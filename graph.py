@@ -42,11 +42,11 @@ class Node(object):
         return self._user_defined
 
     @property
-    def dependencies(self) -> list:
+    def dependencies(self) -> typing.List['Node']:
         return self._dependencies
 
     @property
-    def depended_on_by(self) -> list:
+    def depended_on_by(self) -> typing.List['Node']:
         return self._depended_on_by
 
     def __hash__(self):
@@ -56,13 +56,22 @@ class Node(object):
         return f'<{self._name}>'
 
 
+# kind of hacky for now but it will work
+def is_submodule(child: ModuleType, parent: ModuleType):
+    return parent.__name__ in child.__name__
+
+
 def find_functions(function_module: ModuleType) -> typing.List[typing.Callable]:
     """Function to determine the set of functions we want to build a graph from.
 
     This iterates through the `funcs` imports and grabs all function definitions.
     :return: list of dicts of func_name -> function.
     """
-    return [f for f in inspect.getmembers(function_module) if inspect.isfunction(f[1]) and not f[0].startswith('_')]
+
+    def valid_fn(fn):
+        return inspect.isfunction(fn) and is_submodule(inspect.getmodule(fn), function_module)
+
+    return [f for f in inspect.getmembers(function_module, predicate=valid_fn)]
 
 
 def add_dependency(
