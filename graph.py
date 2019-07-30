@@ -55,6 +55,22 @@ class Node(object):
     def __repr__(self):
         return f'<{self._name}>'
 
+    def __eq__(self, other: 'Node'):
+        """Want to deeply compare nodes in a custom way.
+
+        Current user is just unit tests. But you never know :)
+
+        Note: we only compare names of dependencies because we don't want infinite recursion.
+        """
+        return (self._name == other.name and
+                self._type == other.type and
+                self.user_defined == other.user_defined and
+                [n.name for n in self.dependencies] == [o.name for o in other.dependencies] and
+                [n.name for n in self.depended_on_by] == [o.name for o in other.depended_on_by])
+
+    def __ne__(self, other: 'Node'):
+        return not self.__eq__(other)
+
 
 # kind of hacky for now but it will work
 def is_submodule(child: ModuleType, parent: ModuleType):
@@ -104,7 +120,7 @@ def add_dependency(
 
 
 def create_function_graph(module: ModuleType) -> typing.Dict[str, Node]:
-    """Creates a graph of all available functions & their depdendencies.
+    """Creates a graph of all available functions & their dependencies.
 
     :return: list of nodes in the graph.
     If it needs to be more complicated, we'll return an actual networkx graph and get all the rest of the logic for free
