@@ -19,3 +19,8 @@ def _do_not_import_me(some_input: int, some_input2: int) -> int:
 def B(A: int) -> int:
     """Function that should be come part of the graph"""
     return A * A
+
+
+def C(A: int) -> int:
+    """Function that should be come part of the graph"""
+    return A * 2
