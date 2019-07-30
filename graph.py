@@ -214,7 +214,6 @@ class FunctionGraph(object):
         :param computed: memoized storage to speed up computation. Usually an empty dict.
         :return: the passed in dict for memoized storage.
         """
-
         def dfs_traverse(node: Node):
             for n in node.dependencies:
                 if n.name not in computed:
