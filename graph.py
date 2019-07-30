@@ -180,7 +180,6 @@ class FunctionGraph(object):
     def get_required_functions(self, final_vars: typing.List[str]) -> typing.Tuple[typing.Set[Node], typing.Set[Node]]:
         """Given our function graph, and a list of desired output variables, returns the subgraph required to compute them.
 
-        :param function_graph: The function graph that we're using
         :param final_vars: the list of node names we want.
         :return: a tuple of sets:
             - set of all nodes.
@@ -204,8 +203,8 @@ class FunctionGraph(object):
 
         return nodes, user_nodes
 
-    def execute(self,
-                nodes: typing.Collection[Node],
+    @staticmethod
+    def execute(nodes: typing.Collection[Node],
                 inputs: typing.Dict[str, typing.Any],
                 computed: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
         """Executes computation on the given graph, inputs, and memoized computation.
