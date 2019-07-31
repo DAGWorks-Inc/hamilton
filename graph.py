@@ -5,8 +5,8 @@ It should only be able the graph & things required to create and traverse one.
 """
 import inspect
 import logging
-import typing
 from types import ModuleType
+from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
 
 import graphviz
 import networkx
@@ -17,20 +17,33 @@ logger = logging.getLogger(__name__)
 class Node(object):
     """Object representing a node of computation."""
 
-    def __init__(self, name: str, typ: typing.Any, callable: typing.Callable = None, user_defined: bool = False):
+    def __init__(self, name: str, typ: Type, callabl: Callable = None,
+                 user_defined: bool = False, input_types: Dict[str, Type] = None):
         self._name = name
         self._type = typ
-        self._callable = callable
+        self._callable = callabl
         self._user_defined = user_defined
         self._dependencies = []
         self._depended_on_by = []
+
+        if not self.user_defined:
+            signature = inspect.signature(callabl)
+            if input_types is not None:
+                self._input_types = input_types
+            else:
+                self._input_types = {key: value.annotation for key, value in signature.parameters.items()}
+
+
+    @property
+    def input_types(self) -> Dict[str, Type]:
+        return self._input_types
 
     @property
     def name(self) -> str:
         return self._name
 
     @property
-    def type(self) -> typing.Any:
+    def type(self) -> Any:
         return self._type
 
     @property
@@ -42,11 +55,11 @@ class Node(object):
         return self._user_defined
 
     @property
-    def dependencies(self) -> typing.List['Node']:
+    def dependencies(self) -> List['Node']:
         return self._dependencies
 
     @property
-    def depended_on_by(self) -> typing.List['Node']:
+    def depended_on_by(self) -> List['Node']:
         return self._depended_on_by
 
     def __hash__(self):
@@ -77,7 +90,7 @@ def is_submodule(child: ModuleType, parent: ModuleType):
     return parent.__name__ in child.__name__
 
 
-def find_functions(function_module: ModuleType) -> typing.List[typing.Tuple[str, typing.Callable]]:
+def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
     """Function to determine the set of functions we want to build a graph from.
 
     This iterates through the `funcs` imports and grabs all function definitions.
@@ -93,7 +106,7 @@ def find_functions(function_module: ModuleType) -> typing.List[typing.Tuple[str,
 
 
 def add_dependency(
-        func_node: Node, func_name: str, nodes: typing.Dict[str, Node], param_name: str, param_type: typing.Any):
+        func_node: Node, func_name: str, nodes: Dict[str, Node], param_name: str, param_type: Type):
     """Adds dependencies to the node objects.
 
     This will add user defined inputs to the dictionary of nodes in the graph.
@@ -107,19 +120,19 @@ def add_dependency(
     if param_name in nodes:
         # validate types match
         required_node = nodes[param_name]
-        if required_node.type != param_type.annotation:
-            raise ValueError(f'Error: {func_name} is expecting {param_name}:{param_type.annotation}, but found '
+        if not issubclass(required_node.type, param_type):
+            raise ValueError(f'Error: {func_name} is expecting {param_name}:{param_type}, but found '
                              f'{param_name}:{required_node.type}. All names & types must match.')
     else:
         # this is a user defined var
-        required_node = Node(param_name, param_type.annotation, user_defined=True)
+        required_node = Node(param_name, param_type, user_defined=True)
         nodes[param_name] = required_node
     # add edges
     func_node.dependencies.append(required_node)
     required_node.depended_on_by.append(func_node)
 
 
-def create_function_graph(module: ModuleType) -> typing.Dict[str, Node]:
+def create_function_graph(module: ModuleType) -> Dict[str, Node]:
     """Creates a graph of all available functions & their dependencies.
 
     :return: list of nodes in the graph.
@@ -130,18 +143,19 @@ def create_function_graph(module: ModuleType) -> typing.Dict[str, Node]:
 
     # create nodes -- easier to just create this in one loop
     for func_name, f in functions:
-        sig = inspect.signature(f)
-        n = Node(func_name, sig.return_annotation, callable=f)
-        if func_name in nodes:
-            raise ValueError(f'Cannot define function {func_name} more than once!')
-        nodes[func_name] = n
-
+        if hasattr(f, 'nodes'):
+            function_nodes = f.nodes
+        else:
+            sig = inspect.signature(f)
+            function_nodes = [Node(func_name, sig.return_annotation, callabl=f)]
+        for node in function_nodes:
+            if node.name in nodes:
+                raise ValueError(f'Cannot define function {node.name} more than once!')
+            nodes[node.name] = node
     # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
-    for func_name, f in functions:
-        func_node = nodes[func_name]
-        sig = inspect.signature(f)
-        for param_name, param_type in sig.parameters.items():
-            add_dependency(func_node, func_name, nodes, param_name, param_type)
+    for node_name, node in list(nodes.items()):
+        for param_name, param_type in node.input_types.items():
+            add_dependency(node, node_name, nodes, param_name, param_type)
     return nodes
 
 
@@ -149,7 +163,7 @@ class FunctionGraph(object):
     def __init__(self, module: ModuleType):
         self.nodes = create_function_graph(module)
 
-    def get_nodes(self) -> typing.List[Node]:
+    def get_nodes(self) -> List[Node]:
         return list(self.nodes.values())
 
     def display(self, output_file_path: str = 'test-output/graph.gv'):
@@ -177,7 +191,7 @@ class FunctionGraph(object):
         else:
             logger.info('No cycles detected')
 
-    def get_required_functions(self, final_vars: typing.List[str]) -> typing.Tuple[typing.Set[Node], typing.Set[Node]]:
+    def get_required_functions(self, final_vars: List[str]) -> Tuple[Set[Node], Set[Node]]:
         """Given our function graph, and a list of desired output variables, returns the subgraph required to compute them.
 
         :param final_vars: the list of node names we want.
@@ -204,9 +218,9 @@ class FunctionGraph(object):
         return nodes, user_nodes
 
     @staticmethod
-    def execute(nodes: typing.Collection[Node],
-                inputs: typing.Dict[str, typing.Any],
-                computed: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+    def execute(nodes: Collection[Node],
+                inputs: Dict[str, Any],
+                computed: Dict[str, Any]) -> Dict[str, Any]:
         """Executes computation on the given graph, inputs, and memoized computation.
 
         :param nodes: the graph to traverse for execution.
@@ -214,6 +228,7 @@ class FunctionGraph(object):
         :param computed: memoized storage to speed up computation. Usually an empty dict.
         :return: the passed in dict for memoized storage.
         """
+
         def dfs_traverse(node: Node):
             for n in node.dependencies:
                 if n.name not in computed:
