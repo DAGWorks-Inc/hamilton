@@ -96,12 +96,12 @@ class parametrized(NodeExpander):
 
 
 class extract_columns(NodeExpander):
-    def __init__(self, *columns: str):
+    def __init__(self, *columns: Union[Tuple[str, str], str]):
         """Constructor for a modifier that expands a single function into the following nodes:
         - n functions, each of which take in the original dataframe and output a specific column
         - 1 function that outputs the original dataframe
 
-        :param columns: Columns to extract
+        :param columns: Columns to extract, that can be a list of tuples of (name, documentation) or just names.
         """
         self.columns = columns
 
@@ -121,11 +121,17 @@ class extract_columns(NodeExpander):
         generator.
 
         :param fn: Function to extract columns from. Must output a dataframe.
-        :return: A collection of nodes -- one for the original dataframe generator, and another for each column to extract.
+        :return: A collection of nodes --
+                one for the original dataframe generator, and another for each column to extract.
         """
         node_name = fn.__name__
-        output_nodes = [graph.Node(node_name, typ=pd.DataFrame, callabl=fn)]
+        base_doc = fn.__doc__ if fn.__doc__ else ''
+        output_nodes = [graph.Node(node_name, typ=pd.DataFrame, doc_string=base_doc, callabl=fn)]
         for column in self.columns:
+            doc_string = base_doc  # default doc string of base function.
+            if isinstance(column, Tuple):  # Expand tuple into constituents
+                column, doc_string = column
+
             def extractor_fn(column_to_extract=column, **kwargs):  # avoiding problems with closures
                 return kwargs[node_name][column_to_extract]
 
@@ -133,6 +139,7 @@ class extract_columns(NodeExpander):
                 graph.Node(
                     column,
                     pd.Series,
+                    doc_string,
                     extractor_fn,
                     input_types={node_name: pd.DataFrame}))
         return output_nodes
