@@ -1,7 +1,7 @@
 import abc
 import functools
 import inspect
-from typing import Dict, Callable, Collection
+from typing import Dict, Callable, Collection, Tuple, Union
 
 import pandas as pd
 
@@ -49,15 +49,20 @@ class NodeExpander(abc.ABC):
 
 
 class parametrized(NodeExpander):
-    def __init__(self, parameter: str, assigned_output: Dict[str, str]):
+    def __init__(self, parameter: str, assigned_output: Dict[Tuple[str, str], str]):
         """Constructor for a modifier that expands a single function into n, each of which
         corresponds to a function in which the parameter value is replaced by that specific value.
 
         :param parameter: Parameter to expand on.
-        :param assigned_output: A map of values to parameter names.
+        :param assigned_output: A map of tuple of [parameter names, documentation] to values
         """
         self.parameter = parameter
         self.assigned_output = assigned_output
+        for node in assigned_output.keys():
+            if not isinstance(node, Tuple):
+                raise InvalidDecoratorException(
+                    f'assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of '
+                    '[name, doc string] -> value to function.')
 
     def get_nodes(self, fn: Callable) -> Collection[graph.Node]:
         """For each parameter value, loop through, partially curry the function, and output a node.
@@ -68,11 +73,12 @@ class parametrized(NodeExpander):
         nodes = []
         input_types = {param_name: param.annotation for param_name, param in inspect.signature(fn).parameters.items()
                        if param_name != self.parameter}
-        for value, node_name in self.assigned_output.items():
+        for (node_name, node_doc), value in self.assigned_output.items():
             nodes.append(
                 graph.Node(
                     node_name,
                     inspect.signature(fn).return_annotation,
+                    node_doc,
                     functools.partial(fn, **{self.parameter: value}),
                     input_types=input_types))
         return nodes
