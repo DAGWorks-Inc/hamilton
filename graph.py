@@ -161,7 +161,7 @@ def create_function_graph(module: ModuleType) -> Dict[str, Node]:
             function_nodes = f.nodes
         else:
             sig = inspect.signature(f)
-            function_nodes = [Node(func_name, sig.return_annotation, callabl=f)]
+            function_nodes = [Node(func_name, sig.return_annotation, f.__doc__ if f.__doc__ else '', callabl=f)]
         for node in function_nodes:
             if node.name in nodes:
                 raise ValueError(f'Cannot define function {node.name} more than once!')
