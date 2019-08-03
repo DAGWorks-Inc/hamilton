@@ -17,11 +17,21 @@ logger = logging.getLogger(__name__)
 class Node(object):
     """Object representing a node of computation."""
 
-    def __init__(self, name: str, typ: Type, callabl: Callable = None,
+    def __init__(self, name: str, typ: Type, doc_string: str = '', callabl: Callable = None,
                  user_defined: bool = False, input_types: Dict[str, Type] = None):
+        """Constructor for our Node object.
+
+        :param name: the name of the function.
+        :param typ: the output type of the function.
+        :param doc_string: the doc string for the function. Optional.
+        :param callabl: the actual function callable.
+        :param user_defined: whether this is something someone has to pass in.
+        :param input_types: the input parameters and their types.
+        """
         self._name = name
         self._type = typ
         self._callable = callabl
+        self._doc = doc_string
         self._user_defined = user_defined
         self._dependencies = []
         self._depended_on_by = []
@@ -33,6 +43,9 @@ class Node(object):
             else:
                 self._input_types = {key: value.annotation for key, value in signature.parameters.items()}
 
+    @property
+    def documentation(self) -> str:
+        return self._doc
 
     @property
     def input_types(self) -> Dict[str, Type]:
@@ -77,6 +90,7 @@ class Node(object):
         """
         return (self._name == other.name and
                 self._type == other.type and
+                self._doc == other.documentation and
                 self.user_defined == other.user_defined and
                 [n.name for n in self.dependencies] == [o.name for o in other.dependencies] and
                 [n.name for n in self.depended_on_by] == [o.name for o in other.depended_on_by])
