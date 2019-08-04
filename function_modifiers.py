@@ -143,3 +143,83 @@ class extract_columns(NodeExpander):
                     extractor_fn,
                     input_types={node_name: pd.DataFrame}))
         return output_nodes
+
+
+# the following are empty functions that we can compare against to ensure that @does uses an empty function
+def _empty_function():
+    pass
+
+
+def _empty_function_with_docstring():
+    """Docstring for an empty function"""
+    pass
+
+
+class does(NodeExpander):
+    def __init__(self, replacing_function: Callable):
+        """
+        Constructor for a modifier that replaces the annotated functions functionality with something else.
+        Right now this has a very strict validation requirements to make compliance with the framework easy.
+        """
+        self.replacing_function = replacing_function
+
+    @staticmethod
+    def ensure_function_empty(fn: Callable):
+        """
+        Ensures that a function is empty. This is strict definition -- the function must have only one line (and
+        possibly a docstring), and that line must say "pass".
+        """
+        if fn.__code__.co_code not in {_empty_function.__code__.co_code,
+                                       _empty_function_with_docstring.__code__.co_code}:
+            raise InvalidDecoratorException(f'Function: {fn.__name__} is not empty. Must have only one line that '
+                                            f'consists of "pass"')
+
+    @staticmethod
+    def ensure_output_types_match(fn: Callable, todo: Callable):
+        """
+        Ensures that the output types of two functions match.
+        """
+        annotation_fn = inspect.signature(fn).return_annotation
+        annotation_todo = inspect.signature(todo).return_annotation
+        if not issubclass(annotation_todo, annotation_fn):
+            raise InvalidDecoratorException(f'Output types: {annotation_fn} and {annotation_todo} are not compatible')
+
+    @staticmethod
+    def ensure_function_kwarg_only(fn: Callable):
+        """
+        Ensures that a function is kwarg only. Meaning that it only has one parameter similar to **kwargs.
+        """
+        parameters = inspect.signature(fn).parameters
+        if len(parameters) > 1:
+            raise InvalidDecoratorException('Too many parameters -- for now @does can only use **kwarg functions. '
+                                            f'Found params: {parameters}')
+        (_, parameter), = parameters.items()
+        if not parameter.kind == inspect.Parameter.VAR_KEYWORD:
+            raise InvalidDecoratorException(f'Must have only one parameter, and that parameter must be a **kwargs '
+                                            f'parameter. Instead, found: {parameter}')
+
+    def validate(self, fn: Callable):
+        """
+        Validates that the function:
+        - Is empty (we don't want to be overwriting actual code)
+        - is keyword argument only (E.G. has just **kwargs in its argument list)
+        :param fn: Function to validate
+        :raises: InvalidDecoratorException
+        """
+        does.ensure_function_empty(fn)
+        does.ensure_function_kwarg_only(self.replacing_function)
+        does.ensure_output_types_match(fn, self.replacing_function)
+
+    def get_nodes(self, fn: Callable) -> Collection[graph.Node]:
+        """
+        Returns one node which has the replaced functionality
+        :param fn:
+        :return:
+        """
+        fn_signature = inspect.signature(fn)
+        return [graph.Node(
+            fn.__name__,
+            doc_string=fn.__doc__ if fn.__doc__ is not None else '',
+            callabl=self.replacing_function,
+            input_types={key: value.annotation for key, value in fn_signature.parameters.items()},
+            typ=fn_signature.return_annotation)]
