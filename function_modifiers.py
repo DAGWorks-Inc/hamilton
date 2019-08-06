@@ -103,6 +103,10 @@ class extract_columns(NodeExpander):
 
         :param columns: Columns to extract, that can be a list of tuples of (name, documentation) or just names.
         """
+        if not columns:
+            raise InvalidDecoratorException('Error empty arguments passed to extract_columns decorator.')
+        elif isinstance(columns[0], list):
+            raise InvalidDecoratorException('Error list passed in. Please `*` in front of it to expand it.')
         self.columns = columns
 
     def validate(self, fn: Callable):
