@@ -1,7 +1,7 @@
 import abc
 import functools
 import inspect
-from typing import Dict, Callable, Collection, Tuple, Union
+from typing import Dict, Callable, Collection, Tuple, Union, Any
 
 import pandas as pd
 
@@ -96,18 +96,21 @@ class parametrized(NodeExpander):
 
 
 class extract_columns(NodeExpander):
-    def __init__(self, *columns: Union[Tuple[str, str], str]):
+    def __init__(self, *columns: Union[Tuple[str, str], str], fill_with: Any = None):
         """Constructor for a modifier that expands a single function into the following nodes:
         - n functions, each of which take in the original dataframe and output a specific column
         - 1 function that outputs the original dataframe
 
         :param columns: Columns to extract, that can be a list of tuples of (name, documentation) or just names.
+        :param fill_with: If you want to extract a column that doesn't exist, do you want to fill it with a default value?
+        Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a column.
         """
         if not columns:
             raise InvalidDecoratorException('Error empty arguments passed to extract_columns decorator.')
         elif isinstance(columns[0], list):
             raise InvalidDecoratorException('Error list passed in. Please `*` in front of it to expand it.')
         self.columns = columns
+        self.fill_with = fill_with
 
     def validate(self, fn: Callable):
         """A function is invalid if it does not output a dataframe.
@@ -136,7 +139,12 @@ class extract_columns(NodeExpander):
             if isinstance(column, Tuple):  # Expand tuple into constituents
                 column, doc_string = column
 
-            def extractor_fn(column_to_extract=column, **kwargs):  # avoiding problems with closures
+            def extractor_fn(column_to_extract: str = column, **kwargs) -> pd.Series:  # avoiding problems with closures
+                df = kwargs[node_name]
+                if column_to_extract not in df:
+                    if self.fill_with is None:
+                        raise InvalidDecoratorException(f'No such column: {column_to_extract} produced by {node_name}')
+                    return pd.Series(data=self.fill_with, index=df.index)
                 return kwargs[node_name][column_to_extract]
 
             output_nodes.append(
