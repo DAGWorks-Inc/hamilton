@@ -133,7 +133,18 @@ class extract_columns(NodeExpander):
         """
         node_name = fn.__name__
         base_doc = fn.__doc__ if fn.__doc__ else ''
-        output_nodes = [graph.Node(node_name, typ=pd.DataFrame, doc_string=base_doc, callabl=fn)]
+
+        @functools.wraps(fn)
+        def df_generator(*args, **kwargs):
+            df_generated = fn(*args, **kwargs)
+            if self.fill_with is not None:
+                for col in self.columns:
+                    if col not in df_generated:
+                        df_generated[col] = self.fill_with
+            return df_generated
+
+        output_nodes = [graph.Node(node_name, typ=pd.DataFrame, doc_string=base_doc, callabl=df_generator)]
+
         for column in self.columns:
             doc_string = base_doc  # default doc string of base function.
             if isinstance(column, Tuple):  # Expand tuple into constituents
@@ -142,9 +153,7 @@ class extract_columns(NodeExpander):
             def extractor_fn(column_to_extract: str = column, **kwargs) -> pd.Series:  # avoiding problems with closures
                 df = kwargs[node_name]
                 if column_to_extract not in df:
-                    if self.fill_with is None:
-                        raise InvalidDecoratorException(f'No such column: {column_to_extract} produced by {node_name}')
-                    return pd.Series(data=self.fill_with, index=df.index)
+                    raise InvalidDecoratorException(f'No such column: {column_to_extract} produced by {node_name}')
                 return kwargs[node_name][column_to_extract]
 
             output_nodes.append(
