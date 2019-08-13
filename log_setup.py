@@ -1,8 +1,19 @@
 import logging
 import sys
 
+LOG_LEVELS = {
+    'CRITICAL': logging.CRITICAL,
+    'ERROR': logging.ERROR,
+    'WARNING': logging.WARNING,
+    'INFO': logging.INFO,
+    'DEBUG': logging.DEBUG
+}
 
-def setup_logging(log_level: int=logging.INFO):
+
+# this is suboptimal but python has no public mapping of log names to levels
+
+
+def setup_logging(log_level: int = logging.INFO):
     """Helper function to setup logging to console.
     :param log_level: Log level to use when logging
     """
