@@ -248,7 +248,7 @@ class FunctionGraph(object):
                 if n.name not in computed:
                     dfs_traverse(n)
 
-            logger.info(f'Computing {node.name}.')
+            logger.debug(f'Computing {node.name}.')
             if node.user_defined:
                 value = inputs[node.name]
             else:
