@@ -4,7 +4,11 @@ from types import ModuleType
 
 import pandas as pd
 
-from . import graph
+# required if we want to run this code stand alone.
+if __name__ == '__main__':
+    import graph
+else:
+    from . import graph
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +82,10 @@ if __name__ == '__main__':
     x.index = x
     # df = execute(['D_THANKSGIVING'], {'DATE': x.to_series(), 'RANDOM': 4}, display_graph=True)
     # print(df)
-    df = execute(['DATE', 'M_DISPLAY_SPEND_TF', 'D_WEEK_AFTER_MOTHERSDAY'],
-                 {'DATE': x.to_series(), 'VERSION': 'womens', 'AS_OF': '2019-06-01'},
-                 display_graph=True)
+    import demandpy.funcs
+    dr = Driver(demandpy.funcs)
+    df = dr.execute(['DATE', 'D_SIGNUP_LVL', 'D_WEEK_AFTER_MOTHERSDAY'],
+                    {'DATE': x.to_series(), 'VERSION': 'womens', 'AS_OF': '2019-06-01',
+                     'end_date': '2020-12-31', 'start_date': '2019-01-05'},
+                    display_graph=True)
     print(df)
