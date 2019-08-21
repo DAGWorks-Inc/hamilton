@@ -250,6 +250,8 @@ class FunctionGraph(object):
 
             logger.debug(f'Computing {node.name}.')
             if node.user_defined:
+                if node.name not in inputs:
+                    raise NotImplementedError(f'{node.name} as expected to be passed in but was not.')
                 value = inputs[node.name]
             else:
                 kwargs = {}  # construct signature
