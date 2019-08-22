@@ -234,14 +234,24 @@ class FunctionGraph(object):
     @staticmethod
     def execute(nodes: Collection[Node],
                 inputs: Dict[str, Any],
-                computed: Dict[str, Any]) -> Dict[str, Any]:
+                computed: Dict[str, Any]=None,
+                overrides: Dict[str, Any] =None) -> Dict[str, Any]:
         """Executes computation on the given graph, inputs, and memoized computation.
+        To override a value, utilize `overrides`.
+        To pass in a value to ensure we don't compute data twice, use `computed`.
+        Don't use `computed` to override a value, you will not get the results you expect.
 
         :param nodes: the graph to traverse for execution.
-        :param inputs: the inputs provided.
+        :param inputs: the inputs provided. These will only be called if a node is "user-defined"
         :param computed: memoized storage to speed up computation. Usually an empty dict.
+        :param overrides: any inputs we want to user to override actual computation
         :return: the passed in dict for memoized storage.
         """
+
+        if overrides is None:
+            overrides = {}
+        if computed is None:
+            computed = {}
 
         def dfs_traverse(node: Node):
             for n in node.dependencies:
@@ -254,6 +264,9 @@ class FunctionGraph(object):
                     raise NotImplementedError(f'{node.name} as expected to be passed in but was not.')
                 value = inputs[node.name]
             else:
+                if node.name in overrides:
+                    computed[node.name] = overrides[node.name]
+                    return
                 kwargs = {}  # construct signature
                 for dependency in node.dependencies:
                     kwargs[dependency.name] = computed[dependency.name]
