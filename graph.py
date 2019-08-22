@@ -146,14 +146,14 @@ def add_dependency(
     required_node.depended_on_by.append(func_node)
 
 
-def create_function_graph(module: ModuleType) -> Dict[str, Node]:
+def create_function_graph(*modules: ModuleType) -> Dict[str, Node]:
     """Creates a graph of all available functions & their dependencies.
-
+    :param modules: A set of modules over which one wants to compute the function graph
     :return: list of nodes in the graph.
     If it needs to be more complicated, we'll return an actual networkx graph and get all the rest of the logic for free
     """
     nodes = {}  # name -> Node
-    functions = find_functions(module)
+    functions = sum([find_functions(module) for module in modules], [])
 
     # create nodes -- easier to just create this in one loop
     for func_name, f in functions:
@@ -174,8 +174,8 @@ def create_function_graph(module: ModuleType) -> Dict[str, Node]:
 
 
 class FunctionGraph(object):
-    def __init__(self, module: ModuleType):
-        self.nodes = create_function_graph(module)
+    def __init__(self, *modules: ModuleType):
+        self.nodes = create_function_graph(*modules)
 
     def get_nodes(self) -> List[Node]:
         return list(self.nodes.values())
