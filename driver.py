@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class Driver(object):
-    def __init__(self, module: ModuleType):
-        self.graph = graph.FunctionGraph(module)
+    def __init__(self, *modules: ModuleType):
+        self.graph = graph.FunctionGraph(*modules)
 
     def validate_inputs(self, user_nodes: typing.Collection[graph.Node], inputs: typing.Dict[str, typing.Any]):
         """Validates that inputs meet our expectations.
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     # df = execute(['D_THANKSGIVING'], {'DATE': x.to_series(), 'RANDOM': 4}, display_graph=True)
     # print(df)
     import demandpy.funcs
-    dr = Driver(demandpy.funcs)
+    dr = Driver(demandpy.funcs, demandpy.config)
     df = dr.execute(['DATE', 'D_SIGNUP_LVL', 'D_WEEK_AFTER_MOTHERSDAY'],
                     {'DATE': x.to_series(), 'VERSION': 'womens', 'AS_OF': '2019-06-01',
                      'end_date': '2020-12-31', 'start_date': '2019-01-05'},
