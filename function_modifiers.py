@@ -21,6 +21,9 @@ class InvalidDecoratorException(Exception):
 class NodeExpander(abc.ABC):
     """Abstract class for nodes that "expand" functions into other nodes."""
 
+    # constant that will be the field modified by this decorator
+    GENERATE_NODES = 'generate_nodes'
+
     @abc.abstractmethod
     def get_nodes(self, fn: Callable) -> Collection[graph.Node]:
         """Given a function, converts it to a series of nodes that it produces.
@@ -41,10 +44,10 @@ class NodeExpander(abc.ABC):
 
     def __call__(self, fn: Callable):
         self.validate(fn)
-        if hasattr(fn, 'nodes'):
+        if hasattr(fn, NodeExpander.GENERATE_NODES):
             raise Exception(f'Only one expander annotation allowed at a time. Function {fn} already has an expander '
                             f'annotation.')
-        fn.nodes = self.get_nodes(fn)
+        setattr(fn, NodeExpander.GENERATE_NODES, self.get_nodes(fn))
         return fn
 
 

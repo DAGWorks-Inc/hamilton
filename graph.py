@@ -11,6 +11,8 @@ from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
 import graphviz
 import networkx
 
+from hamilton import function_modifiers
+
 logger = logging.getLogger(__name__)
 
 
@@ -106,6 +108,21 @@ class Node(object):
         return not self.__eq__(other)
 
 
+def generate_nodes(fn: Callable, name: str) -> Collection[Node]:
+    """Gets a list of nodes from a function. This is meant to be an abstraction between the node
+    and the function that it implements. This will end up coordinating with the decorators we build
+    to modify nodes.
+
+    :param fn: Function to input.
+    :param name: Function name -- will (in some cases) be the name of the node.
+    :return: A list of nodes into which this function transforms.
+    """
+    if hasattr(fn, function_modifiers.NodeExpander.GENERATE_NODES):
+        return getattr(fn, function_modifiers.NodeExpander.GENERATE_NODES)
+    sig = inspect.signature(fn)
+    return [Node(name, sig.return_annotation, fn.__doc__ if fn.__doc__ else '', callabl=fn)]
+
+
 # kind of hacky for now but it will work
 def is_submodule(child: ModuleType, parent: ModuleType):
     return parent.__name__ in child.__name__
@@ -164,12 +181,7 @@ def create_function_graph(*modules: ModuleType) -> Dict[str, Node]:
 
     # create nodes -- easier to just create this in one loop
     for func_name, f in functions:
-        if hasattr(f, 'nodes'):
-            function_nodes = f.nodes
-        else:
-            sig = inspect.signature(f)
-            function_nodes = [Node(func_name, sig.return_annotation, f.__doc__ if f.__doc__ else '', callabl=f)]
-        for node in function_nodes:
+        for node in generate_nodes(f, func_name):
             if node.name in nodes:
                 raise ValueError(f'Cannot define function {node.name} more than once!')
             nodes[node.name] = node
@@ -241,8 +253,8 @@ class FunctionGraph(object):
     @staticmethod
     def execute(nodes: Collection[Node],
                 inputs: Dict[str, Any],
-                computed: Dict[str, Any]=None,
-                overrides: Dict[str, Any] =None) -> Dict[str, Any]:
+                computed: Dict[str, Any] = None,
+                overrides: Dict[str, Any] = None) -> Dict[str, Any]:
         """Executes computation on the given graph, inputs, and memoized computation.
         To override a value, utilize `overrides`.
         To pass in a value to ensure we don't compute data twice, use `computed`.
