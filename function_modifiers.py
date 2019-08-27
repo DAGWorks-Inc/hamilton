@@ -1,11 +1,12 @@
 import abc
 import functools
 import inspect
-from typing import Dict, Callable, Collection, Tuple, Union, Any
+from typing import Dict, Callable, Collection, Tuple, Union, Any, Type
 
 import pandas as pd
 
 from hamilton import graph
+from hamilton.models import BaseModel
 
 """
 Annotations for modifying the way functions get added to the DAG.
@@ -182,6 +183,16 @@ def _empty_function_with_docstring():
     pass
 
 
+def ensure_function_empty(fn: Callable):
+    """
+    Ensures that a function is empty. This is strict definition -- the function must have only one line (and
+    possibly a docstring), and that line must say "pass".
+    """
+    if fn.__code__.co_code not in {_empty_function.__code__.co_code,
+                                   _empty_function_with_docstring.__code__.co_code}:
+        raise InvalidDecoratorException(f'Function: {fn.__name__} is not empty. Must have only one line that '
+                                        f'consists of "pass"')
+
 class does(NodeExpander):
     def __init__(self, replacing_function: Callable):
         """
@@ -189,17 +200,6 @@ class does(NodeExpander):
         Right now this has a very strict validation requirements to make compliance with the framework easy.
         """
         self.replacing_function = replacing_function
-
-    @staticmethod
-    def ensure_function_empty(fn: Callable):
-        """
-        Ensures that a function is empty. This is strict definition -- the function must have only one line (and
-        possibly a docstring), and that line must say "pass".
-        """
-        if fn.__code__.co_code not in {_empty_function.__code__.co_code,
-                                       _empty_function_with_docstring.__code__.co_code}:
-            raise InvalidDecoratorException(f'Function: {fn.__name__} is not empty. Must have only one line that '
-                                            f'consists of "pass"')
 
     @staticmethod
     def ensure_output_types_match(fn: Callable, todo: Callable):
@@ -233,7 +233,7 @@ class does(NodeExpander):
         :param fn: Function to validate
         :raises: InvalidDecoratorException
         """
-        does.ensure_function_empty(fn)
+        ensure_function_empty(fn)
         does.ensure_function_kwarg_only(self.replacing_function)
         does.ensure_output_types_match(fn, self.replacing_function)
 
@@ -251,3 +251,39 @@ class does(NodeExpander):
             callabl=self.replacing_function,
             input_types={key: value.annotation for key, value in fn_signature.parameters.items()},
             typ=fn_signature.return_annotation)]
+
+
+class model(NodeExpander):
+    def __init__(self, model_cls: Type[BaseModel], config_param: str):
+        """Constructs a model. Takes in a model_cls, whose only cunstruction parameter is a dictionary."""
+        self.model_cls = model_cls
+        self.config_param = config_param
+
+    def validate(self, fn: Callable):
+        """Validates that the model works with the function -- ensures:
+        1. function has no code
+        2. function has no parameters
+        3. function has series as a return type
+        :param fn: Function to validate
+        :raises InvalidDecoratorException if the model is not valid.
+        """
+
+        ensure_function_empty(fn) # it has to look exactly
+        signature = inspect.signature(fn)
+        if not issubclass(signature.return_annotation, pd.Series):
+            raise InvalidDecoratorException('Models must declare their return type as a pandas Series')
+        if len(signature.parameters) > 0:
+            raise InvalidDecoratorException('Models must have no parameters -- all are passed in through the config')
+
+    def get_nodes(self, fn: Callable, config: Dict[str, Any] = None) -> Collection[graph.Node]:
+        if self.config_param not in config:
+            raise InvalidDecoratorException(f'Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?')
+
+        model = self.model_cls(config[self.config_param])
+        return [graph.Node(
+            name=fn.__name__,
+            typ=inspect.signature(fn).return_annotation,
+            doc_string=fn.__doc__,
+            callabl=model.predict,
+            user_defined=False,
+            input_types={dep: pd.Series for dep in model.get_dependents()})]
