@@ -108,7 +108,7 @@ class Node(object):
         return not self.__eq__(other)
 
 
-def generate_nodes(fn: Callable, name: str) -> Collection[Node]:
+def generate_nodes(fn: Callable, name: str, config: Dict[str, Any]) -> Collection[Node]:
     """Gets a list of nodes from a function. This is meant to be an abstraction between the node
     and the function that it implements. This will end up coordinating with the decorators we build
     to modify nodes.
@@ -118,7 +118,7 @@ def generate_nodes(fn: Callable, name: str) -> Collection[Node]:
     :return: A list of nodes into which this function transforms.
     """
     if hasattr(fn, function_modifiers.NodeExpander.GENERATE_NODES):
-        return getattr(fn, function_modifiers.NodeExpander.GENERATE_NODES)
+        return getattr(fn, function_modifiers.NodeExpander.GENERATE_NODES)(fn, config)
     sig = inspect.signature(fn)
     return [Node(name, sig.return_annotation, fn.__doc__ if fn.__doc__ else '', callabl=fn)]
 
@@ -170,7 +170,7 @@ def add_dependency(
     required_node.depended_on_by.append(func_node)
 
 
-def create_function_graph(*modules: ModuleType) -> Dict[str, Node]:
+def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[str, Node]:
     """Creates a graph of all available functions & their dependencies.
     :param modules: A set of modules over which one wants to compute the function graph
     :return: list of nodes in the graph.
@@ -181,7 +181,7 @@ def create_function_graph(*modules: ModuleType) -> Dict[str, Node]:
 
     # create nodes -- easier to just create this in one loop
     for func_name, f in functions:
-        for node in generate_nodes(f, func_name):
+        for node in generate_nodes(f, func_name, config):
             if node.name in nodes:
                 raise ValueError(f'Cannot define function {node.name} more than once!')
             nodes[node.name] = node
@@ -200,8 +200,8 @@ class FunctionGraph(object):
         :param modules: Modules to crawl for functions
         :param config:
         """
-        self.nodes = create_function_graph(*modules)
         self._config = config
+        self.nodes = create_function_graph(*modules, config=self._config)
 
     @property
     def config(self):

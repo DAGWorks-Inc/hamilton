@@ -25,9 +25,10 @@ class NodeExpander(abc.ABC):
     GENERATE_NODES = 'generate_nodes'
 
     @abc.abstractmethod
-    def get_nodes(self, fn: Callable) -> Collection[graph.Node]:
+    def get_nodes(self, fn: Callable, config: Dict[str, Any]) -> Collection[graph.Node]:
         """Given a function, converts it to a series of nodes that it produces.
 
+        :param config:
         :param fn: A function to convert.
         :return: A collection of nodes.
         """
@@ -47,7 +48,7 @@ class NodeExpander(abc.ABC):
         if hasattr(fn, NodeExpander.GENERATE_NODES):
             raise Exception(f'Only one expander annotation allowed at a time. Function {fn} already has an expander '
                             f'annotation.')
-        setattr(fn, NodeExpander.GENERATE_NODES, self.get_nodes(fn))
+        setattr(fn, NodeExpander.GENERATE_NODES, self.get_nodes)
         return fn
 
 
@@ -67,9 +68,10 @@ class parametrized(NodeExpander):
                     f'assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of '
                     '[name, doc string] -> value to function.')
 
-    def get_nodes(self, fn: Callable) -> Collection[graph.Node]:
+    def get_nodes(self, fn: Callable, config) -> Collection[graph.Node]:
         """For each parameter value, loop through, partially curry the function, and output a node.
 
+        :param config:
         :param fn: Function to operate on.
         :return: A collection of nodes, each of which is parametrized.
         """
@@ -126,10 +128,11 @@ class extract_columns(NodeExpander):
             raise InvalidDecoratorException(
                 f'For extracting columns, output type must be pandas dataframe, not: {output_type}')
 
-    def get_nodes(self, fn: Callable) -> Collection[graph.Node]:
+    def get_nodes(self, fn: Callable, config: Dict[str, Any]) -> Collection[graph.Node]:
         """For each column to extract, output a node that extracts that column. Also, output the original dataframe
         generator.
 
+        :param config:
         :param fn: Function to extract columns from. Must output a dataframe.
         :return: A collection of nodes --
                 one for the original dataframe generator, and another for each column to extract.
@@ -234,9 +237,10 @@ class does(NodeExpander):
         does.ensure_function_kwarg_only(self.replacing_function)
         does.ensure_output_types_match(fn, self.replacing_function)
 
-    def get_nodes(self, fn: Callable) -> Collection[graph.Node]:
+    def get_nodes(self, fn: Callable, config) -> Collection[graph.Node]:
         """
         Returns one node which has the replaced functionality
+        :param config:
         :param fn:
         :return:
         """
