@@ -30,6 +30,8 @@ class Node(object):
         """
         self._name = name
         self._type = typ
+        if typ is None or typ == inspect._empty:
+            raise ValueError(f'Missing type for hint for function {name}. Please add one to fix.')
         self._callable = callabl
         self._doc = doc_string
         self._user_defined = user_defined
@@ -37,11 +39,16 @@ class Node(object):
         self._depended_on_by = []
 
         if not self.user_defined:
-            signature = inspect.signature(callabl)
             if input_types is not None:
                 self._input_types = input_types
             else:
-                self._input_types = {key: value.annotation for key, value in signature.parameters.items()}
+                signature = inspect.signature(callabl)
+                self._input_types = {}
+                for key, value in signature.parameters.items():
+                    if value.annotation == inspect._empty:
+                        raise ValueError(f'Missing type hint for {key} in function {name}. Please add one to fix.')
+                    self._input_types[key] = value.annotation
+
 
     @property
     def documentation(self) -> str:
