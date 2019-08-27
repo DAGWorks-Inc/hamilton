@@ -193,8 +193,19 @@ def create_function_graph(*modules: ModuleType) -> Dict[str, Node]:
 
 
 class FunctionGraph(object):
-    def __init__(self, *modules: ModuleType):
+    def __init__(self, *modules: ModuleType, config: Dict[str, Any]):
+        """Initializes a function graph by crawling through modules. Function graph must have a config,
+        as the config could determine the shape of the graph.
+
+        :param modules: Modules to crawl for functions
+        :param config:
+        """
         self.nodes = create_function_graph(*modules)
+        self._config = config
+
+    @property
+    def config(self):
+        return self._config
 
     def get_nodes(self) -> List[Node]:
         return list(self.nodes.values())
@@ -251,21 +262,21 @@ class FunctionGraph(object):
         return nodes, user_nodes
 
     @staticmethod
-    def execute(nodes: Collection[Node],
-                inputs: Dict[str, Any],
-                computed: Dict[str, Any] = None,
-                overrides: Dict[str, Any] = None) -> Dict[str, Any]:
+    def execute_static(nodes: Collection[Node],
+                       inputs: Dict[str, Any],
+                       computed: Dict[str, Any] = None,
+                       overrides: Dict[str, Any] = None):
         """Executes computation on the given graph, inputs, and memoized computation.
-        To override a value, utilize `overrides`.
-        To pass in a value to ensure we don't compute data twice, use `computed`.
-        Don't use `computed` to override a value, you will not get the results you expect.
+                To override a value, utilize `overrides`.
+                To pass in a value to ensure we don't compute data twice, use `computed`.
+                Don't use `computed` to override a value, you will not get the results you expect.
 
-        :param nodes: the graph to traverse for execution.
-        :param inputs: the inputs provided. These will only be called if a node is "user-defined"
-        :param computed: memoized storage to speed up computation. Usually an empty dict.
-        :param overrides: any inputs we want to user to override actual computation
-        :return: the passed in dict for memoized storage.
-        """
+                :param nodes: the graph to traverse for execution.
+                :param inputs: the inputs provided. These will only be called if a node is "user-defined"
+                :param computed: memoized storage to speed up computation. Usually an empty dict.
+                :param overrides: any inputs we want to user to override actual computation
+                :return: the passed in dict for memoized storage.
+                """
 
         if overrides is None:
             overrides = {}
@@ -295,3 +306,16 @@ class FunctionGraph(object):
         for final_var_node in nodes:
             dfs_traverse(final_var_node)
         return computed
+
+    def execute(self,
+                nodes: Collection[Node] = None,
+                computed: Dict[str, Any] = None,
+                overrides: Dict[str, Any] = None) -> Dict[str, Any]:
+        if nodes is None:
+            nodes = self.get_nodes()
+        return FunctionGraph.execute_static(
+            nodes=nodes,
+            inputs=self.config,
+            computed=computed,
+            overrides=overrides
+        )

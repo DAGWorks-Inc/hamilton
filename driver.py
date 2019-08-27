@@ -1,5 +1,5 @@
 import logging
-import typing
+from typing import Dict, Collection, List, Any
 from types import ModuleType
 
 import pandas as pd
@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 class Driver(object):
-    def __init__(self, *modules: ModuleType):
-        self.graph = graph.FunctionGraph(*modules)
+    def __init__(self, config: Dict[str, Any], *modules: ModuleType):
+        self.graph = graph.FunctionGraph(*modules, config=config)
 
-    def validate_inputs(self, user_nodes: typing.Collection[graph.Node], inputs: typing.Dict[str, typing.Any]):
+    def validate_inputs(self, user_nodes: Collection[graph.Node], inputs: Dict[str, Any]):
         """Validates that inputs meet our expectations.
 
         :param user_nodes: The required nodes we need for computation.
@@ -31,8 +31,7 @@ class Driver(object):
                 raise ValueError(f'Error: Type requirement mistmatch. Expected {user_node.name}:{user_node.type} '
                                  f'got {inputs[user_node.name]} instead.')
 
-    def execute(self, final_vars: typing.List[str],
-                inputs: typing.Dict[str, typing.Any],
+    def execute(self, final_vars: List[str],
                 display_graph: bool = False) -> pd.DataFrame:
         """Executes computation.
 
@@ -42,13 +41,13 @@ class Driver(object):
         :return: a data frame consisting of the variables requested.
         """
         nodes, user_nodes = self.graph.get_required_functions(final_vars)
-        self.validate_inputs(user_nodes, inputs)
+        self.validate_inputs(user_nodes, self.graph.config) #TODO -- validate within the function graph itself
         if display_graph:
             # TODO: fix path.
             self.graph.display(output_file_path='test-output/execute.gv')
 
         memoized_computation = dict()  # memoized storage
-        self.graph.execute(nodes, inputs, memoized_computation)
+        self.graph.execute(nodes, memoized_computation)
         columns = {c: memoized_computation[c] for c in final_vars}  # only want request variables in df.
         del memoized_computation  # trying to cleanup some memory
         # TODO: figure out how to fill in columns?
@@ -56,7 +55,7 @@ class Driver(object):
         #  to be used off of them) or do some special combining logic.
         return pd.DataFrame(columns)
 
-    def list_available_variables(self) -> typing.List[str]:
+    def list_available_variables(self) -> List[str]:
         """Returns available variables.
 
         :return: list of available variables.
