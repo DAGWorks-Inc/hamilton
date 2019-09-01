@@ -254,10 +254,11 @@ class does(NodeExpander):
 
 
 class model(NodeExpander):
-    def __init__(self, model_cls: Type[BaseModel], config_param: str):
+    def __init__(self, model_cls: Type[BaseModel], config_param: str, **extra_model_params):
         """Constructs a model. Takes in a model_cls, whose only cunstruction parameter is a dictionary."""
         self.model_cls = model_cls
         self.config_param = config_param
+        self.extra_model_params = extra_model_params
 
     def validate(self, fn: Callable):
         """Validates that the model works with the function -- ensures:
@@ -279,7 +280,8 @@ class model(NodeExpander):
         if self.config_param not in config:
             return []
             # raise InvalidDecoratorException(f'Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?')
-        model = self.model_cls(config[self.config_param])
+
+        model = self.model_cls(config[self.config_param], **self.extra_model_params)
         return [node.Node(
             name=fn.__name__,
             typ=inspect.signature(fn).return_annotation,
