@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Dict, Collection, List, Any
 from types import ModuleType
 
@@ -24,19 +25,25 @@ class Driver(object):
         :param inputs: the user inputs provided.
         """
         # validate inputs
+        errors = []
         for user_node in user_nodes:
             if user_node.name not in inputs:
-                raise ValueError(f'Error: Required input {user_node.name} not provided.')
+                errors.append(f'Error: Required input {user_node.name} not provided.')
             elif not isinstance(inputs[user_node.name], user_node.type):
-                raise ValueError(f'Error: Type requirement mistmatch. Expected {user_node.name}:{user_node.type} '
+                errors.append(f'Error: Type requirement mistmatch. Expected {user_node.name}:{user_node.type} '
                                  f'got {inputs[user_node.name]} instead.')
+        if errors:
+            error_str = f'{len(errors)} errors encountered:\n  ' + '\n  '.join(errors)
+            raise ValueError(error_str)
 
-    def execute(self, final_vars: List[str],
+    def execute(self,
+                final_vars: List[str],
+                overrides: Dict[str, Any] = None,
                 display_graph: bool = False) -> pd.DataFrame:
         """Executes computation.
 
         :param final_vars: the final list of variables we want in the data frame.
-        :param inputs: the user defined input variables.
+        :param overrides: the user defined input variables.
         :param display_graph: whether we want to display the graph being computed.
         :return: a data frame consisting of the variables requested.
         """
@@ -47,7 +54,7 @@ class Driver(object):
             self.graph.display(output_file_path='test-output/execute.gv')
 
         memoized_computation = dict()  # memoized storage
-        self.graph.execute(nodes, memoized_computation)
+        self.graph.execute(nodes, memoized_computation, overrides)
         columns = {c: memoized_computation[c] for c in final_vars}  # only want request variables in df.
         del memoized_computation  # trying to cleanup some memory
         # TODO: figure out how to fill in columns?
@@ -82,9 +89,22 @@ if __name__ == '__main__':
     # df = execute(['D_THANKSGIVING'], {'DATE': x.to_series(), 'RANDOM': 4}, display_graph=True)
     # print(df)
     import demandpy.funcs
-    dr = Driver(demandpy.funcs, demandpy.config)
-    df = dr.execute(['DATE', 'D_SIGNUP_LVL', 'D_WEEK_AFTER_MOTHERSDAY'],
-                    {'DATE': x.to_series(), 'VERSION': 'womens', 'AS_OF': '2019-06-01',
-                     'end_date': '2020-12-31', 'start_date': '2019-01-05'},
-                    display_graph=True)
+    # TODO: enable injecting of a "node" value. I don't think tht works anymore.
+    dr = Driver({
+        # 'DATE': x.to_series(),
+        'VERSION': 'kids', 'as_of': datetime.strptime('2019-06-01', '%Y-%m-%d'),
+                 'end_date': '2020-12-31', 'start_date': '2019-01-05',
+                 'start_date_d': datetime.strptime('2019-01-05', '%Y-%m-%d'),
+                 'end_date_d': datetime.strptime('2020-12-31', '%Y-%m-%d'),
+                 'signups_non_referral': pd.Series(data=0, index=x.index),
+                 'segment_filters': {'business_line': 'womens'}
+                 }, demandpy.funcs, demandpy.config)
+    df = dr.execute(
+        [
+            'DATE',
+         # 'D_WEEK_BEFORE_EASTER',
+         # 'prob_demand_new_non_referral'
+         ]
+        # ,overrides={'DATE': pd.Series(0)}
+        , display_graph=False)
     print(df)
