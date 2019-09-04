@@ -119,20 +119,37 @@ class FunctionGraph(object):
     def get_nodes(self) -> List[node.Node]:
         return list(self.nodes.values())
 
-    def display(self, output_file_path: str = 'test-output/graph.gv'):
+    def display_all(self, output_file_path: str = 'test-output/graph-all.gv'):
+        """Displays the entire DAG structure constructed.
+
+        :param output_file_path: the place to save the files.
+        """
+        defined_nodes = set()
+        user_nodes = set()
+        for n in self.nodes.values():
+            if n.user_defined:
+                user_nodes.add(n)
+            else:
+                defined_nodes.add(n)
+        self.display(defined_nodes, user_nodes, output_file_path=output_file_path)
+
+    @staticmethod
+    def display(nodes: Set[node.Node], user_nodes: Set[node.Node], output_file_path: str = 'test-output/graph.gv'):
         """Function to display the graph represented by the passed in nodes.
 
-            Just because it is easy, we also through in a check for cycles.
+        Just because it is easy, we also through in a check for cycles.
 
-            :param graph: the DAG we want to display
-            :param output_file_path: the path where we want to store the a `dot` file + pdf picture.
-            """
+        :param final_vars: the final vars we want -- else all if None.
+        :param output_file_path: the path where we want to store the a `dot` file + pdf picture.
+        """
         dot = graphviz.Digraph(comment='Dependency Graph')
-        for n in self.nodes.values():
-            label = f'UD: {n.name}' if n.user_defined else n.name
-            dot.node(n.name, label)
 
-        for n in self.nodes.values():
+        for n in nodes:
+            dot.node(n.name, label=n.name)
+        for n in user_nodes:
+            dot.node(n.name, label=f'UD: {n.name}')
+
+        for n in list(nodes) + list(user_nodes):
             for d in n.dependencies:
                 dot.edge(d.name, n.name)
 

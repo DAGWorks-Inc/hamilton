@@ -53,7 +53,7 @@ class Driver(object):
         self.validate_inputs(user_nodes, self.graph.config) #TODO -- validate within the function graph itself
         if display_graph:
             # TODO: fix path.
-            self.graph.display(output_file_path='test-output/execute.gv')
+            self.graph.display(nodes, user_nodes, output_file_path='test-output/execute.gv')
 
         memoized_computation = dict()  # memoized storage
         self.graph.execute(nodes, memoized_computation, overrides)
@@ -73,7 +73,7 @@ class Driver(object):
 
     def display_all_functions(self):
         """Displays the graph."""
-        self.graph.display()
+        self.graph.display_all()
 
 
 if __name__ == '__main__':
