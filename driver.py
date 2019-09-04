@@ -35,6 +35,7 @@ class Driver(object):
                 errors.append(f'Error: Type requirement mistmatch. Expected {user_node.name}:{user_node.type} '
                                  f'got {inputs[user_node.name]} instead.')
         if errors:
+            errors.sort()
             error_str = f'{len(errors)} errors encountered:\n  ' + '\n  '.join(errors)
             raise ValueError(error_str)
 
