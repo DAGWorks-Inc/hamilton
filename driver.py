@@ -8,8 +8,10 @@ import pandas as pd
 # required if we want to run this code stand alone.
 if __name__ == '__main__':
     import graph
+    import node
 else:
     from . import graph
+    from . import node
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,7 @@ class Driver(object):
     def __init__(self, config: Dict[str, Any], *modules: ModuleType):
         self.graph = graph.FunctionGraph(*modules, config=config)
 
-    def validate_inputs(self, user_nodes: Collection[graph.Node], inputs: Dict[str, Any]):
+    def validate_inputs(self, user_nodes: Collection[node.Node], inputs: Dict[str, Any]):
         """Validates that inputs meet our expectations.
 
         :param user_nodes: The required nodes we need for computation.

@@ -12,103 +12,12 @@ import graphviz
 import networkx
 
 from hamilton import function_modifiers
+from hamilton import node
 
 logger = logging.getLogger(__name__)
 
 
-class Node(object):
-    """Object representing a node of computation."""
-
-    def __init__(self, name: str, typ: Type, doc_string: str = '', callabl: Callable = None,
-                 user_defined: bool = False, input_types: Dict[str, Type] = None):
-        """Constructor for our Node object.
-
-        :param name: the name of the function.
-        :param typ: the output type of the function.
-        :param doc_string: the doc string for the function. Optional.
-        :param callabl: the actual function callable.
-        :param user_defined: whether this is something someone has to pass in.
-        :param input_types: the input parameters and their types.
-        """
-        self._name = name
-        self._type = typ
-        if typ is None or typ == inspect._empty:
-            raise ValueError(f'Missing type for hint for function {name}. Please add one to fix.')
-        self._callable = callabl
-        self._doc = doc_string
-        self._user_defined = user_defined
-        self._dependencies = []
-        self._depended_on_by = []
-
-        if not self.user_defined:
-            if input_types is not None:
-                self._input_types = input_types
-            else:
-                signature = inspect.signature(callabl)
-                self._input_types = {}
-                for key, value in signature.parameters.items():
-                    if value.annotation == inspect._empty:
-                        raise ValueError(f'Missing type hint for {key} in function {name}. Please add one to fix.')
-                    self._input_types[key] = value.annotation
-
-
-    @property
-    def documentation(self) -> str:
-        return self._doc
-
-    @property
-    def input_types(self) -> Dict[str, Type]:
-        return self._input_types
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def type(self) -> Any:
-        return self._type
-
-    @property
-    def callable(self):
-        return self._callable
-
-    @property
-    def user_defined(self):
-        return self._user_defined
-
-    @property
-    def dependencies(self) -> List['Node']:
-        return self._dependencies
-
-    @property
-    def depended_on_by(self) -> List['Node']:
-        return self._depended_on_by
-
-    def __hash__(self):
-        return hash(self._name)
-
-    def __repr__(self):
-        return f'<{self._name}>'
-
-    def __eq__(self, other: 'Node'):
-        """Want to deeply compare nodes in a custom way.
-
-        Current user is just unit tests. But you never know :)
-
-        Note: we only compare names of dependencies because we don't want infinite recursion.
-        """
-        return (self._name == other.name and
-                self._type == other.type and
-                self._doc == other.documentation and
-                self.user_defined == other.user_defined and
-                [n.name for n in self.dependencies] == [o.name for o in other.dependencies] and
-                [n.name for n in self.depended_on_by] == [o.name for o in other.depended_on_by])
-
-    def __ne__(self, other: 'Node'):
-        return not self.__eq__(other)
-
-
-def generate_nodes(fn: Callable, name: str, config: Dict[str, Any]) -> Collection[Node]:
+def generate_nodes(fn: Callable, name: str, config: Dict[str, Any]) -> Collection[node.Node]:
     """Gets a list of nodes from a function. This is meant to be an abstraction between the node
     and the function that it implements. This will end up coordinating with the decorators we build
     to modify nodes.
@@ -120,7 +29,7 @@ def generate_nodes(fn: Callable, name: str, config: Dict[str, Any]) -> Collectio
     if hasattr(fn, function_modifiers.NodeExpander.GENERATE_NODES):
         return getattr(fn, function_modifiers.NodeExpander.GENERATE_NODES)(fn, config)
     sig = inspect.signature(fn)
-    return [Node(name, sig.return_annotation, fn.__doc__ if fn.__doc__ else '', callabl=fn)]
+    return [node.Node(name, sig.return_annotation, fn.__doc__ if fn.__doc__ else '', callabl=fn)]
 
 
 # kind of hacky for now but it will work
@@ -144,7 +53,7 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
 
 
 def add_dependency(
-        func_node: Node, func_name: str, nodes: Dict[str, Node], param_name: str, param_type: Type):
+        func_node: node.Node, func_name: str, nodes: Dict[str, node.Node], param_name: str, param_type: Type):
     """Adds dependencies to the node objects.
 
     This will add user defined inputs to the dictionary of nodes in the graph.
@@ -163,14 +72,14 @@ def add_dependency(
                              f'{param_name}:{required_node.type}. All names & types must match.')
     else:
         # this is a user defined var
-        required_node = Node(param_name, param_type, user_defined=True)
+        required_node = node.Node(param_name, param_type, user_defined=True)
         nodes[param_name] = required_node
     # add edges
     func_node.dependencies.append(required_node)
     required_node.depended_on_by.append(func_node)
 
 
-def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[str, Node]:
+def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
     :param modules: A set of modules over which one wants to compute the function graph
     :return: list of nodes in the graph.
@@ -207,7 +116,7 @@ class FunctionGraph(object):
     def config(self):
         return self._config
 
-    def get_nodes(self) -> List[Node]:
+    def get_nodes(self) -> List[node.Node]:
         return list(self.nodes.values())
 
     def display(self, output_file_path: str = 'test-output/graph.gv'):
@@ -235,7 +144,7 @@ class FunctionGraph(object):
         else:
             logger.info('No cycles detected')
 
-    def get_required_functions(self, final_vars: List[str]) -> Tuple[Set[Node], Set[Node]]:
+    def get_required_functions(self, final_vars: List[str]) -> Tuple[Set[node.Node], Set[node.Node]]:
         """Given our function graph, and a list of desired output variables, returns the subgraph required to compute them.
 
         :param final_vars: the list of node names we want.
@@ -246,7 +155,7 @@ class FunctionGraph(object):
         nodes = set()
         user_nodes = set()
 
-        def dfs_traverse(node: Node):
+        def dfs_traverse(node: node.Node):
             for n in node.dependencies:
                 if n not in nodes:
                     dfs_traverse(n)
@@ -262,7 +171,7 @@ class FunctionGraph(object):
         return nodes, user_nodes
 
     @staticmethod
-    def execute_static(nodes: Collection[Node],
+    def execute_static(nodes: Collection[node.Node],
                        inputs: Dict[str, Any],
                        computed: Dict[str, Any] = None,
                        overrides: Dict[str, Any] = None):
@@ -283,7 +192,7 @@ class FunctionGraph(object):
         if computed is None:
             computed = {}
 
-        def dfs_traverse(node: Node):
+        def dfs_traverse(node: node.Node):
             for n in node.dependencies:
                 if n.name not in computed:
                     dfs_traverse(n)
@@ -308,7 +217,7 @@ class FunctionGraph(object):
         return computed
 
     def execute(self,
-                nodes: Collection[Node] = None,
+                nodes: Collection[node.Node] = None,
                 computed: Dict[str, Any] = None,
                 overrides: Dict[str, Any] = None) -> Dict[str, Any]:
         if nodes is None:

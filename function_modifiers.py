@@ -5,7 +5,7 @@ from typing import Dict, Callable, Collection, Tuple, Union, Any, Type
 
 import pandas as pd
 
-from hamilton import graph
+from hamilton import node
 from hamilton.models import BaseModel
 
 """
@@ -26,7 +26,7 @@ class NodeExpander(abc.ABC):
     GENERATE_NODES = 'generate_nodes'
 
     @abc.abstractmethod
-    def get_nodes(self, fn: Callable, config: Dict[str, Any]) -> Collection[graph.Node]:
+    def get_nodes(self, fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
         """Given a function, converts it to a series of nodes that it produces.
 
         :param config:
@@ -69,7 +69,7 @@ class parametrized(NodeExpander):
                     f'assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of '
                     '[name, doc string] -> value to function.')
 
-    def get_nodes(self, fn: Callable, config) -> Collection[graph.Node]:
+    def get_nodes(self, fn: Callable, config) -> Collection[node.Node]:
         """For each parameter value, loop through, partially curry the function, and output a node.
 
         :param config:
@@ -81,7 +81,7 @@ class parametrized(NodeExpander):
                        if param_name != self.parameter}
         for (node_name, node_doc), value in self.assigned_output.items():
             nodes.append(
-                graph.Node(
+                node.Node(
                     node_name,
                     inspect.signature(fn).return_annotation,
                     node_doc,
@@ -129,7 +129,7 @@ class extract_columns(NodeExpander):
             raise InvalidDecoratorException(
                 f'For extracting columns, output type must be pandas dataframe, not: {output_type}')
 
-    def get_nodes(self, fn: Callable, config: Dict[str, Any]) -> Collection[graph.Node]:
+    def get_nodes(self, fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
         """For each column to extract, output a node that extracts that column. Also, output the original dataframe
         generator.
 
@@ -150,7 +150,7 @@ class extract_columns(NodeExpander):
                         df_generated[col] = self.fill_with
             return df_generated
 
-        output_nodes = [graph.Node(node_name, typ=pd.DataFrame, doc_string=base_doc, callabl=df_generator)]
+        output_nodes = [node.Node(node_name, typ=pd.DataFrame, doc_string=base_doc, callabl=df_generator)]
 
         for column in self.columns:
             doc_string = base_doc  # default doc string of base function.
@@ -164,7 +164,7 @@ class extract_columns(NodeExpander):
                 return kwargs[node_name][column_to_extract]
 
             output_nodes.append(
-                graph.Node(
+                node.Node(
                     column,
                     pd.Series,
                     doc_string,
@@ -237,7 +237,7 @@ class does(NodeExpander):
         does.ensure_function_kwarg_only(self.replacing_function)
         does.ensure_output_types_match(fn, self.replacing_function)
 
-    def get_nodes(self, fn: Callable, config) -> Collection[graph.Node]:
+    def get_nodes(self, fn: Callable, config) -> Collection[node.Node]:
         """
         Returns one node which has the replaced functionality
         :param config:
@@ -245,7 +245,7 @@ class does(NodeExpander):
         :return:
         """
         fn_signature = inspect.signature(fn)
-        return [graph.Node(
+        return [node.Node(
             fn.__name__,
             doc_string=fn.__doc__ if fn.__doc__ is not None else '',
             callabl=self.replacing_function,
@@ -275,11 +275,12 @@ class model(NodeExpander):
         if len(signature.parameters) > 0:
             raise InvalidDecoratorException('Models must have no parameters -- all are passed in through the config')
 
-    def get_nodes(self, fn: Callable, config: Dict[str, Any] = None) -> Collection[graph.Node]:
+    def get_nodes(self, fn: Callable, config: Dict[str, Any] = None) -> Collection[node.Node]:
         if self.config_param not in config:
-            raise InvalidDecoratorException(f'Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?')
+            return []
+            # raise InvalidDecoratorException(f'Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?')
         model = self.model_cls(config[self.config_param])
-        return [graph.Node(
+        return [node.Node(
             name=fn.__name__,
             typ=inspect.signature(fn).return_annotation,
             doc_string=fn.__doc__,
