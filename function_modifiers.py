@@ -1,6 +1,7 @@
 import abc
 import functools
 import inspect
+import types
 from typing import Dict, Callable, Collection, Tuple, Union, Any, Type, List
 
 import pandas as pd
@@ -289,7 +290,6 @@ class model(NodeExpander):
 
     def get_nodes(self, fn: Callable, config: Dict[str, Any] = None) -> Collection[node.Node]:
         if self.config_param not in config:
-            # return []
             raise InvalidDecoratorException(f'Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?')
         model = self.model_cls(config[self.config_param], **self.extra_model_params)
         return [node.Node(
@@ -347,18 +347,24 @@ class config(FunctionResolver):
     That said, you can have functions that *only* exist in certain configurations without worrying about it.
     """
 
-    def __init__(self, resolves: Callable[[Dict[str, Any]], bool]):
+    def __init__(self, resolves: Callable[[Dict[str, Any]], bool], target_name: str=None):
         self.does_resolve = resolves
+        self.target_name = target_name
 
     @staticmethod
-    def _get_function_name(name: str) -> str:
+    def _filter_underscores(name: str):
         last_dunder_index = name.rfind('__')
         return name[:last_dunder_index] if last_dunder_index != -1 else name
+
+    def _get_function_name(self, fn: Callable) -> str:
+        if self.target_name is not None:
+            return self.target_name
+        return config._filter_underscores(fn.__name__)
 
     def resolve(self, fn, configuration: Dict[str, Any]) -> Callable:
         if not self.does_resolve(configuration):
             return None
-        fn.__name__ = self._get_function_name(fn.__name__)  # TODO -- copy function to not mutate it
+        fn.__name__ = self._get_function_name(fn)  # TODO -- copy function to not mutate it
         return fn
 
     def validate(self, fn):
@@ -412,3 +418,24 @@ class config(FunctionResolver):
             return all(configuration[key] not in value for key, value in key_value_group_pairs.items())
 
         return config(resolves)
+
+
+def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
+    """Gets a list of nodes from a function. This is meant to be an abstraction between the node
+    and the function that it implements. This will end up coordinating with the decorators we build
+    to modify nodes.
+
+    :param fn: Function to input.
+    :param name: Function name -- will (in some cases) be the name of the node.
+    :return: A list of nodes into which this function transforms.
+    """
+
+    if hasattr(fn, FunctionResolver.RESOLVE):
+        fn = getattr(fn, FunctionResolver.RESOLVE)(fn, config)
+        if fn is None:
+            return []
+        # TODO -- clean it up so that Node Expanders are oblivious of the name, and we don't have to rename it
+    nodes = [node.Node.from_fn(fn)]
+    if hasattr(fn, NodeExpander.GENERATE_NODES):
+        nodes = getattr(fn, NodeExpander.GENERATE_NODES)(fn, config)
+    return nodes

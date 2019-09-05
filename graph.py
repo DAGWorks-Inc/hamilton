@@ -17,27 +17,6 @@ from hamilton import node
 logger = logging.getLogger(__name__)
 
 
-def generate_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
-    """Gets a list of nodes from a function. This is meant to be an abstraction between the node
-    and the function that it implements. This will end up coordinating with the decorators we build
-    to modify nodes.
-
-    :param fn: Function to input.
-    :param name: Function name -- will (in some cases) be the name of the node.
-    :return: A list of nodes into which this function transforms.
-    """
-
-    if hasattr(fn, function_modifiers.config.RESOLVE):
-        fn = getattr(fn, function_modifiers.FunctionResolver.RESOLVE)(fn, config)
-        if fn is None:
-            return []
-        # TODO -- clean it up so that Node Expanders are oblivious of the name, and we don't have to rename it
-    nodes = [node.Node.from_fn(fn)]
-    if hasattr(fn, function_modifiers.NodeExpander.GENERATE_NODES):
-        nodes = getattr(fn, function_modifiers.NodeExpander.GENERATE_NODES)(fn, config)
-    return nodes
-
-
 # kind of hacky for now but it will work
 def is_submodule(child: ModuleType, parent: ModuleType):
     return parent.__name__ in child.__name__
@@ -96,7 +75,7 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
 
     # create nodes -- easier to just create this in one loop
     for func_name, f in functions:
-        for node in generate_nodes(f, config):
+        for node in function_modifiers.resolve_nodes(f, config):
             if node.name in nodes:
                 raise ValueError(f'Cannot define function {node.name} more than once!')
             nodes[node.name] = node
