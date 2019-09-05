@@ -102,3 +102,16 @@ class Node(object):
 
     def __ne__(self, other: 'Node'):
         return not self.__eq__(other)
+
+    @staticmethod
+    def from_fn(fn: Callable, name: str=None) -> 'Node':
+        """Generates a node from a function. Optionally overrides the name.
+
+        :param fn: Function to generate the name from
+        :param name: Name to use for the node
+        :return: The node we generated
+        """
+        if name is None:
+            name = fn.__name__
+        sig = inspect.signature(fn)
+        return Node(name, sig.return_annotation, fn.__doc__ if fn.__doc__ else '', callabl=fn)

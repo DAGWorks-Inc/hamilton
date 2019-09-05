@@ -1,7 +1,7 @@
 import abc
 import functools
 import inspect
-from typing import Dict, Callable, Collection, Tuple, Union, Any, Type
+from typing import Dict, Callable, Collection, Tuple, Union, Any, Type, List
 
 import pandas as pd
 
@@ -24,6 +24,16 @@ class NodeExpander(abc.ABC):
 
     # constant that will be the field modified by this decorator
     GENERATE_NODES = 'generate_nodes'
+
+    @abc.abstractmethod
+    def get_nodes(self, fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
+        """Given a function, converts it to a series of nodes that it produces.
+
+        :param config:
+        :param fn: A function to convert.
+        :return: A collection of nodes.
+        """
+        pass
 
     @abc.abstractmethod
     def get_nodes(self, fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
@@ -193,6 +203,7 @@ def ensure_function_empty(fn: Callable):
         raise InvalidDecoratorException(f'Function: {fn.__name__} is not empty. Must have only one line that '
                                         f'consists of "pass"')
 
+
 class does(NodeExpander):
     def __init__(self, replacing_function: Callable):
         """
@@ -269,7 +280,7 @@ class model(NodeExpander):
         :raises InvalidDecoratorException if the model is not valid.
         """
 
-        ensure_function_empty(fn) # it has to look exactly
+        ensure_function_empty(fn)  # it has to look exactly
         signature = inspect.signature(fn)
         if not issubclass(signature.return_annotation, pd.Series):
             raise InvalidDecoratorException('Models must declare their return type as a pandas Series')
@@ -288,3 +299,116 @@ class model(NodeExpander):
             callabl=model.predict,
             user_defined=False,
             input_types={dep: pd.Series for dep in model.get_dependents()})]
+
+
+class FunctionResolver:
+    """Decorator to resolve a nodes function. Can modify anything about the function and is run before the node."""
+    RESOLVE = 'resolve'
+
+    @abc.abstractmethod
+    def resolve(self, fn: Callable, configuration: Dict[str, Any]) -> Callable:
+        """Determines what a function resolves to. Returns None if it should not be included in the DAG.
+
+        :param fn: Function to resolve
+        :param configuration: DAG config
+        :return: A name if it should resolve to something. Otherwise None.
+        """
+        pass
+
+    @abc.abstractmethod
+    def validate(self, fn):
+        """Validates that the function can work with the function resolver.
+
+        :param fn: Function to validate
+        :return: nothing
+        :raises InvalidDecoratorException: if the function is not valid for this decorator
+        """
+        pass
+
+    def __call__(self, fn: Callable):
+        """Executes the decorator. Marks it as containing a node resolver,
+        which is then executed by the function graph.
+
+        :param fn: Function to call.
+        :return: the function, decorated.
+        """
+        self.validate(fn)
+        if hasattr(fn, FunctionResolver.RESOLVE):
+            raise Exception(f'Only one resolver annotation allowed at a time. Function {fn} already has a resolver '
+                            f'annotation.')
+        setattr(fn, FunctionResolver.RESOLVE, self.resolve)
+        return fn
+
+
+class config(FunctionResolver):
+    """Decorator class that resolves a node's function based on  some configuration variable
+    Currently, functions that exist in all configurations have to be disjoint.
+    E.G. for every config.when(), you can have a config.when_not() that filters the opposite.
+    That said, you can have functions that *only* exist in certain configurations without worrying about it.
+    """
+
+    def __init__(self, resolves: Callable[[Dict[str, Any]], bool]):
+        self.does_resolve = resolves
+
+    @staticmethod
+    def _get_function_name(name: str) -> str:
+        last_dunder_index = name.rfind('__')
+        return name[:last_dunder_index] if last_dunder_index != -1 else name
+
+    def resolve(self, fn, configuration: Dict[str, Any]) -> Callable:
+        if not self.does_resolve(configuration):
+            return None
+        fn.__name__ = self._get_function_name(fn.__name__)  # TODO -- copy function to not mutate it
+        return fn
+
+    def validate(self, fn):
+        if fn.__name__.endswith('__'):
+            raise InvalidDecoratorException('Config will always use the portion of the function name before the last __. For example, signups__v2 will map to signups, whereas')
+
+    @staticmethod
+    def when(**key_value_pairs) -> 'config':
+        """Yields a decorator that resolves the function if all keys in the config are equal to the corresponding value
+
+        :param key_value_pairs: Keys and corresponding values to look up in the config
+        :return: a configuration decorator
+        """
+        def resolves(configuration: Dict[str, Any]) -> bool:
+            return all(value == configuration[key] for key, value in key_value_pairs.items())
+
+        return config(resolves)
+
+    @staticmethod
+    def when_not(**key_value_pairs: Any) -> 'config':
+        """Yields a decorator that resolves the function if none keys in the config are equal to the corresponding value
+
+        :param key_value_pairs: Keys and corresponding values to look up in the config
+        :return: a configuration decorator
+        """
+        def resolves(configuration: Dict[str, Any]) -> bool:
+            return all(value != configuration[key] for key, value in key_value_pairs.items())
+
+        return config(resolves)
+
+    @staticmethod
+    def when_in(**key_value_group_pairs: Collection[Any]) -> 'config':
+        """Yields a decorator that resolves the function if all of the keys are equal to one of items in the list of values.
+
+        :param key_value_group_pairs: pairs of key-value mappings where the value is a lsit of possible values
+        :return: a configuration decorator
+        """
+        def resolves(configuration: Dict[str, Any]) -> bool:
+            return all(configuration[key] in value for key, value in key_value_group_pairs.items())
+
+        return config(resolves)
+
+    @staticmethod
+    def when_not_in(**key_value_group_pairs: Collection[Any]) -> 'config':
+        """Yields a decorator that resolves the function if all of the keys are equal to one of items in the list of values.
+
+        :param key_value_group_pairs: pairs of key-value mappings where the value is a lsit of possible values
+        :return: a configuration decorator
+        """
+        def resolves(configuration: Dict[str, Any]) -> bool:
+            return all(configuration[key] not in value for key, value in key_value_group_pairs.items())
+
+        return config(resolves)
