@@ -278,9 +278,8 @@ class model(NodeExpander):
 
     def get_nodes(self, fn: Callable, config: Dict[str, Any] = None) -> Collection[node.Node]:
         if self.config_param not in config:
-            return []
-            # raise InvalidDecoratorException(f'Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?')
-
+            # return []
+            raise InvalidDecoratorException(f'Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?')
         model = self.model_cls(config[self.config_param], **self.extra_model_params)
         return [node.Node(
             name=fn.__name__,
