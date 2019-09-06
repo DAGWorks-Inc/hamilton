@@ -372,7 +372,7 @@ class config(FunctionResolver):
             raise InvalidDecoratorException('Config will always use the portion of the function name before the last __. For example, signups__v2 will map to signups, whereas')
 
     @staticmethod
-    def when(**key_value_pairs) -> 'config':
+    def when(name=None, **key_value_pairs) -> 'config':
         """Yields a decorator that resolves the function if all keys in the config are equal to the corresponding value
 
         :param key_value_pairs: Keys and corresponding values to look up in the config
@@ -381,10 +381,10 @@ class config(FunctionResolver):
         def resolves(configuration: Dict[str, Any]) -> bool:
             return all(value == configuration[key] for key, value in key_value_pairs.items())
 
-        return config(resolves)
+        return config(resolves, target_name=name)
 
     @staticmethod
-    def when_not(**key_value_pairs: Any) -> 'config':
+    def when_not(name=None, **key_value_pairs: Any) -> 'config':
         """Yields a decorator that resolves the function if none keys in the config are equal to the corresponding value
 
         :param key_value_pairs: Keys and corresponding values to look up in the config
@@ -393,10 +393,10 @@ class config(FunctionResolver):
         def resolves(configuration: Dict[str, Any]) -> bool:
             return all(value != configuration[key] for key, value in key_value_pairs.items())
 
-        return config(resolves)
+        return config(resolves, target_name=name)
 
     @staticmethod
-    def when_in(**key_value_group_pairs: Collection[Any]) -> 'config':
+    def when_in(name=None, **key_value_group_pairs: Collection[Any]) -> 'config':
         """Yields a decorator that resolves the function if all of the keys are equal to one of items in the list of values.
 
         :param key_value_group_pairs: pairs of key-value mappings where the value is a lsit of possible values
@@ -405,7 +405,7 @@ class config(FunctionResolver):
         def resolves(configuration: Dict[str, Any]) -> bool:
             return all(configuration[key] in value for key, value in key_value_group_pairs.items())
 
-        return config(resolves)
+        return config(resolves, target_name=name)
 
     @staticmethod
     def when_not_in(**key_value_group_pairs: Collection[Any]) -> 'config':
