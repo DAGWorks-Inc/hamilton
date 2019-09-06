@@ -93,21 +93,21 @@ if __name__ == '__main__':
     # print(df)
     import demandpy.funcs
     # TODO: enable injecting of a "node" value. I don't think tht works anymore.
+    start_date = '2019-01-05'
+    end_date = '2020-12-31'
+    as_of = datetime.strptime('2019-06-01', '%Y-%m-%d')
     dr = Driver({
         # 'DATE': x.to_series(),
-        'VERSION': 'kids', 'as_of': datetime.strptime('2019-06-01', '%Y-%m-%d'),
+        'VERSION': 'kids', 'as_of': as_of,
                  'end_date': '2020-12-31', 'start_date': '2019-01-05',
-                 'start_date_d': datetime.strptime('2019-01-05', '%Y-%m-%d'),
-                 'end_date_d': datetime.strptime('2020-12-31', '%Y-%m-%d'),
+                 # 'start_date_d': datetime.strptime('2019-01-05', '%Y-%m-%d'),
+                 # 'end_date_d': datetime.strptime('2020-12-31', '%Y-%m-%d'),
                  'signups_non_referral': pd.Series(data=0, index=x.index),
                  'segment_filters': {'business_line': 'womens'}
                  }, demandpy.funcs, demandpy.config)
+
     df = dr.execute(
-        [
-            'DATE',
-         # 'D_WEEK_BEFORE_EASTER',
-         # 'prob_demand_new_non_referral'
-         ]
+        sorted(md_columns - unimplemented_columns)
         # ,overrides={'DATE': pd.Series(0)}
         , display_graph=False)
     print(df)
