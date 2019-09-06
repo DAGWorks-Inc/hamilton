@@ -18,3 +18,8 @@ def fn__v1() -> str:
 @config.when(fn_1_version=2)
 def fn__v2(new_param: str) -> str:
     return 'version_2'
+
+
+@config.when(fn_1_version=3, name='fn')
+def fn_to_rename() -> str:
+    return 'version_3'
