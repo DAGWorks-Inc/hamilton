@@ -30,7 +30,7 @@ class Driver(object):
         errors = []
         for user_node in user_nodes:
             if user_node.name not in inputs:
-                errors.append(f'Error: Required input {user_node.name} not provided.')
+                errors.append(f'Error: Required input {user_node.name} not provided for nodes: {[node.name for node in user_node.depended_on_by]}.')
             elif not isinstance(inputs[user_node.name], user_node.type):
                 errors.append(f'Error: Type requirement mistmatch. Expected {user_node.name}:{user_node.type} '
                                  f'got {inputs[user_node.name]} instead.')
