@@ -165,11 +165,15 @@ class FunctionGraph(object):
             if node.user_defined:
                 user_nodes.add(node)
 
+        missing_vars = []
         for final_var in final_vars:
             if final_var not in self.nodes:
-                raise ValueError(f'Unknown node {final_var} requested. Check for typos?')
+                missing_vars.append(final_var)
+                continue  # collect all missing final variables
             dfs_traverse(self.nodes[final_var])
-
+        if missing_vars:
+            missing_vars_str = ',\n'.join(missing_vars)
+            raise ValueError(f'Unknown nodes [{missing_vars_str}] requested. Check for typos?')
         return nodes, user_nodes
 
     @staticmethod
