@@ -91,7 +91,7 @@ if __name__ == '__main__':
     x.index = x
     # df = execute(['D_THANKSGIVING'], {'DATE': x.to_series(), 'RANDOM': 4}, display_graph=True)
     # print(df)
-    import demandpy.funcs
+    import demandpy.training_data
     # TODO: enable injecting of a "node" value. I don't think tht works anymore.
     dr = Driver({
         # 'DATE': x.to_series(),
@@ -101,7 +101,7 @@ if __name__ == '__main__':
                  'end_date_d': datetime.strptime('2020-12-31', '%Y-%m-%d'),
                  'signups_non_referral': pd.Series(data=0, index=x.index),
                  'segment_filters': {'business_line': 'womens'}
-                 }, demandpy.funcs, demandpy.config)
+                 }, demandpy.training_data, demandpy.config)
     df = dr.execute(
         [
             'DATE',
