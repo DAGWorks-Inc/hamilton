@@ -49,7 +49,7 @@ class Node(object):
         self._dependencies = []
         self._depended_on_by = []
 
-        if not self.user_defined:
+        if self._node_source == NodeSource.STANDARD:
             if input_types is not None:
                 self._input_types = input_types
             else:
@@ -134,6 +134,3 @@ class Node(object):
             name = fn.__name__
         sig = inspect.signature(fn)
         return Node(name, sig.return_annotation, fn.__doc__ if fn.__doc__ else '', callabl=fn)
-
-    def copy_without_dependencies(self) -> 'Node':
-        return Node(self.name, self.type, self.documentation, self.callable, self.user_defined, self.input_types)

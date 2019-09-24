@@ -60,7 +60,7 @@ def add_dependency(
         # this is a user defined var
         required_node = node.Node(param_name, param_type, node_source=NodeSource.EXTERNAL)
         nodes[param_name] = required_node
-    # add edgesa
+    # add edges
     func_node.dependencies.append(required_node)
     required_node.depended_on_by.append(func_node)
 
