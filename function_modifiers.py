@@ -92,12 +92,7 @@ class parametrized(NodeExpander):
                        if param_name != self.parameter}
         for (node_name, node_doc), value in self.assigned_output.items():
             nodes.append(
-                node.Node(
-                    node_name,
-                    inspect.signature(fn).return_annotation,
-                    node_doc,
-                    functools.partial(fn, **{self.parameter: value}),
-                    input_types=input_types))
+                node.Node(node_name, inspect.signature(fn).return_annotation, node_doc, functools.partial(fn, **{self.parameter: value}), input_types=input_types))
         return nodes
 
     def validate(self, fn: Callable):
@@ -175,12 +170,7 @@ class extract_columns(NodeExpander):
                 return kwargs[node_name][column_to_extract]
 
             output_nodes.append(
-                node.Node(
-                    column,
-                    pd.Series,
-                    doc_string,
-                    extractor_fn,
-                    input_types={node_name: pd.DataFrame}))
+                node.Node(column, pd.Series, doc_string, extractor_fn, input_types={node_name: pd.DataFrame}))
         return output_nodes
 
 
@@ -257,12 +247,8 @@ class does(NodeExpander):
         :return:
         """
         fn_signature = inspect.signature(fn)
-        return [node.Node(
-            fn.__name__,
-            doc_string=fn.__doc__ if fn.__doc__ is not None else '',
-            callabl=self.replacing_function,
-            input_types={key: value.annotation for key, value in fn_signature.parameters.items()},
-            typ=fn_signature.return_annotation)]
+        return [node.Node(fn.__name__, typ=fn_signature.return_annotation, doc_string=fn.__doc__ if fn.__doc__ is not None else '', callabl=self.replacing_function,
+                          input_types={key: value.annotation for key, value in fn_signature.parameters.items()})]
 
 
 class model(NodeExpander):
@@ -292,13 +278,8 @@ class model(NodeExpander):
         if self.config_param not in config:
             raise InvalidDecoratorException(f'Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?')
         model = self.model_cls(config[self.config_param], **self.extra_model_params)
-        return [node.Node(
-            name=fn.__name__,
-            typ=inspect.signature(fn).return_annotation,
-            doc_string=fn.__doc__,
-            callabl=model.predict,
-            user_defined=False,
-            input_types={dep: pd.Series for dep in model.get_dependents()})]
+        return [node.Node(name=fn.__name__, typ=inspect.signature(fn).return_annotation, doc_string=fn.__doc__, callabl=model.predict,
+                          input_types={dep: pd.Series for dep in model.get_dependents()})]
 
 
 class FunctionResolver:

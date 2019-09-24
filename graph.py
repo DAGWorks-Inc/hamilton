@@ -13,6 +13,7 @@ import networkx
 
 from hamilton import function_modifiers
 from hamilton import node
+from hamilton.node import NodeSource
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +58,9 @@ def add_dependency(
                              f'{param_name}:{required_node.type}. All names & types must match.')
     else:
         # this is a user defined var
-        required_node = node.Node(param_name, param_type, user_defined=True)
+        required_node = node.Node(param_name, param_type, node_source=NodeSource.EXTERNAL)
         nodes[param_name] = required_node
-    # add edges
+    # add edgesa
     func_node.dependencies.append(required_node)
     required_node.depended_on_by.append(func_node)
 
