@@ -1,6 +1,8 @@
 import logging
 import sys
 
+import numpy as np
+
 LOG_LEVELS = {
     'CRITICAL': logging.CRITICAL,
     'ERROR': logging.ERROR,
@@ -23,3 +25,4 @@ def setup_logging(log_level: int = logging.INFO):
     stream_handler.setFormatter(formatter)
     root_logger.addHandler(stream_handler)
     root_logger.setLevel(log_level)
+    np.seterr(divide='ignore', invalid='ignore')
