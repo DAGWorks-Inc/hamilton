@@ -17,8 +17,9 @@ Note that the model-training is not yet in scope."""
 class BaseModel(abc.ABC):
     """Abstract class for a model as seen by hamilton"""
 
-    def __init__(self, config_parameters: Any):
+    def __init__(self, config_parameters: Any, name: str):
         self._config_parameters = config_parameters
+        self._name = name
 
     @abc.abstractmethod
     def get_dependents(self) -> List[str]:
@@ -41,3 +42,7 @@ class BaseModel(abc.ABC):
     def config_parameters(self) -> Dict[str, Any]:
         """Accessor for configuration parameters"""
         return self._config_parameters
+
+    @property
+    def name(self) -> str:
+        return self._name
