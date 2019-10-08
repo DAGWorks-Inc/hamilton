@@ -50,20 +50,36 @@ class Driver(object):
         :param display_graph: whether we want to display the graph being computed.
         :return: a data frame consisting of the variables requested.
         """
-        nodes, user_nodes = self.graph.get_required_functions(final_vars)
-        self.validate_inputs(user_nodes, self.graph.config) #TODO -- validate within the function graph itself
-        if display_graph:
-            # TODO: fix path.
-            self.graph.display(nodes, user_nodes, output_file_path='test-output/execute.gv')
-
-        memoized_computation = dict()  # memoized storage
-        self.graph.execute(nodes, memoized_computation, overrides)
-        columns = {c: memoized_computation[c] for c in final_vars}  # only want request variables in df.
-        del memoized_computation  # trying to cleanup some memory
+        columns = self.raw_execute(final_vars, overrides, display_graph)
         # TODO: figure out how to fill in columns?
         # TODO: if we have dataframes as computations, we will likely have to skip them (cause we want identity functions
         #  to be used off of them) or do some special combining logic.
         return pd.DataFrame(columns)
+
+    def raw_execute(self,
+                         final_vars: List[str],
+                         overrides: Dict[str, Any] = None,
+                         display_graph: bool = False) -> Dict[str, Any]:
+        """Raw execute function that does the meat of execute.
+
+        It does not try to stitch anything together. Thus allowing wrapper executes around this to shape the output
+        of the data.
+
+        :param final_vars:
+        :param overrides:
+        :param display_graph:
+        :return:
+        """
+        nodes, user_nodes = self.graph.get_required_functions(final_vars)
+        self.validate_inputs(user_nodes, self.graph.config)  # TODO -- validate within the function graph itself
+        if display_graph:
+            # TODO: fix path.
+            self.graph.display(nodes, user_nodes, output_file_path='test-output/execute.gv')
+        memoized_computation = dict()  # memoized storage
+        self.graph.execute(nodes, memoized_computation, overrides)
+        columns = {c: memoized_computation[c] for c in final_vars}  # only want request variables in df.
+        del memoized_computation  # trying to cleanup some memory
+        return columns
 
     def list_available_variables(self) -> List[str]:
         """Returns available variables.
