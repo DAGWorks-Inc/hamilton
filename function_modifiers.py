@@ -166,7 +166,8 @@ class extract_columns(NodeExpander):
             def extractor_fn(column_to_extract: str = column, **kwargs) -> pd.Series:  # avoiding problems with closures
                 df = kwargs[node_name]
                 if column_to_extract not in df:
-                    raise InvalidDecoratorException(f'No such column: {column_to_extract} produced by {node_name}')
+                    raise InvalidDecoratorException(f'No such column: {column_to_extract} produced by {node_name}. '
+                                                    f'It only produced {str(df.columns)}')
                 return kwargs[node_name][column_to_extract]
 
             output_nodes.append(
