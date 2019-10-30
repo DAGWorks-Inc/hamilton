@@ -23,6 +23,8 @@ def setup_logging(log_level: int = logging.INFO):
     formatter = logging.Formatter('[%(levelname)s] %(asctime)s %(name)s(%(lineno)s): %(message)s')
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(formatter)
-    root_logger.addHandler(stream_handler)
-    root_logger.setLevel(log_level)
+    if not len(root_logger.handlers):
+        # assumes we have already been set up.
+        root_logger.addHandler(stream_handler)
+        root_logger.setLevel(log_level)
     np.seterr(divide='ignore', invalid='ignore')
