@@ -53,7 +53,13 @@ def add_dependency(
     if param_name in nodes:
         # validate types match
         required_node = nodes[param_name]
-        if not issubclass(required_node.type, param_type):
+        if param_type == dict and issubclass(required_node.type, Dict):  # python3.7 changed issubclass behavior
+            pass
+        elif param_type == list and issubclass(required_node.type, List):  # python3.7 changed issubclass behavior
+            pass
+        elif issubclass(required_node.type, param_type):
+            pass
+        else:
             raise ValueError(f'Error: {func_name} is expecting {param_name}:{param_type}, but found '
                              f'{param_name}:{required_node.type}. All names & types must match.')
     else:
