@@ -153,6 +153,18 @@ class FunctionGraph(object):
         else:
             logger.info('No cycles detected')
 
+    def get_impacted_nodes(self, var_changes: List[str]) -> Set[node.Node]:
+        """Given our function graph, and a list of nodes that are changed,
+        returns the subgraph that they will impact. Note that no user-defined nodes will be returned
+
+        :param var_changes: the list of nodes that will change.
+        :return: A set of all changed nodes.
+        """
+        nodes, user_nodes = self.directional_dfs_traverse(lambda n: n.depended_on_by, starting_nodes=var_changes)
+        if len(user_nodes) > 0:
+            raise Exception(f'User nodes should not ever be impacted, received the following nodes {user_nodes}')
+        return nodes
+
     def get_required_functions(self, final_vars: List[str]) -> Tuple[Set[node.Node], Set[node.Node]]:
         """Given our function graph, and a list of desired output variables, returns the subgraph required to compute them.
 
@@ -161,11 +173,17 @@ class FunctionGraph(object):
             - set of all nodes.
             - subset of nodes that human input is required for.
         """
+        print(type(list(final_vars)[0]))
+        return self.directional_dfs_traverse(lambda n: n.dependencies, starting_nodes=final_vars)
+
+    def directional_dfs_traverse(self, next_nodes_fn: Callable[[node.Node], Collection[node.Node]], starting_nodes: List[str]):
         nodes = set()
         user_nodes = set()
 
+        print(type(list(starting_nodes[0])))
+
         def dfs_traverse(node: node.Node):
-            for n in node.dependencies:
+            for n in next_nodes_fn(node):
                 if n not in nodes:
                     dfs_traverse(n)
             nodes.add(node)
@@ -173,11 +191,14 @@ class FunctionGraph(object):
                 user_nodes.add(node)
 
         missing_vars = []
-        for final_var in final_vars:
-            if final_var not in self.nodes:
-                missing_vars.append(final_var)
+        for var in starting_nodes:
+            if var not in self.nodes:
+                if type(var) != str:
+                    import pdb
+                    pdb.set_trace()
+                missing_vars.append(var)
                 continue  # collect all missing final variables
-            dfs_traverse(self.nodes[final_var])
+            dfs_traverse(self.nodes[var])
         if missing_vars:
             missing_vars_str = ',\n'.join(missing_vars)
             raise ValueError(f'Unknown nodes [{missing_vars_str}] requested. Check for typos?')

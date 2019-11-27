@@ -51,9 +51,6 @@ class Driver(object):
         :return: a data frame consisting of the variables requested.
         """
         columns = self.raw_execute(final_vars, overrides, display_graph)
-        # TODO: figure out how to fill in columns?
-        # TODO: if we have dataframes as computations, we will likely have to skip them (cause we want identity functions
-        #  to be used off of them) or do some special combining logic.
         return pd.DataFrame(columns)
 
     def raw_execute(self,
