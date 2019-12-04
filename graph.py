@@ -173,15 +173,11 @@ class FunctionGraph(object):
             - set of all nodes.
             - subset of nodes that human input is required for.
         """
-        print(type(list(final_vars)[0]))
         return self.directional_dfs_traverse(lambda n: n.dependencies, starting_nodes=final_vars)
 
     def directional_dfs_traverse(self, next_nodes_fn: Callable[[node.Node], Collection[node.Node]], starting_nodes: List[str]):
         nodes = set()
         user_nodes = set()
-
-        print(type(list(starting_nodes[0])))
-
         def dfs_traverse(node: node.Node):
             for n in next_nodes_fn(node):
                 if n not in nodes:
