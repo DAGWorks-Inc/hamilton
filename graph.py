@@ -230,7 +230,8 @@ class FunctionGraph(object):
             logger.debug(f'Computing {node.name}.')
             if node.user_defined:
                 if node.name not in inputs:
-                    raise NotImplementedError(f'{node.name} was expected to be passed in but was not.')
+                    raise NotImplementedError(f'{node.name} was expected to be passed in but was not. '
+                                              f'Dependencies to check are: {node.depended_on_by}')
                 value = inputs[node.name]
             else:
                 if node.name in overrides:
