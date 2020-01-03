@@ -362,7 +362,7 @@ class config(FunctionResolver):
         :return: a configuration decorator
         """
         def resolves(configuration: Dict[str, Any]) -> bool:
-            return all(value == configuration[key] for key, value in key_value_pairs.items())
+            return all(value == configuration.get(key) for key, value in key_value_pairs.items())
 
         return config(resolves, target_name=name)
 
@@ -374,7 +374,7 @@ class config(FunctionResolver):
         :return: a configuration decorator
         """
         def resolves(configuration: Dict[str, Any]) -> bool:
-            return all(value != configuration[key] for key, value in key_value_pairs.items())
+            return all(value != configuration.get(key) for key, value in key_value_pairs.items())
 
         return config(resolves, target_name=name)
 
@@ -386,7 +386,7 @@ class config(FunctionResolver):
         :return: a configuration decorator
         """
         def resolves(configuration: Dict[str, Any]) -> bool:
-            return all(configuration[key] in value for key, value in key_value_group_pairs.items())
+            return all(configuration.get(key) in value for key, value in key_value_group_pairs.items())
 
         return config(resolves, target_name=name)
 
@@ -398,7 +398,7 @@ class config(FunctionResolver):
         :return: a configuration decorator
         """
         def resolves(configuration: Dict[str, Any]) -> bool:
-            return all(configuration[key] not in value for key, value in key_value_group_pairs.items())
+            return all(configuration.get(key) not in value for key, value in key_value_group_pairs.items())
 
         return config(resolves)
 
