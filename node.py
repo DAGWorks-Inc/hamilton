@@ -20,6 +20,17 @@ class NodeSource(Enum):
     PRIOR_RUN = 3  # This node's value sould be taken from a prior run. This is not used in a standard function graph, but it comes in handy for repeatedly running the same one.
 
 
+class DependencyType(Enum):
+    REQUIRED = 1
+    OPTIONAL = 2
+
+    @staticmethod
+    def from_parameter(param: inspect.Parameter):
+        if param.default == inspect.Parameter.empty:
+            return DependencyType.REQUIRED
+        return DependencyType.OPTIONAL
+
+
 class Node(object):
     """Object representing a node of computation."""
 
@@ -51,14 +62,14 @@ class Node(object):
 
         if self._node_source == NodeSource.STANDARD:
             if input_types is not None:
-                self._input_types = input_types
+                self._input_types = {key: (value, DependencyType.REQUIRED) for key, value in input_types.items()}
             else:
                 signature = inspect.signature(callabl)
                 self._input_types = {}
                 for key, value in signature.parameters.items():
                     if value.annotation == inspect._empty:
                         raise ValueError(f'Missing type hint for {key} in function {name}. Please add one to fix.')
-                    self._input_types[key] = value.annotation
+                    self._input_types[key] = (value.annotation, DependencyType.from_parameter(value))
 
     @property
     def documentation(self) -> str:

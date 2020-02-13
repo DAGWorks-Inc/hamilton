@@ -13,7 +13,7 @@ import networkx
 
 from hamilton import function_modifiers
 from hamilton import node
-from hamilton.node import NodeSource
+from hamilton.node import NodeSource, DependencyType
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
             nodes[node.name] = node
     # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
     for node_name, node in list(nodes.items()):
-        for param_name, param_type in node.input_types.items():
+        for param_name, (param_type, _) in node.input_types.items():
             add_dependency(node, node_name, nodes, param_name, param_type)
     return nodes
 
@@ -223,16 +223,18 @@ class FunctionGraph(object):
         if computed is None:
             computed = {}
 
-        def dfs_traverse(node: node.Node):
+        def dfs_traverse(node: node.Node, dependency_type: DependencyType=DependencyType.REQUIRED):
             for n in node.dependencies:
                 if n.name not in computed:
-                    dfs_traverse(n)
+                    _, node_dependency_type = node.input_types[n.name]
+                    dfs_traverse(n, node_dependency_type)
 
             logger.debug(f'Computing {node.name}.')
             if node.user_defined:
                 if node.name not in inputs:
-                    raise NotImplementedError(f'{node.name} was expected to be passed in but was not. '
-                                              f'Dependencies to check are: {node.depended_on_by}')
+                    if dependency_type != DependencyType.OPTIONAL:
+                        raise NotImplementedError(f'{node.name} was expected to be passed in but was not.')
+                    return
                 value = inputs[node.name]
             else:
                 if node.name in overrides:
@@ -240,7 +242,8 @@ class FunctionGraph(object):
                     return
                 kwargs = {}  # construct signature
                 for dependency in node.dependencies:
-                    kwargs[dependency.name] = computed[dependency.name]
+                    if dependency.name in computed:
+                        kwargs[dependency.name] = computed[dependency.name]
                 value = node.callable(**kwargs)
             computed[node.name] = value
 
