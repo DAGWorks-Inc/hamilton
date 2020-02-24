@@ -84,8 +84,7 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
     for func_name, f in functions:
         for node in function_modifiers.resolve_nodes(f, config):
             if node.name in nodes:
-                raise ValueError(f'Cannot define function {node.name} more than once.'
-                                 f' Already defined by function {f}')
+                raise ValueError(f'Cannot define function {node.name} more than once!')
             nodes[node.name] = node
     # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
     for node_name, node in list(nodes.items()):
