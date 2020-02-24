@@ -6,6 +6,8 @@ from types import ModuleType
 import pandas as pd
 
 # required if we want to run this code stand alone.
+import typing
+
 if __name__ == '__main__':
     import graph
     import node
@@ -31,7 +33,7 @@ class Driver(object):
         for user_node in user_nodes:
             if user_node.name not in inputs:
                 errors.append(f'Error: Required input {user_node.name} not provided for nodes: {[node.name for node in user_node.depended_on_by]}.')
-            elif inputs[user_node] is not None and not isinstance(inputs[user_node.name], user_node.type):
+            elif inputs[user_node.name] is not None and user_node.type != typing.Any and not isinstance(inputs[user_node.name], user_node.type):
                 errors.append(f'Error: Type requirement mismatch. Expected {user_node.name}:{user_node.type} '
                                  f'got {inputs[user_node.name]} instead.')
         if errors:

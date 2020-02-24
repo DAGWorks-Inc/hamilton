@@ -82,15 +82,18 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
 
     # create nodes -- easier to just create this in one loop
     for func_name, f in functions:
-        for node in function_modifiers.resolve_nodes(f, config):
-            if node.name in nodes:
+        for n in function_modifiers.resolve_nodes(f, config):
+            if n.name in nodes:
                 raise ValueError(f'Cannot define function {node.name} more than once.'
                                  f' Already defined by function {f}')
-            nodes[node.name] = node
+            nodes[n.name] = n
     # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
-    for node_name, node in list(nodes.items()):
-        for param_name, (param_type, _) in node.input_types.items():
-            add_dependency(node, node_name, nodes, param_name, param_type)
+    for node_name, n in list(nodes.items()):
+        for param_name, (param_type, _) in n.input_types.items():
+            add_dependency(n, node_name, nodes, param_name, param_type)
+    for key in config.keys():
+        if key not in nodes:
+            nodes[key] = node.Node(key, Any, node_source=NodeSource.EXTERNAL)
     return nodes
 
 
@@ -189,10 +192,7 @@ class FunctionGraph(object):
 
         missing_vars = []
         for var in starting_nodes:
-            if var not in self.nodes:
-                if type(var) != str:
-                    import pdb
-                    pdb.set_trace()
+            if var not in self.nodes and var not in self.config:
                 missing_vars.append(var)
                 continue  # collect all missing final variables
             dfs_traverse(self.nodes[var])
