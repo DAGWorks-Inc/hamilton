@@ -83,6 +83,8 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
     # create nodes -- easier to just create this in one loop
     for func_name, f in functions:
         for n in function_modifiers.resolve_nodes(f, config):
+            if n.name in config:
+                continue # This makes sure we overwrite things if they're in the config...
             if n.name in nodes:
                 raise ValueError(f'Cannot define function {node.name} more than once.'
                                  f' Already defined by function {f}')
@@ -225,6 +227,7 @@ class FunctionGraph(object):
 
         def dfs_traverse(node: node.Node, dependency_type: DependencyType=DependencyType.REQUIRED):
             for n in node.dependencies:
+
                 if n.name not in computed:
                     _, node_dependency_type = node.input_types[n.name]
                     dfs_traverse(n, node_dependency_type)
