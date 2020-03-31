@@ -161,14 +161,12 @@ class FunctionGraph(object):
 
     def get_impacted_nodes(self, var_changes: List[str]) -> Set[node.Node]:
         """Given our function graph, and a list of nodes that are changed,
-        returns the subgraph that they will impact. Note that no user-defined nodes will be returned
+        returns the subgraph that they will impact.
 
         :param var_changes: the list of nodes that will change.
         :return: A set of all changed nodes.
         """
         nodes, user_nodes = self.directional_dfs_traverse(lambda n: n.depended_on_by, starting_nodes=var_changes)
-        if len(user_nodes) > 0:
-            raise Exception(f'User nodes should not ever be impacted, received the following nodes {user_nodes}')
         return nodes
 
     def get_required_functions(self, final_vars: List[str]) -> Tuple[Set[node.Node], Set[node.Node]]:
