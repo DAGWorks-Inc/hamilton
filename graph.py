@@ -245,7 +245,11 @@ class FunctionGraph(object):
                 for dependency in node.dependencies:
                     if dependency.name in computed:
                         kwargs[dependency.name] = computed[dependency.name]
-                value = node.callable(**kwargs)
+                try:
+                    value = node.callable(**kwargs)
+                except Exception as e:
+                    logger.exception(f"Node {node.name} encountered an error")
+                    raise
             computed[node.name] = value
 
         for final_var_node in nodes:
