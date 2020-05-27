@@ -80,12 +80,12 @@ class Driver(object):
         del memoized_computation  # trying to cleanup some memory
         return columns
 
-    def list_available_variables(self) -> List[str]:
+    def list_available_variables(self, valid_variable_types: List[type] = [pd.Series]) -> List[str]:
         """Returns available variables.
 
         :return: list of available variables.
         """
-        return [node.name for node in self.graph.get_nodes()]
+        return [node.name for node in self.graph.get_nodes() if node.type in valid_variable_types]
 
     def display_all_functions(self):
         """Displays the graph."""
