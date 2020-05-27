@@ -392,10 +392,22 @@ class config(FunctionResolver):
 
     @staticmethod
     def when_not_in(**key_value_group_pairs: Collection[Any]) -> 'config':
-        """Yields a decorator that resolves the function if all of the keys are equal to one of items in the list of values.
+        """Yields a decorator that resolves the function only if none of the keys are in the list of values.
 
         :param key_value_group_pairs: pairs of key-value mappings where the value is a lsit of possible values
         :return: a configuration decorator
+
+        :Example:
+
+        @config.when_not_in(business_line=["mens","kids"], region=["uk"])
+        def LEAD_LOG_BASS_MODEL_TIMES_TREND(TREND_BSTS_WOMENS_ACQUISITIONS: pd.Series,
+                                    LEAD_LOG_BASS_MODEL_SIGNUPS_NON_REFERRAL: pd.Series) -> pd.Series:
+
+        above will resolve for config has {"business_line": "womens", "region": "us"},
+        but not for configs that have {"business_line": "mens", "region": "us"}, {"business_line": "kids", "region": "us"},
+        or {"region": "uk"}
+
+        .. seealso:: when_not
         """
         def resolves(configuration: Dict[str, Any]) -> bool:
             return all(configuration.get(key) not in value for key, value in key_value_group_pairs.items())
