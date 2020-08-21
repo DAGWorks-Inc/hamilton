@@ -1,3 +1,4 @@
+dataclasses
 graphviz
 networkx
 numpy
