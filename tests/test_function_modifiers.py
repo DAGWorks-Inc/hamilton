@@ -3,8 +3,7 @@ from typing import Any, List, Dict
 import pandas as pd
 import pytest
 
-from demandpy import models
-from hamilton import function_modifiers
+from hamilton import function_modifiers, models
 from hamilton import node
 from hamilton.function_modifiers import does, ensure_function_empty
 from hamilton.node import DependencyType

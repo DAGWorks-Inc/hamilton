@@ -1,0 +1,23 @@
+[style]
+based_on_style = google
+
+# max characters per line
+COLUMN_LIMIT = 100
+
+# Put closing brackets on a separate line, dedented, if the bracketed expression can't fit in a single line
+DEDENT_CLOSING_BRACKETS = true
+
+# Place each dictionary entry onto its own line.
+EACH_DICT_ENTRY_ON_SEPARATE_LINE = true
+
+# Join short lines into one line. E.g., single line if statements.
+JOIN_MULTIPLE_LINES = true
+
+# Insert a blank line before a def or class immediately nested within another def or class
+BLANK_LINE_BEFORE_NESTED_CLASS_OR_DEF = true
+
+# Split before arguments if the argument list is terminated by a comma.
+SPLIT_ARGUMENTS_WHEN_COMMA_TERMINATED = true
+
+# If an argument / parameter list is going to be split, then split before the first argument
+SPLIT_BEFORE_FIRST_ARGUMENT = true
