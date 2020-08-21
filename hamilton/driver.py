@@ -105,35 +105,34 @@ class Driver(object):
 
 if __name__ == '__main__':
     import sys
+    import importlib
 
     formatter = logging.Formatter('[%(levelname)s] %(asctime)s %(name)s(%(lineno)s): %(message)s')
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(formatter)
-
     logger.addHandler(stream_handler)
     logger.setLevel(logging.INFO)
-    # df = execute(['D_SHIFT_FUNC', 'D_TWO_WEEKS_BEFORE_HALLOWEEN'], {'DATE': x.to_series(), 'RANDOM': 4})
-    x = pd.date_range('2019-01-05', '2020-12-31', freq='7D')  # TODO figure out saturday to start from.
-    x.index = x
-    # df = execute(['D_THANKSGIVING'], {'DATE': x.to_series(), 'RANDOM': 4}, display_graph=True)
-    # print(df)
-    import demandpy.features
 
-    # TODO: enable injecting of a "node" value. I don't think tht works anymore.
+    if len(sys.argv) < 2:
+        logger.error('No modules passed')
+        sys.exit(1)
+    logger.info(f'Importing {sys.argv[1]}')
+    module = importlib.import_module(sys.argv[1])
+
+    x = pd.date_range('2019-01-05', '2020-12-31', freq='7D')
+    x.index = x
+
     dr = Driver({
-        # 'DATE': x.to_series(),
         'VERSION': 'kids', 'as_of': datetime.strptime('2019-06-01', '%Y-%m-%d'),
         'end_date': '2020-12-31', 'start_date': '2019-01-05',
         'start_date_d': datetime.strptime('2019-01-05', '%Y-%m-%d'),
         'end_date_d': datetime.strptime('2020-12-31', '%Y-%m-%d'),
-        'signups_non_referral': pd.Series(data=0, index=x.index),
         'segment_filters': {'business_line': 'womens'}
-    }, demandpy.features, demandpy.config)
+    }, module, {})
     df = dr.execute(
         [
-            'DATE',
-            # 'D_WEEK_BEFORE_EASTER',
-            # 'prob_demand_new_non_referral'
+            'date_index',
+            'some_column'
         ]
         # ,overrides={'DATE': pd.Series(0)}
         , display_graph=False)
