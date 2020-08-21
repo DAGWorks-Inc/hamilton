@@ -1,0 +1,87 @@
+## Python CircleCI 2.0 configuration file
+##
+## Check https://circleci.com/docs/2.0/language-python/ for more details
+##
+
+version: 2
+jobs:
+  build:
+    docker:
+      - image: docker.vertigo.stitchfix.com:5000/z-python
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+    steps:
+      - checkout
+      - run:
+          name: install hamilton dependencies
+          command: |
+            . /etc/profile.d/z-base.sh
+            pyenv shell 3.6
+            python --version
+            pip --version
+            pip install -r requirements.txt
+            pyenv which python
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . /etc/profile.d/z-base.sh
+            pyenv shell 3.6
+            python setup.py pytest
+
+      # run coverage tool!
+      - run:
+          name: run coverage
+          command: |
+            . /etc/profile.d/z-base.sh
+            pyenv shell 3.6
+            pip install -r requirements-test.txt
+            python -m pytest --cov=hamilton tests/
+
+  build-py37:
+    docker:
+      - image: docker.vertigo.stitchfix.com:5000/z-python
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+    steps:
+      - checkout
+      - run:
+          name: install hamilton dependencies
+          command: |
+            . /etc/profile.d/z-base.sh
+            pyenv shell 3.7
+            python --version
+            pip --version
+            pip install -r requirements.txt
+            pyenv which python
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . /etc/profile.d/z-base.sh
+            pyenv shell 3.7
+            python setup.py pytest
+
+      # run coverage tool!
+      - run:
+          name: run coverage
+          command: |
+            . /etc/profile.d/z-base.sh
+            pyenv shell 3.7
+            pip install -r requirements-test.txt
+            python -m pytest --cov=hamilton tests/
+
+workflow:
+  version: 2
+
+  unit-test-workflow:
+    - build
+    - build-py37
