@@ -86,7 +86,7 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
             if n.name in config:
                 continue # This makes sure we overwrite things if they're in the config...
             if n.name in nodes:
-                raise ValueError(f'Cannot define function {node.name} more than once.'
+                raise ValueError(f'Cannot define function {n.name} more than once.'
                                  f' Already defined by function {f}')
             nodes[n.name] = n
     # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
