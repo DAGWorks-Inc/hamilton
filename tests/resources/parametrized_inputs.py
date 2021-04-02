@@ -11,7 +11,7 @@ def input_2() -> int:
 
 @parametrized_input(
     parameter='input_value_tbd',
-    assigned_inputs={
+    variable_inputs={
         'input_1': ('output_1', 'function_with_multiple_inputs called using input_1'),
         'input_2': ('output_2', 'function_with_multiple_inputs called using input_2')
     }

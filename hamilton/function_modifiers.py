@@ -108,16 +108,21 @@ class parametrized(NodeExpander):
 
 
 class parametrized_input(NodeExpander):
-    def __init__(self, parameter: str, assigned_inputs: Dict[str, Tuple[str, str]]):
+    def __init__(self, parameter: str, variable_inputs: Dict[str, Tuple[str, str]]):
         """Constructor for a modifier that expands a single function into n, each of which
         corresponds to the specified parameter replaced by a specific input column.
 
+        The `parameterized_inputs` allows you keep your code DRY by reusing the same function but replace the inputs
+        to create multiple corresponding distinct outputs. The _parameter_ key word argument has to match one of the
+         arguments in the function. The rest of the arguments are pulled from items inside the DAG the DAG. The _assigned_inputs_ key word argument takes in a
+        dictionary of input_column -> tuple(Output Name, Documentation string).
+
         :param parameter: Parameter to expand on.
-        :param assigned_inputs: A map of tuple of [parameter names, documentation] to values
+        :param variable_inputs: A map of tuple of [parameter names, documentation] to values
         """
         self.parameter = parameter
-        self.assigned_output = assigned_inputs
-        for value in assigned_inputs.values():
+        self.assigned_output = variable_inputs
+        for value in variable_inputs.values():
             if not isinstance(value, Tuple):
                 raise InvalidDecoratorException(
                     f'assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of '
