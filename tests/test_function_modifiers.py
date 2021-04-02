@@ -92,6 +92,25 @@ def test_parametrized_with_multiple_params():
     assert called_2 == ('value_2', 'static_param')
 
 
+def test_parametrized_input():
+    annotation = function_modifiers.parametrized_input(
+        parameter='parameter',
+        assigned_inputs={
+            'input_1': ('test_1', 'Function with first column as input'),
+            'input_2': ('test_2', 'Function with second column as input')
+        })
+
+    def identity(parameter: Any, static: Any) -> Any:
+        return parameter, static
+
+    nodes = annotation.get_nodes(identity, {})
+    assert len(nodes) == 2
+    nodes = sorted(nodes, key=lambda n: n.name)
+    assert [n.name for n in nodes] == ['test_1', 'test_2']
+    assert set(nodes[0].input_types.keys()) == {'static', 'test_1'}
+    assert set(nodes[1].input_types.keys()) == {'static', 'test_2'}
+
+
 def test_invalid_column_extractor():
     annotation = function_modifiers.extract_columns('dummy_column')
 
@@ -286,6 +305,7 @@ def test_config_modifier_validate():
 
     def valid_fn__this_is_also_valid() -> int:
         pass
+
     function_modifiers.config.when(key='value').validate(valid_fn__this_is_also_valid)
     function_modifiers.config.when(key='value').validate(valid_fn)
 

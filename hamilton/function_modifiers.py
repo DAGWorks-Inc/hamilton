@@ -65,7 +65,7 @@ class NodeExpander(abc.ABC):
 
 
 class parametrized(NodeExpander):
-    def __init__(self, parameter: str, assigned_output: Dict[Tuple[str, str], str]):
+    def __init__(self, parameter: str, assigned_output: Dict[Tuple[str, str], Any]):
         """Constructor for a modifier that expands a single function into n, each of which
         corresponds to a function in which the parameter value is replaced by that specific value.
 
@@ -93,6 +93,61 @@ class parametrized(NodeExpander):
         for (node_name, node_doc), value in self.assigned_output.items():
             nodes.append(
                 node.Node(node_name, inspect.signature(fn).return_annotation, node_doc, functools.partial(fn, **{self.parameter: value}), input_types=input_types))
+        return nodes
+
+    def validate(self, fn: Callable):
+        """A function is invalid if it does not have the requested parameter.
+
+        :param fn: Function to validate against this annotation.
+        :raises: InvalidDecoratorException If the function does not have the requested parameter
+        """
+        signature = inspect.signature(fn)
+        if self.parameter not in signature.parameters.keys():
+            raise InvalidDecoratorException(
+                f'Annotation is invalid -- no such parameter {self.parameter} in function {fn}')
+
+
+class parametrized_input(NodeExpander):
+    def __init__(self, parameter: str, assigned_inputs: Dict[str, Tuple[str, str]]):
+        """Constructor for a modifier that expands a single function into n, each of which
+        corresponds to the specified parameter replaced by a specific input column.
+
+        :param parameter: Parameter to expand on.
+        :param assigned_inputs: A map of tuple of [parameter names, documentation] to values
+        """
+        self.parameter = parameter
+        self.assigned_output = assigned_inputs
+        for value in assigned_inputs.values():
+            if not isinstance(value, Tuple):
+                raise InvalidDecoratorException(
+                    f'assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of '
+                    'input column -> [name, description] to function.')
+
+    def get_nodes(self, fn: Callable, config) -> Collection[node.Node]:
+        """For each parameter value, loop through, partially curry the function, and output a node.
+
+        :param config:
+        :param fn: Function to operate on.
+        :return: A collection of nodes, each of which is parametrized.
+        """
+        nodes = []
+        input_types = {param_name: param.annotation for param_name, param in inspect.signature(fn).parameters.items()}
+        for input_column, (node_name, node_description) in self.assigned_output.items():
+            specific_inputs = input_types.copy()
+            specific_inputs[input_column] = specific_inputs.pop(self.parameter)  # replace the name with the new function name so we get the right dependencies
+
+            def new_fn(*args, input_column=input_column, **kwargs):
+                kwargs = kwargs.copy()
+                kwargs[self.parameter] = kwargs.pop(input_column)
+                return fn(*args, **kwargs)
+
+            nodes.append(
+                node.Node(
+                    node_name,
+                    inspect.signature(fn).return_annotation,
+                    node_description,
+                    new_fn,
+                    input_types=specific_inputs))
         return nodes
 
     def validate(self, fn: Callable):
@@ -330,7 +385,7 @@ class config(FunctionResolver):
     That said, you can have functions that *only* exist in certain configurations without worrying about it.
     """
 
-    def __init__(self, resolves: Callable[[Dict[str, Any]], bool], target_name: str=None):
+    def __init__(self, resolves: Callable[[Dict[str, Any]], bool], target_name: str = None):
         self.does_resolve = resolves
         self.target_name = target_name
 
@@ -361,6 +416,7 @@ class config(FunctionResolver):
         :param key_value_pairs: Keys and corresponding values to look up in the config
         :return: a configuration decorator
         """
+
         def resolves(configuration: Dict[str, Any]) -> bool:
             return all(value == configuration.get(key) for key, value in key_value_pairs.items())
 
@@ -373,6 +429,7 @@ class config(FunctionResolver):
         :param key_value_pairs: Keys and corresponding values to look up in the config
         :return: a configuration decorator
         """
+
         def resolves(configuration: Dict[str, Any]) -> bool:
             return all(value != configuration.get(key) for key, value in key_value_pairs.items())
 
@@ -385,6 +442,7 @@ class config(FunctionResolver):
         :param key_value_group_pairs: pairs of key-value mappings where the value is a lsit of possible values
         :return: a configuration decorator
         """
+
         def resolves(configuration: Dict[str, Any]) -> bool:
             return all(configuration.get(key) in value for key, value in key_value_group_pairs.items())
 
@@ -409,6 +467,7 @@ class config(FunctionResolver):
 
         .. seealso:: when_not
         """
+
         def resolves(configuration: Dict[str, Any]) -> bool:
             return all(configuration.get(key) not in value for key, value in key_value_group_pairs.items())
 

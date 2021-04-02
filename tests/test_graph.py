@@ -8,6 +8,7 @@ from hamilton import node
 import tests.resources.bad_functions
 import tests.resources.dummy_functions
 import tests.resources.parametrized_nodes
+import tests.resources.parametrized_inputs
 import tests.resources.extract_column_nodes
 import tests.resources.config_modifier
 import tests.resources.typing_vs_not_typing
@@ -206,6 +207,18 @@ def test_end_to_end_with_parametrized_nodes():
     assert results == {'parametrized_1': 1, 'parametrized_2': 2, 'parametrized_3': 3}
 
 
+def test_end_to_end_with_parametrized_inputs():
+    fg = graph.FunctionGraph(tests.resources.parametrized_inputs, config={'static_value': 3})
+    results = fg.execute(fg.get_nodes())
+    assert results == {
+        'input_1': 1,
+        'input_2': 2,
+        'output_1': 1 + 3,
+        'output_2': 2 + 3,
+        'static_value': 3
+    }
+
+
 def test_get_required_functions_askfor_config():
     """Tests that a simple function graph with parametrized nodes works end-to-end"""
     fg = graph.FunctionGraph(tests.resources.parametrized_nodes, config={'a': 1})
@@ -213,7 +226,7 @@ def test_get_required_functions_askfor_config():
     n, = user_nodes
     assert n.name == 'a'
     results = fg.execute(user_nodes)
-    assert results == {'a' : 1}
+    assert results == {'a': 1}
 
 
 def test_end_to_end_with_column_extractor_nodes():
@@ -257,6 +270,7 @@ def test_non_required_nodes():
     fg = graph.FunctionGraph(tests.resources.test_default_args, config={'required': 10, 'defaults_to_zero': 1})
     results = fg.execute([n for n in fg.get_nodes() if n.node_source == NodeSource.STANDARD], {}, {})
     assert results['A'] == 11
+
 
 def test_config_can_override():
     config = {
