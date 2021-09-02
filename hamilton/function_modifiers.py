@@ -67,7 +67,7 @@ class NodeExpander(abc.ABC):
 class parametrized(NodeExpander):
     def __init__(self, parameter: str, assigned_output: Dict[Tuple[str, str], Any]):
         """Constructor for a modifier that expands a single function into n, each of which
-        corresponds to a function in which the parameter value is replaced by that specific value.
+        corresponds to a function in which the parameter value is replaced by that *specific value*.
 
         :param parameter: Parameter to expand on.
         :param assigned_output: A map of tuple of [parameter names, documentation] to values
@@ -110,11 +110,15 @@ class parametrized(NodeExpander):
 class parametrized_input(NodeExpander):
     def __init__(self, parameter: str, variable_inputs: Dict[str, Tuple[str, str]]):
         """Constructor for a modifier that expands a single function into n, each of which
-        corresponds to the specified parameter replaced by a specific input column.
+        corresponds to the specified parameter replaced by a *specific input column*.
+
+        Note this decorator and `@parametrized` are quite similar, except that the input here is another DAG node,
+        i.e. column, rather than some specific value.
 
         The `parameterized_inputs` allows you keep your code DRY by reusing the same function but replace the inputs
         to create multiple corresponding distinct outputs. The _parameter_ key word argument has to match one of the
-         arguments in the function. The rest of the arguments are pulled from items inside the DAG the DAG. The _assigned_inputs_ key word argument takes in a
+        arguments in the function. The rest of the arguments are pulled from items inside the DAG.
+        The _assigned_inputs_ key word argument takes in a
         dictionary of input_column -> tuple(Output Name, Documentation string).
 
         :param parameter: Parameter to expand on.
@@ -314,7 +318,7 @@ class does(NodeExpander):
 
 class model(NodeExpander):
     def __init__(self, model_cls: Type[BaseModel], config_param: str, **extra_model_params):
-        """Constructs a model. Takes in a model_cls, whose only cunstruction parameter is a dictionary."""
+        """Constructs a model. Takes in a model_cls, whose only construction parameter is a dictionary."""
         self.model_cls = model_cls
         self.config_param = config_param
         self.extra_model_params = extra_model_params

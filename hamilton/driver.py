@@ -30,7 +30,15 @@ class Variable:
 
 
 class Driver(object):
+    """This class orchestrates creating and executing the DAG to create a dataframe."""
+
     def __init__(self, config: Dict[str, Any], *modules: ModuleType):
+        """Constructor: creates a DAG given the configuration & modules to crawl.
+
+        :param config: This is a dictionary of initial data & configuration.
+                       The contents are used to help create the DAG.
+        :param modules: Python module objects you want to inspect for Hamilton Functions.
+        """
         self.graph = graph.FunctionGraph(*modules, config=config)
 
     def validate_inputs(self, user_nodes: Collection[node.Node], inputs: Dict[str, Any]):
@@ -83,8 +91,11 @@ class Driver(object):
         nodes, user_nodes = self.graph.get_required_functions(final_vars)
         self.validate_inputs(user_nodes, self.graph.config)  # TODO -- validate within the function graph itself
         if display_graph:
-            # TODO: fix path.
-            self.graph.display(nodes, user_nodes, output_file_path='test-output/execute.gv')
+            # TODO: fix hardcoded path.
+            try:
+                self.graph.display(nodes, user_nodes, output_file_path='test-output/execute.gv')
+            except ImportError as e:
+                logger.warning(f'Unable to import {e}', exc_info=True)
         memoized_computation = dict()  # memoized storage
         self.graph.execute(nodes, memoized_computation, overrides)
         columns = {c: memoized_computation[c] for c in final_vars}  # only want request variables in df.
@@ -104,6 +115,7 @@ class Driver(object):
 
 
 if __name__ == '__main__':
+    """some example test code"""
     import sys
     import importlib
 
