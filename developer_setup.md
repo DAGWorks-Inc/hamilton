@@ -41,3 +41,19 @@ additional arguments part, you'll then get verbose diffs if any tests fail.
 You need to install the circleci command line tooling for this to work. See the unit testing algo curriculum slides for details.
 Once you have installed it you just need to run `circleci local execute` from the root directory and it'll run the entire suite of tests
 that are setup to run each time you push a commit to a branch in github.
+
+# Pushing to pypi
+These are the steps to push to pypi. This is taken from the [python packaging tutorial](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives).
+
+1. Have an account & be granted the ability to push to sf-hamilton on testpypi & real pypi.
+2. Setup API tokens and add them to your ~/.pypirc.
+3. Run `python3 -m pip install --upgrade build`.
+4. Run `python3 -m pip install --upgrade twine`
+5. Push to test pypi - `python3 -m twine upload --repository testpypi dist/*`.
+
+   Note: you cannot push the same version twice to test or real pypi. So it's useful to append `-rcX` to the version.
+   Once you're happy, you can remove that; just remember to not check that in.
+6. Validate you can install from testpypi - follow the URL output.
+7. If you can, then push to real pypi. `python3 -m twine upload dist/*`
+8. Double check you can download and install what you just pushed in a fresh environment. A good thing to test is to
+   run the hello world example.

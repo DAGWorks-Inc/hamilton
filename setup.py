@@ -23,7 +23,7 @@ def get_version():
     version_dict = {}
     with open('hamilton/version.py') as f:
         exec(f.read(), version_dict)
-    return '.'.join(map(str, version_dict['VERSION'])) + '-rc1'
+    return '.'.join(map(str, version_dict['VERSION']))
 
 
 VERSION = get_version()
