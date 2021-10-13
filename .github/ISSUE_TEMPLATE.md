@@ -17,5 +17,3 @@ Short description explaining the high-level reason for the new issue.
 
 ## Screenshots
 (If applicable)
-
-

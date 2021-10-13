@@ -248,7 +248,7 @@ class FunctionGraph(object):
                 try:
                     value = node.callable(**kwargs)
                 except Exception as e:
-                    logger.exception(f"Node {node.name} encountered an error")
+                    logger.exception(f'Node {node.name} encountered an error')
                     raise
             computed[node.name] = value
 

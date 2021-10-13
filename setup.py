@@ -62,8 +62,10 @@ setup(
     zip_safe=False,
     keywords='hamilton',
     classifiers=[
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Natural Language :: English',
+        'License :: OSI Approved ::  BSD-3-Clause-Clear License',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
@@ -81,5 +83,11 @@ setup(
 
     # Note that this feature requires pep8 >= v9 and a version of setup tools greater than the
     # default version installed with virtualenv. Make sure to update your tools!
-    python_requires='>=3.6',
+    python_requires='>=3.6, <4',
+
+    # Relevant project URLs
+    project_urls={  # Optional
+        'Bug Reports': 'https://github.com/stitchfix/hamilton/issues',
+        'Source': 'https://github.com/stitchfix/hamilton',
+    },
 )

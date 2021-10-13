@@ -7,7 +7,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: docker.vertigo.stitchfix.com:5000/z-python
+      - image: circleci/python:3.6
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -18,33 +18,29 @@ jobs:
       - run:
           name: install hamilton dependencies
           command: |
-            . /etc/profile.d/z-base.sh
-            pyenv shell 3.6
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
             python --version
             pip --version
+            pip install -r requirements-test.txt
             pip install -r requirements.txt
-            pyenv which python
-
-      # run tests!
+        # run tests!
       - run:
           name: run tests
           command: |
-            . /etc/profile.d/z-base.sh
-            pyenv shell 3.6
+            . venv/bin/activate
             python setup.py pytest
 
       # run coverage tool!
       - run:
           name: run coverage
           command: |
-            . /etc/profile.d/z-base.sh
-            pyenv shell 3.6
-            pip install -r requirements-test.txt
+            . venv/bin/activate
             python -m pytest --cov=hamilton tests/
 
   build-py37:
     docker:
-      - image: docker.vertigo.stitchfix.com:5000/z-python
+      - image: circleci/python:3.7
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -55,33 +51,40 @@ jobs:
       - run:
           name: install hamilton dependencies
           command: |
-            . /etc/profile.d/z-base.sh
-            pyenv shell 3.7
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
             python --version
             pip --version
+            pip install -r requirements-test.txt
             pip install -r requirements.txt
-            pyenv which python
 
       # run tests!
       - run:
           name: run tests
           command: |
-            . /etc/profile.d/z-base.sh
-            pyenv shell 3.7
+            . venv/bin/activate
             python setup.py pytest
 
       # run coverage tool!
       - run:
           name: run coverage
           command: |
-            . /etc/profile.d/z-base.sh
-            pyenv shell 3.7
-            pip install -r requirements-test.txt
+            . venv/bin/activate
             python -m pytest --cov=hamilton tests/
-
+  pre-commit:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          name: run pre-commit hooks
+          command: |
+            pip install pre-commit
+            pre-commit run --all-files
 workflow:
   version: 2
 
   unit-test-workflow:
     - build
     - build-py37
+    - pre-commit
