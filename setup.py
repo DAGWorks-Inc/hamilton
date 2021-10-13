@@ -23,7 +23,7 @@ def get_version():
     version_dict = {}
     with open('hamilton/version.py') as f:
         exec(f.read(), version_dict)
-    return '.'.join(map(str, version_dict['VERSION']))
+    return '.'.join(map(str, version_dict['VERSION'])) + '-rc1'
 
 
 VERSION = get_version()
@@ -53,6 +53,7 @@ setup(
     version=VERSION,
     description='Hamilton, the micro-framework for creating dataframes.',
     long_description=readme,
+    long_description_content_type='text/markdown',
     author='Stefan Krawczyk, Elijah ben Izzy',
     author_email='skrawczyk@stitchfix.com,elijah.benizzy@stitchfix.com',
     url='https://github.com/stitchfix/hamilton',
@@ -65,7 +66,7 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Natural Language :: English',
-        'License :: OSI Approved ::  BSD-3-Clause-Clear License',
+        'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
