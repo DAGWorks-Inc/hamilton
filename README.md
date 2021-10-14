@@ -7,7 +7,7 @@ This is meant to solve the problem of creating complex data pipelines. Core to t
 function name to implementation. That is, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity,
 easy modifications, unit testing, and documentation.
 
-To read more, see our [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/)
+For the backstory on how Hamilton came about, see our [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
 
 # Getting Started
 Here's a quick getting started guide to get you up and running in less than 15 minutes.
