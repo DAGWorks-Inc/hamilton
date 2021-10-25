@@ -5,6 +5,7 @@ import pytest
 
 from hamilton import graph
 from hamilton import node
+from hamilton import driver
 import tests.resources.bad_functions
 import tests.resources.dummy_functions
 import tests.resources.parametrized_nodes
@@ -160,15 +161,16 @@ def create_testing_nodes():
 
 def test_execute():
     """Tests graph execution along with basic memoization since A is depended on by two functions."""
+    executor = driver.DirectExecutor()
     nodes = create_testing_nodes()
     inputs = {
         'b': 2,
         'c': 5
     }
     expected = {'A': 7, 'B': 49, 'C': 14, 'b': 2, 'c': 5}
-    actual = graph.FunctionGraph.execute_static(nodes.values(), inputs)
+    actual = graph.FunctionGraph.execute_static(nodes.values(), inputs, executor)
     assert actual == expected
-    actual = graph.FunctionGraph.execute_static(nodes.values(), inputs, overrides={'A': 8})
+    actual = graph.FunctionGraph.execute_static(nodes.values(), inputs, executor, overrides={'A': 8})
     assert actual['A'] == 8
 
 
