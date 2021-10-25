@@ -32,14 +32,18 @@ class Variable:
 class Driver(object):
     """This class orchestrates creating and executing the DAG to create a dataframe."""
 
-    def __init__(self, config: Dict[str, Any], *modules: ModuleType):
+    def __init__(self, config: Dict[str, Any], *modules: ModuleType, executor=None):
         """Constructor: creates a DAG given the configuration & modules to crawl.
 
         :param config: This is a dictionary of initial data & configuration.
                        The contents are used to help create the DAG.
         :param modules: Python module objects you want to inspect for Hamilton Functions.
         """
-        self.graph = graph.FunctionGraph(*modules, config=config)
+        if executor is None:
+            executor = DirectExecutor()
+
+        self.graph = graph.FunctionGraph(*modules, config=config, executor=executor)
+        self.executor = executor
 
     def validate_inputs(self, user_nodes: Collection[node.Node], inputs: Dict[str, Any]):
         """Validates that inputs meet our expectations.
@@ -52,7 +56,7 @@ class Driver(object):
         for user_node in user_nodes:
             if user_node.name not in inputs:
                 errors.append(f'Error: Required input {user_node.name} not provided for nodes: {[node.name for node in user_node.depended_on_by]}.')
-            elif inputs[user_node.name] is not None and user_node.type != typing.Any and not isinstance(inputs[user_node.name], user_node.type):
+            elif inputs[user_node.name] is not None and not self.executor.check_input_type(user_node, inputs[user_node.name]):
                 errors.append(f'Error: Type requirement mismatch. Expected {user_node.name}:{user_node.type} '
                               f'got {inputs[user_node.name]} instead.')
         if errors:
@@ -112,6 +116,14 @@ class Driver(object):
     def display_all_functions(self):
         """Displays the graph."""
         self.graph.display_all()
+
+
+class DirectExecutor:
+    def check_input_type(self, node: node.Node, input: typing.Any) -> bool:
+        return node.type == typing.Any or isinstance(input, node.type)
+
+    def execute(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
+        return node.callable(**kwargs)
 
 
 if __name__ == '__main__':

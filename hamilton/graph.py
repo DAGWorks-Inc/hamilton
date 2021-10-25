@@ -97,15 +97,20 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
 
 
 class FunctionGraph(object):
-    def __init__(self, *modules: ModuleType, config: Dict[str, Any]):
+    def __init__(self, *modules: ModuleType, config: Dict[str, Any], executor = None):
         """Initializes a function graph by crawling through modules. Function graph must have a config,
         as the config could determine the shape of the graph.
 
         :param modules: Modules to crawl for functions
         :param config:
         """
+        if executor is None:
+            from .driver import DirectExecutor
+            executor = DirectExecutor()
+
         self._config = config
         self.nodes = create_function_graph(*modules, config=self._config)
+        self.executor = executor
 
     @property
     def config(self):
@@ -219,6 +224,7 @@ class FunctionGraph(object):
     @staticmethod
     def execute_static(nodes: Collection[node.Node],
                        inputs: Dict[str, Any],
+                       executor,
                        computed: Dict[str, Any] = None,
                        overrides: Dict[str, Any] = None):
         """Executes computation on the given graph, inputs, and memoized computation.
@@ -261,7 +267,7 @@ class FunctionGraph(object):
                     if dependency.name in computed:
                         kwargs[dependency.name] = computed[dependency.name]
                 try:
-                    value = node.callable(**kwargs)
+                    value = executor.execute(node, kwargs)
                 except Exception as e:
                     logger.exception(f'Node {node.name} encountered an error')
                     raise
@@ -280,6 +286,7 @@ class FunctionGraph(object):
         return FunctionGraph.execute_static(
             nodes=nodes,
             inputs=self.config,
+            executor=self.executor,
             computed=computed,
-            overrides=overrides
+            overrides=overrides,
         )
