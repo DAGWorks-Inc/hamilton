@@ -10,8 +10,6 @@ import typing
 
 from dataclasses import dataclass
 
-from pandas.core.frame import DataFrame
-
 if __name__ == '__main__':
     import graph
     import node
