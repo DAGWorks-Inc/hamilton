@@ -130,3 +130,6 @@ dmypy.json
 
 # pycharm
 .idea/*
+
+# ignore dask execution files
+dask-worker-space/
