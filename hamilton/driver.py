@@ -10,6 +10,8 @@ import typing
 
 from dataclasses import dataclass
 
+from pandas.core.frame import DataFrame
+
 if __name__ == '__main__':
     import graph
     import node
@@ -76,7 +78,7 @@ class Driver(object):
         :return: a data frame consisting of the variables requested.
         """
         columns = self.raw_execute(final_vars, overrides, display_graph)
-        return pd.DataFrame(columns)
+        return self.executor.build_data_frame(columns)
 
     def raw_execute(self,
                     final_vars: List[str],
@@ -124,6 +126,9 @@ class DirectExecutor:
 
     def execute(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
         return node.callable(**kwargs)
+
+    def build_data_frame(self, columns: typing.Dict[str, typing.Any]) -> pd.DataFrame:
+        return pd.DataFrame(columns)
 
 
 if __name__ == '__main__':
