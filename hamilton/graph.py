@@ -8,7 +8,6 @@ import logging
 from types import ModuleType
 from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
 
-import graphviz
 import networkx
 
 from hamilton import function_modifiers
@@ -140,6 +139,14 @@ class FunctionGraph(object):
         :param final_vars: the final vars we want -- else all if None.
         :param output_file_path: the path where we want to store the a `dot` file + pdf picture.
         """
+        try:
+            import graphviz
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                'graphviz is required for visualizing the function graph. Install it with:'
+                '\n\n  pip install graphviz'
+            )
+
         dot = graphviz.Digraph(comment='Dependency Graph')
 
         for n in nodes:

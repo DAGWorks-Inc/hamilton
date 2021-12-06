@@ -1,5 +1,4 @@
 dataclasses
-graphviz
 networkx
 numpy
 pandas
