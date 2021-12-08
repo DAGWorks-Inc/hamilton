@@ -11,6 +11,7 @@ from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
 import graphviz
 import networkx
 
+import hamilton.function_modifiers_base
 from hamilton import function_modifiers
 from hamilton import node
 from hamilton.node import NodeSource, DependencyType
@@ -53,6 +54,7 @@ def add_dependency(
     if param_name in nodes:
         # validate types match
         required_node = nodes[param_name]
+        print(required_node.type, param_type)
         if param_type == dict and issubclass(required_node.type, Dict):  # python3.7 changed issubclass behavior
             pass
         elif param_type == list and issubclass(required_node.type, List):  # python3.7 changed issubclass behavior
@@ -82,7 +84,7 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
 
     # create nodes -- easier to just create this in one loop
     for func_name, f in functions:
-        for n in function_modifiers.resolve_nodes(f, config):
+        for n in hamilton.function_modifiers_base.resolve_nodes(f, config):
             if n.name in config:
                 continue # This makes sure we overwrite things if they're in the config...
             if n.name in nodes:

@@ -45,7 +45,7 @@ def test_parametrized_single_param():
     def identity(parameter: Any) -> Any:
         return parameter
 
-    nodes = annotation.get_nodes(identity, {})
+    nodes = annotation.expand_node(node.Node.from_fn(identity), {})
     assert len(nodes) == 1
     assert nodes[0].name == 'only_node_name'
     assert nodes[0].type == Any
@@ -64,7 +64,7 @@ def test_parametrized_single_param_expanded():
     def identity(parameter: Any) -> Any:
         return parameter
 
-    nodes = annotation.get_nodes(identity, {})
+    nodes = annotation.expand_node(node.Node.from_fn(identity), {})
     assert len(nodes) == 2
     called_1 = nodes[0].callable()
     called_2 = nodes[1].callable()
@@ -84,7 +84,7 @@ def test_parametrized_with_multiple_params():
     def identity(parameter: Any, static: Any) -> Any:
         return parameter, static
 
-    nodes = annotation.get_nodes(identity, {})
+    nodes = annotation.expand_node(node.Node.from_fn(identity), {})
     assert len(nodes) == 2
     called_1 = nodes[0].callable(static='static_param')
     called_2 = nodes[1].callable(static='static_param')
@@ -103,7 +103,7 @@ def test_parametrized_input():
     def identity(parameter: Any, static: Any) -> Any:
         return parameter, static
 
-    nodes = annotation.get_nodes(identity, {})
+    nodes = annotation.expand_node(node.Node.from_fn(identity), {})
     assert len(nodes) == 2
     nodes = sorted(nodes, key=lambda n: n.name)
     assert [n.name for n in nodes] == ['test_1', 'test_2']
@@ -148,7 +148,7 @@ def test_valid_column_extractor():
             'col_1': [1, 2, 3, 4],
             'col_2': [11, 12, 13, 14]})
 
-    nodes = annotation.get_nodes(dummy_df_generator, {})
+    nodes = list(annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}))
     assert len(nodes) == 3
     assert nodes[0] == node.Node(name=dummy_df_generator.__name__, typ=pd.DataFrame, doc_string=dummy_df_generator.__doc__, callabl=dummy_df_generator)
     assert nodes[1].name == 'col_1'
@@ -169,7 +169,7 @@ def test_column_extractor_fill_with():
             'col_2': [11, 12, 13, 14]})
 
     annotation = function_modifiers.extract_columns('col_3', fill_with=0)
-    original_node, extracted_column_node = annotation.get_nodes(dummy_df, {})
+    original_node, extracted_column_node = annotation.expand_node(node.Node.from_fn(dummy_df), {})
     original_df = original_node.callable()
     extracted_column = extracted_column_node.callable(dummy_df=original_df)
     pd.testing.assert_series_equal(extracted_column, pd.Series([0, 0, 0, 0]), check_names=False)
@@ -184,7 +184,7 @@ def test_column_extractor_no_fill_with():
             'col_2': [11, 12, 13, 14]})
 
     annotation = function_modifiers.extract_columns('col_3')
-    nodes = annotation.get_nodes(dummy_df_generator, {})
+    nodes = list(annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}))
     with pytest.raises(function_modifiers.InvalidDecoratorException):
         nodes[1].callable(dummy_df_generator=dummy_df_generator())
 
@@ -255,7 +255,7 @@ def test_does_function_modifier():
         pass
 
     annotation = does(sum_)
-    node, = annotation.get_nodes(to_modify, {})
+    node = annotation.generate_node(to_modify, {})
     assert node.name == 'to_modify'
     assert node.callable(param1=1, param2=1) == 2
     assert node.documentation == to_modify.__doc__
@@ -282,7 +282,7 @@ def test_model_modifier():
 
     annotation = function_modifiers.model(LinearCombination, 'my_column_model_params')
     annotation.validate(my_column)
-    model_node, = annotation.get_nodes(my_column, config)
+    model_node = annotation.generate_node(my_column, config)
     assert model_node.input_types['col_1'][0] == model_node.input_types['col_2'][0] == pd.Series
     assert model_node.type == pd.Series
     pd.testing.assert_series_equal(model_node.callable(col_1=pd.Series([1]), col_2=pd.Series([2])), pd.Series([1.5]))
