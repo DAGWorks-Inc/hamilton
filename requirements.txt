@@ -1,4 +1,3 @@
 dataclasses
-networkx
 numpy
 pandas

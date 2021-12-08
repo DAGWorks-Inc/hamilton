@@ -8,8 +8,6 @@ import logging
 from types import ModuleType
 from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
 
-import networkx
-
 from hamilton import function_modifiers
 from hamilton import node
 from hamilton.node import NodeSource, DependencyType
@@ -145,6 +143,14 @@ class FunctionGraph(object):
             raise ModuleNotFoundError(
                 'graphviz is required for visualizing the function graph. Install it with:'
                 '\n\n  pip install graphviz'
+            )
+
+        try:
+            import networkx
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                'networkx is required for visualizing the function graph. Install it with:'
+                '\n\n  pip install networkx'
             )
 
         dot = graphviz.Digraph(comment='Dependency Graph')
