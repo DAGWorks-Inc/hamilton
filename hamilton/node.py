@@ -2,7 +2,7 @@ import copy
 import inspect
 import logging
 from enum import Enum
-from typing import Type, Dict, Any, Callable, List
+from typing import Type, Dict, Any, Callable, List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class Node(object):
         return self._doc
 
     @property
-    def input_types(self) -> Dict[str, Type]:
+    def input_types(self) -> Dict[Any, Tuple[Any, DependencyType]]:
         return self._input_types
 
     @property
