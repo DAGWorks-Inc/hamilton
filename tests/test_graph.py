@@ -13,6 +13,7 @@ import tests.resources.parametrized_inputs
 import tests.resources.extract_column_nodes
 import tests.resources.config_modifier
 import tests.resources.typing_vs_not_typing
+import tests.resources.layered_decorators
 from hamilton.node import NodeSource
 
 
@@ -282,3 +283,19 @@ def test_config_can_override():
     fg = graph.FunctionGraph(tests.resources.config_modifier, config=config)
     out = fg.execute([n for n in fg.get_nodes()])
     assert out['new_param'] == 'new_value'
+
+
+def test_end_to_end_with_layered_decorators_resolves_true():
+    fg = graph.FunctionGraph(tests.resources.layered_decorators, config={'foo': 'bar', 'd': 10, 'b': 20})
+    out = fg.execute([n for n in fg.get_nodes()], overrides={'b': 10})
+    assert len(out) > 0  # test config.when resolves correctly
+    assert out['e'] == (20+10) ** 2 + 10
+    assert out['f'] == (30+10) ** 2 + 10
+
+
+def test_end_to_end_with_layered_decorators_resolves_false():
+    config = {'foo': 'not_bar', 'd': 10, 'b': 20}
+    fg = graph.FunctionGraph(tests.resources.layered_decorators, config=config)
+    out = fg.execute([n for n in fg.get_nodes()], )
+    assert {item: value for item, value in out.items() if item not in config} == {}
+

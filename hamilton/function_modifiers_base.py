@@ -7,6 +7,8 @@ from hamilton import node
 class NodeTransformLifecycle(abc.ABC):
     """Base class to represent the decorator lifecycle. Common among all node decorators."""
 
+    fn = None # Will get modified when this decorator is called
+
     @classmethod
     @abc.abstractmethod
     def get_lifecycle_name(cls) -> str:
@@ -84,7 +86,7 @@ class NodeResolver(NodeTransformLifecycle):
         return True
 
 
-class NodeCreator(abc.ABC):
+class NodeCreator(NodeTransformLifecycle, abc.ABC):
     """Abstract class for nodes that "expand" functions into other nodes."""
 
     @abc.abstractmethod
@@ -115,28 +117,29 @@ class NodeCreator(abc.ABC):
         return False
 
 
-class SubDAGModifier(abc.ABC):
+class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
     @abc.abstractmethod
-    def transform_dag(self, nodes: Collection[node.Node]) -> Collection[node.Node]:
+    def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         """Modifies a DAG consisting of a set of nodes. Note that this is to support the following two base classes.
 
         :param nodes: Collection of nodes (not necessarily connected) to modify
+        :param config: Configuration in case any is needed
         :return: the new DAG of nodes
         """
         pass
 
 
-class NodeExpander(SubDAGModifier, NodeTransformLifecycle):
+class NodeExpander(SubDAGModifier):
     EXPAND_NODES = 'expand_nodes'
 
-    def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any]) -> Collection[node.Node]:
+    def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         if len(nodes) != 1:
             raise ValueError(f'Cannot call NodeExpander on more than one node. This must be called first in the DAG. Called with {nodes}')
         node_, = nodes
-        return self.expand_node(node_, config)
+        return self.expand_node(node_, config, fn)
 
     @abc.abstractmethod
-    def expand_node(self, node_: node.Node, config: Dict[str, Any]) -> Collection[node.Node]:
+    def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         """Given a single node, expands into multiple nodes. Note that this node list includes:
         1. Each "output" node (think sink in a DAG)
         2. All intermediate steps
@@ -161,32 +164,32 @@ class NodeExpander(SubDAGModifier, NodeTransformLifecycle):
 
 
 class NodeTransformer(SubDAGModifier):
-    TRANSFORM_NODES = 'transform_nodes'
-
     def _separate_final_nodes(self, nodes: Collection[node.Node]) -> Tuple[Collection[node.Node], Collection[node.Node]]:
         """Separates out final nodes (sinks) from the nodes.
 
         :param nodes: Nodes to separate out
-        :return: A list of nodes
+        :return: A tuple consisting of [internal, final] node sets
         """
         all_dependencies = set(sum([[dep for dep in node_.dependencies] for node_ in nodes], []))
         return [node_ for node_ in nodes if node_.name in all_dependencies], [node_ for node_ in nodes if node_.name not in all_dependencies]
 
-    def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any]) -> Collection[node.Node]:
+    def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         """Finds the sources and sinks and runs the transformer on each sink.
         Then returns the result of the entire set of sinks. Note that each sink has to have a unique name.
 
-        :param nodes: subdag to modify
+        :param config: The original function we're messing with
+        :param nodes: Subdag to modify
+        :param fn: Original function that we're utilizing/modifying
         :return: The DAG of nodes in this node
         """
         internal_nodes, final_nodes = self._separate_final_nodes(nodes)
         out = list(internal_nodes)
         for sink in final_nodes:
-            out += list(self.transform_node(sink))
+            out += list(self.transform_node(sink, config, fn))
         return out
 
     @abc.abstractmethod
-    def transform_node(self, node_: node.Node) -> Collection[node.Node]:
+    def transform_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         pass
 
     @abc.abstractmethod
@@ -219,7 +222,7 @@ class DefaultNodeResolver(NodeResolver):
 
 
 class DefaultNodeExpander(NodeExpander):
-    def expand_node(self, node_: node.Node, config: Dict[str, Any]) -> Collection[node.Node]:
+    def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         return [node_]
 
     def validate(self, fn: Callable):
@@ -263,8 +266,8 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     node_creator, = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
     nodes = [node_creator.generate_node(fn, config)]
     node_expander, = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
-    nodes = node_expander.transform_dag(nodes, config)
+    nodes = node_expander.transform_dag(nodes, config, fn)
     node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
     for dag_modifier in node_transformers:
-        nodes = dag_modifier.transform_dag(nodes, config)
+        nodes = dag_modifier.transform_dag(nodes, config, fn)
     return nodes

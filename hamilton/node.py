@@ -62,7 +62,13 @@ class Node(object):
 
         if self._node_source == NodeSource.STANDARD:
             if input_types is not None:
-                self._input_types = {key: (value, DependencyType.REQUIRED) for key, value in input_types.items()}
+                self._input_types = {}
+                for key, value in input_types.items():
+                    if isinstance(value, tuple):
+                        self._input_types[key] = value
+                    else:
+                        print(key, value)
+                        self._input_types = {key: (value, DependencyType.REQUIRED) for key, value in input_types.items()}
             else:
                 signature = inspect.signature(callabl)
                 self._input_types = {}

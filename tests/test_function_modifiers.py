@@ -45,7 +45,7 @@ def test_parametrized_single_param():
     def identity(parameter: Any) -> Any:
         return parameter
 
-    nodes = annotation.expand_node(node.Node.from_fn(identity), {})
+    nodes = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
     assert len(nodes) == 1
     assert nodes[0].name == 'only_node_name'
     assert nodes[0].type == Any
@@ -64,7 +64,7 @@ def test_parametrized_single_param_expanded():
     def identity(parameter: Any) -> Any:
         return parameter
 
-    nodes = annotation.expand_node(node.Node.from_fn(identity), {})
+    nodes = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
     assert len(nodes) == 2
     called_1 = nodes[0].callable()
     called_2 = nodes[1].callable()
@@ -84,7 +84,7 @@ def test_parametrized_with_multiple_params():
     def identity(parameter: Any, static: Any) -> Any:
         return parameter, static
 
-    nodes = annotation.expand_node(node.Node.from_fn(identity), {})
+    nodes = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
     assert len(nodes) == 2
     called_1 = nodes[0].callable(static='static_param')
     called_2 = nodes[1].callable(static='static_param')
@@ -103,7 +103,7 @@ def test_parametrized_input():
     def identity(parameter: Any, static: Any) -> Any:
         return parameter, static
 
-    nodes = annotation.expand_node(node.Node.from_fn(identity), {})
+    nodes = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
     assert len(nodes) == 2
     nodes = sorted(nodes, key=lambda n: n.name)
     assert [n.name for n in nodes] == ['test_1', 'test_2']
@@ -148,7 +148,7 @@ def test_valid_column_extractor():
             'col_1': [1, 2, 3, 4],
             'col_2': [11, 12, 13, 14]})
 
-    nodes = list(annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}))
+    nodes = list(annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator))
     assert len(nodes) == 3
     assert nodes[0] == node.Node(name=dummy_df_generator.__name__, typ=pd.DataFrame, doc_string=dummy_df_generator.__doc__, callabl=dummy_df_generator)
     assert nodes[1].name == 'col_1'
@@ -169,7 +169,7 @@ def test_column_extractor_fill_with():
             'col_2': [11, 12, 13, 14]})
 
     annotation = function_modifiers.extract_columns('col_3', fill_with=0)
-    original_node, extracted_column_node = annotation.expand_node(node.Node.from_fn(dummy_df), {})
+    original_node, extracted_column_node = annotation.expand_node(node.Node.from_fn(dummy_df), {}, dummy_df)
     original_df = original_node.callable()
     extracted_column = extracted_column_node.callable(dummy_df=original_df)
     pd.testing.assert_series_equal(extracted_column, pd.Series([0, 0, 0, 0]), check_names=False)
@@ -184,7 +184,7 @@ def test_column_extractor_no_fill_with():
             'col_2': [11, 12, 13, 14]})
 
     annotation = function_modifiers.extract_columns('col_3')
-    nodes = list(annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}))
+    nodes = list(annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator))
     with pytest.raises(function_modifiers.InvalidDecoratorException):
         nodes[1].callable(dummy_df_generator=dummy_df_generator())
 
@@ -368,3 +368,24 @@ def test_config_when_with_custom_name():
 
     annotation = function_modifiers.config.when(key='value', name='new_function_name')
     assert annotation.resolve(config_when_fn, {'key': 'value'}).__name__ == 'new_function_name'
+
+
+def test_augment_decorator():
+
+    def foo(a: int) -> int:
+        return a*2
+
+    annotation = function_modifiers.augment("foo*MULTIPLIER_foo+OFFSET_foo")
+    annotation.validate(foo)
+    nodes = annotation.transform_dag([node.Node.from_fn(foo)], {}, foo)
+    assert 1 == len(nodes)
+    nodes_by_name = {node_.name: node_ for node_ in nodes}
+    assert set(nodes_by_name) == {'foo'}
+    a = 5
+    MULTIPLIER_foo = 3
+    OFFSET_foo = 7
+    foo = a*2
+    foo = MULTIPLIER_foo*foo + OFFSET_foo
+    assert nodes_by_name['foo'].callable(a=a, MULTIPLIER_foo=MULTIPLIER_foo, OFFSET_foo=OFFSET_foo) == foo # note its foo_raw as that's the node on which it depends
+
+
