@@ -7,6 +7,7 @@ Note: one should largely consider the code in this module to be "private".
 """
 import inspect
 import logging
+import typing
 from types import ModuleType
 from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
 
@@ -21,6 +22,25 @@ logger = logging.getLogger(__name__)
 # kind of hacky for now but it will work
 def is_submodule(child: ModuleType, parent: ModuleType):
     return parent.__name__ in child.__name__
+
+
+def custom_subclass_check(requested_type: Type[Type], param_type: Type[Type]):
+    """This is a custom check as subclass does not work with python generic.
+    That said, its
+
+    :param requested_type: Candidate subclass
+    :param param_type: Type of parameter to check
+    :return: Whether or not this is a valid subclass.
+    """
+    if requested_type == typing.Any:
+        return True
+    if param_type == dict and issubclass(requested_type, Dict):  # python3.7 changed issubclass behavior
+        return True
+    if param_type == list and issubclass(requested_type, List):  # python3.7 changed issubclass behavior
+        return True
+    if issubclass(requested_type, param_type):
+        return True
+    return False
 
 
 def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
@@ -55,12 +75,7 @@ def add_dependency(
     if param_name in nodes:
         # validate types match
         required_node = nodes[param_name]
-        print(required_node.type, param_type)
-        if param_type == dict and issubclass(required_node.type, Dict):  # python3.7 changed issubclass behavior
-            pass
-        elif param_type == list and issubclass(required_node.type, List):  # python3.7 changed issubclass behavior
-            pass
-        elif issubclass(required_node.type, param_type):
+        if custom_subclass_check(required_node.type, param_type):
             pass
         elif adapter.check_node_type_equivalence(required_node.type, param_type):
             pass
