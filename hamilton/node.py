@@ -2,7 +2,7 @@ import copy
 import inspect
 import logging
 from enum import Enum
-from typing import Type, Dict, Any, Callable, List, Tuple
+from typing import Type, Dict, Any, Callable, List, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class Node(object):
                  doc_string: str = '',
                  callabl: Callable = None,
                  node_source: NodeSource = NodeSource.STANDARD,
-                 input_types: Dict[str, Type] = None):
+                 input_types: Dict[str, Union[Type, Tuple[Type, DependencyType]]] = None):
         """Constructor for our Node object.
 
         :param name: the name of the function.
@@ -67,7 +67,6 @@ class Node(object):
                     if isinstance(value, tuple):
                         self._input_types[key] = value
                     else:
-                        print(key, value)
                         self._input_types = {key: (value, DependencyType.REQUIRED) for key, value in input_types.items()}
             else:
                 signature = inspect.signature(callabl)
