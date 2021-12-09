@@ -10,6 +10,7 @@ from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
 
 import graphviz
 import networkx
+import typing
 
 import hamilton.function_modifiers_base
 from hamilton import function_modifiers
@@ -22,6 +23,18 @@ logger = logging.getLogger(__name__)
 # kind of hacky for now but it will work
 def is_submodule(child: ModuleType, parent: ModuleType):
     return parent.__name__ in child.__name__
+
+
+def permitted_type(requested_type: Type[Type], param_type: Type[Type]):
+    if requested_type == typing.Any:
+        return True
+    if param_type == dict and issubclass(requested_type, Dict):  # python3.7 changed issubclass behavior
+        return True
+    if param_type == list and issubclass(requested_type, List):  # python3.7 changed issubclass behavior
+        return True
+    if issubclass(requested_type, param_type):
+        return True
+    return False
 
 
 def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
@@ -54,14 +67,7 @@ def add_dependency(
     if param_name in nodes:
         # validate types match
         required_node = nodes[param_name]
-        print(required_node.type, param_type)
-        if param_type == dict and issubclass(required_node.type, Dict):  # python3.7 changed issubclass behavior
-            pass
-        elif param_type == list and issubclass(required_node.type, List):  # python3.7 changed issubclass behavior
-            pass
-        elif issubclass(required_node.type, param_type):
-            pass
-        else:
+        if not permitted_type(required_node.type, param_type):
             raise ValueError(f'Error: {func_name} is expecting {param_name}:{param_type}, but found '
                              f'{param_name}:{required_node.type}. All names & types must match.')
     else:
@@ -86,7 +92,7 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
     for func_name, f in functions:
         for n in hamilton.function_modifiers_base.resolve_nodes(f, config):
             if n.name in config:
-                continue # This makes sure we overwrite things if they're in the config...
+                continue  # This makes sure we overwrite things if they're in the config...
             if n.name in nodes:
                 raise ValueError(f'Cannot define function {n.name} more than once.'
                                  f' Already defined by function {f}')
@@ -184,6 +190,7 @@ class FunctionGraph(object):
     def directional_dfs_traverse(self, next_nodes_fn: Callable[[node.Node], Collection[node.Node]], starting_nodes: List[str]):
         nodes = set()
         user_nodes = set()
+
         def dfs_traverse(node: node.Node):
             for n in next_nodes_fn(node):
                 if n not in nodes:
@@ -225,7 +232,7 @@ class FunctionGraph(object):
         if computed is None:
             computed = {}
 
-        def dfs_traverse(node: node.Node, dependency_type: DependencyType=DependencyType.REQUIRED):
+        def dfs_traverse(node: node.Node, dependency_type: DependencyType = DependencyType.REQUIRED):
             for n in node.dependencies:
 
                 if n.name not in computed:
