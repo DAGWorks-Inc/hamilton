@@ -8,7 +8,6 @@ import pandas as pd
 from hamilton import node
 from hamilton.function_modifiers_base import NodeCreator, NodeResolver, NodeExpander, NodeTransformer
 from hamilton.models import BaseModel
-from hamilton.node import DependencyType
 
 """
 Annotations for modifying the way functions get added to the DAG.

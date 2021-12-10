@@ -130,8 +130,6 @@ class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
 
 
 class NodeExpander(SubDAGModifier):
-    EXPAND_NODES = 'expand_nodes'
-
     def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         if len(nodes) != 1:
             raise ValueError(f'Cannot call NodeExpander on more than one node. This must be called first in the DAG. Called with {nodes}')

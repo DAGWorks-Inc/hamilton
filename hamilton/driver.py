@@ -89,7 +89,7 @@ class Driver(object):
         :return:
         """
         nodes, user_nodes = self.graph.get_required_functions(final_vars)
-        self.validate_inputs(user_nodes, self.graph.config)  # TODO -- validate within the function graph itself
+        # self.validate_inputs(user_nodes, self.graph.config)  # TODO -- validate within the function graph itself
         if display_graph:
             # TODO: fix hardcoded path.
             try:
@@ -98,7 +98,7 @@ class Driver(object):
                 logger.warning(f'Unable to import {e}', exc_info=True)
         memoized_computation = dict()  # memoized storage
         self.graph.execute(nodes, memoized_computation, overrides)
-        columns = {c: memoized_computation[c] for c in final_vars}  # only want request variables in df.
+        columns = {c: memoized_computation[c] for c in final_vars if c in memoized_computation}  # only want request variables in df.
         del memoized_computation  # trying to cleanup some memory
         return columns
 

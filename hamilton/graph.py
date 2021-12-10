@@ -233,8 +233,8 @@ class FunctionGraph(object):
             computed = {}
 
         def dfs_traverse(node: node.Node, dependency_type: DependencyType = DependencyType.REQUIRED):
-            for n in node.dependencies:
 
+            for n in node.dependencies:
                 if n.name not in computed:
                     _, node_dependency_type = node.input_types[n.name]
                     dfs_traverse(n, node_dependency_type)
@@ -242,7 +242,7 @@ class FunctionGraph(object):
             logger.debug(f'Computing {node.name}.')
             if node.user_defined:
                 if node.name not in inputs:
-                    if dependency_type != DependencyType.OPTIONAL:
+                    if dependency_type != DependencyType.OPTIONAL:  # Probably a better way to do this
                         raise NotImplementedError(f'{node.name} was expected to be passed in but was not.')
                     return
                 value = inputs[node.name]
@@ -261,8 +261,17 @@ class FunctionGraph(object):
                     raise
             computed[node.name] = value
 
+        def derive_node_dependency(n):
+            depended_on_by = n.depended_on_by
+            if len(depended_on_by) == 0:
+                return DependencyType.REQUIRED
+            for depended_on_by in final_var_node.depended_on_by:
+                if depended_on_by.input_types[n.name][1] == DependencyType.REQUIRED:  # In the case that the node doesn't know its optional
+                    return DependencyType.REQUIRED
+            return DependencyType.OPTIONAL
+
         for final_var_node in nodes:
-            dfs_traverse(final_var_node)
+            dfs_traverse(final_var_node, derive_node_dependency(final_var_node))
         return computed
 
     def execute(self,

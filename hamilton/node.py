@@ -67,6 +67,7 @@ class Node(object):
                     if isinstance(value, tuple):
                         self._input_types[key] = value
                     else:
+                        print(key, value)
                         self._input_types = {key: (value, DependencyType.REQUIRED) for key, value in input_types.items()}
             else:
                 signature = inspect.signature(callabl)
