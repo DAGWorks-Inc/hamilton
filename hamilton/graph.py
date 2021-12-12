@@ -137,21 +137,23 @@ class FunctionGraph(object):
         :param final_vars: the final vars we want -- else all if None.
         :param output_file_path: the path where we want to store the a `dot` file + pdf picture.
         """
+        # Check to see if optional dependencies have been installed.
         try:
             import graphviz
         except ModuleNotFoundError:
-            raise ModuleNotFoundError(
-                'graphviz is required for visualizing the function graph. Install it with:'
-                '\n\n  pip install graphviz'
+            logger.exception(
+                ' graphviz is required for visualizing the function graph. Install it with:'
+                '\n\n  pip install sf-hamilton[visualization] or pip install graphviz \n\n'
             )
-
+            return
         try:
             import networkx
         except ModuleNotFoundError:
-            raise ModuleNotFoundError(
-                'networkx is required for visualizing the function graph. Install it with:'
-                '\n\n  pip install networkx'
+            logger.exception(
+                ' networkx is required for visualizing the function graph. Install it with:'
+                '\n\n  pip install sf-hamilton[visualization] or pip install networkx \n\n'
             )
+            return
 
         dot = graphviz.Digraph(comment='Dependency Graph')
 

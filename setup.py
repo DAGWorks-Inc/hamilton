@@ -86,6 +86,9 @@ setup(
     # default version installed with virtualenv. Make sure to update your tools!
     python_requires='>=3.6, <4',
 
+    # adding this to slim the package down, since these dependencies are only used to visualize the DAG.
+    extras_require={'visualization': ['graphviz', 'networkx']},
+
     # Relevant project URLs
     project_urls={  # Optional
         'Bug Reports': 'https://github.com/stitchfix/hamilton/issues',

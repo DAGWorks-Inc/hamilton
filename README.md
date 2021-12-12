@@ -20,6 +20,9 @@ Requirements:
 To get started, first you need to install hamilton. It is published to pypi under `sf-hamilton`:
 > pip install sf-hamilton
 
+Note: to use the DAG visualization functionality, you should instead do:
+> pip install sf-hamilton[visualization]
+
 While it is installing we encourage you to start on the next section.
 
 Note: the content (i.e. names, function bodies) of our example code snippets are for illustrative purposes only, and don't reflect what we actually do internally.
@@ -92,14 +95,16 @@ output_columns = [
     'spend_per_signup',
 ]
 # let's create the dataframe!
-df = dr.execute(output_columns, display_graph=True)
+# if you only did `pip install sf-hamilton` earlier:
+df = dr.execute(output_columns)
+# else if you did `pip install sf-hamilton[visualization]` earlier:
+# df = dr.execute(output_columns, display_graph=True)
 print(df)
 ```
 3. Run my_script.py
 > python my_script.py
 
 You should see the following output:
-![hello_world_image](hello_world_image.png)
 
        spend  signups  avg_3wk_spend  spend_per_signup
     0     10        1            NaN            10.000
@@ -108,6 +113,10 @@ You should see the following output:
     3     40      100      23.333333             0.400
     4     40      200      33.333333             0.200
     5     50      400      43.333333             0.125
+
+You should see the following image if you set `display_graph=True`:
+
+![hello_world_image](hello_world_image.png)
 
 Congratulations - you just created your first dataframe with Hamilton!
 
