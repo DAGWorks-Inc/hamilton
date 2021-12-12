@@ -68,6 +68,8 @@ def spend_per_signup(spend: pd.Series, signups: pd.Series) -> pd.Series:
 The astute observer will notice we have not defined `spend` or `signups` as functions. That is okay,
 this just means these need to be provided as input when we come to actually wanting to create a dataframe.
 
+Note: functions can take or create scalar values too.
+
 2. Create a `my_script.py` which is where code will live to tell Hamilton what to do:
 ```python
 import importlib
@@ -80,6 +82,7 @@ from hamilton import driver
 logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout)
 initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
+    # Note: these do not have to be all series, they could be scalar inputs.
     'signups': pd.Series([1, 10, 50, 100, 200, 400]),
     'spend': pd.Series([10, 10, 20, 40, 40, 50]),
 }
