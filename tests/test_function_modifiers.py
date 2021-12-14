@@ -3,7 +3,7 @@ from typing import Any, List, Dict
 import pandas as pd
 import pytest
 
-from hamilton import function_modifiers, models
+from hamilton import function_modifiers, models, function_modifiers_base
 from hamilton import node
 from hamilton.function_modifiers import does, ensure_function_empty
 from hamilton.node import DependencyType
@@ -294,9 +294,9 @@ def test_model_modifier():
         annotation.validate(bad_model)
 
 
-def test_filter_underscores():
-    assert function_modifiers.config._filter_underscores('fn_name__v2') == 'fn_name'
-    assert function_modifiers.config._filter_underscores('fn_name') == 'fn_name'
+def test_sanitize_function_name():
+    assert function_modifiers_base.sanitize_function_name('fn_name__v2') == 'fn_name'
+    assert function_modifiers_base.sanitize_function_name('fn_name') == 'fn_name'
 
 
 def test_config_modifier_validate():
