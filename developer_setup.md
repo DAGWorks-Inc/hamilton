@@ -57,3 +57,12 @@ These are the steps to push to pypi. This is taken from the [python packaging tu
 7. If you can, then push to real pypi. `python3 -m twine upload dist/*`
 8. Double check you can download and install what you just pushed in a fresh environment. A good thing to test is to
    run the hello world example.
+
+# Announcing your release
+
+Now that you've pushed to pypi, announce your release! We plan to automate this, but for now...
+
+1. Create a github release (select auto-generate release for painless text generation). Create a tag that's called `sf-hamilton-{version_string}`. 
+See [1.2.0](https://github.com/stitchfix/hamilton/releases/tag/sf-hamilton-1.2.0) for an example.
+2. Announce on the #releases channel in discord, following the format presented there.
+3. Thanks for contributing!
