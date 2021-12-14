@@ -4,10 +4,22 @@ from typing import Callable, Dict, Any, Collection, Tuple
 from hamilton import node
 
 
+def sanitize_function_name(name: str) -> str:
+    """Sanitizes the function name to use.
+    Note that this is a slightly leaky abstraction, but this is really just a single case in which we want to strip out
+    dunderscores. This will likely change over time, but for now we need a way for a decorator to know about the true
+    function name without having to rely on the decorator order. So, if you want the function name of the function you're
+    decorating, call this first.
+
+    :param name: Function name
+    :return: Sanitized version.
+    """
+    last_dunder_index = name.rfind('__')
+    return name[:last_dunder_index] if last_dunder_index != -1 else name
+
+
 class NodeTransformLifecycle(abc.ABC):
     """Base class to represent the decorator lifecycle. Common among all node decorators."""
-
-    fn = None # Will get modified when this decorator is called
 
     @classmethod
     @abc.abstractmethod

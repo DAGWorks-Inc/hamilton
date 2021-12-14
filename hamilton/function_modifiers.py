@@ -6,7 +6,7 @@ from typing import Dict, Callable, Collection, Tuple, Union, Any, Type
 import pandas as pd
 
 from hamilton import node
-from hamilton.function_modifiers_base import NodeCreator, NodeResolver, NodeExpander, NodeTransformer
+from hamilton.function_modifiers_base import NodeCreator, NodeResolver, NodeExpander, NodeTransformer, sanitize_function_name
 from hamilton.models import BaseModel
 from hamilton.node import DependencyType
 
@@ -319,15 +319,10 @@ class config(NodeResolver):
         self.does_resolve = resolves
         self.target_name = target_name
 
-    @staticmethod
-    def _filter_underscores(name: str):
-        last_dunder_index = name.rfind('__')
-        return name[:last_dunder_index] if last_dunder_index != -1 else name
-
     def _get_function_name(self, fn: Callable) -> str:
         if self.target_name is not None:
             return self.target_name
-        return config._filter_underscores(fn.__name__)
+        return sanitize_function_name(fn.__name__)
 
     def resolve(self, fn, configuration: Dict[str, Any]) -> Callable:
         if not self.does_resolve(configuration):
@@ -430,7 +425,7 @@ class augment(NodeTransformer):
         expression_parsed = ast.parse(self.expression, mode='eval')
         dependent_variables = {item.id for item in ast.walk(expression_parsed) if isinstance(item, ast.Name)}
 
-        var_name = fn.__name__
+        var_name = sanitize_function_name(fn.__name__)
         # We should be passing the function through (or the name?)
 
         def new_function(**kwargs):
@@ -458,10 +453,11 @@ class augment(NodeTransformer):
     def validate(self, fn: Callable):
         """Validates the expression is of the right form"""
         parsed_expression = ast.parse(self.expression, mode='eval')
-        if not isinstance(parsed_expression, ast.Expression): #
+        if not isinstance(parsed_expression, ast.Expression):
             raise ValueError(f'Expression {self.expr} must be an expression.')
         dependent_variables = {item.id for item in ast.walk(parsed_expression) if isinstance(item, ast.Name)}
-        if fn.__name__ not in dependent_variables:
-            raise ValueError(f'Expression must depend on the function its transforming. Did not find {fn.__name__} in your expression\'s AST'
-                             f'If you have a function called "foo", your expression must be a function of foo (as well as other variables).'
+        var_name = sanitize_function_name(fn.__name__)
+        if var_name not in dependent_variables:
+            raise ValueError(f'Expression must depend on the function its transforming. Did not find {var_name} in your expression\'s AST '
+                             f'If you have a function called "foo", your expression must be a function of foo (as well as other variables). '
                              f'If you want to replace the value of this function, write your function as you normally would (E.G. as a function of its parameters).')
