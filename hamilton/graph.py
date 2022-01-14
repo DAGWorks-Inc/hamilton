@@ -267,7 +267,7 @@ class FunctionGraph(object):
                     if dependency.name in computed:
                         kwargs[dependency.name] = computed[dependency.name]
                 try:
-                    value = executor.execute(node, kwargs)
+                    value = executor.execute_node(node, kwargs)
                 except Exception as e:
                     logger.exception(f'Node {node.name} encountered an error')
                     raise

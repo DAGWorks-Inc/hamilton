@@ -14,7 +14,7 @@ if __name__ == '__main__':
     import graph
     import node
 else:
-    from . import graph
+    from . import graph, base
     from . import node
 
 logger = logging.getLogger(__name__)
@@ -32,15 +32,16 @@ class Variable:
 class Driver(object):
     """This class orchestrates creating and executing the DAG to create a dataframe."""
 
-    def __init__(self, config: Dict[str, Any], *modules: ModuleType, executor=None):
+    def __init__(self, config: Dict[str, Any], *modules: ModuleType, executor: base.HamiltonExecutor = None):
         """Constructor: creates a DAG given the configuration & modules to crawl.
 
         :param config: This is a dictionary of initial data & configuration.
                        The contents are used to help create the DAG.
         :param modules: Python module objects you want to inspect for Hamilton Functions.
+        :param executor: The executor you want to use to compute things by.
         """
         if executor is None:
-            executor = DirectExecutor()
+            executor = base.SimplePythonExecutor()
 
         self.graph = graph.FunctionGraph(*modules, config=config, executor=executor)
         self.executor = executor
@@ -67,7 +68,7 @@ class Driver(object):
     def execute(self,
                 final_vars: List[str],
                 overrides: Dict[str, Any] = None,
-                display_graph: bool = False) -> pd.DataFrame:
+                display_graph: bool = False) -> typing.Any:
         """Executes computation.
 
         :param final_vars: the final list of variables we want in the data frame.
@@ -76,13 +77,13 @@ class Driver(object):
         :return: a data frame consisting of the variables requested.
         """
         columns = self.raw_execute(final_vars, overrides, display_graph)
-        return self.executor.build_data_frame(columns)
+        return self.executor.build_result(**columns)
 
     def raw_execute(self,
                     final_vars: List[str],
                     overrides: Dict[str, Any] = None,
                     display_graph: bool = False) -> Dict[str, Any]:
-        """Raw execute function that does the meat of execute.
+        """Raw execute_node function that does the meat of execute_node.
 
         It does not try to stitch anything together. Thus allowing wrapper executes around this to shape the output
         of the data.
@@ -97,7 +98,7 @@ class Driver(object):
         if display_graph:
             # TODO: fix hardcoded path.
             try:
-                self.graph.display(nodes, user_nodes, output_file_path='test-output/execute.gv')
+                self.graph.display(nodes, user_nodes, output_file_path='test-output/execute_node.gv')
             except ImportError as e:
                 logger.warning(f'Unable to import {e}', exc_info=True)
         memoized_computation = dict()  # memoized storage
@@ -118,15 +119,7 @@ class Driver(object):
         self.graph.display_all()
 
 
-class DirectExecutor:
-    def check_input_type(self, node: node.Node, input: typing.Any) -> bool:
-        return node.type == typing.Any or isinstance(input, node.type)
 
-    def execute(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
-        return node.callable(**kwargs)
-
-    def build_data_frame(self, columns: typing.Dict[str, typing.Any]) -> pd.DataFrame:
-        return pd.DataFrame(columns)
 
 
 if __name__ == '__main__':
