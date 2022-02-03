@@ -58,7 +58,7 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
     def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
         return delayed(node.callable)(**kwargs)
 
-    def build_result(self, **columns: typing.Dict[str, typing.Any]) -> pd.DataFrame:
+    def build_result(self, **columns: typing.Dict[str, typing.Any]) -> typing.Any:
         for k, v in columns.items():
             logger.info(f'Got column {k}, with type [{type(v)}].')
         delayed_combine = delayed(self.result_builder.build_result)(**columns)
