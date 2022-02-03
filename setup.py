@@ -87,7 +87,16 @@ setup(
     python_requires='>=3.6, <4',
 
     # adding this to slim the package down, since these dependencies are only used to visualize the DAG.
-    extras_require={'visualization': ['graphviz', 'networkx']},
+    extras_require={'visualization': ['graphviz', 'networkx'],
+                    'dask': ['dask'],
+                    'dask-array': ['dask[array]'],
+                    'dask-complete': ['dask[complete]'],
+                    'dask-dataframe': ['dask[dataframe]'],
+                    'dask-diagnostics': ['dask[diagnostics]'],
+                    'dask-distributed': ['dask[distributed]'],
+                    'ray': ['ray'],
+                    'pyspark': ['pyspark[pandas_on_spark]'],
+                    },
 
     # Relevant project URLs
     project_urls={  # Optional
