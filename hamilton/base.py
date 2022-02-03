@@ -137,3 +137,16 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
 
     def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
         return node.callable(**kwargs)
+
+
+class SimplePythonGraphAdapter(SimplePythonDataFrameGraphAdapter):
+    """This class allows you to swap out the build_result very easily."""
+
+    def __init__(self, result_builder: ResultMixin):
+        self.result_builder = result_builder
+        if self.result_builder is None:
+            raise ValueError('You must provide a ResultMixin object for `result_builder`.')
+
+    def build_result(self, **columns: typing.Dict[str, typing.Any]) -> typing.Any:
+        """Delegates to the result builder function supplied."""
+        return self.result_builder.build_result(**columns)

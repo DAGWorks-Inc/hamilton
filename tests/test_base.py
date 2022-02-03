@@ -1,4 +1,5 @@
 import collections
+import typing
 
 import numpy as np
 from numpy import testing
@@ -30,3 +31,17 @@ def test_numpymatrixresult_raise_length_mismatch():
     )
     with pytest.raises(ValueError):
         base.NumpyMatrixResult().build_result(**columns)
+
+
+def test_SimplePythonGraphAdapter():
+    """Tests that it delegates as intended"""
+    class Foo(base.ResultMixin):
+        @staticmethod
+        def build_result(**columns: typing.Dict[str, typing.Any]) -> typing.Any:
+            columns.update({'esoteric': 'function'})
+            return columns
+    spga = base.SimplePythonGraphAdapter(Foo())
+    cols = {'a': 'b'}
+    expected = {'a': 'b', 'esoteric': 'function'}
+    actual = spga.build_result(**cols)
+    assert actual == expected
