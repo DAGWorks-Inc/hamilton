@@ -29,7 +29,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python setup.py pytest
+            python -m pytest tests/
 
       # run coverage tool!
       - run:
@@ -37,7 +37,6 @@ jobs:
           command: |
             . venv/bin/activate
             python -m pytest --cov=hamilton tests/
-
   build-py37:
     docker:
       - image: circleci/python:3.7
@@ -63,7 +62,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python setup.py pytest
+            python -m pytest tests/
 
       # run coverage tool!
       - run:
@@ -81,10 +80,94 @@ jobs:
           command: |
             pip install pre-commit
             pre-commit run --all-files
-workflow:
-  version: 2
+  dask-py36:
+    docker:
+      - image: circleci/python:3.6
 
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+    steps:
+      - checkout
+      - run:
+          name: install hamilton dependencies + dask
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python --version
+            pip --version
+            pip install -r requirements-test.txt
+            pip install -r requirements.txt
+            pip install "dask[complete]"
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest graph_adapter_tests/h_dask
+  dask-py37:
+    docker:
+      - image: circleci/python:3.7
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+    steps:
+      - checkout
+      - run:
+          name: install hamilton dependencies + dask
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python --version
+            pip --version
+            pip install -r requirements-test.txt
+            pip install -r requirements.txt
+            pip install "dask[complete]"
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest graph_adapter_tests/h_dask
+  ray-py37:
+    docker:
+      - image: circleci/python:3.7
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+    steps:
+      - checkout
+      - run:
+          name: install hamilton dependencies + ray
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python --version
+            pip --version
+            pip install -r requirements-test.txt
+            pip install -r requirements.txt
+            pip install ray
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest graph_adapter_tests/h_ray
+workflows:
+  version: 2
   unit-test-workflow:
-    - build
-    - build-py37
-    - pre-commit
+    jobs:
+      - build
+      - build-py37
+      - pre-commit
+      - dask-py36
+      - dask-py37
+      - ray-py37
