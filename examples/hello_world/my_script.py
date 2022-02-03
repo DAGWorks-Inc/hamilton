@@ -27,4 +27,4 @@ output_columns = [
 # let's create the dataframe!
 df = dr.execute(output_columns, display_graph=True)
 # do `pip install sf-hamilton[visualization]` if you want display_graph=True to work.
-print(df)
+print(df.to_string())

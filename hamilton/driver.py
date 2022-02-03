@@ -14,7 +14,7 @@ if __name__ == '__main__':
     import graph
     import node
 else:
-    from . import graph
+    from . import graph, base
     from . import node
 
 logger = logging.getLogger(__name__)
@@ -32,18 +32,20 @@ class Variable:
 class Driver(object):
     """This class orchestrates creating and executing the DAG to create a dataframe."""
 
-    def __init__(self, config: Dict[str, Any], *modules: ModuleType, executor=None):
+    def __init__(self, config: Dict[str, Any], *modules: ModuleType, adapter: base.HamiltonGraphAdapter = None):
         """Constructor: creates a DAG given the configuration & modules to crawl.
 
         :param config: This is a dictionary of initial data & configuration.
                        The contents are used to help create the DAG.
         :param modules: Python module objects you want to inspect for Hamilton Functions.
+        :param adapter: Optional. A way to wire in another way of "executing" a hamilton graph.
+                        Defaults to using original Hamilton adapter which is single threaded in memory python.
         """
-        if executor is None:
-            executor = DirectExecutor()
+        if adapter is None:
+            adapter = base.SimplePythonDataFrameGraphAdapter()
 
-        self.graph = graph.FunctionGraph(*modules, config=config, executor=executor)
-        self.executor = executor
+        self.graph = graph.FunctionGraph(*modules, config=config, adapter=adapter)
+        self.adapter = adapter
 
     def validate_inputs(self, user_nodes: Collection[node.Node], inputs: Dict[str, Any]):
         """Validates that inputs meet our expectations.
@@ -55,8 +57,10 @@ class Driver(object):
         errors = []
         for user_node in user_nodes:
             if user_node.name not in inputs:
-                errors.append(f'Error: Required input {user_node.name} not provided for nodes: {[node.name for node in user_node.depended_on_by]}.')
-            elif inputs[user_node.name] is not None and not self.executor.check_input_type(user_node, inputs[user_node.name]):
+                errors.append(f'Error: Required input {user_node.name} not provided '
+                              f'for nodes: {[node.name for node in user_node.depended_on_by]}.')
+            elif (inputs[user_node.name] is not None
+                  and not self.adapter.check_input_type(user_node.type, inputs[user_node.name])):
                 errors.append(f'Error: Type requirement mismatch. Expected {user_node.name}:{user_node.type} '
                               f'got {inputs[user_node.name]} instead.')
         if errors:
@@ -76,7 +80,7 @@ class Driver(object):
         :return: a data frame consisting of the variables requested.
         """
         columns = self.raw_execute(final_vars, overrides, display_graph)
-        return self.executor.build_data_frame(columns)
+        return self.adapter.build_result(**columns)
 
     def raw_execute(self,
                     final_vars: List[str],
@@ -118,17 +122,6 @@ class Driver(object):
         self.graph.display_all()
 
 
-class DirectExecutor:
-    def check_input_type(self, node: node.Node, input: typing.Any) -> bool:
-        return node.type == typing.Any or isinstance(input, node.type)
-
-    def execute(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
-        return node.callable(**kwargs)
-
-    def build_data_frame(self, columns: typing.Dict[str, typing.Any]) -> pd.DataFrame:
-        return pd.DataFrame(columns)
-
-
 if __name__ == '__main__':
     """some example test code"""
     import sys
@@ -155,7 +148,7 @@ if __name__ == '__main__':
         'start_date_d': datetime.strptime('2019-01-05', '%Y-%m-%d'),
         'end_date_d': datetime.strptime('2020-12-31', '%Y-%m-%d'),
         'segment_filters': {'business_line': 'womens'}
-    }, module, {})
+    }, module)
     df = dr.execute(
         [
             'date_index',
