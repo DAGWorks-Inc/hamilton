@@ -1,7 +1,9 @@
-""""
+"""
 This module should not have any real business logic.
 
-It should only be able the graph & things required to create and traverse one.
+It should only house the graph & things required to create and traverse one.
+
+Note: one should largely consider the code in this module to be "private".
 """
 import inspect
 import logging
@@ -11,6 +13,7 @@ from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
 from hamilton import function_modifiers
 from hamilton import node
 from hamilton.node import NodeSource, DependencyType
+from hamilton import base
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +39,8 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
 
 
 def add_dependency(
-        func_node: node.Node, func_name: str, nodes: Dict[str, node.Node], param_name: str, param_type: Type):
+        func_node: node.Node, func_name: str, nodes: Dict[str, node.Node], param_name: str, param_type: Type,
+        adapter: base.HamiltonGraphAdapter):
     """Adds dependencies to the node objects.
 
     This will add user defined inputs to the dictionary of nodes in the graph.
@@ -46,6 +50,7 @@ def add_dependency(
     :param nodes: nodes representing the graph. This function mutates this object and underlying objects.
     :param param_name: the parameter name we're looking for/adding as a dependency.
     :param param_type: the type of the parameter.
+    :param adapter: The adapter that adapts our node type checking based on the context.
     """
     if param_name in nodes:
         # validate types match
@@ -55,6 +60,8 @@ def add_dependency(
         elif param_type == list and issubclass(required_node.type, List):  # python3.7 changed issubclass behavior
             pass
         elif issubclass(required_node.type, param_type):
+            pass
+        elif adapter.check_node_type_equivalence(required_node.type, param_type):
             pass
         else:
             raise ValueError(f'Error: {func_name} is expecting {param_name}:{param_type}, but found '
@@ -68,9 +75,11 @@ def add_dependency(
     required_node.depended_on_by.append(func_node)
 
 
-def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[str, node.Node]:
+def create_function_graph(*modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter) -> Dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
     :param modules: A set of modules over which one wants to compute the function graph
+    :param config: Dictionary that we will inspect to get values from in building the function graph.
+    :param adapter: The adapter that adapts our node type checking based on the context.
     :return: list of nodes in the graph.
     If it needs to be more complicated, we'll return an actual networkx graph and get all the rest of the logic for free
     """
@@ -89,7 +98,7 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
     # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
     for node_name, n in list(nodes.items()):
         for param_name, (param_type, _) in n.input_types.items():
-            add_dependency(n, node_name, nodes, param_name, param_type)
+            add_dependency(n, node_name, nodes, param_name, param_type, adapter)
     for key in config.keys():
         if key not in nodes:
             nodes[key] = node.Node(key, Any, node_source=NodeSource.EXTERNAL)
@@ -97,20 +106,24 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any]) -> Dict[
 
 
 class FunctionGraph(object):
-    def __init__(self, *modules: ModuleType, config: Dict[str, Any], executor = None):
+    """Note: this object should be considered private until stated otherwise.
+
+    That is, you should not try to build off of it directly without chatting to us first.
+    """
+    def __init__(self, *modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter = None):
         """Initializes a function graph by crawling through modules. Function graph must have a config,
         as the config could determine the shape of the graph.
 
         :param modules: Modules to crawl for functions
-        :param config:
+        :param config: this is configuration and/or initial data.
+        :param adapter: adapts function building and graph execution for different contexts.
         """
-        if executor is None:
-            from .driver import DirectExecutor
-            executor = DirectExecutor()
+        if adapter is None:
+            adapter = base.SimplePythonDataFrameGraphAdapter()
 
         self._config = config
-        self.nodes = create_function_graph(*modules, config=self._config)
-        self.executor = executor
+        self.nodes = create_function_graph(*modules, config=self._config, adapter=adapter)
+        self.executor = adapter
 
     @property
     def config(self):
@@ -224,20 +237,24 @@ class FunctionGraph(object):
     @staticmethod
     def execute_static(nodes: Collection[node.Node],
                        inputs: Dict[str, Any],
-                       executor,
+                       adapter: base.HamiltonGraphAdapter,
                        computed: Dict[str, Any] = None,
                        overrides: Dict[str, Any] = None):
         """Executes computation on the given graph, inputs, and memoized computation.
-                To override a value, utilize `overrides`.
-                To pass in a value to ensure we don't compute data twice, use `computed`.
-                Don't use `computed` to override a value, you will not get the results you expect.
 
-                :param nodes: the graph to traverse for execution.
-                :param inputs: the inputs provided. These will only be called if a node is "user-defined"
-                :param computed: memoized storage to speed up computation. Usually an empty dict.
-                :param overrides: any inputs we want to user to override actual computation
-                :return: the passed in dict for memoized storage.
-                """
+        Effectively this is a "private" function and should be viewed as such.
+
+        To override a value, utilize `overrides`.
+        To pass in a value to ensure we don't compute data twice, use `computed`.
+        Don't use `computed` to override a value, you will not get the results you expect.
+
+        :param nodes: the graph to traverse for execution.
+        :param inputs: the inputs provided. These will only be called if a node is "user-defined"
+        :param adapter: object that adapts execution based on context it knows about.
+        :param computed: memoized storage to speed up computation. Usually an empty dict.
+        :param overrides: any inputs we want to user to override actual computation
+        :return: the passed in dict for memoized storage.
+        """
 
         if overrides is None:
             overrides = {}
@@ -267,7 +284,7 @@ class FunctionGraph(object):
                     if dependency.name in computed:
                         kwargs[dependency.name] = computed[dependency.name]
                 try:
-                    value = executor.execute(node, kwargs)
+                    value = adapter.execute_node(node, kwargs)
                 except Exception as e:
                     logger.exception(f'Node {node.name} encountered an error')
                     raise
@@ -286,7 +303,7 @@ class FunctionGraph(object):
         return FunctionGraph.execute_static(
             nodes=nodes,
             inputs=self.config,
-            executor=self.executor,
+            adapter=self.executor,
             computed=computed,
             overrides=overrides,
         )

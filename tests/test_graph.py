@@ -3,7 +3,7 @@ import inspect
 import pandas as pd
 import pytest
 
-from hamilton import graph
+from hamilton import graph, base
 from hamilton import node
 from hamilton import driver
 import tests.resources.bad_functions
@@ -53,7 +53,7 @@ def test_add_dependency_strict_node_dependencies():
     param_name = 'A'
     param_type = b_sig.parameters['A'].annotation
 
-    graph.add_dependency(func_node, func_name, nodes, param_name, param_type)
+    graph.add_dependency(func_node, func_name, nodes, param_name, param_type, base.SimplePythonDataFrameGraphAdapter())
     assert nodes['A'] == func_node.dependencies[0]
     assert func_node.depended_on_by == []
 
@@ -68,7 +68,7 @@ def test_typing_to_primitive_conversion():
     param_name = 'A'
     param_type = b_sig.parameters['A'].annotation
 
-    graph.add_dependency(func_node, func_name, nodes, param_name, param_type)
+    graph.add_dependency(func_node, func_name, nodes, param_name, param_type, base.SimplePythonDataFrameGraphAdapter())
     assert nodes['A'] == func_node.dependencies[0]
     assert func_node.depended_on_by == []
 
@@ -83,7 +83,7 @@ def test_primitive_to_typing_conversion():
     param_name = 'A2'
     param_type = b_sig.parameters['A2'].annotation
 
-    graph.add_dependency(func_node, func_name, nodes, param_name, param_type)
+    graph.add_dependency(func_node, func_name, nodes, param_name, param_type, base.SimplePythonDataFrameGraphAdapter())
     assert nodes['A2'] == func_node.dependencies[0]
     assert func_node.depended_on_by == []
 
@@ -98,7 +98,7 @@ def test_throwing_error_on_incompatible_types():
     param_name = 'C'
     param_type = d_sig.parameters['C'].annotation
     with pytest.raises(ValueError):
-        graph.add_dependency(func_node, func_name, nodes, param_name, param_type)
+        graph.add_dependency(func_node, func_name, nodes, param_name, param_type, base.SimplePythonDataFrameGraphAdapter())
 
 
 def test_add_dependency_user_nodes():
@@ -114,7 +114,7 @@ def test_add_dependency_user_nodes():
     param_name = 'b'
     param_type = a_sig.parameters['b'].annotation
 
-    graph.add_dependency(func_node, func_name, nodes, param_name, param_type)
+    graph.add_dependency(func_node, func_name, nodes, param_name, param_type, base.SimplePythonDataFrameGraphAdapter())
     # user node is created and added to nodes.
     assert nodes['b'] == func_node.dependencies[0]
     assert nodes['b'].depended_on_by[0] == func_node
@@ -124,7 +124,8 @@ def test_add_dependency_user_nodes():
 def test_create_function_graph_simple():
     """Tests that we create a simple function graph."""
     expected = create_testing_nodes()
-    actual = graph.create_function_graph(tests.resources.dummy_functions, config={})
+    actual = graph.create_function_graph(tests.resources.dummy_functions, config={},
+                                         adapter=base.SimplePythonDataFrameGraphAdapter())
     assert actual == expected
 
 
@@ -161,7 +162,7 @@ def create_testing_nodes():
 
 def test_execute():
     """Tests graph execution along with basic memoization since A is depended on by two functions."""
-    executor = driver.DirectExecutor()
+    executor = base.SimplePythonDataFrameGraphAdapter()
     nodes = create_testing_nodes()
     inputs = {
         'b': 2,
