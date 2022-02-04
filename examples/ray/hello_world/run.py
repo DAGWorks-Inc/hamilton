@@ -37,6 +37,6 @@ if __name__ == '__main__':
         'spend_zero_mean_unit_variance'
     ]
     # let's create the dataframe!
-    df = dr.execute(output_columns, display_graph=True)
+    df = dr.execute(output_columns, display_graph=False)
     print(df.to_string())
     ray.shutdown()

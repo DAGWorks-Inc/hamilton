@@ -43,7 +43,7 @@ if __name__ == '__main__':
         'spend_per_signup',
         'spend_zero_mean_unit_variance'
     ]
-    df = dr.execute(output_columns, display_graph=True)
+    df = dr.execute(output_columns, display_graph=False)
     # will output test-output/execute.gv.pdf
     logger.info(df.to_string())
     client.shutdown()
