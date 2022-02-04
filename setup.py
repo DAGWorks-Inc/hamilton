@@ -88,9 +88,9 @@ setup(
 
     # adding this to slim the package down, since these dependencies are only used to visualize the DAG.
     extras_require={'visualization': ['graphviz', 'networkx'],
-                    'dask': ['dask'],
+                    'dask': ['dask[complete]'],  # commonly you'll want everything.
                     'dask-array': ['dask[array]'],
-                    'dask-complete': ['dask[complete]'],
+                    'dask-core': ['dask-core'],
                     'dask-dataframe': ['dask[dataframe]'],
                     'dask-diagnostics': ['dask[diagnostics]'],
                     'dask-distributed': ['dask[distributed]'],
