@@ -26,7 +26,7 @@ def test_dask_graph_adapter(client):
         'spend': delayed(lambda: pd.Series([10, 10, 20, 40, 40, 50]))(),
     }
 
-    dr = driver.Driver(initial_columns, example_module, adapter=h_dask.DaskGraphAdapter(client, visualize=False))
+    dr = driver.Driver(initial_columns, example_module, adapter=h_dask.DaskGraphAdapter(client))
 
     output_columns = [
         'spend',
