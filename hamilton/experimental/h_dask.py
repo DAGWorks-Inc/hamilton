@@ -53,17 +53,20 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
     DISCLAIMER -- this class is experimental, so signature changes are a possibility!
     """
 
-    def __init__(self, dask_client: DaskClient, result_builder: base.ResultMixin = None, visualize: bool = True):
+    def __init__(self, dask_client: DaskClient, result_builder: base.ResultMixin = None, visualize_kwargs: dict = None):
         """Constructor
 
         :param dask_client: the dask client -- we don't do anything with it, but thought that it would be useful
             to wire through here.
         :param result_builder: The function that will build the result. Optional, defaults to pandas dataframe.
-        :param visualize: whether we want to visualize what Dask wants to execute.
+        :param visualize_kwargs: Arguments to visualize the graph using dask's internals.
+            None, means no visualization.
+            Dict, means visualize -- see https://docs.dask.org/en/latest/api.html?highlight=visualize#dask.visualize
+            for what to pass in.
         """
         self.client = dask_client
         self.result_builder = result_builder if result_builder else base.PandasDataFrameResult()
-        self.visualize = visualize
+        self.visualize_kwargs = visualize_kwargs
 
     @staticmethod
     def check_input_type(node_type: typing.Type, input_value: typing.Any) -> bool:
@@ -103,8 +106,8 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
             for k, v in columns.items():
                 logger.info(f'Got column {k}, with type [{type(v)}].')
         delayed_combine = delayed(self.result_builder.build_result)(**columns)
-        if self.visualize:
-            delayed_combine.visualize()
+        if self.visualize_kwargs is not None:
+            delayed_combine.visualize(**self.visualize_kwargs)
         df, = compute(delayed_combine)
         return df
 
