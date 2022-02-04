@@ -25,8 +25,8 @@ if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     modules = [importlib.import_module(m) for m in module_names]
-    dga = h_dask.DaskGraphAdapter(client, base.PandasDataFrameResult(), visualize=True)
-    # will output mydask.png
+    dga = h_dask.DaskGraphAdapter(client, base.PandasDataFrameResult())
+    # will output Dask's execution graph mydask.png -- requires sf-hamilton[visualization] to be installed.
 
     initial_config_and_data = {
         'spend_location': 'some file path',
