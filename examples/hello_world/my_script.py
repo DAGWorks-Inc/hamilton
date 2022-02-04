@@ -25,6 +25,6 @@ output_columns = [
     'spend_zero_mean_unit_variance'
 ]
 # let's create the dataframe!
-df = dr.execute(output_columns, display_graph=True)
+df = dr.execute(output_columns, display_graph=False)
 # do `pip install sf-hamilton[visualization]` if you want display_graph=True to work.
 print(df.to_string())
