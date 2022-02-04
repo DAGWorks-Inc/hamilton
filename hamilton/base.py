@@ -42,17 +42,24 @@ class PandasDataFrameResult(ResultMixin):
     @staticmethod
     def build_result(**columns: typing.Dict[str, typing.Any]) -> pd.DataFrame:
         # TODO check inputs are pd.Series, arrays, or scalars -- else error
-        # TODO do a basic index check across pd.Series?
+        # TODO do a basic index check across pd.Series and flag where mismatches occur?
         return pd.DataFrame(columns)
 
 
 class NumpyMatrixResult(ResultMixin):
-    """Mixin for building a Numpy Matrix from the result"""
+    """Mixin for building a Numpy Matrix from the result of walking the graph.
+
+    All inputs to the build_result function are expected to be numpy arrays
+    """
 
     @staticmethod
     def build_result(**columns: typing.Dict[str, typing.Any]) -> np.matrix:
-        # TODO check inputs are all numpy arrays -- else error
+        """Builds a numpy matrix from the passed in, inputs.
 
+        :param columns: function_name -> np.array.
+        :return: numpy matrix
+        """
+        # TODO check inputs are all numpy arrays/array like things -- else error
         num_rows = -1
         columns_with_lengths = collections.OrderedDict()
         for col, val in columns.items():   # assumption is fixed order
