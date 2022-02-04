@@ -1,5 +1,12 @@
 import pandas as pd
 
+"""
+Notes:
+  1. This file is used for all the [ray|dask|spark]/hello_world examples.
+  2. It therefore show cases how you can write something once and not only scale it, but port it
+     to different frameworks with ease!
+"""
+
 
 def avg_3wk_spend(spend: pd.Series) -> pd.Series:
     """Rolling 3 week average spend."""
