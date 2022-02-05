@@ -7,7 +7,7 @@ def _sum(**kwargs: int) -> int:
 
 @does(_sum)
 @parametrized(parameter='a', assigned_output={('e', 'First value'): 10, ('f', 'First value'): 20})
-@augment("c**2+d")
+@augment('c**2+d')
 @config.when(foo='bar')
 def c__foobar(a: int, b: int) -> int:
     """Demonstrates utilizing a bunch of decorators.
@@ -22,7 +22,7 @@ def c__foobar(a: int, b: int) -> int:
 
 @does(_sum)
 @parametrized(parameter='a', assigned_output={('e', 'First value'): 11, ('f', 'First value'): 22})
-@augment("c**2+d")
+@augment('c**2+d')
 @config.when(foo='baz')
 def c__foobaz(a: int, b: int) -> int:
     """Demonstrates utilizing a bunch of decorators.

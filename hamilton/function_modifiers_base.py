@@ -58,7 +58,7 @@ class NodeTransformLifecycle(abc.ABC):
         lifecycle_name = self.__class__.get_lifecycle_name()
         if hasattr(fn, self.get_lifecycle_name()):
             if not self.allows_multiple():
-                raise ValueError(f"Got multiple decorators for decorator @{self.__class__}. Only one allowed.")
+                raise ValueError(f'Got multiple decorators for decorator @{self.__class__}. Only one allowed.')
             curr_value = getattr(fn, lifecycle_name)
             setattr(fn, lifecycle_name, curr_value + [self])
         else:
