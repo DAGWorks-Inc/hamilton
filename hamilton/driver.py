@@ -81,11 +81,14 @@ class Driver(object):
         """Executes computation.
 
         :param final_vars: the final list of variables we want in the data frame.
-        :param overrides: the user defined overrides.
-        :param display_graph: whether we want to display the graph being computed.
+        :param overrides: the user defined input variables.
+        :param display_graph: DEPRECATED. Whether we want to display the graph being computed.
         :param inputs: Runtime inputs to the DAG
         :return: a data frame consisting of the variables requested.
         """
+        if display_graph:
+            logger.warning('display_graph=True is deprecated. It will be removed in the 2.0.0 release. '
+                           'Please use visualize_execution().')
         columns = self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
         return self.adapter.build_result(**columns)
 
@@ -101,19 +104,16 @@ class Driver(object):
 
         :param final_vars: Final variables to compute
         :param overrides: Overrides to run.
+        :param display_graph: DEPRECATED. DO NOT USE. Whether or not to display the graph when running it
         :param inputs: Runtime inputs to the DAG
-        :param display_graph: Whether or not to display the graph when running it
         :return:
         """
         nodes, user_nodes = self.graph.get_required_functions(final_vars)
-
         self.validate_inputs(user_nodes, inputs)  # TODO -- validate within the function graph itself
         if display_graph:
-            # TODO: fix hardcoded path.
-            try:
-                self.graph.display(nodes, user_nodes, output_file_path='test-output/execute.gv')
-            except ImportError as e:
-                logger.warning(f'Unable to import {e}', exc_info=True)
+            self.visualize_execution(final_vars, 'test-output/execute.gv', {'view': True})
+            if self.has_cycles(final_vars):  # here for backwards compatible driver behavior.
+                raise ValueError('Error: cycles detected in you graph.')
         memoized_computation = dict()  # memoized storage
         self.graph.execute(nodes, memoized_computation, overrides, inputs)
         columns = {c: memoized_computation[c] for c in final_vars}  # only want request variables in df.
@@ -127,9 +127,46 @@ class Driver(object):
         """
         return [Variable(node.name, node.type) for node in self.graph.get_nodes()]
 
-    def display_all_functions(self):
-        """Displays the graph."""
-        self.graph.display_all()
+    def display_all_functions(self, output_file_uri: str):
+        """Displays the graph of all functions loaded!
+
+        :param output_file_uri: the full URI of path + file name to save the dot file to.
+            E.g. 'some/path/graph-all.dot'
+        """
+        try:
+            self.graph.display_all(output_file_uri)
+        except ImportError as e:
+            logger.warning(f'Unable to import {e}', exc_info=True)
+
+    def visualize_execution(self,
+                            final_vars: List[str],
+                            output_file_uri: str,
+                            render_kwargs: dict):
+        """Visualizes Execution.
+
+        Note: overrides are not handled at this time.
+
+        :param final_vars: the outputs we want to compute.
+        :param output_file_uri: the full URI of path + file name to save the dot file to.
+            E.g. 'some/path/graph.dot'
+        :param render_kwargs: a dictionary of values we'll pass to graphviz render function.
+        """
+        nodes, user_nodes = self.graph.get_required_functions(final_vars)
+        self.validate_inputs(user_nodes, self.graph.config)
+        try:
+            self.graph.display(nodes, user_nodes, output_file_uri, render_kwargs=render_kwargs)
+        except ImportError as e:
+            logger.warning(f'Unable to import {e}', exc_info=True)
+
+    def has_cycles(self, final_vars: List[str]) -> bool:
+        """Checks that the created graph does not have cycles.
+
+        :param final_vars: the outputs we want to comute.
+        :return: boolean True for cycles, False for no cycles.
+        """
+        nodes, user_nodes = self.graph.get_required_functions(final_vars)
+        self.validate_inputs(user_nodes, self.graph.config)
+        return self.graph.has_cycles(nodes, user_nodes)
 
 
 if __name__ == '__main__':

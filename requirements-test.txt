@@ -1,3 +1,5 @@
+graphviz
+networkx
 pytest
 pytest-assume
 pytest-cov

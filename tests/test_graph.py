@@ -1,19 +1,20 @@
 import inspect
+import tempfile
 
 import pandas as pd
 import pytest
 
-from hamilton import graph, base
-from hamilton import node
-from hamilton import driver
 import tests.resources.bad_functions
-import tests.resources.dummy_functions
-import tests.resources.parametrized_nodes
-import tests.resources.parametrized_inputs
-import tests.resources.extract_column_nodes
 import tests.resources.config_modifier
+import tests.resources.cyclic_functions
+import tests.resources.dummy_functions
+import tests.resources.extract_column_nodes
+import tests.resources.parametrized_inputs
+import tests.resources.parametrized_nodes
 import tests.resources.typing_vs_not_typing
 import tests.resources.layered_decorators
+from hamilton import graph, base
+from hamilton import node
 from hamilton.node import NodeSource
 
 
@@ -99,7 +100,8 @@ def test_throwing_error_on_incompatible_types():
     param_name = 'C'
     param_type = d_sig.parameters['C'].annotation
     with pytest.raises(ValueError):
-        graph.add_dependency(func_node, func_name, nodes, param_name, param_type, base.SimplePythonDataFrameGraphAdapter())
+        graph.add_dependency(func_node, func_name, nodes, param_name, param_type,
+                             base.SimplePythonDataFrameGraphAdapter())
 
 
 def test_add_dependency_user_nodes():
@@ -283,6 +285,96 @@ def test_config_can_override():
     fg = graph.FunctionGraph(tests.resources.config_modifier, config=config)
     out = fg.execute([n for n in fg.get_nodes()])
     assert out['new_param'] == 'new_value'
+
+
+def test_function_graph_has_cycles_true():
+    """Tests whether we catch a graph with cycles"""
+    fg = graph.FunctionGraph(tests.resources.cyclic_functions, config={'b': 2, 'c': 1})
+    all_nodes = fg.get_nodes()
+    nodes = [n for n in all_nodes if not n.user_defined]
+    user_nodes = [n for n in all_nodes if n.user_defined]
+    assert fg.has_cycles(nodes, user_nodes) is True
+    with pytest.raises(RecursionError):
+        fg.get_required_functions(['A', 'B', 'C'])
+
+
+def test_function_graph_has_cycles_false():
+    """Tests whether we catch a graph with cycles"""
+    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={'b': 1, 'c': 2})
+    all_nodes = fg.get_nodes()
+    # checks it two ways
+    nodes = [n for n in all_nodes if not n.user_defined]
+    user_nodes = [n for n in all_nodes if n.user_defined]
+    assert fg.has_cycles(nodes, user_nodes) is False
+    # this is called by the driver
+    nodes, user_nodes = fg.get_required_functions(['A', 'B', 'C'])
+    assert fg.has_cycles(nodes, user_nodes) is False
+
+
+def test_function_graph_display():
+    """Tests that display saves a file"""
+    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={'b': 1, 'c': 2})
+    defined_nodes = set()
+    user_nodes = set()
+    for n in fg.get_nodes():
+        if n.user_defined:
+            user_nodes.add(n)
+        else:
+            defined_nodes.add(n)
+    expected = sorted(['// Dependency Graph\n',
+                'digraph {\n',
+                '\tA [label=A]\n',
+                '\tC [label=C]\n',
+                '\tB [label=B]\n',
+                '\tc [label="UD: c"]\n',
+                '\tb [label="UD: b"]\n',
+                '\tb -> A\n',
+                '\tc -> A\n',
+                '\tA -> C\n',
+                '\tA -> B\n',
+                '}\n'])
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        path = tmp_dir.join('test.dot')
+        fg.display(defined_nodes, user_nodes, str(path), {'view': False})
+        with open(str(path), 'r') as dot_file:
+            actual = sorted(dot_file.readlines())
+            assert actual == expected
+
+
+def test_create_graphviz_graph():
+    """Tests that we create a graphviz graph"""
+    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
+    nodes, user_nodes = fg.get_required_functions(['A', 'B', 'C'])
+    # hack of a test -- but it works... sort the lines and match them up.
+    expected = sorted(['// test-graph',
+                       'digraph {',
+                       '\tB [label=B]',
+                       '\tA [label=A]',
+                       '\tc [label=c]',
+                       '\tC [label=C]',
+                       '\tb [label=b]',
+                       '\tb [label="UD: b"]',
+                       '\tc [label="UD: c"]',
+                       '\tA -> B',
+                       '\tb -> A',
+                       '\tc -> A',
+                       '\tA -> C',
+                       '}',
+                       ''])
+    digraph = graph.create_graphviz_graph(nodes, user_nodes, 'test-graph')
+    actual = sorted(str(digraph).split('\n'))
+    assert actual == expected
+
+
+def test_create_networkx_graph():
+    """Tests that we create a networkx graph"""
+    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
+    nodes, user_nodes = fg.get_required_functions(['A', 'B', 'C'])
+    digraph = graph.create_networkx_graph(nodes, user_nodes, 'test-graph')
+    expected_nodes = sorted(['c', 'B', 'C', 'b', 'A'])
+    expected_edges = sorted([('c', 'A'), ('b', 'A'), ('A', 'B'), ('A', 'C')])
+    assert sorted(list(digraph.nodes)) == expected_nodes
+    assert sorted(list(digraph.edges)) == expected_edges
 
 
 def test_end_to_end_with_layered_decorators_resolves_true():

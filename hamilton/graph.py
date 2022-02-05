@@ -121,6 +121,48 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any], adapter:
     return nodes
 
 
+def create_graphviz_graph(nodes: Set[node.Node], user_nodes: Set[node.Node], comment: str) -> 'graphviz.Digraph':
+    """Helper function to create a graphviz graph.
+
+    :param nodes: The set of computational nodes
+    :param user_nodes: The set of nodes that the user is providing inputs for.
+    :param comment: The comment to have on the graph.
+    :return: a graphviz.Digraph; use this to render/save a graph representation.
+    """
+    import graphviz
+    digraph = graphviz.Digraph(comment=comment)
+    for n in nodes:
+        digraph.node(n.name, label=n.name)
+    for n in user_nodes:
+        digraph.node(n.name, label=f'UD: {n.name}')
+
+    for n in list(nodes) + list(user_nodes):
+        for d in n.dependencies:
+            digraph.edge(d.name, n.name)
+    return digraph
+
+
+def create_networkx_graph(nodes: Set[node.Node], user_nodes: Set[node.Node], name: str) -> 'networkx.DiGraph':
+    """Helper function to create a networkx graph.
+
+    :param nodes: The set of computational nodes
+    :param user_nodes: The set of nodes that the user is providing inputs for.
+    :param name: The name to have on the graph.
+    :return: a graphviz.Digraph; use this to render/save a graph representation.
+    """
+    import networkx
+    digraph = networkx.DiGraph(name=name)
+    for n in nodes:
+        digraph.add_node(n.name, label=n.name)
+    for n in user_nodes:
+        digraph.add_node(n.name, label=f'UD: {n.name}')
+
+    for n in list(nodes) + list(user_nodes):
+        for d in n.dependencies:
+            digraph.add_edge(d.name, n.name)
+    return digraph
+
+
 class FunctionGraph(object):
     """Note: this object should be considered private until stated otherwise.
 
@@ -149,7 +191,7 @@ class FunctionGraph(object):
         return list(self.nodes.values())
 
     def display_all(self, output_file_path: str = 'test-output/graph-all.gv'):
-        """Displays the entire DAG structure constructed.
+        """Displays & saves a dot file of the entire DAG structure constructed.
 
         :param output_file_path: the place to save the files.
         """
@@ -162,14 +204,46 @@ class FunctionGraph(object):
                 defined_nodes.add(n)
         self.display(defined_nodes, user_nodes, output_file_path=output_file_path)
 
+    def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
+        """Checks that the graph created does not contain cycles.
+
+        :param nodes: the set of nodes that need to be computed.
+        :param user_nodes: the set of inputs that the user provided.
+        :return: bool. True if cycles detected. False if not.
+        """
+        cycles = self.get_cycles(nodes, user_nodes)
+        return True if cycles else False
+
+    def get_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> List:
+        """Returns cycles found in the graph.
+
+        :param nodes: the set of nodes that need to be computed.
+        :param user_nodes: the set of inputs that the user provided.
+        :return: list of cycles
+        """
+        try:
+            import networkx
+        except ModuleNotFoundError:
+            logger.exception(
+                ' networkx is required for detecting cycles in the function graph. Install it with:'
+                '\n\n  pip install sf-hamilton[visualization] or pip install networkx \n\n'
+            )
+            return False
+        digraph = create_networkx_graph(nodes, user_nodes, 'Dependency Graph')
+        cycles = list(networkx.simple_cycles(digraph))
+        return cycles
+
     @staticmethod
-    def display(nodes: Set[node.Node], user_nodes: Set[node.Node], output_file_path: str = 'test-output/graph.gv'):
+    def display(nodes: Set[node.Node],
+                user_nodes: Set[node.Node],
+                output_file_path: str = 'test-output/graph.gv',
+                render_kwargs: dict = None):
         """Function to display the graph represented by the passed in nodes.
 
-        Just because it is easy, we also through in a check for cycles.
-
-        :param final_vars: the final vars we want -- else all if None.
+        :param nodes: the set of nodes that need to be computed.
+        :param user_nodes: the set of inputs that the user provided.
         :param output_file_path: the path where we want to store the a `dot` file + pdf picture.
+        :param render_kwargs: kwargs to be passed to the render function to visualize.
         """
         # Check to see if optional dependencies have been installed.
         try:
@@ -180,33 +254,12 @@ class FunctionGraph(object):
                 '\n\n  pip install sf-hamilton[visualization] or pip install graphviz \n\n'
             )
             return
-        try:
-            import networkx
-        except ModuleNotFoundError:
-            logger.exception(
-                ' networkx is required for visualizing the function graph. Install it with:'
-                '\n\n  pip install sf-hamilton[visualization] or pip install networkx \n\n'
-            )
-            return
 
-        dot = graphviz.Digraph(comment='Dependency Graph')
-
-        for n in nodes:
-            dot.node(n.name, label=n.name)
-        for n in user_nodes:
-            dot.node(n.name, label=f'UD: {n.name}')
-
-        for n in list(nodes) + list(user_nodes):
-            for d in n.dependencies:
-                dot.edge(d.name, n.name)
-
-        dot.render(output_file_path, view=True)
-        ntx_graph = networkx.DiGraph(networkx.drawing.nx_agraph.read_dot(output_file_path))
-        cycles = list(networkx.simple_cycles(ntx_graph))
-        if cycles:
-            raise ValueError(f'Error cycle(s) detected:{cycles}')
-        else:
-            logger.info('No cycles detected')
+        dot = create_graphviz_graph(nodes, user_nodes, 'Dependency Graph')
+        kwargs = {'view': True}
+        if kwargs and isinstance(render_kwargs, dict):
+            kwargs.update(render_kwargs)
+        dot.render(output_file_path, **kwargs)
 
     def get_impacted_nodes(self, var_changes: List[str]) -> Set[node.Node]:
         """Given our function graph, and a list of nodes that are changed,
