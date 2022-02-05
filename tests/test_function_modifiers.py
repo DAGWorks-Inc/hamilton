@@ -375,7 +375,7 @@ def test_augment_decorator():
     def foo(a: int) -> int:
         return a*2
 
-    annotation = function_modifiers.augment("foo*MULTIPLIER_foo+OFFSET_foo")
+    annotation = function_modifiers.augment('foo*MULTIPLIER_foo+OFFSET_foo')
     annotation.validate(foo)
     nodes = annotation.transform_dag([node.Node.from_fn(foo)], {}, foo)
     assert 1 == len(nodes)
@@ -387,5 +387,3 @@ def test_augment_decorator():
     foo = a*2
     foo = MULTIPLIER_foo*foo + OFFSET_foo
     assert nodes_by_name['foo'].callable(a=a, MULTIPLIER_foo=MULTIPLIER_foo, OFFSET_foo=OFFSET_foo) == foo # note its foo_raw as that's the node on which it depends
-
-
