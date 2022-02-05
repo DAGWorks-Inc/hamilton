@@ -161,6 +161,37 @@ jobs:
           command: |
             . venv/bin/activate
             python -m pytest graph_adapter_tests/h_ray
+  spark-py38:
+    docker:
+      - image: cimg/openjdk:14.0   # need java on it
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+    steps:
+      - checkout
+      - run:
+          name: install hamilton dependencies + spark
+          command: |
+            # venv & pip weren't installed -- so have to do this hacky stuff
+            sudo apt-get update
+            sudo apt-get install aptitude
+            sudo aptitude install python3.8-venv -y
+            python3.8 -m venv venv
+            . venv/bin/activate
+            python3.8 --version
+            pip3.8 --version
+            pip3.8 install -r requirements-test.txt
+            pip3.8 install -r requirements.txt
+            pip3.8 install pyspark[pandas_on_spark]  # note bdist will error, but things install fine enough to run!
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest graph_adapter_tests/h_spark
 workflows:
   version: 2
   unit-test-workflow:
@@ -171,3 +202,4 @@ workflows:
       - dask-py36
       - dask-py37
       - ray-py37
+      - spark-py38
