@@ -272,12 +272,12 @@ class does(NodeCreator):
             input_types={key: value.annotation for key, value in fn_signature.parameters.items()})
 
 
-class model(NodeCreator):
-    def __init__(self, model_cls: Type[BaseModel], config_param: str, **extra_model_params):
-        """Constructs a model. Takes in a model_cls, whose only construction parameter is a dictionary."""
-        self.model_cls = model_cls
+class dynamic_transform(NodeCreator):
+    def __init__(self, transform_cls: Type[BaseModel], config_param: str, **extra_transform_params):
+        """Constructs a model. Takes in a model_cls, which has to have a parameter."""
+        self.transform_cls = transform_cls
         self.config_param = config_param
-        self.extra_model_params = extra_model_params
+        self.extra_transform_params = extra_transform_params
 
     def validate(self, fn: Callable):
         """Validates that the model works with the function -- ensures:
@@ -299,13 +299,19 @@ class model(NodeCreator):
         if self.config_param not in config:
             raise InvalidDecoratorException(f'Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?')
         fn_name = fn.__name__
-        model = self.model_cls(config[self.config_param], fn_name, **self.extra_model_params)
+        transform = self.transform_cls(config[self.config_param], fn_name, **self.extra_transform_params)
         return node.Node(
             name=fn_name,
             typ=inspect.signature(fn).return_annotation,
             doc_string=fn.__doc__,
-            callabl=model.predict,
-            input_types={dep: pd.Series for dep in model.get_dependents()})
+            callabl=transform.compute,
+            input_types={dep: pd.Series for dep in transform.get_dependents()})
+
+
+class model(dynamic_transform):
+    """Model, same as a dynamic transform"""
+    def __init__(self, model_cls, config_param: str, **extra_model_params):
+        super(model, self).__init__(transform_cls=model_cls, config_param=config_param, **extra_model_params)
 
 
 class config(NodeResolver):
@@ -426,6 +432,7 @@ class augment(NodeTransformer):
         dependent_variables = {item.id for item in ast.walk(expression_parsed) if isinstance(item, ast.Name)}
 
         var_name = sanitize_function_name(fn.__name__)
+
         # We should be passing the function through (or the name?)
 
         def new_function(**kwargs):
