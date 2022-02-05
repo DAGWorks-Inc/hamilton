@@ -298,3 +298,23 @@ def test_end_to_end_with_layered_decorators_resolves_false():
     fg = graph.FunctionGraph(tests.resources.layered_decorators, config=config)
     out = fg.execute([n for n in fg.get_nodes()], )
     assert {item: value for item, value in out.items() if item not in config} == {}
+
+
+def test_combine_inputs_no_collision():
+    """Tests the combine_and_validate_inputs functionality when there are no collisions"""
+    combined = graph.FunctionGraph.combine_config_and_inputs({'a': 1}, {'b': 2})
+    assert combined == {'a': 1, 'b': 2}
+
+
+def test_combine_inputs_collision():
+    """Tests the combine_and_validate_inputs functionality
+    when there are collisions of keys but not values"""
+    with pytest.raises(ValueError):
+        graph.FunctionGraph.combine_config_and_inputs({'a': 1}, {'a': 2})
+
+
+def test_combine_inputs_collision_2():
+    """Tests the combine_and_validate_inputs functionality
+    when there are collisions of keys and values"""
+    with pytest.raises(ValueError):
+        graph.FunctionGraph.combine_config_and_inputs({'a': 1}, {'a': 1})

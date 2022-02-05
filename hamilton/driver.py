@@ -47,22 +47,26 @@ class Driver(object):
         self.graph = graph.FunctionGraph(*modules, config=config, adapter=adapter)
         self.adapter = adapter
 
-    def validate_inputs(self, user_nodes: Collection[node.Node], inputs: Dict[str, Any]):
-        """Validates that inputs meet our expectations.
+    def validate_inputs(self, user_nodes: Collection[node.Node], inputs: typing.Optional[Dict[str, Any]] = None):
+        """Validates that inputs meet our expectations. This means that:
+        1. The runtime inputs don't clash with the graph's config
+        2. All expected graph inputs are provided, either in config or at runtime
 
         :param user_nodes: The required nodes we need for computation.
         :param inputs: the user inputs provided.
         """
-        # validate inputs
+        if inputs is None:
+            inputs = {}
+        all_inputs, = graph.FunctionGraph.combine_config_and_inputs(self.graph.config, inputs),
         errors = []
         for user_node in user_nodes:
-            if user_node.name not in inputs:
+            if user_node.name not in all_inputs:
                 errors.append(f'Error: Required input {user_node.name} not provided '
                               f'for nodes: {[node.name for node in user_node.depended_on_by]}.')
-            elif (inputs[user_node.name] is not None
-                  and not self.adapter.check_input_type(user_node.type, inputs[user_node.name])):
+            elif (all_inputs[user_node.name] is not None
+                  and not self.adapter.check_input_type(user_node.type, all_inputs[user_node.name])):
                 errors.append(f'Error: Type requirement mismatch. Expected {user_node.name}:{user_node.type} '
-                              f'got {inputs[user_node.name]} instead.')
+                              f'got {all_inputs[user_node.name]} instead.')
         if errors:
             errors.sort()
             error_str = f'{len(errors)} errors encountered:\n  ' + '\n  '.join(errors)
@@ -71,33 +75,39 @@ class Driver(object):
     def execute(self,
                 final_vars: List[str],
                 overrides: Dict[str, Any] = None,
-                display_graph: bool = False) -> pd.DataFrame:
+                display_graph: bool = False,
+                inputs: Dict[str, Any] = None,
+                ) -> pd.DataFrame:
         """Executes computation.
 
         :param final_vars: the final list of variables we want in the data frame.
-        :param overrides: the user defined input variables.
+        :param overrides: the user defined overrides.
         :param display_graph: whether we want to display the graph being computed.
+        :param inputs: Runtime inputs to the DAG
         :return: a data frame consisting of the variables requested.
         """
-        columns = self.raw_execute(final_vars, overrides, display_graph)
+        columns = self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
         return self.adapter.build_result(**columns)
 
     def raw_execute(self,
                     final_vars: List[str],
                     overrides: Dict[str, Any] = None,
-                    display_graph: bool = False) -> Dict[str, Any]:
+                    display_graph: bool = False,
+                    inputs: Dict[str, Any] = None) -> Dict[str, Any]:
         """Raw execute function that does the meat of execute.
 
         It does not try to stitch anything together. Thus allowing wrapper executes around this to shape the output
         of the data.
 
-        :param final_vars:
-        :param overrides:
-        :param display_graph:
+        :param final_vars: Final variables to compute
+        :param overrides: Overrides to run.
+        :param inputs: Runtime inputs to the DAG
+        :param display_graph: Whether or not to display the graph when running it
         :return:
         """
         nodes, user_nodes = self.graph.get_required_functions(final_vars)
-        self.validate_inputs(user_nodes, self.graph.config)  # TODO -- validate within the function graph itself
+
+        self.validate_inputs(user_nodes, inputs)  # TODO -- validate within the function graph itself
         if display_graph:
             # TODO: fix hardcoded path.
             try:
@@ -105,7 +115,7 @@ class Driver(object):
             except ImportError as e:
                 logger.warning(f'Unable to import {e}', exc_info=True)
         memoized_computation = dict()  # memoized storage
-        self.graph.execute(nodes, memoized_computation, overrides)
+        self.graph.execute(nodes, memoized_computation, overrides, inputs)
         columns = {c: memoized_computation[c] for c in final_vars}  # only want request variables in df.
         del memoized_computation  # trying to cleanup some memory
         return columns

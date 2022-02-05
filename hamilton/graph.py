@@ -311,15 +311,40 @@ class FunctionGraph(object):
             dfs_traverse(final_var_node)
         return computed
 
+    @staticmethod
+    def combine_config_and_inputs(config: Dict[str, Any], inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """Validates and combines config and inputs, ensuring that they're mutually disjoint.
+        :param config: Config to construct, run the DAG with.
+        :param inputs: Inputs to run the DAG on at runtime
+        :return: The combined set of inputs to the DAG.
+        :raises ValueError: if they are not disjoint
+        """
+        duplicated_inputs = [key for key in inputs if key in config]
+        if len(duplicated_inputs) > 0:
+            raise ValueError(f'The following inputs are present in both config and inputs. They must be mutually disjoint. {duplicated_inputs}')
+        return {**config, **inputs}
+
     def execute(self,
                 nodes: Collection[node.Node] = None,
                 computed: Dict[str, Any] = None,
-                overrides: Dict[str, Any] = None) -> Dict[str, Any]:
+                overrides: Dict[str, Any] = None,
+                inputs: Dict[str, Any] = None
+                ) -> Dict[str, Any]:
+        """Executes the DAG, given potential inputs/previously compoted components.
+
+        :param nodes: Nodes to compute
+        :param computed: Nodes that have already been computed
+        :param overrides: Overrides for nodes in the DAG
+        :param inputs: Inputs to the DAG -- have to be disjoint from config.
+        :return: The result of executing the DAG (a dict of node name to node result)
+        """
         if nodes is None:
             nodes = self.get_nodes()
+        if inputs is None:
+            inputs = {}
         return FunctionGraph.execute_static(
             nodes=nodes,
-            inputs=self.config,
+            inputs=FunctionGraph.combine_config_and_inputs(self.config, inputs),
             adapter=self.executor,
             computed=computed,
             overrides=overrides,
