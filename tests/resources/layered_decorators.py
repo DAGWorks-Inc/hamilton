@@ -1,4 +1,5 @@
-from hamilton.function_modifiers import config, does, parametrized, augment
+from hamilton.function_modifiers import config, does, parametrized
+from hamilton.experimental.decorators import augment
 
 
 def _sum(**kwargs: int) -> int:
