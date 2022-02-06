@@ -110,7 +110,9 @@ class Driver(object):
         """
         nodes, user_nodes = self.graph.get_required_functions(final_vars)
         self.validate_inputs(user_nodes, inputs)  # TODO -- validate within the function graph itself
-        if display_graph:
+        if display_graph:  # deprecated flow.
+            logger.warning('display_graph=True is deprecated. It will be removed in the 2.0.0 release. '
+                           'Please use visualize_execution().')
             self.visualize_execution(final_vars, 'test-output/execute.gv', {'view': True})
             if self.has_cycles(final_vars):  # here for backwards compatible driver behavior.
                 raise ValueError('Error: cycles detected in you graph.')
@@ -127,14 +129,16 @@ class Driver(object):
         """
         return [Variable(node.name, node.type) for node in self.graph.get_nodes()]
 
-    def display_all_functions(self, output_file_uri: str):
+    def display_all_functions(self, output_file_uri: str, render_kwargs: dict = None):
         """Displays the graph of all functions loaded!
 
         :param output_file_uri: the full URI of path + file name to save the dot file to.
             E.g. 'some/path/graph-all.dot'
+        :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
+            If you do not want to view the file, pass in `{'view':False}`.
         """
         try:
-            self.graph.display_all(output_file_uri)
+            self.graph.display_all(output_file_uri, render_kwargs)
         except ImportError as e:
             logger.warning(f'Unable to import {e}', exc_info=True)
 
@@ -149,7 +153,8 @@ class Driver(object):
         :param final_vars: the outputs we want to compute.
         :param output_file_uri: the full URI of path + file name to save the dot file to.
             E.g. 'some/path/graph.dot'
-        :param render_kwargs: a dictionary of values we'll pass to graphviz render function.
+        :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
+            If you do not want to view the file, pass in `{'view':False}`.
         """
         nodes, user_nodes = self.graph.get_required_functions(final_vars)
         self.validate_inputs(user_nodes, self.graph.config)

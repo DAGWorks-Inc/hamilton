@@ -190,10 +190,12 @@ class FunctionGraph(object):
     def get_nodes(self) -> List[node.Node]:
         return list(self.nodes.values())
 
-    def display_all(self, output_file_path: str = 'test-output/graph-all.gv'):
+    def display_all(self, output_file_path: str = 'test-output/graph-all.gv', render_kwargs: dict = None):
         """Displays & saves a dot file of the entire DAG structure constructed.
 
         :param output_file_path: the place to save the files.
+        :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
+            If you do not want to view the file, pass in `{'view':False}`.
         """
         defined_nodes = set()
         user_nodes = set()
@@ -202,7 +204,9 @@ class FunctionGraph(object):
                 user_nodes.add(n)
             else:
                 defined_nodes.add(n)
-        self.display(defined_nodes, user_nodes, output_file_path=output_file_path)
+        if render_kwargs is None:
+            render_kwargs = {}
+        self.display(defined_nodes, user_nodes, output_file_path=output_file_path, render_kwargs=render_kwargs)
 
     def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
         """Checks that the graph created does not contain cycles.
