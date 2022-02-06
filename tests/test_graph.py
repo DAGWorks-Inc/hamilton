@@ -321,6 +321,8 @@ def test_function_graph_display():
             user_nodes.add(n)
         else:
             defined_nodes.add(n)
+    # hack of a test -- but it works... sort the lines and match them up.
+    # why? because for some reason given the same graph, the output file isn't deterministic.
     expected = sorted(['// Dependency Graph\n',
                 'digraph {\n',
                 '\tA [label=A]\n',
@@ -346,6 +348,7 @@ def test_create_graphviz_graph():
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
     nodes, user_nodes = fg.get_required_functions(['A', 'B', 'C'])
     # hack of a test -- but it works... sort the lines and match them up.
+    # why? because for some reason given the same graph, the output file isn't deterministic.
     expected = sorted(['// test-graph',
                        'digraph {',
                        '\tB [label=B]',
