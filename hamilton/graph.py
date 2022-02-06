@@ -218,12 +218,12 @@ class FunctionGraph(object):
         cycles = self.get_cycles(nodes, user_nodes)
         return True if cycles else False
 
-    def get_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> List:
+    def get_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> List[List[str]]:
         """Returns cycles found in the graph.
 
         :param nodes: the set of nodes that need to be computed.
         :param user_nodes: the set of inputs that the user provided.
-        :return: list of cycles
+        :return: list of cycles, which is a list of node names.
         """
         try:
             import networkx
