@@ -83,7 +83,7 @@ class Driver(object):
         :param final_vars: the final list of variables we want in the data frame.
         :param overrides: the user defined input variables.
         :param display_graph: DEPRECATED. Whether we want to display the graph being computed.
-        :param inputs: Runtime inputs to the DAG
+        :param inputs: Runtime inputs to the DAG.
         :return: a data frame consisting of the variables requested.
         """
         if display_graph:
@@ -145,7 +145,8 @@ class Driver(object):
     def visualize_execution(self,
                             final_vars: List[str],
                             output_file_path: str,
-                            render_kwargs: dict):
+                            render_kwargs: dict,
+                            inputs: Dict[str, Any] = None):
         """Visualizes Execution.
 
         Note: overrides are not handled at this time.
@@ -155,9 +156,10 @@ class Driver(object):
             E.g. 'some/path/graph.dot'
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
+        :param inputs: Optional. Runtime inputs to the DAG.
         """
         nodes, user_nodes = self.graph.get_required_functions(final_vars)
-        self.validate_inputs(user_nodes, self.graph.config)
+        self.validate_inputs(user_nodes, inputs)
         try:
             self.graph.display(nodes, user_nodes, output_file_path, render_kwargs=render_kwargs)
         except ImportError as e:
