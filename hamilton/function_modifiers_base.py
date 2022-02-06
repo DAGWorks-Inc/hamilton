@@ -67,7 +67,7 @@ class NodeTransformLifecycle(abc.ABC):
 
 
 class NodeResolver(NodeTransformLifecycle):
-    """Decorator to resolve a nodes function. Can modify anything about the function and is run before the node."""
+    """Decorator to resolve a nodes function. Can modify anything about the function and is run at DAG creation time."""
 
     @abc.abstractmethod
     def resolve(self, fn: Callable, configuration: Dict[str, Any]) -> Callable:
@@ -142,11 +142,13 @@ class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
 
 
 class NodeExpander(SubDAGModifier):
+    """Expands a node into multiple nodes. This is a special case of the SubDAGModifier,
+    which allows modification of some portion of the DAG. This just modifies a single node."""
     EXPAND_NODES = 'expand_nodes'
 
     def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         if len(nodes) != 1:
-            raise ValueError(f'Cannot call NodeExpander on more than one node. This must be called first in the DAG. Called with {nodes}')
+            raise ValueError(f'Cannot call NodeExpander: {self.__class__} on more than one node. This must be called first in the DAG. Called with {nodes}')
         node_, = nodes
         return self.expand_node(node_, config, fn)
 

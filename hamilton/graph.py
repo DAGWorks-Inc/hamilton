@@ -26,7 +26,7 @@ def is_submodule(child: ModuleType, parent: ModuleType):
 
 def custom_subclass_check(requested_type: Type[Type], param_type: Type[Type]):
     """This is a custom check as subclass does not work with python generic.
-    That said, its
+    We will likely need to revisit this in the future (perhaps integrate with graphadapter?)
 
     :param requested_type: Candidate subclass
     :param param_type: Type of parameter to check
