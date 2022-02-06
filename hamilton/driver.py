@@ -129,29 +129,29 @@ class Driver(object):
         """
         return [Variable(node.name, node.type) for node in self.graph.get_nodes()]
 
-    def display_all_functions(self, output_file_uri: str, render_kwargs: dict = None):
+    def display_all_functions(self, output_file_path: str, render_kwargs: dict = None):
         """Displays the graph of all functions loaded!
 
-        :param output_file_uri: the full URI of path + file name to save the dot file to.
+        :param output_file_path: the full URI of path + file name to save the dot file to.
             E.g. 'some/path/graph-all.dot'
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
         """
         try:
-            self.graph.display_all(output_file_uri, render_kwargs)
+            self.graph.display_all(output_file_path, render_kwargs)
         except ImportError as e:
             logger.warning(f'Unable to import {e}', exc_info=True)
 
     def visualize_execution(self,
                             final_vars: List[str],
-                            output_file_uri: str,
+                            output_file_path: str,
                             render_kwargs: dict):
         """Visualizes Execution.
 
         Note: overrides are not handled at this time.
 
         :param final_vars: the outputs we want to compute.
-        :param output_file_uri: the full URI of path + file name to save the dot file to.
+        :param output_file_path: the full URI of path + file name to save the dot file to.
             E.g. 'some/path/graph.dot'
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
@@ -159,7 +159,7 @@ class Driver(object):
         nodes, user_nodes = self.graph.get_required_functions(final_vars)
         self.validate_inputs(user_nodes, self.graph.config)
         try:
-            self.graph.display(nodes, user_nodes, output_file_uri, render_kwargs=render_kwargs)
+            self.graph.display(nodes, user_nodes, output_file_path, render_kwargs=render_kwargs)
         except ImportError as e:
             logger.warning(f'Unable to import {e}', exc_info=True)
 
