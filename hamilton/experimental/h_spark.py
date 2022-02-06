@@ -17,7 +17,7 @@ class KoalasDataFrameResult(base.ResultMixin):
     """Mixin for building a koalas dataframe from the result"""
 
     @staticmethod
-    def build_result(**columns: typing.Dict[str, typing.Any]) -> ps.DataFrame:
+    def build_result(**outputs: typing.Dict[str, typing.Any]) -> ps.DataFrame:
         """Right now this class is just used for signaling the return type."""
         pass
 
@@ -111,10 +111,10 @@ class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         """
         return node.callable(**kwargs)
 
-    def build_result(self, **columns: typing.Dict[str, typing.Any]) -> typing.Union[pd.DataFrame, ps.DataFrame]:
+    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Union[pd.DataFrame, ps.DataFrame]:
         # we don't use the actual function for building right now, we use this hacky equivalent
-        df = ps.DataFrame(columns[self.spine_column])
-        for k, v in columns.items():
+        df = ps.DataFrame(outputs[self.spine_column])
+        for k, v in outputs.items():
             logger.info(f'Got column {k}, with type [{type(v)}].')
             df[k] = v
         if isinstance(self.result_builder, base.PandasDataFrameResult):

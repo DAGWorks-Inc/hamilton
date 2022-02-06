@@ -59,16 +59,16 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         """
         return ray.remote(node.callable).remote(**kwargs)
 
-    def build_result(self, **columns: typing.Dict[str, typing.Any]) -> typing.Any:
+    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
 
-        :param columns: the dictionary of key -> Union[ray object reference | value]
+        :param outputs: the dictionary of key -> Union[ray object reference | value]
         :return: The type of object returned by self.result_builder.
         """
         if logger.isEnabledFor(logging.DEBUG):
-            for k, v in columns.items():
+            for k, v in outputs.items():
                 logger.debug(f'Got column {k}, with type [{type(v)}].')
         # need to wrap our result builder in a remote call and then pass in what we want to build from.
-        remote_combine = ray.remote(self.result_builder.build_result).remote(**columns)
+        remote_combine = ray.remote(self.result_builder.build_result).remote(**outputs)
         result = ray.get(remote_combine)  # this materializes the object locally
         return result

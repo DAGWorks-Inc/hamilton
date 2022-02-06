@@ -23,7 +23,7 @@ class ResultMixin(object):
     """
     @staticmethod
     @abc.abstractmethod
-    def build_result(**columns: typing.Dict[str, typing.Any]) -> typing.Any:
+    def build_result(**outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """This function builds the result given the computed values."""
         pass
 
@@ -31,19 +31,19 @@ class ResultMixin(object):
 class DictResult(ResultMixin):
     """Simple function that returns the dict of column -> value results."""
     @staticmethod
-    def build_result(**columns: typing.Dict[str, typing.Any]) -> typing.Dict:
+    def build_result(**outputs: typing.Dict[str, typing.Any]) -> typing.Dict:
         """This function builds a simple dict of output -> computed values."""
-        return columns
+        return outputs
 
 
 class PandasDataFrameResult(ResultMixin):
     """Mixin for building a pandas dataframe from the result"""
 
     @staticmethod
-    def build_result(**columns: typing.Dict[str, typing.Any]) -> pd.DataFrame:
+    def build_result(**outputs: typing.Dict[str, typing.Any]) -> pd.DataFrame:
         # TODO check inputs are pd.Series, arrays, or scalars -- else error
         # TODO do a basic index check across pd.Series and flag where mismatches occur?
-        return pd.DataFrame(columns)
+        return pd.DataFrame(outputs)
 
 
 class NumpyMatrixResult(ResultMixin):
@@ -53,16 +53,16 @@ class NumpyMatrixResult(ResultMixin):
     """
 
     @staticmethod
-    def build_result(**columns: typing.Dict[str, typing.Any]) -> np.matrix:
+    def build_result(**outputs: typing.Dict[str, typing.Any]) -> np.matrix:
         """Builds a numpy matrix from the passed in, inputs.
 
-        :param columns: function_name -> np.array.
+        :param outputs: function_name -> np.array.
         :return: numpy matrix
         """
         # TODO check inputs are all numpy arrays/array like things -- else error
         num_rows = -1
         columns_with_lengths = collections.OrderedDict()
-        for col, val in columns.items():   # assumption is fixed order
+        for col, val in outputs.items():   # assumption is fixed order
             if isinstance(val, (int, float)):  # TODO add more things here
                 columns_with_lengths[(col, 1)] = val
             else:
@@ -154,6 +154,6 @@ class SimplePythonGraphAdapter(SimplePythonDataFrameGraphAdapter):
         if self.result_builder is None:
             raise ValueError('You must provide a ResultMixin object for `result_builder`.')
 
-    def build_result(self, **columns: typing.Dict[str, typing.Any]) -> typing.Any:
+    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Delegates to the result builder function supplied."""
-        return self.result_builder.build_result(**columns)
+        return self.result_builder.build_result(**outputs)

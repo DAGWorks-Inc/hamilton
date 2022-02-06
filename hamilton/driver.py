@@ -89,8 +89,8 @@ class Driver(object):
         if display_graph:
             logger.warning('display_graph=True is deprecated. It will be removed in the 2.0.0 release. '
                            'Please use visualize_execution().')
-        columns = self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
-        return self.adapter.build_result(**columns)
+        outputs = self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
+        return self.adapter.build_result(**outputs)
 
     def raw_execute(self,
                     final_vars: List[str],
@@ -118,9 +118,9 @@ class Driver(object):
                 raise ValueError('Error: cycles detected in you graph.')
         memoized_computation = dict()  # memoized storage
         self.graph.execute(nodes, memoized_computation, overrides, inputs)
-        columns = {c: memoized_computation[c] for c in final_vars}  # only want request variables in df.
+        outputs = {c: memoized_computation[c] for c in final_vars}  # only want request variables in df.
         del memoized_computation  # trying to cleanup some memory
-        return columns
+        return outputs
 
     def list_available_variables(self) -> List[Variable]:
         """Returns available variables.

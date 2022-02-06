@@ -96,16 +96,16 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
         """
         return delayed(node.callable)(**kwargs)
 
-    def build_result(self, **columns: typing.Dict[str, typing.Any]) -> typing.Any:
+    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
 
-        :param columns: the dictionary of key -> Union[delayed object reference | value]
+        :param outputs: the dictionary of key -> Union[delayed object reference | value]
         :return: The type of object returned by self.result_builder.
         """
         if logger.isEnabledFor(logging.DEBUG):
-            for k, v in columns.items():
+            for k, v in outputs.items():
                 logger.info(f'Got column {k}, with type [{type(v)}].')
-        delayed_combine = delayed(self.result_builder.build_result)(**columns)
+        delayed_combine = delayed(self.result_builder.build_result)(**outputs)
         if self.visualize_kwargs is not None:
             delayed_combine.visualize(**self.visualize_kwargs)
         df, = compute(delayed_combine)
