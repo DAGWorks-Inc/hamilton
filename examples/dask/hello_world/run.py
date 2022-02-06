@@ -43,7 +43,9 @@ if __name__ == '__main__':
         'spend_per_signup',
         'spend_zero_mean_unit_variance'
     ]
-    df = dr.execute(output_columns, display_graph=False)
-    # will output test-output/execute.gv.pdf
+    df = dr.execute(output_columns)
+    # To visualize do `pip install sf-hamilton[visualization]` if you want these to work
+    # dr.visualize_execution(output_columns, './my_dag.dot', {})
+    # dr.display_all_functions('./my_full_dag.dot')
     logger.info(df.to_string())
     client.shutdown()
