@@ -289,8 +289,8 @@ def test_end_to_end_with_layered_decorators_resolves_true():
     fg = graph.FunctionGraph(tests.resources.layered_decorators, config={'foo': 'bar', 'd': 10, 'b': 20})
     out = fg.execute([n for n in fg.get_nodes()], overrides={'b': 10})
     assert len(out) > 0  # test config.when resolves correctly
-    assert out['e'] == (20+10) ** 2 + 10
-    assert out['f'] == (30+10) ** 2 + 10
+    assert out['e'] == (20+10)
+    assert out['f'] == (30+10)
 
 
 def test_end_to_end_with_layered_decorators_resolves_false():

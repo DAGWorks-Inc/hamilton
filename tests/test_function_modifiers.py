@@ -368,22 +368,3 @@ def test_config_when_with_custom_name():
 
     annotation = function_modifiers.config.when(key='value', name='new_function_name')
     assert annotation.resolve(config_when_fn, {'key': 'value'}).__name__ == 'new_function_name'
-
-
-def test_augment_decorator():
-
-    def foo(a: int) -> int:
-        return a*2
-
-    annotation = function_modifiers.augment('foo*MULTIPLIER_foo+OFFSET_foo')
-    annotation.validate(foo)
-    nodes = annotation.transform_dag([node.Node.from_fn(foo)], {}, foo)
-    assert 1 == len(nodes)
-    nodes_by_name = {node_.name: node_ for node_ in nodes}
-    assert set(nodes_by_name) == {'foo'}
-    a = 5
-    MULTIPLIER_foo = 3
-    OFFSET_foo = 7
-    foo = a*2
-    foo = MULTIPLIER_foo*foo + OFFSET_foo
-    assert nodes_by_name['foo'].callable(a=a, MULTIPLIER_foo=MULTIPLIER_foo, OFFSET_foo=OFFSET_foo) == foo # note its foo_raw as that's the node on which it depends
