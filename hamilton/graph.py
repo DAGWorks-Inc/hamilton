@@ -5,11 +5,12 @@ It should only house the graph & things required to create and traverse one.
 
 Note: one should largely consider the code in this module to be "private".
 """
+import collections
 import inspect
 import logging
 import typing
 from types import ModuleType
-from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
+from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List, Mapping
 
 import hamilton.function_modifiers_base
 from hamilton import node
@@ -310,10 +311,10 @@ class FunctionGraph(object):
 
     @staticmethod
     def execute_static(nodes: Collection[node.Node],
-                       inputs: Dict[str, Any],
+                       inputs: Mapping[str, Any],
                        adapter: base.HamiltonGraphAdapter,
-                       computed: Dict[str, Any] = None,
-                       overrides: Dict[str, Any] = None):
+                       computed: Mapping[str, Any] = None,
+                       overrides: Mapping[str, Any] = None):
         """Executes computation on the given graph, inputs, and memoized computation.
 
         Effectively this is a "private" function and should be viewed as such.
@@ -369,7 +370,7 @@ class FunctionGraph(object):
         return computed
 
     @staticmethod
-    def combine_config_and_inputs(config: Dict[str, Any], inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def combine_config_and_inputs(config: Mapping[str, Any], inputs: Mapping[str, Any]) -> typing.Mapping[str, Any]:
         """Validates and combines config and inputs, ensuring that they're mutually disjoint.
         :param config: Config to construct, run the DAG with.
         :param inputs: Inputs to run the DAG on at runtime
@@ -379,7 +380,7 @@ class FunctionGraph(object):
         duplicated_inputs = [key for key in inputs if key in config]
         if len(duplicated_inputs) > 0:
             raise ValueError(f'The following inputs are present in both config and inputs. They must be mutually disjoint. {duplicated_inputs}')
-        return {**config, **inputs}
+        return collections.ChainMap(config, inputs)
 
     def execute(self,
                 nodes: Collection[node.Node] = None,
