@@ -14,10 +14,14 @@ These get their own file because we don't like circular dependencies.
 
 
 class NodeSource(Enum):
-    """Specifies where this node's value originates. This can be used by different executors to flexibly execute a function graph."""
+    """
+    Specifies where this node's value originates.
+    This can be used by different adapters to flexibly execute a function graph.
+    """
     STANDARD = 1  # standard dependencies
     EXTERNAL = 2  # This node's value should be taken from cache
-    PRIOR_RUN = 3  # This node's value sould be taken from a prior run. This is not used in a standard function graph, but it comes in handy for repeatedly running the same one.
+    PRIOR_RUN = 3  # This node's value sould be taken from a prior run.
+    # This is not used in a standard function graph, but it comes in handy for repeatedly running the same one.
 
 
 class DependencyType(Enum):

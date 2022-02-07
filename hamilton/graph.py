@@ -181,7 +181,7 @@ class FunctionGraph(object):
 
         self._config = config
         self.nodes = create_function_graph(*modules, config=self._config, adapter=adapter)
-        self.executor = adapter
+        self.adapter = adapter
 
     @property
     def config(self):
@@ -402,7 +402,7 @@ class FunctionGraph(object):
         return FunctionGraph.execute_static(
             nodes=nodes,
             inputs=FunctionGraph.combine_config_and_inputs(self.config, inputs),
-            adapter=self.executor,
+            adapter=self.adapter,
             computed=computed,
             overrides=overrides,
         )

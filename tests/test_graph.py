@@ -165,16 +165,16 @@ def create_testing_nodes():
 
 def test_execute():
     """Tests graph execution along with basic memoization since A is depended on by two functions."""
-    executor = base.SimplePythonDataFrameGraphAdapter()
+    adapter = base.SimplePythonDataFrameGraphAdapter()
     nodes = create_testing_nodes()
     inputs = {
         'b': 2,
         'c': 5
     }
     expected = {'A': 7, 'B': 49, 'C': 14, 'b': 2, 'c': 5}
-    actual = graph.FunctionGraph.execute_static(nodes.values(), inputs, executor)
+    actual = graph.FunctionGraph.execute_static(nodes.values(), inputs, adapter)
     assert actual == expected
-    actual = graph.FunctionGraph.execute_static(nodes.values(), inputs, executor, overrides={'A': 8})
+    actual = graph.FunctionGraph.execute_static(nodes.values(), inputs, adapter, overrides={'A': 8})
     assert actual['A'] == 8
 
 

@@ -122,7 +122,7 @@ class HamiltonGraphAdapter(ResultMixin):
     @abc.abstractmethod
     def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Given a node that represents a hamilton function, execute it.
-        Note, in some executors this might just return some type of "future".
+        Note, in some adapters this might just return some type of "future".
 
         :param node: the Hamilton Node
         :param kwargs: the kwargs required to exercise the node function.
