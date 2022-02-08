@@ -1,11 +1,11 @@
 ---
 description: >-
-  Let's get started with a pipeline that computes statistics on a time-series of
+  Let's get started with a dataflow that computes statistics on a time-series of
   marketing spend. Note this is inspired by, but not representative of, the
   first hamilton use-case at Stitch Fix.
 ---
 
-# Writing Your First Pipeline
+# Writing Your First Dataflow
 
 We're jumping in head-first. If you want to start with an overview, skip ahead to [overview of concepts](../overview-of-concepts/).
 
