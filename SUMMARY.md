@@ -1,0 +1,32 @@
+# Table of contents
+
+* [Hamilton](README.md)
+* [Quick Start](quick-start/README.md)
+  * [Installing](quick-start/installing.md)
+  * [Writing Your First Pipeline](quick-start/writing-your-first-pipeline.md)
+  * [Running Your Pipeline](quick-start/running-your-pipeline.md)
+  * [Integrating Decorators](quick-start/integrating-decorators.md)
+  * [Digging in Further](quick-start/digging-in-further.md)
+* [Overview of Concepts](overview-of-concepts/README.md)
+  * [Lexicon](overview-of-concepts/lexicon.md)
+  * [Writing Transforms](overview-of-concepts/writing-transforms.md)
+  * [Parametrizing the DAG](overview-of-concepts/parametrizing-the-dag.md)
+  * [Drivers](overview-of-concepts/drivers.md)
+  * [Decorators](overview-of-concepts/decorators.md)
+* [Tutorials](tutorials.md)
+* [Best Practices](best-practices/README.md)
+  * [Loading Data](best-practices/loading-data.md)
+  * [Writing Drivers](best-practices/writing-drivers.md)
+  * [Shared Indices](best-practices/shared-indices.md)
+* [Extensions](extensions.md)
+* [Contributing](contributing.md)
+
+## Reference
+
+* [API Reference](reference/api-reference/README.md)
+  * [Available Drivers](reference/api-reference/available-drivers.md)
+  * [Available Decorators](reference/api-reference/available-decorators.md)
+* [API Extensions](reference/api-extensions/README.md)
+  * [Custom Drivers](reference/api-extensions/custom-drivers.md)
+  * [Custom Decorators](reference/api-extensions/custom-decorators.md)
+  * [Custom Graph Adapters](reference/api-extensions/custom-graph-adapters.md)
