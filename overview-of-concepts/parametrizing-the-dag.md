@@ -8,7 +8,7 @@ Static dataflows are only so useful. In the real world, we need to be able to co
 
 Let's go through some examples...
 
-**You have a DAG for region and business line**, where the rolling average for marketing spend is computed differently (see [quickstart](../15-minutes-to-mastery/) for the motivating example). In this case, you'll define the DAG as follows:
+**You have a DAG for region and business line**, where the rolling average for marketing spend is computed differently (see [quickstart](../quick-start/) for the motivating example). In this case, you'll define the DAG as follows:
 
 ```python
 @config.when(business_line='CA')

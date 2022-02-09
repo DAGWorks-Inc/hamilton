@@ -1,12 +1,12 @@
 # Table of contents
 
 * [Hamilton](README.md)
-* [15 Minutes to Mastery](15-minutes-to-mastery/README.md)
-  * [Installing](15-minutes-to-mastery/installing.md)
-  * [Writing Your First Dataflow](15-minutes-to-mastery/writing-your-first-dataflow.md)
-  * [Running Your Dataflow](15-minutes-to-mastery/running-your-dataflow.md)
-  * [Integrating Decorators](15-minutes-to-mastery/integrating-decorators.md)
-  * [Digging in Further](15-minutes-to-mastery/digging-in-further.md)
+* [15 Minutes to Mastery](quick-start/README.md)
+  * [Installing](quick-start/installing.md)
+  * [Writing Your First Dataflow](quick-start/writing-your-first-dataflow.md)
+  * [Running Your Dataflow](quick-start/running-your-dataflow.md)
+  * [Integrating Decorators](quick-start/integrating-decorators.md)
+  * [Digging in Further](quick-start/digging-in-further.md)
 * [Overview of Concepts](overview-of-concepts/README.md)
   * [Lexicon](overview-of-concepts/lexicon.md)
   * [Writing Transforms](overview-of-concepts/writing-transforms.md)
@@ -25,7 +25,7 @@
 
 * [API Reference](reference/api-reference/README.md)
   * [Available Drivers](reference/api-reference/available-drivers.md)
-  * [Available Decorators](reference/api-reference/available-decorators.md)
+  * [Decorators](reference/api-reference/decorators.md)
 * [API Extensions](reference/api-extensions/README.md)
   * [Custom Drivers](reference/api-extensions/custom-drivers.md)
   * [Custom Decorators](reference/api-extensions/custom-decorators.md)

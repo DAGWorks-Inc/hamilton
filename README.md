@@ -10,8 +10,8 @@ description: >-
 
 If you want to jump in head first, we have a simple tutorial for getting started!&#x20;
 
-{% content-ref url="15-minutes-to-mastery/" %}
-[15-minutes-to-mastery](15-minutes-to-mastery/)
+{% content-ref url="quick-start/" %}
+[quick-start](quick-start/)
 {% endcontent-ref %}
 
 ## What is Hamilton?

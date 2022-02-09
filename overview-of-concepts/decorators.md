@@ -1,6 +1,6 @@
 # Decorators
 
-While the one to one mapping of node -> function implementation is powerful, it can sometimes lead to repeated code. In order to avoid this, Hamilton employs decorators to promote reuse of business logic. In this section we will go ove a few different classes of decorators with some examples. For reference on specific decorators, see [available-decorators.md](../reference/api-reference/available-decorators.md "mention"). &#x20;
+While the one to one mapping of node -> function implementation is powerful, it can sometimes lead to repeated code. In order to avoid this, Hamilton employs decorators to promote reuse of business logic. In this section we will go ove a few different classes of decorators with some examples. For reference on specific decorators, see [Broken link](broken-reference "mention"). &#x20;
 
 In Hamilton, decorators allow the author of pipelines to modify functions as well as their role in the DAG. Decorators do one (or multiple) of the following:
 
@@ -70,8 +70,8 @@ The `marketing_spend_df` function becomes three separate available datums from t
 
 While there are decorators that don't quite fit into the above, these should give you a sense of how and why decorators are used. For more information on available decorators, see:
 
-{% content-ref url="../reference/api-reference/available-decorators.md" %}
-[available-decorators.md](../reference/api-reference/available-decorators.md)
+{% content-ref url="broken-reference" %}
+[Broken link](broken-reference)
 {% endcontent-ref %}
 
 And for more information on writing your own decorators see:

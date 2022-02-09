@@ -16,7 +16,7 @@ There are two types of drivers: [framework-specified](drivers.md#framework-speci
 
 ## Framework Specified
 
-These are drivers that come with the framework Their primary goal is to shield the complexity of the DAG and provide a nice clean API. They're cheap, and easy to add to the framework. On the main version of Hamilton we currently have [one driver](https://github.com/stitchfix/hamilton/blob/main/hamilton/driver.py). This runs all the functions in memory and returns the results joined as a pandas Dataframe. We also have multiple experimental distributed drivers (Dask, Spark, and Ray) integrations on the experimental branch.
+These are drivers that come with the framework Their primary goal is to shield the complexity of the DAG and provide a nice clean API. They're cheap, and easy to add to the framework. If you're looking for a driver, start with the [default driver](https://github.com/stitchfix/hamilton/blob/main/hamilton/driver.py). This runs all the functions in memory and returns the results joined as a pandas Dataframe or a dict of node name to node values. We also have multiple experimental distributed drivers (Dask, Spark, and Ray) integrations under [`experimental`](https://github.com/stitchfix/hamilton/tree/main/hamilton/experimental). We encourage you to give them a spin!
 
 ## User Defined
 
