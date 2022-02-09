@@ -24,8 +24,8 @@
 ## Reference
 
 * [API Reference](reference/api-reference/README.md)
+  * [Available Decorators](reference/api-reference/available-decorators.md)
   * [Available Drivers](reference/api-reference/available-drivers.md)
-  * [Decorators](reference/api-reference/decorators.md)
 * [API Extensions](reference/api-extensions/README.md)
   * [Custom Drivers](reference/api-extensions/custom-drivers.md)
   * [Custom Decorators](reference/api-extensions/custom-decorators.md)
