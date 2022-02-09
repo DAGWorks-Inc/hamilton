@@ -15,7 +15,7 @@
   * [Decorators](overview-of-concepts/decorators.md)
 * [Tutorials](tutorials/README.md)
   * [Classic Spend Example](tutorials/classic-spend-example.md)
-  * [Page 1](tutorials/page-1.md)
+  * [Model Training](tutorials/model-training.md)
   * [Dask](tutorials/dask.md)
   * [Spark](tutorials/spark.md)
   * [Ray](tutorials/ray.md)
