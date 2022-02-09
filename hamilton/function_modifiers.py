@@ -208,7 +208,7 @@ class extract_fields(NodeExpander):
         if not fields:
             raise InvalidDecoratorException('Error an empty dict, or no dict, passed to extract_fields decorator.')
         elif not isinstance(fields, dict):
-            raise InvalidDecoratorException(f'Error, please pass in a dict or typed dict, not {type(fields)}')
+            raise InvalidDecoratorException(f'Error, please pass in a dict, not {type(fields)}')
         else:
             errors = []
             for field, field_type in fields.items():
@@ -232,7 +232,7 @@ class extract_fields(NodeExpander):
         output_type = inspect.signature(fn).return_annotation
         if typing_inspect.is_generic_type(output_type):
             base = typing_inspect.get_origin(output_type)
-            if base == dict or base == typing.Dict:
+            if base == dict or base == typing.Dict:  # different python versions return different things 3.7+ vs 3.6.
                 pass
             else:
                 raise InvalidDecoratorException(

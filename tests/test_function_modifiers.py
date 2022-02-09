@@ -1,5 +1,6 @@
 from typing import Any, List, Dict
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -368,3 +369,111 @@ def test_config_when_with_custom_name():
 
     annotation = function_modifiers.config.when(key='value', name='new_function_name')
     assert annotation.resolve(config_when_fn, {'key': 'value'}).__name__ == 'new_function_name'
+
+
+@pytest.mark.parametrize('fields', [
+    (None),  # empty
+    ('string_input'), # not a dict
+    (['string_input']),  # not a dict
+    ({}),  # empty dict
+    ({1: 'string', 'field': str}),  # invalid dict
+    ({'field': lambda x: x, 'field2': int} ),  # invalid dict
+])
+def test_extract_fields_constructor_errors(fields):
+    with pytest.raises(function_modifiers.InvalidDecoratorException):
+        function_modifiers.extract_fields(fields)
+
+
+@pytest.mark.parametrize('fields', [
+    ({'field': np.ndarray, 'field2': str}),
+    ({'field': dict, 'field2': int, 'field3': list, 'field4': float, 'field5': str}),
+])
+def test_extract_fields_constructor_happy(fields):
+    """Tests that we are happy with good arguments."""
+    function_modifiers.extract_fields(fields)
+
+
+@pytest.mark.parametrize('return_type', [
+    (dict),
+    (Dict),
+    (Dict[str, str]),
+    (Dict[str, Any]),
+])
+def test_extract_fields_validate_happy(return_type):
+    def return_dict() -> return_type:
+        return {}
+
+    annotation = function_modifiers.extract_fields({'test': int})
+    annotation.validate(return_dict)
+
+
+@pytest.mark.parametrize('return_type', [
+    (int), (list), (np.ndarray), (pd.DataFrame)
+])
+def test_extract_fields_validate_errors(return_type):
+    def return_dict() -> return_type:
+        return {}
+    annotation = function_modifiers.extract_fields({'test': int})
+    with pytest.raises(function_modifiers.InvalidDecoratorException):
+        annotation.validate(return_dict)
+
+
+def test_valid_extract_fields():
+    """Tests whole extract_fields decorator."""
+    annotation = function_modifiers.extract_fields({'col_1': list, 'col_2': int, 'col_3': np.ndarray})
+
+    def dummy_dict_generator() -> dict:
+        """dummy doc"""
+        return {'col_1': [1, 2, 3, 4],
+                'col_2': 1,
+                'col_3': np.ndarray([1, 2, 3, 4])}
+
+    nodes = list(annotation.expand_node(node.Node.from_fn(dummy_dict_generator), {}, dummy_dict_generator))
+    assert len(nodes) == 4
+    assert nodes[0] == node.Node(name=dummy_dict_generator.__name__,
+                                 typ=dict,
+                                 doc_string=dummy_dict_generator.__doc__,
+                                 callabl=dummy_dict_generator)
+    assert nodes[1].name == 'col_1'
+    assert nodes[1].type == list
+    assert nodes[1].documentation == 'dummy doc'  # we default to base function doc.
+    assert nodes[1].input_types == {dummy_dict_generator.__name__: (dict, DependencyType.REQUIRED)}
+    assert nodes[2].name == 'col_2'
+    assert nodes[2].type == int
+    assert nodes[2].documentation == 'dummy doc'
+    assert nodes[2].input_types == {dummy_dict_generator.__name__: (dict, DependencyType.REQUIRED)}
+    assert nodes[3].name == 'col_3'
+    assert nodes[3].type == np.ndarray
+    assert nodes[3].documentation == 'dummy doc'
+    assert nodes[3].input_types == {dummy_dict_generator.__name__: (dict, DependencyType.REQUIRED)}
+
+
+def test_extract_fields_fill_with():
+    def dummy_dict() -> dict:
+        """dummy doc"""
+        return {'col_1': [1, 2, 3, 4],
+                'col_2': 1,
+                'col_3': np.ndarray([1, 2, 3, 4])}
+
+    annotation = function_modifiers.extract_fields({'col_2': int, 'col_4': float}, fill_with=1.0)
+    original_node, extracted_field_node, missing_field_node = annotation.expand_node(node.Node.from_fn(dummy_dict),
+                                                                                     {},
+                                                                                     dummy_dict)
+    original_dict = original_node.callable()
+    extracted_field = extracted_field_node.callable(dummy_dict=original_dict)
+    missing_field = missing_field_node.callable(dummy_dict=original_dict)
+    assert extracted_field == 1
+    assert missing_field == 1.0
+
+
+def test_extract_fields_no_fill_with():
+    def dummy_dict() -> dict:
+        """dummy doc"""
+        return {'col_1': [1, 2, 3, 4],
+                'col_2': 1,
+                'col_3': np.ndarray([1, 2, 3, 4])}
+
+    annotation = function_modifiers.extract_fields({'col_4': int})
+    nodes = list(annotation.expand_node(node.Node.from_fn(dummy_dict), {}, dummy_dict))
+    with pytest.raises(function_modifiers.InvalidDecoratorException):
+        nodes[1].callable(dummy_dict=dummy_dict())
