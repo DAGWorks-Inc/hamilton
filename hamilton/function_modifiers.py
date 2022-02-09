@@ -1,7 +1,9 @@
 import functools
 import functools
 import inspect
+import typing
 from typing import Dict, Callable, Collection, Tuple, Union, Any, Type
+import typing_inspect
 
 import pandas as pd
 
@@ -187,6 +189,96 @@ class extract_columns(NodeExpander):
 
             output_nodes.append(
                 node.Node(column, pd.Series, doc_string, extractor_fn, input_types={node_.name: pd.DataFrame}))
+        return output_nodes
+
+
+
+class extract_fields(NodeExpander):
+    """Extracts fields from a dictionary of output."""
+
+    def __init__(self, fields: dict, fill_with: Any = None):
+        """Constructor for a modifier that expands a single function into the following nodes:
+        - n functions, each of which take in the original dict and output a specific field
+        - 1 function that outputs the original dict
+
+        :param fields: Fields to extract. A dict of 'field_name' -> 'field_type'.
+        :param fill_with: If you want to extract a field that doesn't exist, do you want to fill it with a default value?
+        Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a field value.
+        """
+        if not fields:
+            raise InvalidDecoratorException('Error an empty dict, or no dict, passed to extract_fields decorator.')
+        elif not isinstance(fields, dict):
+            raise InvalidDecoratorException(f'Error, please pass in a dict or typed dict, not {type(fields)}')
+        else:
+            errors = []
+            for field, field_type in fields.items():
+                if not isinstance(field, str):
+                    errors.append(f'{field} is not a string. All keys must be strings.')
+                if not isinstance(field_type, type):
+                    errors.append(f'{field} does not declare a type. Instead it passes {field_type}.')
+
+            if errors:
+                raise InvalidDecoratorException(f'Error, found these {errors}. '
+                                                f'Please pass in a dict of string to types. ')
+        self.fields = fields
+        self.fill_with = fill_with
+
+    def validate(self, fn: Callable):
+        """A function is invalid if it is not annotated with a dict or typing.Dict return type.
+
+        :param fn: Function to validate.
+        :raises: InvalidDecoratorException If the function is not annotated with a dict or typing.Dict type as output.
+        """
+        output_type = inspect.signature(fn).return_annotation
+        if typing_inspect.is_generic_type(output_type):
+            base = typing_inspect.get_origin(output_type)
+            if base == dict or base == typing.Dict:
+                pass
+            else:
+                raise InvalidDecoratorException(
+                    f'For extracting fields, output type must be a dict or typing.Dict, not: {output_type}')
+        elif output_type == dict:
+            pass
+        else:
+            raise InvalidDecoratorException(
+                f'For extracting fields, output type must be a dict or typing.Dict, not: {output_type}')
+
+    def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+        """For each field to extract, output a node that extracts that field. Also, output the original TypedDict
+        generator.
+
+        :param node_:
+        :param config:
+        :param fn: Function to extract columns from. Must output a dataframe.
+        :return: A collection of nodes --
+                one for the original dataframe generator, and another for each column to extract.
+        """
+        fn = node_.callable
+        base_doc = node_.documentation
+
+        @functools.wraps(fn)
+        def dict_generator(*args, **kwargs):
+            dict_generated = fn(*args, **kwargs)
+            if self.fill_with is not None:
+                for field in self.fields:
+                    if field not in dict_generated:
+                        dict_generated[field] = self.fill_with
+            return dict_generated
+
+        output_nodes = [node.Node(node_.name, typ=dict, doc_string=base_doc, callabl=dict_generator)]
+
+        for field, field_type in self.fields.items():
+            doc_string = base_doc  # default doc string of base function.
+
+            def extractor_fn(field_to_extract: str = field, **kwargs) -> field_type:  # avoiding problems with closures
+                dt = kwargs[node_.name]
+                if field_to_extract not in dt:
+                    raise InvalidDecoratorException(f'No such field: {field_to_extract} produced by {node_.name}. '
+                                                    f'It only produced {list(dt.keys())}')
+                return kwargs[node_.name][field_to_extract]
+
+            output_nodes.append(
+                node.Node(field, field_type, doc_string, extractor_fn, input_types={node_.name: dict}))
         return output_nodes
 
 
