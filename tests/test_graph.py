@@ -364,8 +364,12 @@ def test_create_graphviz_graph():
                        '\tA -> C',
                        '}',
                        ''])
+    if '' in expected:
+        expected.remove('')
     digraph = graph.create_graphviz_graph(nodes, user_nodes, 'test-graph')
     actual = sorted(str(digraph).split('\n'))
+    if '' in actual:
+        actual.remove('')
     assert actual == expected
 
 
