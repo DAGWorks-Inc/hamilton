@@ -10,8 +10,8 @@ Congratulations! You've completed the intro, and are now on your way to becoming
 
 **For more examples**, check out some more advanced tutorials:
 
-{% content-ref url="../tutorials.md" %}
-[tutorials.md](../tutorials.md)
+{% content-ref url="../tutorials/" %}
+[tutorials](../tutorials/)
 {% endcontent-ref %}
 
 **To read about best practices** in constructing Hamilton DAGs, read through the guidebook:
