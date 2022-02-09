@@ -31,10 +31,10 @@ def acquisition_cost(avg_3wk_spend: pd.Series, signups: pd.Series) -> pd.Series:
 
 An astute observer might ask the following questions:
 
-1. **Why do the parameter names clash with the function names?** This is core to how hamilton works. It utilizes dependency injection to create a DAG of computation. Parameter names tell the framework from where your function gets its data.
+1. **Why do the parameter names clash with the function names?** This is core to how hamilton works. It utilizes dependency injection to create a DAG of computation. Parameter names tell the framework where your function gets its data.
 2. **OK, if the parameter names determine the source of the data, why have we not defined defined `spend` or `signups` as functions?** This is OK, as we will provide this data as an input when we actually want to materialize our functions. The DAG doesn't have to be complete when it is compiled.
 3. **Why is there no main line to call these functions?** Good observation. In fact, we never will call them (directly)! This is one of the core principles of Hamilton. You write individual transforms and the rest is handled by the framework. More on that next.
-4. **The functions all output pandas series. What if I don't want to use series?** Hamilton is not opinionated on the data type you use! The following are all perfectly valid as well.
+4. **The functions all output pandas series. What if I don't want to use series?** You don't have to! Hamilton is not opinionated on the data type you use. The following are all perfectly valid as well (and we support dask/spark/ray/other distributed frameworks).
 
 ```python
 def spend_mean(spend: pd.Series) -> float:
