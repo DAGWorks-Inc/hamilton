@@ -11,6 +11,7 @@ For the backstory on how Hamilton came about, see our [blog post!](https://multi
 
 # Getting Started
 Here's a quick getting started guide to get you up and running in less than 15 minutes.
+If you need help join our [discord](https://discord.gg/wCqxqBqn73) community to chat/ask Qs/etc.
 
 ## Installation
 Requirements:
@@ -123,6 +124,9 @@ You should see the following image if you ran `dr.visualize_execution(output_col
 ![hello_world_image](hello_world_image.png)
 
 Congratulations - you just created your Hamilton dataflow that created a dataframe!
+
+# Discord Community
+We have a small but active community on [discord](https://discord.gg/wCqxqBqn73). Come join us!
 
 # License
 Hamilton is released under the [BSD 3-Clause Clear License](LICENSE). If you need to get in touch about something,
