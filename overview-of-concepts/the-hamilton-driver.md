@@ -15,7 +15,7 @@ It is provided as an easy way for the user to specify the data she wants without
 
 The basic structure of using the Hamilton Driver is:
 
-```
+```python
 from hamilton import driver
 from hamilton import base
 
@@ -104,7 +104,7 @@ To change these behaviors, we need to introduce two concepts:
 
 In effect, this is a class with a static function, that takes a dictionary of computed results, and turns it into something.
 
-```
+```python
 class ResultMixin(object):
     """Base class housing the static function.
 
@@ -126,7 +126,7 @@ To use it, it needs to be paired with a GraphAdapter - onto the next section!
 
 Graph Adapters _adapt_ the Hamilton DAG, and change how it is executed. They all implement a single interface called `base.HamiltonGraphAdapter.` They are called internally by Hamilton at the right points in time to make execution work. The link with the Result Builders, is that GraphAdapters need to implement a `build_result()` function themselves.
 
-```
+```python
 class HamiltonGraphAdapter(ResultMixin):
     """Any GraphAdapters should implement this interface to adapt the HamiltonGraph for that particular context.
 
@@ -194,7 +194,7 @@ The APIs that the Hamilton Driver is built on, are considered internal. So it is
 
 i.e.
 
-```
+```python
 from hamilton import driver
 
 class MyCustomDriver(object):

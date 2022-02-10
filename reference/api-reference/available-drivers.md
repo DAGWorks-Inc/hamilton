@@ -19,11 +19,9 @@ Let's walk through how you might use the Hamilton Driver.
 
 1. Determine the configuration required to setup the DAG.
 2. Provide the python modules that should be crawled to create the DAG.
-3. Optional. Determine the return type of the object you want `execute()` to return. Default is to create a Pandas DataFrame.
+3. Optional. Determine the return type of the object you want `execute()` to return. Default is to create a Pandas DataFrame.ho
 
-
-
-```
+```python
 from hamilton import driver
 from hamilton import base
 
@@ -47,7 +45,7 @@ dr = driver.Driver(config, module, adapter=adapter)
 
 This approach assumes that all inputs were passed in with the `config` dictionary above.
 
-```
+```python
 output = ['output1', 'output2', ...]
 df = dr.execute(output)
 ```
@@ -56,7 +54,7 @@ df = dr.execute(output)
 
 This approach assumes that at least one input is not provided in the `config` dictionary provided to the constructor, and instead you provide that input to each `execute` invocation.
 
-```
+```python
 output = ['output1', 'output2', ...]
 for data in dataset:  # if data is a dict of values.
     df = dr.execute(output, inputs=data)
@@ -66,7 +64,7 @@ for data in dataset:  # if data is a dict of values.
 
 This will force Hamilton to short circuit a particular computation path, and use the passed in override as a result of that particular node.
 
-```
+```python
 output = ['output1', 'output2', ...]
 df = dr.execute(output, overrides={'intermediate_node': intermediat_value})
 ```

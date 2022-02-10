@@ -1,6 +1,6 @@
 # Available Decorators
 
-While the 1:1 mapping of column -> function implementation is powerful, we've implemented a few decorators to promote business-logic reuse. The decorators we've defined are as follows (source can be found in function\_modifiers):
+While the 1:1 mapping of column -> function implementation is powerful, we've implemented a few decorators to promote business-logic reuse. The decorators we've defined are as follows (source can be found in [function\_modifiers](https://github.com/stitchfix/hamilton/blob/main/hamilton/function\_modifiers.py)):
 
 ## @extract\_columns
 
