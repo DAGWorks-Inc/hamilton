@@ -1,11 +1,11 @@
 # Hamilton
 
-The micro-framework to create dataframes from functions.
+The general purpose micro-framework for creating dataflows from python functions!
 
-Specifically, Hamilton is a framework that allows for delayed executions of functions in a Directed Acyclic Graph (DAG).
-This is meant to solve the problem of creating complex data pipelines. Core to the design of Hamilton is a clear mapping of
-function name to implementation. That is, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity,
-easy modifications, unit testing, and documentation.
+Specifically, Hamilton defines a novel paradigm, that allows you to specify a flow of (delayed) execution, that forms a Directed Acyclic Graph (DAG).
+It was original built to solve creating wide (1000+) column dataframes. Core to the design of Hamilton is a clear mapping of
+function name to dataflow output. That is, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity,
+easy modifications, with always unit testable and naturally documentable code.
 
 For the backstory on how Hamilton came about, see our [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
 
@@ -15,7 +15,7 @@ Here's a quick getting started guide to get you up and running in less than 15 m
 ## Installation
 Requirements:
 
-* Python 3.6 or 3.7
+* Python 3.6+
 
 To get started, first you need to install hamilton. It is published to pypi under `sf-hamilton`:
 > pip install sf-hamilton
@@ -27,9 +27,10 @@ While it is installing we encourage you to start on the next section.
 
 Note: the content (i.e. names, function bodies) of our example code snippets are for illustrative purposes only, and don't reflect what we actually do internally.
 
-## Hamilton in 15 minutes
-Hamilton is a new paradigm when it comes to creating dataframes. Rather than thinking about manipulating
-a central dataframe, you instead think about the column(s) you want to create, and what inputs are required. There
+## Hamilton in <15 minutes
+Hamilton is a new paradigm when it comes to creating, um, dataframes (let's use dataframes as an example, otherwise you can create _ANY_ python object).
+Rather than thinking about manipulating a central dataframe, as is normal in some data engineering/data science work,
+you instead think about the column(s) you want to create, and what inputs are required. There
 is no need for you to think about maintaining this dataframe, meaning you do not need to think about any "glue" code;
 this is all taken care of by the Hamilton framework.
 
@@ -68,7 +69,7 @@ def spend_per_signup(spend: pd.Series, signups: pd.Series) -> pd.Series:
 The astute observer will notice we have not defined `spend` or `signups` as functions. That is okay,
 this just means these need to be provided as input when we come to actually wanting to create a dataframe.
 
-Note: functions can take or create scalar values too.
+Note: functions can take or create scalar values, in addition to any python object type.
 
 2. Create a `my_script.py` which is where code will live to tell Hamilton what to do:
 ```python
@@ -101,7 +102,7 @@ output_columns = [
 # if you only did `pip install sf-hamilton` earlier:
 df = dr.execute(output_columns)
 # else if you did `pip install sf-hamilton[visualization]` earlier:
-# df = dr.execute(output_columns, display_graph=True)
+# dr.visualize_execution(output_columns, './my-dag.dot', {})
 print(df)
 ```
 3. Run my_script.py
@@ -117,11 +118,11 @@ You should see the following output:
     4     40      200      33.333333             0.200
     5     50      400      43.333333             0.125
 
-You should see the following image if you set `display_graph=True`:
+You should see the following image if you ran `dr.visualize_execution(output_columns, './my-dag.dot', {})`:
 
 ![hello_world_image](hello_world_image.png)
 
-Congratulations - you just created your first dataframe with Hamilton!
+Congratulations - you just created your Hamilton dataflow that created a dataframe!
 
 # License
 Hamilton is released under the [BSD 3-Clause Clear License](LICENSE). If you need to get in touch about something,
