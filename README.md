@@ -16,13 +16,17 @@ If you want to jump in head first, we have a simple tutorial for getting started
 
 ## What is Hamilton?
 
-Hamilton is a framework that allows for delayed executions of functions in a Directed Acyclic Graph (DAG). It was created to solve the problem of creating complex data pipelines. Core to the design of Hamilton is a clear mapping of function name to implementation. With this, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity, easy modifications, unit testing, and documentation.
+It's a general purpose micro-framework for creating [dataflows](https://en.wikipedia.org/wiki/Dataflow) from python functions!
 
-Hamilton's method of defining dataflows presents a new paradigm when it comes to creating datasets. Rather than manipulating one (or a set of) central dataframes procedurally and extracting the data you want, Hamilton enables you to run your dataflow with the following steps:
+Specifically, Hamilton defines a novel paradigm, that allows you to specify a flow of (delayed) execution, that forms a Directed Acyclic Graph (DAG). It was original built to solve creating wide (1000+) column dataframes at Stitch Fix. Core to the design of Hamilton is a clear mapping of function name to dataflow output. That is, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity, easy modifications, _with always unit testable and naturally documentable code!_
 
-1. Define the pipeline as a set of transforms using Hamilton's API&#x20;
-2. Specify parameter values your pipeline requires
-3. Specify which outputs you want to compute from your pipeline
+For the backstory on how Hamilton came about, see our [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
+
+Hamilton's method of defining dataflows presents a new paradigm when it comes to creating, um, dataframes (let's use dataframes as an example, otherwise you can create _ANY_ python object). Rather than thinking about manipulating a central dataframe procedurally, and extracting the data you want, as is normal in some data engineering/data science work, you instead think about the column(s) (a.k.a. outputs) you want to create, and what inputs are required. There is no need for you to think about maintaining how to create this dataframe, meaning you do not need to think about any "glue" code; this is all taken care of by the Hamilton framework. Specifically, Hamilton enables you to run your dataflow with the following steps:
+
+1. Define your dataflow (a.k.a. pipeline), as a set of transforms using Hamilton's paradigm for writing python functions.
+2. Specify the parameter values your dataflow requires
+3. Specify which outputs you want to compute from your dataflow
 
 The rest is delegated to the framework, which handles the computation for you.
 
@@ -32,7 +36,7 @@ Let's illustrate this with some code. If you were asked to write a simple transf
 df['col_c'] = df['col_a'] + df['col_b']
 ```
 
-To represent this in a way hamilton can understand, you write:
+To represent this in a way Hamilton can understand, you write:
 
 ```python
 def col_c(col_a: pd.Series, col_b: pd.Series) -> pd.Series:
@@ -42,7 +46,7 @@ def col_c(col_a: pd.Series, col_b: pd.Series) -> pd.Series:
 
 ![The above code represented as a diagram](.gitbook/assets/image.png)
 
-The hamilton framework takes the above code, forms it into a computational DAG, and executes it for you!
+The Hamilton framework takes the above code, forms it into a computational DAG, and executes it for you!
 
 ## Installing Hamilton
 
