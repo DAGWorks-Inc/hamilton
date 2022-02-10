@@ -48,6 +48,10 @@ def col_c(col_a: pd.Series, col_b: pd.Series) -> pd.Series:
 
 The Hamilton framework takes the above code, forms it into a computational DAG, and executes it for you!
 
+## Hamilton Open Source Community
+
+If you have questions, or need help with Hamilton, join us on [discord](https://discord.gg/wCqxqBqn73), and we'll try to help!
+
 ## Installing Hamilton
 
 Installation should be quick and as simple as:

@@ -29,6 +29,7 @@
   * [Output Immutability](best-practices/output-immutability.md)
 * [Extensions](extensions.md)
 * [Talks | Podcasts | Blogs](talks-or-podcasts-or-blogs.md)
+* [Hamilton Community](hamilton-community.md)
 * [License](license.md)
 * [Contributing](contributing.md)
 
