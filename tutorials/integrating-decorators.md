@@ -42,19 +42,41 @@ def acquisition_cost(spend: pd.Series, signups: pd.Series) -> pd.Series:
 
 All we have to do is modify our driver to run the right module and ask for the right outputs, and we're good to go!
 
-{% code title="driver.diff" %}
-```git
-@@ -6 +6 @@ import pandas as pd
--import my_functions
-+import with_decorators
-@@ -21 +21 @@ if __name__ == '__main__':
--    dr = driver.Driver(initial_columns, my_functions)  # can pass in multiple modules
-+    dr = driver.Driver(initial_columns, with_decorators)  # can pass in multiple modules
-@@ -26,2 +26,2 @@ if __name__ == '__main__':
--        'avg_3wk_spend',
--        'acquisition_cost',
-+        'acquisition_cost_2wk',
-+        'acquisition_cost_3wk'
+{% code title="driver.py" %}
+```python
+import logging
+import sys
+
+import pandas as pd
+
+import with_decoratorst  # we import the module here!
+from hamilton import driver
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(stream=sys.stdout)
+
+if __name__ == '__main__':
+    # Instantiate a common spine for your pipeline
+    index = pd.date_range("2022-01-01", periods=6, freq="w")
+    initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
+        # Note: these do not have to be all series, they could be scalar inputs.
+        'signups': pd.Series([1, 10, 50, 100, 200, 400], index=index),
+        'spend': pd.Series([10, 10, 20, 40, 40, 50], index=index),
+    }
+    # we need to tell hamilton where to load function definitions from
+    dr = driver.Driver(initial_columns, with_decorators)  # can pass in multiple modules
+    # we need to specify what we want in the final dataframe.
+    output_columns = [
+        'spend',
+        'signups',
+        'acquisition_cost_2wk',
+        'acquisition_cost_3wk',
+    ]
+    # let's create the dataframe!
+    df = dr.execute(output_columns)
+    # `pip install sf-hamilton[visualization]` earlier you can also do
+    # dr.visualize_execution(output_columns,'./my_dag.dot', {})
+    print(df)
 ```
 {% endcode %}
 
