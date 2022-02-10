@@ -10,15 +10,15 @@ description: >-
 
 If you want to jump in head first, we have a simple tutorial for getting started!&#x20;
 
-{% content-ref url="quick-start/" %}
-[quick-start](quick-start/)
+{% content-ref url="less-than-15-minutes-to-mastery/" %}
+[less-than-15-minutes-to-mastery](less-than-15-minutes-to-mastery/)
 {% endcontent-ref %}
 
 ## What is Hamilton?
 
 Hamilton is a framework that allows for delayed executions of functions in a Directed Acyclic Graph (DAG). It was created to solve the problem of creating complex data pipelines. Core to the design of Hamilton is a clear mapping of function name to implementation. With this, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity, easy modifications, unit testing, and documentation.
 
-Hamilton's method of defining data pipelines presents a new paradigm when it comes to creating datasets. Rather than manipulating one (or a set of) central dataframes procedurally and extracting the data you want, Hamilton enables you to run your pipeline with the following steps:
+Hamilton's method of defining dataflows presents a new paradigm when it comes to creating datasets. Rather than manipulating one (or a set of) central dataframes procedurally and extracting the data you want, Hamilton enables you to run your dataflow with the following steps:
 
 1. Define the pipeline as a set of transforms using Hamilton's API&#x20;
 2. Specify parameter values your pipeline requires
@@ -43,6 +43,24 @@ def col_c(col_a: pd.Series, col_b: pd.Series) -> pd.Series:
 ![The above code represented as a diagram](.gitbook/assets/image.png)
 
 The hamilton framework takes the above code, forms it into a computational DAG, and executes it for you!
+
+## Installing Hamilton
+
+Installation should be quick and as simple as:
+
+```
+> pip install sf-hamilton
+```
+
+For more information please see [installing.md](less-than-15-minutes-to-mastery/installing.md "mention").&#x20;
+
+## License
+
+Hamilton is released under the [BSD 3-Clause Clear License](https://github.com/stitchfix/hamilton/blob/main/LICENSE). If you need to get in touch about something, contact us at algorithms-opensource (at) stitchfix.com.
+
+## Contributing
+
+We take contributions, large and small. We operate via a Code of Conduct and expect anyone contributing to do the same.
 
 ## User Guide
 

@@ -1,6 +1,6 @@
 # Digging in Further
 
-Congratulations! You've completed the intro, and are now on your way to becoming a certified hamilton expert. Hopefully you're as excited about building and executing computation DAGs as we are, but if you need more convincing, we have a ton more resources to pore over...
+Congratulations! You've completed the intro, and are now on your way to becoming a certified Hamilton expert. Hopefully you're as excited about building and executing computation DAGs as we are, but if you need more convincing, we have a ton more resources to pore over...
 
 **To better grok core hamilton concepts**, check out our reference:
 
@@ -24,4 +24,10 @@ Congratulations! You've completed the intro, and are now on your way to becoming
 
 {% content-ref url="../extensions.md" %}
 [extensions.md](../extensions.md)
+{% endcontent-ref %}
+
+To see media coverage about Hamilton see:
+
+{% content-ref url="../talks-or-podcasts-or-blogs.md" %}
+[talks-or-podcasts-or-blogs.md](../talks-or-podcasts-or-blogs.md)
 {% endcontent-ref %}

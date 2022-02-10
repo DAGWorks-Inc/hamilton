@@ -1,8 +1,12 @@
+---
+description: Useful ways to help you make the most of Hamilton
+---
+
 # Decorators
 
-While the one to one mapping of node -> function implementation is powerful, it can sometimes lead to repeated code. In order to avoid this, Hamilton employs decorators to promote reuse of business logic. In this section we will go ove a few different classes of decorators with some examples. For reference on specific decorators, see [Broken link](broken-reference "mention"). &#x20;
+While the one to one mapping of node -> function implementation is powerful, it can sometimes lead to repeated code. In order to avoid this, Hamilton employs decorators to promote reuse of business logic. In this section we will go over a few different classes of decorators with some examples. For reference on specific decorators, see [available-decorators.md](../reference/api-reference/available-decorators.md "mention"). &#x20;
 
-In Hamilton, decorators allow the author of pipelines to modify functions as well as their role in the DAG. Decorators do one (or multiple) of the following:
+In Hamilton, decorators allow the author of Hamilton dataflows to modify functions as well as their role in the DAG. Decorators do one (or multiple) of the following:
 
 **Determine whether a function should exist as a transform in the DAG.**&#x20;
 
@@ -46,11 +50,11 @@ def marketing_spend(tv_spend: pd.Series, radio_spend: pd.Series):
     pass
 ```
 
-Note that we have no implementation for the functions! They're automagically replaced. There are other decorators that similar things. `@dynamic_transform` does something similar to the above but allows for configuration of the inputs to the function as well.
+Note that we have no implementation for the functions! They're automagically replaced. There are other decorators that similar things.&#x20;
 
 **Split the function into multiple nodes in the DAG**
 
-In order to reduce duplicated code, hamilton has decoratos that allow a single function to output multiple nodes. These can be incredibly powerful. Take, for example, the extract\_columns decorator. In this case, let's say that we have all the source spend in a big dataframe, and want to split it out into multiple columns, so the above can read it. One might write the following:
+In order to reduce duplicated code, Hamilton has decorators that allow a single function to output multiple nodes. These can be incredibly powerful. Take, for example, the extract\_columns decorator. In this case, let's say that we have all the source spend in a big dataframe, and want to split it out into multiple columns, so the above can read it. One might write the following:
 
 ```python
 import functools
@@ -58,24 +62,15 @@ import operators
 
 from hamilton.function_modifiers import extract_columns
 
-def _sum_series(**series: pd.Series) -> pd.Series:
-    return functools.reduce(operators.add, series.values())
-
 @extract_columns(['tv_spend', 'radio_spend', 'billboard_spend'])
 def marketing_spend_df() -> pd.DataFrame:
     return load_all_marketing_spend_from_external_source()
 ```
 
-The `marketing_spend_df` function becomes three separate available datums from the pipeline. Note it actually provides a fourth, as the original node itself is added so the computation is not rerun. `@extract_columns` works specially for pandas dataframes (and we'll adding support for dask and spark shortly). In fact, it will break if you try it on a function annotated with the wrong type. The other most widely used transform is `@parametrized`.
+The `marketing_spend_df` function becomes three separate available datums from the pipeline. Note it actually provides a fourth, as the original node itself is added so the computation is not rerun. `@extract_columns` works specifically only over dataframes. In fact, it will break if you try it on a function annotated with the wrong type. The other most widely used transform is `@parametrized`.
 
 While there are decorators that don't quite fit into the above, these should give you a sense of how and why decorators are used. For more information on available decorators, see:
 
-{% content-ref url="broken-reference" %}
-[Broken link](broken-reference)
-{% endcontent-ref %}
-
-And for more information on writing your own decorators see:
-
-{% content-ref url="../reference/api-extensions/custom-decorators.md" %}
-[custom-decorators.md](../reference/api-extensions/custom-decorators.md)
+{% content-ref url="../reference/api-reference/available-decorators.md" %}
+[available-decorators.md](../reference/api-reference/available-decorators.md)
 {% endcontent-ref %}

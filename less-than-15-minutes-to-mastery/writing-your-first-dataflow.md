@@ -15,7 +15,7 @@ We're jumping in head-first. If you want to start with an overview, skip ahead t
 
 ## Writing some Transforms
 
-Create a file `my_functions.py` and add the following two functions:
+Create a file `my_functions.py`and add the following two functions:
 
 ```python
 import pandas as pd
@@ -35,6 +35,8 @@ An astute observer might ask the following questions:
 2. **OK, if the parameter names determine the source of the data, why have we not defined defined `spend` or `signups` as functions?** This is OK, as we will provide this data as an input when we actually want to materialize our functions. The DAG doesn't have to be complete when it is compiled.
 3. **Why is there no main line to call these functions?** Good observation. In fact, we never will call them (directly)! This is one of the core principles of Hamilton. You write individual transforms and the rest is handled by the framework. More on that next.
 4. **The functions all output pandas series. What if I don't want to use series?** You don't have to! Hamilton is not opinionated on the data type you use. The following are all perfectly valid as well (and we support dask/spark/ray/other distributed frameworks).
+
+Let's add a few more functions to our my\_functions.py file:
 
 ```python
 def spend_mean(spend: pd.Series) -> float:

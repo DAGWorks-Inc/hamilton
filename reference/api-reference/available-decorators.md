@@ -1,6 +1,108 @@
-# Decorators
+# Available Decorators
 
 While the 1:1 mapping of column -> function implementation is powerful, we've implemented a few decorators to promote business-logic reuse. The decorators we've defined are as follows (source can be found in function\_modifiers):
+
+## @extract\_columns
+
+This works on a function that outputs a dataframe, that we want to extract the columns from and make them individually available for consumption. So it expands a single function into _n functions_, each of which take in the output dataframe and output a specific column as named in the `extract_columns` decorator.
+
+```python
+import pandas as pd
+from hamilton.function_modifiers import extract_columns
+
+@extract_columns('fiscal_date', 'fiscal_week_name', 'fiscal_month', 'fiscal_quarter', 'fiscal_year')
+def fiscal_columns(date_index: pd.Series, fiscal_dates: pd.DataFrame) -> pd.DataFrame:
+    """Extracts the fiscal column data.
+    We want to ensure that it has the same spine as date_index.
+    :param fiscal_dates: the input dataframe to extract.
+    :return:
+    """
+    df = pd.DataFrame({'date_index': date_index}, index=date_index.index)
+    merged = df.join(fiscal_dates, how='inner')
+    return merged
+```
+
+Note: if you have a list of columns to extract, then when you call `@extract_columns` you should call it with an asterisk like this:
+
+```python
+import pandas as pd
+from hamilton.function_modifiers import extract_columns
+
+@extract_columns(*my_list_of_column_names)
+def my_func(...) -> pd.DataFrame:
+   """..."""
+```
+
+## @extract\_fields
+
+This works on a function that outputs a dictionary, that we want to extract the fields from and make them individually available for consumption. So it expands a single function into _n functions_, each of which take in the output dictionary and output a specific field as named in the `extract_fields` decorator.
+
+```python
+import pandas as pd
+from hamilton.function_modifiers import extract_columns
+
+@function_modifiers.extract_fields(
+    {'X_train': np.ndarray, 'X_test': np.ndarray, 'y_train': np.ndarray, 'y_test': np.ndarray})
+def train_test_split_func(feature_matrix: np.ndarray,
+                          target: np.ndarray,
+                          test_size_fraction: float,
+                          shuffle_train_test_split: bool) -> Dict[str, np.ndarray]:
+    ...
+    return {'X_train': ... }
+
+```
+
+The input to the decorator is a dictionary of `field_name` to `field_type` -- this information is used for static compilation to ensure downstream uses are expecting the right type.
+
+## @config.when\*
+
+`@config.when` allows you to specify different implementations depending on configuration parameters.
+
+The following use cases are supported:
+
+1. A column is present for only one value of a config parameter -- in this case, we define a function only once, with a `@config.when`
+
+```python
+    import pandas as pd
+    from hamilton.function_modifiers import config
+
+    # signups_parent_before_launch is only present in the kids business line
+    @config.when(business_line='kids')
+    def signups_parent_before_launch(signups_from_existing_womens_tf: pd.Series) -> pd.Series:
+        """TODO:
+        :param signups_from_existing_womens_tf:
+        :return:
+        """
+        return signups_from_existing_womens_tf
+```
+
+1. A column is implemented differently for different business inputs, e.g. in the case of Stitch Fix gender intent.
+
+```python
+    import pandas as pd
+    from hamilton.function_modifiers import config, model
+    import internal_package_with_logic
+
+    # Some 21 day autoship cadence does not exist for kids, so we just return 0s
+    @config.when(gender_intent='kids')
+    def percent_clients_something__kids(date_index: pd.Series) -> pd.Series:
+        return pd.Series(index=date_index.index, data=0.0)
+
+    # In other business lines, we have a model for it
+    @config.when_not(gender_intent='kids')
+    @model(internal_package_with_logic.GLM, 'some_model_name', output_column='percent_clients_something')
+    def percent_clients_something_model() -> pd.Series:
+        pass
+```
+
+Note the following:
+
+* The function cannot have the same name in the same file (or python gets unhappy), so we name it with a \_\_ (dunderscore) as a suffix. The dunderscore is removed before it goes into the DAG.
+* There is currently no `@config.otherwise(...)` decorator, so make sure to have `config.when` specify set of configuration possibilities. Any missing cases will not have that output column (and subsequent downstream nodes may error out if they ask for it). To make this easier, we have a few more `@config` decorators:
+  * `@config.when_not(param=value)` Will be included if the parameter is _not_ equal to the value specified.
+  * `@config.when_in(param=[value1, value2, ...])` Will be included if the parameter is equal to one of the specified values.
+  * `@config.when_not_in(param=[value1, value2, ...])` Will be included if the parameter is not equal to any of the specified values.
+  * `@config` If you're feeling adventurous, you can pass in a lambda function that takes in the entire configuration and resolves to `True` or `False`. You probably don't want to do this.
 
 ## @parameterized
 
@@ -60,37 +162,6 @@ def SOME_OUTPUT_NAME(SOME_INPUT_NAME: pd.Series) -> pd.Series:
 
 Note also that the different input variables must all have compatible types with the original decorated input variable.
 
-## @extract\_columns
-
-This works on a function that outputs a dataframe, that we want to extract the columns from and make them individually available for consumption. So it expands a single function into _n functions_, each of which take in the output dataframe and output a specific column as named in the `extract_coumns` decorator.
-
-```python
-import pandas as pd
-from hamilton.function_modifiers import extract_columns
-
-@extract_columns('fiscal_date', 'fiscal_week_name', 'fiscal_month', 'fiscal_quarter', 'fiscal_year')
-def fiscal_columns(date_index: pd.Series, fiscal_dates: pd.DataFrame) -> pd.DataFrame:
-    """Extracts the fiscal column data.
-    We want to ensure that it has the same spine as date_index.
-    :param fiscal_dates: the input dataframe to extract.
-    :return:
-    """
-    df = pd.DataFrame({'date_index': date_index}, index=date_index.index)
-    merged = df.join(fiscal_dates, how='inner')
-    return merged
-```
-
-Note: if you have a list of columns to extract, then when you call `@extract_columns` you should call it with an asterisk like this:
-
-```python
-import pandas as pd
-from hamilton.function_modifiers import extract_columns
-
-@extract_columns(*my_list_of_column_names)
-def my_func(...) -> pd.DataFrame:
-   """..."""
-```
-
 ## @does
 
 `@does` is a decorator that essentially allows you to run a function over all the input parameters. So you can't pass any old function to `@does`, instead the function passed has to take any amount of inputs and process them all in the same way.
@@ -146,52 +217,4 @@ def prob_cancel_manual_res() -> pd.Series:
 
 Models (optionally) accept a `output_column` parameter -- this is specifically if the name of the function differs from the output column that it should represent. E.G. if you use the model result as an intermediate object, and manipulate it all later. At Stitch Fix this is necessary because various dependent columns that a model queries (e.g. `MULTIPLIER_...` and `OFFSET_...`) are derived from the model's name.
 
-## @config.when\*
-
-`@config.when` allows you to specify different implementations depending on configuration parameters.
-
-The following use cases are supported:
-
-1. A column is present for only one value of a config parameter -- in this case, we define a function only once, with a `@config.when`
-
-```python
-    import pandas as pd
-    from hamilton.function_modifiers import config
-
-    # signups_parent_before_launch is only present in the kids business line
-    @config.when(business_line='kids')
-    def signups_parent_before_launch(signups_from_existing_womens_tf: pd.Series) -> pd.Series:
-        """TODO:
-        :param signups_from_existing_womens_tf:
-        :return:
-        """
-        return signups_from_existing_womens_tf
-```
-
-1. A column is implemented differently for different business inputs, e.g. in the case of Stitch Fix gender intent.
-
-```python
-    import pandas as pd
-    from hamilton.function_modifiers import config, model
-    import internal_package_with_logic
-
-    # Some 21 day autoship cadence does not exist for kids, so we just return 0s
-    @config.when(gender_intent='kids')
-    def percent_clients_something__kids(date_index: pd.Series) -> pd.Series:
-        return pd.Series(index=date_index.index, data=0.0)
-
-    # In other business lines, we have a model for it
-    @config.when_not(gender_intent='kids')
-    @model(internal_package_with_logic.GLM, 'some_model_name', output_column='percent_clients_something')
-    def percent_clients_something_model() -> pd.Series:
-        pass
-```
-
-Note the following:
-
-* The function cannot have the same name in the same file (or python gets unhappy), so we name it with a \_\_ (dunderscore) as a suffix. The dunderscore is removed before it goes into the DAG.
-* There is currently no `@config.otherwise(...)` decorator, so make sure to have `config.when` specify set of configuration possibilities. Any missing cases will not have that output column (and subsequent downstream nodes may error out if they ask for it). To make this easier, we have a few more `@config` decorators:
-  * `@config.when_not(param=value)` Will be included if the parameter is _not_ equal to the value specified.
-  * `@config.when_in(param=[value1, value2, ...])` Will be included if the parameter is equal to one of the specified values.
-  * `@config.when_not_in(param=[value1, value2, ...])` Will be included if the parameter is not equal to any of the specified values.
-  * `@config` If you're feeling adventurous, you can pass in a lambda function that takes in the entire configuration and resolves to `True` or `False`. You probably don't want to do this.
+##

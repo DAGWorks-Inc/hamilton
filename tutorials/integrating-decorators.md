@@ -1,3 +1,7 @@
+---
+description: Let's talk about some functionality
+---
+
 # Integrating Decorators
 
 Hamilton relies on[ python decorators](https://towardsdatascience.com/the-simplest-tutorial-for-python-decorator-dadbf8f20b0f) to enable easy code reuse. Taking the previous example, let's say that we cared about the running average spend per signup with both a 2 and a 3 week lookback. Rather than writing a bunch of functions with almost exactly the same definitions, we can parametrize! The following uses two decorator to [curry](https://en.wikipedia.org/wiki/Currying) your nodes into multiple functions.

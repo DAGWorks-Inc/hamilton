@@ -1,6 +1,6 @@
 # Running Your Dataflow
 
-To actually run the dataflow, we'll need to write a [driver](../overview-of-concepts/drivers.md). Create `my_script.py`with the following contents:
+To actually run the dataflow, we'll need to write a [driver](../overview-of-concepts/the-hamilton-driver.md). Create `my_script.py`with the following contents:
 
 {% code title="my_functions.py" %}
 ```python
@@ -43,7 +43,9 @@ if __name__ == '__main__':
 
 Run the script with the following command:
 
-`python my_functions.py`
+`python my_script.py`
+
+And you should see the following output:
 
 ```
             spend  signups  avg_3wk_spend  acquisition_cost
@@ -55,6 +57,6 @@ Run the script with the following command:
 2022-02-06     50      400      43.333333             0.125
 ```
 
-Congrats! Not only is your spend to signup ratio decreasing exponentially (your product is going viral!), but you've also successfully ran your first hamilton dataflow. Kudos!
+Not only is your spend to signup ratio decreasing exponentially (your product is going viral!), but you've also successfully ran your first Hamilton Dataflow. Kudos!
 
-Before we conclude the tutorial, let's spend a minute expanding this code to be a little more parametrized.
+See, wasn't that quick and easy?&#x20;
