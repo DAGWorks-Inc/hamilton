@@ -13,7 +13,6 @@
   * [Decorators](overview-of-concepts/decorators.md)
 * [Tutorials](tutorials/README.md)
   * [Integrating Decorators](tutorials/integrating-decorators.md)
-  * [Classic Spend Example](tutorials/classic-spend-example.md)
   * [Model Training](tutorials/model-training.md)
   * [Dask](tutorials/dask.md)
   * [Spark](tutorials/spark.md)
