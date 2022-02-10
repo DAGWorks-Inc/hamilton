@@ -8,7 +8,7 @@ description: >-
 
 ## Getting Started
 
-If you want to jump in head first, we have a simple tutorial for getting started!&#x20;
+If you want to jump in head first, we have a simple tutorial for getting started!  To ask questions, please join our[ discord community](https://discord.gg/wCqxqBqn73)!
 
 {% content-ref url="less-than-15-minutes-to-mastery/" %}
 [less-than-15-minutes-to-mastery](less-than-15-minutes-to-mastery/)
