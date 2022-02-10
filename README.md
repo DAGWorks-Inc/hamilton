@@ -50,7 +50,7 @@ The Hamilton framework takes the above code, forms it into a computational DAG, 
 
 ## Hamilton Open Source Community
 
-If you have questions, or need help with Hamilton, join us on [discord](https://discord.gg/wCqxqBqn73), and we'll try to help!
+If you have questions, have ideas, or need help with Hamilton, join us on [discord](https://discord.gg/wCqxqBqn73), and we'll try to help!
 
 ## Installing Hamilton
 
