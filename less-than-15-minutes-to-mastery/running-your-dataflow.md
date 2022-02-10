@@ -9,7 +9,7 @@ import sys
 
 import pandas as pd
 
-import my_functions
+import my_functions  # we import the module here!
 from hamilton import driver
 
 logger = logging.getLogger(__name__)
