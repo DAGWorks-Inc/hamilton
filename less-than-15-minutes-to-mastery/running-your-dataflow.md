@@ -33,10 +33,9 @@ if __name__ == '__main__':
         'acquisition_cost',
     ]
     # let's create the dataframe!
-    # if you only did `pip install sf-hamilton` earlier:
     df = dr.execute(output_columns)
-    # else if you did `pip install sf-hamilton[visualization]` earlier:
-    # df = dr.execute(output_columns, display_graph=True)
+    # `pip install sf-hamilton[visualization]` earlier you can also do
+    # dr.visualize_execution(output_columns,'./my_dag.dot', {})
     print(df)
 ```
 {% endcode %}

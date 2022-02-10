@@ -178,7 +178,7 @@ Hamilton enables you to quickly and easily visualize your entire DAG, as well as
 
 `dr.visualize_execution(['desired_output1', 'desired_output2'], './my_file.dot', render_args)`
 
-In addition to specifying the outputs you desire, you need to provide a path to save the created dot file and image, and then provide some optional arguments for rendering.&#x20;
+In addition to specifying the outputs you desire, you need to provide a path to save the created dot file and image, and then provide some  arguments for rendering -- at minimum, pass in an empty dictionary.
 
 #### Visualize the entire DAG constructed
 
