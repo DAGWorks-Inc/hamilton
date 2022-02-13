@@ -1,6 +1,5 @@
 import importlib
 import logging
-import sys
 
 import pyspark.pandas as ps
 from pyspark.sql import SparkSession
