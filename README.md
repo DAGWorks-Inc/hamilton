@@ -183,3 +183,4 @@ To use it hit `option + mouse click` to create multiple cursors. `Esc` to revert
 - Shelly Jang (@shellyjang)
 - Vincent Chu (@vslchusf)
 - Christopher Prohm (@chmp)
+- James Lamb (@jameslamb)
