@@ -2,7 +2,7 @@
 
 To actually run the dataflow, we'll need to write a [driver](../overview-of-concepts/the-hamilton-driver.md). Create `my_script.py`with the following contents:
 
-{% code title="my_functions.py" %}
+{% code title="my_script.py" %}
 ```python
 import logging
 import sys
