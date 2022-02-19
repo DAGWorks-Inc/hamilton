@@ -461,7 +461,7 @@ class config(NodeResolver):
     def when_in(name=None, **key_value_group_pairs: Collection[Any]) -> 'config':
         """Yields a decorator that resolves the function if all of the keys are equal to one of items in the list of values.
 
-        :param key_value_group_pairs: pairs of key-value mappings where the value is a lsit of possible values
+        :param key_value_group_pairs: pairs of key-value mappings where the value is a list of possible values
         :return: a configuration decorator
         """
 
@@ -474,7 +474,7 @@ class config(NodeResolver):
     def when_not_in(**key_value_group_pairs: Collection[Any]) -> 'config':
         """Yields a decorator that resolves the function only if none of the keys are in the list of values.
 
-        :param key_value_group_pairs: pairs of key-value mappings where the value is a lsit of possible values
+        :param key_value_group_pairs: pairs of key-value mappings where the value is a list of possible values
         :return: a configuration decorator
 
         :Example:

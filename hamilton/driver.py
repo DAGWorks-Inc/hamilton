@@ -168,7 +168,7 @@ class Driver(object):
     def has_cycles(self, final_vars: List[str]) -> bool:
         """Checks that the created graph does not have cycles.
 
-        :param final_vars: the outputs we want to comute.
+        :param final_vars: the outputs we want to compute.
         :return: boolean True for cycles, False for no cycles.
         """
         nodes, user_nodes = self.graph.get_required_functions(final_vars)

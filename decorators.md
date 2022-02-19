@@ -69,7 +69,7 @@ Note also that the different input variables must all have compatible types with
 ## @extract_columns
 This works on a function that outputs a dataframe, that we want to extract the columns from and make them individually
 available for consumption. So it expands a single function into _n functions_, each of which take in the output dataframe
- and output a specific column as named in the `extract_coumns` decorator.
+ and output a specific column as named in the `extract_columns` decorator.
 ```python
 import pandas as pd
 from hamilton.function_modifiers import extract_columns

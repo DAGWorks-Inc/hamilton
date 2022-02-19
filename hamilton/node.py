@@ -19,7 +19,7 @@ class NodeSource(Enum):
     """
     STANDARD = 1  # standard dependencies
     EXTERNAL = 2  # This node's value should be taken from cache
-    PRIOR_RUN = 3  # This node's value sould be taken from a prior run.
+    PRIOR_RUN = 3  # This node's value should be taken from a prior run.
     # This is not used in a standard function graph, but it comes in handy for repeatedly running the same one.
 
 

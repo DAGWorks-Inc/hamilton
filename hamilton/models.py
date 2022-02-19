@@ -59,7 +59,7 @@ class BaseModel(DynamicTransformBase, abc.ABC):
         """Delegates to predict function to compute this model's return.
 
         :param inputs: Inputs for the model
-        :return: The result of claling the model.
+        :return: The result of calling the model.
         """
         return self.predict(**inputs)
 

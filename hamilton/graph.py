@@ -387,7 +387,7 @@ class FunctionGraph(object):
                 overrides: Dict[str, Any] = None,
                 inputs: Dict[str, Any] = None
                 ) -> Dict[str, Any]:
-        """Executes the DAG, given potential inputs/previously compoted components.
+        """Executes the DAG, given potential inputs/previously computed components.
 
         :param nodes: Nodes to compute
         :param computed: Nodes that have already been computed
