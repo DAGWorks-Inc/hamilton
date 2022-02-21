@@ -1,5 +1,5 @@
 ---
-description: https://github.com/stitchfix/hamilton/blob/main/examples/dask/
+description: 'TODO: complete this tutorial'
 ---
 
 # Dask

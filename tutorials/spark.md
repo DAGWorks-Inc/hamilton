@@ -1,5 +1,5 @@
 ---
-description: https://github.com/stitchfix/hamilton/tree/main/examples/spark
+description: 'TODO: complete this tutorial'
 ---
 
 # Spark
