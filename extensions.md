@@ -11,9 +11,17 @@ description: >-
 
 Hamilton by default runs in a single process and single threaded manner.
 
-Wouldn't it be great if it could execute computation in parallel if it could? Or, if you could scale to data sets that can't all fit in memory?
+Wouldn't it be great if it could execute computation in parallel if it could? Or, if you could scale to data sets that can't all fit in memory? What if you _didn't have to change_ your Hamilton functions?
 
-Well, with the simple change of some driver script code, you can very easily scale your Hamilton dataflows!
+Well, with the simple change of some driver script code, you can very easily scale your Hamilton dataflows, especially if you write Pandas code!
+
+All that's needed is to:
+
+1. Import system specific code to setup a client/cluster/etc for that distributed/scalable system.
+2. Import a [GraphAdapter](https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L91) that implements using that distributed/scalable system. See [available-graph-adapters.md](reference/api-reference/available-graph-adapters.md "mention") for what is available.
+3. You may need to provide a specific module that knows how to load data into the scalable system.
+4. Pass the modules, and graph adapter to the Hamilton Driver.
+5. Proceed as you would normally.
 
 ```
 from hamilton import driver
@@ -31,6 +39,8 @@ dr = driver.Driver(dag_config, bl_module, loader_module, adapter=adapter)
 output_columns = ['year','week',...,'spend_shift_3weeks_per_signup','special_feature'] 
 df = dr.execute(output_columns) # only walk DAG for what is needed
 ```
+
+See [available-graph-adapters.md](reference/api-reference/available-graph-adapters.md "mention") and [custom-graph-adapters.md](reference/api-extensions/custom-graph-adapters.md "mention") for options.
 
 ### A note on the definition of _Experimental_
 
@@ -88,3 +98,26 @@ If you have a Spark cluster setup, then you can farm out Hamilton computation to
 
 ## Customizing what Hamilton Returns
 
+Hamilton grew up with a Pandas Dataframe assumption. However, as of the `1.3.0` release, **Hamilton is a general purpose dataflow framework.**
+
+This means, that the result of `execute()` can be any python object type!
+
+### How do you change the type of the object returned?
+
+You need to implement a [ResultMixin](https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L18) if there isn't one already defined for what you want to do. Then you need to provide that to a [GraphAdapter](https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L91), similar to what was presented above.
+
+See [available-result-builders.md](reference/api-reference/available-result-builders.md "mention") for what is provided with Hamilton, or [custom-result-builders.md](reference/api-extensions/custom-result-builders.md "mention") for how to build your own.
+
+```
+from dask.distributed import Client    
+from hamilton import driver   
+from hamilton import base   
+
+adapter = base.SimplePythonGraphAdapter(base.DictResult())# or your custom class  
+
+dr = driver.Driver(dag_config, bl_module, loader_module, adapter=adapter)
+
+output_columns = ['year','week',...,'spend_shift_3weeks_per_signup','special_feature']
+# creates a dict of {col -> function result} 
+result_dict = dr.execute(output_columns)
+```
