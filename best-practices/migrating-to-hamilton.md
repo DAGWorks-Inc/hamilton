@@ -10,6 +10,7 @@ Create a way to easily & frequently compare results.
 
 1. Integrate with continuous integration (CI) system if you can.
 2. 🔎🐛  Having a means that tests code early & often will helps diagnose bugs in your old code (most likely) or your new implementation (less likely).
+3. Specifically, have a system to compare the output of your Hamilton code, to compare to the output of your existing system.&#x20;
 
 ![Example CI process that we used at Stitch Fix for migrating to Hamilton](<../.gitbook/assets/Hamilton ApplyMeetup 2022 - migration CI (1).svg>)
 
