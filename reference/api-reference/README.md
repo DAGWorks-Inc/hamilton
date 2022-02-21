@@ -10,4 +10,4 @@ See [available-drivers.md](available-drivers.md "mention") for how to call and i
 
 See [available-result-builders.md](available-result-builders.md "mention")for what comes out of the box for determining how to construct a return type from `execute`.
 
-See [available-graph-adapters.md](available-graph-adapters.md "mention")for ways to scale Hamilton to larger datasets and compute.
+See [available-graph-adapters.md](available-graph-adapters.md "mention")for ways to execute Hamilton.
