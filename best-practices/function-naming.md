@@ -16,7 +16,7 @@ You don't need to get this right the first time -- search and replace is really 
 
 As the name of a hamilton function defines the name of the created artifact, naming is vital to a readable, extensible hamilton codebase.  Names must mean something:
 
-```
+```python
 def foo_bar(input1: int, input2: pd.Series) -> pd.Series:
     """docs..."""
     ...
