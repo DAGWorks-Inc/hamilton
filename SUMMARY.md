@@ -47,5 +47,5 @@
 
 ## unorganized-docs
 
-* [Docs to be organized](unorganized-docs/docs-to-be-organized.md)
-* [Writing Drivers](unorganized-docs/writing-drivers.md)
+* [Docs to be organized](unorganized-docs/docs-to-be-organized/README.md)
+  * [Writing Drivers](unorganized-docs/docs-to-be-organized/writing-drivers.md)
