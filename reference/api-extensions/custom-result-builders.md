@@ -32,7 +32,7 @@ E.g.
 import typing
 from hamilton import base
 class MyCustomBuilder(base.ResultMixin):
-     
+     # add a constructor if you need to
      @staticmethod
      def build_result(**outputs: typing.Dict[str, typing.Any]) -> YOUR_RETURN_TYPE:
          """Custom function you fill in"""
