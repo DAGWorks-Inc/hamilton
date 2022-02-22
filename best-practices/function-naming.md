@@ -14,9 +14,7 @@ You don't need to get this right the first time -- search and replace is really 
 
 ## It enables you to define your Hamilton dataflow
 
-The core of Hamilton is really in how you name your functions.
-
-Naming something like
+As the name of a hamilton function defines the name of the created artifact, naming is vital to a readable, extensible hamilton codebase.  Names must mean something:
 
 ```
 def foo_bar(input1: int, input2: pd.Series) -> pd.Series:
@@ -24,7 +22,7 @@ def foo_bar(input1: int, input2: pd.Series) -> pd.Series:
     ...
 ```
 
-`foo_bar` is not helpful - it's unclear what this function produces at all. Remember you want function names to mean something, since that will enable clarity when using Hamilton, what is being requested, and will help document what the function itself is doing.
+In this case,`foo_bar` is not helpful - it's unclear what this function produces at all. Remember you want function names to mean something, since that will enable clarity when using Hamilton, what is being requested, and will help document what the function itself is doing.
 
 ## It drives collaboration and reuse
 
