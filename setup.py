@@ -42,10 +42,6 @@ def load_test_requirements():
         return [line.strip() for line in f]
 
 
-setup_requirements = [
-    'pytest-runner',
-]
-
 test_requirements = load_test_requirements()
 
 setup(
@@ -78,11 +74,6 @@ setup(
     # similar to setup_requires, these packages are not added to your venv but are made available
     # during testing
     tests_require=test_requirements,
-
-    # Any packages required when running `python setup.py X` (where X is an alias). These packages
-    # are NOT installed as part of the virtualenv (thus not polluting your venv) but instead just
-    # made available to the setup.
-    setup_requires=setup_requirements,
 
     # Note that this feature requires pep8 >= v9 and a version of setup tools greater than the
     # default version installed with virtualenv. Make sure to update your tools!
