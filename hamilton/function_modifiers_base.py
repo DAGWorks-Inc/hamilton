@@ -219,6 +219,40 @@ class NodeTransformer(SubDAGModifier):
         return True
 
 
+class NodeDecorator(NodeTransformer, abc.ABC):
+    DECORATE_NODES = 'decorate_nodes'
+
+    def transform_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+        """Transforms the node. Delegates to decorate_node
+
+        :param node_: Node to transform
+        :param config: Config in case its needed
+        :param fn: Function we're decorating
+        :return: The nodes produced by the transformation
+        """
+        return [self.decorate_node(node_)]
+
+    @classmethod
+    def get_lifecycle_name(cls) -> str:
+        return NodeDecorator.DECORATE_NODES
+
+    @classmethod
+    def allows_multiple(cls) -> bool:
+        return True
+
+    def validate(self, fn: Callable):
+        pass
+
+    @abc.abstractmethod
+    def decorate_node(self, node_: node.Node) -> node.Node:
+        """Decorates the node -- copies and embellishes in some way.
+
+        :param node_: Node to decorate.
+        :return: A copy of the node.
+        """
+        pass
+
+
 class DefaultNodeCreator(NodeCreator):
     def generate_node(self, fn: Callable, config: Dict[str, Any]) -> node.Node:
         return node.Node.from_fn(fn)
@@ -241,6 +275,11 @@ class DefaultNodeExpander(NodeExpander):
 
     def validate(self, fn: Callable):
         pass
+
+
+class DefaultNodeDecorator(NodeDecorator):
+    def decorate_node(self, node_: node.Node) -> node.Node:
+        return node_
 
 
 def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
@@ -284,4 +323,7 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
     for dag_modifier in node_transformers:
         nodes = dag_modifier.transform_dag(nodes, config, fn)
+    node_decorators = getattr(fn, NodeDecorator.get_lifecycle_name(), [DefaultNodeDecorator()])
+    for node_decorator in node_decorators:
+        nodes = node_decorator.transform_dag(nodes, config, fn)
     return nodes

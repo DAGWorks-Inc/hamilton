@@ -4,6 +4,7 @@ from hamilton import base
 from hamilton.driver import Driver
 import tests.resources.very_simple_dag
 import tests.resources.cyclic_functions
+import tests.resources.tagging
 
 
 def test_driver_validate_input_types():
@@ -36,3 +37,11 @@ def test_driver_cycles_execute_recursion_error():
     dr = Driver({}, tests.resources.cyclic_functions, adapter=base.SimplePythonGraphAdapter(base.DictResult()))
     with pytest.raises(RecursionError):
         dr.execute(['C'], inputs={'b': 2, 'c': 2})
+
+def test_driver_variables():
+    dr = Driver({}, tests.resources.tagging)
+    tags = {var.name: var.tags for var in dr.list_available_variables()}
+    assert tags['a'] == {'test': 'a'}
+    assert tags['b'] == {'test': 'b_c'}
+    assert tags['c'] == {'test': 'b_c'}
+    assert tags['d'] == {}
