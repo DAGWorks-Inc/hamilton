@@ -8,7 +8,7 @@ import pandas as pd
 # required if we want to run this code stand alone.
 import typing
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from hamilton import node
 
@@ -36,6 +36,7 @@ class Variable:
     Furthermore, we can always add attributes and maintain backwards compatibility."""
     name: str
     type: typing.Type
+    tags: Dict[str, str] = field(default_factory=frozenset)
 
 
 class Driver(object):
@@ -160,7 +161,7 @@ class Driver(object):
 
         :return: list of available variables.
         """
-        return [Variable(node.name, node.type) for node in self.graph.get_nodes()]
+        return [Variable(node.name, node.type, node.tags) for node in self.graph.get_nodes()]
 
     def display_all_functions(self, output_file_path: str, render_kwargs: dict = None):
         """Displays the graph of all functions loaded!

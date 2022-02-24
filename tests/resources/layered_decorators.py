@@ -1,10 +1,11 @@
-from hamilton.function_modifiers import config, does, parametrized
+from hamilton.function_modifiers import config, does, parametrized, tag
 
 """Demonstrates a DAG with multiple decorators for functions.
 This is a good test case to ensure that all the decorators work together
 This DAG outputs two nodes -- e and f. The value of these will vary
 based on whether or not foo==bar or foo==baz in the config.
 """
+
 
 def _sum(**kwargs: int) -> int:
     return sum(kwargs.values())

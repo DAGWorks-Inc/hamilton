@@ -1,6 +1,6 @@
 import inspect
 from enum import Enum
-from typing import Type, Dict, Any, Callable, List, Tuple, Union
+from typing import Type, Dict, Any, Callable, List, Tuple, Union, Collection
 
 """
 Module that contains the primitive components of the graph.
@@ -40,7 +40,8 @@ class Node(object):
                  doc_string: str = '',
                  callabl: Callable = None,
                  node_source: NodeSource = NodeSource.STANDARD,
-                 input_types: Dict[str, Union[Type, Tuple[Type, DependencyType]]] = None):
+                 input_types: Dict[str, Union[Type, Tuple[Type, DependencyType]]] = None,
+                 tags: Dict[str, Any] = None):
         """Constructor for our Node object.
 
         :param name: the name of the function.
@@ -49,7 +50,11 @@ class Node(object):
         :param callabl: the actual function callable.
         :param node_source: whether this is something someone has to pass in.
         :param input_types: the input parameters and their types.
+        :param tags: the set of tags that this node contains. This is a nested dictionary of keys/values.
         """
+        if tags is None:
+            tags = dict()
+        self._tags = tags
         self._name = name
         self._type = typ
         if typ is None or typ == inspect._empty:
@@ -116,6 +121,10 @@ class Node(object):
     @property
     def depended_on_by(self) -> List['Node']:
         return self._depended_on_by
+
+    @property
+    def tags(self) -> Collection[str]:
+        return self._tags
 
     def __hash__(self):
         return hash(self._name)
