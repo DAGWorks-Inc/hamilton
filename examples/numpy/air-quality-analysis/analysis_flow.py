@@ -5,6 +5,13 @@ https://github.com/numpy/numpy-tutorials/blob/main/content/tutorial-air-quality-
 What we've done here is made a dataflow of the computation required to do an AQI analysis.
 It's very easy to change these functions for more sophisticated analysis, as well as to
 change the inputs, etc.
+
+Note: this code here is really to show you how to use pure numpy, not the best practices way of doing analysis.
+In real-life practice you would probably do the following:
+* The pandas library is preferable to use for time-series data analysis.
+* The SciPy stats module provides the stats.ttest_rel function which can be used to get the t statistic and p value.
+* In real life, data is generally not normally distributed. There are tests for such non-normal data like the
+  Wilcoxon test.
 """
 import typing
 from functools import partial
@@ -15,7 +22,7 @@ from scipy import stats
 
 # --- private helper functions
 def _moving_mean(a, n):
-    """Computes the moving mean using numpy constructurs."""
+    """Computes the moving mean using numpy constructs."""
     ret = np.cumsum(a, dtype=float, axis=0)
     ret[n:] = ret[n:] - ret[:-n]
     return ret[n - 1:] / n
@@ -23,6 +30,13 @@ def _moving_mean(a, n):
 
 def _compute_indices(breakpoints: dict, aqi: np.ndarray, pol: str, con: float) -> float:
     """Computes break points for pollutants
+
+    The compute_indices function first fetches the correct upper and lower bounds of AQI categories and breakpoint
+    concentrations for the input concentration and pollutant with the help of arrays AQI and breakpoints.
+
+    It is code copied straight from
+    https://github.com/numpy/numpy-tutorials/blob/main/content/tutorial-air-quality-analysis.md
+
 
     :param breakpoints: dictionary of pollutant to break points.
     :param aqi: array of AQI break points.
@@ -94,12 +108,16 @@ def pollutants_B(pollutant_data: np.ndarray) -> np.ndarray:
 
 
 def AQI() -> np.ndarray:
-    """AQI ranges"""
+    """AQI ranges.
+    See https://github.com/numpy/numpy-tutorials/blob/main/content/tutorial-air-quality-analysis.md#calculating-the-air-quality-index
+    """
     return np.array([0, 51, 101, 201, 301, 401, 501])
 
 
 def breakpoints() -> dict:
-    """AQI breakpoints for pollutants"""
+    """AQI breakpoints for pollutants.
+    See https://github.com/numpy/numpy-tutorials/blob/main/content/tutorial-air-quality-analysis.md#calculating-the-air-quality-index
+    """
     return {
         'PM2.5': np.array([0, 31, 61, 91, 121, 251]),
         'PM10': np.array([0, 51, 101, 251, 351, 431]),
@@ -112,22 +130,39 @@ def breakpoints() -> dict:
 
 
 def pollutants_A_24hr_avg(pollutants_A: np.ndarray) -> np.ndarray:
-    """24 hour move average of pollutant A"""
+    """24 hour move average of pollutant A."""
     return _moving_mean(pollutants_A, 24)
 
 
 def pollutants_B_8hr_avg(pollutants_B: np.ndarray, pollutants_A_24hr_avg: np.ndarray) -> np.ndarray:
-    """8 hour move average of pollutant B"""
+    """8 hour move average of pollutant B.
+    To make sure both the sets are of the same length, we will truncate the pollutants_B_8hr_avg according to
+    the length of pollutants_A_24hr_avg. This will also ensure we have concentrations for all the pollutants
+    over the same period of time.
+    """
     return _moving_mean(pollutants_B, 8)[-(pollutants_A_24hr_avg.shape[0]):]
 
 
 def pollutants(pollutants_A_24hr_avg: np.ndarray, pollutants_B_8hr_avg: np.ndarray) -> np.ndarray:
-    """Concatenates Pollutants A and Pollutants B"""
+    """Concatenates Pollutants A and Pollutants B.
+
+    Now, we can join both sets with np.concatenate to form a single data set of all the averaged concentrations.
+    Note that we have to join our arrays column-wise so we pass the axis=1 parameter.
+    """
     return np.concatenate((pollutants_A_24hr_avg, pollutants_B_8hr_avg), axis=1)
 
 
 def sub_indices(pollutants: np.ndarray, breakpoints: dict, AQI: np.ndarray) -> np.ndarray:
-    """Return sub indicies"""
+    """Return sub indicies.
+
+    The subindices for each pollutant are calculated according to the linear relationship between the AQI and standard
+    breakpoint ranges with the formula as above:
+
+        $$ Ip = \dfrac{\text{IHi – ILo}}{\text{BPHi – BPLo}}\cdot{\text{Cp – BPLo}} + \text{ILo} $$
+
+    By calling our vectorized function vcompute_indices for each pollutant, we get the sub-indices.
+    To get back an array with the original shape, we use np.stack.
+    """
     vcompute_indices = np.vectorize(partial(_compute_indices, breakpoints, AQI))
     return np.stack((vcompute_indices('PM2.5', pollutants[..., 0]),
                      vcompute_indices('PM10', pollutants[..., 1]),

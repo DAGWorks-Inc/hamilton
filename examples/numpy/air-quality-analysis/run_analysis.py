@@ -7,7 +7,9 @@ Run this analysis by doing `python run_analysis.py`.
 
 Or copy this code into a notebook for further analysis...
 
-Otherwise this is meant to mirror analysis as presented in https://github.com/numpy/numpy-tutorials/tree/main/content.
+Otherwise this is meant to mirror analysis as presented in
+https://github.com/numpy/numpy-tutorials/blob/main/content/tutorial-air-quality-analysis.md
+
 """
 
 if __name__ == '__main__':
@@ -26,7 +28,8 @@ if __name__ == '__main__':
     print(result)
     print(f"The t value is {result['t_value']} and the p value is {result['p_value']}.")
 
-    # from a dict result, it's easy to use another ResultMixin to build another result
+    # Just to show you, from a dict result, it's easy to use another ResultMixin to build another result.
+    # This can be an easy way to try out/prototype what you want to do next -- before committing to it.
     sample_matrix = base.NumpyMatrixResult().build_result(before_sample=result['before_sample'],
                                                           after_sample=result['after_sample'])
     print(sample_matrix)
