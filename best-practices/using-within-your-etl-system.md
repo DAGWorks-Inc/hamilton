@@ -6,16 +6,18 @@ description: How to integrate Hamilton within your existing ETL system.
 
 ## Compatibility Matrix
 
-|                                           |                              |
-| ----------------------------------------- | ---------------------------- |
-| Framework / Scheduler                     | Compatibility                |
-| Airflow                                   | ✅                            |
-| Dagster                                   | ✅                            |
-| Prefect                                   | ✅                            |
-| Kubeflow                                  | ✅                            |
-| CRON                                      | ✅                            |
-| dbt                                       | ⛔️ (dbt does not run python) |
-| ... in general if it runs python 3.6+ ... | ✅                            |
+|                                                                           |                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework / Scheduler                                                     | Compatibility                                                                                                                                                                                                                                                                                   |
+| [Airflow](http://airflow.org)                                             | ✅                                                                                                                                                                                                                                                                                               |
+| [Dagster](https://dagster.io)                                             | ✅                                                                                                                                                                                                                                                                                               |
+| [Prefect](https://prefect.io)                                             | ✅                                                                                                                                                                                                                                                                                               |
+| [Kubeflow Pipelines](https://www.kubeflow.org/docs/components/pipelines/) | ✅                                                                                                                                                                                                                                                                                               |
+| CRON                                                                      | ✅                                                                                                                                                                                                                                                                                               |
+| [dbt](https://getdbt.com)                                                 | ⛔️ (dbt does not run python)                                                                                                                                                                                                                                                                    |
+| kubernetes                                                                | ✅  but you need to setup kubernetes to run an image that can run python code - e.g. see [https://medium.com/avmconsulting-blog/running-a-python-application-on-kubernetes-aws-56609e7cd88c](https://medium.com/avmconsulting-blog/running-a-python-application-on-kubernetes-aws-56609e7cd88c)  |
+| docker                                                                    | ✅  but you need to setup a docker image that can execute python code.                                                                                                                                                                                                                           |
+| ... in general if it runs python 3.6+ ...                                 | ✅                                                                                                                                                                                                                                                                                               |
 
 ## &#x20;ETL Recipe
 
