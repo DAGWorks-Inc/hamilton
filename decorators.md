@@ -214,3 +214,25 @@ To make this easier, we have a few more `@config` decorators:
     - `@config` If you're feeling adventurous, you can pass in a lambda function that takes in the entire configuration
       and resolves to
     `True` or `False`. You probably don't want to do this.
+
+## @tag
+
+Allows you to attach metadata to a node (any node decorated with the function).
+A common use of this is to enable marking nodes as part of some data product.
+
+For instance:
+
+```python
+import pandas as pd
+from hamilton.function_modifiers import tag
+
+def intermediate_column() -> pd.Series:
+    pass
+
+@tag(data_product='final')
+def final_column(intermediate_column: pd.Series) -> pd.Series:
+    pass
+```
+
+Using the `list_available_variables()` capability exposes tags along with variables,
+enabling querying of the available variables for specific tag matches.
