@@ -37,13 +37,6 @@ def load_requirements():
     return list(requirements)
 
 
-def load_test_requirements():
-    with open('requirements-test.txt') as f:
-        return [line.strip() for line in f]
-
-
-test_requirements = load_test_requirements()
-
 setup(
     name='sf-hamilton',  # there's already a hamilton in pypi
     version=VERSION,
@@ -70,10 +63,6 @@ setup(
         'Programming Language :: Python :: 3.9',
     ],
     test_suite='tests',
-
-    # similar to setup_requires, these packages are not added to your venv but are made available
-    # during testing
-    tests_require=test_requirements,
 
     # Note that this feature requires pep8 >= v9 and a version of setup tools greater than the
     # default version installed with virtualenv. Make sure to update your tools!
