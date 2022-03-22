@@ -123,7 +123,7 @@ class Node(object):
         return self._depended_on_by
 
     @property
-    def tags(self) -> Collection[str]:
+    def tags(self) -> Dict[str, Any]:
         return self._tags
 
     def __hash__(self):

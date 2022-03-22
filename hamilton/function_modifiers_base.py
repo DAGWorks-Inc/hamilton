@@ -178,6 +178,8 @@ class NodeExpander(SubDAGModifier):
 
 
 class NodeTransformer(SubDAGModifier):
+    NON_FINAL_TAG = 'hamilton.decorators.non_final'  # TODO -- utilize this in _separate_final_nodes
+
     def _separate_final_nodes(self, nodes: Collection[node.Node]) -> Tuple[Collection[node.Node], Collection[node.Node]]:
         """Separates out final nodes (sinks) from the nodes.
 
