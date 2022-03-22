@@ -1,5 +1,6 @@
 import inspect
 import tempfile
+import typing
 import uuid
 
 import pandas as pd
@@ -11,6 +12,7 @@ import tests.resources.cyclic_functions
 import tests.resources.dummy_functions
 import tests.resources.extract_column_nodes
 import tests.resources.extract_columns_execution_count
+import tests.resources.functions_with_generics
 import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
 import tests.resources.typing_vs_not_typing
@@ -428,3 +430,89 @@ def test_extract_columns_executes_once():
     unique_id = str(uuid.uuid4())
     fg.execute([n for n in fg.get_nodes()], inputs={'unique_id': unique_id})
     assert len(tests.resources.extract_columns_execution_count.outputs[unique_id]) == 1  # It should only be called once
+
+
+class X():
+    pass
+
+
+class Y(X):
+    pass
+
+
+custom_type = typing.TypeVar('FOOBAR')
+
+
+@pytest.mark.parametrize('param_type,required_type,expected', [
+    (custom_type, custom_type, True),
+    (custom_type, typing.TypeVar('FOO'), False),
+    (int, int, True),
+    (int, float, False),
+    (typing.List[int], typing.List, True),
+    (typing.List, typing.List[float], True),
+    (typing.List, list, True),
+    (typing.Dict, dict, True),
+    (dict, typing.Dict, True),
+    (list, typing.List, True),
+    (list, typing.List, True),
+    (typing.List[int], typing.List[float], False),
+    (typing.Dict, typing.List, False),
+    (typing.Mapping, typing.Dict, True),
+    (typing.Mapping, dict, True),
+    (dict, typing.Mapping, False),
+    (typing.Dict, typing.Mapping, False),
+    (typing.Iterable, typing.List, True),
+    (typing.Tuple[str, str], typing.Tuple[str, str], True),
+    (typing.Tuple[str, str], typing.Tuple[str], False),
+    (typing.Tuple[str, str], typing.Tuple, True),
+    (typing.Tuple, typing.Tuple[str, str], True),
+    (typing.Union[str, str], typing.Union[str, str], True),
+    (X, X, True),
+    (X, Y, True),
+    (Y, X, False),
+])
+def test_custom_subclass_check(param_type, required_type, expected):
+    """Tests the custom_subclass_check"""
+    actual = graph.custom_subclass_check(required_type, param_type)
+    assert actual == expected
+
+
+class TestAdapter(base.SimplePythonDataFrameGraphAdapter):
+    @staticmethod
+    def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
+        # fake equivalence function
+        return node_type == pd.Series and input_type == list
+
+
+adapter = TestAdapter()
+
+
+@pytest.mark.parametrize('adapter,param_type,required_type,expected', [
+    (None, typing.TypeVar('FOO'), typing.TypeVar('BAR'), False),
+    (None, custom_type, custom_type, True),
+    (None, int, int, True),
+    (adapter, int, float, False),
+    (None, typing.Dict, typing.Any, True),
+    (None, X, X, True),
+    (None, X, Y, True),
+    (adapter, pd.Series, pd.Series, True),
+    (adapter, list, pd.Series, True),
+    (adapter, dict, pd.Series, False),
+])
+def test_types_match(adapter, param_type, required_type, expected):
+    """Tests the types_match function"""
+    actual = graph.types_match(adapter, param_type, required_type)
+    assert actual == expected
+
+
+def test_end_to_end_with_generics():
+    fg = graph.FunctionGraph(tests.resources.functions_with_generics, config={'b': {}, 'c': 1})
+    results = fg.execute(fg.get_nodes())
+    assert results == {
+        'A': ({}, 1),
+        'B': [({}, 1), ({}, 1)],
+        'C': {'foo': [({}, 1), ({}, 1)]},
+        'D': 1.0,
+        'b': {},
+        'c': 1
+    }
