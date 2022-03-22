@@ -4,11 +4,13 @@ It cannot import hamilton.graph, or hamilton.driver.
 """
 import abc
 import collections
+import inspect
 import typing
 import logging
 
 import pandas as pd
 import numpy as np
+import typing_inspect
 
 from . import node
 
@@ -136,7 +138,13 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
 
     @staticmethod
     def check_input_type(node_type: typing.Type, input_value: typing.Any) -> bool:
-        return node_type == typing.Any or isinstance(input_value, node_type)
+        if node_type == typing.Any:
+            return True
+        elif inspect.isclass(node_type) and isinstance(input_value, node_type):
+            return True
+        elif typing_inspect.is_typevar(node_type):  # skip runtime comparison for now.
+            return True
+        return False
 
     @staticmethod
     def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
