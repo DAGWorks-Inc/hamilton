@@ -13,10 +13,11 @@ import tests.resources.dummy_functions
 import tests.resources.extract_column_nodes
 import tests.resources.extract_columns_execution_count
 import tests.resources.functions_with_generics
+import tests.resources.layered_decorators
+import tests.resources.optional_dependencies
 import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
 import tests.resources.typing_vs_not_typing
-import tests.resources.layered_decorators
 from hamilton import graph, base
 from hamilton import node
 from hamilton.node import NodeSource
@@ -189,7 +190,7 @@ def test_get_required_functions():
     expected_user_nodes = {nodes['b'], nodes['c']}
     expected_nodes = {nodes['A'], nodes['B'], nodes['b'], nodes['c']}  # we skip 'C'
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
-    actual_nodes, actual_ud_nodes = fg.get_required_functions(final_vars)
+    actual_nodes, actual_ud_nodes = fg.get_upstream_nodes(final_vars)
     assert actual_nodes == expected_nodes
     assert actual_ud_nodes == expected_user_nodes
 
@@ -232,7 +233,7 @@ def test_end_to_end_with_parametrized_inputs():
 def test_get_required_functions_askfor_config():
     """Tests that a simple function graph with parametrized nodes works end-to-end"""
     fg = graph.FunctionGraph(tests.resources.parametrized_nodes, config={'a': 1})
-    nodes, user_nodes = fg.get_required_functions(['a', 'parametrized_1'])
+    nodes, user_nodes = fg.get_upstream_nodes(['a', 'parametrized_1'])
     n, = user_nodes
     assert n.name == 'a'
     results = fg.execute(user_nodes)
@@ -298,7 +299,7 @@ def test_function_graph_has_cycles_true():
     nodes = [n for n in all_nodes if not n.user_defined]
     user_nodes = [n for n in all_nodes if n.user_defined]
     assert fg.has_cycles(nodes, user_nodes) is True
-    required_nodes, required_user_nodes = fg.get_required_functions(['A', 'B', 'C'])
+    required_nodes, required_user_nodes = fg.get_upstream_nodes(['A', 'B', 'C'])
     assert required_nodes == set(nodes + user_nodes)
     assert required_user_nodes == set(user_nodes)
     # We don't want to support this behavior officially -- but this works:
@@ -318,7 +319,7 @@ def test_function_graph_has_cycles_false():
     user_nodes = [n for n in all_nodes if n.user_defined]
     assert fg.has_cycles(nodes, user_nodes) is False
     # this is called by the driver
-    nodes, user_nodes = fg.get_required_functions(['A', 'B', 'C'])
+    nodes, user_nodes = fg.get_upstream_nodes(['A', 'B', 'C'])
     assert fg.has_cycles(nodes, user_nodes) is False
 
 
@@ -357,7 +358,7 @@ def test_function_graph_display():
 def test_create_graphviz_graph():
     """Tests that we create a graphviz graph"""
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
-    nodes, user_nodes = fg.get_required_functions(['A', 'B', 'C'])
+    nodes, user_nodes = fg.get_upstream_nodes(['A', 'B', 'C'])
     # hack of a test -- but it works... sort the lines and match them up.
     # why? because for some reason given the same graph, the output file isn't deterministic.
     expected = sorted(['// test-graph',
@@ -387,7 +388,7 @@ def test_create_graphviz_graph():
 def test_create_networkx_graph():
     """Tests that we create a networkx graph"""
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
-    nodes, user_nodes = fg.get_required_functions(['A', 'B', 'C'])
+    nodes, user_nodes = fg.get_upstream_nodes(['A', 'B', 'C'])
     digraph = graph.create_networkx_graph(nodes, user_nodes, 'test-graph')
     expected_nodes = sorted(['c', 'B', 'C', 'b', 'A'])
     expected_edges = sorted([('c', 'A'), ('b', 'A'), ('A', 'B'), ('A', 'C')])
@@ -523,3 +524,63 @@ def test_end_to_end_with_generics():
         'b': {},
         'c': 1
     }
+
+
+@pytest.mark.parametrize(
+    'config,inputs,overrides',
+    [
+        # testing with no provided inputs
+        ({}, {}, {}),
+        # testing with just configs
+        ({'a': 11}, {}, {}),
+        ({'b': 13, 'a': 17}, {}, {}),
+        ({'b': 19, 'a': 23, 'd': 29, 'f': 31}, {}, {}),
+        # Testing with just inputs
+        ({}, {'a': 37}, {}),
+        ({}, {'b': 41, 'a': 43}, {}),
+        ({}, {'b': 41, 'a': 43, 'd': 47, 'f': 53}, {}),
+        # Testing with just overrides
+        # TBD whether these should be legitimate -- can we override required inputs?
+        # Test works now but not part of the contract
+        # ({}, {}, {'a': 59}),
+        # ({}, {}, {'a': 61, 'b': 67}),
+        # ({}, {}, {'a': 71, 'b': 73, 'd': 79, 'f': 83}),
+        # testing with a mix
+        ({'a': 89}, {'b': 97}, {}),
+        ({'a': 101}, {'b': 103, 'd': 107}, {}),
+    ]
+
+)
+def test_optional_execute(config, inputs, overrides):
+    """Tests execution of optionals with different assortment of overrides, configs, inputs, etc...
+    Be careful adding tests with conflicting values between them.
+    """
+    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config=config)
+    results = fg.execute([fg.nodes['g']], inputs=inputs, overrides=overrides)
+    do_all_args = {key + '_val': val for key, val in {**config, **inputs, **overrides}.items()}
+    expected_results = tests.resources.optional_dependencies._do_all(**do_all_args)
+    assert results['g'] == expected_results['g']
+
+
+def test_optional_get_required_compile_time():
+    """Tests that getting required with optionals at compile time returns everything
+    TODO -- change this to be testing a different function (compile time) than runtime.
+    """
+    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    all_upstream, user_required = fg.get_upstream_nodes(['g'])
+    assert len(all_upstream) == 7  # 6 total nodes upstream
+    assert len(user_required) == 4  # 4 nodes required input
+
+
+def test_optional_get_required_runtime():
+    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    all_upstream, user_required = fg.get_upstream_nodes(['g'], runtime_inputs={})  # Nothng required
+    assert len(all_upstream) == 3  # 6 total nodes upstream
+    assert len(user_required) == 0  # 4 nodes required input
+
+
+def test_optional_get_required_runtime_with_provided():
+    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    all_upstream, user_required = fg.get_upstream_nodes(['g'], runtime_inputs={'b': 109})  # Nothng required
+    assert len(all_upstream) == 4  # 6 total nodes upstream
+    assert len(user_required) == 1  # 4 nodes required input

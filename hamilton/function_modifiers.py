@@ -192,7 +192,6 @@ class extract_columns(NodeExpander):
         return output_nodes
 
 
-
 class extract_fields(NodeExpander):
     """Extracts fields from a dictionary of output."""
 

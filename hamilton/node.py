@@ -63,9 +63,10 @@ class Node(object):
         self._dependencies = []
         self._depended_on_by = []
 
+        self._input_types = {}
+
         if self._node_source == NodeSource.STANDARD:
             if input_types is not None:
-                self._input_types = {}
                 for key, value in input_types.items():
                     if isinstance(value, tuple):
                         self._input_types[key] = value
@@ -73,11 +74,14 @@ class Node(object):
                         self._input_types = {key: (value, DependencyType.REQUIRED) for key, value in input_types.items()}
             else:
                 signature = inspect.signature(callabl)
-                self._input_types = {}
                 for key, value in signature.parameters.items():
                     if value.annotation == inspect._empty:
                         raise ValueError(f'Missing type hint for {key} in function {name}. Please add one to fix.')
                     self._input_types[key] = (value.annotation, DependencyType.from_parameter(value))
+        elif self.user_defined:
+            if input_types is not None:
+                raise ValueError(f'Input types cannot be provided for user-defined node {self.name}')
+
 
     @property
     def documentation(self) -> str:

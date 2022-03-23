@@ -19,7 +19,7 @@ from hamilton.node import NodeSource, DependencyType
 from hamilton import base
 
 logger = logging.getLogger(__name__)
-BASE_ARGS_FOR_GENERICS = (typing.T, )
+BASE_ARGS_FOR_GENERICS = (typing.T,)
 
 
 # kind of hacky for now but it will work
@@ -56,7 +56,7 @@ def custom_subclass_check(requested_type: Type[Type], param_type: Type[Type]):
         return True
 
     if ((typing_inspect.is_generic_type(requested_type) and typing_inspect.is_generic_type(param_type)) or
-        (inspect.isclass(requested_type) and typing_inspect.is_generic_type(param_type))):
+            (inspect.isclass(requested_type) and typing_inspect.is_generic_type(param_type))):
         # we're comparing two generics that aren't equal -- check if Mapping vs Dict
         # or we're comparing a class to a generic -- check if Mapping vs dict
         # the precedence is that requested will go into the param_type, so the param_type should be more permissive.
@@ -215,6 +215,7 @@ class FunctionGraph(object):
 
     That is, you should not try to build off of it directly without chatting to us first.
     """
+
     def __init__(self, *modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter = None):
         """Initializes a function graph by crawling through modules. Function graph must have a config,
         as the config could determine the shape of the graph.
@@ -322,17 +323,42 @@ class FunctionGraph(object):
         nodes, user_nodes = self.directional_dfs_traverse(lambda n: n.depended_on_by, starting_nodes=var_changes)
         return nodes
 
-    def get_required_functions(self, final_vars: List[str]) -> Tuple[Set[node.Node], Set[node.Node]]:
+    def get_upstream_nodes(self, final_vars: List[str], runtime_inputs: Dict[str, Any] = None) -> Tuple[Set[node.Node], Set[node.Node]]:
         """Given our function graph, and a list of desired output variables, returns the subgraph required to compute them.
 
         :param final_vars: the list of node names we want.
+        :param runtime_inputs: runtime inputs to the DAG -- if not provided we will assume we're running at compile-time.
+        Everything would then be required (even though it might be marked as optional), as we want to crawl the whole DAG.
+        If we're at runtime, we want to just use the nodes that are provided, and not count the optional ones that are not.
         :return: a tuple of sets:
             - set of all nodes.
             - subset of nodes that human input is required for.
         """
-        return self.directional_dfs_traverse(lambda n: n.dependencies, starting_nodes=final_vars)
+
+        def next_nodes_function(n: node.Node) -> List[node.Node]:
+            if runtime_inputs is None:
+                return n.dependencies
+            deps = []
+            for dep in n.dependencies:
+                # If inputs is None, we want to assume its required, as it is a compile-time dependency
+                if dep.user_defined and dep.name not in runtime_inputs and dep.name not in self.config:
+                    _, dependency_type = n.input_types[dep.name]
+                    if dependency_type == DependencyType.OPTIONAL:
+                        continue
+                deps.append(dep)
+            return deps
+
+        return self.directional_dfs_traverse(next_nodes_function, starting_nodes=final_vars)
 
     def directional_dfs_traverse(self, next_nodes_fn: Callable[[node.Node], Collection[node.Node]], starting_nodes: List[str]):
+        """Traverses the DAG directionally using a DFS.
+
+        :param next_nodes_fn: Function to give the next set of nodes
+        :param starting_nodes: Which nodes to start at.
+        :return: a tuple of sets:
+            - set of all nodes.
+            - subset of nodes that human input is required for.
+        """
         nodes = set()
         user_nodes = set()
 

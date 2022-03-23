@@ -10,6 +10,8 @@ import typing
 
 from dataclasses import dataclass
 
+from hamilton import node
+
 if __name__ == '__main__':
     import graph
     import node
@@ -47,6 +49,22 @@ class Driver(object):
         self.graph = graph.FunctionGraph(*modules, config=config, adapter=adapter)
         self.adapter = adapter
 
+    def _node_is_required_by_anything(self, node_: node.Node) -> bool:
+        """Checks dependencies on this node and determines if at least one requires it.
+
+        Nodes can be optionally depended upon, i.e. the function parameter has a default value. We want to check that
+        of the nodes the depend on this one, at least one of them requires it, i.e. the parameter is not optional.
+
+        :param node_: node in question
+        :return: True if it is required by any downstream node, false otherwise
+        """
+        required = False
+        for downstream_node in node_.depended_on_by:
+            _, dep_type = downstream_node.input_types[node_.name]
+            if dep_type == node.DependencyType.REQUIRED:
+                return True
+        return required
+
     def validate_inputs(self, user_nodes: Collection[node.Node], inputs: typing.Optional[Dict[str, Any]] = None):
         """Validates that inputs meet our expectations. This means that:
         1. The runtime inputs don't clash with the graph's config
@@ -61,8 +79,9 @@ class Driver(object):
         errors = []
         for user_node in user_nodes:
             if user_node.name not in all_inputs:
-                errors.append(f'Error: Required input {user_node.name} not provided '
-                              f'for nodes: {[node.name for node in user_node.depended_on_by]}.')
+                if self._node_is_required_by_anything(user_node):
+                    errors.append(f'Error: Required input {user_node.name} not provided '
+                                  f'for nodes: {[node.name for node in user_node.depended_on_by]}.')
             elif (all_inputs[user_node.name] is not None
                   and not self.adapter.check_input_type(user_node.type, all_inputs[user_node.name])):
                 errors.append(f'Error: Type requirement mismatch. Expected {user_node.name}:{user_node.type} '
@@ -108,7 +127,7 @@ class Driver(object):
         :param inputs: Runtime inputs to the DAG
         :return:
         """
-        nodes, user_nodes = self.graph.get_required_functions(final_vars)
+        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
         self.validate_inputs(user_nodes, inputs)  # TODO -- validate within the function graph itself
         if display_graph:  # deprecated flow.
             logger.warning('display_graph=True is deprecated. It will be removed in the 2.0.0 release. '
@@ -158,7 +177,7 @@ class Driver(object):
             If you do not want to view the file, pass in `{'view':False}`.
         :param inputs: Optional. Runtime inputs to the DAG.
         """
-        nodes, user_nodes = self.graph.get_required_functions(final_vars)
+        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
         self.validate_inputs(user_nodes, inputs)
         try:
             self.graph.display(nodes, user_nodes, output_file_path, render_kwargs=render_kwargs)
@@ -172,7 +191,7 @@ class Driver(object):
         :return: boolean True for cycles, False for no cycles.
         """
         # get graph we'd be executing over
-        nodes, user_nodes = self.graph.get_required_functions(final_vars)
+        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars)
         return self.graph.has_cycles(nodes, user_nodes)
 
 
