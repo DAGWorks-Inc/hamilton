@@ -298,8 +298,12 @@ def test_function_graph_has_cycles_true():
     nodes = [n for n in all_nodes if not n.user_defined]
     user_nodes = [n for n in all_nodes if n.user_defined]
     assert fg.has_cycles(nodes, user_nodes) is True
-    with pytest.raises(RecursionError):
-        fg.get_required_functions(['A', 'B', 'C'])
+    nodez, user_nodez = fg.get_required_functions(['A', 'B', 'C'])
+    assert nodez == set(nodes + user_nodes)
+    assert user_nodez == set(user_nodes)
+    result = fg.execute([n for n in nodes if n.name == 'B'], overrides={'A': 1, 'D': 2})
+    assert len(result) == 3
+    assert result['B'] == 3
 
 
 def test_function_graph_has_cycles_false():

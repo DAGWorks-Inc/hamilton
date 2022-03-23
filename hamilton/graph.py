@@ -337,10 +337,10 @@ class FunctionGraph(object):
         user_nodes = set()
 
         def dfs_traverse(node: node.Node):
+            nodes.add(node)
             for n in next_nodes_fn(node):
                 if n not in nodes:
                     dfs_traverse(n)
-            nodes.add(node)
             if node.user_defined:
                 user_nodes.add(node)
 
