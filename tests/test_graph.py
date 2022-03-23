@@ -301,9 +301,10 @@ def test_function_graph_has_cycles_true():
     required_nodes, required_user_nodes = fg.get_required_functions(['A', 'B', 'C'])
     assert required_nodes == set(nodes + user_nodes)
     assert required_user_nodes == set(user_nodes)
-    result = fg.execute([n for n in nodes if n.name == 'B'], overrides={'A': 1, 'D': 2})
-    assert len(result) == 3
-    assert result['B'] == 3
+    # We don't want to support this behavior officially -- but this works:
+    # result = fg.execute([n for n in nodes if n.name == 'B'], overrides={'A': 1, 'D': 2})
+    # assert len(result) == 3
+    # assert result['B'] == 3
     with pytest.raises(RecursionError):  # throw recursion error when we don't have a way to short circuit
         fg.execute([n for n in nodes if n.name == 'B'])
 

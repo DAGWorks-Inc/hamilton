@@ -23,12 +23,12 @@ def test_driver_has_cycles_true():
     dr = Driver({}, tests.resources.cyclic_functions)
     assert dr.has_cycles(['C'])
 
-
-def test_driver_cycles_execute_override():
-    """Tests that we short circuit a cycle by passing in overrides."""
-    dr = Driver({}, tests.resources.cyclic_functions, adapter=base.SimplePythonGraphAdapter(base.DictResult()))
-    result = dr.execute(['C'], overrides={'D': 1}, inputs={'b': 2, 'c': 2})
-    assert result['C'] == 34
+# This is possible -- but we don't want to officially support it. Here for documentation purposes.
+# def test_driver_cycles_execute_override():
+#     """Tests that we short circuit a cycle by passing in overrides."""
+#     dr = Driver({}, tests.resources.cyclic_functions, adapter=base.SimplePythonGraphAdapter(base.DictResult()))
+#     result = dr.execute(['C'], overrides={'D': 1}, inputs={'b': 2, 'c': 2})
+#     assert result['C'] == 34
 
 
 def test_driver_cycles_execute_recursion_error():
