@@ -336,8 +336,12 @@ class FunctionGraph(object):
             computed = {}
 
         def dfs_traverse(node: node.Node, dependency_type: DependencyType = DependencyType.REQUIRED):
+            if node.name in computed:
+                return
+            if node.name in overrides:
+                computed[node.name] = overrides[node.name]
+                return
             for n in node.dependencies:
-
                 if n.name not in computed:
                     _, node_dependency_type = node.input_types[n.name]
                     dfs_traverse(n, node_dependency_type)
@@ -350,9 +354,6 @@ class FunctionGraph(object):
                     return
                 value = inputs[node.name]
             else:
-                if node.name in overrides:
-                    computed[node.name] = overrides[node.name]
-                    return
                 kwargs = {}  # construct signature
                 for dependency in node.dependencies:
                     if dependency.name in computed:

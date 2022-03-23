@@ -1,5 +1,6 @@
 import inspect
 import tempfile
+import uuid
 
 import pandas as pd
 import pytest
@@ -9,6 +10,7 @@ import tests.resources.config_modifier
 import tests.resources.cyclic_functions
 import tests.resources.dummy_functions
 import tests.resources.extract_column_nodes
+import tests.resources.extract_columns_execution_count
 import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
 import tests.resources.typing_vs_not_typing
@@ -324,17 +326,17 @@ def test_function_graph_display():
     # hack of a test -- but it works... sort the lines and match them up.
     # why? because for some reason given the same graph, the output file isn't deterministic.
     expected = sorted(['// Dependency Graph\n',
-                'digraph {\n',
-                '\tA [label=A]\n',
-                '\tC [label=C]\n',
-                '\tB [label=B]\n',
-                '\tc [label="UD: c"]\n',
-                '\tb [label="UD: b"]\n',
-                '\tb -> A\n',
-                '\tc -> A\n',
-                '\tA -> C\n',
-                '\tA -> B\n',
-                '}\n'])
+                       'digraph {\n',
+                       '\tA [label=A]\n',
+                       '\tC [label=C]\n',
+                       '\tB [label=B]\n',
+                       '\tc [label="UD: c"]\n',
+                       '\tb [label="UD: b"]\n',
+                       '\tb -> A\n',
+                       '\tc -> A\n',
+                       '\tA -> C\n',
+                       '\tA -> B\n',
+                       '}\n'])
     with tempfile.TemporaryDirectory() as tmp_dir:
         path = tmp_dir.join('test.dot')
         fg.display(defined_nodes, user_nodes, str(path), {'view': False})
@@ -386,10 +388,10 @@ def test_create_networkx_graph():
 
 def test_end_to_end_with_layered_decorators_resolves_true():
     fg = graph.FunctionGraph(tests.resources.layered_decorators, config={'foo': 'bar', 'd': 10, 'b': 20})
-    out = fg.execute([n for n in fg.get_nodes()], overrides={'b': 10})
+    out = fg.execute([n for n in fg.get_nodes()])
     assert len(out) > 0  # test config.when resolves correctly
-    assert out['e'] == (20+10)
-    assert out['f'] == (30+10)
+    assert out['e'] == (20 + 10)
+    assert out['f'] == (20 + 20)
 
 
 def test_end_to_end_with_layered_decorators_resolves_false():
@@ -417,3 +419,12 @@ def test_combine_inputs_collision_2():
     when there are collisions of keys and values"""
     with pytest.raises(ValueError):
         graph.FunctionGraph.combine_config_and_inputs({'a': 1}, {'a': 1})
+
+
+def test_extract_columns_executes_once():
+    """Ensures that extract_columns only computes the function once.
+    Note this is a bit heavy-handed of a test but its nice to have."""
+    fg = graph.FunctionGraph(tests.resources.extract_columns_execution_count, config={})
+    unique_id = str(uuid.uuid4())
+    fg.execute([n for n in fg.get_nodes()], inputs={'unique_id': unique_id})
+    assert len(tests.resources.extract_columns_execution_count.outputs[unique_id]) == 1  # It should only be called once
