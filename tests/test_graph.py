@@ -292,18 +292,20 @@ def test_config_can_override():
 
 
 def test_function_graph_has_cycles_true():
-    """Tests whether we catch a graph with cycles"""
+    """Tests whether we catch a graph with cycles -- and expected behaviors"""
     fg = graph.FunctionGraph(tests.resources.cyclic_functions, config={'b': 2, 'c': 1})
     all_nodes = fg.get_nodes()
     nodes = [n for n in all_nodes if not n.user_defined]
     user_nodes = [n for n in all_nodes if n.user_defined]
     assert fg.has_cycles(nodes, user_nodes) is True
-    nodez, user_nodez = fg.get_required_functions(['A', 'B', 'C'])
-    assert nodez == set(nodes + user_nodes)
-    assert user_nodez == set(user_nodes)
+    required_nodes, required_user_nodes = fg.get_required_functions(['A', 'B', 'C'])
+    assert required_nodes == set(nodes + user_nodes)
+    assert required_user_nodes == set(user_nodes)
     result = fg.execute([n for n in nodes if n.name == 'B'], overrides={'A': 1, 'D': 2})
     assert len(result) == 3
     assert result['B'] == 3
+    with pytest.raises(RecursionError):  # throw recursion error when we don't have a way to short circuit
+        fg.execute([n for n in nodes if n.name == 'B'])
 
 
 def test_function_graph_has_cycles_false():
