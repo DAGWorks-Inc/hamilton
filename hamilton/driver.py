@@ -171,8 +171,8 @@ class Driver(object):
         :param final_vars: the outputs we want to compute.
         :return: boolean True for cycles, False for no cycles.
         """
+        # get graph we'd be executing over
         nodes, user_nodes = self.graph.get_required_functions(final_vars)
-        self.validate_inputs(user_nodes, self.graph.config)
         return self.graph.has_cycles(nodes, user_nodes)
 
 
