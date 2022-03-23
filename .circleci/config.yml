@@ -5,7 +5,7 @@
 
 version: 2
 jobs:
-  build:
+  build-py36:
     docker:
       - image: circleci/python:3.6
 
@@ -41,6 +41,74 @@ jobs:
   build-py37:
     docker:
       - image: circleci/python:3.7
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+    steps:
+      - checkout
+      - run:
+          name: install hamilton dependencies
+          command: |
+            sudo apt install graphviz
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python --version
+            pip --version
+            pip install -r requirements-test.txt
+            pip install -r requirements.txt
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest tests/
+
+      # run coverage tool!
+      - run:
+          name: run coverage
+          command: |
+            . venv/bin/activate
+            python -m pytest --cov=hamilton tests/
+  build-py38:
+    docker:
+      - image: circleci/python:3.8
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+    steps:
+      - checkout
+      - run:
+          name: install hamilton dependencies
+          command: |
+            sudo apt install graphviz
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python --version
+            pip --version
+            pip install -r requirements-test.txt
+            pip install -r requirements.txt
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest tests/
+
+      # run coverage tool!
+      - run:
+          name: run coverage
+          command: |
+            . venv/bin/activate
+            python -m pytest --cov=hamilton tests/
+  build-py39:
+    docker:
+      - image: circleci/python:3.9
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -198,8 +266,10 @@ workflows:
   version: 2
   unit-test-workflow:
     jobs:
-      - build
+      - build-py36
       - build-py37
+      - build-py38
+      - build-py39
       - pre-commit
       - dask-py36
       - dask-py37
