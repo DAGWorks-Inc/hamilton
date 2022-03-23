@@ -9,26 +9,25 @@ assignees: ''
 
 Short description explaining the high-level reason for the new issue.
 
-## Current behavior
-
-
-## Expected behavior
-
-
-## Library & System Information
-E.g. python version, hamilton library version, linux, etc.
-
-
-**Steps to replicate behavior**
-1.
+# Current behavior
 
 
 ## Stack Traces
 (If applicable)
 
-
 ## Screenshots
 (If applicable)
 
-## Additional context
+
+## Steps to replicate behavior
+1.
+
+## Library & System Information
+E.g. python version, hamilton library version, linux, etc.
+
+
+# Expected behavior
+
+
+# Additional context
 Add any other context about the problem here.
