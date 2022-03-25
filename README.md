@@ -176,6 +176,7 @@ To use it hit `option + mouse click` to create multiple cursors. `Esc` to revert
 
 # Contributors
 
+## Code Contributors
 - Stefan Krawczyk (@skrawcz)
 - Elijah ben Izzy (@elijahbenizzy)
 - Danielle Quinn (@danfisher-sf)
@@ -184,5 +185,7 @@ To use it hit `option + mouse click` to create multiple cursors. `Esc` to revert
 - Vincent Chu (@vslchusf)
 - Christopher Prohm (@chmp)
 - James Lamb (@jameslamb)
+
+## Bug Hunters/Special Mentions
 - Nils Olsson (@nilsso)
 - Michał Siedlaczek (@elshize)
