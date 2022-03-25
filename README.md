@@ -12,6 +12,7 @@ For the backstory on how Hamilton came about, see our [blog post!](https://multi
 # Getting Started
 Here's a quick getting started guide to get you up and running in less than 15 minutes.
 If you need help join our [discord](https://discord.gg/wCqxqBqn73) community to chat/ask Qs/etc.
+For the latest updates, follow us on [twitter](https://twitter.com/hamilton_os)!
 
 ## Installation
 Requirements:
