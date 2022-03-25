@@ -186,4 +186,3 @@ To use it hit `option + mouse click` to create multiple cursors. `Esc` to revert
 - James Lamb (@jameslamb)
 - Nils Olsson (@nilsso)
 - Michał Siedlaczek (@elshize)
-
