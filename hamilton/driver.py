@@ -12,6 +12,13 @@ from dataclasses import dataclass
 
 from hamilton import node
 
+DISCORD_ERROR_MESSAGE = (
+    '-------------------------------------------------------------------\n'
+    'Oh no an error! Need help with Hamilton?\n'
+    'Join our discord and ask for help! https://discord.gg/wCqxqBqn73\n'
+    '-------------------------------------------------------------------\n'
+)
+
 if __name__ == '__main__':
     import graph
     import node
@@ -45,8 +52,11 @@ class Driver(object):
         """
         if adapter is None:
             adapter = base.SimplePythonDataFrameGraphAdapter()
-
-        self.graph = graph.FunctionGraph(*modules, config=config, adapter=adapter)
+        try:
+            self.graph = graph.FunctionGraph(*modules, config=config, adapter=adapter)
+        except Exception as e:
+            logger.error(DISCORD_ERROR_MESSAGE)
+            raise e
         self.adapter = adapter
 
     def _node_is_required_by_anything(self, node_: node.Node) -> bool:
@@ -108,8 +118,12 @@ class Driver(object):
         if display_graph:
             logger.warning('display_graph=True is deprecated. It will be removed in the 2.0.0 release. '
                            'Please use visualize_execution().')
-        outputs = self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
-        return self.adapter.build_result(**outputs)
+        try:
+            outputs = self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
+            return self.adapter.build_result(**outputs)
+        except Exception as e:
+            logger.error(DISCORD_ERROR_MESSAGE)
+            raise e
 
     def raw_execute(self,
                     final_vars: List[str],
