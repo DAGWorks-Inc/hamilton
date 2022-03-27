@@ -1,5 +1,4 @@
 import importlib
-import logging
 
 import pyspark.pandas as ps
 from pyspark.sql import SparkSession
@@ -8,9 +7,6 @@ from hamilton import base
 from hamilton import driver
 from hamilton import log_setup
 from hamilton.experimental import h_spark
-
-
-logger = logging.getLogger(__name__)
 
 
 if __name__ == '__main__':

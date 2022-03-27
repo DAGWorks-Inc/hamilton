@@ -1,9 +1,6 @@
 import inspect
-import logging
 from enum import Enum
 from typing import Type, Dict, Any, Callable, List, Tuple, Union
-
-logger = logging.getLogger(__name__)
 
 """
 Module that contains the primitive components of the graph.

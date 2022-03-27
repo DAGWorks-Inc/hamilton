@@ -1,5 +1,4 @@
 import importlib
-import logging
 
 import ray
 
@@ -8,7 +7,6 @@ from hamilton import driver
 from hamilton import log_setup
 from hamilton.experimental import h_ray
 
-logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     log_setup.setup_logging()

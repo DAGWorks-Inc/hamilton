@@ -1,12 +1,8 @@
 import importlib
-import logging
-import sys
 
 import pandas as pd
 from hamilton import driver
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout)
 initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
     # Note: these values don't have to be all series, they could be a scalar.
     'signups': pd.Series([1, 10, 50, 100, 200, 400]),
