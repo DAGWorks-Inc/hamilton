@@ -11,7 +11,7 @@ There are two parts to Hamilton:
    Once you've written your functions, you will need to use the Hamilton Driver to build the DAG and orchestrate
    execution.
 
-Let's diver deeper into these parts below, but first a word on terminology.
+Let's dive deeper into these parts below, but first a word on terminology.
 
 We use the following terms interchangeably, e.g. a ____ in Hamilton is ... :
 
@@ -118,7 +118,7 @@ Otherwise the contents of the _config_ dictionary should include all the inputs 
 want to create. The configuration dictionary should not be used for overriding what Hamilton will compute.
 To do this, use the `override` parameter as part of the `execute()` -- see below.
 
-#### *modules: ModuleType
+#### modules: ModuleType
 This can be any number of modules. We traverse the modules in the order they are provided.
 
 ### Driver.execute()

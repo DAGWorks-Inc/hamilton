@@ -121,7 +121,7 @@ def copy_of_x(x: pd.Series) -> pd.Series:
 ```
 The example here is a function, that all that it does, is sum all the parameters together. So we can annotate it with
 the `@does` decorator and pass it the `sum_series` function.
-The `@does` decorator is currently limited to just allow functions that consist only of one argument, a generic **kwargs.
+The `@does` decorator is currently limited to just allow functions that consist only of one argument, a generic `**kwargs`.
 
 ## @model
 `@model` allows you to abstract a function that is a model. You will need to implement models that make sense for
