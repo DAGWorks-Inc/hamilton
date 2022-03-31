@@ -118,7 +118,7 @@ Otherwise the contents of the _config_ dictionary should include all the inputs 
 want to create. The configuration dictionary should not be used for overriding what Hamilton will compute.
 To do this, use the `override` parameter as part of the `execute()` -- see below.
 
-#### modules: ModuleType
+#### \*modules: ModuleType
 This can be any number of modules. We traverse the modules in the order they are provided.
 
 ### Driver.execute()
