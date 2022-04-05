@@ -139,11 +139,11 @@ import internal_package_with_logic
 
 ONE_OFF_DATES = {
      #input var        (# output var,               # description of new outputs)
-     'D_ELECTION_2016', ('D_ELECTION_2016_shifted', 'US election 2016 shifted by 1'),
-     'SOME_INPUT_NAME', ('SOME_OUTPUT_NAME', 'Doc string for this thing'),
+     'D_ELECTION_2016': ('D_ELECTION_2016_shifted', 'US election 2016 shifted by 1'),
+     'SOME_INPUT_NAME': ('SOME_OUTPUT_NAME', 'Doc string for this thing'),
 }
             # parameter matches the name of the argument in the function below
-@parametrized_input(parameter='one_off_date', assigned_inputs=ONE_OFF_DATES)
+@parametrized_input(parameter='one_off_date', variable_inputs=ONE_OFF_DATES)
 def date_shifter(one_off_date: pd.Series) -> pd.Series:
     return one_off_date.shift(1)
 ```
