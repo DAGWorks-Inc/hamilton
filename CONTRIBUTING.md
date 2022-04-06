@@ -36,6 +36,6 @@ In terms of getting setup to develop, we invite you to read our [developer setup
 ## Using circleci CLI to run tests locally
 
 1. Install the [circleci CLI](https://circleci.com/docs/2.0/local-cli/).
-2. To run a circleci job locally, you should then, from the root of the repository, do 
+2. To run a circleci job locally, you should then, from the root of the repository, do
    > circleci local execute --job=JOB_NAME
 3. This assumes you have docker installed, it will pull the images, but otherwise will run the circleci job.
