@@ -224,8 +224,11 @@ def test_end_to_end_with_parametrized_inputs():
     assert results == {
         'input_1': 1,
         'input_2': 2,
+        'input_3': 3,
         'output_1': 1 + 3,
         'output_2': 2 + 3,
+        'output_12': 1 + 2 + 3,
+        'output_123': 1 + 2 + 3 + 3,
         'static_value': 3
     }
 

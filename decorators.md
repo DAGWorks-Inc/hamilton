@@ -29,42 +29,46 @@ distinct outputs. The _parameter_ key word argument has to match one of the argu
 the arguments are pulled from outside the DAG. The _assigned_output_ key word argument takes in a dictionary of
 tuple(Output Name, Documentation string) -> value.
 
-## @parametrized_input
-Expands a single function into n, each of which corresponds to a function in which the parameter value is fed
-the input from a *specific column*. Note this decorator and `@parametrized` are quite similar, except that
-the input here is another DAG node, i.e. column, rather than some specific value.
+## @parametrized_inputs
+Expands a single function into _n_, each of which corresponds to a function in which the parameters specified are mapped
+to the specified inputs. Note this decorator and `@parametrized` are quite similar, except that
+the input here is another DAG node(s), i.e. column/input, rather than a specific scalar/static value.
 ```python
 import pandas as pd
-from hamilton.function_modifiers import parametrized_input
-import internal_package_with_logic
+from hamilton.function_modifiers import parametrized_inputs
 
-ONE_OFF_DATES = {
-     #input var        (# output var,               # description of new outputs)
-     'D_ELECTION_2016', ('D_ELECTION_2016_shifted', 'US election 2016 shifted by 1'),
-     'SOME_INPUT_NAME', ('SOME_OUTPUT_NAME', 'Doc string for this thing'),
-}
-            # parameter matches the name of the argument in the function below
-@parametrized_input(parameter='one_off_date', assigned_inputs=ONE_OFF_DATES)
+
+@parametrized_inputs(
+    D_ELECTION_2016_shifted=dict(one_off_date='D_ELECTION_2016'),
+    SOME_OUTPUT_NAME=dict(one_off_date='SOME_INPUT_NAME')
+)
 def date_shifter(one_off_date: pd.Series) -> pd.Series:
+    """{one_off_date} shifted by 1 to create {output_name}"""
     return one_off_date.shift(1)
 
 ```
-We see here that `parameterized_input` allows you to keep your code DRY by reusing the same function to create multiple
-distinct outputs. The _parameter_ key word argument has to match one of the arguments in the function. The rest of
-the arguments are pulled from items inside the DAG. The _assigned_inputs_ key word argument takes in a
-dictionary of input_column -> tuple(Output Name, Documentation string).
+We see here that `parameterized_inputs` allows you to keep your code DRY by reusing the same function to create multiple
+distinct outputs. The key word arguments passed have to have the following structure:
+> OUTPUT_NAME = Mapping of function argument to input that should go into it.
 
-Note that this is equivalent to writing the following two function definitions:
+So in the example, `D_ELECTION_2016_shifted` is an _output_ that will correspond to replacing `one_off_date` with `D_ELECTION_2016`.
+Then similarly `SOME_OUTPUT_NAME` is an _output_ that will correspond to replacing `one_off_date` with `SOME_INPUT_NAME`.
+The documentation for both uses the same function doc and will replace values that are templatized with the input
+parameter names, and the reserved value `output_name`.
+
+To help visualize what the above is doing, it is equivalent to writing the following two function definitions:
 
 ```python
 def D_ELECTION_2016_shifted(D_ELECTION_2016: pd.Series) -> pd.Series:
+    """D_ELECTION_2016 shifted by 1 to create D_ELECTION_2016_shifted"""
     return D_ELECTION_2016.shift(1)
 
 def SOME_OUTPUT_NAME(SOME_INPUT_NAME: pd.Series) -> pd.Series:
+    """SOME_INPUT_NAME shifted by 1 to create SOME_OUTPUT_NAME"""
     return SOME_INPUT_NAME.shift(1)
 ```
 
-Note also that the different input variables must all have compatible types with the original decorated input variable.
+*Note*: that the different input variables must all have compatible types with the original decorated input variable.
 
 ## @extract_columns
 This works on a function that outputs a dataframe, that we want to extract the columns from and make them individually

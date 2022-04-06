@@ -1,7 +1,8 @@
 import functools
+import logging
 import inspect
 import typing
-from typing import Dict, Callable, Collection, Tuple, Union, Any, Type
+from typing import Dict, Callable, Collection, Tuple, Union, Any, Type, List, NamedTuple
 import typing_inspect
 
 import pandas as pd
@@ -9,6 +10,9 @@ import pandas as pd
 from hamilton import node
 from hamilton.function_modifiers_base import NodeCreator, NodeResolver, NodeExpander, sanitize_function_name
 from hamilton.models import BaseModel
+
+
+logger = logging.getLogger(__name__)
 
 """
 Annotations for modifying the way functions get added to the DAG.
@@ -72,7 +76,7 @@ class parametrized_input(NodeExpander):
         Note this decorator and `@parametrized` are quite similar, except that the input here is another DAG node,
         i.e. column, rather than some specific value.
 
-        The `parameterized_inputs` allows you keep your code DRY by reusing the same function but replace the inputs
+        The `parameterized_input` allows you keep your code DRY by reusing the same function but replace the inputs
         to create multiple corresponding distinct outputs. The _parameter_ key word argument has to match one of the
         arguments in the function. The rest of the arguments are pulled from items inside the DAG.
         The _assigned_inputs_ key word argument takes in a
@@ -97,6 +101,7 @@ class parametrized_input(NodeExpander):
             specific_inputs[input_column] = specific_inputs.pop(self.parameter)  # replace the name with the new function name so we get the right dependencies
 
             def new_fn(*args, input_column=input_column, **kwargs):
+                """This function rewrites what is passed in kwargs to the right kwarg for the function."""
                 kwargs = kwargs.copy()
                 kwargs[self.parameter] = kwargs.pop(input_column)
                 return node_.callable(*args, **kwargs)
@@ -120,6 +125,104 @@ class parametrized_input(NodeExpander):
         if self.parameter not in signature.parameters.keys():
             raise InvalidDecoratorException(
                 f'Annotation is invalid -- no such parameter {self.parameter} in function {fn}')
+
+
+class parametrized_inputs(NodeExpander):
+    RESERVED_KWARG = 'output_name'
+
+    def __init__(self, **parameterization: Dict[str, Dict[str, str]]):
+        """Constructor for a modifier that expands a single function into n, each of which corresponds to replacing
+        some subset of the specified parameters with specific inputs.
+
+        Note this decorator and `@parametrized_input` are similar, except this one allows multiple
+        parameters to be mapped to multiple function arguments.
+
+        `parameterized_inputs` allows you keep your code DRY by reusing the same function but replace the inputs
+        to create multiple corresponding distinct outputs. We see here that `parameterized_inputs` allows you to keep
+        your code DRY by reusing the same function to create multiple distinct outputs. The key word arguments passed
+        have to have the following structure:
+            > OUTPUT_NAME = Mapping of function argument to input that should go into it.
+        The documentation for the output is taken from the function. The documentation string can be templatized with
+        the parameter names of the function and the reserved value `output_name` - those will be replaced with the
+        corresponding values from the parameterization.
+
+        :param **parameterization: kwargs of output name to dict of parameter mappings.
+        """
+        self.parametrization = parameterization
+        if not parameterization:
+            raise ValueError(f'Cannot pass empty/None dictionary to parametrized_inputs')
+        for output, mappings in parameterization.items():
+            if not mappings:
+                raise ValueError(f'Error, {output} has a none/empty dictionary mapping. Please fill it.')
+
+    def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+        nodes = []
+        input_types = node_.input_types
+        for output_name, mapping in self.parametrization.items():
+            node_name = output_name
+            # output_name is a reserved kwarg name.
+            node_description = self.format_doc_string(node_.documentation, output_name, **mapping)
+            specific_inputs = {key: value for key, (value, _) in input_types.items()}
+            for func_param, replacement_param in mapping.items():
+                logger.info(f'For function {node_.name}: mapping {replacement_param} to {func_param}.')
+                # replace the name with the new function name so we get the right dependencies
+                specific_inputs[replacement_param] = specific_inputs.pop(func_param)
+
+            def new_fn(*args, inputs=mapping, **kwargs):
+                """This function rewrites what is passed in kwargs to the right kwarg for the function."""
+                kwargs = kwargs.copy()
+                for func_param, replacement_param in inputs.items():
+                    kwargs[func_param] = kwargs.pop(replacement_param)
+                return node_.callable(*args, **kwargs)
+
+            nodes.append(
+                node.Node(
+                    node_name,
+                    node_.type,
+                    node_description,
+                    new_fn,
+                    input_types=specific_inputs))
+        return nodes
+
+    def format_doc_string(self, doc: str, output_name: str, **params: Dict[str, str]) -> str:
+        """Helper function to format a function documentation string.
+
+        :param doc: the string template to format
+        :param output_name: the output name of the function
+        :param params: the parameter mappings
+        :return: formatted string
+        :raises: KeyError if there is a template variable missing from the parameter mapping.
+        """
+        return doc.format(**{self.RESERVED_KWARG: output_name}, **params)
+
+    def validate(self, fn: Callable):
+        """A function is invalid if it does not have the requested parameter.
+
+        :param fn: Function to validate against this annotation.
+        :raises: InvalidDecoratorException If the function does not have the requested parameter
+        """
+        signature = inspect.signature(fn)
+        func_param_name_set = set(signature.parameters.keys())
+        try:
+            for output_name, mappings in self.parametrization.items():
+                self.format_doc_string(fn.__doc__, output_name, **mappings)
+        except KeyError as e:
+            raise InvalidDecoratorException(f'Function docstring templating is incorrect. '
+                                            f'Please fix up the docstring {fn.__module__}.{fn.__name__}.') from e
+
+        if self.RESERVED_KWARG in func_param_name_set:
+            raise InvalidDecoratorException(
+                f'Error function {fn.__module__}.{fn.__name__} cannot have `{self.RESERVED_KWARG}` '
+                f'as a parameter it is reserved.')
+        missing_params = set()
+        for output_name, mappings in self.parametrization.items():
+            for func_name, replacement_name in mappings.items():
+                if func_name not in func_param_name_set:
+                    missing_params.add(func_name)
+        if missing_params:
+            raise InvalidDecoratorException(
+                f'Annotation is invalid -- No such parameter(s) {missing_params} in function '
+                f'{fn.__module__}.{fn.__name__}.')
 
 
 class extract_columns(NodeExpander):

@@ -112,6 +112,73 @@ def test_parametrized_input():
     assert set(nodes[1].input_types.keys()) == {'static', 'input_2'}
 
 
+def test_parametrized_inputs_validate_param_name():
+    """Tests validate function of parameterized_inputs capturing bad param name usage."""
+    annotation = function_modifiers.parametrized_inputs(
+        parameterization={
+            'test_1': dict(parameterfoo='input_1'),
+        })
+    def identity(parameter1: str, parameter2: str, static: str) -> str:
+        """Function with {parameter1} as first input"""
+        return parameter1 + parameter2 + static
+
+    with pytest.raises(function_modifiers.InvalidDecoratorException):
+        annotation.validate(identity)
+
+
+def test_parametrized_inputs_validate_reserved_param():
+    """Tests validate function of parameterized_inputs catching reserved param usage."""
+    annotation = function_modifiers.parametrized_inputs(
+        **{
+            'test_1': dict(parameter2='input_1'),
+        })
+    def identity(output_name: str, parameter2: str, static: str) -> str:
+        """Function with {parameter2} as second input"""
+        return output_name + parameter2 + static
+
+    with pytest.raises(function_modifiers.InvalidDecoratorException):
+        annotation.validate(identity)
+
+
+def test_parametrized_inputs_validate_bad_doc_string():
+    """Tests validate function of parameterized_inputs catching bad doc string."""
+    annotation = function_modifiers.parametrized_inputs(
+        **{
+            'test_1': dict(parameter2='input_1'),
+        })
+    def identity(output_name: str, parameter2: str, static: str) -> str:
+        """Function with {foo} as second input"""
+        return output_name + parameter2 + static
+
+    with pytest.raises(function_modifiers.InvalidDecoratorException):
+        annotation.validate(identity)
+
+
+def test_parametrized_inputs():
+    annotation = function_modifiers.parametrized_inputs(
+        **{
+            'test_1': dict(parameter1='input_1', parameter2='input_2'),
+            'test_2': dict(parameter1='input_2', parameter2='input_1'),
+        })
+
+    def identity(parameter1: str, parameter2: str, static: str) -> str:
+        """Function with {parameter1} as first input"""
+        return parameter1 + parameter2 + static
+
+    nodes = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
+    assert len(nodes) == 2
+    nodes = sorted(nodes, key=lambda n: n.name)
+    assert [n.name for n in nodes] == ['test_1', 'test_2']
+    assert set(nodes[0].input_types.keys()) == {'static', 'input_1', 'input_2'}
+    assert nodes[0].documentation == 'Function with input_1 as first input'
+    assert set(nodes[1].input_types.keys()) == {'static', 'input_1', 'input_2'}
+    assert nodes[1].documentation == 'Function with input_2 as first input'
+    result1 = nodes[0].callable(**{'input_1': '1', 'input_2': '2', 'static': '3'})
+    assert result1 == '123'
+    result2 = nodes[1].callable(**{'input_1': '1', 'input_2': '2', 'static': '3'})
+    assert result2 == '213'
+
+
 def test_invalid_column_extractor():
     annotation = function_modifiers.extract_columns('dummy_column')
 
