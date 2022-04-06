@@ -1,5 +1,7 @@
 # Hamilton
 
+[![CircleCI](https://circleci.com/gh/stitchfix/hamilton/tree/main.svg?style=svg)](https://circleci.com/gh/stitchfix/hamilton/tree/main)
+
 The general purpose micro-framework for creating dataflows from python functions!
 
 Specifically, Hamilton defines a novel paradigm, that allows you to specify a flow of (delayed) execution, that forms a Directed Acyclic Graph (DAG).
