@@ -85,6 +85,8 @@ class parametrized_input(NodeExpander):
         :param parameter: Parameter to expand on.
         :param variable_inputs: A map of tuple of [parameter names, documentation] to values
         """
+        logger.warning('`parameterized_input` (singular) is deprecated. It will be removed in a 2.0.0 release. '
+                       'Please migrate to using `parameterized_inputs` (plural).')
         self.parameter = parameter
         self.assigned_output = variable_inputs
         for value in variable_inputs.values():
