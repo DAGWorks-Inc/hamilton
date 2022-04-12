@@ -29,16 +29,17 @@ distinct outputs. The _parameter_ key word argument has to match one of the argu
 the arguments are pulled from outside the DAG. The _assigned_output_ key word argument takes in a dictionary of
 tuple(Output Name, Documentation string) -> value.
 
-## @parametrized_inputs
+## @parameterized_inputs
 Expands a single function into _n_, each of which corresponds to a function in which the parameters specified are mapped
 to the specified inputs. Note this decorator and `@parametrized` are quite similar, except that
 the input here is another DAG node(s), i.e. column/input, rather than a specific scalar/static value.
+
 ```python
 import pandas as pd
-from hamilton.function_modifiers import parametrized_inputs
+from hamilton.function_modifiers import parameterized_inputs
 
 
-@parametrized_inputs(
+@parameterized_inputs(
     D_ELECTION_2016_shifted=dict(one_off_date='D_ELECTION_2016'),
     SOME_OUTPUT_NAME=dict(one_off_date='SOME_INPUT_NAME')
 )

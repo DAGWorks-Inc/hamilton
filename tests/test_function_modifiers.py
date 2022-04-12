@@ -114,7 +114,7 @@ def test_parametrized_input():
 
 def test_parametrized_inputs_validate_param_name():
     """Tests validate function of parameterized_inputs capturing bad param name usage."""
-    annotation = function_modifiers.parametrized_inputs(
+    annotation = function_modifiers.parameterized_inputs(
         parameterization={
             'test_1': dict(parameterfoo='input_1'),
         })
@@ -128,7 +128,7 @@ def test_parametrized_inputs_validate_param_name():
 
 def test_parametrized_inputs_validate_reserved_param():
     """Tests validate function of parameterized_inputs catching reserved param usage."""
-    annotation = function_modifiers.parametrized_inputs(
+    annotation = function_modifiers.parameterized_inputs(
         **{
             'test_1': dict(parameter2='input_1'),
         })
@@ -142,7 +142,7 @@ def test_parametrized_inputs_validate_reserved_param():
 
 def test_parametrized_inputs_validate_bad_doc_string():
     """Tests validate function of parameterized_inputs catching bad doc string."""
-    annotation = function_modifiers.parametrized_inputs(
+    annotation = function_modifiers.parameterized_inputs(
         **{
             'test_1': dict(parameter2='input_1'),
         })
@@ -155,7 +155,7 @@ def test_parametrized_inputs_validate_bad_doc_string():
 
 
 def test_parametrized_inputs():
-    annotation = function_modifiers.parametrized_inputs(
+    annotation = function_modifiers.parameterized_inputs(
         **{
             'test_1': dict(parameter1='input_1', parameter2='input_2'),
             'test_2': dict(parameter1='input_2', parameter2='input_1'),

@@ -129,7 +129,7 @@ class parametrized_input(NodeExpander):
                 f'Annotation is invalid -- no such parameter {self.parameter} in function {fn}')
 
 
-class parametrized_inputs(NodeExpander):
+class parameterized_inputs(NodeExpander):
     RESERVED_KWARG = 'output_name'
 
     def __init__(self, **parameterization: Dict[str, Dict[str, str]]):
@@ -137,7 +137,7 @@ class parametrized_inputs(NodeExpander):
         some subset of the specified parameters with specific inputs.
 
         Note this decorator and `@parametrized_input` are similar, except this one allows multiple
-        parameters to be mapped to multiple function arguments.
+        parameters to be mapped to multiple function arguments (and it fixes the spelling mistake).
 
         `parameterized_inputs` allows you keep your code DRY by reusing the same function but replace the inputs
         to create multiple corresponding distinct outputs. We see here that `parameterized_inputs` allows you to keep
@@ -152,7 +152,7 @@ class parametrized_inputs(NodeExpander):
         """
         self.parametrization = parameterization
         if not parameterization:
-            raise ValueError(f'Cannot pass empty/None dictionary to parametrized_inputs')
+            raise ValueError(f'Cannot pass empty/None dictionary to parameterized_inputs')
         for output, mappings in parameterization.items():
             if not mappings:
                 raise ValueError(f'Error, {output} has a none/empty dictionary mapping. Please fill it.')
