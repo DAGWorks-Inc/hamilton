@@ -11,4 +11,15 @@ File organization:
 * `business_logic.py` houses logic that should be invariant to how hamilton is executed.
 * `data_loaders.py` houses logic to load data for the business_logic.py module. The
 idea is that you'd swap this module out for other ways of loading data.
-*  `run.py` is the script that ties everything together.
+* `run.py` is the script that ties everything together that uses vanilla Ray.
+* `run_rayworkflow.py` is the script that again ties everything together, but this time uses
+[Ray Workflows](https://docs.ray.io/en/latest/workflows/concepts.html) to execute.
+
+# Running the code:
+For the vanilla Ray implementation use:
+
+> python run.py
+
+For the [Ray Workflow](https://docs.ray.io/en/latest/workflows/concepts.html) implementation use:
+
+> python run_rayworkflow.py
