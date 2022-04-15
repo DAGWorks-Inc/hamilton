@@ -9,10 +9,6 @@ jobs:
     docker:
       - image: circleci/python:3.6
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
     steps:
       - checkout
       - run:
@@ -42,10 +38,6 @@ jobs:
     docker:
       - image: circleci/python:3.7
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
     steps:
       - checkout
       - run:
@@ -76,10 +68,6 @@ jobs:
     docker:
       - image: circleci/python:3.8
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
     steps:
       - checkout
       - run:
@@ -110,10 +98,6 @@ jobs:
     docker:
       - image: circleci/python:3.9
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
     steps:
       - checkout
       - run:
@@ -154,10 +138,6 @@ jobs:
     docker:
       - image: circleci/python:3.6
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
     steps:
       - checkout
       - run:
@@ -181,10 +161,6 @@ jobs:
     docker:
       - image: circleci/python:3.7
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
     steps:
       - checkout
       - run:
@@ -208,10 +184,6 @@ jobs:
     docker:
       - image: circleci/python:3.7
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
     steps:
       - checkout
       - run:
@@ -235,10 +207,6 @@ jobs:
     docker:
       - image: cimg/openjdk:14.0   # need java on it
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
     steps:
       - checkout
       - run:
