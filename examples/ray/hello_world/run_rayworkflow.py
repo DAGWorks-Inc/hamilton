@@ -13,11 +13,11 @@ if __name__ == '__main__':
     log_setup.setup_logging()
     ray.init()
     workflow.init()
-    module_names = [
-        'data_loaders',  # functions to help load data
-        'business_logic'  # where our important logic lives
-    ]
-    modules = [importlib.import_module(m) for m in module_names]
+    # You can also script module import loading by knowing the module name
+    # See run.py for an example of doing it that way.
+    import data_loaders
+    import business_logic
+    modules = [data_loaders, business_logic]
     initial_columns = {  # could load data here via some other means, or delegate to a module as we have done.
         # 'signups': pd.Series([1, 10, 50, 100, 200, 400]),
         'signups_location': 'some_path',
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     rga = h_ray.RayWorkflowGraphAdapter(result_builder=base.PandasDataFrameResult(),
                                         # Ray will resume a run if possible based on workflow id
                                         workflow_id='hello-world-123')
-    dr = driver.Driver(initial_columns, *modules, adapter=rga)  # can pass in multiple modules
+    dr = driver.Driver(initial_columns, *modules, adapter=rga)
     # we need to specify what we want in the final dataframe.
     output_columns = [
         'spend',
