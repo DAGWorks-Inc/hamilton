@@ -637,7 +637,12 @@ class tag(NodeDecorator):
         'dag',
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 
-    def __init__(self, **tags: Dict[str, str]):
+    def __init__(self, **tags: str):
+        """Constructor for adding tag annotations to a function.
+
+        :param tags: the keys are always going to be strings, so the type annotation here means the values are strings.
+            Implicitly this is `Dict[str, str]` but the PEP guideline is to only annotate it with `str`.
+        """
         self.tags = tags
 
     def decorate_node(self, node_: node.Node) -> node.Node:
