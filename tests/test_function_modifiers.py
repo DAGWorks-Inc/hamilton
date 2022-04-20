@@ -597,6 +597,7 @@ def test_tags_valid_key(key):
 def test_tags_invalid_value(value):
     assert not function_modifiers.tag._value_allowed(value)
 
+
 @pytest.mark.parametrize(
     'value',
     [

@@ -50,7 +50,7 @@ class Node(object):
         :param callabl: the actual function callable.
         :param node_source: whether this is something someone has to pass in.
         :param input_types: the input parameters and their types.
-        :param tags: the set of tags that this node contains. This is a nested dictionary of keys/values.
+        :param tags: the set of tags that this node contains.
         """
         if tags is None:
             tags = dict()
@@ -123,7 +123,7 @@ class Node(object):
         return self._depended_on_by
 
     @property
-    def tags(self) -> Collection[str]:
+    def tags(self) -> Dict[str, str]:
         return self._tags
 
     def __hash__(self):
@@ -143,6 +143,7 @@ class Node(object):
                 self._name == other.name and
                 self._type == other.type and
                 self._doc == other.documentation and
+                self._tags == other.tags and
                 self.user_defined == other.user_defined and
                 [n.name for n in self.dependencies] == [o.name for o in other.dependencies] and
                 [n.name for n in self.depended_on_by] == [o.name for o in other.depended_on_by] and

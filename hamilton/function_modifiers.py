@@ -601,18 +601,32 @@ class config(NodeResolver):
 
 class tag(NodeDecorator):
     """Decorator class that adds a tag to a node. Tags take the form of key/value pairings.
-    Tags can have dots to specify namespaces (keys with dots), but this is usually reserved for special cases (E.G. subdecorators)
-    that utilize them. These are passed in as kwargs, so usually they'll be un-namespaced.
+    Tags can have dots to specify namespaces (keys with dots), but this is usually reserved for special cases
+    (E.G. subdecorators) that utilize them. Usually one will pass in tags as kwargs, so we expect tags to
+    be un-namespaced in most uses.
 
-    Currently tag values are restricted to allowing strings only, although we may consider changing the in the future (E.G. thinking of lists)
+    That is using:
+    > @tag(my_tag='tag_value')
+    > def my_function(...) -> ...:
+    is un-namespaced because you cannot put a `.` in the keyword part (the part before the '=').
 
-    Also, we reserve the right to add purely positional arguments in this as well.
+    But using:
+    > @tag(**{'my.tag': 'tag_value'})
+    > def my_function(...) -> ...:
+    allows you to add dots that allow you to namespace your tags.
 
-    @tag(foo='bar', bar=baz)
-    def my_function(...) -> ...:
-       ...
+    Currently, tag values are restricted to allowing strings only, although we may consider changing the in the future
+    (E.G. thinking of lists).
 
-    The framework reserves the right to a certain set of top-level prefixes (E.G. any tag where the top level is RESERVED_TAG_PREFIX).
+    Hamilton also reserves the right to change the following:
+    * adding purely positional arguments
+    * not allowing users to use a certain set of top-level prefixes (E.G. any tag where the top level is one of the
+      values in RESERVED_TAG_PREFIX).
+
+    Example usage:
+    > @tag(foo='bar', a_tag_key='a_tag_value', **{'namespace.tag_key': 'tag_value'})
+    > def my_function(...) -> ...:
+    >   ...
     """
 
     RESERVED_TAG_NAMESPACES = [
@@ -623,7 +637,7 @@ class tag(NodeDecorator):
         'dag',
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 
-    def __init__(self, **tags: str):
+    def __init__(self, **tags: Dict[str, str]):
         self.tags = tags
 
     def decorate_node(self, node_: node.Node) -> node.Node:
