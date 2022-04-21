@@ -218,7 +218,11 @@ def test_valid_column_extractor():
 
     nodes = list(annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator))
     assert len(nodes) == 3
-    assert nodes[0] == node.Node(name=dummy_df_generator.__name__, typ=pd.DataFrame, doc_string=dummy_df_generator.__doc__, callabl=dummy_df_generator)
+    assert nodes[0] == node.Node(name=dummy_df_generator.__name__,
+                                 typ=pd.DataFrame,
+                                 doc_string=dummy_df_generator.__doc__,
+                                 callabl=dummy_df_generator,
+                                 tags={'module': 'tests.test_function_modifiers'})
     assert nodes[1].name == 'col_1'
     assert nodes[1].type == pd.Series
     assert nodes[1].documentation == 'dummy doc'  # we default to base function doc.
@@ -501,7 +505,8 @@ def test_valid_extract_fields():
     assert nodes[0] == node.Node(name=dummy_dict_generator.__name__,
                                  typ=dict,
                                  doc_string=dummy_dict_generator.__doc__,
-                                 callabl=dummy_dict_generator)
+                                 callabl=dummy_dict_generator,
+                                 tags={'module': 'tests.test_function_modifiers'})
     assert nodes[1].name == 'col_1'
     assert nodes[1].type == list
     assert nodes[1].documentation == 'dummy doc'  # we default to base function doc.

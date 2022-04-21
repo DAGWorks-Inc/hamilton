@@ -24,6 +24,16 @@ class InvalidDecoratorException(Exception):
     pass
 
 
+def get_default_tags(fn: Callable) -> Dict[str, str]:
+    """Function that encapsulates default tags on a function.
+
+    :param fn: the function we want to create default tags for.
+    :return: a dictionary with str -> str values representing the default tags.
+    """
+    module_name = inspect.getmodule(fn).__name__
+    return {'module': module_name}
+
+
 class parametrized(NodeExpander):
     def __init__(self, parameter: str, assigned_output: Dict[Tuple[str, str], Any]):
         """Constructor for a modifier that expands a single function into n, each of which
@@ -62,7 +72,8 @@ class parametrized(NodeExpander):
                     node_.type,
                     node_doc,
                     functools.partial(node_.callable, **{self.parameter: value}),
-                    input_types={key: value for key, (value, _) in input_types.items() if key != self.parameter}))
+                    input_types={key: value for key, (value, _) in input_types.items() if key != self.parameter},
+                    tags=node_.tags.copy()))
         return nodes
 
 
@@ -113,7 +124,8 @@ class parametrized_input(NodeExpander):
                     node_.type,
                     node_description,
                     new_fn,
-                    input_types=specific_inputs))
+                    input_types=specific_inputs,
+                    tags=node_.tags.copy()))
         return nodes
 
     def validate(self, fn: Callable):
@@ -182,7 +194,8 @@ class parameterized_inputs(NodeExpander):
                     node_.type,
                     node_description,
                     new_fn,
-                    input_types=specific_inputs))
+                    input_types=specific_inputs,
+                    tags=node_.tags.copy()))
         return nodes
 
     def format_doc_string(self, doc: str, output_name: str, **params: Dict[str, str]) -> str:
@@ -276,7 +289,11 @@ class extract_columns(NodeExpander):
                         df_generated[col] = self.fill_with
             return df_generated
 
-        output_nodes = [node.Node(node_.name, typ=pd.DataFrame, doc_string=base_doc, callabl=df_generator)]
+        output_nodes = [node.Node(node_.name,
+                                  typ=pd.DataFrame,
+                                  doc_string=base_doc,
+                                  callabl=df_generator,
+                                  tags=node_.tags.copy())]
 
         for column in self.columns:
             doc_string = base_doc  # default doc string of base function.
@@ -291,7 +308,8 @@ class extract_columns(NodeExpander):
                 return kwargs[node_.name][column_to_extract]
 
             output_nodes.append(
-                node.Node(column, pd.Series, doc_string, extractor_fn, input_types={node_.name: pd.DataFrame}))
+                node.Node(column, pd.Series, doc_string, extractor_fn,
+                          input_types={node_.name: pd.DataFrame}, tags=node_.tags.copy()))
         return output_nodes
 
 
@@ -367,7 +385,7 @@ class extract_fields(NodeExpander):
                         dict_generated[field] = self.fill_with
             return dict_generated
 
-        output_nodes = [node.Node(node_.name, typ=dict, doc_string=base_doc, callabl=dict_generator)]
+        output_nodes = [node.Node(node_.name, typ=dict, doc_string=base_doc, callabl=dict_generator, tags=node_.tags.copy())]
 
         for field, field_type in self.fields.items():
             doc_string = base_doc  # default doc string of base function.
@@ -380,7 +398,7 @@ class extract_fields(NodeExpander):
                 return kwargs[node_.name][field_to_extract]
 
             output_nodes.append(
-                node.Node(field, field_type, doc_string, extractor_fn, input_types={node_.name: dict}))
+                node.Node(field, field_type, doc_string, extractor_fn, input_types={node_.name: dict}, tags=node_.tags.copy()))
         return output_nodes
 
 
@@ -452,8 +470,8 @@ class does(NodeCreator):
     def generate_node(self, fn: Callable, config) -> node.Node:
         """
         Returns one node which has the replaced functionality
-        :param config:
         :param fn:
+        :param config:
         :return:
         """
         fn_signature = inspect.signature(fn)
@@ -462,7 +480,8 @@ class does(NodeCreator):
             typ=fn_signature.return_annotation,
             doc_string=fn.__doc__ if fn.__doc__ is not None else '',
             callabl=self.replacing_function,
-            input_types={key: value.annotation for key, value in fn_signature.parameters.items()})
+            input_types={key: value.annotation for key, value in fn_signature.parameters.items()},
+            tags=get_default_tags(fn))
 
 
 class dynamic_transform(NodeCreator):
@@ -498,7 +517,8 @@ class dynamic_transform(NodeCreator):
             typ=inspect.signature(fn).return_annotation,
             doc_string=fn.__doc__,
             callabl=transform.compute,
-            input_types={dep: pd.Series for dep in transform.get_dependents()})
+            input_types={dep: pd.Series for dep in transform.get_dependents()},
+            tags=get_default_tags(fn))
 
 
 class model(dynamic_transform):
@@ -635,6 +655,7 @@ class tag(NodeDecorator):
         'gdpr',
         'ccpa',
         'dag',
+        'module',
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 
     def __init__(self, **tags: str):
@@ -651,6 +672,8 @@ class tag(NodeDecorator):
         :param node_: Node to decorate
         :return: Copy of the node, with tags assigned
         """
+        unioned_tags = self.tags.copy()
+        unioned_tags.update(node_.tags)
         return node.Node(
             name=node_.name,
             typ=node_.type,
@@ -658,7 +681,7 @@ class tag(NodeDecorator):
             callabl=node_.callable,
             node_source=node_.node_source,
             input_types=node_.input_types,
-            tags=self.tags)
+            tags=unioned_tags)
 
     @staticmethod
     def _key_allowed(key: str) -> bool:

@@ -126,11 +126,14 @@ class Node(object):
     def tags(self) -> Dict[str, str]:
         return self._tags
 
+    def add_tag(self, tag_name: str, tag_value: str):
+        self._tags[tag_name] = tag_value
+
     def __hash__(self):
         return hash(self._name)
 
     def __repr__(self):
-        return f'<{self._name}>'
+        return f'<{self._name} {self._tags}>'
 
     def __eq__(self, other: 'Node'):
         """Want to deeply compare nodes in a custom way.
@@ -163,4 +166,6 @@ class Node(object):
         if name is None:
             name = fn.__name__
         sig = inspect.signature(fn)
-        return Node(name, sig.return_annotation, fn.__doc__ if fn.__doc__ else '', callabl=fn)
+        module = inspect.getmodule(fn).__name__
+        return Node(name, sig.return_annotation, fn.__doc__ if fn.__doc__ else '', callabl=fn,
+                    tags={'module': module})

@@ -41,7 +41,7 @@ def test_driver_cycles_execute_recursion_error():
 def test_driver_variables():
     dr = Driver({}, tests.resources.tagging)
     tags = {var.name: var.tags for var in dr.list_available_variables()}
-    assert tags['a'] == {'test': 'a'}
-    assert tags['b'] == {'test': 'b_c'}
-    assert tags['c'] == {'test': 'b_c'}
-    assert tags['d'] == {}
+    assert tags['a'] == {'module': 'tests.resources.tagging', 'test': 'a'}
+    assert tags['b'] == {'module': 'tests.resources.tagging', 'test': 'b_c'}
+    assert tags['c'] == {'module': 'tests.resources.tagging', 'test': 'b_c'}
+    assert tags['d'] == {'module': 'tests.resources.tagging'}
