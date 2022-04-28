@@ -157,9 +157,9 @@ class Driver(object):
         return outputs
 
     def list_available_variables(self) -> List[Variable]:
-        """Returns available variables.
+        """Returns available variables, i.e. outputs.
 
-        :return: list of available variables.
+        :return: list of available variables (i.e. outputs).
         """
         return [Variable(node.name, node.type, node.tags) for node in self.graph.get_nodes()]
 
