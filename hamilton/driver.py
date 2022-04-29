@@ -107,14 +107,16 @@ class Driver(object):
                 overrides: Dict[str, Any] = None,
                 display_graph: bool = False,
                 inputs: Dict[str, Any] = None,
-                ) -> pd.DataFrame:
+                ) -> Any:
         """Executes computation.
 
-        :param final_vars: the final list of variables we want in the data frame.
-        :param overrides: the user defined input variables.
+        :param final_vars: the final list of variables we want to compute.
+        :param overrides: values that will override "nodes" in the DAG.
         :param display_graph: DEPRECATED. Whether we want to display the graph being computed.
         :param inputs: Runtime inputs to the DAG.
-        :return: a data frame consisting of the variables requested.
+        :return: an object consisting of the variables requested, matching the type returned by the GraphAdapter.
+            See constructor for how the GraphAdapter is initialized. The default one right now returns a pandas
+            dataframe.
         """
         if display_graph:
             logger.warning('display_graph=True is deprecated. It will be removed in the 2.0.0 release. '
