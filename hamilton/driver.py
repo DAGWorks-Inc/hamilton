@@ -209,42 +209,42 @@ class Driver(object):
         nodes, user_nodes = self.graph.get_upstream_nodes(final_vars)
         return self.graph.has_cycles(nodes, user_nodes)
 
-    def what_is_downstream_of(self, *function_names: str) -> List[Variable]:
+    def what_is_downstream_of(self, *node_names: str) -> List[Variable]:
         """Tells you what is downstream of this function(s), i.e. node(s).
 
-        :param function_names: names of function(s) that are starting points for traversing the graph.
+        :param node_names: names of function(s) that are starting points for traversing the graph.
         :return: list of "variables" (i.e. nodes), inclusive of the function names, that are downstream of the passed
                 in function names.
         """
-        downstream_nodes = self.graph.get_impacted_nodes(list(function_names))
+        downstream_nodes = self.graph.get_impacted_nodes(list(node_names))
         return [Variable(node.name, node.type, node.tags) for node in downstream_nodes]
 
-    def display_downstream_of(self, *function_names: str, output_file_path: str, render_kwargs: dict):
+    def display_downstream_of(self, *node_names: str, output_file_path: str, render_kwargs: dict):
         """Creates a visualization of the DAG starting from the passed in function name(s).
 
         Note: for any "node" visualized, we will also add its parents to the visualization as well, so
         there could be more nodes visualized than strictly what is downstream of the passed in function name(s).
 
-        :param function_names: names of function(s) that are starting points for traversing the graph.
+        :param node_names: names of function(s) that are starting points for traversing the graph.
         :param output_file_path: the full URI of path + file name to save the dot file to.
             E.g. 'some/path/graph.dot'
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
         """
-        downstream_nodes = self.graph.get_impacted_nodes(list(function_names))
+        downstream_nodes = self.graph.get_impacted_nodes(list(node_names))
         try:
             self.graph.display(downstream_nodes, set(), output_file_path, render_kwargs=render_kwargs)
         except ImportError as e:
             logger.warning(f'Unable to import {e}', exc_info=True)
 
-    def what_is_upstream_of(self, *function_names: str) -> List[Variable]:
+    def what_is_upstream_of(self, *node_names: str) -> List[Variable]:
         """Tells you what is upstream of this function(s), i.e. node(s).
 
-        :param function_names: names of function(s) that are starting points for traversing the graph backwards.
+        :param node_names: names of function(s) that are starting points for traversing the graph backwards.
         :return: list of "variables" (i.e. nodes), inclusive of the function names, that are upstream of the passed
                 in function names.
         """
-        upstream_nodes, _ = self.graph.get_upstream_nodes(list(function_names))
+        upstream_nodes, _ = self.graph.get_upstream_nodes(list(node_names))
         return [Variable(node.name, node.type, node.tags) for node in upstream_nodes]
 
 
