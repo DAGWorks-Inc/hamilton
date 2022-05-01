@@ -366,6 +366,7 @@ def test_create_graphviz_graph():
     # why? because for some reason given the same graph, the output file isn't deterministic.
     expected = sorted(['// test-graph',
                        'digraph {',
+                       '\tgraph [ratio=1]',
                        '\tB [label=B]',
                        '\tA [label=A]',
                        '\tc [label=c]',
@@ -381,7 +382,7 @@ def test_create_graphviz_graph():
                        ''])
     if '' in expected:
         expected.remove('')
-    digraph = graph.create_graphviz_graph(nodes, user_nodes, 'test-graph')
+    digraph = graph.create_graphviz_graph(nodes, user_nodes, 'test-graph', dict(graph_attr={'ratio': '1'}))
     actual = sorted(str(digraph).split('\n'))
     if '' in actual:
         actual.remove('')

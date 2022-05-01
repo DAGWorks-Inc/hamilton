@@ -168,16 +168,19 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any], adapter:
     return nodes
 
 
-def create_graphviz_graph(nodes: Set[node.Node], user_nodes: Set[node.Node], comment: str) -> 'graphviz.Digraph':
+def create_graphviz_graph(nodes: Set[node.Node], user_nodes: Set[node.Node], comment: str,
+                          graphviz_kwargs: dict) -> 'graphviz.Digraph':
     """Helper function to create a graphviz graph.
 
     :param nodes: The set of computational nodes
     :param user_nodes: The set of nodes that the user is providing inputs for.
     :param comment: The comment to have on the graph.
+    :param graphviz_kwargs: kwargs to pass to create the graph.
+        e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
     import graphviz
-    digraph = graphviz.Digraph(comment=comment)
+    digraph = graphviz.Digraph(comment=comment, **graphviz_kwargs)
     for n in nodes:
         digraph.node(n.name, label=n.name)
     for n in user_nodes:
@@ -238,12 +241,17 @@ class FunctionGraph(object):
     def get_nodes(self) -> List[node.Node]:
         return list(self.nodes.values())
 
-    def display_all(self, output_file_path: str = 'test-output/graph-all.gv', render_kwargs: dict = None):
+    def display_all(self,
+                    output_file_path: str = 'test-output/graph-all.gv',
+                    render_kwargs: dict = None,
+                    graphviz_kwargs: dict = None):
         """Displays & saves a dot file of the entire DAG structure constructed.
 
         :param output_file_path: the place to save the files.
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
+        :param graphviz_kwargs: kwargs to be passed to the graphviz graph object to configure it.
+            e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
         """
         defined_nodes = set()
         user_nodes = set()
@@ -254,7 +262,10 @@ class FunctionGraph(object):
                 defined_nodes.add(n)
         if render_kwargs is None:
             render_kwargs = {}
-        self.display(defined_nodes, user_nodes, output_file_path=output_file_path, render_kwargs=render_kwargs)
+        if graphviz_kwargs is None:
+            graphviz_kwargs = {}
+        self.display(defined_nodes, user_nodes,
+                     output_file_path=output_file_path, render_kwargs=render_kwargs, graphviz_kwargs=graphviz_kwargs)
 
     def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
         """Checks that the graph created does not contain cycles.
@@ -289,13 +300,16 @@ class FunctionGraph(object):
     def display(nodes: Set[node.Node],
                 user_nodes: Set[node.Node],
                 output_file_path: str = 'test-output/graph.gv',
-                render_kwargs: dict = None):
+                render_kwargs: dict = None,
+                graphviz_kwargs: dict = None):
         """Function to display the graph represented by the passed in nodes.
 
         :param nodes: the set of nodes that need to be computed.
         :param user_nodes: the set of inputs that the user provided.
         :param output_file_path: the path where we want to store the a `dot` file + pdf picture.
         :param render_kwargs: kwargs to be passed to the render function to visualize.
+        :param graphviz_kwargs: kwargs to be passed to the graphviz graph object to configure it.
+            e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
         """
         # Check to see if optional dependencies have been installed.
         try:
@@ -306,10 +320,11 @@ class FunctionGraph(object):
                 '\n\n  pip install sf-hamilton[visualization] or pip install graphviz \n\n'
             )
             return
-
-        dot = create_graphviz_graph(nodes, user_nodes, 'Dependency Graph')
+        if graphviz_kwargs is None:
+            graphviz_kwargs = {}
+        dot = create_graphviz_graph(nodes, user_nodes, 'Dependency Graph', graphviz_kwargs)
         kwargs = {'view': True}
-        if kwargs and isinstance(render_kwargs, dict):
+        if render_kwargs and isinstance(render_kwargs, dict):
             kwargs.update(render_kwargs)
         dot.render(output_file_path, **kwargs)
 

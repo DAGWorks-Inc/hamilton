@@ -165,16 +165,20 @@ class Driver(object):
         """
         return [Variable(node.name, node.type, node.tags) for node in self.graph.get_nodes()]
 
-    def display_all_functions(self, output_file_path: str, render_kwargs: dict = None):
+    def display_all_functions(self, output_file_path: str, render_kwargs: dict = None, graphviz_kwargs: dict = None):
         """Displays the graph of all functions loaded!
 
         :param output_file_path: the full URI of path + file name to save the dot file to.
             E.g. 'some/path/graph-all.dot'
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
+            See https://graphviz.readthedocs.io/en/stable/api.html#graphviz.Graph.render for other options.
+        :param graphviz_kwargs: Optional. Kwargs to be passed to the graphviz graph object to configure it.
+            E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
+            See https://graphviz.org/doc/info/attrs.html for options.
         """
         try:
-            self.graph.display_all(output_file_path, render_kwargs)
+            self.graph.display_all(output_file_path, render_kwargs, graphviz_kwargs)
         except ImportError as e:
             logger.warning(f'Unable to import {e}', exc_info=True)
 
@@ -182,7 +186,8 @@ class Driver(object):
                             final_vars: List[str],
                             output_file_path: str,
                             render_kwargs: dict,
-                            inputs: Dict[str, Any] = None):
+                            inputs: Dict[str, Any] = None,
+                            graphviz_kwargs: dict = None):
         """Visualizes Execution.
 
         Note: overrides are not handled at this time.
@@ -192,12 +197,17 @@ class Driver(object):
             E.g. 'some/path/graph.dot'
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
+            See https://graphviz.readthedocs.io/en/stable/api.html#graphviz.Graph.render for other options.
         :param inputs: Optional. Runtime inputs to the DAG.
+        :param graphviz_kwargs: Optional. Kwargs to be passed to the graphviz graph object to configure it.
+            E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
+            See https://graphviz.org/doc/info/attrs.html for options.
         """
         nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
         self.validate_inputs(user_nodes, inputs)
         try:
-            self.graph.display(nodes, user_nodes, output_file_path, render_kwargs=render_kwargs)
+            self.graph.display(nodes, user_nodes, output_file_path,
+                               render_kwargs=render_kwargs, graphviz_kwargs=graphviz_kwargs)
         except ImportError as e:
             logger.warning(f'Unable to import {e}', exc_info=True)
 
@@ -221,7 +231,11 @@ class Driver(object):
         downstream_nodes = self.graph.get_impacted_nodes(list(node_names))
         return [Variable(node.name, node.type, node.tags) for node in downstream_nodes]
 
-    def display_downstream_of(self, *node_names: str, output_file_path: str, render_kwargs: dict):
+    def display_downstream_of(self,
+                              *node_names: str,
+                              output_file_path: str,
+                              render_kwargs: dict,
+                              graphviz_kwargs: dict):
         """Creates a visualization of the DAG starting from the passed in function name(s).
 
         Note: for any "node" visualized, we will also add its parents to the visualization as well, so
@@ -232,10 +246,13 @@ class Driver(object):
             E.g. 'some/path/graph.dot'
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
+        :param graphviz_kwargs: Kwargs to be passed to the graphviz graph object to configure it.
+            E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
         """
         downstream_nodes = self.graph.get_impacted_nodes(list(node_names))
         try:
-            self.graph.display(downstream_nodes, set(), output_file_path, render_kwargs=render_kwargs)
+            self.graph.display(downstream_nodes, set(), output_file_path,
+                               render_kwargs=render_kwargs, graphviz_kwargs=graphviz_kwargs)
         except ImportError as e:
             logger.warning(f'Unable to import {e}', exc_info=True)
 
