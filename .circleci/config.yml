@@ -26,14 +26,8 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest tests/
-
-      # run coverage tool!
-      - run:
-          name: run coverage
-          command: |
-            . venv/bin/activate
             python -m pytest --cov=hamilton tests/
+
   build-py37:
     docker:
       - image: circleci/python:3.7
@@ -56,14 +50,8 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest tests/
-
-      # run coverage tool!
-      - run:
-          name: run coverage
-          command: |
-            . venv/bin/activate
             python -m pytest --cov=hamilton tests/
+
   build-py38:
     docker:
       - image: circleci/python:3.8
@@ -86,14 +74,8 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest tests/
-
-      # run coverage tool!
-      - run:
-          name: run coverage
-          command: |
-            . venv/bin/activate
             python -m pytest --cov=hamilton tests/
+
   build-py39:
     docker:
       - image: circleci/python:3.9
@@ -116,14 +98,8 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest tests/
-
-      # run coverage tool!
-      - run:
-          name: run coverage
-          command: |
-            . venv/bin/activate
             python -m pytest --cov=hamilton tests/
+
   pre-commit:
     docker:
       - image: circleci/python:3.7
