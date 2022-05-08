@@ -1,6 +1,6 @@
 import abc
 import numbers
-from typing import Any, Type, List, Optional
+from typing import Any, Type, List, Optional, Tuple
 
 from hamilton.data_quality.base import DataValidator, ValidationResult
 import pandas as pd
@@ -38,36 +38,18 @@ class BaseDefaultValidator(DataValidator, abc.ABC):
         """
         pass
 
-    @staticmethod
-    def resolve(arg: str, type_: Type[Type], candidates: Optional[List[Type['BaseDefaultValidator']]] = None) -> Type['BaseDefaultValidator']:
-        """Resolves a validator given two things:
-        1. An argument
-        2. A type to which it should apply
-
-        :param arg: The argument that we want to evaluate
-        :param type_: The type that we need it to apply to
-        :param candidates: The set of candidates that we have to choose from
-        :return:
-        """
-        if candidates is None:
-            candidates = AVAILABLE_DEFAULT_VALIDATORS
-
-        for candidate in candidates:
-            if arg == candidate.arg() and candidate.applies_to(type_):
-                return candidate
-        raise ValueError(f'No registered subclass of BaseDefaultValidator is available '
-                         f'for arg: {arg} and type {type_}. This either means (a) this arg-type '
-                         f"contribution isn't supported or (b) this has not been added yet (but should be). "
-                         f'In the case of (b), we welcome contributions. Get started at github.com/stitchfix/hamilton')
-
 
 class DataInRangeValidatorPandas(BaseDefaultValidator):
 
-    def __init__(self, range: str):
+    def name(self) -> str:
+        return f'data_in_range_validator'
+
+    def __init__(self, range: Tuple[float, float], importance: str):
         """Data validator that tells if data is in a range. This applies to primitives (ints, floats).
 
         :param range: Inclusive range of parameters
         """
+        super(DataInRangeValidatorPandas).__init__(importance=importance)
         self.range = range
 
     @classmethod
@@ -102,11 +84,12 @@ class DataInRangeValidatorPandas(BaseDefaultValidator):
 
 
 class DataInRangeValidatorPrimitives(BaseDefaultValidator):
-    def __init__(self, range: str):
+    def __init__(self, range: str, importance: str):
         """Data validator that tells if data is in a range. This applies to primitives (ints, floats).
 
         :param range: Inclusive range of parameters
         """
+        super(DataInRangeValidatorPrimitives).__init__(importance=importance)
         self.range = range
 
     @classmethod
@@ -134,17 +117,40 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
     def arg(cls) -> str:
         return 'range'
 
+    def name(self) -> str:
+        return 'data_in_range_validator'
+
 
 AVAILABLE_DEFAULT_VALIDATORS = [
     DataInRangeValidatorPandas,
     DataInRangeValidatorPrimitives,
 ]
 
-def resolve_validators(output_type: Type[Type], **default_validator_kwargs) -> List[BaseDefaultValidator]:
+
+def resolve_default_validators(
+        output_type: Type[Type],
+        importance: str,
+        available_validators: List[Type[BaseDefaultValidator]] = None,
+        **default_validator_kwargs) -> List[BaseDefaultValidator]:
+    """Resolves default validators given a set pof parameters and the type to which they apply.
+    Note that each (kwarg, type) combination should map to a validator
+    @param importance: importance level of the validator to instantiate
+    @param output_type: The type to which the validator should apply
+    @param available_validators: The available validators to choose from
+    @param default_validator_kwargs: Kwargs to use
+    @return: A list of validators to use
+    """
+    if available_validators is None:
+        available_validators = AVAILABLE_DEFAULT_VALIDATORS
     validators = []
     for key in default_validator_kwargs.keys():
-        for validator_cls in AVAILABLE_DEFAULT_VALIDATORS:
-            if validator_cls.arg() == key and validator_cls.applies_to(output_type):
-                output.append(validator_cls(**default_validator_kwargs))
+        for validator_cls in available_validators:
+            if key == validator_cls.arg() and validator_cls.applies_to(output_type):
+                validators.append(validator_cls(**{key: default_validator_kwargs[key], 'importance': importance}))
                 break
+        else:
+            raise ValueError(f'No registered subclass of BaseDefaultValidator is available '
+                             f'for arg: {key} and type {output_type}. This either means (a) this arg-type '
+                             f"contribution isn't supported or (b) this has not been added yet (but should be). "
+                             f'In the case of (b), we welcome contributions. Get started at github.com/stitchfix/hamilton')
     return validators

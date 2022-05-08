@@ -9,7 +9,7 @@ import typing_inspect
 
 from hamilton import node
 from hamilton.data_quality.base import DataValidator, ValidationResult
-from hamilton.data_quality.default_validators import resolve_validators
+from hamilton.data_quality.default_validators import resolve_default_validators, BaseDefaultValidator
 from hamilton.function_modifiers_base import NodeCreator, NodeResolver, NodeExpander, sanitize_function_name, NodeDecorator, NodeTransformer
 from hamilton.models import BaseModel
 
@@ -698,24 +698,20 @@ class tag(NodeDecorator):
 
 
 class check_output(NodeTransformer):
-    def __init__(self, *validator: DataValidator, importance: str = DataValidator.WARN, **default_validator_kwargs: Any):
-        """Creates the check_output validator. This constructs the specified validator class.
-        Note that this has two modes -- utilizing default validators, and utilizing custom validators.
+    def __init__(self,
+                 importance: str = DataValidator.WARN,
+                 default_decorator_candidates: Type[BaseDefaultValidator] = None,
+                 **default_validator_kwargs: Any):
+        """Creates the check_output validator. This constructs the default validator class.
+        Note that this creates a whole set of default validators
+        TODO -- enable construction of custom validators using check_output.custom(*validators)
 
-        These are mutually exclusive.
-
-        TODO -- come up with a better API for this. Its a little messy. Should probably have something like:
-        - check_output(**default_kwargs)
-        - check_output.custom
-
-        :param validator: List of validators to add to this node
-        :param importance: For the default validator, how importat
+        :param importance: For the default validator, how important is it that this passes.
         :param validator_kwargs: keyword arguments to be passed to the validator
         """
-        check_output._validate_constructor_args(*validator, importance=importance, **default_validator_kwargs)
-        self.validators = validator
         self.importance = importance
         self.default_validator_kwargs = default_validator_kwargs
+        self.default_decorator_candidates = default_decorator_candidates
         # We need to wait until we actually have the function in order to construct the validators
         # So, we'll just store the constructor arguments for now and check it in validation
 
@@ -731,10 +727,11 @@ class check_output(NodeTransformer):
                 raise ValueError(f"Must supply an ipmortance level if using the default validator.")
 
     def _resolve_validators(self, return_type: Type[Type]) -> typing.Collection[DataValidator]:
-        if len(self.validators) > 0:
-            # If we've passed in validators then we're good to go
-            return self.validators
-        return resolve_validators(return_type, importance=self.importance, **self.default_validator_kwargs)
+        return resolve_default_validators(
+            return_type,
+            importance=self.importance,
+            available_validators=self.default_decorator_candidates,
+            **self.default_validator_kwargs)
 
     def transform_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         """Transforms the node into a subdag that does validation and still returns the node's result.
