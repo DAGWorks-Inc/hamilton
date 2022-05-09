@@ -139,6 +139,13 @@ contributing to do the same.
 To see how you can contribute, please read our [contributing guidelines](CONTRIBUTING.md) and then our [developer
 setup guide](developer_setup.md).
 
+# Blog Posts
+* [Towards Data Science post on backstory & introduction](https://towardsdatascience.com/functions-dags-introducing-hamilton-a-microframework-for-dataframe-generation-more-8e34b84efc1d).
+* [How to use Hamilton with Pandas in 5 minutes](https://medium.com/@stefan.krawczyk/how-to-use-hamilton-with-pandas-in-5-minutes-89f63e5af8f5).
+* [How to iterate with Hamilton in a Notebook](https://towardsdatascience.com/how-to-iterate-with-hamilton-in-a-notebook-8ec0f85851ed).
+* [Original Stitch Fix Post](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
+* [Extension Stitch Fix Post](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
+
 
 # Prescribed Development Workflow
 In general we prescribe the following:
