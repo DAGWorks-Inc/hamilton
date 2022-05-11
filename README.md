@@ -132,6 +132,11 @@ We have a small but active community on [discord](https://discord.gg/wCqxqBqn73)
 Hamilton is released under the [BSD 3-Clause Clear License](LICENSE). If you need to get in touch about something,
 contact us at algorithms-opensource (at) stitchfix.com.
 
+# Used by
+* Stitch Fix
+
+To add your company, make a pull request to add it here.
+
 # Contributing
 We take contributions, large and small. We operate via a [Code of Conduct](CODE_OF_CONDUCT.md) and expect anyone
 contributing to do the same.
