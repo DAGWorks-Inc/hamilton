@@ -2,6 +2,37 @@
 
 While the 1:1 mapping of column -> function implementation is powerful, we've implemented a few decorators to promote business-logic reuse. The decorators we've defined are as follows (source can be found in [function\_modifiers](https://github.com/stitchfix/hamilton/blob/main/hamilton/function\_modifiers.py)):
 
+## @tag
+
+Allows you to attach metadata to a node (any node decorated with the function). A common use of this is to enable marking nodes as part of some data product, or for GDPR/privacy purposes.
+
+For instance:
+
+```python
+import pandas as pd
+from hamilton.function_modifiers import tag
+
+def intermediate_column() -> pd.Series:
+    pass
+
+@tag(data_product='final', pii='true')
+def final_column(intermediate_column: pd.Series) -> pd.Series:
+    pass
+```
+
+#### How do I query by tags?
+
+Right now, we don't have a specific interface to query by tags, however we do expose them via the driver. Using the `list_available_variables()` capability exposes tags along with their names & types, enabling querying of the available outputs for specific tag matches. E.g.
+
+```python
+from hamilton import driver
+dr = driver.Driver(...)  # create driver as required
+all_possible_outputs = dr.list_available_variables()
+desired_outputs = [o.name for o in all_possible_outputs
+                   if 'my_tag_value' == o.tags.get('my_tag_key')]
+output = dr.execute(desired_outputs)
+```
+
 ## @extract\_columns
 
 This works on a function that outputs a dataframe, that we want to extract the columns from and make them individually available for consumption. So it expands a single function into _n functions_, each of which take in the output dataframe and output a specific column as named in the `extract_columns` decorator.
