@@ -22,6 +22,23 @@ def g(e: int, f: int = _F) -> int:
     return e + f
 
 
+def i(h: int, f: int = _F) -> int:
+    """we will pass None to e and so don't want the code to break for the unit test."""
+    if h is None:
+        h = 10
+    return h + f
+
+
+def none_result() -> int:
+    """Function to show that we don't filter out the result."""
+    return None
+
+
+def j(none_result: int, f: int = _F) -> int:
+    # dont use f.
+    return none_result
+
+
 def _do_all(a_val: int = _A, b_val: int = _B, d_val: int = _D, f_val: int = _F) -> Dict[str, Any]:
     c_val = c(a_val, b_val)
     e_val = e(c_val, d_val)

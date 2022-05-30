@@ -454,7 +454,11 @@ class FunctionGraph(object):
             computed[node.name] = value
 
         for final_var_node in nodes:
-            dfs_traverse(final_var_node)
+            dep_type = DependencyType.REQUIRED
+            if final_var_node.user_defined:
+                # from the top level, we don't know if this UserInput is required. So mark as optional.
+                dep_type = DependencyType.OPTIONAL
+            dfs_traverse(final_var_node, dep_type)
         return computed
 
     @staticmethod

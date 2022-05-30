@@ -1,4 +1,5 @@
 import inspect
+from itertools import permutations
 import tempfile
 import typing
 import uuid
@@ -560,10 +561,67 @@ def test_optional_execute(config, inputs, overrides):
     Be careful adding tests with conflicting values between them.
     """
     fg = graph.FunctionGraph(tests.resources.optional_dependencies, config=config)
-    results = fg.execute([fg.nodes['g']], inputs=inputs, overrides=overrides)
+    # we put a user input node first to ensure that order does not matter with computation order.
+    results = fg.execute([fg.nodes['b'], fg.nodes['g']], inputs=inputs, overrides=overrides)
     do_all_args = {key + '_val': val for key, val in {**config, **inputs, **overrides}.items()}
     expected_results = tests.resources.optional_dependencies._do_all(**do_all_args)
     assert results['g'] == expected_results['g']
+
+
+def test_optional_input_behavior():
+    """Tests that if we request optional user inputs that are not provided, we do not break. And if they are
+    we do the right thing and return them.
+    """
+    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    # nothing passed, so nothing returned
+    result = fg.execute([fg.nodes['b'], fg.nodes['a']], inputs={}, overrides={})
+    assert result == {}
+    # something passed, something returned via config
+    fg2 = graph.FunctionGraph(tests.resources.optional_dependencies, config={'a': 10})
+    result = fg2.execute([fg.nodes['b'], fg.nodes['a']], inputs={}, overrides={})
+    assert result == {'a': 10}
+    # something passed, something returned via inputs
+    result = fg.execute([fg.nodes['b'], fg.nodes['a']], inputs={'a': 10}, overrides={})
+    assert result == {'a': 10}
+    # something passed, something returned via overrides
+    result = fg.execute([fg.nodes['b'], fg.nodes['a']], inputs={}, overrides={'a': 10})
+    assert result == {'a': 10}
+
+
+@pytest.mark.parametrize('node_order', list(permutations('fhi')))
+def test_user_input_breaks_if_required_missing(node_order):
+    """Tests that we break because `h` is required but is not passed in."""
+    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    permutation = [
+        fg.nodes[n] for n in node_order
+    ]
+    with pytest.raises(NotImplementedError):
+        fg.execute(permutation, inputs={}, overrides={})
+
+
+@pytest.mark.parametrize('node_order', list(permutations('fhi')))
+def test_user_input_does_not_break_if_required_provided(node_order):
+    """Tests that things work no matter the order because `h` is required and is passed in, while `f` is optional."""
+    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={'h': 10})
+    permutation = [
+        fg.nodes[n] for n in node_order
+    ]
+    result = fg.execute(permutation, inputs={}, overrides={})
+    assert result == {'h': 10, 'i': 17}
+
+
+def test_optional_donot_drop_none():
+    """We do not want to drop `None` results from functions. We want to pass them through to the function.
+
+    This is here to enshrine the current behavior.
+    """
+    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={'h': None})
+    # enshrine behavior that None is not removed from being passed to the function.
+    results = fg.execute([fg.nodes['h'], fg.nodes['i']], inputs={}, overrides={})
+    assert results == {'h': None, 'i': 17}
+    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    results = fg.execute([fg.nodes['j'], fg.nodes['none_result'], fg.nodes['f']], inputs={}, overrides={})
+    assert results == {'j': None, 'none_result': None}  # f omitted cause it's optional.
 
 
 def test_optional_get_required_compile_time():
