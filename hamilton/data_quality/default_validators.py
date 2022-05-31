@@ -2,6 +2,9 @@ import abc
 import numbers
 from typing import Any, Type, List, Optional, Tuple
 
+import numpy
+import numpy as np
+
 from hamilton.data_quality.base import DataValidator, ValidationResult
 import pandas as pd
 
@@ -84,7 +87,7 @@ class DataInRangeValidatorPandas(BaseDefaultValidator):
 
 
 class DataInRangeValidatorPrimitives(BaseDefaultValidator):
-    def __init__(self, range: str, importance: str):
+    def __init__(self, range: Tuple[numbers.Real, numbers.Real], importance: str):
         """Data validator that tells if data is in a range. This applies to primitives (ints, floats).
 
         :param range: Inclusive range of parameters
@@ -121,9 +124,161 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
         return 'data_in_range_validator'
 
 
+class MaxFractionNansValidatorPandas(BaseDefaultValidator):
+    def __init__(self, max_fraction_nan: float, importance: str):
+        super(MaxFractionNansValidatorPandas).__init__(importance=importance)
+        MaxFractionNansValidatorPandas._validate_max_fraction_nan(max_fraction_nan)
+        self.max_fraction_nan = max_fraction_nan
+
+    @staticmethod
+    def _to_percent(fraction: float):
+        return "{0:.2%}".format(fraction)
+
+    def name(self) -> str:
+        return 'max_fraction_nan_validator'
+
+    @classmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)
+
+    def description(self) -> str:
+        return f'Validates that no more than {MaxFractionNansValidatorPandas._to_percent(self.max_fraction_nan)} of the data is Nan.'
+
+    def validate(self, data: pd.Series) -> ValidationResult:
+        total_length = len(data)
+        total_na = data.isna().sum()
+        fraction_na = total_na / total_length
+        passes = fraction_na <= self.max_fraction_nan
+        return ValidationResult(
+            passes=passes,
+            message=f'Out of {total_length} items in the series, {total_na} of them are Nan, '
+                    f'representing: {MaxFractionNansValidatorPandas._to_percent(fraction_na)}. '
+                    f'Max allowable Nans is: {MaxFractionNansValidatorPandas._to_percent(self.max_fraction_nan)},'
+                    f' so this {"passes" if passes else "does not pass"}.',
+            diagnostics={
+                "total_nan": total_na,
+                "total_length": total_length,
+                "fraction_na": fraction_na,
+                "max_fraction_na": self.max_fraction_nan
+            }
+        )
+
+    @classmethod
+    def arg(cls) -> str:
+        return 'max_fraction_nan'
+
+    @staticmethod
+    def _validate_max_fraction_nan(max_fraction_nan: float):
+        if not (0 <= max_fraction_nan <= 1):
+            raise ValueError(f"Maximum fraction allowed to be nan must be in range [0,1]")
+
+
+class PandasSeriesDataTypeValidator(BaseDefaultValidator):
+
+    def __init__(self, datatype: Type[Type], importance: str):
+        super(PandasSeriesDataTypeValidator, self).__init__(importance=importance)
+        PandasSeriesDataTypeValidator.datatype = datatype
+        self.datatype = datatype
+
+    def name(self) -> str:
+        return "dtype_validator"
+
+    @classmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)
+
+    def description(self) -> str:
+        return f"Validates that the datatype of the pandas series is a subclass of: {self.datatype}"
+
+    def validate(self, data: pd.Series) -> ValidationResult:
+        dtype = data.dtype
+        passes = np.issubdtype(dtype, self.datatype)
+        return ValidationResult(
+            passes=passes,
+            message=f"Requires subclass of datatype: {self.datatype}. Got datatype: {dtype}. This {'is' if passes else 'is not'} a valid subclass.",
+            diagnostics={
+                "required_dtype": self.datatype,
+                "actual_dtype": dtype
+            }
+        )
+
+    @classmethod
+    def arg(cls) -> str:
+        pass
+
+
+class PandasMaxStandardDevValidator(BaseDefaultValidator):
+    def __init__(self, max_standard_dev: float, importance: str):
+        super(PandasMaxStandardDevValidator, self).__init__(importance)
+        self.max_standard_dev = max_standard_dev
+
+    @classmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)
+
+    def description(self) -> str:
+        return f"Validates that the standard deviation of a pandas series is no greater than : {self.max_standard_dev}"
+
+    def validate(self, data: pd.Series) -> ValidationResult:
+        standard_dev = data.std()
+        passes = standard_dev <= self.max_standard_dev
+        return ValidationResult(
+            passes=passes,
+            message=f"Max allowable standard dev is: {self.max_standard_dev}. "
+                    f"Dataset stddev is : {standard_dev}. "
+                    f"This {'passes' if passes else 'does not pass'}.",
+            diagnostics={
+                "standard_dev": standard_dev,
+                "max_standard_dev": self.max_standard_dev
+            }
+        )
+
+    @classmethod
+    def arg(cls) -> str:
+        return "max_standard_dev"
+
+    def name(self) -> str:
+        return "max_standard_dev_validator"
+
+
+class PandasMeanInRangeValidator(BaseDefaultValidator):
+
+    def __init__(self, mean_in_range: Tuple[float, float], importance: str):
+        super(PandasMeanInRangeValidator, self).__init__(importance)
+        self.mean_in_range = mean_in_range
+
+    @classmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)
+
+    def description(self) -> str:
+        return f"Validates that a pandas series has mean in range [{self.mean_in_range[0]}, {self.mean_in_range[1]}]"
+
+    def validate(self, data: pd.Series) -> ValidationResult:
+        dataset_mean = data.mean()
+        min_, max_ = self.mean_in_range
+        passes = min_ <= dataset_mean <= max_
+        return ValidationResult(
+            passes=passes,
+            message=f"Dataset has mean: {dataset_mean}. This {'is ' if passes else 'is not '} "
+                    f"in the required range: [{self.mean_in_range[0]}, {self.mean_in_range[1]}]."
+        )
+
+    @classmethod
+    def arg(cls) -> str:
+        return 'mean_in_range'
+
+    def name(self) -> str:
+        return 'mean_in_range_validator'
+
+
 AVAILABLE_DEFAULT_VALIDATORS = [
     DataInRangeValidatorPandas,
     DataInRangeValidatorPrimitives,
+    PandasMaxStandardDevValidator,
+    PandasMeanInRangeValidator,
+    DataTypeValidatorPandas,
+    MaxFractionNansValidatorPandas,
 ]
 
 
