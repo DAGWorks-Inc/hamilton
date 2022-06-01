@@ -6,8 +6,9 @@ import pytest
 
 from hamilton import function_modifiers, models, function_modifiers_base
 from hamilton import node
-from hamilton.function_modifiers import does, ensure_function_empty, InvalidDecoratorException
+from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom
 from hamilton.node import DependencyType
+from resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator1, SampleDataValidator2, SampleDataValidator3
 
 
 def test_parametrized_invalid_params():
@@ -118,6 +119,7 @@ def test_parametrized_inputs_validate_param_name():
         parameterization={
             'test_1': dict(parameterfoo='input_1'),
         })
+
     def identity(parameter1: str, parameter2: str, static: str) -> str:
         """Function with {parameter1} as first input"""
         return parameter1 + parameter2 + static
@@ -132,6 +134,7 @@ def test_parametrized_inputs_validate_reserved_param():
         **{
             'test_1': dict(parameter2='input_1'),
         })
+
     def identity(output_name: str, parameter2: str, static: str) -> str:
         """Function with {parameter2} as second input"""
         return output_name + parameter2 + static
@@ -146,6 +149,7 @@ def test_parametrized_inputs_validate_bad_doc_string():
         **{
             'test_1': dict(parameter2='input_1'),
         })
+
     def identity(output_name: str, parameter2: str, static: str) -> str:
         """Function with {foo} as second input"""
         return output_name + parameter2 + static
@@ -614,3 +618,59 @@ def test_tags_invalid_value(value):
 )
 def test_tags_invalid_value(value):
     assert not function_modifiers.tag._value_allowed(value)
+
+
+def test_check_output_node_transform():
+    decorator = check_output(
+        importance='warn',
+        default_decorator_candidates=DUMMY_VALIDATORS_FOR_TESTING,
+        dataset_length=1,
+        dtype=np.int64
+    )
+
+    def fn(input: pd.Series) -> pd.Series:
+        return input
+
+    node_ = node.Node.from_fn(fn)
+    subdag = decorator.transform_node(node_, config={}, fn=fn)
+    assert 4 == len(subdag)
+    subdag_as_dict = {
+        node_.name: node_ for node_ in subdag
+    }
+    assert sorted(subdag_as_dict.keys()) == ['fn', 'fn_dummy_data_validator_2', 'fn_dummy_data_validator_3', 'fn_raw']
+    # TODO -- change when we change the naming scheme
+    assert subdag_as_dict['fn_raw'].input_types['input'][1] == DependencyType.REQUIRED
+    assert 3 == len(subdag_as_dict['fn'].input_types)  # Three dependencies -- the two with DQ + the original
+    # The final function should take in everything but only use the raw results
+    assert subdag_as_dict['fn'].callable(
+        fn_raw='test',
+        fn_dummy_data_validator_2='does_not_matter',
+        fn_dummy_data_validator_3='does_not_matter'
+    ) == 'test'
+
+
+def test_check_output_custom_node_transform():
+    decorator = check_output_custom(
+        SampleDataValidator2(dataset_length=1, importance="warn"),
+        SampleDataValidator3(dtype=np.int64, importance="warn")
+    )
+
+    def fn(input: int) -> int:
+        return input
+
+    node_ = node.Node.from_fn(fn)
+    subdag = decorator.transform_node(node_, config={}, fn=fn)
+    assert 4 == len(subdag)
+    subdag_as_dict = {
+        node_.name: node_ for node_ in subdag
+    }
+    assert sorted(subdag_as_dict.keys()) == ['fn', 'fn_dummy_data_validator_2', 'fn_dummy_data_validator_3', 'fn_raw']
+    # TODO -- change when we change the naming scheme
+    assert subdag_as_dict['fn_raw'].input_types['input'][1] == DependencyType.REQUIRED
+    assert 3 == len(subdag_as_dict['fn'].input_types)  # Three dependencies -- the two with DQ + the original
+    # The final function should take in everything but only use the raw results
+    assert subdag_as_dict['fn'].callable(
+        fn_raw='test',
+        fn_dummy_data_validator_2='does_not_matter',
+        fn_dummy_data_validator_3='does_not_matter'
+    ) == 'test'

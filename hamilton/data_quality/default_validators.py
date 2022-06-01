@@ -16,6 +16,9 @@ class BaseDefaultValidator(DataValidator, abc.ABC):
     creation of validators.
     """
 
+    def __init__(self, importance: str):
+        super(BaseDefaultValidator, self).__init__(importance)
+
     @classmethod
     @abc.abstractmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
@@ -52,7 +55,7 @@ class DataInRangeValidatorPandas(BaseDefaultValidator):
 
         :param range: Inclusive range of parameters
         """
-        super(DataInRangeValidatorPandas).__init__(importance=importance)
+        super(DataInRangeValidatorPandas, self).__init__(importance=importance)
         self.range = range
 
     @classmethod
@@ -69,9 +72,9 @@ class DataInRangeValidatorPandas(BaseDefaultValidator):
     def validate(self, data: pd.Series) -> ValidationResult:
         min_, max_ = self.range
         between = data.between(min_, max_, inclusive=True)
-        counts = between.value_counts()
-        in_range = counts[True]
-        out_range = counts[False]
+        counts = between.value_counts().to_dict()
+        in_range = counts.get(True, 0)
+        out_range = counts.get(False, 0)
         passes = out_range == 0
         message = f'Series contains {in_range} values in range ({min_},{max_}), and {out_range} outside.'
         return ValidationResult(
@@ -92,7 +95,7 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
 
         :param range: Inclusive range of parameters
         """
-        super(DataInRangeValidatorPrimitives).__init__(importance=importance)
+        super(DataInRangeValidatorPrimitives, self).__init__(importance=importance)
         self.range = range
 
     @classmethod
@@ -126,7 +129,7 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
 
 class MaxFractionNansValidatorPandas(BaseDefaultValidator):
     def __init__(self, max_fraction_nan: float, importance: str):
-        super(MaxFractionNansValidatorPandas).__init__(importance=importance)
+        super(MaxFractionNansValidatorPandas, self).__init__(importance=importance)
         MaxFractionNansValidatorPandas._validate_max_fraction_nan(max_fraction_nan)
         self.max_fraction_nan = max_fraction_nan
 
@@ -173,11 +176,11 @@ class MaxFractionNansValidatorPandas(BaseDefaultValidator):
             raise ValueError(f"Maximum fraction allowed to be nan must be in range [0,1]")
 
 
-class PandasSeriesDataTypeValidator(BaseDefaultValidator):
+class DataTypeValidatorPandas(BaseDefaultValidator):
 
     def __init__(self, datatype: Type[Type], importance: str):
-        super(PandasSeriesDataTypeValidator, self).__init__(importance=importance)
-        PandasSeriesDataTypeValidator.datatype = datatype
+        super(DataTypeValidatorPandas, self).__init__(importance=importance)
+        DataTypeValidatorPandas.datatype = datatype
         self.datatype = datatype
 
     def name(self) -> str:
@@ -204,7 +207,7 @@ class PandasSeriesDataTypeValidator(BaseDefaultValidator):
 
     @classmethod
     def arg(cls) -> str:
-        pass
+        return 'datatype'
 
 
 class PandasMaxStandardDevValidator(BaseDefaultValidator):
@@ -261,7 +264,11 @@ class PandasMeanInRangeValidator(BaseDefaultValidator):
         return ValidationResult(
             passes=passes,
             message=f"Dataset has mean: {dataset_mean}. This {'is ' if passes else 'is not '} "
-                    f"in the required range: [{self.mean_in_range[0]}, {self.mean_in_range[1]}]."
+                    f"in the required range: [{self.mean_in_range[0]}, {self.mean_in_range[1]}].",
+            diagnostics={
+                "dataset_mean" : dataset_mean,
+                "mean_in_range" : self.mean_in_range
+            }
         )
 
     @classmethod
