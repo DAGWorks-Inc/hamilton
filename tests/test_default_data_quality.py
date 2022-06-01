@@ -1,3 +1,4 @@
+import inspect
 from typing import Any, Type
 
 import numpy
@@ -92,3 +93,14 @@ def test_default_data_validators(cls: Type[default_validators.BaseDefaultValidat
     validator = cls(**{cls.arg(): param, "importance": "warn"})
     result = validator.validate(data)
     assert result.passes == should_pass
+
+
+def test_to_ensure_all_validators_added_to_default_validator_list():
+    def predicate(maybe_cls: Any) -> bool:
+        if not inspect.isclass(maybe_cls):
+            return False
+        return issubclass(maybe_cls, BaseDefaultValidator) and maybe_cls != BaseDefaultValidator
+
+    all_subclasses = inspect.getmembers(default_validators, predicate)
+    missing_classes = [item for (_, item) in all_subclasses if item not in default_validators.AVAILABLE_DEFAULT_VALIDATORS]
+    assert len(missing_classes) == 0
