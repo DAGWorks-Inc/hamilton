@@ -674,3 +674,28 @@ def test_check_output_custom_node_transform():
         fn_dummy_data_validator_2='does_not_matter',
         fn_dummy_data_validator_3='does_not_matter'
     ) == 'test'
+
+
+def test_check_output_custom_node_transform_layered():
+    decorator_1 = check_output_custom(
+        SampleDataValidator2(dataset_length=1, importance="warn"),
+    )
+
+    decorator_2 = check_output_custom(
+        SampleDataValidator3(dtype=np.int64, importance="warn")
+    )
+
+    def fn(input: int) -> int:
+        return input
+
+    node_ = node.Node.from_fn(fn)
+    subdag_first_transformation = decorator_1.transform_dag([node_], config={}, fn=fn)
+    subdag_second_transformation = decorator_2.transform_dag(subdag_first_transformation, config={}, fn=fn)
+    # One node for each dummy validator
+    # One final node
+    # One intermediate node for each of the functions (E.G. raw)
+    # TODO -- ensure that the intermediate nodes don't share names
+    assert 5 == len(subdag_second_transformation)
+    subdag_as_dict = {
+        node_.name: node_ for node_ in subdag_second_transformation
+    }
