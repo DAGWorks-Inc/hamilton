@@ -774,6 +774,7 @@ class BaseDataValidationDecorator(NodeTransformer):
                 callabl=validation_function,
                 node_source=node.NodeSource.STANDARD,
                 input_types={raw_node.name: (node_.type, node.DependencyType.REQUIRED)},
+                tags={**node_.tags, **{NodeTransformer.NON_FINAL_TAG: True}} # This is not to be used as a subdag later on
             )
             validator_nodes.append(validator_node)
 

@@ -180,14 +180,20 @@ class NodeExpander(SubDAGModifier):
 class NodeTransformer(SubDAGModifier):
     NON_FINAL_TAG = 'hamilton.decorators.non_final'  # TODO -- utilize this in _separate_final_nodes
 
-    def _separate_final_nodes(self, nodes: Collection[node.Node]) -> Tuple[Collection[node.Node], Collection[node.Node]]:
+    @staticmethod
+    def _separate_final_nodes(nodes: Collection[node.Node]) -> Tuple[Collection[node.Node], Collection[node.Node]]:
         """Separates out final nodes (sinks) from the nodes.
 
         :param nodes: Nodes to separate out
         :return: A tuple consisting of [internal, final] node sets
         """
-        all_dependencies = set(sum([[dep for dep in node_.dependencies] for node_ in nodes], []))
-        return [node_ for node_ in nodes if node_.name in all_dependencies], [node_ for node_ in nodes if node_.name not in all_dependencies]
+
+        def node_tagged_non_final(node_: node.Node):
+            return node_.tags.get(NodeTransformer.NON_FINAL_TAG, False)  # Defaults to final
+
+        non_final_nodes = set(
+            sum([[dep for dep in node_.input_types] for node_ in nodes], [node_.name for node_ in nodes if node_tagged_non_final(node_)]))
+        return [node_ for node_ in nodes if node_.name in non_final_nodes], [node_ for node_ in nodes if node_.name not in non_final_nodes]
 
     def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         """Finds the sources and sinks and runs the transformer on each sink.
