@@ -248,3 +248,32 @@ desired_outputs = [o.name for o in all_possible_outputs
                    if 'my_tag_value' == o.tags.get('my_tag_key')]
 output = dr.execute(desired_outputs)
 ```
+
+## @check_output
+
+The `@check_output` decorator enables you to add simple data quality checks to your code.
+
+For example:
+
+```python
+import pandas as pd
+import numpy as np
+from hamilton.function_modifiers import check_output
+from hamilton.data_quality.base import DataValidator
+
+@check_output(
+    datatype=np.int64,
+    data_in_range=(0,100),
+    importance=DataValidator.WARN,
+)
+def some_int_data_between_0_and_100() -> pd.Series:
+    pass
+```
+
+The check_output validator takes in arguments that each correspond to one of the default validators.
+These arguments tell it to add the default validator to the list. The above thus creates
+two validators, one that checks the datatype of the series, and one that checks whether the data is in a certain range.
+
+Note that you can also specify custom decorators using the `@check_output_custom` decorator. 
+
+See [data_quality](data_quality.md) for more information on available validators and how to build custom ones.
