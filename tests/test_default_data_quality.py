@@ -6,8 +6,9 @@ import pandas as pd
 import pytest
 
 from hamilton import node
+from hamilton.data_quality import default_validators
 from hamilton.data_quality.base import DataValidator
-from hamilton.data_quality.default_validators import resolve_default_validators
+from hamilton.data_quality.default_validators import resolve_default_validators, BaseDefaultValidator
 from hamilton.function_modifiers import check_output
 from hamilton.node import DependencyType
 
@@ -63,30 +64,31 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
             **kwargs)
 
 
-def test_data_quality_node_transform():
-    decorator = check_output(
-        importance='warn',
-        default_decorator_candidates=DUMMY_VALIDATORS_FOR_TESTING,
-        dataset_length=1,
-        dtype=numpy.int64
-    )
+@pytest.mark.parametrize(
+    'cls,param,data,should_pass',
+    [
+        (default_validators.DataInRangeValidatorPandas, (0, 1), pd.Series([0.1, 0.2, 0.3]), True),
+        (default_validators.DataInRangeValidatorPandas, (0, 1), pd.Series([-30.0, 0.1, 0.2, 0.3, 100.0]), False),
 
-    def fn(input: pd.Series) -> pd.Series:
-        return input
+        (default_validators.DataInRangeValidatorPrimitives, (0, 1), .5, True),
+        (default_validators.DataInRangeValidatorPrimitives, (0, 1), 100.3, False),
 
-    node_ = node.Node.from_fn(fn)
-    subdag = decorator.transform_node(node_, config={}, fn=fn)
-    assert 4 == len(subdag)
-    subdag_as_dict = {
-        node_.name: node_ for node_ in subdag
-    }
-    assert sorted(subdag_as_dict.keys()) == ['fn', 'fn_dummy_data_validator_2', 'fn_dummy_data_validator_3', 'fn_raw']
-    # TODO -- change when we change the naming scheme
-    assert subdag_as_dict['fn_raw'].input_types['input'][1] == DependencyType.REQUIRED
-    assert 3 == len(subdag_as_dict['fn'].input_types)  # Three dependencies -- the two with DQ + the original
-    # The final function should take in everything but only use the raw results
-    assert subdag_as_dict['fn'].callable(
-        fn_raw='test',
-        fn_dummy_data_validator_2='does_not_matter',
-        fn_dummy_data_validator_3='does_not_matter'
-    ) == 'test'
+        (default_validators.MaxFractionNansValidatorPandas, .5, pd.Series([1.0, 2.0, 3.0, None]), True),
+        (default_validators.MaxFractionNansValidatorPandas, 0, pd.Series([1.0, 2.0, 3.0, None]), False),
+        (default_validators.MaxFractionNansValidatorPandas, .5, pd.Series([1.0, 2.0, None, None]), True),
+        (default_validators.MaxFractionNansValidatorPandas, .5, pd.Series([1.0, None, None, None]), False),
+        (default_validators.MaxFractionNansValidatorPandas, .5, pd.Series([None, None, None, None]), False),
+
+        (default_validators.DataTypeValidatorPandas, numpy.dtype('int'), pd.Series([1, 2, 3]), True),
+        (default_validators.DataTypeValidatorPandas, numpy.dtype('int'), pd.Series([1.0, 2.0, 3.0]), False),
+        (default_validators.DataTypeValidatorPandas, numpy.dtype('object'), pd.Series(['hello', 'goodbye']), True),
+        (default_validators.DataTypeValidatorPandas, numpy.dtype('object'), pd.Series([1, 2]), False),
+
+        (default_validators.PandasMaxStandardDevValidator, 1.0, pd.Series([.1, .2, .3, .4]), True),
+        (default_validators.PandasMaxStandardDevValidator, 0.01, pd.Series([.1, .2, .3, .4]), False)
+    ]
+)
+def test_default_data_validators(cls: Type[default_validators.BaseDefaultValidator], param: Any, data: Any, should_pass: bool):
+    validator = cls(**{cls.arg(): param, "importance": "warn"})
+    result = validator.validate(data)
+    assert result.passes == should_pass

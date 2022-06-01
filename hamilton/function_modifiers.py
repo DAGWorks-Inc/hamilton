@@ -1,3 +1,4 @@
+import abc
 import functools
 import logging
 import inspect
@@ -739,61 +740,18 @@ class tag(NodeDecorator):
                                             f'reserved as well: {self.RESERVED_TAG_NAMESPACES}')
 
 
-class check_output(NodeTransformer):
-    def __init__(self,
-                 importance: str = DataValidator.WARN,
-                 default_decorator_candidates: Type[BaseDefaultValidator] = None,
-                 **default_validator_kwargs: Any):
-        """Creates the check_output validator. This constructs the default validator class.
-        Note that this creates a whole set of default validators
-        TODO -- enable construction of custom validators using check_output.custom(*validators)
+class BaseDataValidationDecorator(NodeTransformer):
 
-        :param importance: For the default validator, how important is it that this passes.
-        :param validator_kwargs: keyword arguments to be passed to the validator
+    @abc.abstractmethod
+    def get_validators(self, node_to_validate: node.Node) -> List[DataValidator]:
+        """Returns a list of validators used to transform the nodes.
+
+        @param node_to_validate: Nodes to which the output of the validator will apply
+        @return: A list of validators to apply to the node.
         """
-        self.importance = importance
-        self.default_validator_kwargs = default_validator_kwargs
-        self.default_decorator_candidates = default_decorator_candidates
-        # We need to wait until we actually have the function in order to construct the validators
-        # So, we'll just store the constructor arguments for now and check it in validation
-
-    @staticmethod
-    def _validate_constructor_args(*validator: DataValidator, importance: str = None, **default_validator_kwargs: Any):
-        if len(validator) != 0:
-            if importance is not None or len(default_validator_kwargs) > 0:
-                raise ValueError(
-                    f'Can provide *either* a list of custom validators or arguments for the default validator. '
-                    f'Instead received both.')
-        else:
-            if importance is None:
-                raise ValueError(f'Must supply an ipmortance level if using the default validator.')
-
-    def _resolve_validators(self, return_type: Type[Type]) -> typing.Collection[DataValidator]:
-        return resolve_default_validators(
-            return_type,
-            importance=self.importance,
-            available_validators=self.default_decorator_candidates,
-            **self.default_validator_kwargs)
+        pass
 
     def transform_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
-        """Transforms the node into a subdag that does validation and still returns the node's result.
-        Say we have a node n and two validators (V1 and V2). The subdag will look like:
-
-        n_raw :=
-         > n_raw -> V1 -> n
-         > n_raw -> V2 -> n
-         > n_raw -> n
-        where
-         - V1 and V2 are nodes that return a tuple of original result
-         - n_raw is the original node, clone of n
-         - n is the final node -- it takes in any number of data quality results and drops them, as well as the original result
-        Note that n takes in params it does not use -- this is to ensure execution order of the DAG.
-
-        :param node_: Node to transform.
-        :param config: Configuration used to transform TODO -- add configuration elements for turning on/off dq actions
-        :param fn: Function that was being decorated
-        :return: A new list of nodes specifying the original DAG.
-        """
         raw_node = node.Node(
             name=node_.name + '_raw',  # TODO -- make this unique -- this will break with multiple validation decorators, which we *don't* want
             typ=node_.type,
@@ -802,7 +760,7 @@ class check_output(NodeTransformer):
             node_source=node_.node_source,
             input_types=node_.input_types,
             tags=node_.tags)
-        validators = self._resolve_validators(node_.type)
+        validators = self.get_validators(node_)
         validator_nodes = []
         for validator in validators:
             def validation_function(validator_to_call: DataValidator = validator, **kwargs):
@@ -835,17 +793,62 @@ class check_output(NodeTransformer):
         return [*validator_nodes, final_node, raw_node]
 
     def validate(self, fn: Callable):
+        pass
+
+
+class check_output_custom(BaseDataValidationDecorator):
+    def __init__(self, *validators: DataValidator):
+        """Creates a check_output_custom decorator. This allows
+        passing of custom validators that implement the DataValidator interface.
+
+        @param validator: Validator to use.
+        """
+        self.validators = validators
+
+    def get_validators(self, node_to_validate: node.Node) -> List[DataValidator]:
+        return self.validators
+
+
+class check_output(BaseDataValidationDecorator):
+    def get_validators(self, node_to_validate: node.Node) -> List[DataValidator]:
+        return resolve_default_validators(
+            node_to_validate.type,
+            importance=self.importance,
+            available_validators=self.default_decorator_candidates,
+            **self.default_validator_kwargs)
+
+    def __init__(self,
+                 importance: str = DataValidator.WARN,
+                 default_decorator_candidates: Type[BaseDefaultValidator] = None,
+                 **default_validator_kwargs: Any):
+        """Creates the check_output validator. This constructs the default validator class.
+        Note that this creates a whole set of default validators
+        TODO -- enable construction of custom validators using check_output.custom(*validators)
+
+        :param importance: For the default validator, how important is it that this passes.
+        :param validator_kwargs: keyword arguments to be passed to the validator
+        """
+        self.importance = importance
+        self.default_validator_kwargs = default_validator_kwargs
+        self.default_decorator_candidates = default_decorator_candidates
+        # We need to wait until we actually have the function in order to construct the validators
+        # So, we'll just store the constructor arguments for now and check it in validation
+
+    @staticmethod
+    def _validate_constructor_args(*validator: DataValidator, importance: str = None, **default_validator_kwargs: Any):
+        if len(validator) != 0:
+            if importance is not None or len(default_validator_kwargs) > 0:
+                raise ValueError(
+                    f'Can provide *either* a list of custom validators or arguments for the default validator. '
+                    f'Instead received both.')
+        else:
+            if importance is None:
+                raise ValueError(f'Must supply an ipmortance level if using the default validator.')
+
+    def validate(self, fn: Callable):
         """Validates that the check_output node works on the function on which it was called
 
         :param fn: Function to validate
         :raises: InvalidDecoratorException if the decorator is not valid for the function's return type
         """
         pass
-        # sig = inspect.signature(fn)
-        # return_annotation = sig.return_annotation
-        # We may want to use the upstream node to validate rather than the function...
-        # Temporarily we'll assume that they're the same, although this will have to get fixed prior to release
-        # This will break, for instance, with extract_columns (dataframe versus series)
-        # The solution is probably to apply the validator within transform_node and not validate here, *or*
-        # redo the framework to validate based off of dependent nodes?
-        # self._resolve_validators(return_annotation)  # Just resolve validators to ensure that we can
