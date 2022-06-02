@@ -8,8 +8,8 @@ from typing import Dict, Callable, Collection, Tuple, Union, Any, Type, List, Na
 import pandas as pd
 import typing_inspect
 
-from hamilton import node
-from hamilton.data_quality.base import DataValidator, ValidationResult
+from hamilton import node, data_quality
+from hamilton.data_quality.base import DataValidator, ValidationResult, DataValidationLevel
 from hamilton.data_quality.default_validators import resolve_default_validators, BaseDefaultValidator
 from hamilton.function_modifiers_base import NodeCreator, NodeResolver, NodeExpander, sanitize_function_name, NodeDecorator, NodeTransformer
 from hamilton.models import BaseModel
@@ -762,13 +762,14 @@ class BaseDataValidationDecorator(NodeTransformer):
             tags=node_.tags)
         validators = self.get_validators(node_)
         validator_nodes = []
+        validator_name_map = {}
         for validator in validators:
             def validation_function(validator_to_call: DataValidator = validator, **kwargs):
                 result = list(kwargs.values())[0]  # This should just have one kwarg
                 return validator_to_call.validate(result)
-
+            validator_node_name = node_.name + '_' + validator.name()
             validator_node = node.Node(
-                name=node_.name + '_' + validator.name(),  # TODO -- determine a good approach towards naming this
+                name=validator_node_name,  # TODO -- determine a good approach towards naming this
                 typ=ValidationResult,
                 doc_string=validator.description(),
                 callabl=validation_function,
@@ -776,9 +777,20 @@ class BaseDataValidationDecorator(NodeTransformer):
                 input_types={raw_node.name: (node_.type, node.DependencyType.REQUIRED)},
                 tags={**node_.tags, **{NodeTransformer.NON_FINAL_TAG: True}} # This is not to be used as a subdag later on
             )
+            validator_name_map[validator_node_name] = validator
             validator_nodes.append(validator_node)
 
-        def final_node_callable(**kwargs):
+        def final_node_callable(validator_nodes=validator_nodes, validator_name_map=validator_name_map, **kwargs):
+            """Callable for the final node. First calls the action on every node, then
+
+            @param validator_nodes:
+            @param validator_name_map:
+            @param kwargs:
+            @return:
+            """
+            for validator_node in validator_nodes:
+                print(kwargs)
+                data_quality.base.act(kwargs[validator_node.name], validator=validator_name_map[validator_node.name])
             return kwargs[raw_node.name]
 
         final_node = node.Node(
@@ -819,7 +831,7 @@ class check_output(BaseDataValidationDecorator):
             **self.default_validator_kwargs)
 
     def __init__(self,
-                 importance: str = DataValidator.WARN,
+                 importance: str = DataValidationLevel.WARN.value,
                  default_decorator_candidates: Type[BaseDefaultValidator] = None,
                  **default_validator_kwargs: Any):
         """Creates the check_output validator. This constructs the default validator class.

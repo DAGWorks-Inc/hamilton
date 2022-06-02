@@ -6,19 +6,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hamilton import node
 from hamilton.data_quality import default_validators
-from hamilton.data_quality.base import DataValidator
 from hamilton.data_quality.default_validators import resolve_default_validators, BaseDefaultValidator
-from hamilton.function_modifiers import check_output
-from hamilton.node import DependencyType
-
 from resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator2, SampleDataValidator1, SampleDataValidator3
-
-
-@pytest.mark.parametrize('level', ['warn', 'fail'])
-def test_validate_importance_level(level):
-    DataValidator.validate_importance_level(level)
 
 
 @pytest.mark.parametrize(

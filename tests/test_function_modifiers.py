@@ -6,6 +6,7 @@ import pytest
 
 from hamilton import function_modifiers, models, function_modifiers_base
 from hamilton import node
+from hamilton.data_quality.base import ValidationResult
 from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom
 from hamilton.node import DependencyType
 from resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator1, SampleDataValidator2, SampleDataValidator3
@@ -644,8 +645,8 @@ def test_check_output_node_transform():
     # The final function should take in everything but only use the raw results
     assert subdag_as_dict['fn'].callable(
         fn_raw='test',
-        fn_dummy_data_validator_2='does_not_matter',
-        fn_dummy_data_validator_3='does_not_matter'
+        fn_dummy_data_validator_2=ValidationResult(True, '', {}),
+        fn_dummy_data_validator_3=ValidationResult(True, '', {})
     ) == 'test'
 
 
@@ -671,8 +672,8 @@ def test_check_output_custom_node_transform():
     # The final function should take in everything but only use the raw results
     assert subdag_as_dict['fn'].callable(
         fn_raw='test',
-        fn_dummy_data_validator_2='does_not_matter',
-        fn_dummy_data_validator_3='does_not_matter'
+        fn_dummy_data_validator_2=ValidationResult(True, '', {}),
+        fn_dummy_data_validator_3=ValidationResult(True, '', {})
     ) == 'test'
 
 
