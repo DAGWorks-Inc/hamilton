@@ -18,7 +18,8 @@ class SampleDataValidator1(BaseDefaultValidator):
     def description(self) -> str:
         return 'Data must be equal to 10 to be valid'
 
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         return 'dummy_data_validator_1'
 
     def validate(self, dataset: int) -> ValidationResult:
@@ -44,7 +45,8 @@ class SampleDataValidator2(DataValidator):
     def description(self) -> str:
         return f'series must have length {self.dataset_length} to be valid'
 
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         return 'dummy_data_validator_2'
 
     def validate(self, dataset: pd.Series) -> ValidationResult:
@@ -75,7 +77,8 @@ class SampleDataValidator3(DataValidator):
     def description(self) -> str:
         return f'Series dtype must be {self.dtype} to be valid'
 
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         return 'dummy_data_validator_3'
 
     def validate(self, dataset: pd.Series) -> ValidationResult:
