@@ -259,12 +259,10 @@ For example:
 import pandas as pd
 import numpy as np
 from hamilton.function_modifiers import check_output
-from hamilton.data_quality.base import DataValidator
 
 @check_output(
     datatype=np.int64,
     data_in_range=(0,100),
-    importance=DataValidator.WARN,
 )
 def some_int_data_between_0_and_100() -> pd.Series:
     pass

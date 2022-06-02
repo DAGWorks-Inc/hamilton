@@ -1,11 +1,19 @@
 import abc
+import dataclasses
+import enum
+import logging
 from typing import Type, Any, List, Dict
 
-import dataclasses
+logger = logging.getLogger(__name__)
 
 
-class DataValidationError:
+class DataValidationError(Exception):
     pass
+
+
+class DataValidationLevel(enum.Enum):
+    WARN = 'warn'
+    FAIL = 'fail'
 
 
 @dataclasses.dataclass
@@ -17,23 +25,13 @@ class ValidationResult:
 
 class DataValidator(abc.ABC):
     """Base class for a data quality operator. This will be used by the `data_quality` operator"""
-    # Importance levels
-    WARN = 'warn'
-    FAIL = 'fail'
-
-    VALID_IMPORTANCES = {WARN, FAIL}  # TODO -- think through the API
 
     def __init__(self, importance: str):
-        self._importance = importance
+        self._importance = DataValidationLevel(importance)
 
     @property
-    def importance(self) -> str:
+    def importance(self) -> DataValidationLevel:
         return self._importance
-
-    @staticmethod
-    def validate_importance_level(importance: str):
-        if importance not in DataValidator.VALID_IMPORTANCES:
-            raise ValueError(f'Importance level must be one of: {DataValidator.VALID_IMPORTANCES}')
 
     @abc.abstractmethod
     def applies_to(self, datatype: Type[Type]) -> bool:
@@ -62,8 +60,8 @@ class DataValidator(abc.ABC):
     def validate(self, dataset: Any) -> ValidationResult:
         """Actually performs the validation. Note when you
 
-        :param dataset:
-        :return:
+        :param dataset: dataset to validate
+        :return: The result of validation
         """
         pass
 
@@ -83,3 +81,28 @@ class DataValidator(abc.ABC):
         :return: The list of node-name dependencies.
         """
         return []
+
+
+def _act_warn(validation_result: ValidationResult, validator: DataValidator):
+    if not validation_result.passes:
+        logger.warning(f"Validator: {validator.name()} failed. Message was: {validation_result.message}. "
+                       f"Diagnostic information is: {validation_result.diagnostics}")
+
+
+def _act_fail(validation_result: ValidationResult, validator: DataValidator):
+    if not validation_result.passes:
+        raise DataValidationError(f"Validator: {validator.name()} failed. Message was: {validation_result.message}. "
+                                  f"Diagnostic information is: {validation_result.diagnostics}")
+
+
+def act(validation_result: ValidationResult, validator: DataValidator):
+    """This is the current default for acting on the validation result.
+    Note that we might move this at some point -- we'll want to make it configurable. But for now, this
+    seems like a fine place to put it.
+
+    @return:
+    """
+    if validator.importance == DataValidationLevel.WARN:
+        _act_warn(validation_result, validator)
+    elif validator.importance == DataValidationLevel.FAIL:
+        _act_fail(validation_result, validator)

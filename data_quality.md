@@ -7,12 +7,11 @@ that have assertion on the output. For example...
 import pandas as pd
 import numpy as np
 from hamilton.function_modifiers import check_output
-from hamilton.data_quality.base import DataValidator
 
 @check_output(
     datatype=np.int64,
     data_in_range=(0,100),
-    importance=DataValidator.WARN,
+    importance="warn",
 )
 def some_int_data_between_0_and_100() -> pd.Series:
     pass
@@ -45,8 +44,6 @@ To add a custom validator, you need to implement the class `DataValidator`. You 
 ```python
 import pandas as pd
 import numpy as np
-from hamilton.function_modifiers import check_output
-from hamilton.data_quality.base import DataValidator
 
 @check_output_custom(AllPrimeValidator(...))
 def prime_number_generator(number_of_primes_to_generate: int) -> pd.Series:
