@@ -86,7 +86,10 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
         (default_validators.DataTypeValidatorPandas, numpy.dtype('object'), pd.Series([1, 2]), False),
 
         (default_validators.PandasMaxStandardDevValidator, 1.0, pd.Series([.1, .2, .3, .4]), True),
-        (default_validators.PandasMaxStandardDevValidator, 0.01, pd.Series([.1, .2, .3, .4]), False)
+        (default_validators.PandasMaxStandardDevValidator, 0.01, pd.Series([.1, .2, .3, .4]), False),
+
+        (default_validators.NansAllowedValidatorPandas, False, pd.Series([.1, None]), False),
+        (default_validators.NansAllowedValidatorPandas, False, pd.Series([.1, .2]), True),
     ]
 )
 def test_default_data_validators(cls: Type[default_validators.BaseDefaultValidator], param: Any, data: Any, should_pass: bool):

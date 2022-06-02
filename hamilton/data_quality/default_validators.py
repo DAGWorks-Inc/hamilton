@@ -47,9 +47,6 @@ class BaseDefaultValidator(DataValidator, abc.ABC):
 
 class DataInRangeValidatorPandas(BaseDefaultValidator):
 
-    def name(self) -> str:
-        return f'data_in_range_validator'
-
     def __init__(self, range: Tuple[float, float], importance: str):
         """Data validator that tells if data is in a range. This applies to primitives (ints, floats).
 
@@ -65,6 +62,10 @@ class DataInRangeValidatorPandas(BaseDefaultValidator):
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
         return issubclass(datatype, pd.Series)  # TODO -- handle dataframes?
+
+    @classmethod
+    def name(cls) -> str:
+        return f'data_in_range_validator'
 
     def description(self) -> str:
         return f'Validates that the datapoint falls within the range ({self.range[0]}, {self.range[1]})'
@@ -123,7 +124,8 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
     def arg(cls) -> str:
         return 'range'
 
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         return 'data_in_range_validator'
 
 
@@ -137,7 +139,8 @@ class MaxFractionNansValidatorPandas(BaseDefaultValidator):
     def _to_percent(fraction: float):
         return "{0:.2%}".format(fraction)
 
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         return 'max_fraction_nan_validator'
 
     @classmethod
@@ -176,6 +179,22 @@ class MaxFractionNansValidatorPandas(BaseDefaultValidator):
             raise ValueError(f"Maximum fraction allowed to be nan must be in range [0,1]")
 
 
+class NansAllowedValidatorPandas(MaxFractionNansValidatorPandas):
+    def __init__(self, allow_nans: bool, importance: str):
+        if allow_nans:
+            raise ValueError(f"Only allowed to block Nans with this validator."
+                             f"Otherwise leave blank or specify the percentage of Nans using {MaxFractionNansValidatorPandas.name()}")
+        super(NansAllowedValidatorPandas, self).__init__(max_fraction_nan=0 if not allow_nans else 1.0, importance=importance)
+
+    @classmethod
+    def name(cls) -> str:
+        return "nans_allowed_validator"
+
+    @classmethod
+    def arg(cls) -> str:
+        return 'allow_nans'
+
+
 class DataTypeValidatorPandas(BaseDefaultValidator):
 
     def __init__(self, datatype: Type[Type], importance: str):
@@ -183,7 +202,8 @@ class DataTypeValidatorPandas(BaseDefaultValidator):
         DataTypeValidatorPandas.datatype = datatype
         self.datatype = datatype
 
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         return "dtype_validator"
 
     @classmethod
@@ -240,7 +260,8 @@ class PandasMaxStandardDevValidator(BaseDefaultValidator):
     def arg(cls) -> str:
         return "max_standard_dev"
 
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         return "max_standard_dev_validator"
 
 
@@ -266,8 +287,8 @@ class PandasMeanInRangeValidator(BaseDefaultValidator):
             message=f"Dataset has mean: {dataset_mean}. This {'is ' if passes else 'is not '} "
                     f"in the required range: [{self.mean_in_range[0]}, {self.mean_in_range[1]}].",
             diagnostics={
-                "dataset_mean" : dataset_mean,
-                "mean_in_range" : self.mean_in_range
+                "dataset_mean": dataset_mean,
+                "mean_in_range": self.mean_in_range
             }
         )
 
@@ -275,7 +296,8 @@ class PandasMeanInRangeValidator(BaseDefaultValidator):
     def arg(cls) -> str:
         return 'mean_in_range'
 
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         return 'mean_in_range_validator'
 
 
@@ -286,6 +308,7 @@ AVAILABLE_DEFAULT_VALIDATORS = [
     PandasMeanInRangeValidator,
     DataTypeValidatorPandas,
     MaxFractionNansValidatorPandas,
+    NansAllowedValidatorPandas,
 ]
 
 

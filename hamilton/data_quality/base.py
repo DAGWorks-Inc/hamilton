@@ -53,8 +53,9 @@ class DataValidator(abc.ABC):
         """
         pass
 
+    @classmethod
     @abc.abstractmethod
-    def name(self) -> str:
+    def name(cls) -> str:
         """Returns the name for this validator."""
 
     @abc.abstractmethod
