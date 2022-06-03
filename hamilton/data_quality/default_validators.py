@@ -65,7 +65,7 @@ class DataInRangeValidatorPandas(BaseDefaultValidator):
 
     @classmethod
     def name(cls) -> str:
-        return f'data_in_range_validator'
+        return 'data_in_range_validator'
 
     def description(self) -> str:
         return f'Validates that the datapoint falls within the range ({self.range[0]}, {self.range[1]})'

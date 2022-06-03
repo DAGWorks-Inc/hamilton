@@ -1,3 +1,4 @@
+import collections
 import inspect
 from typing import Any, Type
 
@@ -7,7 +8,7 @@ import pandas as pd
 import pytest
 
 from hamilton.data_quality import default_validators
-from hamilton.data_quality.default_validators import resolve_default_validators, BaseDefaultValidator
+from hamilton.data_quality.default_validators import resolve_default_validators, BaseDefaultValidator, AVAILABLE_DEFAULT_VALIDATORS
 from resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator2, SampleDataValidator1, SampleDataValidator3
 
 
@@ -97,3 +98,19 @@ def test_to_ensure_all_validators_added_to_default_validator_list():
     all_subclasses = inspect.getmembers(default_validators, predicate)
     missing_classes = [item for (_, item) in all_subclasses if item not in default_validators.AVAILABLE_DEFAULT_VALIDATORS]
     assert len(missing_classes) == 0
+
+
+def test_that_all_validators_with_the_same_arg_have_the_same_name():
+    kwarg_to_name_map = {}
+    conflicting = collections.defaultdict(list)
+    for validator in AVAILABLE_DEFAULT_VALIDATORS:
+        print(validator.arg(), validator.name())
+        if validator.arg() not in kwarg_to_name_map:
+            kwarg_to_name_map[validator.arg()] = validator.name()
+        if kwarg_to_name_map[validator.arg()] != validator.name():
+            conflicting[validator.arg()] = validator.name()
+    if len(conflicting) > 0:
+        raise ValueError(f"The following args have multiple classes with different corresponding names. "
+                         f"Validators with the same arg must all have the same name: {conflicting}")
+
+
