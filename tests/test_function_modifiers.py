@@ -6,7 +6,7 @@ import pytest
 
 from hamilton import function_modifiers, models, function_modifiers_base
 from hamilton import node
-from hamilton.data_quality.base import ValidationResult
+from hamilton.data_quality.base import ValidationResult, DataValidationError
 from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom
 from hamilton.node import DependencyType
 from resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator1, SampleDataValidator2, SampleDataValidator3
@@ -656,7 +656,7 @@ def test_check_output_custom_node_transform():
         SampleDataValidator3(dtype=np.int64, importance="warn")
     )
 
-    def fn(input: int) -> int:
+    def fn(input: pd.Series) -> pd.Series:
         return input
 
     node_ = node.Node.from_fn(fn)
@@ -677,6 +677,29 @@ def test_check_output_custom_node_transform():
     ) == 'test'
 
 
+def test_check_output_custom_node_transform_raises_exception_with_failure():
+    decorator = check_output_custom(
+        SampleDataValidator2(dataset_length=1, importance="fail"),
+        SampleDataValidator3(dtype=np.int64, importance="fail")
+    )
+
+    def fn(input: pd.Series) -> pd.Series:
+        return input
+
+    node_ = node.Node.from_fn(fn)
+    subdag = decorator.transform_node(node_, config={}, fn=fn)
+    assert 4 == len(subdag)
+    subdag_as_dict = {
+        node_.name: node_ for node_ in subdag
+    }
+    with pytest.raises(DataValidationError):
+        subdag_as_dict['fn'].callable(
+            fn_raw=pd.Series([1.0, 2.0, 3.0]),
+            fn_dummy_data_validator_2=ValidationResult(False, '', {}),
+            fn_dummy_data_validator_3=ValidationResult(False, '', {})
+        )
+
+
 def test_check_output_custom_node_transform_layered():
     decorator_1 = check_output_custom(
         SampleDataValidator2(dataset_length=1, importance="warn"),
@@ -686,7 +709,7 @@ def test_check_output_custom_node_transform_layered():
         SampleDataValidator3(dtype=np.int64, importance="warn")
     )
 
-    def fn(input: int) -> int:
+    def fn(input: pd.Series) -> pd.Series:
         return input
 
     node_ = node.Node.from_fn(fn)
@@ -697,6 +720,4 @@ def test_check_output_custom_node_transform_layered():
     # One intermediate node for each of the functions (E.G. raw)
     # TODO -- ensure that the intermediate nodes don't share names
     assert 5 == len(subdag_second_transformation)
-    subdag_as_dict = {
-        node_.name: node_ for node_ in subdag_second_transformation
-    }
+
