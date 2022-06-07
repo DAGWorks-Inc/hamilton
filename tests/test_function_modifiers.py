@@ -669,10 +669,10 @@ def test_check_output_custom_node_transform():
     # TODO -- change when we change the naming scheme
     assert subdag_as_dict['fn_raw'].input_types['input'][1] == DependencyType.REQUIRED
     assert 3 == len(subdag_as_dict['fn'].input_types)  # Three dependencies -- the two with DQ + the original
-    data_validators = [value for value in subdag_as_dict.values() if value.tags.get('hamilton.data_validator', False)]
+    data_validators = [value for value in subdag_as_dict.values() if value.tags.get('hamilton.data_quality.contains_dq_results', False)]
     assert len(data_validators) == 2  # One for each validator
     first_validator, _ = data_validators
-    assert IS_DATA_VALIDATOR_TAG in first_validator.tags and first_validator.tags[IS_DATA_VALIDATOR_TAG] is True # Validatoes that all the required tags are included
+    assert IS_DATA_VALIDATOR_TAG in first_validator.tags and first_validator.tags[IS_DATA_VALIDATOR_TAG] is True # Validates that all the required tags are included
     assert DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG in first_validator.tags and first_validator.tags[DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG] == 'fn'
 
     # The final function should take in everything but only use the raw results
@@ -727,3 +727,9 @@ def test_check_output_custom_node_transform_layered():
     # One intermediate node for each of the functions (E.G. raw)
     # TODO -- ensure that the intermediate nodes don't share names
     assert 5 == len(subdag_second_transformation)
+
+
+def test_data_quality_constants():
+    # simple tests to test data quality constants remain the same
+    assert IS_DATA_VALIDATOR_TAG == 'hamilton.data_quality.contains_dq_results'
+    assert DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG == 'hamilton.data_quality.source_node'
