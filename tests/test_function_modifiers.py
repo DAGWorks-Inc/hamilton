@@ -7,7 +7,7 @@ import pytest
 from hamilton import function_modifiers, models, function_modifiers_base
 from hamilton import node
 from hamilton.data_quality.base import ValidationResult, DataValidationError
-from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom
+from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom, IS_DATA_VALIDATOR_TAG, DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG
 from hamilton.node import DependencyType
 from resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator1, SampleDataValidator2, SampleDataValidator3
 
@@ -669,6 +669,12 @@ def test_check_output_custom_node_transform():
     # TODO -- change when we change the naming scheme
     assert subdag_as_dict['fn_raw'].input_types['input'][1] == DependencyType.REQUIRED
     assert 3 == len(subdag_as_dict['fn'].input_types)  # Three dependencies -- the two with DQ + the original
+    data_validators = [value for value in subdag_as_dict.values() if value.tags.get('hamilton.data_validator', False)]
+    assert len(data_validators) == 2  # One for each validator
+    first_validator, _ = data_validators
+    assert IS_DATA_VALIDATOR_TAG in first_validator.tags and first_validator.tags[IS_DATA_VALIDATOR_TAG] is True # Validatoes that all the required tags are included
+    assert DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG in first_validator.tags and first_validator.tags[DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG] == 'fn'
+
     # The final function should take in everything but only use the raw results
     assert subdag_as_dict['fn'].callable(
         fn_raw='test',
@@ -692,6 +698,7 @@ def test_check_output_custom_node_transform_raises_exception_with_failure():
     subdag_as_dict = {
         node_.name: node_ for node_ in subdag
     }
+
     with pytest.raises(DataValidationError):
         subdag_as_dict['fn'].callable(
             fn_raw=pd.Series([1.0, 2.0, 3.0]),
@@ -720,4 +727,3 @@ def test_check_output_custom_node_transform_layered():
     # One intermediate node for each of the functions (E.G. raw)
     # TODO -- ensure that the intermediate nodes don't share names
     assert 5 == len(subdag_second_transformation)
-

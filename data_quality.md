@@ -52,8 +52,34 @@ def prime_number_generator(number_of_primes_to_generate: int) -> pd.Series:
 
 ## Urgency Levels
 
-TODO
+Currently there are two available urgency level:
+
+1. "warn"
+2. "fail"
+
+They do exactly as you'd expect. "warn" logs the failure to the terminal and continues on. "fail"
+raises an exception in the final node.
+
+Limitations/future work are as follows:
+
+1. Currently the actions are hardcoded. In the future, we will be considering adding 
+special actions for each level that one can customize...
+2. One can only disable data quality checks by commenting out the decorator. We intend to allow node-specific overrides.
+3. Currently the data quality results apply to every output of that function. E.G. if it runs `extract_columns`
+it is 
 
 ## Handling the results
 
-TODO
+We utilize tags to index nodes that represent data quality. All data-quality related tags start with the 
+prefix `hamilton.data_quality`. Currently there are two:
+
+1. `hamilton.data_quality.contains_dq_results` -- this is a boolean that tells 
+whether a node outputs a data quality results. These are nodes that get injected when
+a node is decorated, and can be queried by the end user.
+2. `hamilton.data_quality.source_node` -- this contains the name of the source_node
+the data to which the data quality points.
+
+Note that these tags will not be present if the node is not related to data quality -- 
+don't assume they're in every node. 
+
+To query one can simply filter for all the nodes that contain these tags and access the results!
