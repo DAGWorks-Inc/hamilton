@@ -740,6 +740,12 @@ class tag(NodeDecorator):
                                             f'reserved as well: {self.RESERVED_TAG_NAMESPACES}')
 
 
+# These are part of the publicly exposed API -- do not change them
+# Tests will catch it if you do!
+IS_DATA_VALIDATOR_TAG = 'hamilton.data_quality.contains_dq_results'
+DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = 'hamilton.data_quality.source_node'
+
+
 class BaseDataValidationDecorator(NodeTransformer):
 
     @abc.abstractmethod
@@ -767,6 +773,7 @@ class BaseDataValidationDecorator(NodeTransformer):
             def validation_function(validator_to_call: DataValidator = validator, **kwargs):
                 result = list(kwargs.values())[0]  # This should just have one kwarg
                 return validator_to_call.validate(result)
+
             validator_node_name = node_.name + '_' + validator.name()
             validator_node = node.Node(
                 name=validator_node_name,  # TODO -- determine a good approach towards naming this
@@ -775,7 +782,13 @@ class BaseDataValidationDecorator(NodeTransformer):
                 callabl=validation_function,
                 node_source=node.NodeSource.STANDARD,
                 input_types={raw_node.name: (node_.type, node.DependencyType.REQUIRED)},
-                tags={**node_.tags, **{NodeTransformer.NON_FINAL_TAG: True}} # This is not to be used as a subdag later on
+                tags={
+                    **node_.tags,
+                    **{
+                        NodeTransformer.NON_FINAL_TAG: True,  # This is not to be used as a subdag later on
+                        IS_DATA_VALIDATOR_TAG: True,
+                        DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG: node_.name
+                    }}
             )
             validator_name_map[validator_node_name] = validator
             validator_nodes.append(validator_node)
