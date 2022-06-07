@@ -652,8 +652,8 @@ def test_check_output_node_transform():
 
 def test_check_output_custom_node_transform():
     decorator = check_output_custom(
-        SampleDataValidator2(dataset_length=1, importance="warn"),
-        SampleDataValidator3(dtype=np.int64, importance="warn")
+        SampleDataValidator2(dataset_length=1, importance='warn'),
+        SampleDataValidator3(dtype=np.int64, importance='warn')
     )
 
     def fn(input: pd.Series) -> pd.Series:
@@ -685,8 +685,8 @@ def test_check_output_custom_node_transform():
 
 def test_check_output_custom_node_transform_raises_exception_with_failure():
     decorator = check_output_custom(
-        SampleDataValidator2(dataset_length=1, importance="fail"),
-        SampleDataValidator3(dtype=np.int64, importance="fail")
+        SampleDataValidator2(dataset_length=1, importance='fail'),
+        SampleDataValidator3(dtype=np.int64, importance='fail')
     )
 
     def fn(input: pd.Series) -> pd.Series:
@@ -709,11 +709,11 @@ def test_check_output_custom_node_transform_raises_exception_with_failure():
 
 def test_check_output_custom_node_transform_layered():
     decorator_1 = check_output_custom(
-        SampleDataValidator2(dataset_length=1, importance="warn"),
+        SampleDataValidator2(dataset_length=1, importance='warn'),
     )
 
     decorator_2 = check_output_custom(
-        SampleDataValidator3(dtype=np.int64, importance="warn")
+        SampleDataValidator3(dtype=np.int64, importance='warn')
     )
 
     def fn(input: pd.Series) -> pd.Series:

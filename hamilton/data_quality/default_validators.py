@@ -137,7 +137,7 @@ class MaxFractionNansValidatorPandas(BaseDefaultValidator):
 
     @staticmethod
     def _to_percent(fraction: float):
-        return "{0:.2%}".format(fraction)
+        return '{0:.2%}'.format(fraction)
 
     @classmethod
     def name(cls) -> str:
@@ -162,10 +162,10 @@ class MaxFractionNansValidatorPandas(BaseDefaultValidator):
                     f'Max allowable Nans is: {MaxFractionNansValidatorPandas._to_percent(self.max_fraction_nan)},'
                     f' so this {"passes" if passes else "does not pass"}.',
             diagnostics={
-                "total_nan": total_na,
-                "total_length": total_length,
-                "fraction_na": fraction_na,
-                "max_fraction_na": self.max_fraction_nan
+                'total_nan': total_na,
+                'total_length': total_length,
+                'fraction_na': fraction_na,
+                'max_fraction_na': self.max_fraction_nan
             }
         )
 
@@ -176,19 +176,19 @@ class MaxFractionNansValidatorPandas(BaseDefaultValidator):
     @staticmethod
     def _validate_max_fraction_nan(max_fraction_nan: float):
         if not (0 <= max_fraction_nan <= 1):
-            raise ValueError(f"Maximum fraction allowed to be nan must be in range [0,1]")
+            raise ValueError(f'Maximum fraction allowed to be nan must be in range [0,1]')
 
 
 class NansAllowedValidatorPandas(MaxFractionNansValidatorPandas):
     def __init__(self, allow_nans: bool, importance: str):
         if allow_nans:
-            raise ValueError(f"Only allowed to block Nans with this validator."
-                             f"Otherwise leave blank or specify the percentage of Nans using {MaxFractionNansValidatorPandas.name()}")
+            raise ValueError(f'Only allowed to block Nans with this validator.'
+                             f'Otherwise leave blank or specify the percentage of Nans using {MaxFractionNansValidatorPandas.name()}')
         super(NansAllowedValidatorPandas, self).__init__(max_fraction_nan=0 if not allow_nans else 1.0, importance=importance)
 
     @classmethod
     def name(cls) -> str:
-        return "nans_allowed_validator"
+        return 'nans_allowed_validator'
 
     @classmethod
     def arg(cls) -> str:
@@ -204,14 +204,14 @@ class DataTypeValidatorPandas(BaseDefaultValidator):
 
     @classmethod
     def name(cls) -> str:
-        return "dtype_validator"
+        return 'dtype_validator'
 
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
         return issubclass(datatype, pd.Series)
 
     def description(self) -> str:
-        return f"Validates that the datatype of the pandas series is a subclass of: {self.datatype}"
+        return f'Validates that the datatype of the pandas series is a subclass of: {self.datatype}'
 
     def validate(self, data: pd.Series) -> ValidationResult:
         dtype = data.dtype
@@ -220,8 +220,8 @@ class DataTypeValidatorPandas(BaseDefaultValidator):
             passes=passes,
             message=f"Requires subclass of datatype: {self.datatype}. Got datatype: {dtype}. This {'is' if passes else 'is not'} a valid subclass.",
             diagnostics={
-                "required_dtype": self.datatype,
-                "actual_dtype": dtype
+                'required_dtype': self.datatype,
+                'actual_dtype': dtype
             }
         )
 
@@ -240,29 +240,29 @@ class PandasMaxStandardDevValidator(BaseDefaultValidator):
         return issubclass(datatype, pd.Series)
 
     def description(self) -> str:
-        return f"Validates that the standard deviation of a pandas series is no greater than : {self.max_standard_dev}"
+        return f'Validates that the standard deviation of a pandas series is no greater than : {self.max_standard_dev}'
 
     def validate(self, data: pd.Series) -> ValidationResult:
         standard_dev = data.std()
         passes = standard_dev <= self.max_standard_dev
         return ValidationResult(
             passes=passes,
-            message=f"Max allowable standard dev is: {self.max_standard_dev}. "
-                    f"Dataset stddev is : {standard_dev}. "
+            message=f'Max allowable standard dev is: {self.max_standard_dev}. '
+                    f'Dataset stddev is : {standard_dev}. '
                     f"This {'passes' if passes else 'does not pass'}.",
             diagnostics={
-                "standard_dev": standard_dev,
-                "max_standard_dev": self.max_standard_dev
+                'standard_dev': standard_dev,
+                'max_standard_dev': self.max_standard_dev
             }
         )
 
     @classmethod
     def arg(cls) -> str:
-        return "max_standard_dev"
+        return 'max_standard_dev'
 
     @classmethod
     def name(cls) -> str:
-        return "max_standard_dev_validator"
+        return 'max_standard_dev_validator'
 
 
 class PandasMeanInRangeValidator(BaseDefaultValidator):
@@ -276,7 +276,7 @@ class PandasMeanInRangeValidator(BaseDefaultValidator):
         return issubclass(datatype, pd.Series)
 
     def description(self) -> str:
-        return f"Validates that a pandas series has mean in range [{self.mean_in_range[0]}, {self.mean_in_range[1]}]"
+        return f'Validates that a pandas series has mean in range [{self.mean_in_range[0]}, {self.mean_in_range[1]}]'
 
     def validate(self, data: pd.Series) -> ValidationResult:
         dataset_mean = data.mean()
@@ -285,10 +285,10 @@ class PandasMeanInRangeValidator(BaseDefaultValidator):
         return ValidationResult(
             passes=passes,
             message=f"Dataset has mean: {dataset_mean}. This {'is ' if passes else 'is not '} "
-                    f"in the required range: [{self.mean_in_range[0]}, {self.mean_in_range[1]}].",
+                    f'in the required range: [{self.mean_in_range[0]}, {self.mean_in_range[1]}].',
             diagnostics={
-                "dataset_mean": dataset_mean,
-                "mean_in_range": self.mean_in_range
+                'dataset_mean': dataset_mean,
+                'mean_in_range': self.mean_in_range
             }
         )
 
