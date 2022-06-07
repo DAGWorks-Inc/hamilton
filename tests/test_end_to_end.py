@@ -22,5 +22,3 @@ def test_data_quality_workflow_fails():
     all_vars = driver.list_available_variables()
     with pytest.raises(DataValidationError):
         driver.raw_execute([var.name for var in all_vars], inputs={'data_quality_should_fail': True})
-
-

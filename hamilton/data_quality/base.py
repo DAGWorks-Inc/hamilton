@@ -85,14 +85,14 @@ class DataValidator(abc.ABC):
 
 def _act_warn(validation_result: ValidationResult, validator: DataValidator):
     if not validation_result.passes:
-        logger.warning(f"Validator: {validator.name()} failed. Message was: {validation_result.message}. "
-                       f"Diagnostic information is: {validation_result.diagnostics}")
+        logger.warning(f'Validator: {validator.name()} failed. Message was: {validation_result.message}. '
+                       f'Diagnostic information is: {validation_result.diagnostics}')
 
 
 def _act_fail(validation_result: ValidationResult, validator: DataValidator):
     if not validation_result.passes:
-        raise DataValidationError(f"Validator: {validator.name()} failed. Message was: {validation_result.message}. "
-                                  f"Diagnostic information is: {validation_result.diagnostics}")
+        raise DataValidationError(f'Validator: {validator.name()} failed. Message was: {validation_result.message}. '
+                                  f'Diagnostic information is: {validation_result.diagnostics}')
 
 
 def act(validation_result: ValidationResult, validator: DataValidator):

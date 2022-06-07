@@ -84,7 +84,7 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
     ]
 )
 def test_default_data_validators(cls: Type[default_validators.BaseDefaultValidator], param: Any, data: Any, should_pass: bool):
-    validator = cls(**{cls.arg(): param, "importance": "warn"})
+    validator = cls(**{cls.arg(): param, 'importance': 'warn'})
     result = validator.validate(data)
     assert result.passes == should_pass
 
@@ -110,7 +110,5 @@ def test_that_all_validators_with_the_same_arg_have_the_same_name():
         if kwarg_to_name_map[validator.arg()] != validator.name():
             conflicting[validator.arg()] = validator.name()
     if len(conflicting) > 0:
-        raise ValueError(f"The following args have multiple classes with different corresponding names. "
-                         f"Validators with the same arg must all have the same name: {conflicting}")
-
-
+        raise ValueError(f'The following args have multiple classes with different corresponding names. '
+                         f'Validators with the same arg must all have the same name: {conflicting}')

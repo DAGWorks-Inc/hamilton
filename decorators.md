@@ -272,6 +272,6 @@ The check_output validator takes in arguments that each correspond to one of the
 These arguments tell it to add the default validator to the list. The above thus creates
 two validators, one that checks the datatype of the series, and one that checks whether the data is in a certain range.
 
-Note that you can also specify custom decorators using the `@check_output_custom` decorator. 
+Note that you can also specify custom decorators using the `@check_output_custom` decorator.
 
 See [data_quality](data_quality.md) for more information on available validators and how to build custom ones.
