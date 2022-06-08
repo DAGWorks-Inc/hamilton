@@ -9,7 +9,7 @@ from hamilton import node
 from hamilton.data_quality.base import ValidationResult, DataValidationError
 from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom, IS_DATA_VALIDATOR_TAG, DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG
 from hamilton.node import DependencyType
-from resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator1, SampleDataValidator2, SampleDataValidator3
+from tests.resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator2, SampleDataValidator3
 
 
 def test_parametrized_invalid_params():
