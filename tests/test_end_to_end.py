@@ -1,7 +1,6 @@
 import pytest
 
 import hamilton.driver
-from hamilton import graph
 import tests.resources.data_quality
 from hamilton.data_quality.base import ValidationResult, DataValidationError
 

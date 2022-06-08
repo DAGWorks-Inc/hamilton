@@ -9,7 +9,7 @@ import pytest
 
 from hamilton.data_quality import default_validators
 from hamilton.data_quality.default_validators import resolve_default_validators, BaseDefaultValidator, AVAILABLE_DEFAULT_VALIDATORS
-from resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator2, SampleDataValidator1, SampleDataValidator3
+from tests.resources.dq_dummy_examples import SampleDataValidator1, SampleDataValidator2, SampleDataValidator3, DUMMY_VALIDATORS_FOR_TESTING
 
 
 @pytest.mark.parametrize(
