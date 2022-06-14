@@ -9,10 +9,10 @@ import pandas as pd
 import typing_inspect
 
 from hamilton import node, data_quality
-from hamilton.data_quality.base import DataValidator, ValidationResult, DataValidationLevel
-from hamilton.data_quality.default_validators import resolve_default_validators, BaseDefaultValidator
-from hamilton.function_modifiers_base import NodeCreator, NodeResolver, NodeExpander, sanitize_function_name, NodeDecorator, NodeTransformer
-from hamilton.models import BaseModel
+from hamilton.data_quality import base
+from hamilton.data_quality import default_validators
+from hamilton import function_modifiers_base
+from hamilton import models
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def get_default_tags(fn: Callable) -> Dict[str, str]:
     return {'module': module_name}
 
 
-class parametrized(NodeExpander):
+class parametrized(function_modifiers_base.NodeExpander):
     def __init__(self, parameter: str, assigned_output: Dict[Tuple[str, str], Any]):
         """Constructor for a modifier that expands a single function into n, each of which
         corresponds to a function in which the parameter value is replaced by that *specific value*.
@@ -80,7 +80,7 @@ class parametrized(NodeExpander):
         return nodes
 
 
-class parametrized_input(NodeExpander):
+class parametrized_input(function_modifiers_base.NodeExpander):
 
     def __init__(self, parameter: str, variable_inputs: Dict[str, Tuple[str, str]]):
         """Constructor for a modifier that expands a single function into n, each of which
@@ -143,7 +143,7 @@ class parametrized_input(NodeExpander):
                 f'Annotation is invalid -- no such parameter {self.parameter} in function {fn}')
 
 
-class parameterized_inputs(NodeExpander):
+class parameterized_inputs(function_modifiers_base.NodeExpander):
     RESERVED_KWARG = 'output_name'
 
     def __init__(self, **parameterization: Dict[str, Dict[str, str]]):
@@ -242,7 +242,7 @@ class parameterized_inputs(NodeExpander):
                 f'{fn.__module__}.{fn.__name__}.')
 
 
-class extract_columns(NodeExpander):
+class extract_columns(function_modifiers_base.NodeExpander):
 
     def __init__(self, *columns: Union[Tuple[str, str], str], fill_with: Any = None):
         """Constructor for a modifier that expands a single function into the following nodes:
@@ -316,7 +316,7 @@ class extract_columns(NodeExpander):
         return output_nodes
 
 
-class extract_fields(NodeExpander):
+class extract_fields(function_modifiers_base.NodeExpander):
     """Extracts fields from a dictionary of output."""
 
     def __init__(self, fields: dict, fill_with: Any = None):
@@ -426,7 +426,7 @@ def ensure_function_empty(fn: Callable):
                                         f'consists of "pass"')
 
 
-class does(NodeCreator):
+class does(function_modifiers_base.NodeCreator):
     def __init__(self, replacing_function: Callable):
         """
         Constructor for a modifier that replaces the annotated functions functionality with something else.
@@ -487,8 +487,8 @@ class does(NodeCreator):
             tags=get_default_tags(fn))
 
 
-class dynamic_transform(NodeCreator):
-    def __init__(self, transform_cls: Type[BaseModel], config_param: str, **extra_transform_params):
+class dynamic_transform(function_modifiers_base.NodeCreator):
+    def __init__(self, transform_cls: Type[models.BaseModel], config_param: str, **extra_transform_params):
         """Constructs a model. Takes in a model_cls, which has to have a parameter."""
         self.transform_cls = transform_cls
         self.config_param = config_param
@@ -531,7 +531,7 @@ class model(dynamic_transform):
         super(model, self).__init__(transform_cls=model_cls, config_param=config_param, **extra_model_params)
 
 
-class config(NodeResolver):
+class config(function_modifiers_base.NodeResolver):
     """Decorator class that resolves a node's function based on  some configuration variable
     Currently, functions that exist in all configurations have to be disjoint.
     E.G. for every config.when(), you can have a config.when_not() that filters the opposite.
@@ -545,7 +545,7 @@ class config(NodeResolver):
     def _get_function_name(self, fn: Callable) -> str:
         if self.target_name is not None:
             return self.target_name
-        return sanitize_function_name(fn.__name__)
+        return function_modifiers_base.sanitize_function_name(fn.__name__)
 
     def resolve(self, fn, configuration: Dict[str, Any]) -> Callable:
         if not self.does_resolve(configuration):
@@ -622,7 +622,7 @@ class config(NodeResolver):
         return config(resolves)
 
 
-class tag(NodeDecorator):
+class tag(function_modifiers_base.NodeDecorator):
     """Decorator class that adds a tag to a node. Tags take the form of key/value pairings.
     Tags can have dots to specify namespaces (keys with dots), but this is usually reserved for special cases
     (E.G. subdecorators) that utilize them. Usually one will pass in tags as kwargs, so we expect tags to
@@ -746,10 +746,10 @@ IS_DATA_VALIDATOR_TAG = 'hamilton.data_quality.contains_dq_results'
 DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = 'hamilton.data_quality.source_node'
 
 
-class BaseDataValidationDecorator(NodeTransformer):
+class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
 
     @abc.abstractmethod
-    def get_validators(self, node_to_validate: node.Node) -> List[DataValidator]:
+    def get_validators(self, node_to_validate: node.Node) -> List[base.DataValidator]:
         """Returns a list of validators used to transform the nodes.
 
         @param node_to_validate: Nodes to which the output of the validator will apply
@@ -770,14 +770,14 @@ class BaseDataValidationDecorator(NodeTransformer):
         validator_nodes = []
         validator_name_map = {}
         for validator in validators:
-            def validation_function(validator_to_call: DataValidator = validator, **kwargs):
+            def validation_function(validator_to_call: base.DataValidator = validator, **kwargs):
                 result = list(kwargs.values())[0]  # This should just have one kwarg
                 return validator_to_call.validate(result)
 
             validator_node_name = node_.name + '_' + validator.name()
             validator_node = node.Node(
                 name=validator_node_name,  # TODO -- determine a good approach towards naming this
-                typ=ValidationResult,
+                typ=base.ValidationResult,
                 doc_string=validator.description(),
                 callabl=validation_function,
                 node_source=node.NodeSource.STANDARD,
@@ -785,7 +785,7 @@ class BaseDataValidationDecorator(NodeTransformer):
                 tags={
                     **node_.tags,
                     **{
-                        NodeTransformer.NON_FINAL_TAG: True,  # This is not to be used as a subdag later on
+                        function_modifiers_base.NodeTransformer.NON_FINAL_TAG: True,  # This is not to be used as a subdag later on
                         IS_DATA_VALIDATOR_TAG: True,
                         DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG: node_.name
                     }}
@@ -823,7 +823,7 @@ class BaseDataValidationDecorator(NodeTransformer):
 
 
 class check_output_custom(BaseDataValidationDecorator):
-    def __init__(self, *validators: DataValidator):
+    def __init__(self, *validators: base.DataValidator):
         """Creates a check_output_custom decorator. This allows
         passing of custom validators that implement the DataValidator interface.
 
@@ -831,21 +831,21 @@ class check_output_custom(BaseDataValidationDecorator):
         """
         self.validators = validators
 
-    def get_validators(self, node_to_validate: node.Node) -> List[DataValidator]:
+    def get_validators(self, node_to_validate: node.Node) -> List[base.DataValidator]:
         return self.validators
 
 
 class check_output(BaseDataValidationDecorator):
-    def get_validators(self, node_to_validate: node.Node) -> List[DataValidator]:
-        return resolve_default_validators(
+    def get_validators(self, node_to_validate: node.Node) -> List[base.DataValidator]:
+        return default_validators.resolve_default_validators(
             node_to_validate.type,
             importance=self.importance,
             available_validators=self.default_decorator_candidates,
             **self.default_validator_kwargs)
 
     def __init__(self,
-                 importance: str = DataValidationLevel.WARN.value,
-                 default_decorator_candidates: Type[BaseDefaultValidator] = None,
+                 importance: str = base.DataValidationLevel.WARN.value,
+                 default_decorator_candidates: Type[default_validators.BaseDefaultValidator] = None,
                  **default_validator_kwargs: Any):
         """Creates the check_output validator. This constructs the default validator class.
         Note that this creates a whole set of default validators
@@ -861,7 +861,7 @@ class check_output(BaseDataValidationDecorator):
         # So, we'll just store the constructor arguments for now and check it in validation
 
     @staticmethod
-    def _validate_constructor_args(*validator: DataValidator, importance: str = None, **default_validator_kwargs: Any):
+    def _validate_constructor_args(*validator: base.DataValidator, importance: str = None, **default_validator_kwargs: Any):
         if len(validator) != 0:
             if importance is not None or len(default_validator_kwargs) > 0:
                 raise ValueError(

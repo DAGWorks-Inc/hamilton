@@ -5,11 +5,11 @@ from typing import Any, Type, List, Optional, Tuple
 import numpy
 import numpy as np
 
-from hamilton.data_quality.base import DataValidator, ValidationResult
+from hamilton.data_quality import base
 import pandas as pd
 
 
-class BaseDefaultValidator(DataValidator, abc.ABC):
+class BaseDefaultValidator(base.DataValidator, abc.ABC):
     """Base class for a default validator.
     These are all validators that utilize a single argument to be passed to the decorator check_output.
     check_output can thus delegate to multiple of these. This is an internal abstraction to allow for easy
@@ -29,7 +29,7 @@ class BaseDefaultValidator(DataValidator, abc.ABC):
         pass
 
     @abc.abstractmethod
-    def validate(self, data: Any) -> ValidationResult:
+    def validate(self, data: Any) -> base.ValidationResult:
         pass
 
     @classmethod
@@ -70,7 +70,7 @@ class DataInRangeValidatorPandas(BaseDefaultValidator):
     def description(self) -> str:
         return f'Validates that the datapoint falls within the range ({self.range[0]}, {self.range[1]})'
 
-    def validate(self, data: pd.Series) -> ValidationResult:
+    def validate(self, data: pd.Series) -> base.ValidationResult:
         min_, max_ = self.range
         between = data.between(min_, max_, inclusive=True)
         counts = between.value_counts().to_dict()
@@ -78,7 +78,7 @@ class DataInRangeValidatorPandas(BaseDefaultValidator):
         out_range = counts.get(False, 0)
         passes = out_range == 0
         message = f'Series contains {in_range} values in range ({min_},{max_}), and {out_range} outside.'
-        return ValidationResult(
+        return base.ValidationResult(
             passes=passes,
             message=message,
             diagnostics={
@@ -106,12 +106,12 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
     def description(self) -> str:
         return f'Validates that the datapoint falls within the range ({self.range[0]}, {self.range[1]})'
 
-    def validate(self, data: numbers.Real) -> ValidationResult:
+    def validate(self, data: numbers.Real) -> base.ValidationResult:
         min_, max_ = self.range
         passes = min_ <= data <= max_
         message = f'Data point {data} falls within acceptable range: ({min_}, {max_})' if passes else \
             f'Data point {data} does not fall within acceptable range: ({min_}, {max_})'
-        return ValidationResult(
+        return base.ValidationResult(
             passes=passes,
             message=message,
             diagnostics={
@@ -150,12 +150,12 @@ class MaxFractionNansValidatorPandas(BaseDefaultValidator):
     def description(self) -> str:
         return f'Validates that no more than {MaxFractionNansValidatorPandas._to_percent(self.max_fraction_nan)} of the data is Nan.'
 
-    def validate(self, data: pd.Series) -> ValidationResult:
+    def validate(self, data: pd.Series) -> base.ValidationResult:
         total_length = len(data)
         total_na = data.isna().sum()
         fraction_na = total_na / total_length
         passes = fraction_na <= self.max_fraction_nan
-        return ValidationResult(
+        return base.ValidationResult(
             passes=passes,
             message=f'Out of {total_length} items in the series, {total_na} of them are Nan, '
                     f'representing: {MaxFractionNansValidatorPandas._to_percent(fraction_na)}. '
@@ -213,10 +213,10 @@ class DataTypeValidatorPandas(BaseDefaultValidator):
     def description(self) -> str:
         return f'Validates that the datatype of the pandas series is a subclass of: {self.datatype}'
 
-    def validate(self, data: pd.Series) -> ValidationResult:
+    def validate(self, data: pd.Series) -> base.ValidationResult:
         dtype = data.dtype
         passes = np.issubdtype(dtype, self.datatype)
-        return ValidationResult(
+        return base.ValidationResult(
             passes=passes,
             message=f"Requires subclass of datatype: {self.datatype}. Got datatype: {dtype}. This {'is' if passes else 'is not'} a valid subclass.",
             diagnostics={
@@ -242,10 +242,10 @@ class PandasMaxStandardDevValidator(BaseDefaultValidator):
     def description(self) -> str:
         return f'Validates that the standard deviation of a pandas series is no greater than : {self.max_standard_dev}'
 
-    def validate(self, data: pd.Series) -> ValidationResult:
+    def validate(self, data: pd.Series) -> base.ValidationResult:
         standard_dev = data.std()
         passes = standard_dev <= self.max_standard_dev
-        return ValidationResult(
+        return base.ValidationResult(
             passes=passes,
             message=f'Max allowable standard dev is: {self.max_standard_dev}. '
                     f'Dataset stddev is : {standard_dev}. '
@@ -278,11 +278,11 @@ class PandasMeanInRangeValidator(BaseDefaultValidator):
     def description(self) -> str:
         return f'Validates that a pandas series has mean in range [{self.mean_in_range[0]}, {self.mean_in_range[1]}]'
 
-    def validate(self, data: pd.Series) -> ValidationResult:
+    def validate(self, data: pd.Series) -> base.ValidationResult:
         dataset_mean = data.mean()
         min_, max_ = self.mean_in_range
         passes = min_ <= dataset_mean <= max_
-        return ValidationResult(
+        return base.ValidationResult(
             passes=passes,
             message=f"Dataset has mean: {dataset_mean}. This {'is ' if passes else 'is not '} "
                     f'in the required range: [{self.mean_in_range[0]}, {self.mean_in_range[1]}].',
