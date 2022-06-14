@@ -23,12 +23,12 @@ In the above, we run two assertions:
 2. That every item in the series in between 0 and 100
 
 Furthermore, the workflow does not fail when this dies. Rather, it logs a warning
-(more about configuring that later).
+More about configuring that later, but you can see its specified in the `importance` parameter above.
 
 ## Design
 
-To add data quality validation, we do a simple DAG manipulation. See comments on the
-`BaseDataValidationDecorator` class for how it works.
+To add data quality validation, we run an additional computational step in your workflow after function calculation.
+See comments on the `BaseDataValidationDecorator` class for how it works.
 
 ## Default Validators
 
@@ -66,7 +66,7 @@ Limitations/future work are as follows:
 special actions for each level that one can customize...
 2. One can only disable data quality checks by commenting out the decorator. We intend to allow node-specific overrides.
 3. Currently the data quality results apply to every output of that function. E.G. if it runs `extract_columns`
-it is
+it executes on every column that's extracted.
 
 ## Handling the results
 

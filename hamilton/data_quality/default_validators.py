@@ -129,10 +129,10 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
         return 'data_in_range_validator'
 
 
-class MaxFractionNansValidatorPandas(BaseDefaultValidator):
+class MaxFractionNansValidatorPandasSeries(BaseDefaultValidator):
     def __init__(self, max_fraction_nan: float, importance: str):
-        super(MaxFractionNansValidatorPandas, self).__init__(importance=importance)
-        MaxFractionNansValidatorPandas._validate_max_fraction_nan(max_fraction_nan)
+        super(MaxFractionNansValidatorPandasSeries, self).__init__(importance=importance)
+        MaxFractionNansValidatorPandasSeries._validate_max_fraction_nan(max_fraction_nan)
         self.max_fraction_nan = max_fraction_nan
 
     @staticmethod
@@ -148,7 +148,7 @@ class MaxFractionNansValidatorPandas(BaseDefaultValidator):
         return issubclass(datatype, pd.Series)
 
     def description(self) -> str:
-        return f'Validates that no more than {MaxFractionNansValidatorPandas._to_percent(self.max_fraction_nan)} of the data is Nan.'
+        return f'Validates that no more than {MaxFractionNansValidatorPandasSeries._to_percent(self.max_fraction_nan)} of the data is Nan.'
 
     def validate(self, data: pd.Series) -> base.ValidationResult:
         total_length = len(data)
@@ -158,8 +158,8 @@ class MaxFractionNansValidatorPandas(BaseDefaultValidator):
         return base.ValidationResult(
             passes=passes,
             message=f'Out of {total_length} items in the series, {total_na} of them are Nan, '
-                    f'representing: {MaxFractionNansValidatorPandas._to_percent(fraction_na)}. '
-                    f'Max allowable Nans is: {MaxFractionNansValidatorPandas._to_percent(self.max_fraction_nan)},'
+                    f'representing: {MaxFractionNansValidatorPandasSeries._to_percent(fraction_na)}. '
+                    f'Max allowable Nans is: {MaxFractionNansValidatorPandasSeries._to_percent(self.max_fraction_nan)},'
                     f' so this {"passes" if passes else "does not pass"}.',
             diagnostics={
                 'total_nan': total_na,
@@ -179,11 +179,11 @@ class MaxFractionNansValidatorPandas(BaseDefaultValidator):
             raise ValueError(f'Maximum fraction allowed to be nan must be in range [0,1]')
 
 
-class NansAllowedValidatorPandas(MaxFractionNansValidatorPandas):
+class NansAllowedValidatorPandas(MaxFractionNansValidatorPandasSeries):
     def __init__(self, allow_nans: bool, importance: str):
         if allow_nans:
             raise ValueError(f'Only allowed to block Nans with this validator.'
-                             f'Otherwise leave blank or specify the percentage of Nans using {MaxFractionNansValidatorPandas.name()}')
+                             f'Otherwise leave blank or specify the percentage of Nans using {MaxFractionNansValidatorPandasSeries.name()}')
         super(NansAllowedValidatorPandas, self).__init__(max_fraction_nan=0 if not allow_nans else 1.0, importance=importance)
 
     @classmethod
@@ -307,7 +307,7 @@ AVAILABLE_DEFAULT_VALIDATORS = [
     PandasMaxStandardDevValidator,
     PandasMeanInRangeValidator,
     DataTypeValidatorPandas,
-    MaxFractionNansValidatorPandas,
+    MaxFractionNansValidatorPandasSeries,
     NansAllowedValidatorPandas,
 ]
 

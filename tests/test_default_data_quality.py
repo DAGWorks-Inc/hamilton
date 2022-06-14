@@ -65,11 +65,11 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
         (default_validators.DataInRangeValidatorPrimitives, (0, 1), .5, True),
         (default_validators.DataInRangeValidatorPrimitives, (0, 1), 100.3, False),
 
-        (default_validators.MaxFractionNansValidatorPandas, .5, pd.Series([1.0, 2.0, 3.0, None]), True),
-        (default_validators.MaxFractionNansValidatorPandas, 0, pd.Series([1.0, 2.0, 3.0, None]), False),
-        (default_validators.MaxFractionNansValidatorPandas, .5, pd.Series([1.0, 2.0, None, None]), True),
-        (default_validators.MaxFractionNansValidatorPandas, .5, pd.Series([1.0, None, None, None]), False),
-        (default_validators.MaxFractionNansValidatorPandas, .5, pd.Series([None, None, None, None]), False),
+        (default_validators.MaxFractionNansValidatorPandasSeries, .5, pd.Series([1.0, 2.0, 3.0, None]), True),
+        (default_validators.MaxFractionNansValidatorPandasSeries, 0, pd.Series([1.0, 2.0, 3.0, None]), False),
+        (default_validators.MaxFractionNansValidatorPandasSeries, .5, pd.Series([1.0, 2.0, None, None]), True),
+        (default_validators.MaxFractionNansValidatorPandasSeries, .5, pd.Series([1.0, None, None, None]), False),
+        (default_validators.MaxFractionNansValidatorPandasSeries, .5, pd.Series([None, None, None, None]), False),
 
         (default_validators.DataTypeValidatorPandas, numpy.dtype('int'), pd.Series([1, 2, 3]), True),
         (default_validators.DataTypeValidatorPandas, numpy.dtype('int'), pd.Series([1.0, 2.0, 3.0]), False),

@@ -802,7 +802,6 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
             @return:
             """
             for validator_node in validator_nodes:
-                print(kwargs)
                 data_quality.base.act(kwargs[validator_node.name], validator=validator_name_map[validator_node.name])
             return kwargs[raw_node.name]
 
