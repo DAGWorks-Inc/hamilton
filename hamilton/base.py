@@ -141,6 +141,10 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
             return True
         elif typing_inspect.is_typevar(node_type):  # skip runtime comparison for now.
             return True
+        elif typing_inspect.is_generic_type(node_type) and typing_inspect.get_origin(node_type) == type(input_value):
+            return True
+        elif node_type == type(input_value):
+            return True
         return False
 
     @staticmethod
