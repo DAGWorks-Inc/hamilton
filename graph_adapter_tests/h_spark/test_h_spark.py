@@ -39,6 +39,6 @@ def test_koalas_spark_graph_adapter(spark_session):
     ]
     df = dr.execute(output_columns)
     assert set(df) == set(output_columns)
-    expected_column = pd.Series([0.0, 0.0, 13.33333, 23.33333, 33.33333, 43.33333], name='avg_3wk_spend')
-    pd.testing.assert_series_equal(df.avg_3wk_spend.fillna(0.0), expected_column)  # fill na to get around NaN
+    expected_column = pd.Series([0.0, 0.0, 13.33333, 23.33333, 33.33333, 43.33333], index=[0, 1, 2, 3, 4, 5], name='avg_3wk_spend')
+    pd.testing.assert_series_equal(df.avg_3wk_spend.fillna(0.0).sort_index(), expected_column)  # fill na to get around NaN
     # TODO: do some more asserting?
