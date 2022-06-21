@@ -76,7 +76,7 @@ setup(
                     'dask-dataframe': ['dask[dataframe]'],
                     'dask-diagnostics': ['dask[diagnostics]'],
                     'dask-distributed': ['dask[distributed]'],
-                    'ray': ['ray'],
+                    'ray': ['ray', 'pyarrow'],
                     'pyspark': ['pyspark[pandas_on_spark]'],
                     },
 

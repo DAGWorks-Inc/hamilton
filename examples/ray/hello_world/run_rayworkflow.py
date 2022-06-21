@@ -11,7 +11,6 @@ from hamilton.experimental import h_ray
 
 if __name__ == '__main__':
     log_setup.setup_logging()
-    ray.init()
     workflow.init()
     # You can also script module import loading by knowing the module name
     # See run.py for an example of doing it that way.
