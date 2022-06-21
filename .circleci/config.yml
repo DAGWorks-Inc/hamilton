@@ -124,8 +124,7 @@ jobs:
             python --version
             pip --version
             pip install -r requirements-test.txt
-            pip install -r requirements.txt
-            pip install "dask[complete]"
+            pip install -e ".[dask]"
 
       # run tests!
       - run:
@@ -147,8 +146,7 @@ jobs:
             python --version
             pip --version
             pip install -r requirements-test.txt
-            pip install -r requirements.txt
-            pip install "dask[complete]"
+            pip install -e ".[dask]"
 
       # run tests!
       - run:
@@ -170,8 +168,7 @@ jobs:
             python --version
             pip --version
             pip install -r requirements-test.txt
-            pip install -r requirements.txt
-            pip install ray
+            pip install -e ".[ray]"
 
       # run tests!
       - run:
@@ -197,8 +194,7 @@ jobs:
             python3.8 --version
             pip3.8 --version
             pip3.8 install -r requirements-test.txt
-            pip3.8 install -r requirements.txt
-            pip3.8 install pyspark[pandas_on_spark]  # note bdist will error, but things install fine enough to run!
+            pip3.8 install -e ".[pyspark]" # note bdist will error, but things install fine enough to run!
 
       # run tests!
       - run:
