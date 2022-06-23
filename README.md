@@ -152,6 +152,11 @@ setup guide](developer_setup.md).
 * [Original Stitch Fix Post](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
 * [Extension Stitch Fix Post](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
 
+# Videos of talks
+* [Hamilton: a python micro-framework for data/feature engineering at Stitch Fix](https://www.youtube.com/watch?v=PDGIt37dov8&ab_channel=AICamp):
+[![Watch the video](https://img.youtube.com/vi/PDGIt37dov8/hqdefault.jpg)](https://youtu.be/PDGIt37dov8)
+
+
 
 # Prescribed Development Workflow
 In general we prescribe the following:
