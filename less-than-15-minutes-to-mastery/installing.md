@@ -22,3 +22,5 @@ Hamilton is published on [pypi](https://pypi.org/project/sf-hamilton/1.1.1/) und
 To use the DAG visualization functionality, instead install with&#x20;
 
 `pip install sf-hamilton[visualization]`
+
+``Note: for visualization you may additionally need to install `graphviz` externally -- see`` [`https://graphviz.org/download/`](https://graphviz.org/download/) `for instructions on the correct way for your operating system.`
