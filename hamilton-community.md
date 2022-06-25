@@ -6,7 +6,7 @@ description: >-
 
 # Hamilton Community
 
-We have a bunch of channels on Discord that are designed to help you get the most out of Hamilton!
+We have a bunch of channels on Slack that are designed to help you get the most out of Hamilton!
 
 Slack space name: [https://hamilton-opensource.slack.com/](https://hamilton-opensource.slack.com/)
 

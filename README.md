@@ -8,7 +8,7 @@ description: >-
 
 ## Getting Started
 
-If you want to jump in head first, we have a simple tutorial for getting started!  To ask questions, please join our[ discord community](https://discord.gg/wCqxqBqn73)!
+If you want to jump in head first, we have a simple tutorial for getting started!  To ask questions, please join our [slack community!](https://join.slack.com/t/hamilton-opensource/shared\_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg)
 
 {% content-ref url="less-than-15-minutes-to-mastery/" %}
 [less-than-15-minutes-to-mastery](less-than-15-minutes-to-mastery/)
@@ -50,7 +50,7 @@ The Hamilton framework takes the above code, forms it into a computational DAG, 
 
 ## Hamilton Open Source Community
 
-If you have questions, have ideas, or need help with Hamilton, join us on [discord](https://discord.gg/wCqxqBqn73), and we'll try to help!
+If you have questions, have ideas, or need help with Hamilton, join us on [slack](https://join.slack.com/t/hamilton-opensource/shared\_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg), and we'll try to help!
 
 ## Installing Hamilton
 
