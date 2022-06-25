@@ -8,8 +8,8 @@ description: >-
 
 We have a bunch of channels on Discord that are designed to help you get the most out of Hamilton!
 
-Discord server name: Stitch Fix Hamilton Open Source
+Slack space name: [https://hamilton-opensource.slack.com/](https://hamilton-opensource.slack.com/)
 
-Discord invite link: [https://discord.gg/wCqxqBqn73](https://discord.gg/wCqxqBqn73)
+Slack invite link: [https://join.slack.com/t/hamilton-opensource/shared\_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg](https://join.slack.com/t/hamilton-opensource/shared\_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg)
 
 See you there!
