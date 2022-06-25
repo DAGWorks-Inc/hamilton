@@ -3,7 +3,7 @@
 Here you'll find some very simple hello world type examples.
 
 If you have questions, or need help with these examples,
-join us on [discord](https://discord.gg/wCqxqBqn73), and we'll try to help!
+join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg), and we'll try to help!
 
 ## Show casing scaling Pandas
 The `hello_world` folder shows a simple example of how to create a Hamilton DAG and run it.

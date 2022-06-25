@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Stitch Fix Hamilton Open Source Discord Server
-    url: https://discord.gg/wCqxqBqn73
-    about: We are piloting using discord for chat. Feel free to try asking questions there first.
+  - name: Stitch Fix Hamilton Open Source Slack Server
+    url: https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg
+    about: We are piloting using slack for chat. Feel free to try asking questions there first.

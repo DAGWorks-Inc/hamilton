@@ -12,10 +12,10 @@ from dataclasses import dataclass, field
 
 from hamilton import node
 
-DISCORD_ERROR_MESSAGE = (
+SLACK_ERROR_MESSAGE = (
     '-------------------------------------------------------------------\n'
     'Oh no an error! Need help with Hamilton?\n'
-    'Join our discord and ask for help! https://discord.gg/wCqxqBqn73\n'
+    'Join our slack and ask for help! https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg\n'
     '-------------------------------------------------------------------\n'
 )
 
@@ -56,7 +56,7 @@ class Driver(object):
         try:
             self.graph = graph.FunctionGraph(*modules, config=config, adapter=adapter)
         except Exception as e:
-            logger.error(DISCORD_ERROR_MESSAGE)
+            logger.error(SLACK_ERROR_MESSAGE)
             raise e
         self.adapter = adapter
 
@@ -125,7 +125,7 @@ class Driver(object):
             outputs = self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
             return self.adapter.build_result(**outputs)
         except Exception as e:
-            logger.error(DISCORD_ERROR_MESSAGE)
+            logger.error(SLACK_ERROR_MESSAGE)
             raise e
 
     def raw_execute(self,

@@ -16,4 +16,4 @@ To run things:
 ```
 
 If you have questions, or need help with this example,
-join us on [discord](https://discord.gg/wCqxqBqn73), and we'll try to help!
+join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg), and we'll try to help!

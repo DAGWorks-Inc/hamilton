@@ -13,7 +13,7 @@ For the backstory on how Hamilton came about, see our [blog post!](https://multi
 
 # Getting Started
 Here's a quick getting started guide to get you up and running in less than 15 minutes.
-If you need help join our [discord](https://discord.gg/wCqxqBqn73) community to chat/ask Qs/etc.
+If you need help join our [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) community to chat/ask Qs/etc.
 For the latest updates, follow us on [twitter](https://twitter.com/hamilton_os)!
 
 ## Installation
@@ -125,8 +125,8 @@ You should see the following image if you ran `dr.visualize_execution(output_col
 
 Congratulations - you just created your Hamilton dataflow that created a dataframe!
 
-# Discord Community
-We have a small but active community on [discord](https://discord.gg/wCqxqBqn73). Come join us!
+# Slack Community
+We have a small but active community on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg). Come join us!
 
 # License
 Hamilton is released under the [BSD 3-Clause Clear License](LICENSE). If you need to get in touch about something,
@@ -165,7 +165,7 @@ In general we prescribe the following:
 2. Familiarize yourself with some of the [Hamilton decorators](decorators.md). They will help keep your code DRY.
 3. Start creating Hamilton Functions that represent your work. We suggest grouping them in modules where it makes sense.
 4. Write a simple script so that you can easily run things end to end.
-5. Join our [discord](https://discord.gg/wCqxqBqn73) community to chat/ask Qs/etc.
+5. Join our [Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) community to chat/ask Qs/etc.
 
 For the backstory on Hamilton we invite you to watch a roughly-9 minute lightning talk on it that we gave at the apply conference:
 [video](https://www.youtube.com/watch?v=B5Zp_30Knoo), [slides](https://www.slideshare.net/StefanKrawczyk/hamilton-a-micro-framework-for-creating-dataframes).

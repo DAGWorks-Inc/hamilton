@@ -65,5 +65,5 @@ Now that you've pushed to pypi, announce your release! We plan to automate this,
 
 1. Create a github release (select auto-generate release for painless text generation). Create a tag that's called `sf-hamilton-{version_string}`.
 See [1.2.0](https://github.com/stitchfix/hamilton/releases/tag/sf-hamilton-1.2.0) for an example.
-2. Announce on the #releases channel in discord, following the format presented there.
+2. Announce on the #announcements channel in slack, following the format presented there.
 3. Thanks for contributing!
