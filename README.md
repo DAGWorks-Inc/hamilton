@@ -1,6 +1,7 @@
 # Hamilton
 
 [![CircleCI](https://circleci.com/gh/stitchfix/hamilton/tree/main.svg?style=svg)](https://circleci.com/gh/stitchfix/hamilton/tree/main)
+[![slack](https://img.shields.io/badge/slack-hamilton-brightgreen.svg?logo=slack)](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg)
 
 The general purpose micro-framework for creating dataflows from python functions!
 
