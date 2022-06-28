@@ -65,23 +65,6 @@ class DataValidator(abc.ABC):
         """
         pass
 
-    def required_config(self) -> List[str]:
-        """Gets the required configuration items. These are likely passed in in construction
-        (E.G. in the constructor parameters).
-
-        :return: A list of required configurations
-        """
-        return []
-
-    def dependencies(self) -> List[str]:
-        """Nodes upon which this depends. For example,
-        this might depend on a node that provides the output from the
-        last run of this DAG to execute an auto-correlation.
-
-        :return: The list of node-name dependencies.
-        """
-        return []
-
 
 def _act_warn(validation_result: ValidationResult, validator: DataValidator):
     if not validation_result.passes:
