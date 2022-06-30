@@ -9,7 +9,7 @@ import inspect
 import logging
 import typing
 from types import ModuleType
-from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
+from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List, Union
 
 import typing_inspect
 
@@ -94,7 +94,7 @@ def types_match(adapter: base.HamiltonGraphAdapter,
     return False
 
 
-def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
+def find_functions(function_module: Union[ModuleType, base.TemporaryFunctionModule]) -> List[Tuple[str, Callable]]:
     """Function to determine the set of functions we want to build a graph from.
 
     This iterates through the function module and grabs all function definitions.
@@ -102,9 +102,10 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
     """
 
     def valid_fn(fn):
-        return (inspect.isfunction(fn)
-                and not fn.__name__.startswith('_')
-                and is_submodule(inspect.getmodule(fn), function_module))
+        if inspect.isfunction(fn) and not fn.__name__.startswith('_'):
+            return (is_submodule(inspect.getmodule(fn), function_module)
+                    or isinstance(function_module, base.TemporaryFunctionModule))
+        return False
 
     return [f for f in inspect.getmembers(function_module, predicate=valid_fn)]
 
@@ -138,7 +139,8 @@ def add_dependency(
     required_node.depended_on_by.append(func_node)
 
 
-def create_function_graph(*modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter) -> Dict[str, node.Node]:
+def create_function_graph(*modules: Union[ModuleType, base.TemporaryFunctionModule],
+                          config: Dict[str, Any], adapter: base.HamiltonGraphAdapter) -> Dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
     :param modules: A set of modules over which one wants to compute the function graph
     :param config: Dictionary that we will inspect to get values from in building the function graph.
@@ -219,7 +221,10 @@ class FunctionGraph(object):
     That is, you should not try to build off of it directly without chatting to us first.
     """
 
-    def __init__(self, *modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter = None):
+    def __init__(self,
+                 *modules: Union[ModuleType, base.TemporaryFunctionModule],
+                 config: Dict[str, Any],
+                 adapter: base.HamiltonGraphAdapter = None):
         """Initializes a function graph by crawling through modules. Function graph must have a config,
         as the config could determine the shape of the graph.
 

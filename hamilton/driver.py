@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Dict, Collection, List, Any
+from typing import Dict, Collection, List, Any, Union
 from types import ModuleType
 
 import pandas as pd
@@ -42,7 +42,10 @@ class Variable:
 class Driver(object):
     """This class orchestrates creating and executing the DAG to create a dataframe."""
 
-    def __init__(self, config: Dict[str, Any], *modules: ModuleType, adapter: base.HamiltonGraphAdapter = None):
+    def __init__(self,
+                 config: Dict[str, Any],
+                 *modules: Union[ModuleType, base.TemporaryFunctionModule],
+                 adapter: base.HamiltonGraphAdapter = None):
         """Constructor: creates a DAG given the configuration & modules to crawl.
 
         :param config: This is a dictionary of initial data & configuration.
