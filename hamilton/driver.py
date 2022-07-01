@@ -44,7 +44,7 @@ class Driver(object):
 
     def __init__(self,
                  config: Dict[str, Any],
-                 *modules: Union[ModuleType, base.TemporaryFunctionModule],
+                 *modules: ModuleType,
                  adapter: base.HamiltonGraphAdapter = None):
         """Constructor: creates a DAG given the configuration & modules to crawl.
 

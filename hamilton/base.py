@@ -167,23 +167,3 @@ class SimplePythonGraphAdapter(SimplePythonDataFrameGraphAdapter):
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Delegates to the result builder function supplied."""
         return self.result_builder.build_result(**outputs)
-
-
-class TemporaryFunctionModule(object):
-    """This class represents a way to encapsulate a set of functions for DAG construction.
-
-    It is meant to be used in a notebook, e.g. google collab, like context where you are iterating and prototyping.
-
-    Once you're happy with the functions you have created, you're supposed to transition the functions into a
-    proper python module.
-    """
-    __name__ = 'TemporaryFunctionModule'
-
-    def __init__(self, *functions: Callable):
-        """Constructor.
-
-        Takes in functions as arguments.
-        """
-        for function in functions:
-            # this sets each function as an attribute on this object.
-            setattr(self, function.__name__, function)

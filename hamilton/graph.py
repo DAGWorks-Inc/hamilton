@@ -94,7 +94,7 @@ def types_match(adapter: base.HamiltonGraphAdapter,
     return False
 
 
-def find_functions(function_module: Union[ModuleType, base.TemporaryFunctionModule]) -> List[Tuple[str, Callable]]:
+def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
     """Function to determine the set of functions we want to build a graph from.
 
     This iterates through the function module and grabs all function definitions.
@@ -103,8 +103,7 @@ def find_functions(function_module: Union[ModuleType, base.TemporaryFunctionModu
 
     def valid_fn(fn):
         if inspect.isfunction(fn) and not fn.__name__.startswith('_'):
-            return (is_submodule(inspect.getmodule(fn), function_module)
-                    or isinstance(function_module, base.TemporaryFunctionModule))
+            return is_submodule(inspect.getmodule(fn), function_module)
         return False
 
     return [f for f in inspect.getmembers(function_module, predicate=valid_fn)]
@@ -139,8 +138,8 @@ def add_dependency(
     required_node.depended_on_by.append(func_node)
 
 
-def create_function_graph(*modules: Union[ModuleType, base.TemporaryFunctionModule],
-                          config: Dict[str, Any], adapter: base.HamiltonGraphAdapter) -> Dict[str, node.Node]:
+def create_function_graph(*modules: ModuleType, config: Dict[str, Any],
+                          adapter: base.HamiltonGraphAdapter) -> Dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
     :param modules: A set of modules over which one wants to compute the function graph
     :param config: Dictionary that we will inspect to get values from in building the function graph.
@@ -222,7 +221,7 @@ class FunctionGraph(object):
     """
 
     def __init__(self,
-                 *modules: Union[ModuleType, base.TemporaryFunctionModule],
+                 *modules: ModuleType,
                  config: Dict[str, Any],
                  adapter: base.HamiltonGraphAdapter = None):
         """Initializes a function graph by crawling through modules. Function graph must have a config,

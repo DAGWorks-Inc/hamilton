@@ -19,7 +19,7 @@ import tests.resources.optional_dependencies
 import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
 import tests.resources.typing_vs_not_typing
-from hamilton import graph, base
+from hamilton import graph, base, ad_hoc_utils
 from hamilton import node
 from hamilton.node import NodeSource
 
@@ -39,12 +39,13 @@ def test_find_functions_from_temporary_function_module():
     expected = [('A', tests.resources.dummy_functions.A),
                 ('B', tests.resources.dummy_functions.B),
                 ('C', tests.resources.dummy_functions.C)]
-    func_module = base.TemporaryFunctionModule(tests.resources.dummy_functions.A,
+    func_module = ad_hoc_utils.create_temporary_module(tests.resources.dummy_functions.A,
                                                tests.resources.dummy_functions.B,
                                                tests.resources.dummy_functions.C)
     actual = graph.find_functions(func_module)
     assert len(actual) == len(expected)
-    assert actual == expected
+    assert [node_name for node_name, _ in actual] == [node_name for node_name, _ in expected]
+    assert [fn.__code__ for _, fn in actual] == [fn.__code__ for _, fn in expected] # easy way to say they're the same
 
 
 def test_add_dependency_missing_param_type():
@@ -666,7 +667,7 @@ def test_in_driver_function_definitions():
     def my_function(A: int, b: int, c: int) -> int:
         """Function for input below"""
         return A + b + c
-    f_module = base.TemporaryFunctionModule(my_function)
+    f_module = ad_hoc_utils.create_temporary_module(my_function)
     fg = graph.FunctionGraph(tests.resources.dummy_functions, f_module, config={'b': 3, 'c': 1})
     results = fg.execute([n for n in fg.get_nodes() if n.name in ['my_function', 'A']])
     assert results == {'A': 4, 'b': 3, 'c': 1, 'my_function': 8}
