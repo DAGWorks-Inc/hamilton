@@ -114,6 +114,8 @@ Since the `1.8.0` release, you now have the ability to inline define functions w
 For example, say we want to add a function to compute the logarithm of `avg_3wk_spend`:
 
 ```
+import numpy as np
+
 def log_avg_3wk_spend(avg_3wk_spend: pd.Series) -> pd.Series:
     """Simple function taking the logarithm of spend over signups."""
     return np.log(avg_3wk_spend)
@@ -124,7 +126,7 @@ We then have to create a "temporary python module" to house it in. We do this by
 ```
 from hamilton import ad_hoc_utils
 temp_module = ad_hoc_utils.create_temporary_module(
-     log_spend_per_signup, module_name='function_example')
+     log_avg_3wk_spend, module_name='function_example')
 ```
 
 You can now treat `temp_module` like a python module and pass it to your driver and use Hamilton like normal:
