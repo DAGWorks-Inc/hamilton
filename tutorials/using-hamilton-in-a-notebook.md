@@ -109,7 +109,7 @@ Congratulations! You just managed to iterate on Hamilton using a Jupyter noteboo
 
 ## Help: I am using Google Colab and I can't do the above <a href="#2e10" id="2e10"></a>
 
-Since the `1.8.0` release, you now have the ability to inline define functions with your driver that can be used to build a DAG.&#x20;
+Since the `1.8.0` release, you now have the ability to inline define functions with your driver that can be used to build a DAG. _We strongly recommend only using this approach when absolutely necessary_ — it’s very easy to build spaghetti code this way.
 
 For example, say we want to add a function to compute the logarithm of `avg_3wk_spend` and not add it to `some_functions.py`, we can do the following steps directly in our notebook:
 
