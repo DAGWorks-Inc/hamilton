@@ -78,6 +78,7 @@ setup(
                     'dask-distributed': ['dask[distributed]'],
                     'ray': ['ray', 'pyarrow'],
                     'pyspark': ['pyspark[pandas_on_spark]'],
+                    'pandera': ['pandera']
                     },
 
     # Relevant project URLs

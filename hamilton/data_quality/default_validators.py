@@ -1,12 +1,14 @@
 import abc
+import logging
 import numbers
-from typing import Any, Type, List, Optional, Tuple
+from typing import Any, Type, List, Tuple
 
-import numpy
 import numpy as np
+import pandas as pd
 
 from hamilton.data_quality import base
-import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 class BaseDefaultValidator(base.DataValidator, abc.ABC):
@@ -310,6 +312,20 @@ AVAILABLE_DEFAULT_VALIDATORS = [
     MaxFractionNansValidatorPandasSeries,
     NansAllowedValidatorPandas,
 ]
+
+
+def _append_pandera_to_default_validators():
+    """Utility method to append pandera validators as needed"""
+    try:
+        import pandera
+    except ModuleNotFoundError:
+        logger.info(f"Cannot import pandera from pandera_validators. Run pip install hamilton[pandera] if needed.")
+        return
+   from . import pandera_validators
+    AVAILABLE_DEFAULT_VALIDATORS.extend(pandera_validators.PANDERA_VALIDATORS)
+
+
+_append_pandera_to_default_validators()
 
 
 def resolve_default_validators(
