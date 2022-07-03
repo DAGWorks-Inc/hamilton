@@ -319,7 +319,7 @@ def _append_pandera_to_default_validators():
     try:
         import pandera
     except ModuleNotFoundError:
-        logger.info(f"Cannot import pandera from pandera_validators. Run pip install hamilton[pandera] if needed.")
+        logger.info(f'Cannot import pandera from pandera_validators. Run pip install hamilton[pandera] if needed.')
         return
    from . import pandera_validators
     AVAILABLE_DEFAULT_VALIDATORS.extend(pandera_validators.PANDERA_VALIDATORS)
