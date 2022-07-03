@@ -31,7 +31,8 @@ def log_spend_per_signup(spend_per_signup: pd.Series) -> pd.Series:
 
 
 # Place the functions into a temporary module -- the idea is that this should house a curated set of functions.
-# Don't be afraid to make multiple of them.
+# Don't be afraid to make multiple of them -- however we'd advise you to not use this method for production.
+# Also note, that using a temporary function module does not work for scaling onto Ray, Dask, or Pandas on Spark.
 temp_module = ad_hoc_utils.create_temporary_module(spend, signups, log_spend_per_signup, module_name='function_example')
 
 # Cell 4 - Instantiate the Hamilton driver and pass it the right things in.

@@ -25,9 +25,11 @@ def _generate_unique_temp_module_name() -> str:
 def create_temporary_module(*functions: Callable, module_name: str = None) -> ModuleType:
     """Creates a temporary module usable by hamilton. Note this should *not* be used in production --
     you should really be organizing your functions into modules. This is perfect in a jupyter notebook,
-    however, where you have a few functions that you want to string together to build an ad-hoc driver.
+    however, where you have a few functions that you want to string together to build an ad-hoc driver. See notes below:
 
-    Note that this is slightly dangerous -- we want the module to look and feel like an actual module
+    NOTE (1): this currently *DOES NOT WORK* for scaling out onto Ray, Dask, or Pandas on Spark.
+
+    NOTE (2): that this is slightly dangerous -- we want the module to look and feel like an actual module
     so we can fully duck-type it. We thus stick it in sys.modules (checking if it already exists).
 
     :param functions: Functions to use
