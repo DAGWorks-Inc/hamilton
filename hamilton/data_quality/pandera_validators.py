@@ -18,7 +18,7 @@ class PanderaDataFrameValidator(BaseDefaultValidator):
         return issubclass(datatype, pd.DataFrame)  # TODO -- allow for modin, etc. as they come for free with pandera
 
     def description(self) -> str:
-        return f"Validates that the returned dataframe matches the pander"
+        return f'Validates that the returned dataframe matches the pander'
 
     def validate(self, data: pd.DataFrame) -> base.ValidationResult:
         try:
@@ -31,17 +31,17 @@ class PanderaDataFrameValidator(BaseDefaultValidator):
             )
         return base.ValidationResult(
             passes=True,
-            message=f"Data passes pandera check for schema {str(self.schema)}"
+            message=f'Data passes pandera check for schema {str(self.schema)}'
             # TDOO -- add diagnostics data with serialized the schema
         )
 
     @classmethod
     def arg(cls) -> str:
-        return "schema"  # TODO -- determine whether we want to allow other schemas
+        return 'schema'  # TODO -- determine whether we want to allow other schemas
 
     @classmethod
     def name(cls) -> str:
-        return "pandera_schema_validator"
+        return 'pandera_schema_validator'
 
 
 class PanderaSeriesSchemaValidator(BaseDefaultValidator):
@@ -68,17 +68,17 @@ class PanderaSeriesSchemaValidator(BaseDefaultValidator):
             )
         return base.ValidationResult(
             passes=True,
-            message=f"Data passes pandera check for schema {str(self.schema)}"
+            message=f'Data passes pandera check for schema {str(self.schema)}'
             # TDOO -- add diagnostics data with serialized the schema
         )
 
     @classmethod
     def arg(cls) -> str:
-        return "schema"  # TODO -- determine whether we want to allow other schemas
+        return 'schema'  # TODO -- determine whether we want to allow other schemas
 
     @classmethod
     def name(cls) -> str:
-        return "pandera_schema_validator"
+        return 'pandera_schema_validator'
 
 
 PANDERA_VALIDATORS = [PanderaDataFrameValidator, PanderaSeriesSchemaValidator]

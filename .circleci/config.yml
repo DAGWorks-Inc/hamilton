@@ -26,7 +26,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest --cov=hamilton tests/
+            python -m pytest --cov=hamilton tests/ --ignore tests/integrations
 
   build-py37:
     docker:
@@ -50,7 +50,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest --cov=hamilton tests/
+            python -m pytest --cov=hamilton tests/ --ignore tests/integrations
 
   build-py38:
     docker:
@@ -74,7 +74,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest --cov=hamilton tests/
+            python -m pytest --cov=hamilton tests/ --ignore tests/integrations
 
   build-py39:
     docker:
@@ -98,7 +98,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest --cov=hamilton tests/
+            python -m pytest --cov=hamilton tests/ --ignore tests/integrations
 
   pre-commit:
     docker:
@@ -202,6 +202,86 @@ jobs:
           command: |
             . venv/bin/activate
             python -m pytest graph_adapter_tests/h_spark
+  integrations-py36:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - checkout
+      - run:
+          name: install all python dependencies for integrations
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python --version
+            pip --version
+            pip install -e .[pandera] # TODO -- add more as we add more integrations
+            pip install -r requirements-test.txt
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest tests/integrations
+  integrations-py37:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          name: install all python dependencies for integrations
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python --version
+            pip --version
+            pip install -e .[pandera] # TODO -- add more as we add more integrations
+            pip install -r requirements-test.txt
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest tests/integrations
+  integrations-py38:
+    docker:
+      - image: circleci/python:3.8
+    steps:
+      - checkout
+      - run:
+          name: install all python dependencies for integrations
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python --version
+            pip --version
+            pip install -e .[pandera] # TODO -- add more as we add more integrations
+            pip install -r requirements-test.txt
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest tests/integrations
+  integrations-py39:
+    docker:
+      - image: circleci/python:3.9
+    steps:
+      - checkout
+      - run:
+          name: install all python dependencies for integrations
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python --version
+            pip --version
+            pip install -e .[pandera] # TODO -- add more as we add more integrations
+            pip install -r requirements-test.txt
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest tests/integrations
 workflows:
   version: 2
   unit-test-workflow:
@@ -215,3 +295,7 @@ workflows:
       - dask-py37
       - ray-py37
       - spark-py38
+      - integrations-py36
+      - integrations-py37
+      - integrations-py38
+      - integrations-py39
