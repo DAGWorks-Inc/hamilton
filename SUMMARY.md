@@ -12,6 +12,7 @@
   * [The Hamilton Driver](overview-of-concepts/the-hamilton-driver.md)
   * [Decorators](overview-of-concepts/decorators.md)
 * [Tutorials](tutorials/README.md)
+  * [Using Hamilton in a notebook](tutorials/using-hamilton-in-a-notebook.md)
   * [Integrating Decorators](tutorials/integrating-decorators.md)
   * [Model Training](tutorials/model-training.md)
   * [Dask](tutorials/dask.md)
