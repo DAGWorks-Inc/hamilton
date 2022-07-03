@@ -107,13 +107,14 @@ Congratulations! You just managed to iterate on Hamilton using a Jupyter noteboo
 
 ![](https://miro.medium.com/max/680/1\*xNtsl3KtWdRjM6FbuaPr2w.png)
 
-## Help: I am using Google Colab and python files are easily lost <a href="#2e10" id="2e10"></a>
+## Help: I am using Google Colab and I can't do the above <a href="#2e10" id="2e10"></a>
 
 Since the `1.8.0` release, you now have the ability to inline define functions with your driver that can be used to build a DAG.&#x20;
 
-For example, say we want to add a function to compute the logarithm of `avg_3wk_spend`:
+For example, say we want to add a function to compute the logarithm of `avg_3wk_spend` and not add it to `some_functions.py`, we can do the following steps directly in our notebook:
 
 ```
+# Step 1 - define function 
 import numpy as np
 
 def log_avg_3wk_spend(avg_3wk_spend: pd.Series) -> pd.Series:
@@ -124,6 +125,7 @@ def log_avg_3wk_spend(avg_3wk_spend: pd.Series) -> pd.Series:
 We then have to create a "temporary python module" to house it in. We do this by importing `ad_hoc_utils` and then calling the `create_temporary_module` function, passing in the functions we want, and providing a name for the module we're creating.
 
 ```
+# Step 2 - create a temporary modeul to house all notebook functions
 from hamilton import ad_hoc_utils
 temp_module = ad_hoc_utils.create_temporary_module(
      log_avg_3wk_spend, module_name='function_example')
@@ -132,13 +134,14 @@ temp_module = ad_hoc_utils.create_temporary_module(
 You can now treat `temp_module` like a python module and pass it to your driver and use Hamilton like normal:
 
 ```
+# Step 3 - add the module to the driver and continue as usual
 dr = driver.Driver(config, some_functions, temp_module) 
 df = dr.execute(['avg_3wk_spend', 'log_avg_3wk_spend'], inputs=input_data)
 ```
 
 ### Caveat with this approach:
 
-Creating a "temporary python module" will fail if you want to scale the computation by using Ray, Dask, or Pandas on Spark. So we suggest only using this approach for development purposes only.
+Using a "temporary python module" will not enable scaling of computation by using Ray, Dask, or Pandas on Spark. So we suggest only using this approach for development purposes only.
 
 ## Pro-tip: You can import functions directly <a href="#2e10" id="2e10"></a>
 
