@@ -1,50 +1,14 @@
-import abc
 import logging
 import numbers
-from typing import Any, Type, List, Tuple
+from typing import Type, List, Tuple
 
 import numpy as np
 import pandas as pd
 
 from hamilton.data_quality import base
+from hamilton.data_quality.base import BaseDefaultValidator
 
 logger = logging.getLogger(__name__)
-
-
-class BaseDefaultValidator(base.DataValidator, abc.ABC):
-    """Base class for a default validator.
-    These are all validators that utilize a single argument to be passed to the decorator check_output.
-    check_output can thus delegate to multiple of these. This is an internal abstraction to allow for easy
-    creation of validators.
-    """
-
-    def __init__(self, importance: str):
-        super(BaseDefaultValidator, self).__init__(importance)
-
-    @classmethod
-    @abc.abstractmethod
-    def applies_to(cls, datatype: Type[Type]) -> bool:
-        pass
-
-    @abc.abstractmethod
-    def description(self) -> str:
-        pass
-
-    @abc.abstractmethod
-    def validate(self, data: Any) -> base.ValidationResult:
-        pass
-
-    @classmethod
-    @abc.abstractmethod
-    def arg(cls) -> str:
-        """Yields a string that represents this validator's argument.
-        @check_output() will be passed a series of kwargs, each one of which will correspond to
-        one of these default validators. Note that we have the limitation of allowing just a single
-        argument.
-
-        :return: The argument that this needs.
-        """
-        pass
 
 
 class DataInRangeValidatorPandas(BaseDefaultValidator):
@@ -321,7 +285,7 @@ def _append_pandera_to_default_validators():
     except ModuleNotFoundError:
         logger.info(f'Cannot import pandera from pandera_validators. Run pip install hamilton[pandera] if needed.')
         return
-   from . import pandera_validators
+    from hamilton.data_quality import pandera_validators
     AVAILABLE_DEFAULT_VALIDATORS.extend(pandera_validators.PANDERA_VALIDATORS)
 
 

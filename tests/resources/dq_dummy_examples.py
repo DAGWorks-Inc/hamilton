@@ -2,8 +2,7 @@ from typing import Type
 
 import pandas as pd
 
-from hamilton.data_quality.base import ValidationResult, DataValidator
-from hamilton.data_quality.default_validators import BaseDefaultValidator
+from hamilton.data_quality.base import ValidationResult, DataValidator, BaseDefaultValidator
 
 
 class SampleDataValidator1(BaseDefaultValidator):

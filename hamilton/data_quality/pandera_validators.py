@@ -4,10 +4,9 @@ import pandas as pd
 import pandera as pa
 
 from hamilton.data_quality import base
-from hamilton.data_quality.default_validators import BaseDefaultValidator
 
 
-class PanderaDataFrameValidator(BaseDefaultValidator):
+class PanderaDataFrameValidator(base.BaseDefaultValidator):
     """Pandera schema validator for dataframes"""
 
     def __init__(self, schema: pa.DataFrameSchema):
@@ -44,7 +43,7 @@ class PanderaDataFrameValidator(BaseDefaultValidator):
         return 'pandera_schema_validator'
 
 
-class PanderaSeriesSchemaValidator(BaseDefaultValidator):
+class PanderaSeriesSchemaValidator(base.BaseDefaultValidator):
     """Pandera schema validator for series"""
 
     def __init__(self, schema: pa.SeriesSchema):

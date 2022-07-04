@@ -89,3 +89,39 @@ def act(validation_result: ValidationResult, validator: DataValidator):
         _act_warn(validation_result, validator)
     elif validator.importance == DataValidationLevel.FAIL:
         _act_fail(validation_result, validator)
+
+
+class BaseDefaultValidator(DataValidator, abc.ABC):
+    """Base class for a default validator.
+    These are all validators that utilize a single argument to be passed to the decorator check_output.
+    check_output can thus delegate to multiple of these. This is an internal abstraction to allow for easy
+    creation of validators.
+    """
+
+    def __init__(self, importance: str):
+        super(BaseDefaultValidator, self).__init__(importance)
+
+    @classmethod
+    @abc.abstractmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        pass
+
+    @abc.abstractmethod
+    def description(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def validate(self, data: Any) -> ValidationResult:
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def arg(cls) -> str:
+        """Yields a string that represents this validator's argument.
+        @check_output() will be passed a series of kwargs, each one of which will correspond to
+        one of these default validators. Note that we have the limitation of allowing just a single
+        argument.
+
+        :return: The argument that this needs.
+        """
+        pass
