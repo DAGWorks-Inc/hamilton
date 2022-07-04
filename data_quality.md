@@ -36,6 +36,71 @@ The available default validators are listed in the variable `AVAILABLE_DEFAULT_V
 in `default_validators.py`. To add more, please implement the class in that file then add to the list.
 There is a test that ensures that everything is added to that list.
 
+## Pandera Integration
+
+We've fully integrated data quality with [pandera](https://pandera.readthedocs.io/en/stable/)!
+
+Note that you have to have hamilton installed with the `pandera` extension. E.G.
+
+```bash
+pip install hamilton[pandera]
+```
+
+The integration point is simple. All you have to do is provide a pandera schema
+using the default data validator with argument `schema=`. This will validate the
+output against a schema provided by you.
+
+If you don't know what a pandera schema is or haven't worked with them before,
+read more about it [here](https://pandera.readthedocs.io/en/stable/schema_models.html).
+The integration works with schemas for both series and dataframes.
+
+### Validating DataFrames
+
+```python
+import pandera as pa
+import pandas as pd
+from hamilton import function_modifiers
+
+@function_modifiers.check_output(schema=pa.DataFrameSchema(
+        {
+            'column1': pa.Column(int),
+            'column2': pa.Column(float, pa.Check(lambda s: s < -1.2)),
+            # you can provide a list of validators
+            'column3': pa.Column(str, [
+                pa.Check(lambda s: s.str.startswith('value')),
+                pa.Check(lambda s: s.str.split('_', expand=True).shape[1] == 2)
+            ]),
+        },
+        index=pa.Index(int),
+        strict=True,
+    ))
+def dataframe_with_schema(...) -> pd.DataFrame:
+    ...
+```
+
+### Validating Series
+
+```python
+import pandera as pa
+import pandas as pd
+from hamilton import function_modifiers
+
+@function_modifiers.check_output(schema = pa.SeriesSchema(
+        str,
+        checks=[
+            pa.Check(lambda s: s.str.startswith('foo')),
+            pa.Check(lambda s: s.str.endswith('bar')),
+            pa.Check(lambda x: len(x) > 3, element_wise=True)
+        ],
+        nullable=False,
+    ))
+def series_with_schema(...) -> pd.Series:
+    ...
+```
+
+
+You can also do schema checks on series, using the `pa.SeriesSchema` feature!
+
 ## Custom Validators
 
 To add a custom validator, you need to implement the class `DataValidator`. You can then use the
