@@ -7,8 +7,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import hamilton.data_quality.base
 from hamilton.data_quality import default_validators
-from hamilton.data_quality.default_validators import resolve_default_validators, BaseDefaultValidator, AVAILABLE_DEFAULT_VALIDATORS
+from hamilton.data_quality.default_validators import resolve_default_validators, AVAILABLE_DEFAULT_VALIDATORS
+from hamilton.data_quality.base import BaseDefaultValidator
 from tests.resources.dq_dummy_examples import SampleDataValidator1, SampleDataValidator2, SampleDataValidator3, DUMMY_VALIDATORS_FOR_TESTING
 
 
@@ -83,7 +85,7 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
         (default_validators.NansAllowedValidatorPandas, False, pd.Series([.1, .2]), True),
     ]
 )
-def test_default_data_validators(cls: Type[default_validators.BaseDefaultValidator], param: Any, data: Any, should_pass: bool):
+def test_default_data_validators(cls: Type[hamilton.data_quality.base.BaseDefaultValidator], param: Any, data: Any, should_pass: bool):
     validator = cls(**{cls.arg(): param, 'importance': 'warn'})
     result = validator.validate(data)
     assert result.passes == should_pass

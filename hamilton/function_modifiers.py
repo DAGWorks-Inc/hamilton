@@ -8,6 +8,7 @@ from typing import Dict, Callable, Collection, Tuple, Union, Any, Type, List, Na
 import pandas as pd
 import typing_inspect
 
+import hamilton.data_quality.base
 from hamilton import node, data_quality
 from hamilton.data_quality import base
 from hamilton.data_quality import default_validators
@@ -844,7 +845,7 @@ class check_output(BaseDataValidationDecorator):
 
     def __init__(self,
                  importance: str = base.DataValidationLevel.WARN.value,
-                 default_decorator_candidates: Type[default_validators.BaseDefaultValidator] = None,
+                 default_decorator_candidates: Type[hamilton.data_quality.base.BaseDefaultValidator] = None,
                  **default_validator_kwargs: Any):
         """Creates the check_output validator. This constructs the default validator class.
         Note that this creates a whole set of default validators
