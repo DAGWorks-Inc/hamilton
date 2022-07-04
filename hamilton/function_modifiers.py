@@ -749,6 +749,33 @@ DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = 'hamilton.data_quality.source_node'
 
 class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
 
+    @staticmethod
+    def should_validate(node_: node.Node, config: Dict[str, Any], validator_name: str) -> bool:
+        """Quick POC that we can wire stuff through as needed.
+
+        Say one has a node called `foo`. We might want the following:
+
+        0. Disable all data validation globally
+        1. Disable all data validation for foo
+        2. Disable a few checks for foo but not all
+
+        This would translate to config:
+        0. "data_quality.disable = True"
+        1. "data_quality.foo.disable = True"
+        2. "data_quality.foo.disable = ['check_1, 'check_2']
+        """
+        global_disable_key = f"data_quality.disable"
+        if global_disable_key in config and config[global_disable_key] is True:
+            return False
+        local_disable_key = f"data_quality.{node_.name}.disable"
+        if local_disable_key not in config:
+            return False
+        local_disable_value = config.get(local_disable_key, False)
+        if local_disable_value is True:
+            return False
+        elif isinstance(local_disable_value, list):
+            return validator_name in local_disable_value
+
     def get_profiler(self, node_to_profile: node.Node) -> Optional[base.DataProfiler]:
         """Gets a profiler if it exists. This is a step in between the data and the validators.
         Note if there is no profiler we will go straight to validation. If there *is* a profiler,
@@ -770,6 +797,12 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
         pass
 
     def transform_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+        validators = self.get_validators(node_)
+        # This is a hacky way to do this, but proves out that we can
+        # Note we can also add more complex config parsing here as needed (for warning levels, actions, parameter overrides...)
+        validators_to_use = [item for item in validators if self.should_validate(node_, config, item.name())]
+        if len(validators_to_use) == 0:
+            return [node_]  # Short-circuits to avoid the complexity
         node_to_validate = node.Node(
             name=node_.name + '_raw',  # TODO -- make this unique -- this will break with multiple validation decorators, which we *don't* want
             typ=node_.type,
@@ -781,7 +814,6 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
 
         raw_node = node_to_validate
         profiler_node = None
-        validators = self.get_validators(node_)
         profiler = self.get_profiler(node_)
         if profiler is not None:
             node_to_validate = node.Node(
@@ -790,12 +822,12 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
                 doc_string=profiler.description(),
                 callabl=profiler.profile,
                 input_types={node_.name + '_raw': node_.type},
-                tags=node_.tags # TODO -- determine the right tags here?
+                tags=node_.tags  # TODO -- determine the right tags here?
             )
 
         validator_nodes = []
         validator_name_map = {}
-        for validator in validators:
+        for validator in validators_to_use:
             def validation_function(validator_to_call: base.DataValidator = validator, **kwargs):
                 result = list(kwargs.values())[0]  # This should just have one kwarg
                 return validator_to_call.validate(result)
