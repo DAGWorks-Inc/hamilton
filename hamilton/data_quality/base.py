@@ -2,6 +2,7 @@ import abc
 import dataclasses
 import enum
 import logging
+import typing
 from typing import Type, Any, List, Dict
 
 logger = logging.getLogger(__name__)
@@ -125,3 +126,43 @@ class BaseDefaultValidator(DataValidator, abc.ABC):
         :return: The argument that this needs.
         """
         pass
+
+
+class DataProfiler(abc.ABC):
+
+    @classmethod
+    @abc.abstractmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        """Does this profile handle the datatype specified?
+
+        @param datatype: Data type it could handle
+        @return: Whether or not it handles that datatype
+        """
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def profile_type(cls) -> Type[Type]:
+        """Type that this profiler returns. Will usually be something internal.
+        That said, this could be any metric if we want to split into multiple.
+
+        @return:
+        """
+        pass
+
+    @abc.abstractmethod
+    def description(self) -> str:
+        """Gives description for what this does
+
+        @return: The description of this profiler.
+        """
+        pass
+
+    @abc.abstractmethod
+    def profile(self, data: Any) -> Any:
+        """Profiles the data
+
+        @param data: Data to profile
+        @return: A profiling result
+        """
+

@@ -3,7 +3,7 @@ import functools
 import logging
 import inspect
 import typing
-from typing import Dict, Callable, Collection, Tuple, Union, Any, Type, List, NamedTuple
+from typing import Dict, Callable, Collection, Tuple, Union, Any, Type, List, Optional
 
 import pandas as pd
 import typing_inspect
@@ -749,6 +749,17 @@ DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = 'hamilton.data_quality.source_node'
 
 class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
 
+    def get_profiler(self, node_to_profile: node.Node) -> Optional[base.DataProfiler]:
+        """Gets a profiler if it exists. This is a step in between the data and the validators.
+        Note if there is no profiler we will go straight to validation. If there *is* a profiler,
+        the validator will end up taking in that datatype
+
+
+        @param node_to_validate: Node to profile
+        @return: The profiler if required.
+        """
+        return None
+
     @abc.abstractmethod
     def get_validators(self, node_to_validate: node.Node) -> List[base.DataValidator]:
         """Returns a list of validators used to transform the nodes.
@@ -759,7 +770,7 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
         pass
 
     def transform_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
-        raw_node = node.Node(
+        node_to_validate = node.Node(
             name=node_.name + '_raw',  # TODO -- make this unique -- this will break with multiple validation decorators, which we *don't* want
             typ=node_.type,
             doc_string=node_.documentation,
@@ -767,7 +778,21 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
             node_source=node_.node_source,
             input_types=node_.input_types,
             tags=node_.tags)
+
+        raw_node = node_to_validate
+        profiler_node = None
         validators = self.get_validators(node_)
+        profiler = self.get_profiler(node_)
+        if profiler is not None:
+            node_to_validate = node.Node(
+                name=node_.name + '_profile',
+                typ=profiler.profile_type(),
+                doc_string=profiler.description(),
+                callabl=profiler.profile,
+                input_types={node_.name + '_raw': node_.type},
+                tags=node_.tags # TODO -- determine the right tags here?
+            )
+
         validator_nodes = []
         validator_name_map = {}
         for validator in validators:
@@ -782,7 +807,7 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
                 doc_string=validator.description(),
                 callabl=validation_function,
                 node_source=node.NodeSource.STANDARD,
-                input_types={raw_node.name: (node_.type, node.DependencyType.REQUIRED)},
+                input_types={node_to_validate.name: (node_.type, node.DependencyType.REQUIRED)},
                 tags={
                     **node_.tags,
                     **{
@@ -804,7 +829,7 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
             """
             for validator_node in validator_nodes:
                 data_quality.base.act(kwargs[validator_node.name], validator=validator_name_map[validator_node.name])
-            return kwargs[raw_node.name]
+            return kwargs[node_to_validate.name]
 
         final_node = node.Node(
             name=node_.name,
@@ -813,26 +838,30 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
             callabl=final_node_callable,
             node_source=node_.node_source,
             input_types={
-                raw_node.name: (node_.type, node.DependencyType.REQUIRED),
+                node_to_validate.name: (node_.type, node.DependencyType.REQUIRED),
                 **{validator_node.name: (validator_node.type, node.DependencyType.REQUIRED) for validator_node in validator_nodes}},
             tags=node_.tags)
-        return [*validator_nodes, final_node, raw_node]
+        return [*validator_nodes, final_node, raw_node] + ([] if profiler_node is None else [profiler_node])
 
     def validate(self, fn: Callable):
         pass
 
 
 class check_output_custom(BaseDataValidationDecorator):
-    def __init__(self, *validators: base.DataValidator):
+    def __init__(self, *validators: base.DataValidator, profiler: base.DataProfiler):
         """Creates a check_output_custom decorator. This allows
         passing of custom validators that implement the DataValidator interface.
 
         @param validator: Validator to use.
         """
         self.validators = validators
+        self.profiler = profiler
 
     def get_validators(self, node_to_validate: node.Node) -> List[base.DataValidator]:
         return self.validators
+
+    def get_profiler(self, node_to_profile: node.Node) -> List[base.DataProfiler]:
+        return self.profiler
 
 
 class check_output(BaseDataValidationDecorator):
