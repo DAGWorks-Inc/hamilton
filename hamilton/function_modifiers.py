@@ -749,8 +749,10 @@ DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = 'hamilton.data_quality.source_node'
 
 class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
 
-    @staticmethod
-    def should_validate(node_: node.Node, config: Dict[str, Any], validator_name: str) -> bool:
+    def __init__(self, applies_to: Optional[List[str]] = None):
+        self.applies_to = applies_to
+
+    def should_validate(self, node_: node.Node, config: Dict[str, Any], validator_name: str) -> bool:
         """Quick POC that we can wire stuff through as needed.
 
         Say one has a node called `foo`. We might want the following:
@@ -764,6 +766,8 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
         1. "data_quality.foo.disable = True"
         2. "data_quality.foo.disable = ['check_1, 'check_2']
         """
+        if self.applies_to is not None and node_.name not in self.applies_to:
+            return False # Not something we want to validate
         global_disable_key = f"data_quality.disable"
         if global_disable_key in config and config[global_disable_key] is True:
             return False
@@ -880,12 +884,13 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
 
 
 class check_output_custom(BaseDataValidationDecorator):
-    def __init__(self, *validators: base.DataValidator, profiler: base.DataProfiler):
+    def __init__(self, *validators: base.DataValidator, profiler: base.DataProfiler, applies_to: Optional[List[str]] = None):
         """Creates a check_output_custom decorator. This allows
         passing of custom validators that implement the DataValidator interface.
 
         @param validator: Validator to use.
         """
+        super(check_output_custom).__init__(applies_to=applies_to)
         self.validators = validators
         self.profiler = profiler
 
@@ -907,6 +912,7 @@ class check_output(BaseDataValidationDecorator):
     def __init__(self,
                  importance: str = base.DataValidationLevel.WARN.value,
                  default_decorator_candidates: Type[hamilton.data_quality.base.BaseDefaultValidator] = None,
+                 *, applies_to: List[str] = None,
                  **default_validator_kwargs: Any):
         """Creates the check_output validator. This constructs the default validator class.
         Note that this creates a whole set of default validators
@@ -915,6 +921,7 @@ class check_output(BaseDataValidationDecorator):
         :param importance: For the default validator, how important is it that this passes.
         :param validator_kwargs: keyword arguments to be passed to the validator
         """
+        super(check_output, self).__init__(applies_to=applies_to)
         self.importance = importance
         self.default_validator_kwargs = default_validator_kwargs
         self.default_decorator_candidates = default_decorator_candidates
