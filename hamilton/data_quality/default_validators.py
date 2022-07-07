@@ -11,14 +11,14 @@ from hamilton.data_quality.base import BaseDefaultValidator
 logger = logging.getLogger(__name__)
 
 
-class DataInRangeValidatorPandas(BaseDefaultValidator):
+class DataInRangeValidatorPandasSeries(BaseDefaultValidator):
 
     def __init__(self, range: Tuple[float, float], importance: str):
         """Data validator that tells if data is in a range. This applies to primitives (ints, floats).
 
         :param range: Inclusive range of parameters
         """
-        super(DataInRangeValidatorPandas, self).__init__(importance=importance)
+        super(DataInRangeValidatorPandasSeries, self).__init__(importance=importance)
         self.range = range
 
     @classmethod
@@ -145,12 +145,12 @@ class MaxFractionNansValidatorPandasSeries(BaseDefaultValidator):
             raise ValueError(f'Maximum fraction allowed to be nan must be in range [0,1]')
 
 
-class NansAllowedValidatorPandas(MaxFractionNansValidatorPandasSeries):
+class NansAllowedValidatorPandasSeries(MaxFractionNansValidatorPandasSeries):
     def __init__(self, allow_nans: bool, importance: str):
         if allow_nans:
             raise ValueError(f'Only allowed to block Nans with this validator.'
                              f'Otherwise leave blank or specify the percentage of Nans using {MaxFractionNansValidatorPandasSeries.name()}')
-        super(NansAllowedValidatorPandas, self).__init__(max_fraction_nan=0 if not allow_nans else 1.0, importance=importance)
+        super(NansAllowedValidatorPandasSeries, self).__init__(max_fraction_nan=0 if not allow_nans else 1.0, importance=importance)
 
     @classmethod
     def name(cls) -> str:
@@ -161,11 +161,11 @@ class NansAllowedValidatorPandas(MaxFractionNansValidatorPandasSeries):
         return 'allow_nans'
 
 
-class DataTypeValidatorPandas(BaseDefaultValidator):
+class DataTypeValidatorPandasSeries(BaseDefaultValidator):
 
     def __init__(self, datatype: Type[Type], importance: str):
-        super(DataTypeValidatorPandas, self).__init__(importance=importance)
-        DataTypeValidatorPandas.datatype = datatype
+        super(DataTypeValidatorPandasSeries, self).__init__(importance=importance)
+        DataTypeValidatorPandasSeries.datatype = datatype
         self.datatype = datatype
 
     @classmethod
@@ -196,9 +196,9 @@ class DataTypeValidatorPandas(BaseDefaultValidator):
         return 'data_type'
 
 
-class PandasMaxStandardDevValidator(BaseDefaultValidator):
+class MaxStandardDevValidatorPandasSeries(BaseDefaultValidator):
     def __init__(self, max_standard_dev: float, importance: str):
-        super(PandasMaxStandardDevValidator, self).__init__(importance)
+        super(MaxStandardDevValidatorPandasSeries, self).__init__(importance)
         self.max_standard_dev = max_standard_dev
 
     @classmethod
@@ -231,10 +231,10 @@ class PandasMaxStandardDevValidator(BaseDefaultValidator):
         return 'max_standard_dev_validator'
 
 
-class PandasMeanInRangeValidator(BaseDefaultValidator):
+class MeanInRangeValidatorPandasSeries(BaseDefaultValidator):
 
     def __init__(self, mean_in_range: Tuple[float, float], importance: str):
-        super(PandasMeanInRangeValidator, self).__init__(importance)
+        super(MeanInRangeValidatorPandasSeries, self).__init__(importance)
         self.mean_in_range = mean_in_range
 
     @classmethod
@@ -268,13 +268,13 @@ class PandasMeanInRangeValidator(BaseDefaultValidator):
 
 
 AVAILABLE_DEFAULT_VALIDATORS = [
-    DataInRangeValidatorPandas,
+    DataInRangeValidatorPandasSeries,
     DataInRangeValidatorPrimitives,
-    PandasMaxStandardDevValidator,
-    PandasMeanInRangeValidator,
-    DataTypeValidatorPandas,
+    DataTypeValidatorPandasSeries,
     MaxFractionNansValidatorPandasSeries,
-    NansAllowedValidatorPandas,
+    MaxStandardDevValidatorPandasSeries,
+    MeanInRangeValidatorPandasSeries,
+    NansAllowedValidatorPandasSeries,
 ]
 
 

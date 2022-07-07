@@ -61,8 +61,8 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
 @pytest.mark.parametrize(
     'cls,param,data,should_pass',
     [
-        (default_validators.DataInRangeValidatorPandas, (0, 1), pd.Series([0.1, 0.2, 0.3]), True),
-        (default_validators.DataInRangeValidatorPandas, (0, 1), pd.Series([-30.0, 0.1, 0.2, 0.3, 100.0]), False),
+        (default_validators.DataInRangeValidatorPandasSeries, (0, 1), pd.Series([0.1, 0.2, 0.3]), True),
+        (default_validators.DataInRangeValidatorPandasSeries, (0, 1), pd.Series([-30.0, 0.1, 0.2, 0.3, 100.0]), False),
 
         (default_validators.DataInRangeValidatorPrimitives, (0, 1), .5, True),
         (default_validators.DataInRangeValidatorPrimitives, (0, 1), 100.3, False),
@@ -73,16 +73,16 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
         (default_validators.MaxFractionNansValidatorPandasSeries, .5, pd.Series([1.0, None, None, None]), False),
         (default_validators.MaxFractionNansValidatorPandasSeries, .5, pd.Series([None, None, None, None]), False),
 
-        (default_validators.DataTypeValidatorPandas, numpy.dtype('int'), pd.Series([1, 2, 3]), True),
-        (default_validators.DataTypeValidatorPandas, numpy.dtype('int'), pd.Series([1.0, 2.0, 3.0]), False),
-        (default_validators.DataTypeValidatorPandas, numpy.dtype('object'), pd.Series(['hello', 'goodbye']), True),
-        (default_validators.DataTypeValidatorPandas, numpy.dtype('object'), pd.Series([1, 2]), False),
+        (default_validators.DataTypeValidatorPandasSeries, numpy.dtype('int'), pd.Series([1, 2, 3]), True),
+        (default_validators.DataTypeValidatorPandasSeries, numpy.dtype('int'), pd.Series([1.0, 2.0, 3.0]), False),
+        (default_validators.DataTypeValidatorPandasSeries, numpy.dtype('object'), pd.Series(['hello', 'goodbye']), True),
+        (default_validators.DataTypeValidatorPandasSeries, numpy.dtype('object'), pd.Series([1, 2]), False),
 
-        (default_validators.PandasMaxStandardDevValidator, 1.0, pd.Series([.1, .2, .3, .4]), True),
-        (default_validators.PandasMaxStandardDevValidator, 0.01, pd.Series([.1, .2, .3, .4]), False),
+        (default_validators.MaxStandardDevValidatorPandasSeries, 1.0, pd.Series([.1, .2, .3, .4]), True),
+        (default_validators.MaxStandardDevValidatorPandasSeries, 0.01, pd.Series([.1, .2, .3, .4]), False),
 
-        (default_validators.NansAllowedValidatorPandas, False, pd.Series([.1, None]), False),
-        (default_validators.NansAllowedValidatorPandas, False, pd.Series([.1, .2]), True),
+        (default_validators.NansAllowedValidatorPandasSeries, False, pd.Series([.1, None]), False),
+        (default_validators.NansAllowedValidatorPandasSeries, False, pd.Series([.1, .2]), True),
     ]
 )
 def test_default_data_validators(cls: Type[hamilton.data_quality.base.BaseDefaultValidator], param: Any, data: Any, should_pass: bool):
