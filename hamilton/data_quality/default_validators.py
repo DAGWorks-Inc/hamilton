@@ -163,10 +163,10 @@ class NansAllowedValidatorPandasSeries(MaxFractionNansValidatorPandasSeries):
 
 class DataTypeValidatorPandasSeries(BaseDefaultValidator):
 
-    def __init__(self, datatype: Type[Type], importance: str):
+    def __init__(self, data_type: Type[Type], importance: str):
         super(DataTypeValidatorPandasSeries, self).__init__(importance=importance)
-        DataTypeValidatorPandasSeries.datatype = datatype
-        self.datatype = datatype
+        DataTypeValidatorPandasSeries.datatype = data_type
+        self.datatype = data_type
 
     @classmethod
     def name(cls) -> str:
