@@ -1,6 +1,6 @@
 import logging
 import numbers
-from typing import Type, List, Tuple
+from typing import Type, List, Tuple, Any, Iterable, Union
 
 import numpy as np
 import pandas as pd
@@ -56,6 +56,58 @@ class DataInRangeValidatorPandasSeries(BaseDefaultValidator):
         )
 
 
+class DataInValuesValidatorPandasSeries(BaseDefaultValidator):
+
+    def __init__(self, values_in: Iterable[Any], importance: str):
+        """Data validator that tells if data is in a set of specified values within a pandas series.
+
+        Note: we will ignore empty/NA values here. If you do not want empty values, use the
+        MaxFractionNansValidatorPandasSeries or the NansAllowedValidatorPandasSeries validator.
+
+        :param values_in: list of valid values
+        """
+        super(DataInValuesValidatorPandasSeries, self).__init__(importance=importance)
+        self.values = frozenset(values_in)
+
+    @classmethod
+    def arg(cls) -> str:
+        return 'values_in'
+
+    @classmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)  # TODO -- handle dataframes?
+
+    @classmethod
+    def name(cls) -> str:
+        return 'data_is_in_values_validator'
+
+    def description(self) -> str:
+        return f'Validates that all data points are from a fixed set of values: ({self.values}), ignoring NA values.'
+
+    def validate(self, data: pd.Series) -> base.ValidationResult:
+        na_values = data.isna()
+        valid_values = data.isin(self.values)
+        final_valid_values = valid_values | na_values  # data is in valid values, or is NA
+        counts = final_valid_values.value_counts().to_dict()
+        correct_values_count = counts.get(True, 0)
+        incorrect_values_count = counts.get(False, 0)
+        incorrect_values = data[~valid_values].value_counts().to_dict()
+        passes = incorrect_values_count == 0
+        message = (f'Series contains {correct_values_count} correct values,'
+                   f' and {incorrect_values_count} incorrect values.')
+        return base.ValidationResult(
+            passes=passes,
+            message=message,
+            diagnostics={
+                'values': self.values,
+                'correct_values_count': correct_values_count,
+                'incorrect_values_count': incorrect_values_count,
+                'incorrect_values': incorrect_values,
+                'data_size': len(data)
+            }
+        )
+
+
 class DataInRangeValidatorPrimitives(BaseDefaultValidator):
     def __init__(self, range: Tuple[numbers.Real, numbers.Real], importance: str):
         """Data validator that tells if data is in a range. This applies to primitives (ints, floats).
@@ -93,6 +145,46 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
     @classmethod
     def name(cls) -> str:
         return 'data_in_range_validator'
+
+
+class DataInValuesValidatorPrimitives(BaseDefaultValidator):
+
+    def __init__(self, values_in: Iterable[Any], importance: str):
+        """Data validator that tells if python primitive type data is in a set of specified values.
+
+        :param values_in: list of valid values
+        """
+        super(DataInValuesValidatorPrimitives, self).__init__(importance=importance)
+        self.values = frozenset(values_in)
+
+    @classmethod
+    def arg(cls) -> str:
+        return 'values_in'
+
+    @classmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, numbers.Real) or datatype == str  # TODO support list, dict and typing.* variants
+
+    @classmethod
+    def name(cls) -> str:
+        return 'data_is_in_values_validator'
+
+    def description(self) -> str:
+        return f'Validates that python values are from a fixed set of values: ({self.values}).'
+
+    def validate(self, data: Union[numbers.Real, str]) -> base.ValidationResult:
+        is_valid_value = data in self.values
+        message = f'Primitive python value was valid is {is_valid_value}.'
+        return base.ValidationResult(
+            passes=is_valid_value,
+            message=message,
+            diagnostics={
+                'values': self.values,
+                'was_correct': is_valid_value,
+                'incorrect_value': None if is_valid_value else data,
+                'data_size': 1
+            }
+        )
 
 
 class MaxFractionNansValidatorPandasSeries(BaseDefaultValidator):
@@ -270,6 +362,8 @@ class MeanInRangeValidatorPandasSeries(BaseDefaultValidator):
 AVAILABLE_DEFAULT_VALIDATORS = [
     DataInRangeValidatorPandasSeries,
     DataInRangeValidatorPrimitives,
+    DataInValuesValidatorPandasSeries,
+    DataInValuesValidatorPrimitives,
     DataTypeValidatorPandasSeries,
     MaxFractionNansValidatorPandasSeries,
     MaxStandardDevValidatorPandasSeries,

@@ -64,8 +64,22 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
         (default_validators.DataInRangeValidatorPandasSeries, (0, 1), pd.Series([0.1, 0.2, 0.3]), True),
         (default_validators.DataInRangeValidatorPandasSeries, (0, 1), pd.Series([-30.0, 0.1, 0.2, 0.3, 100.0]), False),
 
+        (default_validators.DataInValuesValidatorPandasSeries, [0, 1], pd.Series([0, 1, 1]), True),
+        (default_validators.DataInValuesValidatorPandasSeries, [0.0, 1.0], pd.Series([0.0, 1.0, 1.0]), True),
+        (default_validators.DataInValuesValidatorPandasSeries, ['a', 'b'], pd.Series(['a', 'b', 'b']), True),
+        (default_validators.DataInValuesValidatorPandasSeries, [0], pd.Series([0, 1, 1]), False),
+        (default_validators.DataInValuesValidatorPandasSeries, [0.0], pd.Series([0.0, 1.0, 1.0]), False),
+        (default_validators.DataInValuesValidatorPandasSeries, ['a'], pd.Series(['a', 'b', 'b']), False),
+
         (default_validators.DataInRangeValidatorPrimitives, (0, 1), .5, True),
         (default_validators.DataInRangeValidatorPrimitives, (0, 1), 100.3, False),
+
+        (default_validators.DataInValuesValidatorPrimitives, [0, 1], 1, True),
+        (default_validators.DataInValuesValidatorPrimitives, [0.0, 1.0], 1.0, True),
+        (default_validators.DataInValuesValidatorPrimitives, ['a', 'b'], 'b', True),
+        (default_validators.DataInValuesValidatorPrimitives, [0], 1, False),
+        (default_validators.DataInValuesValidatorPrimitives, [0.0], 1.0, False),
+        (default_validators.DataInValuesValidatorPrimitives, ['a'], 'b', False),
 
         (default_validators.MaxFractionNansValidatorPandasSeries, .5, pd.Series([1.0, 2.0, 3.0, None]), True),
         (default_validators.MaxFractionNansValidatorPandasSeries, 0, pd.Series([1.0, 2.0, 3.0, None]), False),
