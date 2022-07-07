@@ -193,7 +193,7 @@ class DataTypeValidatorPandas(BaseDefaultValidator):
 
     @classmethod
     def arg(cls) -> str:
-        return 'datatype'
+        return 'data_type'
 
 
 class PandasMaxStandardDevValidator(BaseDefaultValidator):

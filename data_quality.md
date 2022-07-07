@@ -9,7 +9,7 @@ import numpy as np
 from hamilton.function_modifiers import check_output
 
 @check_output(
-    datatype=np.int64,
+    data_type=np.int64,
     data_in_range=(0,100),
     importance="warn",
 )

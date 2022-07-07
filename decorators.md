@@ -261,7 +261,7 @@ import numpy as np
 from hamilton.function_modifiers import check_output
 
 @check_output(
-    datatype=np.int64,
+    data_type=np.int64,
     data_in_range=(0,100),
 )
 def some_int_data_between_0_and_100() -> pd.Series:
