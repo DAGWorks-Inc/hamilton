@@ -752,8 +752,8 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
     def get_validators(self, node_to_validate: node.Node) -> List[dq_base.DataValidator]:
         """Returns a list of validators used to transform the nodes.
 
-        @param node_to_validate: Nodes to which the output of the validator will apply
-        @return: A list of validators to apply to the node.
+        :param node_to_validate: Nodes to which the output of the validator will apply
+        :return: A list of validators to apply to the node.
         """
         pass
 
@@ -833,9 +833,9 @@ class check_output_custom(BaseDataValidationDecorator):
         """Creates a check_output_custom decorator. This allows
         passing of custom validators that implement the DataValidator interface.
 
-        @param validator: Validator to use.
+        :param validator: Validator to use.
         """
-        self.validators = validators
+        self.validators = list(validators)
 
     def get_validators(self, node_to_validate: node.Node) -> List[dq_base.DataValidator]:
         return self.validators

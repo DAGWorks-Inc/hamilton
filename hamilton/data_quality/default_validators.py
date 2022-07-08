@@ -397,11 +397,11 @@ def resolve_default_validators(
         **default_validator_kwargs) -> List[BaseDefaultValidator]:
     """Resolves default validators given a set pof parameters and the type to which they apply.
     Note that each (kwarg, type) combination should map to a validator
-    @param importance: importance level of the validator to instantiate
-    @param output_type: The type to which the validator should apply
-    @param available_validators: The available validators to choose from
-    @param default_validator_kwargs: Kwargs to use
-    @return: A list of validators to use
+    :param importance: importance level of the validator to instantiate
+    :param output_type: The type to which the validator should apply
+    :param available_validators: The available validators to choose from
+    :param default_validator_kwargs: Kwargs to use
+    :return: A list of validators to use
     """
     if available_validators is None:
         available_validators = AVAILABLE_DEFAULT_VALIDATORS
