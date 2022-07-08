@@ -796,13 +796,20 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
         def final_node_callable(validator_nodes=validator_nodes, validator_name_map=validator_name_map, **kwargs):
             """Callable for the final node. First calls the action on every node, then
 
-            @param validator_nodes:
-            @param validator_name_map:
-            @param kwargs:
-            @return:
+            :param validator_nodes:
+            :param validator_name_map:
+            :param kwargs:
+            :return: returns the original node output
             """
+            failures = []
             for validator_node in validator_nodes:
-                data_quality.base.act(kwargs[validator_node.name], validator=validator_name_map[validator_node.name])
+                validator: dq_base.DataValidator = validator_name_map[validator_node.name]
+                validation_result: dq_base.ValidationResult = kwargs[validator_node.name]
+                if validator.importance == dq_base.DataValidationLevel.WARN:
+                    dq_base.act_warn(node_.name, validation_result, validator)
+                else:
+                    failures.append((validation_result, validator))
+            dq_base.act_fail_bulk(node_.name, failures)
             return kwargs[raw_node.name]
 
         final_node = node.Node(

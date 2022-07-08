@@ -66,29 +66,39 @@ class DataValidator(abc.ABC):
         pass
 
 
-def _act_warn(validation_result: ValidationResult, validator: DataValidator):
-    if not validation_result.passes:
-        logger.warning(f'Validator: {validator.name()} failed. Message was: {validation_result.message}. '
-                       f'Diagnostic information is: {validation_result.diagnostics}')
-
-
-def _act_fail(validation_result: ValidationResult, validator: DataValidator):
-    if not validation_result.passes:
-        raise DataValidationError(f'Validator: {validator.name()} failed. Message was: {validation_result.message}. '
-                                  f'Diagnostic information is: {validation_result.diagnostics}')
-
-
-def act(validation_result: ValidationResult, validator: DataValidator):
-    """This is the current default for acting on the validation result.
+def act_warn(node_name: str, validation_result: ValidationResult, validator: DataValidator):
+    """This is the current default for acting on the validation result when you want to warn.
     Note that we might move this at some point -- we'll want to make it configurable. But for now, this
     seems like a fine place to put it.
 
-    @return:
+    :param node_name: the name of the node we are validating.
+    :param validation_result:  the result
+    :param validator: the validator object.
     """
-    if validator.importance == DataValidationLevel.WARN:
-        _act_warn(validation_result, validator)
-    elif validator.importance == DataValidationLevel.FAIL:
-        _act_fail(validation_result, validator)
+    if not validation_result.passes:
+        logger.warning(_create_error_string(node_name, validation_result, validator))
+
+
+def _create_error_string(node_name, validation_result, validator):
+    return (f'[{node_name}:{validator.name()}] validator failed. Message was: {validation_result.message}. '
+            f'Diagnostic information is: {validation_result.diagnostics}.')
+
+
+def act_fail_bulk(node_name: str, failures: List[Tuple[ValidationResult, DataValidator]]):
+    """This is the current default for acting on the validation result when you want to fail.
+    Note that we might move this at some point -- we'll want to make it configurable. But for now, this
+    seems like a fine place to put it.
+    :param node_name: the name of the node we are validating.
+    :param failures: list of tuples of (validation_result, validator)
+    :raises DataValidationError: if there are errors detected.
+    """
+    error_messages = []
+    for validation_result, validator in failures:
+        if not validation_result.passes:
+            message = f'{_create_error_string(node_name, validation_result, validator)}\n'
+            error_messages.append(message)
+    if error_messages:
+        raise DataValidationError(error_messages)
 
 
 class BaseDefaultValidator(DataValidator, abc.ABC):
