@@ -3,14 +3,13 @@ import functools
 import logging
 import inspect
 import typing
-from typing import Dict, Callable, Collection, Tuple, Union, Any, Type, List, NamedTuple
+from typing import Dict, Callable, Collection, Tuple, Union, Any, Type, List
 
 import pandas as pd
 import typing_inspect
 
-import hamilton.data_quality.base
-from hamilton import node, data_quality
-from hamilton.data_quality import base
+from hamilton import node
+from hamilton.data_quality import base as dq_base
 from hamilton.data_quality import default_validators
 from hamilton import function_modifiers_base
 from hamilton import models
@@ -750,7 +749,7 @@ DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = 'hamilton.data_quality.source_node'
 class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
 
     @abc.abstractmethod
-    def get_validators(self, node_to_validate: node.Node) -> List[base.DataValidator]:
+    def get_validators(self, node_to_validate: node.Node) -> List[dq_base.DataValidator]:
         """Returns a list of validators used to transform the nodes.
 
         @param node_to_validate: Nodes to which the output of the validator will apply
@@ -771,14 +770,14 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
         validator_nodes = []
         validator_name_map = {}
         for validator in validators:
-            def validation_function(validator_to_call: base.DataValidator = validator, **kwargs):
+            def validation_function(validator_to_call: dq_base.DataValidator = validator, **kwargs):
                 result = list(kwargs.values())[0]  # This should just have one kwarg
                 return validator_to_call.validate(result)
 
             validator_node_name = node_.name + '_' + validator.name()
             validator_node = node.Node(
                 name=validator_node_name,  # TODO -- determine a good approach towards naming this
-                typ=base.ValidationResult,
+                typ=dq_base.ValidationResult,
                 doc_string=validator.description(),
                 callabl=validation_function,
                 node_source=node.NodeSource.STANDARD,
@@ -823,7 +822,7 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
 
 
 class check_output_custom(BaseDataValidationDecorator):
-    def __init__(self, *validators: base.DataValidator):
+    def __init__(self, *validators: dq_base.DataValidator):
         """Creates a check_output_custom decorator. This allows
         passing of custom validators that implement the DataValidator interface.
 
@@ -831,12 +830,12 @@ class check_output_custom(BaseDataValidationDecorator):
         """
         self.validators = validators
 
-    def get_validators(self, node_to_validate: node.Node) -> List[base.DataValidator]:
+    def get_validators(self, node_to_validate: node.Node) -> List[dq_base.DataValidator]:
         return self.validators
 
 
 class check_output(BaseDataValidationDecorator):
-    def get_validators(self, node_to_validate: node.Node) -> List[base.DataValidator]:
+    def get_validators(self, node_to_validate: node.Node) -> List[dq_base.DataValidator]:
         return default_validators.resolve_default_validators(
             node_to_validate.type,
             importance=self.importance,
@@ -844,8 +843,8 @@ class check_output(BaseDataValidationDecorator):
             **self.default_validator_kwargs)
 
     def __init__(self,
-                 importance: str = base.DataValidationLevel.WARN.value,
-                 default_decorator_candidates: Type[hamilton.data_quality.base.BaseDefaultValidator] = None,
+                 importance: str = dq_base.DataValidationLevel.WARN.value,
+                 default_decorator_candidates: Type[dq_base.BaseDefaultValidator] = None,
                  **default_validator_kwargs: Any):
         """Creates the check_output validator. This constructs the default validator class.
         Note that this creates a whole set of default validators
@@ -861,7 +860,7 @@ class check_output(BaseDataValidationDecorator):
         # So, we'll just store the constructor arguments for now and check it in validation
 
     @staticmethod
-    def _validate_constructor_args(*validator: base.DataValidator, importance: str = None, **default_validator_kwargs: Any):
+    def _validate_constructor_args(*validator: dq_base.DataValidator, importance: str = None, **default_validator_kwargs: Any):
         if len(validator) != 0:
             if importance is not None or len(default_validator_kwargs) > 0:
                 raise ValueError(
@@ -869,7 +868,7 @@ class check_output(BaseDataValidationDecorator):
                     f'Instead received both.')
         else:
             if importance is None:
-                raise ValueError(f'Must supply an ipmortance level if using the default validator.')
+                raise ValueError(f'Must supply an importance level if using the default validator.')
 
     def validate(self, fn: Callable):
         """Validates that the check_output node works on the function on which it was called
