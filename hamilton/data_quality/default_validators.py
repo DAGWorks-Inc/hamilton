@@ -38,7 +38,7 @@ class DataInRangeValidatorPandasSeries(BaseDefaultValidator):
 
     def validate(self, data: pd.Series) -> base.ValidationResult:
         min_, max_ = self.range
-        between = data.between(min_, max_, inclusive=True)
+        between = data.between(min_, max_, inclusive='both')
         counts = between.value_counts().to_dict()
         in_range = counts.get(True, 0)
         out_range = counts.get(False, 0)
