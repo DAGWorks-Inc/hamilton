@@ -92,6 +92,15 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
         (default_validators.DataTypeValidatorPandasSeries, numpy.dtype('object'), pd.Series(['hello', 'goodbye']), True),
         (default_validators.DataTypeValidatorPandasSeries, numpy.dtype('object'), pd.Series([1, 2]), False),
 
+        (default_validators.DataTypeValidatorPrimitives, int, 1, True),
+        (default_validators.DataTypeValidatorPrimitives, str, 'asdfasdf', True),
+        (default_validators.DataTypeValidatorPrimitives, bool, True, True),
+        (default_validators.DataTypeValidatorPrimitives, float, 2.0, True),
+        (default_validators.DataTypeValidatorPrimitives, int, 1.0, False),
+        (default_validators.DataTypeValidatorPrimitives, str, 1234, False),
+        (default_validators.DataTypeValidatorPrimitives, bool, 0, False),
+        (default_validators.DataTypeValidatorPrimitives, float, 2, False),
+
         (default_validators.MaxStandardDevValidatorPandasSeries, 1.0, pd.Series([.1, .2, .3, .4]), True),
         (default_validators.MaxStandardDevValidatorPandasSeries, 0.01, pd.Series([.1, .2, .3, .4]), False),
 

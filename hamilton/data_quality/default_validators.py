@@ -264,6 +264,41 @@ class DataTypeValidatorPandasSeries(BaseDefaultValidator):
         return 'data_type'
 
 
+class DataTypeValidatorPrimitives(BaseDefaultValidator):
+
+    def __init__(self, data_type: Type[Type], importance: str):
+        """Constructor
+
+        :param data_type: the python data type to expect.
+        """
+        super(DataTypeValidatorPrimitives, self).__init__(importance=importance)
+        DataTypeValidatorPrimitives.datatype = data_type
+        self.datatype = data_type
+
+    @classmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, numbers.Real) or datatype in (str, bool)
+
+    def description(self) -> str:
+        return f'Validates that the datatype of the pandas series is a subclass of: {self.datatype}'
+
+    def validate(self, data: Union[numbers.Real, str, bool, int, float, list, dict]) -> base.ValidationResult:
+        passes = isinstance(data, self.datatype)
+        return base.ValidationResult(
+            passes=passes,
+            message=f'Requires data type: {self.datatype}. '
+                    f"Got data type: {type(data)}. This {'is' if passes else 'is not'} a match.",
+            diagnostics={
+                'required_data_type': self.datatype,
+                'actual_data_type': type(data)
+            }
+        )
+
+    @classmethod
+    def arg(cls) -> str:
+        return 'data_type'
+
+
 class MaxStandardDevValidatorPandasSeries(BaseDefaultValidator):
     def __init__(self, max_standard_dev: float, importance: str):
         super(MaxStandardDevValidatorPandasSeries, self).__init__(importance)
@@ -334,6 +369,7 @@ AVAILABLE_DEFAULT_VALIDATORS = [
     DataInValuesValidatorPandasSeries,
     DataInValuesValidatorPrimitives,
     DataTypeValidatorPandasSeries,
+    DataTypeValidatorPrimitives,
     MaxFractionNansValidatorPandasSeries,
     MaxStandardDevValidatorPandasSeries,
     MeanInRangeValidatorPandasSeries,
