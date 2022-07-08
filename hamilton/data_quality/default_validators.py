@@ -29,10 +29,6 @@ class DataInRangeValidatorPandasSeries(BaseDefaultValidator):
     def applies_to(cls, datatype: Type[Type]) -> bool:
         return issubclass(datatype, pd.Series)  # TODO -- handle dataframes?
 
-    @classmethod
-    def name(cls) -> str:
-        return 'data_in_range_validator'
-
     def description(self) -> str:
         return f'Validates that the datapoint falls within the range ({self.range[0]}, {self.range[1]})'
 
@@ -62,7 +58,7 @@ class DataInValuesValidatorPandasSeries(BaseDefaultValidator):
         """Data validator that tells if data is in a set of specified values within a pandas series.
 
         Note: we will ignore empty/NA values here. If you do not want empty values, use the
-        MaxFractionNansValidatorPandasSeries or the NansAllowedValidatorPandasSeries validator.
+        MaxFractionNansValidatorPandasSeries or the AllowNaNsValidatorPandasSeries validator.
 
         :param values_in: list of valid values
         """
@@ -76,10 +72,6 @@ class DataInValuesValidatorPandasSeries(BaseDefaultValidator):
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
         return issubclass(datatype, pd.Series)  # TODO -- handle dataframes?
-
-    @classmethod
-    def name(cls) -> str:
-        return 'data_is_in_values_validator'
 
     def description(self) -> str:
         return f'Validates that all data points are from a fixed set of values: ({self.values}), ignoring NA values.'
@@ -142,10 +134,6 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
     def arg(cls) -> str:
         return 'range'
 
-    @classmethod
-    def name(cls) -> str:
-        return 'data_in_range_validator'
-
 
 class DataInValuesValidatorPrimitives(BaseDefaultValidator):
 
@@ -164,10 +152,6 @@ class DataInValuesValidatorPrimitives(BaseDefaultValidator):
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
         return issubclass(datatype, numbers.Real) or datatype == str  # TODO support list, dict and typing.* variants
-
-    @classmethod
-    def name(cls) -> str:
-        return 'data_is_in_values_validator'
 
     def description(self) -> str:
         return f'Validates that python values are from a fixed set of values: ({self.values}).'
@@ -188,65 +172,57 @@ class DataInValuesValidatorPrimitives(BaseDefaultValidator):
 
 
 class MaxFractionNansValidatorPandasSeries(BaseDefaultValidator):
-    def __init__(self, max_fraction_nan: float, importance: str):
+    def __init__(self, max_fraction_nans: float, importance: str):
         super(MaxFractionNansValidatorPandasSeries, self).__init__(importance=importance)
-        MaxFractionNansValidatorPandasSeries._validate_max_fraction_nan(max_fraction_nan)
-        self.max_fraction_nan = max_fraction_nan
+        MaxFractionNansValidatorPandasSeries._validate_max_fraction_nans(max_fraction_nans)
+        self.max_fraction_nans = max_fraction_nans
 
     @staticmethod
     def _to_percent(fraction: float):
         return '{0:.2%}'.format(fraction)
 
     @classmethod
-    def name(cls) -> str:
-        return 'max_fraction_nan_validator'
-
-    @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
         return issubclass(datatype, pd.Series)
 
     def description(self) -> str:
-        return f'Validates that no more than {MaxFractionNansValidatorPandasSeries._to_percent(self.max_fraction_nan)} of the data is Nan.'
+        return f'Validates that no more than {MaxFractionNansValidatorPandasSeries._to_percent(self.max_fraction_nans)} of the data is Nan.'
 
     def validate(self, data: pd.Series) -> base.ValidationResult:
         total_length = len(data)
         total_na = data.isna().sum()
         fraction_na = total_na / total_length
-        passes = fraction_na <= self.max_fraction_nan
+        passes = fraction_na <= self.max_fraction_nans
         return base.ValidationResult(
             passes=passes,
             message=f'Out of {total_length} items in the series, {total_na} of them are Nan, '
                     f'representing: {MaxFractionNansValidatorPandasSeries._to_percent(fraction_na)}. '
-                    f'Max allowable Nans is: {MaxFractionNansValidatorPandasSeries._to_percent(self.max_fraction_nan)},'
+                    f'Max allowable Nans is: {MaxFractionNansValidatorPandasSeries._to_percent(self.max_fraction_nans)},'
                     f' so this {"passes" if passes else "does not pass"}.',
             diagnostics={
                 'total_nan': total_na,
                 'total_length': total_length,
                 'fraction_na': fraction_na,
-                'max_fraction_na': self.max_fraction_nan
+                'max_fraction_na': self.max_fraction_nans
             }
         )
 
     @classmethod
     def arg(cls) -> str:
-        return 'max_fraction_nan'
+        return 'max_fraction_nans'
 
     @staticmethod
-    def _validate_max_fraction_nan(max_fraction_nan: float):
-        if not (0 <= max_fraction_nan <= 1):
+    def _validate_max_fraction_nans(max_fraction_nans: float):
+        if not (0 <= max_fraction_nans <= 1):
             raise ValueError(f'Maximum fraction allowed to be nan must be in range [0,1]')
 
 
-class NansAllowedValidatorPandasSeries(MaxFractionNansValidatorPandasSeries):
+class AllowNaNsValidatorPandasSeries(MaxFractionNansValidatorPandasSeries):
     def __init__(self, allow_nans: bool, importance: str):
         if allow_nans:
             raise ValueError(f'Only allowed to block Nans with this validator.'
                              f'Otherwise leave blank or specify the percentage of Nans using {MaxFractionNansValidatorPandasSeries.name()}')
-        super(NansAllowedValidatorPandasSeries, self).__init__(max_fraction_nan=0 if not allow_nans else 1.0, importance=importance)
-
-    @classmethod
-    def name(cls) -> str:
-        return 'nans_allowed_validator'
+        super(AllowNaNsValidatorPandasSeries, self).__init__(max_fraction_nans=0 if not allow_nans else 1.0, importance=importance)
 
     @classmethod
     def arg(cls) -> str:
@@ -256,13 +232,13 @@ class NansAllowedValidatorPandasSeries(MaxFractionNansValidatorPandasSeries):
 class DataTypeValidatorPandasSeries(BaseDefaultValidator):
 
     def __init__(self, data_type: Type[Type], importance: str):
+        """Constructor
+
+        :param data_type: the numpy data type to expect.
+        """
         super(DataTypeValidatorPandasSeries, self).__init__(importance=importance)
         DataTypeValidatorPandasSeries.datatype = data_type
         self.datatype = data_type
-
-    @classmethod
-    def name(cls) -> str:
-        return 'dtype_validator'
 
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
@@ -276,7 +252,7 @@ class DataTypeValidatorPandasSeries(BaseDefaultValidator):
         passes = np.issubdtype(dtype, self.datatype)
         return base.ValidationResult(
             passes=passes,
-            message=f"Requires subclass of datatype: {self.datatype}. Got datatype: {dtype}. This {'is' if passes else 'is not'} a valid subclass.",
+            message=f"Requires subclass of datatype: {self.datatype}. Got datatype: {dtype}. This {'is' if passes else 'is not'} a match.",
             diagnostics={
                 'required_dtype': self.datatype,
                 'actual_dtype': dtype
@@ -318,10 +294,6 @@ class MaxStandardDevValidatorPandasSeries(BaseDefaultValidator):
     def arg(cls) -> str:
         return 'max_standard_dev'
 
-    @classmethod
-    def name(cls) -> str:
-        return 'max_standard_dev_validator'
-
 
 class MeanInRangeValidatorPandasSeries(BaseDefaultValidator):
 
@@ -354,12 +326,9 @@ class MeanInRangeValidatorPandasSeries(BaseDefaultValidator):
     def arg(cls) -> str:
         return 'mean_in_range'
 
-    @classmethod
-    def name(cls) -> str:
-        return 'mean_in_range_validator'
-
 
 AVAILABLE_DEFAULT_VALIDATORS = [
+    AllowNaNsValidatorPandasSeries,
     DataInRangeValidatorPandasSeries,
     DataInRangeValidatorPrimitives,
     DataInValuesValidatorPandasSeries,
@@ -368,7 +337,6 @@ AVAILABLE_DEFAULT_VALIDATORS = [
     MaxFractionNansValidatorPandasSeries,
     MaxStandardDevValidatorPandasSeries,
     MeanInRangeValidatorPandasSeries,
-    NansAllowedValidatorPandasSeries,
 ]
 
 

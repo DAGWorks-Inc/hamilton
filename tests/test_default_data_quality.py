@@ -95,8 +95,8 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
         (default_validators.MaxStandardDevValidatorPandasSeries, 1.0, pd.Series([.1, .2, .3, .4]), True),
         (default_validators.MaxStandardDevValidatorPandasSeries, 0.01, pd.Series([.1, .2, .3, .4]), False),
 
-        (default_validators.NansAllowedValidatorPandasSeries, False, pd.Series([.1, None]), False),
-        (default_validators.NansAllowedValidatorPandasSeries, False, pd.Series([.1, .2]), True),
+        (default_validators.AllowNaNsValidatorPandasSeries, False, pd.Series([.1, None]), False),
+        (default_validators.AllowNaNsValidatorPandasSeries, False, pd.Series([.1, .2]), True),
     ]
 )
 def test_default_data_validators(cls: Type[hamilton.data_quality.base.BaseDefaultValidator], param: Any, data: Any, should_pass: bool):

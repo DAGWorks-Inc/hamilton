@@ -2,7 +2,7 @@ import abc
 import dataclasses
 import enum
 import logging
-from typing import Type, Any, List, Dict
+from typing import Type, Any, List, Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -125,3 +125,7 @@ class BaseDefaultValidator(DataValidator, abc.ABC):
         :return: The argument that this needs.
         """
         pass
+
+    @classmethod
+    def name(cls) -> str:
+        return f'{cls.arg()}_validator'
