@@ -119,8 +119,10 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
     def validate(self, data: numbers.Real) -> base.ValidationResult:
         min_, max_ = self.range
         passes = min_ <= data <= max_
-        message = f'Data point {data} falls within acceptable range: ({min_}, {max_})' if passes else \
-            f'Data point {data} does not fall within acceptable range: ({min_}, {max_})'
+        if passes:
+            message = f'Data point {data} falls within acceptable range: ({min_}, {max_})'
+        else:
+            message = f'Data point {data} does not fall within acceptable range: ({min_}, {max_})'
         return base.ValidationResult(
             passes=passes,
             message=message,
