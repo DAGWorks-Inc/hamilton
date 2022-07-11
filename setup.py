@@ -68,7 +68,7 @@ setup(
     # default version installed with virtualenv. Make sure to update your tools!
     python_requires='>=3.6, <4',
 
-    # adding this to slim the package down, since these dependencies are only used to visualize the DAG.
+    # adding this to slim the package down, since these dependencies are only used in certain contexts.
     extras_require={'visualization': ['graphviz', 'networkx'],
                     'dask': ['dask[complete]'],  # commonly you'll want everything.
                     'dask-array': ['dask[array]'],
