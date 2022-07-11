@@ -118,6 +118,8 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
 
     def validate(self, data: numbers.Real) -> base.ValidationResult:
         min_, max_ = self.range
+        if hasattr(data, 'dask'):
+            data = data.compute()
         passes = min_ <= data <= max_
         if passes:
             message = f'Data point {data} falls within acceptable range: ({min_}, {max_})'
@@ -159,6 +161,8 @@ class DataInValuesValidatorPrimitives(BaseDefaultValidator):
         return f'Validates that python values are from a fixed set of values: ({self.values}).'
 
     def validate(self, data: Union[numbers.Real, str]) -> base.ValidationResult:
+        if hasattr(data, 'dask'):
+            data = data.compute()
         is_valid_value = data in self.values
         message = f'Primitive python value was valid is {is_valid_value}.'
         return base.ValidationResult(
@@ -285,6 +289,8 @@ class DataTypeValidatorPrimitives(BaseDefaultValidator):
         return f'Validates that the datatype of the pandas series is a subclass of: {self.datatype}'
 
     def validate(self, data: Union[numbers.Real, str, bool, int, float, list, dict]) -> base.ValidationResult:
+        if hasattr(data, 'dask'):
+            data = data.compute()
         passes = isinstance(data, self.datatype)
         return base.ValidationResult(
             passes=passes,
