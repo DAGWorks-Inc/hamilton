@@ -47,4 +47,4 @@ if __name__ == '__main__':
 
     # let's create the dataframe!
     df = dr.execute(output_columns)
-    # print(df.to_string())
+    print(df.head().to_string())
