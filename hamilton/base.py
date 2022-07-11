@@ -42,6 +42,13 @@ class PandasDataFrameResult(ResultMixin):
     def build_result(**outputs: typing.Dict[str, typing.Any]) -> pd.DataFrame:
         # TODO check inputs are pd.Series, arrays, or scalars -- else error
         # TODO do a basic index check across pd.Series and flag where mismatches occur?
+        if len(outputs) == 1:
+            value, = outputs.values()  # this works because it's length 1.
+            if isinstance(value, pd.DataFrame):
+                return value
+            elif isinstance(value, pd.Series):
+                return pd.DataFrame(outputs)
+            raise ValueError(f'Cannot build result. Cannot handle type {value}.')
         return pd.DataFrame(outputs)
 
 

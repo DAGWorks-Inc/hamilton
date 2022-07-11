@@ -105,3 +105,51 @@ def test_SimplePythonDataFrameGraphAdapter_check_input_type_mismatch(node_type, 
     adapter = base.SimplePythonDataFrameGraphAdapter()
     actual = adapter.check_input_type(node_type, input_value)
     assert actual is False
+
+
+@pytest.mark.parametrize('outputs,expected_result', [
+    ({'a': pd.Series([1, 2, 3])},
+     pd.DataFrame({'a': pd.Series([1, 2, 3])})),
+    ({'a': pd.DataFrame({'a': [1, 2, 3], 'b': [11, 12, 13]})},
+     pd.DataFrame({'a': pd.Series([1, 2, 3]),
+                   'b': pd.Series([11, 12, 13])})),
+    ({'a': pd.Series([1, 2, 3]),
+      'b': pd.Series([11, 12, 13])},
+     pd.DataFrame({'a': pd.Series([1, 2, 3]),
+                   'b': pd.Series([11, 12, 13])})),
+    ({'a': pd.Series([1, 2, 3]),
+      'b': pd.Series([11, 12, 13]),
+      'c': 1},
+     pd.DataFrame({'a': pd.Series([1, 2, 3]),
+                   'b': pd.Series([11, 12, 13]),
+                   'c': pd.Series([1, 1, 1])})),
+], ids=[
+    'test-single-series',
+    'test-single-dataframe',
+    'test-multiple-series',
+    'test-multiple-series-with-scalar',
+])
+def test_PandasDataFrameResult_build_result(outputs, expected_result):
+    """Tests the happy case of PandasDataFrameResult.build_result()"""
+    pdfr = base.PandasDataFrameResult()
+    actual = pdfr.build_result(**outputs)
+    pd.testing.assert_frame_equal(actual, expected_result)
+
+
+@pytest.mark.parametrize('outputs', [
+    ({'a': 1}),
+    ({'a': pd.DataFrame({'a': [1, 2, 3], 'b': [11, 12, 13]}),
+      'b': pd.DataFrame({'c': [1, 3, 5], 'd': [14, 15, 16]})}),
+    ({'a': pd.Series([1, 2, 3]),
+      'b': pd.Series([11, 12, 13]),
+      'c': pd.DataFrame({'d': [0, 0, 0]})}),
+], ids=[
+    'test-single-value',
+    'test-multiple-dataframes',
+    'test-multiple-series-with-dataframe',
+])
+def test_PandasDataFrameResult_build_result_errors(outputs):
+    """Tests the happy case of PandasDataFrameResult.build_result()"""
+    pdfr = base.PandasDataFrameResult()
+    with pytest.raises(ValueError):
+        pdfr.build_result(**outputs)
