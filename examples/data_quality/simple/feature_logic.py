@@ -9,6 +9,8 @@ Note:
     determine whether this function should exist or not depending on some configuration passed in.
     (2) instead of @config.when* we could instead move these functions into specific independent modules, and then in
     the driver choose which one to use for the DAG. For the purposes of this example, we decided one file is simpler.
+    (3) As of the 1.9.0 release, Hamilton, by default, does not handle data frame validation. Please use the Pandera
+    integration - see `examples/data_quality/pandera` for an example.
 
 """
 import numpy as np
