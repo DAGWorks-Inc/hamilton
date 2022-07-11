@@ -9,7 +9,8 @@ from hamilton.data_quality import base
 class PanderaDataFrameValidator(base.BaseDefaultValidator):
     """Pandera schema validator for dataframes"""
 
-    def __init__(self, schema: pa.DataFrameSchema):
+    def __init__(self, schema: pa.DataFrameSchema, importance: str):
+        super(PanderaDataFrameValidator, self).__init__(importance)
         self.schema = schema
 
     @classmethod
@@ -46,7 +47,8 @@ class PanderaDataFrameValidator(base.BaseDefaultValidator):
 class PanderaSeriesSchemaValidator(base.BaseDefaultValidator):
     """Pandera schema validator for series"""
 
-    def __init__(self, schema: pa.SeriesSchema):
+    def __init__(self, schema: pa.SeriesSchema, importance: str):
+        super(PanderaSeriesSchemaValidator, self).__init__(importance)
         self.schema = schema
 
     @classmethod

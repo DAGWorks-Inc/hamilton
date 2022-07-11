@@ -21,7 +21,7 @@ def test_basic_pandera_decorator_dataframe_fails():
     )
 
     df = pd.DataFrame({'column1': [5, 1, np.nan]})
-    validator = pandera_validators.PanderaDataFrameValidator(schema=schema)
+    validator = pandera_validators.PanderaDataFrameValidator(schema=schema, importance='warn')
     validation_result = validator.validate(df)
     assert not validation_result.passes
     assert 'A total of 4 schema errors were found' in validation_result.message  # TODO -- ensure this will stay constant with the contract
@@ -43,7 +43,7 @@ def test_basic_pandera_decorator_dataframe_passes():
     )
 
     df = pd.DataFrame({'column1': [5, 1, 0], 'column2': [-2.0, -1.9, -20.0], 'column3': ['value_0', 'value_1', 'value_2']})
-    validator = pandera_validators.PanderaDataFrameValidator(schema=schema)
+    validator = pandera_validators.PanderaDataFrameValidator(schema=schema, importance='warn')
     validation_result = validator.validate(df)
     assert validation_result.passes
 
@@ -59,7 +59,7 @@ def test_basic_pandera_decorator_series_fails():
         nullable=False,
     )
     series = pd.Series(['foobar', 'foobox', 'foobaz'])
-    validator = pandera_validators.PanderaSeriesSchemaValidator(schema=schema)
+    validator = pandera_validators.PanderaSeriesSchemaValidator(schema=schema, importance='warn')
     validation_result = validator.validate(series)
     assert not validation_result.passes
     assert 'A total of 1 schema error' in validation_result.message
@@ -76,6 +76,6 @@ def test_basic_pandera_decorator_series_passes():
         nullable=False,
     )
     series = pd.Series(['foobar', 'foo_bar', 'foo__bar'])
-    validator = pandera_validators.PanderaSeriesSchemaValidator(schema=schema)
+    validator = pandera_validators.PanderaSeriesSchemaValidator(schema=schema, importance='warn')
     validation_result = validator.validate(series)
     assert validation_result.passes
