@@ -22,7 +22,9 @@ class PanderaDataFrameValidator(base.BaseDefaultValidator):
 
     def validate(self, data: pd.DataFrame) -> base.ValidationResult:
         try:
-            self.schema.validate(data, lazy=True)
+            result = self.schema.validate(data, lazy=True, inplace=True)
+            if hasattr(result, 'dask'):
+                result.compute()
         except pa.errors.SchemaErrors as e:
             return base.ValidationResult(
                 passes=False,
@@ -60,7 +62,9 @@ class PanderaSeriesSchemaValidator(base.BaseDefaultValidator):
 
     def validate(self, data: pd.Series) -> base.ValidationResult:
         try:
-            self.schema.validate(data, lazy=True)
+            result = self.schema.validate(data, lazy=True, inplace=True)
+            if hasattr(result, 'dask'):
+                result.compute()
         except pa.errors.SchemaErrors as e:
             return base.ValidationResult(
                 passes=False,
