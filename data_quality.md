@@ -43,7 +43,7 @@ We've fully integrated data quality with [pandera](https://pandera.readthedocs.i
 Note that you have to have hamilton installed with the `pandera` extension. E.G.
 
 ```bash
-pip install hamilton[pandera]
+pip install sf-hamilton[pandera]
 ```
 
 The integration point is simple. All you have to do is provide a pandera schema

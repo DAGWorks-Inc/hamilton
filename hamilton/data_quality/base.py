@@ -96,6 +96,7 @@ def act_fail_bulk(node_name: str, failures: List[Tuple[ValidationResult, DataVal
     for validation_result, validator in failures:
         if not validation_result.passes:
             message = f'{_create_error_string(node_name, validation_result, validator)}\n'
+            logger.error(message)  # log here so things print nicely at least
             error_messages.append(message)
     if error_messages:
         raise DataValidationError(error_messages)
