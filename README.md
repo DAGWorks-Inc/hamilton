@@ -138,7 +138,7 @@ We have a growing list of examples showcasing how one might use Hamilton. You ca
 E.g. 
 
 * [Hello world](https://github.com/stitchfix/hamilton/tree/main/examples/hello_world)
-* Scaling on to [Ray](), [Dask](), or [Pandas on Spark]()
+* Scaling on to [Ray](https://github.com/stitchfix/hamilton/tree/main/examples/ray), [Dask](https://github.com/stitchfix/hamilton/tree/main/examples/dask), or [Pandas on Spark](https://github.com/stitchfix/hamilton/tree/main/examples/spark)
 * Training [a model with scikit-learn](https://github.com/stitchfix/hamilton/tree/main/examples/model_examples)
 * Doing [air quality analysis solely in numpy](https://github.com/stitchfix/hamilton/tree/main/examples/numpy/air-quality-analysis)
 
