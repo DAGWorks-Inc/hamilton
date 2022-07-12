@@ -87,6 +87,8 @@ class DataInValuesValidatorPandasSeries(BaseDefaultValidator):
         passes = incorrect_values_count == 0
         message = (f'Series contains {correct_values_count} correct values,'
                    f' and {incorrect_values_count} incorrect values.')
+        if not passes:
+            message += f' Valid values are: {self.values}.'
         return base.ValidationResult(
             passes=passes,
             message=message,
@@ -155,7 +157,7 @@ class DataInValuesValidatorPrimitives(BaseDefaultValidator):
 
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
-        return issubclass(datatype, numbers.Real) or datatype == str  # TODO support list, dict and typing.* variants
+        return issubclass(datatype, numbers.Real) or issubclass(datatype, str)  # TODO support list, dict and typing.* variants
 
     def description(self) -> str:
         return f'Validates that python values are from a fixed set of values: ({self.values}).'
@@ -165,6 +167,8 @@ class DataInValuesValidatorPrimitives(BaseDefaultValidator):
             data = data.compute()
         is_valid_value = data in self.values
         message = f'Primitive python value was valid is {is_valid_value}.'
+        if not is_valid_value:
+            message += f' Correct possible values are {self.values}.'
         return base.ValidationResult(
             passes=is_valid_value,
             message=message,
