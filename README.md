@@ -133,6 +133,16 @@ You should see the following image if you ran `dr.visualize_execution(output_col
 
 Congratulations - you just created your Hamilton dataflow that created a dataframe!
 
+## Example Hamilton Dataflows
+We have a growing list of examples showcasing how one might use Hamilton. You can find them all under the [`examples/`](https://github.com/stitchfix/hamilton/tree/main/examples) directory.
+E.g. 
+
+* [Hello world](https://github.com/stitchfix/hamilton/tree/main/examples/hello_world)
+* Scaling on to [Ray](), [Dask](), or [Pandas on Spark]()
+* Training [a model with scikit-learn](https://github.com/stitchfix/hamilton/tree/main/examples/model_examples)
+* Doing [air quality analysis solely in numpy](https://github.com/stitchfix/hamilton/tree/main/examples/numpy/air-quality-analysis)
+
+
 # Slack Community
 We have a small but active community on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg). Come join us!
 
