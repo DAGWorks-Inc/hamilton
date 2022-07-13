@@ -135,7 +135,7 @@ Congratulations - you just created your Hamilton dataflow that created a datafra
 
 ## Example Hamilton Dataflows
 We have a growing list of examples showcasing how one might use Hamilton. You can find them all under the [`examples/`](https://github.com/stitchfix/hamilton/tree/main/examples) directory.
-E.g. 
+E.g.
 
 * [Hello world](https://github.com/stitchfix/hamilton/tree/main/examples/hello_world)
 * Scaling on to [Ray](https://github.com/stitchfix/hamilton/tree/main/examples/ray), [Dask](https://github.com/stitchfix/hamilton/tree/main/examples/dask), or [Pandas on Spark](https://github.com/stitchfix/hamilton/tree/main/examples/spark)
