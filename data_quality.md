@@ -22,8 +22,8 @@ In the above, we run two assertions:
 1. That the series has an np.int64 datatype
 2. That every item in the series in between 0 and 100
 
-Furthermore, the workflow does not fail when this dies. Rather, it logs a warning
-More about configuring that later, but you can see its specified in the `importance` parameter above.
+```suggestion
+Furthermore, the workflow does not fail when this dies. Rather, it logs a warning, as specified by the value provided to `importance`. In terms of how this works, if you were to visualize what was being executed (e.g. using `visualize_exection()`) then you'd see extra nodes added to the DAG. So when using `@check_output` an extra computational step will be added to your workflow to run that check.
 
 ## Design
 
