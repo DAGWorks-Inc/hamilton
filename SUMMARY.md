@@ -14,6 +14,7 @@
 * [Tutorials](tutorials/README.md)
   * [Using Hamilton in a notebook](tutorials/using-hamilton-in-a-notebook.md)
   * [Integrating Decorators](tutorials/integrating-decorators.md)
+  * [Data Quality Checks](tutorials/data-quality-checks.md)
   * [Model Training](tutorials/model-training.md)
   * [Dask](tutorials/dask.md)
   * [Spark](tutorials/spark.md)
