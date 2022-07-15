@@ -67,3 +67,17 @@ Now that you've pushed to pypi, announce your release! We plan to automate this,
 See [1.2.0](https://github.com/stitchfix/hamilton/releases/tag/sf-hamilton-1.2.0) for an example.
 2. Announce on the #announcements channel in slack, following the format presented there.
 3. Thanks for contributing!
+
+# Pushing to Anaconda
+These are the steps to push to Anaconda after you have built and pushed to PyPi successfully.
+
+1. Make sure you have conda installed with conda-build. See [these instructions](https://conda.io/projects/conda-build/en/latest/install-conda-build.html).
+Note: since it is common to have pyenv installed too -- conda and pyenv don't play nice. My suggestion is to run
+`conda config --set auto_activate_base False` to not set conda to be active by default.
+3. Make sure you have an Anaconda account and are authorized to push to anaconda.
+4. Log in to anaconda (e.g. conda activate && anaconda login).
+5. We have a script `build_conda.sh` that is a bash script that encapsulates the steps. For reference
+it roughly follows [this documentation](https://conda.io/projects/conda-build/en/latest/user-guide/tutorials/build-pkgs-skeleton.html).
+Run it with `bash build_conda.sh`. It should "just work".
+6. Be sure to remove any files it creates afterwards so when you come to do a release again, you're not uploading the
+same files.
