@@ -1,11 +1,16 @@
 <div align="center">
     <h1>Welcome to Hamilton's Github Repository</h1>
-    <a href="https://circleci.com/gh/stitchfix/hamilton/tree/main" target="_blank"><img src="https://circleci.com/gh/stitchfix/hamilton/tree/main.svg?style=svg" alt="Hamilton CircleCI/></a>
+    <a href="https://circleci.com/gh/stitchfix/hamilton/tree/main" target="_blank">
+      <img src="https://circleci.com/gh/stitchfix/hamilton/tree/main.svg?style=svg" alt="Hamilton CircleCI"/>
+    </a>
     <a href="https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg" target="_blank"><img src="https://img.shields.io/badge/Join-Hamilton_Slack-brightgreen?logo=slack" alt="Hamilton Slack"/></a>
-    <br>
+        <a href="https://twitter.com/hamilton_os" target="_blank"><img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Twitter"/></a>
+        <br/>
     <a href="https://www.python.org/downloads/" target="_blank"><img src="https://img.shields.io/badge/python-3.6%20|%203.7|%203.8|%203.9-brightgreen.svg" alt="Python supported"/></a>
     <a href="https://pypi.org/project/sf-hamilton/" target="_blank"><img src="https://badge.fury.io/py/sf-hamilton.svg" alt="PyPi Version"/></a>
-    <a href="https://twitter.com/hamilton_os" target="_blank"><img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Twitter"/></a>
+    <br/>
+    <a href="https://anaconda.org/skrawcz/sf-hamilton"> <img src="https://anaconda.org/skrawcz/sf-hamilton/badges/version.svg" alt="Conda Version"/> </a>
+    <a href="https://anaconda.org/skrawcz/sf-hamilton"> <img src="https://anaconda.org/skrawcz/sf-hamilton/badges/platforms.svg" /> </a>
 </div>
 
 # Hamilton
