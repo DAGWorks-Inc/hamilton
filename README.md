@@ -9,8 +9,8 @@
     <a href="https://www.python.org/downloads/" target="_blank"><img src="https://img.shields.io/badge/python-3.6%20|%203.7|%203.8|%203.9-brightgreen.svg" alt="Python supported"/></a>
     <a href="https://pypi.org/project/sf-hamilton/" target="_blank"><img src="https://badge.fury.io/py/sf-hamilton.svg" alt="PyPi Version"/></a>
     <br/>
-    <a href="https://anaconda.org/skrawcz/sf-hamilton"> <img src="https://anaconda.org/skrawcz/sf-hamilton/badges/version.svg" alt="Conda Version"/> </a>
-    <a href="https://anaconda.org/skrawcz/sf-hamilton"> <img src="https://anaconda.org/skrawcz/sf-hamilton/badges/platforms.svg" /> </a>
+    <a href="https://anaconda.org/hamilton-opensource/sf-hamilton"> <img src="https://anaconda.org/hamilton-opensource/sf-hamilton/badges/version.svg" /> </a>
+    <a href="https://anaconda.org/hamilton-opensource/sf-hamilton"> <img src="https://anaconda.org/hamilton-opensource/sf-hamilton/badges/platforms.svg" /> </a>
 </div>
 
 # Hamilton
