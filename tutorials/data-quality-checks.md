@@ -20,11 +20,11 @@ def acquisition_cost(avg_3wk_spend: pd.Series, signups: pd.Series) -> pd.Series:
 
 Now, let's say we want to assure a few things about `acquisition_cost`...&#x20;
 
-1. That it consists of floats (should be obvious from the code, but we want to be sure)
-2. That it is greater than 0 (highly unlikely that a customer pays you for advertising)
-3. That it is less than $1000 (anything this high likely means a data issue)
+1. That it consists of `float`s (should be obvious from the code, but we want to be sure)
+2. That it is greater than `0` (highly unlikely that a customer pays you for advertising)
+3. That it is less than \`$1000\` (anything this high likely means a data issue)
 
-Furthermore, let's say we want the pipeline to log a warning (and not have a hard failure) if any of the above conditions aren't met.
+Furthermore, let's say we want the pipeline to log a warning (as opposed to just failing out) if any of the above conditions aren't met.
 
 This is easy with the `check_output` decorator!
 
@@ -75,8 +75,6 @@ Finally, if you want to implement your own checks, you can explore the [DataVali
 ### Running your Pipelines and Examining the Results
 
 Let's run the pipeline above to get the result of `acquisition_cost`, injecting some bad data along the way...
-
-
 
 ```python
 import importlib
