@@ -1,4 +1,6 @@
 import abc
+import dataclasses
+import enum
 import functools
 import logging
 import inspect
@@ -35,6 +37,101 @@ def get_default_tags(fn: Callable) -> Dict[str, str]:
     """
     module_name = inspect.getmodule(fn).__name__
     return {'module': module_name}
+
+
+# TODO -- replace this with polymorphism for assigning/grabbing
+#  dependencies once we have the computation decided, if needed
+class ParametrizedDependencySource(enum.Enum):
+    LITERAL = 'literal'
+    UPSTREAM = 'upstream'
+
+
+class ParametrizedDependency:
+    @abc.abstractmethod
+    def get_dependency_type(self) -> ParametrizedDependencySource:
+        pass
+
+
+@dataclasses.dataclass
+class LiteralDependency(ParametrizedDependency):
+    value: Any
+
+    def get_dependency_type(self) -> ParametrizedDependencySource:
+        return ParametrizedDependencySource.LITERAL
+
+
+@dataclasses.dataclass
+class UpstreamDependency(ParametrizedDependency):
+    source: str
+
+    def get_dependency_type(self) -> ParametrizedDependencySource:
+        return ParametrizedDependencySource.UPSTREAM
+
+
+# def is_literal(self) -> bool:
+
+def literal(val: Any) -> LiteralDependency:
+    return LiteralDependency(value=val)
+
+
+def upstream(source: Any) -> UpstreamDependency:
+    return UpstreamDependency(source=source)
+
+
+class parametrized_full(function_modifiers_base.NodeExpander):
+    # TODO -- make this take in just a parameter if we want to use the auto-generated docstring?
+    def __init__(self, **parametrization: Tuple[Dict[str, ParametrizedDependency], str]):
+        self.parametrization = parametrization
+
+    def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+        nodes = []
+        for output_node, (parametrization, docstring) in self.parametrization.items():
+            upstream_dependencies = {
+                parameter: replacement for parameter, replacement in parametrization.items()
+                if replacement.get_dependency_type() == ParametrizedDependencySource.UPSTREAM}
+            literal_dependencies = {
+                parameter: replacement for parameter, replacement in parametrization.items()
+                if replacement.get_dependency_type() == ParametrizedDependencySource.LITERAL}
+            # Should we have a `literal` node/dependency type? Might be nicer than this -- E.G. we can see the inputs...
+            # Or we can create actual nodes that are just literals
+
+            def replacement_function(*args, upstream_dependencies=upstream_dependencies, literal_dependencies=literal_dependencies, **kwargs):
+                """This function rewrites what is passed in kwargs to the right kwarg for the function."""
+                kwargs = kwargs.copy()
+                for dependency, replacement in upstream_dependencies.items():
+                    kwargs[dependency] = kwargs.pop(replacement.source)
+                for dependency, replacement in literal_dependencies.items():
+                    kwargs[dependency] = replacement.value
+                return node_.callable(*args, **kwargs)
+
+            new_input_types = {}
+            for param, value in node_.input_types.items():
+                if param in upstream_dependencies:
+                    new_input_types[upstream_dependencies[param].source] = value # We replace with the upstream_dependencies
+                elif param not in literal_dependencies:
+                    new_input_types[param] = value # We just use the standard one, nothing is getting replaced
+
+            nodes.append(
+                node.Node(
+                    name=output_node,
+                    typ=node_.type,
+                    doc_string=docstring, # TODO -- change docstring
+                    callabl=functools.partial(
+                        replacement_function,
+                        **{parameter: value.value for parameter, value in literal_dependencies.items()}),
+                    input_types=new_input_types,
+                    tags=node_.tags.copy()))
+        return nodes
+
+    def validate(self, fn: Callable):
+        signature = inspect.signature(fn)
+        missing_parameters = set()
+        for (parametrization, _) in self.parametrization.values():
+            for param_to_replace in parametrization.keys():
+                if param_to_replace not in signature.parameters.keys():
+                    missing_parameters.add(param_to_replace)
+        if missing_parameters:
+            raise ValueError(f"Parametrization is invalid: the following parameters don't appear in the function itself: {', '.join()}")
 
 
 class parametrized(function_modifiers_base.NodeExpander):

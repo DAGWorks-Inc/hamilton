@@ -7,7 +7,7 @@ import pytest
 from hamilton import function_modifiers, models, function_modifiers_base
 from hamilton import node
 from hamilton.data_quality.base import ValidationResult, DataValidationError
-from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom, IS_DATA_VALIDATOR_TAG, DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG
+from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom, IS_DATA_VALIDATOR_TAG, DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG, upstream, literal
 from hamilton.node import DependencyType
 from tests.resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator2, SampleDataValidator3
 
@@ -672,7 +672,7 @@ def test_check_output_custom_node_transform():
     data_validators = [value for value in subdag_as_dict.values() if value.tags.get('hamilton.data_quality.contains_dq_results', False)]
     assert len(data_validators) == 2  # One for each validator
     first_validator, _ = data_validators
-    assert IS_DATA_VALIDATOR_TAG in first_validator.tags and first_validator.tags[IS_DATA_VALIDATOR_TAG] is True # Validates that all the required tags are included
+    assert IS_DATA_VALIDATOR_TAG in first_validator.tags and first_validator.tags[IS_DATA_VALIDATOR_TAG] is True  # Validates that all the required tags are included
     assert DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG in first_validator.tags and first_validator.tags[DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG] == 'fn'
 
     # The final function should take in everything but only use the raw results
@@ -729,7 +729,60 @@ def test_check_output_custom_node_transform_layered():
     assert 5 == len(subdag_second_transformation)
 
 
-def test_data_quality_constants():
+def test_parametrized_no_docstring():
     # simple tests to test data quality constants remain the same
     assert IS_DATA_VALIDATOR_TAG == 'hamilton.data_quality.contains_dq_results'
     assert DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG == 'hamilton.data_quality.source_node'
+
+
+def identity(upstream_parameter: str, literal_parameter: str) -> Any:
+    return f'{upstream_parameter}{literal_parameter}'
+
+
+def test_parametrized_full_no_replacement():
+    annotation = function_modifiers.parametrized_full(
+        replace_no_parameters=({}, 'fn with no parameters replaced'),
+    )
+    node_, = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
+    assert node_.callable(upstream_parameter='foo', literal_parameter='bar') == 'foobar'
+    assert node_.input_types == {'literal_parameter': (str, DependencyType.REQUIRED), 'upstream_parameter': (str, DependencyType.REQUIRED)}
+
+
+def test_parametrized_full_replace_just_upstream():
+    annotation = function_modifiers.parametrized_full(
+        replace_just_upstream_parameter=({'upstream_parameter': upstream('foo_source')}, 'fn with upstream_parameter set to node foo'),
+    )
+    node_, = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
+    assert node_.input_types == {
+        'literal_parameter': (str, DependencyType.REQUIRED),
+        'foo_source': (str, DependencyType.REQUIRED)}
+    assert node_.callable(foo_source='foo', literal_parameter='bar') == 'foobar'
+
+
+def test_parametrized_full_replace_just_literal():
+    annotation = function_modifiers.parametrized_full(
+        replace_just_literal_parameter=({'literal_parameter': literal('bar')}, 'fn with upstream_parameter set to node foo'),
+    )
+    node_, = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
+    assert node_.input_types == {'upstream_parameter': (str, DependencyType.REQUIRED)}
+    assert node_.callable(upstream_parameter='foo') == 'foobar'
+
+
+def test_parametrized_full_multiple_replacements():
+    annotation = function_modifiers.parametrized_full(
+        replace_no_parameters=({}, 'fn with no parameters replaced'),
+        replace_just_upstream_parameter=({'upstream_parameter': upstream('foo_source')}, 'fn with upstream_parameter set to node foo'),
+        replace_just_literal_parameter=({'literal_parameter': literal('bar')}, 'fn with upstream_parameter set to node foo'),
+        replace_both_parameters=({'upstream_parameter': upstream('foo_source'), 'literal_parameter': literal('bar')}, 'fn with both parameters replaced')
+    )
+
+    nodes = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
+    assert len(nodes) == 4
+    raise Exception(
+        f'TODO next: \n'
+        f'1. Add tests to ensure this works ✅ \n'
+        f'2. Get it to work without supplying docstrings and instead using parametrization\n'
+        f'3. Replace the other variants with this, ensure all use-cases are covered\n'
+        f'4. Refactor to fix weird polymorphism or simplify in another way\n'
+        f'5. Refactor all decorators to be in a `function_modifiers` module if possible'
+    )
