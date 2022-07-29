@@ -84,7 +84,6 @@ class Node(object):
             if input_types is not None:
                 raise ValueError(f'Input types cannot be provided for user-defined node {self.name}')
 
-
     @property
     def documentation(self) -> str:
         return self._doc

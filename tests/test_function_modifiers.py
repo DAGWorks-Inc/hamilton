@@ -729,60 +729,73 @@ def test_check_output_custom_node_transform_layered():
     assert 5 == len(subdag_second_transformation)
 
 
-def test_parametrized_no_docstring():
+def test_data_quality_constants_for_api_consistency():
     # simple tests to test data quality constants remain the same
     assert IS_DATA_VALIDATOR_TAG == 'hamilton.data_quality.contains_dq_results'
     assert DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG == 'hamilton.data_quality.source_node'
 
 
-def identity(upstream_parameter: str, literal_parameter: str) -> Any:
+def concat(upstream_parameter: str, literal_parameter: str) -> Any:
+    """Concatenates {upstream_parameter} with literal_parameter"""
     return f'{upstream_parameter}{literal_parameter}'
 
 
 def test_parametrized_full_no_replacement():
-    annotation = function_modifiers.parametrized_full(
-        replace_no_parameters=({}, 'fn with no parameters replaced'),
-    )
-    node_, = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
+    annotation = function_modifiers.parametrized_full(replace_no_parameters={})
+    node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
     assert node_.callable(upstream_parameter='foo', literal_parameter='bar') == 'foobar'
     assert node_.input_types == {'literal_parameter': (str, DependencyType.REQUIRED), 'upstream_parameter': (str, DependencyType.REQUIRED)}
+    assert node_.documentation == concat.__doc__.format(upstream_parameter='upstream_parameter')
 
 
 def test_parametrized_full_replace_just_upstream():
     annotation = function_modifiers.parametrized_full(
-        replace_just_upstream_parameter=({'upstream_parameter': upstream('foo_source')}, 'fn with upstream_parameter set to node foo'),
+        replace_just_upstream_parameter={'upstream_parameter': upstream('foo_source')},
     )
-    node_, = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
+    node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
     assert node_.input_types == {
         'literal_parameter': (str, DependencyType.REQUIRED),
         'foo_source': (str, DependencyType.REQUIRED)}
     assert node_.callable(foo_source='foo', literal_parameter='bar') == 'foobar'
+    assert node_.documentation == concat.__doc__.format(upstream_parameter='foo_source')
 
 
 def test_parametrized_full_replace_just_literal():
-    annotation = function_modifiers.parametrized_full(
-        replace_just_literal_parameter=({'literal_parameter': literal('bar')}, 'fn with upstream_parameter set to node foo'),
-    )
-    node_, = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
+    annotation = function_modifiers.parametrized_full(replace_just_literal_parameter={'literal_parameter': literal('bar')})
+    node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
     assert node_.input_types == {'upstream_parameter': (str, DependencyType.REQUIRED)}
     assert node_.callable(upstream_parameter='foo') == 'foobar'
+    assert node_.documentation == concat.__doc__.format(upstream_parameter='upstream_parameter')
+
+
+def test_parametrized_full_replace_both():
+    annotation = function_modifiers.parametrized_full(
+        replace_both_parameters={'upstream_parameter': upstream('foo_source'), 'literal_parameter': literal('bar')}
+    )
+    node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
+    assert node_.input_types == {'foo_source': (str, DependencyType.REQUIRED)}
+    assert node_.callable(foo_source='foo') == 'foobar'
+    assert node_.documentation == concat.__doc__.format(upstream_parameter='foo_source')
 
 
 def test_parametrized_full_multiple_replacements():
-    annotation = function_modifiers.parametrized_full(
+    args = dict(
         replace_no_parameters=({}, 'fn with no parameters replaced'),
         replace_just_upstream_parameter=({'upstream_parameter': upstream('foo_source')}, 'fn with upstream_parameter set to node foo'),
         replace_just_literal_parameter=({'literal_parameter': literal('bar')}, 'fn with upstream_parameter set to node foo'),
         replace_both_parameters=({'upstream_parameter': upstream('foo_source'), 'literal_parameter': literal('bar')}, 'fn with both parameters replaced')
     )
-
-    nodes = annotation.expand_node(node.Node.from_fn(identity), {}, identity)
+    annotation = function_modifiers.parametrized_full(**args)
+    nodes = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
     assert len(nodes) == 4
+    # test out that documentation is assigned correctly
+    assert [node_.documentation for node_ in nodes] == [args[node_.name][1] for node_ in nodes]
     raise Exception(
         f'TODO next: \n'
         f'1. Add tests to ensure this works ✅ \n'
-        f'2. Get it to work without supplying docstrings and instead using parametrization\n'
-        f'3. Replace the other variants with this, ensure all use-cases are covered\n'
+        f'2. Get it to work without supplying docstrings and instead using parametrization ✅ \n'
+        f'2.5 Figure out what the API should look like if parameters are not supplied -- likely keep it so it can work without that ✅ \n'
+        f'3. Replace the other variants with this, ensure all use-cases are covered \n'
         f'4. Refactor to fix weird polymorphism or simplify in another way\n'
         f'5. Refactor all decorators to be in a `function_modifiers` module if possible'
     )

@@ -1,4 +1,5 @@
 import abc
+import collections
 import dataclasses
 import enum
 import functools
@@ -79,19 +80,50 @@ def upstream(source: Any) -> UpstreamDependency:
 
 
 class parametrized_full(function_modifiers_base.NodeExpander):
+    RESERVED_KWARG = 'output_name'
+
     # TODO -- make this take in just a parameter if we want to use the auto-generated docstring?
-    def __init__(self, **parametrization: Tuple[Dict[str, ParametrizedDependency], str]):
+    def __init__(self, **parametrization: Union[Dict[str, ParametrizedDependency], Tuple[Dict[str, ParametrizedDependency], str]]):
+        """Creates a parametrized_full decorator. For example:
+            @parametrized_full(
+                replace_no_parameters=({}, 'fn with no parameters replaced'),
+                replace_just_upstream_parameter=({'upstream_parameter': upstream('foo_source')}, 'fn with upstream_parameter set to node foo'),
+                replace_just_literal_parameter=({'literal_parameter': literal('bar')}, 'fn with upstream_parameter set to node foo'),
+                replace_both_parameters=({'upstream_parameter': upstream('foo_source'), 'literal_parameter': literal('bar')}, 'fn with both parameters replaced')
+            )
+            def concat(upstream_parameter: str, literal_parameter: str) -> Any:
+                return f'{upstream_parameter}{literal_parameter}'
+
+        @param parametrization: **kwargs with one of two things:
+            - a tuple of assignments (consisting of literals/upstream specifications), and docstring
+            - just assignments, in which case it parametrizes the existing docstring
+        """
         self.parametrization = parametrization
 
     def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         nodes = []
-        for output_node, (parametrization, docstring) in self.parametrization.items():
+        for output_node, parametrization_with_optional_docstring in self.parametrization.items():
+            if isinstance(parametrization_with_optional_docstring, tuple):  # In this case it contains the docstring
+                parametrization, docstring = parametrization_with_optional_docstring
+            else:
+                parametrization = parametrization_with_optional_docstring
+                docstring = None
             upstream_dependencies = {
                 parameter: replacement for parameter, replacement in parametrization.items()
                 if replacement.get_dependency_type() == ParametrizedDependencySource.UPSTREAM}
             literal_dependencies = {
                 parameter: replacement for parameter, replacement in parametrization.items()
                 if replacement.get_dependency_type() == ParametrizedDependencySource.LITERAL}
+            if docstring is None:
+                # then we have to generate
+                docstring = self.format_doc_string(
+                    fn.__doc__,
+                    output_node,
+                    **{
+                        **{key: value.source for key, value in upstream_dependencies.items()},
+                        **{key: value.value for key, value in literal_dependencies.items()}
+                    })
+
             # Should we have a `literal` node/dependency type? Might be nicer than this -- E.G. we can see the inputs...
             # Or we can create actual nodes that are just literals
 
@@ -125,13 +157,41 @@ class parametrized_full(function_modifiers_base.NodeExpander):
 
     def validate(self, fn: Callable):
         signature = inspect.signature(fn)
+        func_param_names = set(signature.parameters.keys())
+        try:
+            for output_name, mappings in self.parametrization.items():
+                # TODO -- separate out into the two dependency-types
+                self.format_doc_string(fn.__doc__, output_name, **mappings)
+        except KeyError as e:
+            raise InvalidDecoratorException(f'Function docstring templating is incorrect. '
+                                            f'Please fix up the docstring {fn.__module__}.{fn.__name__}.') from e
+
+        if self.RESERVED_KWARG in func_param_names:
+            raise InvalidDecoratorException(
+                f'Error function {fn.__module__}.{fn.__name__} cannot have `{self.RESERVED_KWARG}` '
+                f'as a parameter it is reserved.')
         missing_parameters = set()
         for (parametrization, _) in self.parametrization.values():
             for param_to_replace in parametrization.keys():
-                if param_to_replace not in signature.parameters.keys():
+                if param_to_replace not in func_param_names:
                     missing_parameters.add(param_to_replace)
         if missing_parameters:
-            raise ValueError(f"Parametrization is invalid: the following parameters don't appear in the function itself: {', '.join()}")
+            raise ValueError(f"Parametrization is invalid: the following parameters don't appear in the function itself: {', '.join(missing_parameters)}")
+
+    def format_doc_string(self, doc: str, output_name: str, **params: Dict[str, str]) -> str:
+        """Helper function to format a function documentation string.
+
+        :param doc: the string template to format
+        :param output_name: the output name of the function
+        :param params: the parameter mappings
+        :return: formatted string
+        :raises: KeyError if there is a template variable missing from the parameter mapping.
+        """
+        class IdentityDict(dict):
+            # quick hack to allow for formatting of missing parameters
+            def __missing__(self, key):
+                return key
+        return doc.format_map(IdentityDict(**{self.RESERVED_KWARG: output_name}, **params))
 
 
 class parametrized(function_modifiers_base.NodeExpander):
