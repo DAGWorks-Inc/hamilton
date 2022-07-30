@@ -798,5 +798,5 @@ def test_parametrized_full_multiple_replacements():
         f'3. Replace the other variants with this, ensure all use-cases are covered \n ✅'
         f'4. Refactor to fix weird polymorphism or simplify in another way\n'
         f'5. Refactor all decorators to be in a `function_modifiers` module if possible. Then have the __init__.py just copy them\n'
-        f'6. Add a @deprecate meta-decorator for deprecating decorators\n'
+        f'6. Add a @deprecate meta-decorator for deprecating decorators\n ✅'
     )
