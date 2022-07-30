@@ -70,20 +70,30 @@ class UpstreamDependency(ParametrizedDependency):
         return ParametrizedDependencySource.UPSTREAM
 
 
-# def is_literal(self) -> bool:
-
 def literal(value: Any) -> LiteralDependency:
+    """Specifies that a parameterized dependency comes from a "literal" source.
+    E.G. literal("foo") means that the value is actualy the value "foo"
+
+    @param value: Python literal value to use
+    @return: A LiteralDependency object -- a signifier to the internal framework of the dependency type
+    """
     return LiteralDependency(value=value)
 
 
 def upstream(source: Any) -> UpstreamDependency:
+    """Specifies that a parameterized dependency comes from an "upstream" source.
+    This means that it comes from a node somewhere else.
+    E.G. upstream("foo") means that it should be assigned the value that "foo" outputs.
+
+    @param source: Upstream node to come from
+    @return:An UpstreamDependency object -- a signifier to the internal framework of the dependency type.
+    """
     return UpstreamDependency(source=source)
 
 
 class parameterize(function_modifiers_base.NodeExpander):
     RESERVED_KWARG = 'output_name'
 
-    # TODO -- make this take in just a parameter if we want to use the auto-generated docstring?
     def __init__(self, **parametrization: Union[Dict[str, ParametrizedDependency], Tuple[Dict[str, ParametrizedDependency], str]]):
         """Creates a parameterize decorator. For example:
             @parameterize(
@@ -124,9 +134,6 @@ class parameterize(function_modifiers_base.NodeExpander):
             literal_dependencies = {
                 parameter: replacement for parameter, replacement in parametrization.items()
                 if replacement.get_dependency_type() == ParametrizedDependencySource.LITERAL}
-
-            # Should we have a `literal` node/dependency type? Might be nicer than this -- E.G. we can see the inputs...
-            # Or we can create actual nodes that are just literals
 
             def replacement_function(*args, upstream_dependencies=upstream_dependencies, literal_dependencies=literal_dependencies, **kwargs):
                 """This function rewrites what is passed in kwargs to the right kwarg for the function."""

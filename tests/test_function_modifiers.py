@@ -790,13 +790,3 @@ def test_parametrized_full_multiple_replacements():
     assert len(nodes) == 4
     # test out that documentation is assigned correctly
     assert [node_.documentation for node_ in nodes] == [args[node_.name][1] for node_ in nodes]
-    raise Exception(
-        f'TODO next: \n'
-        f'1. Add tests to ensure this works ✅ \n'
-        f'2. Get it to work without supplying docstrings and instead using parametrization ✅ \n'
-        f'2.5 Figure out what the API should look like if parameters are not supplied -- likely keep it so it can work without that ✅ \n'
-        f'3. Replace the other variants with this, ensure all use-cases are covered \n ✅'
-        f'4. Refactor to fix weird polymorphism or simplify in another way\n'
-        f'5. Refactor all decorators to be in a `function_modifiers` module if possible. Then have the __init__.py just copy them\n'
-        f'6. Add a @deprecate meta-decorator for deprecating decorators\n ✅'
-    )
