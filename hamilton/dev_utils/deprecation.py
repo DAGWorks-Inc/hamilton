@@ -113,9 +113,5 @@ class deprecated:
         return self.current_version > self.fail_starting
 
     def __call__(self, fn: Callable):
-        @functools.wraps(fn)
-        def replacement(*args, **kwargs):
-            self._do_action(fn)
-            return fn(*args, **kwargs)
-
-        return replacement
+        self._do_action(fn)
+        return fn

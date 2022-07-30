@@ -72,7 +72,6 @@ def test_call_function_not_deprecated_yet():
     def deprecated_function() -> bool:
         return False
 
-    deprecated_function()
     assert not warned
 
 
@@ -98,7 +97,6 @@ def test_call_function_soon_to_be_deprecated():
     def deprecated_function() -> bool:
         return False
 
-    deprecated_function()
     assert warned
 
 
@@ -106,16 +104,14 @@ def test_call_function_already_deprecated():
     def replacement_function() -> bool:
         return True
 
-    @deprecated(
-        warn_starting=(0, 5, 0),
-        fail_starting=(1, 0, 0),
-        use_this=replacement_function,
-        explanation='True is the new False',
-        migration_guide='https://github.com/stitchfix/hamilton',
-        current_version=(1, 1, 0),
-    )
-    def deprecated_function() -> bool:
-        return False
-
     with pytest.raises(DeprecationError):
-        deprecated_function()
+        @deprecated(
+            warn_starting=(0, 5, 0),
+            fail_starting=(1, 0, 0),
+            use_this=replacement_function,
+            explanation='True is the new False',
+            migration_guide='https://github.com/stitchfix/hamilton',
+            current_version=(1, 1, 0),
+        )
+        def deprecated_function() -> bool:
+            return False

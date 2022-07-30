@@ -16,6 +16,7 @@ from hamilton.data_quality import base as dq_base
 from hamilton.data_quality import default_validators
 from hamilton import function_modifiers_base
 from hamilton import models
+from hamilton.dev_utils import deprecation
 
 logger = logging.getLogger(__name__)
 
@@ -106,14 +107,14 @@ class parameterize(function_modifiers_base.NodeExpander):
                     bad_values.append(value)
         if bad_values:
             raise InvalidDecoratorException(f'@parameterize must specify a dependency type -- either upstream() or literal().'
-                             f'The following are not allowed: {bad_values}.')
+                                            f'The following are not allowed: {bad_values}.')
         self.specified_docstrings = {key: value[1] for key, value in parametrization.items() if isinstance(value, tuple)}
 
     def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
         nodes = []
         for output_node, parametrization_with_optional_docstring in self.parametrization.items():
             if isinstance(parametrization_with_optional_docstring, tuple):  # In this case it contains the docstring
-                parametrization,  = parametrization_with_optional_docstring
+                parametrization, = parametrization_with_optional_docstring
             else:
                 parametrization = parametrization_with_optional_docstring
             docstring = self.format_doc_string(fn.__doc__, output_node)
@@ -192,6 +193,7 @@ class parameterize(function_modifiers_base.NodeExpander):
             # quick hack to allow for formatting of missing parameters
             def __missing__(self, key):
                 return key
+
         if output_name in self.specified_docstrings:
             return self.specified_docstrings[output_name]
         if doc is None:
@@ -209,7 +211,7 @@ class parameterize(function_modifiers_base.NodeExpander):
                 **{**upstream_dependencies, **literal_dependencies}))
 
 
-class parametrized(parameterize):
+class parameterize_values(parameterize):
     def __init__(self, parameter: str, assigned_output: Dict[Tuple[str, str], Any]):
         """Constructor for a modifier that expands a single function into n, each of which
         corresponds to a function in which the parameter value is replaced by that *specific value*.
@@ -222,9 +224,56 @@ class parametrized(parameterize):
                 raise InvalidDecoratorException(
                     f'assigned_output key is incorrect: {node_}. The parameterized decorator needs a dict of '
                     '[name, doc string] -> value to function.')
-        super(parametrized, self).__init__(**{output: ({parameter: literal(value)}, documentation) for (output, documentation), value in assigned_output.items()})
+        super(parameterize_values, self).__init__(**{output: ({parameter: literal(value)}, documentation) for (output, documentation), value in assigned_output.items()})
 
 
+@deprecation.deprecated(
+    warn_starting=(1, 10, 0),
+    fail_starting=(2, 0, 0),
+    use_this=parameterize_values,
+    explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
+    migration_guide='...'  # TODO -- add a migration guide
+)
+class parametrized(parameterize_values):
+    pass
+
+
+class parameterize_inputs(parameterize):
+    def __init__(self, **parameterization: Dict[str, Dict[str, str]]):
+        """Constructor for a modifier that expands a single function into n, each of which corresponds to replacing
+        some subset of the specified parameters with specific inputs.
+
+        Note this decorator and `@parametrized_input` are similar, except this one allows multiple
+        parameters to be mapped to multiple function arguments (and it fixes the spelling mistake).
+
+        `parameterized_inputs` allows you keep your code DRY by reusing the same function but replace the inputs
+        to create multiple corresponding distinct outputs. We see here that `parameterized_inputs` allows you to keep
+        your code DRY by reusing the same function to create multiple distinct outputs. The key word arguments passed
+        have to have the following structure:
+            > OUTPUT_NAME = Mapping of function argument to input that should go into it.
+        The documentation for the output is taken from the function. The documentation string can be templatized with
+        the parameter names of the function and the reserved value `output_name` - those will be replaced with the
+        corresponding values from the parameterization.
+
+        :param **parameterization: kwargs of output name to dict of parameter mappings.
+        """
+        self.parametrization = parameterization
+        if not parameterization:
+            raise ValueError(f'Cannot pass empty/None dictionary to parameterized_inputs')
+        for output, mappings in parameterization.items():
+            if not mappings:
+                raise ValueError(f'Error, {output} has a none/empty dictionary mapping. Please fill it.')
+        super(parameterize_inputs, self).__init__(
+            **{output: {parameter: upstream(source) for parameter, source in mapping.items()} for output, mapping in parameterization.items()})
+
+
+@deprecation.deprecated(
+    warn_starting=(1, 10, 0),
+    fail_starting=(2, 0, 0),
+    use_this=parameterize_inputs,
+    explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
+    migration_guide='...'  # TODO -- add a migration guide
+)
 class parametrized_input(parameterize):
     def __init__(self, parameter: str, variable_inputs: Dict[str, Tuple[str, str]]):
         """Constructor for a modifier that expands a single function into n, each of which
@@ -253,33 +302,15 @@ class parametrized_input(parameterize):
             **{output: ({parameter: upstream(value)}, documentation) for value, (output, documentation) in variable_inputs.items()})
 
 
-class parameterized_inputs(parameterize):
-    def __init__(self, **parameterization: Dict[str, Dict[str, str]]):
-        """Constructor for a modifier that expands a single function into n, each of which corresponds to replacing
-        some subset of the specified parameters with specific inputs.
-
-        Note this decorator and `@parametrized_input` are similar, except this one allows multiple
-        parameters to be mapped to multiple function arguments (and it fixes the spelling mistake).
-
-        `parameterized_inputs` allows you keep your code DRY by reusing the same function but replace the inputs
-        to create multiple corresponding distinct outputs. We see here that `parameterized_inputs` allows you to keep
-        your code DRY by reusing the same function to create multiple distinct outputs. The key word arguments passed
-        have to have the following structure:
-            > OUTPUT_NAME = Mapping of function argument to input that should go into it.
-        The documentation for the output is taken from the function. The documentation string can be templatized with
-        the parameter names of the function and the reserved value `output_name` - those will be replaced with the
-        corresponding values from the parameterization.
-
-        :param **parameterization: kwargs of output name to dict of parameter mappings.
-        """
-        self.parametrization = parameterization
-        if not parameterization:
-            raise ValueError(f'Cannot pass empty/None dictionary to parameterized_inputs')
-        for output, mappings in parameterization.items():
-            if not mappings:
-                raise ValueError(f'Error, {output} has a none/empty dictionary mapping. Please fill it.')
-        super(parameterized_inputs, self).__init__(
-            **{output: {parameter: upstream(source) for parameter, source in mapping.items()} for output, mapping in parameterization.items()})
+@deprecation.deprecated(
+    warn_starting=(1, 10, 0),
+    fail_starting=(2, 0, 0),
+    use_this=parameterize_inputs,
+    explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
+    migration_guide='...'  # TODO -- add a migration guide
+)
+class parameterized_inputs(parameterize_inputs):
+    pass
 
 
 class extract_columns(function_modifiers_base.NodeExpander):
