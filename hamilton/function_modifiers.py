@@ -79,13 +79,13 @@ def upstream(source: Any) -> UpstreamDependency:
     return UpstreamDependency(source=source)
 
 
-class parametrized_full(function_modifiers_base.NodeExpander):
+class parameterize(function_modifiers_base.NodeExpander):
     RESERVED_KWARG = 'output_name'
 
     # TODO -- make this take in just a parameter if we want to use the auto-generated docstring?
     def __init__(self, **parametrization: Union[Dict[str, ParametrizedDependency], Tuple[Dict[str, ParametrizedDependency], str]]):
-        """Creates a parametrized_full decorator. For example:
-            @parametrized_full(
+        """Creates a parameterize decorator. For example:
+            @parameterize(
                 replace_no_parameters=({}, 'fn with no parameters replaced'),
                 replace_just_upstream_parameter=({'upstream_parameter': upstream('foo_source')}, 'fn with upstream_parameter set to node foo'),
                 replace_just_literal_parameter=({'literal_parameter': literal('bar')}, 'fn with upstream_parameter set to node foo'),
@@ -105,7 +105,7 @@ class parametrized_full(function_modifiers_base.NodeExpander):
                 if not isinstance(value, ParametrizedDependency):
                     bad_values.append(value)
         if bad_values:
-            raise InvalidDecoratorException(f'@parametrized_full must specify a dependency type -- either upstream() or literal().'
+            raise InvalidDecoratorException(f'@parameterize must specify a dependency type -- either upstream() or literal().'
                              f'The following are not allowed: {bad_values}.')
         self.specified_docstrings = {key: value[1] for key, value in parametrization.items() if isinstance(value, tuple)}
 
@@ -172,7 +172,7 @@ class parametrized_full(function_modifiers_base.NodeExpander):
                 f'as a parameter it is reserved.')
         missing_parameters = set()
         for mapping in self.parametrization.values():
-            for param_to_replace in mapping :
+            for param_to_replace in mapping:
                 if param_to_replace not in func_param_names:
                     missing_parameters.add(param_to_replace)
         if missing_parameters:
@@ -209,7 +209,7 @@ class parametrized_full(function_modifiers_base.NodeExpander):
                 **{**upstream_dependencies, **literal_dependencies}))
 
 
-class parametrized(parametrized_full):
+class parametrized(parameterize):
     def __init__(self, parameter: str, assigned_output: Dict[Tuple[str, str], Any]):
         """Constructor for a modifier that expands a single function into n, each of which
         corresponds to a function in which the parameter value is replaced by that *specific value*.
@@ -225,7 +225,7 @@ class parametrized(parametrized_full):
         super(parametrized, self).__init__(**{output: ({parameter: literal(value)}, documentation) for (output, documentation), value in assigned_output.items()})
 
 
-class parametrized_input(parametrized_full):
+class parametrized_input(parameterize):
     def __init__(self, parameter: str, variable_inputs: Dict[str, Tuple[str, str]]):
         """Constructor for a modifier that expands a single function into n, each of which
         corresponds to the specified parameter replaced by a *specific input column*.
@@ -253,7 +253,7 @@ class parametrized_input(parametrized_full):
             **{output: ({parameter: upstream(value)}, documentation) for value, (output, documentation) in variable_inputs.items()})
 
 
-class parameterized_inputs(parametrized_full):
+class parameterized_inputs(parameterize):
     def __init__(self, **parameterization: Dict[str, Dict[str, str]]):
         """Constructor for a modifier that expands a single function into n, each of which corresponds to replacing
         some subset of the specified parameters with specific inputs.

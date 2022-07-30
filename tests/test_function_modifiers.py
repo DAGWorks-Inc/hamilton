@@ -741,7 +741,7 @@ def concat(upstream_parameter: str, literal_parameter: str) -> Any:
 
 
 def test_parametrized_full_no_replacement():
-    annotation = function_modifiers.parametrized_full(replace_no_parameters={})
+    annotation = function_modifiers.parameterize(replace_no_parameters={})
     node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
     assert node_.callable(upstream_parameter='foo', literal_parameter='bar') == 'foobar'
     assert node_.input_types == {'literal_parameter': (str, DependencyType.REQUIRED), 'upstream_parameter': (str, DependencyType.REQUIRED)}
@@ -749,7 +749,7 @@ def test_parametrized_full_no_replacement():
 
 
 def test_parametrized_full_replace_just_upstream():
-    annotation = function_modifiers.parametrized_full(
+    annotation = function_modifiers.parameterize(
         replace_just_upstream_parameter={'upstream_parameter': upstream('foo_source')},
     )
     node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
@@ -761,7 +761,7 @@ def test_parametrized_full_replace_just_upstream():
 
 
 def test_parametrized_full_replace_just_literal():
-    annotation = function_modifiers.parametrized_full(replace_just_literal_parameter={'literal_parameter': literal('bar')})
+    annotation = function_modifiers.parameterize(replace_just_literal_parameter={'literal_parameter': literal('bar')})
     node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
     assert node_.input_types == {'upstream_parameter': (str, DependencyType.REQUIRED)}
     assert node_.callable(upstream_parameter='foo') == 'foobar'
@@ -769,7 +769,7 @@ def test_parametrized_full_replace_just_literal():
 
 
 def test_parametrized_full_replace_both():
-    annotation = function_modifiers.parametrized_full(
+    annotation = function_modifiers.parameterize(
         replace_both_parameters={'upstream_parameter': upstream('foo_source'), 'literal_parameter': literal('bar')}
     )
     node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
@@ -785,7 +785,7 @@ def test_parametrized_full_multiple_replacements():
         replace_just_literal_parameter=({'literal_parameter': literal('bar')}, 'fn with upstream_parameter set to node foo'),
         replace_both_parameters=({'upstream_parameter': upstream('foo_source'), 'literal_parameter': literal('bar')}, 'fn with both parameters replaced')
     )
-    annotation = function_modifiers.parametrized_full(**args)
+    annotation = function_modifiers.parameterize(**args)
     nodes = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
     assert len(nodes) == 4
     # test out that documentation is assigned correctly
