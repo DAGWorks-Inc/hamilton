@@ -1,6 +1,7 @@
 import dataclasses
 import functools
 import logging
+import types
 from typing import Callable, Optional, Union, Tuple
 
 from hamilton import version
@@ -65,7 +66,7 @@ class deprecated:
         raise DeprecationError(message)
 
     @staticmethod
-    def ensure_version_type(version_spec: Union[Tuple[int, int, int], Version]) -> Version:
+    def _ensure_version_type(version_spec: Union[Tuple[int, int, int], Version]) -> Version:
         if isinstance(version_spec, tuple):
             return Version(*version_spec)
         return version_spec
@@ -74,9 +75,9 @@ class deprecated:
         if self.use_this is None:
             if self.migration_guide is None:
                 raise ValueError('@deprecate must include a migration guide if there is no replacement.')
-        self.warn_starting = deprecated.ensure_version_type(self.warn_starting)
-        self.fail_starting = deprecated.ensure_version_type(self.fail_starting)
-        self.current_version = deprecated.ensure_version_type(self.current_version)
+        self.warn_starting = deprecated._ensure_version_type(self.warn_starting)
+        self.fail_starting = deprecated._ensure_version_type(self.fail_starting)
+        self.current_version = deprecated._ensure_version_type(self.current_version)
         self._validate_fail_starting()
 
     def _validate_fail_starting(self):
@@ -86,7 +87,7 @@ class deprecated:
         if self.warn_starting > self.fail_starting:
             raise ValueError(f'warn_starting must come before fail_starting. {self.fail_starting} < {self.warn_starting}')
 
-    def _do_action(self, fn: Callable):
+    def _do_deprecation_action(self, fn: Callable):
         if self._should_fail():
             failure_message = ' '.join(
                 [
@@ -113,5 +114,34 @@ class deprecated:
         return self.current_version > self.fail_starting
 
     def __call__(self, fn: Callable):
-        self._do_action(fn)
+        """Decorates the function with the deprecated decorator.
+        Note that this has different implementations for functions and
+        objects that masquerade as functions (E.G. by implementing __call__.
+
+        TODO -- use @singledispatchmethod when we no longer support 3.6/3.7
+        https://docs.python.org/3/library/functools.html#functools.singledispatchmethod
+
+        @param fn: function (or class) to decorate
+        @return: The decorated function.
+        """
+        # In this case we just do a standard decorator
+        if isinstance(fn, types.FunctionType):
+            @functools.wraps(fn)
+            def new_fn(*args, **kwargs):
+                self._do_deprecation_action(fn)
+                return fn(*args, **kwargs)
+
+            return new_fn
+
+        # Otherwise we assume that this is a class object
+        # We have to store the former __call__
+        fn.__old_call__ = fn.__call__
+
+        def new__call__(self, *args, deprecator=self, fn=fn, **kwargs):
+            deprecator._do_deprecation_action(fn)
+            return fn.__old_call__(self, *args, **kwargs)
+        # This works as we're assigning it to the entire class...
+        # This also means we can't decorate it with 2 deprecation functions, but, hey,
+        # its on you if you try to deprecate something twice
+        fn.__call__ = new__call__
         return fn

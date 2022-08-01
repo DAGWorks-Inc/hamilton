@@ -71,7 +71,7 @@ def test_call_function_not_deprecated_yet():
     )
     def deprecated_function() -> bool:
         return False
-
+    deprecated_function()
     assert not warned
 
 
@@ -96,7 +96,7 @@ def test_call_function_soon_to_be_deprecated():
     )
     def deprecated_function() -> bool:
         return False
-
+    deprecated_function()
     assert warned
 
 
@@ -104,14 +104,89 @@ def test_call_function_already_deprecated():
     def replacement_function() -> bool:
         return True
 
+    @deprecated(
+        warn_starting=(0, 5, 0),
+        fail_starting=(1, 0, 0),
+        use_this=replacement_function,
+        explanation='True is the new False',
+        migration_guide='https://github.com/stitchfix/hamilton',
+        current_version=(1, 1, 0),
+    )
+    def deprecated_function():
+        return False
+
     with pytest.raises(DeprecationError):
-        @deprecated(
-            warn_starting=(0, 5, 0),
-            fail_starting=(1, 0, 0),
-            use_this=replacement_function,
-            explanation='True is the new False',
-            migration_guide='https://github.com/stitchfix/hamilton',
-            current_version=(1, 1, 0),
-        )
-        def deprecated_function() -> bool:
+        deprecated_function()
+
+
+def test_call_function_class_not_deprecated_yet():
+    warned = False
+
+    def warn(s):
+        nonlocal warned
+        warned = True
+
+    def replacement_function() -> bool:
+        return True
+
+    @deprecated(
+        warn_starting=(0, 5, 0),
+        fail_starting=(1, 0, 0),
+        use_this=replacement_function,
+        explanation='True is the new False',
+        migration_guide='https://github.com/stitchfix/hamilton',
+        current_version=(0, 0, 0),
+        warn_action=warn
+    )
+    class deprecated_function:
+        def __call__(self):
             return False
+
+    deprecated_function()
+    assert not warned
+
+
+def test_call_function_class_soon_to_be_deprecated():
+    warned = False
+
+    def warn(s):
+        nonlocal warned
+        warned = True
+
+    def replacement_function() -> bool:
+        return True
+
+    @deprecated(
+        warn_starting=(0, 5, 0),
+        fail_starting=(1, 0, 0),
+        use_this=replacement_function,
+        explanation='True is the new False',
+        migration_guide='https://github.com/stitchfix/hamilton',
+        current_version=(0, 6, 0),
+        warn_action=warn
+    )
+    class deprecated_function:
+        def __call__(self):
+            return False
+    deprecated_function()()
+    assert warned
+
+
+def test_call_function_class_already_deprecated():
+    def replacement_function() -> bool:
+        return True
+
+    @deprecated(
+        warn_starting=(0, 5, 0),
+        fail_starting=(1, 0, 0),
+        use_this=replacement_function,
+        explanation='True is the new False',
+        migration_guide='https://github.com/stitchfix/hamilton',
+        current_version=(1, 1, 0),
+    )
+    class deprecated_function:
+        def __call__(self):
+            return False
+
+    with pytest.raises(DeprecationError):
+        deprecated_function()()
