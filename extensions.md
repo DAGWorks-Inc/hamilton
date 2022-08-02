@@ -23,7 +23,7 @@ All that's needed is to:
 4. Pass the modules, and graph adapter to the Hamilton Driver.
 5. Proceed as you would normally.
 
-```
+```python
 from hamilton import driver
 from hamilton.experimental import h_dask  # import the correct module
 
@@ -50,7 +50,7 @@ The following implementations are considered experimental because they require m
 
 ### Ray - Experimental!
 
-[Ray](https://ray.io) is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
+[Ray](https://ray.io/) is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
 
 See [https://github.com/stitchfix/hamilton/tree/main/examples/ray](https://github.com/stitchfix/hamilton/tree/main/examples/ray) for an example of using Ray.
 
@@ -66,13 +66,13 @@ If you have a Ray cluster setup, then you can farm out Hamilton computation to i
 
 ### Dask - Experimental!
 
-[Ray](https://ray.io) is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
+[Ray](https://ray.io/) is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
 
 See [https://github.com/stitchfix/hamilton/tree/main/examples/dask](https://github.com/stitchfix/hamilton/tree/main/examples/dask) for an example of using Dask to scale Hamilton computation.
 
 #### Single Machine:
 
-[Dask](https://dask.org) is a very easy way to enable multi-processing on a single machine. This enables you to easily make use of multiple CPU cores.
+[Dask](https://dask.org/) is a very easy way to enable multi-processing on a single machine. This enables you to easily make use of multiple CPU cores.
 
 What this doesn't help with is data scale, as you're still limited to what fits in memory on your machine.
 
@@ -82,7 +82,7 @@ If you have a Dask cluster setup, then you can farm out Hamilton computation to 
 
 ### Koalas on Spark, a.k.a. Pandas API on Spark - Experimental!
 
-[Spark](https://spark.apache.org) is a scalable data processing framework. [Koalas](https://koalas.readthedocs.io/en/latest) was the project code name to implement the [Pandas API on top of Spark](https://spark.apache.org/docs/latest/api/python/user\_guide/pandas\_on\_spark/index.html). Hamilton makes it very easy for you to use Koalas on Spark.
+[Spark](https://spark.apache.org/) is a scalable data processing framework. [Koalas](https://koalas.readthedocs.io/en/latest) was the project code name to implement the [Pandas API on top of Spark](https://spark.apache.org/docs/latest/api/python/user\_guide/pandas\_on\_spark/index.html). Hamilton makes it very easy for you to use Koalas on Spark.
 
 See [https://github.com/stitchfix/hamilton/tree/main/examples/spark](https://github.com/stitchfix/hamilton/tree/main/examples/spark)for an example of using Koalas on Spark to scale Hamilton computation.
 
@@ -108,7 +108,7 @@ You need to implement a [ResultMixin](https://github.com/stitchfix/hamilton/blob
 
 See [available-result-builders.md](reference/api-reference/available-result-builders.md "mention") for what is provided with Hamilton, or [custom-result-builders.md](reference/api-extensions/custom-result-builders.md "mention") for how to build your own.
 
-```
+```python
 from dask.distributed import Client    
 from hamilton import driver   
 from hamilton import base   
