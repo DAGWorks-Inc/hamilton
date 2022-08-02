@@ -40,7 +40,8 @@ def avg_3wk_spend(spend: pd.Series) -> pd.Series:
 @function_modifiers.check_output(
     range=(0,1000),
     data_type=np.float64,
-    importance="warn")
+    importance="warn"
+)
 def acquisition_cost(avg_3wk_spend: pd.Series, signups: pd.Series) -> pd.Series:
     """The cost per signup in relation to a rolling average of spend."""
     return avg_3wk_spend / signups 
@@ -128,6 +129,7 @@ import dataclasses
 
 import pprint
 import pandas as pd
+from hamilton import base
 from hamilton import driver
 
 logging.basicConfig(stream=sys.stdout)
@@ -139,11 +141,12 @@ initial_columns = {  # load from actuals or wherever -- this is our initial data
 # we need to tell hamilton where to load function definitions from
 module_name = 'my_functions'
 module = importlib.import_module(module_name)
-dr = driver.Driver(initial_columns, module)
+adapter = base.SimplePythonGraphAdapter(base.DictResult())
+dr = driver.Driver(initial_columns, module, adapter=adapter)
 all_validator_variables = [
     var.name for var in dr.list_available_variables() if
     var.tags.get('hamilton.data_quality.contains_dq_results')]
-data = dr.raw_execute(['acquisition_cost'] + all_validator_variables)
+data = dr.execute(['acquisition_cost'] + all_validator_variables)
 pprint.pprint(dataclasses.asdict(data['acquisition_cost_range_validator']))
 pprint.pprint(dataclasses.asdict(data['acquisition_cost_data_type_validator']))
 ```
