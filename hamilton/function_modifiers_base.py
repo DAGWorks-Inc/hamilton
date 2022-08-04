@@ -190,9 +190,11 @@ class NodeTransformer(SubDAGModifier):
 
         def node_tagged_non_final(node_: node.Node):
             return node_.tags.get(NodeTransformer.NON_FINAL_TAG, False)  # Defaults to final
-
-        non_final_nodes = set(
-            sum([[dep for dep in node_.input_types] for node_ in nodes], [node_.name for node_ in nodes if node_tagged_non_final(node_)]))
+        non_final_nodes = set()
+        for node_ in nodes:
+            for dep in node_.input_types:
+                if not node_tagged_non_final(node_):
+                    non_final_nodes.add(dep)
         return [node_ for node_ in nodes if node_.name in non_final_nodes], [node_ for node_ in nodes if node_.name not in non_final_nodes]
 
     def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
