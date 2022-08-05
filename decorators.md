@@ -4,7 +4,42 @@ While the 1:1 mapping of column -> function implementation is powerful, we've im
 business-logic reuse. The decorators we've defined are as follows
 (source can be found in [function_modifiers](hamilton/function_modifiers.py)):
 
-## @parameterized
+## @parameterize
+´xpands a signle function into n, each of which correspond to a function in which the parameter value is replaced either by:
+1. A specific value
+2. An specific upstream node.
+
+Note that this can take the place of any of the `@parameterize` decorators below. In fact, they delegate to this!
+```python
+import pandas as pd
+from hamilton.function_modifiers import parameterize
+from hamilton.function_modifiers import literal, upstream
+
+@parameterize(
+    D_ELECTION_2016_shifted=dict(n_off_date=upstream('D_ELECTION_2016'), shift_by=literal(3)),
+    SOME_OUTPUT_NAME=dict(n_off_date=upstream('SOME_INPUT_NAME'), shift_by=literal(1)),
+)
+def date_shifter(n_off_date: pd.Series, shift_by: int=1) -> pd.Series:
+    """{one_off_date} shifted by shift_by to create {output_name}"""
+    return n_off_date.shift(shift_by)
+```
+
+By choosing `literal` or `upstream`, you can determine the source of your dependency. Note that you can
+also pass documentation. If you don't, it will use the parameterized docstring.
+
+```python
+@parameterize(
+    D_ELECTION_2016_shifted=(dict(n_off_date=upstream('D_ELECTION_2016'), shift_by=literal(3)), "D_ELECTION_2016 shifted by 3"),
+    SOME_OUTPUT_NAME=(dict(n_off_date=upstream('SOME_INPUT_NAME'), shift_by=literal(1)),"SOME_INPUT_NAME shifted by 1")
+)
+def date_shifter(n_off_date: pd.Series, shift_by: int=1) -> pd.Series:
+    """{one_off_date} shifted by shift_by to create {output_name}"""
+    return n_off_date.shift(shift_by)
+```
+
+
+
+## @parameterize_values (replacing @parametrized)
 Expands a single function into n, each of which corresponds to a function in which the parameter value is replaced by
 that *specific value*.
 ```python
@@ -29,9 +64,13 @@ distinct outputs. The _parameter_ key word argument has to match one of the argu
 the arguments are pulled from outside the DAG. The _assigned_output_ key word argument takes in a dictionary of
 tuple(Output Name, Documentation string) -> value.
 
-## @parameterized_inputs
+Note that `@parametrized` is deprecated, and we intend for you to use `@parameterize_vales`. We're consolidating
+to make the parameterization decorators more consistent! But we will not break your workflow for a long time.
+
+## @parameterize_inputs (replacing @parameterized_inputs)
+
 Expands a single function into _n_, each of which corresponds to a function in which the parameters specified are mapped
-to the specified inputs. Note this decorator and `@parametrized` are quite similar, except that
+to the specified inputs. Note this decorator and `@parameterize_values` are quite similar, except that
 the input here is another DAG node(s), i.e. column/input, rather than a specific scalar/static value.
 
 ```python
@@ -39,7 +78,7 @@ import pandas as pd
 from hamilton.function_modifiers import parameterized_inputs
 
 
-@parameterized_inputs(
+@parameterize_inputs(
     D_ELECTION_2016_shifted=dict(one_off_date='D_ELECTION_2016'),
     SOME_OUTPUT_NAME=dict(one_off_date='SOME_INPUT_NAME')
 )
@@ -48,7 +87,7 @@ def date_shifter(one_off_date: pd.Series) -> pd.Series:
     return one_off_date.shift(1)
 
 ```
-We see here that `parameterized_inputs` allows you to keep your code DRY by reusing the same function to create multiple
+We see here that `parameterize_inputs` allows you to keep your code DRY by reusing the same function to create multiple
 distinct outputs. The key word arguments passed have to have the following structure:
 > OUTPUT_NAME = Mapping of function argument to input that should go into it.
 
@@ -68,8 +107,12 @@ def SOME_OUTPUT_NAME(SOME_INPUT_NAME: pd.Series) -> pd.Series:
     """SOME_INPUT_NAME shifted by 1 to create SOME_OUTPUT_NAME"""
     return SOME_INPUT_NAME.shift(1)
 ```
+Note that `@parameterized_inputs` is deprecated, and we intend for you to use `@parameterize_inputs`. We're consolidating
+to make the parameterization decorators more consistent! But we will not break your workflow for a long time.
 
 *Note*: that the different input variables must all have compatible types with the original decorated input variable.
+
+
 
 ## @extract_columns
 This works on a function that outputs a dataframe, that we want to extract the columns from and make them individually

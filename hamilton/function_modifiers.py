@@ -239,7 +239,7 @@ class parameterize_values(parameterize):
     fail_starting=(2, 0, 0),
     use_this=parameterize_values,
     explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
-    migration_guide='...'  # TODO -- add a migration guide
+    migration_guide='https://github.com/stitchfix/hamilton/blob/main/decorators.md'
 )
 class parametrized(parameterize_values):
     pass
@@ -279,7 +279,7 @@ class parameterize_inputs(parameterize):
     fail_starting=(2, 0, 0),
     use_this=parameterize_inputs,
     explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
-    migration_guide='...'  # TODO -- add a migration guide
+    migration_guide='https://github.com/stitchfix/hamilton/blob/main/decorators.md'
 )
 class parametrized_input(parameterize):
     def __init__(self, parameter: str, variable_inputs: Dict[str, Tuple[str, str]]):
@@ -314,7 +314,7 @@ class parametrized_input(parameterize):
     fail_starting=(2, 0, 0),
     use_this=parameterize_inputs,
     explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
-    migration_guide='...'  # TODO -- add a migration guide
+    migration_guide='https://github.com/stitchfix/hamilton/blob/main/decorators.md'  # TODO -- add a migration guide
 )
 class parameterized_inputs(parameterize_inputs):
     pass
