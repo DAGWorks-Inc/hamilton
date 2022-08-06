@@ -1,16 +1,12 @@
 import logging
-from datetime import datetime
-from typing import Dict, Collection, List, Any
-from types import ModuleType
-
-import pandas as pd
-
 # required if we want to run this code stand alone.
 import typing
-
 from dataclasses import dataclass, field
+from datetime import datetime
+from types import ModuleType
+from typing import Dict, Collection, List, Any
 
-from hamilton import node
+import pandas as pd
 
 SLACK_ERROR_MESSAGE = (
     '-------------------------------------------------------------------\n'
@@ -265,7 +261,6 @@ class Driver(object):
         """
         upstream_nodes, _ = self.graph.get_upstream_nodes(list(node_names))
         return [Variable(node.name, node.type, node.tags) for node in upstream_nodes]
-
 
 if __name__ == '__main__':
     """some example test code"""
