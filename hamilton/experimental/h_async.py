@@ -18,6 +18,18 @@ async def await_dict_of_tasks(task_dict: Dict[str, types.CoroutineType]) -> Dict
     return dict(zip(keys, coroutines_gathered))
 
 
+async def process_value(val: Any) -> Any:
+    """Helper function to process the value of a potential awaitable.
+    This is very simple -- all it does is await the value if its not already resolved.
+
+    @param val: Value to process.
+    @return: The value (awaited if it is a coroutine, raw otherwise).
+    """
+    if not inspect.isawaitable(val):
+        return val
+    return await val
+
+
 class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
 
     def __init__(self, result_builder: base.ResultMixin = None):
@@ -29,7 +41,6 @@ class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         because that function is called directly within the decorator, so we cannot await it.
         """
         super(AsyncGraphAdapter, self).__init__()
-        self.coroutine_cache = {}
         self.result_builder = result_builder if result_builder else base.PandasDataFrameResult()
 
     @staticmethod
@@ -43,29 +54,6 @@ class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         @return: Whether the actual input value matches the type expected
         """
         return super().check_node_type_equivalence(node_type, input_value) or issubclass(input_value, types.CoroutineType)
-
-    async def process_value(self, val: Any) -> Any:
-        """Helper function to process the value of a potential coroutine.
-
-         We have to track coroutines that have been executed, as
-        python makes it exceedingly difficult to get the result
-        of a coroutine after it's been called, which results in an error.
-        Thus, keeping a cache enables us to handle it nicely.
-        This cache is keyed on the coroutines's memory location.
-        Due to the nature of async code, this should be safe
-        with parallelism.
-
-        @param val: Value to process.
-        @return: The value (awaited if it is a coroutine, raw otherwise).
-        """
-        if not inspect.iscoroutine(val):
-            return val
-        val_id = id(val)
-        if val_id in self.coroutine_cache:
-            return self.coroutine_cache[val_id]
-        output = await val
-        self.coroutine_cache[val_id] = output
-        return output
 
     def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Executes a node. Note this doesn't actually execute it -- rather, it returns a coroutine.
@@ -83,12 +71,14 @@ class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         callabl = node.callable
 
         async def new_fn(fn=callabl, **fn_kwargs):
-            fn_kwargs = await await_dict_of_tasks({key: asyncio.create_task(self.process_value(value)) for key, value in fn_kwargs.items()})
+            fn_kwargs = await await_dict_of_tasks({key: asyncio.create_task(process_value(value)) for key, value in fn_kwargs.items()})
             if inspect.iscoroutinefunction(fn):
                 return await(fn(**fn_kwargs))
             return fn(**fn_kwargs)
 
-        return new_fn(**kwargs)
+        coroutine = new_fn(**kwargs)
+        task = asyncio.create_task(coroutine)
+        return task
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Currently this is a no-op -- it just delegates to the resultsbuilder.
@@ -132,7 +122,7 @@ class AsyncDriver(driver.Driver):
         if display_graph:
             raise ValueError(f'display_graph=True is not supported for the async graph adapter. '
                              f'Instead you should be using visualize_execution.')
-        return await await_dict_of_tasks({key: asyncio.create_task(self.adapter.process_value(memoized_computation[key])) for key in final_vars})
+        return await await_dict_of_tasks({key: asyncio.create_task(process_value(memoized_computation[key])) for key in final_vars})
 
     async def execute(self,
                 final_vars: typing.List[str],
