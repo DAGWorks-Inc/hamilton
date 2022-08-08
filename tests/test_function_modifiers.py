@@ -7,7 +7,7 @@ import pytest
 from hamilton import function_modifiers, models, function_modifiers_base
 from hamilton import node
 from hamilton.data_quality.base import ValidationResult, DataValidationError
-from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom, IS_DATA_VALIDATOR_TAG, DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG, upstream, literal
+from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom, IS_DATA_VALIDATOR_TAG, DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG, upstream, literal, LiteralDependency, UpstreamDependency
 from hamilton.node import DependencyType
 from tests.resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator2, SampleDataValidator3
 
@@ -790,3 +790,26 @@ def test_parametrized_full_multiple_replacements():
     assert len(nodes) == 4
     # test out that documentation is assigned correctly
     assert [node_.documentation for node_ in nodes] == [args[node_.name][1] for node_ in nodes]
+
+
+@pytest.mark.parametrize(
+    'source,expected',
+    [
+        ('foo', UpstreamDependency('foo')),
+        (UpstreamDependency('bar'), UpstreamDependency('bar'))
+    ]
+)
+def test_upstream(source, expected):
+    assert upstream(source) == expected
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    [
+        ('foo', LiteralDependency('foo')),
+        (LiteralDependency('foo'), LiteralDependency('foo')),
+        (1, LiteralDependency(1))
+    ]
+)
+def test_literal(value, expected):
+    assert literal(value) == expected
