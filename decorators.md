@@ -114,6 +114,22 @@ to make the parameterization decorators more consistent! But we will not break y
 
 *Note*: that the different input variables must all have compatible types with the original decorated input variable.
 
+## Migrating @parameterized
+
+As we've said above, we're planning on deprecating the following:
+
+- `@parameterized_inputs` (replaced by `@parameterize_inputs`)
+- `@parametrized` (replaced by `@parameterize_values`, as that's what its really doing)
+- `@parametrized_input` (gotten rid of in its original form, replaced by `@parameterize_inputs` as that is more versatile.)
+
+In other words, we're aligning around the following `@parameterize` implementations:
+
+- `@parameterize` -- this does everything you want
+- `@parameterize_values` -- this just changes the values, does not change the input source
+- `@parameterize_inputs`-- this just changes the source of the inputs
+
+The only non-drop-in change you'll have to do is for `@parameterized`. We won't update this until `hamilton==2.0.0`, though,
+so you'll have time.
 
 
 ## @extract_columns
