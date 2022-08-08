@@ -5,7 +5,7 @@ business-logic reuse. The decorators we've defined are as follows
 (source can be found in [function_modifiers](hamilton/function_modifiers.py)):
 
 ## @parameterize
-´xpands a signle function into n, each of which correspond to a function in which the parameter value is replaced either by:
+´Expands a single function into n, each of which correspond to a function in which the parameter value is replaced either by:
 1. A specific value
 2. An specific upstream node.
 
@@ -65,7 +65,9 @@ the arguments are pulled from outside the DAG. The _assigned_output_ key word ar
 tuple(Output Name, Documentation string) -> value.
 
 Note that `@parametrized` is deprecated, and we intend for you to use `@parameterize_vales`. We're consolidating
-to make the parameterization decorators more consistent! But we will not break your workflow for a long time.
+to make the parameterization decorators more consistent! You have plenty of time to migrate,
+we wont make this a hard change until we have a Hamilton 2.0.0 to release.
+
 
 ## @parameterize_inputs (replacing @parameterized_inputs)
 

@@ -18,6 +18,16 @@ from hamilton.dev_utils.deprecation import Version, deprecated, DeprecationError
 def test_version_compare(version_1, version_2, op):
     assert op(version_1, version_2)
 
+@pytest.mark.parametrize(
+    'version_tuple,version',
+    [
+        ((0, 1, 2), Version(0,1,2)),
+        ((0, 1, 2, 'rc1'), Version(0,1,2))
+    ]
+)
+def test_from_version_tuple(version_tuple, version):
+    assert Version.from_version_tuple(version_tuple) == version
+
 
 @pytest.mark.parametrize(
     'kwargs',

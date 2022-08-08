@@ -19,11 +19,16 @@ class Version:
         return (self.major, self.minor, self.patch) > (other.major, other.minor, other.patch)
 
     @staticmethod
+    def from_version_tuple(version_tuple: Tuple[Union[int, str], ...]) -> 'Version':
+        version_ = version_tuple
+        if len(version_) > 3:  # This means we have an RC
+            version_ = version_tuple[0:3]  # Then let's ignore it
+        return Version(*version_)  # TODO, add some validation
+
+    @staticmethod
     def current() -> 'Version':
         current_version = version.VERSION
-        if len(current_version) > 3:  # This means we have an RC
-            current_version = current_version[0:3]  # Then let's ignore it
-        return Version(*current_version)  # TODO, add some validation
+        return Version.from_version_tuple(current_version)
 
     def __repr__(self):
         return '.'.join(map(str, [self.major, self.minor, self.patch]))
@@ -140,6 +145,7 @@ class deprecated:
         def new__call__(self, *args, deprecator=self, fn=fn, **kwargs):
             deprecator._do_deprecation_action(fn)
             return fn.__old_call__(self, *args, **kwargs)
+
         # This works as we're assigning it to the entire class...
         # This also means we can't decorate it with 2 deprecation functions, but, hey,
         # its on you if you try to deprecate something twice
