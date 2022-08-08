@@ -150,6 +150,9 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
             return True
         elif typing_inspect.is_generic_type(node_type) and typing_inspect.get_origin(node_type) == type(input_value):
             return True
+        elif typing_inspect.is_union_type(node_type):
+            union_types = typing_inspect.get_args(node_type)
+            return any([SimplePythonDataFrameGraphAdapter.check_input_type(ut, input_value) for ut in union_types])
         elif node_type == type(input_value):
             return True
         return False
