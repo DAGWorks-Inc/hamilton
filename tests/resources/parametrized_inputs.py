@@ -1,4 +1,4 @@
-from hamilton.function_modifiers import parametrized_input, parameterized_inputs
+from hamilton.function_modifiers import parametrized_input, parameterize_inputs
 
 
 def input_1() -> int:
@@ -25,7 +25,7 @@ def function_with_multiple_inputs(input_value_tbd: int, static_value: int) -> in
 
 
 # We don't prefer this style of specifying the values. i.e. kwarg with {}.
-@parameterized_inputs(
+@parameterize_inputs(
     output_12={'input_value_tbd1': 'input_1', 'input_value_tbd2': 'input_2'}
 )
 def function_with_two_parameters(input_value_tbd1: int,
@@ -39,7 +39,7 @@ def function_with_two_parameters(input_value_tbd1: int,
 
 
 # We prefer this style of specifying the values. i.e. kwarg with dict().
-@parameterized_inputs(
+@parameterize_inputs(
     output_123=dict(input_value_tbd1='input_1',
                     input_value_tbd2='input_2',
                     input_value_tbd3='input_3')

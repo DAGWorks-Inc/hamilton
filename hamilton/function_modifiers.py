@@ -77,6 +77,8 @@ def literal(value: Any) -> LiteralDependency:
     @param value: Python literal value to use
     @return: A LiteralDependency object -- a signifier to the internal framework of the dependency type
     """
+    if isinstance(value, LiteralDependency):
+        return value
     return LiteralDependency(value=value)
 
 
@@ -88,6 +90,8 @@ def upstream(source: Any) -> UpstreamDependency:
     @param source: Upstream node to come from
     @return:An UpstreamDependency object -- a signifier to the internal framework of the dependency type.
     """
+    if isinstance(source, UpstreamDependency):
+        return source
     return UpstreamDependency(source=source)
 
 

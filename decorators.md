@@ -44,7 +44,7 @@ Expands a single function into n, each of which corresponds to a function in whi
 that *specific value*.
 ```python
 import pandas as pd
-from hamilton.function_modifiers import parametrized
+from hamilton.function_modifiers import parameterize_values
 import internal_package_with_logic
 
 ONE_OFF_DATES = {
@@ -53,7 +53,7 @@ ONE_OFF_DATES = {
     ('SOME_OUTPUT_NAME', 'Doc string for this thing'): 'value to pass to function',
 }
             # parameter matches the name of the argument in the function below
-@parametrized(parameter='one_off_date', assigned_output=ONE_OFF_DATES)
+@parameterize_values(parameter='one_off_date', assigned_output=ONE_OFF_DATES)
 def create_one_off_dates(date_index: pd.Series, one_off_date: str) -> pd.Series:
     """Given a date index, produces a series where a 1 is placed at the date index that would contain that event."""
     one_off_dates = internal_package_with_logic.get_business_week(one_off_date)
@@ -77,7 +77,7 @@ the input here is another DAG node(s), i.e. column/input, rather than a specific
 
 ```python
 import pandas as pd
-from hamilton.function_modifiers import parameterized_inputs
+from hamilton.function_modifiers import parameterize_inputs
 
 
 @parameterize_inputs(

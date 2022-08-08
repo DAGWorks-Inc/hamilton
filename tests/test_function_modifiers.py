@@ -13,7 +13,7 @@ from tests.resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, Samp
 
 
 def test_parametrized_invalid_params():
-    annotation = function_modifiers.parametrized(
+    annotation = function_modifiers.parameterize_values(
         parameter='non_existant',
         assigned_output={('invalid_node_name', 'invalid_doc'): 'invalid_value'}
     )
@@ -33,14 +33,14 @@ def test_parametrized_invalid_params():
 
 def test_parametrized_single_param_breaks_without_docs():
     with pytest.raises(function_modifiers.InvalidDecoratorException):
-        function_modifiers.parametrized(
+        function_modifiers.parameterize_values(
             parameter='parameter',
             assigned_output={'only_node_name': 'only_value'}
         )
 
 
 def test_parametrized_single_param():
-    annotation = function_modifiers.parametrized(
+    annotation = function_modifiers.parameterize_values(
         parameter='parameter',
         assigned_output={('only_node_name', 'only_doc'): 'only_value'}
     )
@@ -58,7 +58,7 @@ def test_parametrized_single_param():
 
 
 def test_parametrized_single_param_expanded():
-    annotation = function_modifiers.parametrized(
+    annotation = function_modifiers.parameterize_values(
         parameter='parameter',
         assigned_output={
             ('node_name_1', 'doc1'): 'value_1',
@@ -78,7 +78,7 @@ def test_parametrized_single_param_expanded():
 
 
 def test_parametrized_with_multiple_params():
-    annotation = function_modifiers.parametrized(
+    annotation = function_modifiers.parameterize_values(
         parameter='parameter',
         assigned_output={
             ('node_name_1', 'doc1'): 'value_1',
@@ -115,8 +115,8 @@ def test_parametrized_input():
 
 
 def test_parametrized_inputs_validate_param_name():
-    """Tests validate function of parameterized_inputs capturing bad param name usage."""
-    annotation = function_modifiers.parameterized_inputs(
+    """Tests validate function of parameterize_inputs capturing bad param name usage."""
+    annotation = function_modifiers.parameterize_inputs(
         parameterization={
             'test_1': dict(parameterfoo='input_1'),
         })
@@ -130,8 +130,8 @@ def test_parametrized_inputs_validate_param_name():
 
 
 def test_parametrized_inputs_validate_reserved_param():
-    """Tests validate function of parameterized_inputs catching reserved param usage."""
-    annotation = function_modifiers.parameterized_inputs(
+    """Tests validate function of parameterize_inputs catching reserved param usage."""
+    annotation = function_modifiers.parameterize_inputs(
         **{
             'test_1': dict(parameter2='input_1'),
         })
@@ -145,8 +145,8 @@ def test_parametrized_inputs_validate_reserved_param():
 
 
 def test_parametrized_inputs_validate_bad_doc_string():
-    """Tests validate function of parameterized_inputs catching bad doc string."""
-    annotation = function_modifiers.parameterized_inputs(
+    """Tests validate function of parameterize_inputs catching bad doc string."""
+    annotation = function_modifiers.parameterize_inputs(
         **{
             'test_1': dict(parameter2='input_1'),
         })
@@ -160,7 +160,7 @@ def test_parametrized_inputs_validate_bad_doc_string():
 
 
 def test_parametrized_inputs():
-    annotation = function_modifiers.parameterized_inputs(
+    annotation = function_modifiers.parameterize_inputs(
         **{
             'test_1': dict(parameter1='input_1', parameter2='input_2'),
             'test_2': dict(parameter1='input_2', parameter2='input_1'),

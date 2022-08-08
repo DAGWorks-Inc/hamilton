@@ -1,4 +1,4 @@
-from hamilton.function_modifiers import config, does, parametrized, tag
+from hamilton.function_modifiers import config, does, parameterize_values
 
 """Demonstrates a DAG with multiple decorators for functions.
 This is a good test case to ensure that all the decorators work together
@@ -12,7 +12,7 @@ def _sum(**kwargs: int) -> int:
 
 
 @does(_sum)
-@parametrized(parameter='a', assigned_output={('e', 'First value'): 10, ('f', 'Second value'): 20})
+@parameterize_values(parameter='a', assigned_output={('e', 'First value'): 10, ('f', 'Second value'): 20})
 @config.when(foo='bar')
 def c__foobar(a: int, b: int) -> int:
     """Demonstrates utilizing a bunch of decorators.
@@ -25,7 +25,7 @@ def c__foobar(a: int, b: int) -> int:
 
 
 @does(_sum)
-@parametrized(parameter='a', assigned_output={('e', 'First value'): 11, ('f', 'Second value'): 22})
+@parameterize_values(parameter='a', assigned_output={('e', 'First value'): 11, ('f', 'Second value'): 22})
 @config.when(foo='baz')
 def c__foobaz(a: int, b: int) -> int:
     """Demonstrates utilizing a bunch of decorators.
