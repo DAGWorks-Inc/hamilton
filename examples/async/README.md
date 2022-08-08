@@ -20,7 +20,7 @@ Then curl with:
 curl -X 'POST' \
   'http://localhost:8000/execute' \
   -H 'accept: application/json' \
-  -d ''
+  -d '{}'
 ```
 
 You should get the following result:
@@ -45,7 +45,7 @@ in external tasks as inputs if you want.
 1. This will break in certain cases when decorating an async function (E.G. with `extract_outputs`).
 This is because the output of that function is never awaited during delegation. We are looking into ways to fix this,
 but for now be careful. We will at least be adding validation so the errors are clearer.
-2. Performance *should* be close to optimal but we have not benchmarked. We welcome contributions
+2. Performance *should* be close to optimal but we have not benchmarked. We welcome contributions.
 
 We want feedback! We can determine how to make this part of the core API once we get userse who are happy,
 so have some fun!

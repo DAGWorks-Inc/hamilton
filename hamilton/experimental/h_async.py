@@ -22,8 +22,8 @@ async def process_value(val: Any) -> Any:
     """Helper function to process the value of a potential awaitable.
     This is very simple -- all it does is await the value if its not already resolved.
 
-    @param val: Value to process.
-    @return: The value (awaited if it is a coroutine, raw otherwise).
+    :param val: Value to process.
+    :return: The value (awaited if it is a coroutine, raw otherwise).
     """
     if not inspect.isawaitable(val):
         return val
@@ -49,29 +49,30 @@ class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         Note that this also allows coroutines, in case you want the DAG to await
         the result of calling the input.
 
-        @param node_type: Type of the input node, expected
-        @param input_value: Type of the actual input, received
-        @return: Whether the actual input value matches the type expected
+        :param node_type: Type of the input node, expected
+        :param input_value: Type of the actual input, received
+        :return: Whether the actual input value matches the type expected
         """
         return super().check_node_type_equivalence(node_type, input_value) or issubclass(input_value, types.CoroutineType)
 
     def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
-        """Executes a node. Note this doesn't actually execute it -- rather, it returns a coroutine.
+        """Executes a node. Note this doesn't actually execute it -- rather, it returns a task.
         This does *not* use async def, as we want it to be awaited on later -- this await is done
         in processing parameters of downstream functions/final results. We can ensure that as
         we also run the driver that this corresponds to.
 
-        Note that this assumes that everything is a coroutine, even if it isn't.
-        It just wraps it in one.
+        Note that this assumes that everything is awaitable, even if it isn't.
+        In that case, it just wraps it in one.
 
-        @param node: Node to wrap
-        @param kwargs: Keyword arguments (either coroutines or raw values) to call it with
-        @return: A coroutine
+        :param node: Node to wrap
+        :param kwargs: Keyword arguments (either coroutines or raw values) to call it with
+        :return: A task
         """
         callabl = node.callable
 
         async def new_fn(fn=callabl, **fn_kwargs):
-            fn_kwargs = await await_dict_of_tasks({key: asyncio.create_task(process_value(value)) for key, value in fn_kwargs.items()})
+            task_dict = {key: process_value(value) for key, value in fn_kwargs.items()}
+            fn_kwargs = await await_dict_of_tasks(task_dict)
             if inspect.iscoroutinefunction(fn):
                 return await(fn(**fn_kwargs))
             return fn(**fn_kwargs)
@@ -85,8 +86,8 @@ class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         That said, we *could* make it async, but it feels wrong -- this will just be
         called after `raw_execute`.
 
-        @param outputs: Outputs (awaited) from the graph.
-        @return: The final results.
+        :param outputs: Outputs (awaited) from the graph.
+        :return: The final results.
         """
         return self.result_builder.build_result(**outputs)
 
@@ -95,9 +96,9 @@ class AsyncDriver(driver.Driver):
     def __init__(self, config, *modules, result_builder: Optional[base.ResultMixin] = None):
         """Instantiates an asynchronous driver.
 
-        @param config: Config to build the graph
-        @param modules: Modules to crawl for fns/graph nodes
-        @param result_builder: Results mixin to compile the graph's final results. TBD whether this should be included in the long run.
+        :param config: Config to build the graph
+        :param modules: Modules to crawl for fns/graph nodes
+        :param result_builder: Results mixin to compile the graph's final results. TBD whether this should be included in the long run.
         """
         super(AsyncDriver, self).__init__(config, *modules, adapter=AsyncGraphAdapter(result_builder=result_builder))
 
@@ -110,11 +111,11 @@ class AsyncDriver(driver.Driver):
 
         Note inputs can be coroutines as well if you desire.
 
-        @param final_vars: Variables to execute (+ upstream)
-        @param overrides: Overrides for nodes
-        @param display_graph: whether or not to display graph -- this is not supported.
-        @param inputs:  Inputs for DAG runtime calculation
-        @return: A dict of key -> result
+        :param final_vars: Variables to execute (+ upstream)
+        :param overrides: Overrides for nodes
+        :param display_graph: whether or not to display graph -- this is not supported.
+        :param inputs:  Inputs for DAG runtime calculation
+        :return: A dict of key -> result
         """
         nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
         memoized_computation = dict()  # memoized storage
@@ -122,7 +123,8 @@ class AsyncDriver(driver.Driver):
         if display_graph:
             raise ValueError(f'display_graph=True is not supported for the async graph adapter. '
                              f'Instead you should be using visualize_execution.')
-        return await await_dict_of_tasks({key: asyncio.create_task(process_value(memoized_computation[key])) for key in final_vars})
+        task_dict = {key: asyncio.create_task(process_value(memoized_computation[key])) for key in final_vars}
+        return await await_dict_of_tasks(task_dict)
 
     async def execute(self,
                 final_vars: typing.List[str],
