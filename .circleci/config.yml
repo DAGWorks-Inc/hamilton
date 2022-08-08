@@ -282,6 +282,27 @@ jobs:
           command: |
             . venv/bin/activate
             python -m pytest tests/integrations
+  asyncio-py39:
+    docker:
+      - image: circleci/python:3.9
+    steps:
+      - checkout
+      - run:
+          name: install hamilton dependencies + testing dependencies
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python --version
+            pip --version
+            pip install -e .
+            pip install -r graph_adapter_tests/h_async/requirements-test.txt
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            python -m pytest graph_adapter_tests/h_async
 workflows:
   version: 2
   unit-test-workflow:
@@ -299,3 +320,4 @@ workflows:
       - integrations-py37
       - integrations-py38
       - integrations-py39
+      - asyncio-py39
