@@ -62,6 +62,8 @@ T = typing.TypeVar('T')
     (int, 1),
     (float, 1.0),
     (str, 'abc'),
+    (typing.Union[int, pd.Series], pd.Series([1,2,3])),
+    (typing.Union[int, pd.Series], 1),
 ], ids=[
     'test-any',
     'test-subclass',
@@ -72,7 +74,9 @@ T = typing.TypeVar('T')
     'test-type-match-list',
     'test-type-match-int',
     'test-type-match-float',
-    'test-type-match-str'
+    'test-type-match-str',
+    'test-union-match-series',
+    'test-union-match-int',
 ])
 def test_SimplePythonDataFrameGraphAdapter_check_input_type_match(node_type, input_value):
     """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
@@ -90,6 +94,8 @@ def test_SimplePythonDataFrameGraphAdapter_check_input_type_match(node_type, inp
     (int, 1.0),
     (float, 1),
     (str, 0),
+    (typing.Union[int, pd.Series], pd.DataFrame({'a': [1, 2, 3]})),
+    (typing.Union[int, pd.Series], 1.0),
 ], ids=[
     'test-subclass',
     'test-generic-list',
@@ -99,6 +105,8 @@ def test_SimplePythonDataFrameGraphAdapter_check_input_type_match(node_type, inp
     'test-type-match-int',
     'test-type-match-float',
     'test-type-match-str',
+    'test-union-mismatch-dataframe',
+    'test-union-mismatch-float',
 ])
 def test_SimplePythonDataFrameGraphAdapter_check_input_type_mismatch(node_type, input_value):
     """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
