@@ -119,7 +119,7 @@ class HamiltonGraphAdapter(ResultMixin):
         This is used when the function graph is being created and we're statically type checking the annotations
         for compatibility.
 
-        :param node_type: The type of the node.
+        :param node_type: The type of the upstream node.
         :param input_type: The type of the input that would flow into the node.
         :return:
         """
@@ -159,7 +159,13 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
 
     @staticmethod
     def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
-        return node_type == input_type
+        if node_type == input_type:
+            return True
+        elif typing_inspect.is_union_type(input_type):
+            union_types = typing_inspect.get_args(input_type)
+            return any([SimplePythonDataFrameGraphAdapter.check_node_type_equivalence(node_type, ut)
+                        for ut in union_types])
+        return False
 
     def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
         return node.callable(**kwargs)

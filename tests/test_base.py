@@ -64,6 +64,7 @@ T = typing.TypeVar('T')
     (str, 'abc'),
     (typing.Union[int, pd.Series], pd.Series([1,2,3])),
     (typing.Union[int, pd.Series], 1),
+    (typing.Union[int, typing.Union[float, pd.Series]], 1.0),
 ], ids=[
     'test-any',
     'test-subclass',
@@ -77,6 +78,7 @@ T = typing.TypeVar('T')
     'test-type-match-str',
     'test-union-match-series',
     'test-union-match-int',
+    'test-union-match-nested-float',
 ])
 def test_SimplePythonDataFrameGraphAdapter_check_input_type_match(node_type, input_value):
     """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
@@ -112,6 +114,74 @@ def test_SimplePythonDataFrameGraphAdapter_check_input_type_mismatch(node_type, 
     """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
     adapter = base.SimplePythonDataFrameGraphAdapter()
     actual = adapter.check_input_type(node_type, input_value)
+    assert actual is False
+
+
+@pytest.mark.parametrize('node_type,input_type', [
+    (typing.Any, typing.Any),
+    (pd.Series, pd.Series),
+    (T, T),
+    (typing.List, typing.List),
+    (typing.Dict, typing.Dict),
+    (dict, dict),
+    (list, list),
+    (int, int),
+    (float, float),
+    (str, str),
+    (typing.Union[int, pd.Series], typing.Union[int, pd.Series]),
+    (pd.Series, typing.Union[int, pd.Series]),
+    (int, typing.Union[int, pd.Series]),
+    (float, typing.Union[int, typing.Union[float, pd.Series]]),
+], ids=[
+    'test-any',
+    'test-subclass',
+    'test-typevar',
+    'test-generic-list',
+    'test-generic-dict',
+    'test-type-match-dict',
+    'test-type-match-list',
+    'test-type-match-int',
+    'test-type-match-float',
+    'test-type-match-str',
+    'test-union-match-exact',
+    'test-union-match-subset-series',
+    'test-union-match-subset-int',
+    'test-union-match-subset-nested-float',
+])
+def test_SimplePythonDataFrameGraphAdapter_check_node_type_equivalence_match(node_type, input_type):
+    """Tests matches for check_node_type_equivalence function"""
+    adapter = base.SimplePythonDataFrameGraphAdapter()
+    actual = adapter.check_node_type_equivalence(node_type, input_type)
+    assert actual is True
+
+
+@pytest.mark.parametrize('node_type,input_type', [
+    (typing.Union[int, pd.Series], typing.Any),
+    (pd.DataFrame, pd.Series),
+    (typing.List, list),
+    (typing.Dict, dict),
+    (dict, list),
+    (list, dict),
+    (int, float),
+    (float, int),
+    (str, int),
+    (typing.Union[int, pd.Series], float),
+], ids=[
+    'test-any-mismatch',
+    'test-class-mismatch',
+    'test-generic-mismatch-list',
+    'test-generic-mismatch-dict',
+    'test-type-mistmatch-dict',
+    'test-type-mismatch-list',
+    'test-type-mismatch-int',
+    'test-type-mismatch-float',
+    'test-type-mismatch-str',
+    'test-union-mismatch-float',
+])
+def test_SimplePythonDataFrameGraphAdapter_check_node_type_equivalence_mismatch(node_type, input_type):
+    """Tests mismatches for check_node_type_equivalence function"""
+    adapter = base.SimplePythonDataFrameGraphAdapter()
+    actual = adapter.check_node_type_equivalence(node_type, input_type)
     assert actual is False
 
 
