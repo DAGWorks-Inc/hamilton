@@ -70,29 +70,29 @@ class UpstreamDependency(ParametrizedDependency):
         return ParametrizedDependencySource.UPSTREAM
 
 
-def literal(value: Any) -> LiteralDependency:
+def value(literal_value: Any) -> LiteralDependency:
     """Specifies that a parameterized dependency comes from a "literal" source.
-    E.G. literal("foo") means that the value is actualy the value "foo"
+    E.G. value("foo") means that the value is actually the string value "foo"
 
-    @param value: Python literal value to use
+    @param literal_value: Python literal value to use
     @return: A LiteralDependency object -- a signifier to the internal framework of the dependency type
     """
-    if isinstance(value, LiteralDependency):
-        return value
-    return LiteralDependency(value=value)
+    if isinstance(literal_value, LiteralDependency):
+        return literal_value
+    return LiteralDependency(value=literal_value)
 
 
-def upstream(source: Any) -> UpstreamDependency:
+def source(dependency_on: Any) -> UpstreamDependency:
     """Specifies that a parameterized dependency comes from an "upstream" source.
     This means that it comes from a node somewhere else.
-    E.G. upstream("foo") means that it should be assigned the value that "foo" outputs.
+    E.G. source("foo") means that it should be assigned the value that "foo" outputs.
 
-    @param source: Upstream node to come from
+    @param dependency_on: Upstream node to come from
     @return:An UpstreamDependency object -- a signifier to the internal framework of the dependency type.
     """
-    if isinstance(source, UpstreamDependency):
-        return source
-    return UpstreamDependency(source=source)
+    if isinstance(dependency_on, UpstreamDependency):
+        return dependency_on
+    return UpstreamDependency(source=dependency_on)
 
 
 class parameterize(function_modifiers_base.NodeExpander):
@@ -235,7 +235,7 @@ class parameterize_values(parameterize):
                 raise InvalidDecoratorException(
                     f'assigned_output key is incorrect: {node_}. The parameterized decorator needs a dict of '
                     '[name, doc string] -> value to function.')
-        super(parameterize_values, self).__init__(**{output: ({parameter: literal(value)}, documentation) for (output, documentation), value in assigned_output.items()})
+        super(parameterize_values, self).__init__(**{output: ({parameter: value(literal_value)}, documentation) for (output, documentation), literal_value in assigned_output.items()})
 
 
 @deprecation.deprecated(
@@ -249,15 +249,15 @@ class parametrized(parameterize_values):
     pass
 
 
-class parameterize_inputs(parameterize):
+class parameterize_sources(parameterize):
     def __init__(self, **parameterization: Dict[str, Dict[str, str]]):
         """Constructor for a modifier that expands a single function into n, each of which corresponds to replacing
-        some subset of the specified parameters with specific inputs.
+        some subset of the specified parameters with specific upstream nodes.
 
         Note this decorator and `@parametrized_input` are similar, except this one allows multiple
         parameters to be mapped to multiple function arguments (and it fixes the spelling mistake).
 
-        `parameterized_inputs` allows you keep your code DRY by reusing the same function but replace the inputs
+        `parameterized_sources` allows you keep your code DRY by reusing the same function but replace the inputs
         to create multiple corresponding distinct outputs. We see here that `parameterized_inputs` allows you to keep
         your code DRY by reusing the same function to create multiple distinct outputs. The key word arguments passed
         have to have the following structure:
@@ -270,18 +270,18 @@ class parameterize_inputs(parameterize):
         """
         self.parametrization = parameterization
         if not parameterization:
-            raise ValueError(f'Cannot pass empty/None dictionary to parameterized_inputs')
+            raise ValueError(f'Cannot pass empty/None dictionary to parameterize_sources')
         for output, mappings in parameterization.items():
             if not mappings:
                 raise ValueError(f'Error, {output} has a none/empty dictionary mapping. Please fill it.')
-        super(parameterize_inputs, self).__init__(
-            **{output: {parameter: upstream(source) for parameter, source in mapping.items()} for output, mapping in parameterization.items()})
+        super(parameterize_sources, self).__init__(
+            **{output: {parameter: source(upstream_node) for parameter, upstream_node in mapping.items()} for output, mapping in parameterization.items()})
 
 
 @deprecation.deprecated(
     warn_starting=(1, 10, 0),
     fail_starting=(2, 0, 0),
-    use_this=parameterize_inputs,
+    use_this=parameterize_sources,
     explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
     migration_guide='https://github.com/stitchfix/hamilton/blob/main/decorators.md#migrating-parameterized'
 )
@@ -302,25 +302,23 @@ class parametrized_input(parameterize):
         :param parameter: Parameter to expand on.
         :param variable_inputs: A map of tuple of [parameter names, documentation] to values
         """
-        logger.warning('`parameterized_input` (singular) is deprecated. It will be removed in a 2.0.0 release. '
-                       'Please migrate to using `parameterized_inputs` (plural).')
         for value in variable_inputs.values():
             if not isinstance(value, Tuple):
                 raise InvalidDecoratorException(
                     f'assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of '
                     'input column -> [name, description] to function.')
         super(parametrized_input, self).__init__(
-            **{output: ({parameter: upstream(value)}, documentation) for value, (output, documentation) in variable_inputs.items()})
+            **{output: ({parameter: source(value)}, documentation) for value, (output, documentation) in variable_inputs.items()})
 
 
 @deprecation.deprecated(
     warn_starting=(1, 10, 0),
     fail_starting=(2, 0, 0),
-    use_this=parameterize_inputs,
+    use_this=parameterize_sources,
     explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
     migration_guide='https://github.com/stitchfix/hamilton/blob/main/decorators.md#migrating-parameterized'
 )
-class parameterized_inputs(parameterize_inputs):
+class parameterized_inputs(parameterize_sources):
     pass
 
 

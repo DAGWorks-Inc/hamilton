@@ -7,7 +7,7 @@ import pytest
 from hamilton import function_modifiers, models, function_modifiers_base
 from hamilton import node
 from hamilton.data_quality.base import ValidationResult, DataValidationError
-from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom, IS_DATA_VALIDATOR_TAG, DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG, upstream, literal, LiteralDependency, UpstreamDependency
+from hamilton.function_modifiers import does, ensure_function_empty, check_output, check_output_custom, IS_DATA_VALIDATOR_TAG, DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG, source, value, LiteralDependency, UpstreamDependency
 from hamilton.node import DependencyType
 from tests.resources.dq_dummy_examples import DUMMY_VALIDATORS_FOR_TESTING, SampleDataValidator2, SampleDataValidator3
 
@@ -114,9 +114,9 @@ def test_parametrized_input():
     assert set(nodes[1].input_types.keys()) == {'static', 'input_2'}
 
 
-def test_parametrized_inputs_validate_param_name():
-    """Tests validate function of parameterize_inputs capturing bad param name usage."""
-    annotation = function_modifiers.parameterize_inputs(
+def test_parametrize_sources_validate_param_name():
+    """Tests validate function of parameterize_sources capturing bad param name usage."""
+    annotation = function_modifiers.parameterize_sources(
         parameterization={
             'test_1': dict(parameterfoo='input_1'),
         })
@@ -131,7 +131,7 @@ def test_parametrized_inputs_validate_param_name():
 
 def test_parametrized_inputs_validate_reserved_param():
     """Tests validate function of parameterize_inputs catching reserved param usage."""
-    annotation = function_modifiers.parameterize_inputs(
+    annotation = function_modifiers.parameterize_sources(
         **{
             'test_1': dict(parameter2='input_1'),
         })
@@ -146,7 +146,7 @@ def test_parametrized_inputs_validate_reserved_param():
 
 def test_parametrized_inputs_validate_bad_doc_string():
     """Tests validate function of parameterize_inputs catching bad doc string."""
-    annotation = function_modifiers.parameterize_inputs(
+    annotation = function_modifiers.parameterize_sources(
         **{
             'test_1': dict(parameter2='input_1'),
         })
@@ -160,7 +160,7 @@ def test_parametrized_inputs_validate_bad_doc_string():
 
 
 def test_parametrized_inputs():
-    annotation = function_modifiers.parameterize_inputs(
+    annotation = function_modifiers.parameterize_sources(
         **{
             'test_1': dict(parameter1='input_1', parameter2='input_2'),
             'test_2': dict(parameter1='input_2', parameter2='input_1'),
@@ -750,7 +750,7 @@ def test_parametrized_full_no_replacement():
 
 def test_parametrized_full_replace_just_upstream():
     annotation = function_modifiers.parameterize(
-        replace_just_upstream_parameter={'upstream_parameter': upstream('foo_source')},
+        replace_just_upstream_parameter={'upstream_parameter': source('foo_source')},
     )
     node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
     assert node_.input_types == {
@@ -761,7 +761,7 @@ def test_parametrized_full_replace_just_upstream():
 
 
 def test_parametrized_full_replace_just_literal():
-    annotation = function_modifiers.parameterize(replace_just_literal_parameter={'literal_parameter': literal('bar')})
+    annotation = function_modifiers.parameterize(replace_just_literal_parameter={'literal_parameter': value('bar')})
     node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
     assert node_.input_types == {'upstream_parameter': (str, DependencyType.REQUIRED)}
     assert node_.callable(upstream_parameter='foo') == 'foobar'
@@ -770,7 +770,7 @@ def test_parametrized_full_replace_just_literal():
 
 def test_parametrized_full_replace_both():
     annotation = function_modifiers.parameterize(
-        replace_both_parameters={'upstream_parameter': upstream('foo_source'), 'literal_parameter': literal('bar')}
+        replace_both_parameters={'upstream_parameter': source('foo_source'), 'literal_parameter': value('bar')}
     )
     node_, = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
     assert node_.input_types == {'foo_source': (str, DependencyType.REQUIRED)}
@@ -781,9 +781,9 @@ def test_parametrized_full_replace_both():
 def test_parametrized_full_multiple_replacements():
     args = dict(
         replace_no_parameters=({}, 'fn with no parameters replaced'),
-        replace_just_upstream_parameter=({'upstream_parameter': upstream('foo_source')}, 'fn with upstream_parameter set to node foo'),
-        replace_just_literal_parameter=({'literal_parameter': literal('bar')}, 'fn with upstream_parameter set to node foo'),
-        replace_both_parameters=({'upstream_parameter': upstream('foo_source'), 'literal_parameter': literal('bar')}, 'fn with both parameters replaced')
+        replace_just_upstream_parameter=({'upstream_parameter': source('foo_source')}, 'fn with upstream_parameter set to node foo'),
+        replace_just_literal_parameter=({'literal_parameter': value('bar')}, 'fn with upstream_parameter set to node foo'),
+        replace_both_parameters=({'upstream_parameter': source('foo_source'), 'literal_parameter': value('bar')}, 'fn with both parameters replaced')
     )
     annotation = function_modifiers.parameterize(**args)
     nodes = annotation.expand_node(node.Node.from_fn(concat), {}, concat)
@@ -793,23 +793,23 @@ def test_parametrized_full_multiple_replacements():
 
 
 @pytest.mark.parametrize(
-    'source,expected',
+    'upstream_source,expected',
     [
         ('foo', UpstreamDependency('foo')),
         (UpstreamDependency('bar'), UpstreamDependency('bar'))
     ]
 )
-def test_upstream(source, expected):
-    assert upstream(source) == expected
+def test_upstream(upstream_source, expected):
+    assert source(upstream_source) == expected
 
 
 @pytest.mark.parametrize(
-    'value,expected',
+    'literal_value,expected',
     [
         ('foo', LiteralDependency('foo')),
         (LiteralDependency('foo'), LiteralDependency('foo')),
         (1, LiteralDependency(1))
     ]
 )
-def test_literal(value, expected):
-    assert literal(value) == expected
+def test_literal(literal_value, expected):
+    assert value(literal_value) == expected

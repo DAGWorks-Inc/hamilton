@@ -5,21 +5,23 @@ business-logic reuse. The decorators we've defined are as follows
 (source can be found in [function_modifiers](hamilton/function_modifiers.py)):
 
 ## @parameterize
-´Expands a single function into n, each of which correspond to a function in which the parameter value is replaced either by:
+Expands a single function into n, each of which correspond to a function in which the parameter value is replaced either by:
 1. A specific value
 2. An specific upstream node.
 
 Note that this can take the place of any of the `@parameterize` decorators below. In fact, they delegate to this!
+
 ```python
 import pandas as pd
 from hamilton.function_modifiers import parameterize
-from hamilton.function_modifiers import literal, upstream
+from hamilton.function_modifiers import value, source
+
 
 @parameterize(
-    D_ELECTION_2016_shifted=dict(n_off_date=upstream('D_ELECTION_2016'), shift_by=literal(3)),
-    SOME_OUTPUT_NAME=dict(n_off_date=upstream('SOME_INPUT_NAME'), shift_by=literal(1)),
+    D_ELECTION_2016_shifted=dict(n_off_date=source('D_ELECTION_2016'), shift_by=value(3)),
+    SOME_OUTPUT_NAME=dict(n_off_date=source('SOME_INPUT_NAME'), shift_by=value(1)),
 )
-def date_shifter(n_off_date: pd.Series, shift_by: int=1) -> pd.Series:
+def date_shifter(n_off_date: pd.Series, shift_by: int = 1) -> pd.Series:
     """{one_off_date} shifted by shift_by to create {output_name}"""
     return n_off_date.shift(shift_by)
 ```
@@ -69,7 +71,7 @@ to make the parameterization decorators more consistent! You have plenty of time
 we wont make this a hard change until we have a Hamilton 2.0.0 to release.
 
 
-## @parameterize_inputs (replacing @parameterized_inputs)
+## @parameterize_sources (replacing @parameterized_inputs)
 
 Expands a single function into _n_, each of which corresponds to a function in which the parameters specified are mapped
 to the specified inputs. Note this decorator and `@parameterize_values` are quite similar, except that
@@ -77,10 +79,10 @@ the input here is another DAG node(s), i.e. column/input, rather than a specific
 
 ```python
 import pandas as pd
-from hamilton.function_modifiers import parameterize_inputs
+from hamilton.function_modifiers import parameterize_sources
 
 
-@parameterize_inputs(
+@parameterize_sources(
     D_ELECTION_2016_shifted=dict(one_off_date='D_ELECTION_2016'),
     SOME_OUTPUT_NAME=dict(one_off_date='SOME_INPUT_NAME')
 )
@@ -89,7 +91,7 @@ def date_shifter(one_off_date: pd.Series) -> pd.Series:
     return one_off_date.shift(1)
 
 ```
-We see here that `parameterize_inputs` allows you to keep your code DRY by reusing the same function to create multiple
+We see here that `parameterize_sources` allows you to keep your code DRY by reusing the same function to create multiple
 distinct outputs. The key word arguments passed have to have the following structure:
 > OUTPUT_NAME = Mapping of function argument to input that should go into it.
 
@@ -109,27 +111,27 @@ def SOME_OUTPUT_NAME(SOME_INPUT_NAME: pd.Series) -> pd.Series:
     """SOME_INPUT_NAME shifted by 1 to create SOME_OUTPUT_NAME"""
     return SOME_INPUT_NAME.shift(1)
 ```
-Note that `@parameterized_inputs` is deprecated, and we intend for you to use `@parameterize_inputs`. We're consolidating
+Note that `@parameterized_inputs` is deprecated, and we intend for you to use `@parameterize_sources`. We're consolidating
 to make the parameterization decorators more consistent! But we will not break your workflow for a long time.
 
 *Note*: that the different input variables must all have compatible types with the original decorated input variable.
 
-## Migrating @parameterized
+## Migrating @parameterized*
 
 As we've said above, we're planning on deprecating the following:
 
-- `@parameterized_inputs` (replaced by `@parameterize_inputs`)
+- `@parameterized_inputs` (replaced by `@parameterize_sources`)
 - `@parametrized` (replaced by `@parameterize_values`, as that's what its really doing)
-- `@parametrized_input` (gotten rid of in its original form, replaced by `@parameterize_inputs` as that is more versatile.)
+- `@parametrized_input` (deprecated long ago, migrate to `@parameterize_sources` as that is more versatile.)
 
 In other words, we're aligning around the following `@parameterize` implementations:
 
 - `@parameterize` -- this does everything you want
 - `@parameterize_values` -- this just changes the values, does not change the input source
-- `@parameterize_inputs`-- this just changes the source of the inputs
+- `@parameterize_sources`-- this just changes the source of the inputs. We also changed the name from inputs -> sources as it was clearer (values are inputs as well).
 
 The only non-drop-in change you'll have to do is for `@parameterized`. We won't update this until `hamilton==2.0.0`, though,
-so you'll have time.
+so you'll have time to migrate for a while.
 
 
 ## @extract_columns
