@@ -106,6 +106,11 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
 
         (default_validators.AllowNaNsValidatorPandasSeries, False, pd.Series([.1, None]), False),
         (default_validators.AllowNaNsValidatorPandasSeries, False, pd.Series([.1, .2]), True),
+
+        (default_validators.AllowNoneValidator, False, None, False),
+        (default_validators.AllowNoneValidator, False, 1, True),
+        (default_validators.AllowNoneValidator, True, None, True),
+        (default_validators.AllowNoneValidator, True, 1, True),
     ]
 )
 def test_default_data_validators(cls: Type[hamilton.data_quality.base.BaseDefaultValidator], param: Any, data: Any, should_pass: bool):

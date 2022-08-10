@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from hamilton.data_quality import base
-from hamilton.data_quality.base import BaseDefaultValidator
+from hamilton.data_quality.base import BaseDefaultValidator, ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -206,9 +206,9 @@ class MaxFractionNansValidatorPandasSeries(BaseDefaultValidator):
         return base.ValidationResult(
             passes=passes,
             message=f'Out of {total_length} items in the series, {total_na} of them are Nan, '
-                    f'representing: {MaxFractionNansValidatorPandasSeries._to_percent(fraction_na)}. '
-                    f'Max allowable Nans is: {MaxFractionNansValidatorPandasSeries._to_percent(self.max_fraction_nans)},'
-                    f' so this {"passes" if passes else "does not pass"}.',
+            f'representing: {MaxFractionNansValidatorPandasSeries._to_percent(fraction_na)}. '
+            f'Max allowable Nans is: {MaxFractionNansValidatorPandasSeries._to_percent(self.max_fraction_nans)},'
+            f' so this {"passes" if passes else "does not pass"}.',
             diagnostics={
                 'total_nan': total_na,
                 'total_length': total_length,
@@ -299,7 +299,7 @@ class DataTypeValidatorPrimitives(BaseDefaultValidator):
         return base.ValidationResult(
             passes=passes,
             message=f'Requires data type: {self.datatype}. '
-                    f"Got data type: {type(data)}. This {'is' if passes else 'is not'} a match.",
+            f"Got data type: {type(data)}. This {'is' if passes else 'is not'} a match.",
             diagnostics={
                 'required_data_type': self.datatype,
                 'actual_data_type': type(data)
@@ -329,8 +329,8 @@ class MaxStandardDevValidatorPandasSeries(BaseDefaultValidator):
         return base.ValidationResult(
             passes=passes,
             message=f'Max allowable standard dev is: {self.max_standard_dev}. '
-                    f'Dataset stddev is : {standard_dev}. '
-                    f"This {'passes' if passes else 'does not pass'}.",
+            f'Dataset stddev is : {standard_dev}. '
+            f"This {'passes' if passes else 'does not pass'}.",
             diagnostics={
                 'standard_dev': standard_dev,
                 'max_standard_dev': self.max_standard_dev
@@ -362,7 +362,7 @@ class MeanInRangeValidatorPandasSeries(BaseDefaultValidator):
         return base.ValidationResult(
             passes=passes,
             message=f"Dataset has mean: {dataset_mean}. This {'is ' if passes else 'is not '} "
-                    f'in the required range: [{self.mean_in_range[0]}, {self.mean_in_range[1]}].',
+            f'in the required range: [{self.mean_in_range[0]}, {self.mean_in_range[1]}].',
             diagnostics={
                 'dataset_mean': dataset_mean,
                 'mean_in_range': self.mean_in_range
@@ -372,6 +372,37 @@ class MeanInRangeValidatorPandasSeries(BaseDefaultValidator):
     @classmethod
     def arg(cls) -> str:
         return 'mean_in_range'
+
+
+class AllowNoneValidator(BaseDefaultValidator):
+
+    def __init__(self, allow_none: bool, importance: str):
+        super(AllowNoneValidator, self).__init__(importance)
+        self.allow_none = allow_none
+
+    @classmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return True
+
+    def description(self) -> str:
+        if self.allow_none:
+            return 'No-op validator.'
+        return 'Validates that an output ;is not None'
+
+    def validate(self, data: Any) -> ValidationResult:
+        passes = True
+        if not self.allow_none:
+            if data is None:
+                passes = False
+        return ValidationResult(
+            passes=passes,
+            message=f'Data is not allowed to be None, got {data}' if not passes else 'Data is not None',
+            diagnostics={}  # Nothing necessary here...
+        )
+
+    @classmethod
+    def arg(cls) -> str:
+        return 'allow_none'
 
 
 AVAILABLE_DEFAULT_VALIDATORS = [
@@ -385,6 +416,7 @@ AVAILABLE_DEFAULT_VALIDATORS = [
     MaxFractionNansValidatorPandasSeries,
     MaxStandardDevValidatorPandasSeries,
     MeanInRangeValidatorPandasSeries,
+    AllowNoneValidator,
 ]
 
 
