@@ -13,58 +13,17 @@ from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
 
 import typing_inspect
 
-import hamilton.function_modifiers_base
+from hamilton import function_modifiers_base
 from hamilton import node
-from hamilton.node import NodeSource, DependencyType
 from hamilton import base
+from hamilton import type_utils
 
 logger = logging.getLogger(__name__)
-BASE_ARGS_FOR_GENERICS = (typing.T,)
 
 
 # kind of hacky for now but it will work
 def is_submodule(child: ModuleType, parent: ModuleType):
     return parent.__name__ in child.__name__
-
-
-def custom_subclass_check(requested_type: Type[Type], param_type: Type[Type]):
-    """This is a custom check around generics & classes. It probably misses a few edge cases.
-
-    We will likely need to revisit this in the future (perhaps integrate with graphadapter?)
-
-    :param requested_type: Candidate subclass
-    :param param_type: Type of parameter to check
-    :return: Whether or not this is a valid subclass.
-    """
-    # handles case when someone is using primitives and generics
-    requested_origin_type = requested_type
-    param_origin_type = param_type
-    has_generic = False
-    if typing_inspect.is_generic_type(requested_type) or typing_inspect.is_tuple_type(requested_type):
-        requested_origin_type = typing_inspect.get_origin(requested_type)
-        has_generic = True
-    if typing_inspect.is_generic_type(param_type) or typing_inspect.is_tuple_type(param_type):
-        param_origin_type = typing_inspect.get_origin(param_type)
-        has_generic = True
-    if requested_origin_type == param_origin_type:
-        if has_generic:  # check the args match or they do not have them defined.
-            requested_args = typing_inspect.get_args(requested_type)
-            param_args = typing_inspect.get_args(param_type)
-            if (requested_args and param_args
-                    and requested_args != BASE_ARGS_FOR_GENERICS and param_args != BASE_ARGS_FOR_GENERICS):
-                return requested_args == param_args
-        return True
-
-    if ((typing_inspect.is_generic_type(requested_type) and typing_inspect.is_generic_type(param_type)) or
-            (inspect.isclass(requested_type) and typing_inspect.is_generic_type(param_type))):
-        # we're comparing two generics that aren't equal -- check if Mapping vs Dict
-        # or we're comparing a class to a generic -- check if Mapping vs dict
-        # the precedence is that requested will go into the param_type, so the param_type should be more permissive.
-        return issubclass(requested_type, param_type)
-    # classes - precedence is that requested will go into the param_type, so the param_type should be more permissive.
-    if inspect.isclass(requested_type) and inspect.isclass(param_type) and issubclass(requested_type, param_type):
-        return True
-    return False
 
 
 def types_match(adapter: base.HamiltonGraphAdapter,
@@ -87,7 +46,7 @@ def types_match(adapter: base.HamiltonGraphAdapter,
         return required_node_type == param_type
     elif required_node_type == param_type:
         return True
-    elif custom_subclass_check(required_node_type, param_type):
+    elif type_utils.custom_subclass_check(required_node_type, param_type):
         return True
     elif adapter.check_node_type_equivalence(required_node_type, param_type):
         return True
@@ -131,7 +90,7 @@ def add_dependency(
                              f'{param_name}:{required_node.type}. All names & types must match.')
     else:
         # this is a user defined var
-        required_node = node.Node(param_name, param_type, node_source=NodeSource.EXTERNAL)
+        required_node = node.Node(param_name, param_type, node_source=node.NodeSource.EXTERNAL)
         nodes[param_name] = required_node
     # add edges
     func_node.dependencies.append(required_node)
@@ -151,7 +110,7 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any], adapter:
 
     # create nodes -- easier to just create this in one loop
     for func_name, f in functions:
-        for n in hamilton.function_modifiers_base.resolve_nodes(f, config):
+        for n in function_modifiers_base.resolve_nodes(f, config):
             if n.name in config:
                 continue  # This makes sure we overwrite things if they're in the config...
             if n.name in nodes:
@@ -164,7 +123,7 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any], adapter:
             add_dependency(n, node_name, nodes, param_name, param_type, adapter)
     for key in config.keys():
         if key not in nodes:
-            nodes[key] = node.Node(key, Any, node_source=NodeSource.EXTERNAL)
+            nodes[key] = node.Node(key, Any, node_source=node.NodeSource.EXTERNAL)
     return nodes
 
 
@@ -358,7 +317,7 @@ class FunctionGraph(object):
                 # If inputs is None, we want to assume its required, as it is a compile-time dependency
                 if dep.user_defined and dep.name not in runtime_inputs and dep.name not in self.config:
                     _, dependency_type = n.input_types[dep.name]
-                    if dependency_type == DependencyType.OPTIONAL:
+                    if dependency_type == node.DependencyType.OPTIONAL:
                         continue
                 deps.append(dep)
             return deps
@@ -423,41 +382,41 @@ class FunctionGraph(object):
         if computed is None:
             computed = {}
 
-        def dfs_traverse(node: node.Node, dependency_type: DependencyType = DependencyType.REQUIRED):
-            if node.name in computed:
+        def dfs_traverse(node_: node.Node, dependency_type: node.DependencyType = node.DependencyType.REQUIRED):
+            if node_.name in computed:
                 return
-            if node.name in overrides:
-                computed[node.name] = overrides[node.name]
+            if node_.name in overrides:
+                computed[node_.name] = overrides[node_.name]
                 return
-            for n in node.dependencies:
+            for n in node_.dependencies:
                 if n.name not in computed:
-                    _, node_dependency_type = node.input_types[n.name]
+                    _, node_dependency_type = node_.input_types[n.name]
                     dfs_traverse(n, node_dependency_type)
 
-            logger.debug(f'Computing {node.name}.')
-            if node.user_defined:
-                if node.name not in inputs:
-                    if dependency_type != DependencyType.OPTIONAL:
-                        raise NotImplementedError(f'{node.name} was expected to be passed in but was not.')
+            logger.debug(f'Computing {node_.name}.')
+            if node_.user_defined:
+                if node_.name not in inputs:
+                    if dependency_type != node.DependencyType.OPTIONAL:
+                        raise NotImplementedError(f'{node_.name} was expected to be passed in but was not.')
                     return
-                value = inputs[node.name]
+                value = inputs[node_.name]
             else:
                 kwargs = {}  # construct signature
-                for dependency in node.dependencies:
+                for dependency in node_.dependencies:
                     if dependency.name in computed:
                         kwargs[dependency.name] = computed[dependency.name]
                 try:
-                    value = adapter.execute_node(node, kwargs)
+                    value = adapter.execute_node(node_, kwargs)
                 except Exception as e:
-                    logger.exception(f'Node {node.name} encountered an error')
+                    logger.exception(f'Node {node_.name} encountered an error')
                     raise
-            computed[node.name] = value
+            computed[node_.name] = value
 
         for final_var_node in nodes:
-            dep_type = DependencyType.REQUIRED
+            dep_type = node.DependencyType.REQUIRED
             if final_var_node.user_defined:
                 # from the top level, we don't know if this UserInput is required. So mark as optional.
-                dep_type = DependencyType.OPTIONAL
+                dep_type = node.DependencyType.OPTIONAL
             dfs_traverse(final_var_node, dep_type)
         return computed
 

@@ -7,6 +7,7 @@ import uuid
 import pandas as pd
 import pytest
 
+import hamilton.type_utils
 import tests.resources.bad_functions
 import tests.resources.config_modifier
 import tests.resources.cyclic_functions
@@ -500,7 +501,7 @@ custom_type = typing.TypeVar('FOOBAR')
 ])
 def test_custom_subclass_check(param_type, required_type, expected):
     """Tests the custom_subclass_check"""
-    actual = graph.custom_subclass_check(required_type, param_type)
+    actual = hamilton.type_utils.custom_subclass_check(required_type, param_type)
     assert actual == expected
 
 

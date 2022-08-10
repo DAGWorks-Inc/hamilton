@@ -1,4 +1,4 @@
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Set
 
 import numpy as np
 import pandas as pd
@@ -335,6 +335,21 @@ def test_does_function_modifier():
     node = annotation.generate_node(to_modify, {})
     assert node.name == 'to_modify'
     assert node.callable(param1=1, param2=1) == 2
+    assert node.documentation == to_modify.__doc__
+
+
+def test_does_function_modifier_complex_types():
+    def setify(**kwargs: List[int]) -> Set[int]:
+        return set(sum(kwargs.values(), []))
+
+    def to_modify(param1: List[int], param2: List[int]) -> int:
+        """This sums the inputs it gets..."""
+        pass
+
+    annotation = does(setify)
+    node = annotation.generate_node(to_modify, {})
+    assert node.name == 'to_modify'
+    assert node.callable(param1=[1, 2, 3], param2=[4, 5, 6]) == {1, 2, 3, 4, 5, 6}
     assert node.documentation == to_modify.__doc__
 
 
