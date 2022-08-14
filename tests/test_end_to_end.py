@@ -1,7 +1,9 @@
+import pandas as pd
 import pytest
 
 import hamilton.driver
 import tests.resources.data_quality
+import tests.resources.smoke_screen_module
 from hamilton.data_quality.base import ValidationResult, DataValidationError
 
 
@@ -21,3 +23,22 @@ def test_data_quality_workflow_fails():
     all_vars = driver.list_available_variables()
     with pytest.raises(DataValidationError):
         driver.raw_execute([var.name for var in all_vars], inputs={'data_quality_should_fail': True})
+
+
+def test_smoke_screen_module():
+    config = {'region': 'US'}
+    dr = hamilton.driver.Driver(config, tests.resources.smoke_screen_module)
+    output_columns = [
+        'raw_acquisition_cost',
+        'pessimistic_net_acquisition_cost',
+        'neutral_net_acquisition_cost',
+        'optimistic_net_acquisition_cost'
+    ]
+    df = dr.execute(
+        inputs={'start_date' : '20200101', 'end_date' : '20220801'},
+        final_vars=output_columns)
+    epsilon = 0.00001
+    assert abs(df.mean()['raw_acquisition_cost'] - 0.393808) < epsilon
+    assert abs(df.mean()['pessimistic_net_acquisition_cost'] - 0.420769) < epsilon
+    assert abs(df.mean()['neutral_net_acquisition_cost'] - 0.405582) < epsilon
+    assert abs(df.mean()['optimistic_net_acquisition_cost'] - 0.399363) < epsilon
