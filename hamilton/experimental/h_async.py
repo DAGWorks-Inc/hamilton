@@ -43,18 +43,6 @@ class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         super(AsyncGraphAdapter, self).__init__()
         self.result_builder = result_builder if result_builder else base.PandasDataFrameResult()
 
-    @staticmethod
-    def check_input_type(node_type: Type, input_value: Any) -> bool:
-        """Checks the input type to ensure that it is compatible with the node type.
-        Note that this also allows coroutines, in case you want the DAG to await
-        the result of calling the input.
-
-        :param node_type: Type of the input node, expected
-        :param input_value: Type of the actual input, received
-        :return: Whether the actual input value matches the type expected
-        """
-        return super().check_node_type_equivalence(node_type, input_value) or issubclass(input_value, types.CoroutineType)
-
     def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Executes a node. Note this doesn't actually execute it -- rather, it returns a task.
         This does *not* use async def, as we want it to be awaited on later -- this await is done
@@ -109,8 +97,6 @@ class AsyncDriver(driver.Driver):
                           inputs: Dict[str, Any] = None) -> Dict[str, Any]:
         """Executes the graph, returning a dictionary of strings (node keys) to final results.
 
-        Note inputs can be coroutines as well if you desire.
-
         :param final_vars: Variables to execute (+ upstream)
         :param overrides: Overrides for nodes
         :param display_graph: whether or not to display graph -- this is not supported.
@@ -127,11 +113,11 @@ class AsyncDriver(driver.Driver):
         return await await_dict_of_tasks(task_dict)
 
     async def execute(self,
-                final_vars: typing.List[str],
-                overrides: Dict[str, Any] = None,
-                display_graph: bool = False,
-                inputs: Dict[str, Any] = None,
-                ) -> Any:
+                      final_vars: typing.List[str],
+                      overrides: Dict[str, Any] = None,
+                      display_graph: bool = False,
+                      inputs: Dict[str, Any] = None,
+                      ) -> Any:
         """Executes computation.
 
         :param final_vars: the final list of variables we want to compute.
