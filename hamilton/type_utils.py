@@ -1,8 +1,10 @@
 import inspect
-from typing import Type
+from typing import Type, Any
 
 import typing
 import typing_inspect
+
+from hamilton import base
 
 BASE_ARGS_FOR_GENERICS = (typing.T,)
 
@@ -43,5 +45,32 @@ def custom_subclass_check(requested_type: Type[Type], param_type: Type[Type]):
         return issubclass(requested_type, param_type)
     # classes - precedence is that requested will go into the param_type, so the param_type should be more permissive.
     if inspect.isclass(requested_type) and inspect.isclass(param_type) and issubclass(requested_type, param_type):
+        return True
+    return False
+
+
+def types_match(adapter: base.HamiltonGraphAdapter,
+                param_type: Type[Type],
+                required_node_type: Any) -> bool:
+    """Checks that we have "types" that "match".
+
+    Matching can be loose here -- and depends on the adapter being used as to what is
+    allowed. Otherwise it does a basic equality check.
+
+    :param adapter: the graph adapter to delegate to for one check.
+    :param param_type: the parameter type we're checking.
+    :param required_node_type: the expected parameter type to validate against.
+    :return: True if types are "matching", False otherwise.
+    """
+    if required_node_type == typing.Any:
+        return True
+    # type var  -- straight == should suffice. Assume people understand what they're doing with TypeVar.
+    elif typing_inspect.is_typevar(required_node_type) or typing_inspect.is_typevar(param_type):
+        return required_node_type == param_type
+    elif required_node_type == param_type:
+        return True
+    elif custom_subclass_check(required_node_type, param_type):
+        return True
+    elif adapter.check_node_type_equivalence(required_node_type, param_type):
         return True
     return False

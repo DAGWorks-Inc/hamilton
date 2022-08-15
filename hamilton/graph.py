@@ -7,16 +7,13 @@ Note: one should largely consider the code in this module to be "private".
 """
 import inspect
 import logging
-import typing
 from types import ModuleType
 from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
-
-import typing_inspect
 
 from hamilton import function_modifiers_base
 from hamilton import node
 from hamilton import base
-from hamilton import type_utils
+from hamilton.type_utils import types_match
 
 logger = logging.getLogger(__name__)
 
@@ -24,33 +21,6 @@ logger = logging.getLogger(__name__)
 # kind of hacky for now but it will work
 def is_submodule(child: ModuleType, parent: ModuleType):
     return parent.__name__ in child.__name__
-
-
-def types_match(adapter: base.HamiltonGraphAdapter,
-                param_type: Type[Type],
-                required_node_type: Any) -> bool:
-    """Checks that we have "types" that "match".
-
-    Matching can be loose here -- and depends on the adapter being used as to what is
-    allowed. Otherwise it does a basic equality check.
-
-    :param adapter: the graph adapter to delegate to for one check.
-    :param param_type: the parameter type we're checking.
-    :param required_node_type: the expected parameter type to validate against.
-    :return: True if types are "matching", False otherwise.
-    """
-    if required_node_type == typing.Any:
-        return True
-    # type var  -- straight == should suffice. Assume people understand what they're doing with TypeVar.
-    elif typing_inspect.is_typevar(required_node_type) or typing_inspect.is_typevar(param_type):
-        return required_node_type == param_type
-    elif required_node_type == param_type:
-        return True
-    elif type_utils.custom_subclass_check(required_node_type, param_type):
-        return True
-    elif adapter.check_node_type_equivalence(required_node_type, param_type):
-        return True
-    return False
 
 
 def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
