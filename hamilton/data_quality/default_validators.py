@@ -6,12 +6,11 @@ import numpy as np
 import pandas as pd
 
 from hamilton.data_quality import base
-from hamilton.data_quality.base import BaseDefaultValidator, ValidationResult
 
 logger = logging.getLogger(__name__)
 
 
-class DataInRangeValidatorPandasSeries(BaseDefaultValidator):
+class DataInRangeValidatorPandasSeries(base.BaseDefaultValidator):
 
     def __init__(self, range: Tuple[float, float], importance: str):
         """Data validator that tells if data is in a range. This applies to primitives (ints, floats).
@@ -52,7 +51,7 @@ class DataInRangeValidatorPandasSeries(BaseDefaultValidator):
         )
 
 
-class DataInValuesValidatorPandasSeries(BaseDefaultValidator):
+class DataInValuesValidatorPandasSeries(base.BaseDefaultValidator):
 
     def __init__(self, values_in: Iterable[Any], importance: str):
         """Data validator that tells if data is in a set of specified values within a pandas series.
@@ -102,7 +101,7 @@ class DataInValuesValidatorPandasSeries(BaseDefaultValidator):
         )
 
 
-class DataInRangeValidatorPrimitives(BaseDefaultValidator):
+class DataInRangeValidatorPrimitives(base.BaseDefaultValidator):
     def __init__(self, range: Tuple[numbers.Real, numbers.Real], importance: str):
         """Data validator that tells if data is in a range. This applies to primitives (ints, floats).
 
@@ -141,7 +140,7 @@ class DataInRangeValidatorPrimitives(BaseDefaultValidator):
         return 'range'
 
 
-class DataInValuesValidatorPrimitives(BaseDefaultValidator):
+class DataInValuesValidatorPrimitives(base.BaseDefaultValidator):
 
     def __init__(self, values_in: Iterable[Any], importance: str):
         """Data validator that tells if python primitive type data is in a set of specified values.
@@ -181,7 +180,7 @@ class DataInValuesValidatorPrimitives(BaseDefaultValidator):
         )
 
 
-class MaxFractionNansValidatorPandasSeries(BaseDefaultValidator):
+class MaxFractionNansValidatorPandasSeries(base.BaseDefaultValidator):
     def __init__(self, max_fraction_nans: float, importance: str):
         super(MaxFractionNansValidatorPandasSeries, self).__init__(importance=importance)
         MaxFractionNansValidatorPandasSeries._validate_max_fraction_nans(max_fraction_nans)
@@ -239,7 +238,7 @@ class AllowNaNsValidatorPandasSeries(MaxFractionNansValidatorPandasSeries):
         return 'allow_nans'
 
 
-class DataTypeValidatorPandasSeries(BaseDefaultValidator):
+class DataTypeValidatorPandasSeries(base.BaseDefaultValidator):
 
     def __init__(self, data_type: Type[Type], importance: str):
         """Constructor
@@ -274,7 +273,7 @@ class DataTypeValidatorPandasSeries(BaseDefaultValidator):
         return 'data_type'
 
 
-class DataTypeValidatorPrimitives(BaseDefaultValidator):
+class DataTypeValidatorPrimitives(base.BaseDefaultValidator):
 
     def __init__(self, data_type: Type[Type], importance: str):
         """Constructor
@@ -311,7 +310,7 @@ class DataTypeValidatorPrimitives(BaseDefaultValidator):
         return 'data_type'
 
 
-class MaxStandardDevValidatorPandasSeries(BaseDefaultValidator):
+class MaxStandardDevValidatorPandasSeries(base.BaseDefaultValidator):
     def __init__(self, max_standard_dev: float, importance: str):
         super(MaxStandardDevValidatorPandasSeries, self).__init__(importance)
         self.max_standard_dev = max_standard_dev
@@ -342,7 +341,7 @@ class MaxStandardDevValidatorPandasSeries(BaseDefaultValidator):
         return 'max_standard_dev'
 
 
-class MeanInRangeValidatorPandasSeries(BaseDefaultValidator):
+class MeanInRangeValidatorPandasSeries(base.BaseDefaultValidator):
 
     def __init__(self, mean_in_range: Tuple[float, float], importance: str):
         super(MeanInRangeValidatorPandasSeries, self).__init__(importance)
@@ -374,7 +373,7 @@ class MeanInRangeValidatorPandasSeries(BaseDefaultValidator):
         return 'mean_in_range'
 
 
-class AllowNoneValidator(BaseDefaultValidator):
+class AllowNoneValidator(base.BaseDefaultValidator):
 
     def __init__(self, allow_none: bool, importance: str):
         super(AllowNoneValidator, self).__init__(importance)
@@ -389,12 +388,12 @@ class AllowNoneValidator(BaseDefaultValidator):
             return 'No-op validator.'
         return 'Validates that an output ;is not None'
 
-    def validate(self, data: Any) -> ValidationResult:
+    def validate(self, data: Any) -> base.ValidationResult:
         passes = True
         if not self.allow_none:
             if data is None:
                 passes = False
-        return ValidationResult(
+        return base.ValidationResult(
             passes=passes,
             message=f'Data is not allowed to be None, got {data}' if not passes else 'Data is not None',
             diagnostics={}  # Nothing necessary here...
@@ -437,8 +436,8 @@ _append_pandera_to_default_validators()
 def resolve_default_validators(
         output_type: Type[Type],
         importance: str,
-        available_validators: List[Type[BaseDefaultValidator]] = None,
-        **default_validator_kwargs) -> List[BaseDefaultValidator]:
+        available_validators: List[Type[base.BaseDefaultValidator]] = None,
+        **default_validator_kwargs) -> List[base.BaseDefaultValidator]:
     """Resolves default validators given a set pof parameters and the type to which they apply.
     Note that each (kwarg, type) combination should map to a validator
     :param importance: importance level of the validator to instantiate
