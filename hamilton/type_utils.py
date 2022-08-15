@@ -22,6 +22,10 @@ def custom_subclass_check(requested_type: Type[Type], param_type: Type[Type]):
     requested_origin_type = requested_type
     param_origin_type = param_type
     has_generic = False
+    if typing_inspect.is_union_type(param_type):
+        for arg in typing_inspect.get_args(param_type):
+            if custom_subclass_check(requested_type, arg):
+                return True
     if typing_inspect.is_generic_type(requested_type) or typing_inspect.is_tuple_type(requested_type):
         requested_origin_type = typing_inspect.get_origin(requested_type)
         has_generic = True

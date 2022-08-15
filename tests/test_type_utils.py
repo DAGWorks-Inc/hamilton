@@ -43,6 +43,11 @@ custom_type = typing.TypeVar('FOOBAR')
     (X, X, True),
     (X, Y, True),
     (Y, X, False),
+    (typing.Union[X, int], X, True),
+    (typing.Union[str, X], str, True),
+    (typing.Union[custom_type, X], Y, True),
+    (typing.Union[float, str], int, False),
+    (typing.Union[int, float], X, False)
 ])
 def test_custom_subclass_check(param_type, required_type, expected):
     """Tests the custom_subclass_check"""
