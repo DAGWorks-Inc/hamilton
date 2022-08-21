@@ -1,0 +1,3 @@
+# To use this file locally > git blame --ignore-revs-file .git-blame-ignore-revs
+# reformats repo to use black
+f273cd5725239cfc39ce05924e7384b3886b593b
