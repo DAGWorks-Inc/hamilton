@@ -12,8 +12,10 @@ def _sum(**kwargs: int) -> int:
 
 
 @does(_sum)
-@parameterize_values(parameter='a', assigned_output={('e', 'First value'): 10, ('f', 'Second value'): 20})
-@config.when(foo='bar')
+@parameterize_values(
+    parameter="a", assigned_output={("e", "First value"): 10, ("f", "Second value"): 20}
+)
+@config.when(foo="bar")
 def c__foobar(a: int, b: int) -> int:
     """Demonstrates utilizing a bunch of decorators.
     In all, this outputs two total nodes -- e and f (as its parametrized)
@@ -25,8 +27,10 @@ def c__foobar(a: int, b: int) -> int:
 
 
 @does(_sum)
-@parameterize_values(parameter='a', assigned_output={('e', 'First value'): 11, ('f', 'Second value'): 22})
-@config.when(foo='baz')
+@parameterize_values(
+    parameter="a", assigned_output={("e", "First value"): 11, ("f", "Second value"): 22}
+)
+@config.when(foo="baz")
 def c__foobaz(a: int, b: int) -> int:
     """Demonstrates utilizing a bunch of decorators.
     In all, this outputs two total nodes -- e and f (as its parametrized)

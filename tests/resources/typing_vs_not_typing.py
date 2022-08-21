@@ -1,14 +1,15 @@
 """
 Module for dummy functions to test graph things with.
 """
+from typing import Dict
+
 # we import this to check we don't pull in this function when parsing this module.
 from tests.resources import only_import_me
-from typing import Dict
 
 
 def A(b: int, c: int) -> Dict:
     """Function that outputs a typing type."""
-    return {'a': b + c}
+    return {"a": b + c}
 
 
 def _do_not_import_me(some_input: int, some_input2: int) -> int:
@@ -19,14 +20,14 @@ def _do_not_import_me(some_input: int, some_input2: int) -> int:
 
 def B(A: dict) -> int:
     """Function that depends on A, but says it's a primitive type dict."""
-    return A['a'] + 1
+    return A["a"] + 1
 
 
 def A2(x: int, y: int) -> dict:
     """Graph function using primitive output type."""
-    return {'a': x + y}
+    return {"a": x + y}
 
 
 def B2(A2: Dict) -> int:
     """Graph function depending on A2 but saying it's a typing type."""
-    return A['a'] + 1
+    return A["a"] + 1

@@ -16,8 +16,7 @@ Note:
 import numpy as np
 import pandas as pd
 
-from hamilton.function_modifiers import check_output
-from hamilton.function_modifiers import config
+from hamilton.function_modifiers import check_output, config
 
 
 @check_output(range=(20.0, 60.0), data_type=np.float64)
@@ -44,7 +43,7 @@ def age_zero_mean_unit_variance(age_zero_mean: pd.Series, age_std_dev: np.float6
     return age_zero_mean / age_std_dev
 
 
-@config.when_not_in(execution=['spark', 'dask'])
+@config.when_not_in(execution=["spark", "dask"])
 def seasons_encoded__base(seasons: pd.Series) -> pd.DataFrame:
     """One hot encodes seasons into 4 dimensions:
     1 - first season
@@ -52,10 +51,10 @@ def seasons_encoded__base(seasons: pd.Series) -> pd.DataFrame:
     3 - third season
     4 - fourth season
     """
-    return pd.get_dummies(seasons, prefix='seasons')
+    return pd.get_dummies(seasons, prefix="seasons")
 
 
-@config.when_in(execution=['spark'])
+@config.when_in(execution=["spark"])
 def seasons_encoded__spark(seasons: pd.Series) -> pd.DataFrame:
     """One hot encodes seasons into 4 dimensions:
     1 - first season
@@ -64,10 +63,11 @@ def seasons_encoded__spark(seasons: pd.Series) -> pd.DataFrame:
     4 - fourth season
     """
     import pyspark.pandas as ps
-    return ps.get_dummies(seasons, prefix='seasons')
+
+    return ps.get_dummies(seasons, prefix="seasons")
 
 
-@config.when_in(execution=['dask'])
+@config.when_in(execution=["dask"])
 def seasons_encoded__dask(seasons: pd.Series) -> pd.DataFrame:
     """One hot encodes seasons into 4 dimensions:
     1 - first season
@@ -76,91 +76,94 @@ def seasons_encoded__dask(seasons: pd.Series) -> pd.DataFrame:
     4 - fourth season
     """
     import dask.dataframe as dd
+
     categorized = seasons.astype(str).to_frame().categorize()
-    df = dd.get_dummies(categorized, prefix='seasons')
+    df = dd.get_dummies(categorized, prefix="seasons")
     return df
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
 def seasons_1(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_1"""
-    return seasons_encoded['seasons_1']
+    return seasons_encoded["seasons_1"]
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
 def seasons_2(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_2"""
-    return seasons_encoded['seasons_2']
+    return seasons_encoded["seasons_2"]
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
 def seasons_3(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_3"""
-    return seasons_encoded['seasons_3']
+    return seasons_encoded["seasons_3"]
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
 def seasons_4(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_4"""
-    return seasons_encoded['seasons_4']
+    return seasons_encoded["seasons_4"]
 
 
-@config.when_not_in(execution=['spark', 'dask'])
+@config.when_not_in(execution=["spark", "dask"])
 def day_of_week_encoded__base(day_of_the_week: pd.Series) -> pd.DataFrame:
     """One hot encodes day of week into five dimensions -- Saturday & Sunday weren't present.
     1 - Sunday, 2 - Monday, 3 - Tuesday, 4 - Wednesday, 5 - Thursday, 6 - Friday, 7 - Saturday.
     """
-    return pd.get_dummies(day_of_the_week, prefix='day_of_the_week')
+    return pd.get_dummies(day_of_the_week, prefix="day_of_the_week")
 
 
-@config.when_in(execution=['spark'])
+@config.when_in(execution=["spark"])
 def day_of_week_encoded__spark(day_of_the_week: pd.Series) -> pd.DataFrame:
     """One hot encodes day of week into five dimensions -- Saturday & Sunday weren't present.
     1 - Sunday, 2 - Monday, 3 - Tuesday, 4 - Wednesday, 5 - Thursday, 6 - Friday, 7 - Saturday.
     """
     import pyspark.pandas as ps
-    return ps.get_dummies(day_of_the_week, prefix='day_of_the_week')
+
+    return ps.get_dummies(day_of_the_week, prefix="day_of_the_week")
 
 
-@config.when_in(execution=['dask'])
+@config.when_in(execution=["dask"])
 def day_of_week_encoded__dask(day_of_the_week: pd.Series) -> pd.DataFrame:
     """One hot encodes day of week into five dimensions -- Saturday & Sunday weren't present.
     1 - Sunday, 2 - Monday, 3 - Tuesday, 4 - Wednesday, 5 - Thursday, 6 - Friday, 7 - Saturday.
     """
     import dask.dataframe as dd
+
     categorized = day_of_the_week.astype(str).to_frame().categorize()
-    df = dd.get_dummies(categorized, prefix='day_of_the_week')
+    df = dd.get_dummies(categorized, prefix="day_of_the_week")
     return df
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
 def day_of_the_week_2(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_2 column."""
-    return day_of_week_encoded['day_of_the_week_2']
+    return day_of_week_encoded["day_of_the_week_2"]
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
 def day_of_the_week_3(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_3 column."""
-    return day_of_week_encoded['day_of_the_week_3']
+    return day_of_week_encoded["day_of_the_week_3"]
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
 def day_of_the_week_4(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_4 column."""
-    return day_of_week_encoded['day_of_the_week_4']
+    return day_of_week_encoded["day_of_the_week_4"]
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
 def day_of_the_week_5(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_5 column."""
-    return day_of_week_encoded['day_of_the_week_5']
+    return day_of_week_encoded["day_of_the_week_5"]
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
 def day_of_the_week_6(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_6 column."""
-    return day_of_week_encoded['day_of_the_week_6']
+    return day_of_week_encoded["day_of_the_week_6"]
 
 
 @check_output(data_type=np.int64, values_in=[0, 1], allow_nans=False)

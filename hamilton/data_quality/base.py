@@ -2,7 +2,7 @@ import abc
 import dataclasses
 import enum
 import logging
-from typing import Type, Any, List, Dict, Tuple
+from typing import Any, Dict, List, Tuple, Type
 
 logger = logging.getLogger(__name__)
 
@@ -12,15 +12,17 @@ class DataValidationError(Exception):
 
 
 class DataValidationLevel(enum.Enum):
-    WARN = 'warn'
-    FAIL = 'fail'
+    WARN = "warn"
+    FAIL = "fail"
 
 
 @dataclasses.dataclass
 class ValidationResult:
     passes: bool  # Whether or not this passed the validation
     message: str  # Error message or success message
-    diagnostics: Dict[str, Any] = dataclasses.field(default_factory=dict)  # Any extra diagnostics information needed, free-form
+    diagnostics: Dict[str, Any] = dataclasses.field(
+        default_factory=dict
+    )  # Any extra diagnostics information needed, free-form
 
 
 class DataValidator(abc.ABC):
@@ -80,8 +82,10 @@ def act_warn(node_name: str, validation_result: ValidationResult, validator: Dat
 
 
 def _create_error_string(node_name, validation_result, validator):
-    return (f'[{node_name}:{validator.name()}] validator failed. Message was: {validation_result.message}. '
-            f'Diagnostic information is: {validation_result.diagnostics}.')
+    return (
+        f"[{node_name}:{validator.name()}] validator failed. Message was: {validation_result.message}. "
+        f"Diagnostic information is: {validation_result.diagnostics}."
+    )
 
 
 def act_fail_bulk(node_name: str, failures: List[Tuple[ValidationResult, DataValidator]]):
@@ -95,7 +99,7 @@ def act_fail_bulk(node_name: str, failures: List[Tuple[ValidationResult, DataVal
     error_messages = []
     for validation_result, validator in failures:
         if not validation_result.passes:
-            message = f'{_create_error_string(node_name, validation_result, validator)}\n'
+            message = f"{_create_error_string(node_name, validation_result, validator)}\n"
             logger.error(message)  # log here so things print nicely at least
             error_messages.append(message)
     if error_messages:
@@ -139,4 +143,4 @@ class BaseDefaultValidator(DataValidator, abc.ABC):
 
     @classmethod
     def name(cls) -> str:
-        return f'{cls.arg()}_validator'
+        return f"{cls.arg()}_validator"

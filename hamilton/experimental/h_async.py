@@ -3,9 +3,9 @@ import inspect
 import logging
 import types
 import typing
-from typing import Dict, Any, Type, Optional
+from typing import Any, Dict, Optional, Type
 
-from hamilton import base, node, driver
+from hamilton import base, driver, node
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,6 @@ async def process_value(val: Any) -> Any:
 
 
 class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
-
     def __init__(self, result_builder: base.ResultMixin = None):
         """Creates an AsyncGraphAdapter class. Note this will *only* work with the AsyncDriver class.
 
@@ -62,7 +61,7 @@ class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
             task_dict = {key: process_value(value) for key, value in fn_kwargs.items()}
             fn_kwargs = await await_dict_of_tasks(task_dict)
             if inspect.iscoroutinefunction(fn):
-                return await(fn(**fn_kwargs))
+                return await (fn(**fn_kwargs))
             return fn(**fn_kwargs)
 
         coroutine = new_fn(**kwargs)
@@ -88,13 +87,17 @@ class AsyncDriver(driver.Driver):
         :param modules: Modules to crawl for fns/graph nodes
         :param result_builder: Results mixin to compile the graph's final results. TBD whether this should be included in the long run.
         """
-        super(AsyncDriver, self).__init__(config, *modules, adapter=AsyncGraphAdapter(result_builder=result_builder))
+        super(AsyncDriver, self).__init__(
+            config, *modules, adapter=AsyncGraphAdapter(result_builder=result_builder)
+        )
 
-    async def raw_execute(self,
-                          final_vars: typing.List[str],
-                          overrides: Dict[str, Any] = None,
-                          display_graph: bool = False,  # don't care
-                          inputs: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def raw_execute(
+        self,
+        final_vars: typing.List[str],
+        overrides: Dict[str, Any] = None,
+        display_graph: bool = False,  # don't care
+        inputs: Dict[str, Any] = None,
+    ) -> Dict[str, Any]:
         """Executes the graph, returning a dictionary of strings (node keys) to final results.
 
         :param final_vars: Variables to execute (+ upstream)
@@ -107,17 +110,22 @@ class AsyncDriver(driver.Driver):
         memoized_computation = dict()  # memoized storage
         self.graph.execute(nodes, memoized_computation, overrides, inputs)
         if display_graph:
-            raise ValueError(f'display_graph=True is not supported for the async graph adapter. '
-                             f'Instead you should be using visualize_execution.')
-        task_dict = {key: asyncio.create_task(process_value(memoized_computation[key])) for key in final_vars}
+            raise ValueError(
+                f"display_graph=True is not supported for the async graph adapter. "
+                f"Instead you should be using visualize_execution."
+            )
+        task_dict = {
+            key: asyncio.create_task(process_value(memoized_computation[key])) for key in final_vars
+        }
         return await await_dict_of_tasks(task_dict)
 
-    async def execute(self,
-                      final_vars: typing.List[str],
-                      overrides: Dict[str, Any] = None,
-                      display_graph: bool = False,
-                      inputs: Dict[str, Any] = None,
-                      ) -> Any:
+    async def execute(
+        self,
+        final_vars: typing.List[str],
+        overrides: Dict[str, Any] = None,
+        display_graph: bool = False,
+        inputs: Dict[str, Any] = None,
+    ) -> Any:
         """Executes computation.
 
         :param final_vars: the final list of variables we want to compute.
@@ -129,8 +137,10 @@ class AsyncDriver(driver.Driver):
             dataframe.
         """
         if display_graph:
-            raise ValueError(f'display_graph=True is not supported for the async graph adapter. '
-                             f'Instead you should be using visualize_execution.')
+            raise ValueError(
+                f"display_graph=True is not supported for the async graph adapter. "
+                f"Instead you should be using visualize_execution."
+            )
         try:
             outputs = await self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
             return self.adapter.build_result(**outputs)

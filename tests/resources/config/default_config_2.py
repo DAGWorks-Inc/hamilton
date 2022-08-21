@@ -1,2 +1,2 @@
 def some_key() -> str:
-    return 'some_value'
+    return "some_value"

@@ -1,19 +1,15 @@
 import logging
 import typing
 
-import pandas as pd
+import dask.array
+import dask.dataframe
 import numpy as np
-
+import pandas as pd
 from dask import compute
 from dask.delayed import Delayed, delayed
 from dask.distributed import Client as DaskClient
-import dask.dataframe
-import dask.array
 
-
-from hamilton import node
-from hamilton import base
-
+from hamilton import base, node
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +49,12 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
     DISCLAIMER -- this class is experimental, so signature changes are a possibility!
     """
 
-    def __init__(self, dask_client: DaskClient, result_builder: base.ResultMixin = None, visualize_kwargs: dict = None):
+    def __init__(
+        self,
+        dask_client: DaskClient,
+        result_builder: base.ResultMixin = None,
+        visualize_kwargs: dict = None,
+    ):
         """Constructor
 
         :param dask_client: the dask client -- we don't do anything with it, but thought that it would be useful
@@ -104,11 +105,11 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
         """
         if logger.isEnabledFor(logging.DEBUG):
             for k, v in outputs.items():
-                logger.info(f'Got column {k}, with type [{type(v)}].')
+                logger.info(f"Got column {k}, with type [{type(v)}].")
         delayed_combine = delayed(self.result_builder.build_result)(**outputs)
         if self.visualize_kwargs is not None:
             delayed_combine.visualize(**self.visualize_kwargs)
-        df, = compute(delayed_combine)
+        (df,) = compute(delayed_combine)
         return df
 
 

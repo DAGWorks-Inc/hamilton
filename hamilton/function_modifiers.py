@@ -3,19 +3,17 @@ import collections
 import dataclasses
 import enum
 import functools
-import logging
 import inspect
+import logging
 import typing
-from typing import Dict, Callable, Collection, Tuple, Union, Any, Type, List
+from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
 
 import pandas as pd
 import typing_inspect
 
-from hamilton import node, type_utils
+from hamilton import function_modifiers_base, models, node, type_utils
 from hamilton.data_quality import base as dq_base
 from hamilton.data_quality import default_validators
-from hamilton import function_modifiers_base
-from hamilton import models
 from hamilton.dev_utils import deprecation
 
 logger = logging.getLogger(__name__)
@@ -38,14 +36,14 @@ def get_default_tags(fn: Callable) -> Dict[str, str]:
     :return: a dictionary with str -> str values representing the default tags.
     """
     module_name = inspect.getmodule(fn).__name__
-    return {'module': module_name}
+    return {"module": module_name}
 
 
 # TODO -- replace this with polymorphism for assigning/grabbing
 #  dependencies once we have the computation decided, if needed
 class ParametrizedDependencySource(enum.Enum):
-    LITERAL = 'literal'
-    UPSTREAM = 'upstream'
+    LITERAL = "literal"
+    UPSTREAM = "upstream"
 
 
 class ParametrizedDependency:
@@ -96,9 +94,14 @@ def source(dependency_on: Any) -> UpstreamDependency:
 
 
 class parameterize(function_modifiers_base.NodeExpander):
-    RESERVED_KWARG = 'output_name'
+    RESERVED_KWARG = "output_name"
 
-    def __init__(self, **parametrization: Union[Dict[str, ParametrizedDependency], Tuple[Dict[str, ParametrizedDependency], str]]):
+    def __init__(
+        self,
+        **parametrization: Union[
+            Dict[str, ParametrizedDependency], Tuple[Dict[str, ParametrizedDependency], str]
+        ],
+    ):
         """Creates a parameterize decorator. For example:
             @parameterize(
                 replace_no_parameters=({}, 'fn with no parameters replaced'),
@@ -113,33 +116,53 @@ class parameterize(function_modifiers_base.NodeExpander):
             - a tuple of assignments (consisting of literals/upstream specifications), and docstring
             - just assignments, in which case it parametrizes the existing docstring
         """
-        self.parametrization = {key: (value[0] if isinstance(value, tuple) else value) for key, value in parametrization.items()}
+        self.parametrization = {
+            key: (value[0] if isinstance(value, tuple) else value)
+            for key, value in parametrization.items()
+        }
         bad_values = []
         for assigned_output, mapping in self.parametrization.items():
             for parameter, value in mapping.items():
                 if not isinstance(value, ParametrizedDependency):
                     bad_values.append(value)
         if bad_values:
-            raise InvalidDecoratorException(f'@parameterize must specify a dependency type -- either upstream() or literal().'
-                                            f'The following are not allowed: {bad_values}.')
-        self.specified_docstrings = {key: value[1] for key, value in parametrization.items() if isinstance(value, tuple)}
+            raise InvalidDecoratorException(
+                f"@parameterize must specify a dependency type -- either upstream() or literal()."
+                f"The following are not allowed: {bad_values}."
+            )
+        self.specified_docstrings = {
+            key: value[1] for key, value in parametrization.items() if isinstance(value, tuple)
+        }
 
-    def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    def expand_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         nodes = []
         for output_node, parametrization_with_optional_docstring in self.parametrization.items():
-            if isinstance(parametrization_with_optional_docstring, tuple):  # In this case it contains the docstring
-                parametrization, = parametrization_with_optional_docstring
+            if isinstance(
+                parametrization_with_optional_docstring, tuple
+            ):  # In this case it contains the docstring
+                (parametrization,) = parametrization_with_optional_docstring
             else:
                 parametrization = parametrization_with_optional_docstring
             docstring = self.format_doc_string(fn.__doc__, output_node)
             upstream_dependencies = {
-                parameter: replacement for parameter, replacement in parametrization.items()
-                if replacement.get_dependency_type() == ParametrizedDependencySource.UPSTREAM}
+                parameter: replacement
+                for parameter, replacement in parametrization.items()
+                if replacement.get_dependency_type() == ParametrizedDependencySource.UPSTREAM
+            }
             literal_dependencies = {
-                parameter: replacement for parameter, replacement in parametrization.items()
-                if replacement.get_dependency_type() == ParametrizedDependencySource.LITERAL}
+                parameter: replacement
+                for parameter, replacement in parametrization.items()
+                if replacement.get_dependency_type() == ParametrizedDependencySource.LITERAL
+            }
 
-            def replacement_function(*args, upstream_dependencies=upstream_dependencies, literal_dependencies=literal_dependencies, **kwargs):
+            def replacement_function(
+                *args,
+                upstream_dependencies=upstream_dependencies,
+                literal_dependencies=literal_dependencies,
+                **kwargs,
+            ):
                 """This function rewrites what is passed in kwargs to the right kwarg for the function."""
                 kwargs = kwargs.copy()
                 for dependency, replacement in upstream_dependencies.items():
@@ -151,9 +174,13 @@ class parameterize(function_modifiers_base.NodeExpander):
             new_input_types = {}
             for param, value in node_.input_types.items():
                 if param in upstream_dependencies:
-                    new_input_types[upstream_dependencies[param].source] = value  # We replace with the upstream_dependencies
+                    new_input_types[
+                        upstream_dependencies[param].source
+                    ] = value  # We replace with the upstream_dependencies
                 elif param not in literal_dependencies:
-                    new_input_types[param] = value  # We just use the standard one, nothing is getting replaced
+                    new_input_types[
+                        param
+                    ] = value  # We just use the standard one, nothing is getting replaced
 
             nodes.append(
                 node.Node(
@@ -162,9 +189,15 @@ class parameterize(function_modifiers_base.NodeExpander):
                     doc_string=docstring,  # TODO -- change docstring
                     callabl=functools.partial(
                         replacement_function,
-                        **{parameter: value.value for parameter, value in literal_dependencies.items()}),
+                        **{
+                            parameter: value.value
+                            for parameter, value in literal_dependencies.items()
+                        },
+                    ),
                     input_types=new_input_types,
-                    tags=node_.tags.copy()))
+                    tags=node_.tags.copy(),
+                )
+            )
         return nodes
 
     def validate(self, fn: Callable):
@@ -175,20 +208,25 @@ class parameterize(function_modifiers_base.NodeExpander):
                 # TODO -- separate out into the two dependency-types
                 self.format_doc_string(fn.__doc__, output_name)
         except KeyError as e:
-            raise InvalidDecoratorException(f'Function docstring templating is incorrect. '
-                                            f'Please fix up the docstring {fn.__module__}.{fn.__name__}.') from e
+            raise InvalidDecoratorException(
+                f"Function docstring templating is incorrect. "
+                f"Please fix up the docstring {fn.__module__}.{fn.__name__}."
+            ) from e
 
         if self.RESERVED_KWARG in func_param_names:
             raise InvalidDecoratorException(
-                f'Error function {fn.__module__}.{fn.__name__} cannot have `{self.RESERVED_KWARG}` '
-                f'as a parameter it is reserved.')
+                f"Error function {fn.__module__}.{fn.__name__} cannot have `{self.RESERVED_KWARG}` "
+                f"as a parameter it is reserved."
+            )
         missing_parameters = set()
         for mapping in self.parametrization.values():
             for param_to_replace in mapping:
                 if param_to_replace not in func_param_names:
                     missing_parameters.add(param_to_replace)
         if missing_parameters:
-            raise InvalidDecoratorException(f"Parametrization is invalid: the following parameters don't appear in the function itself: {', '.join(missing_parameters)}")
+            raise InvalidDecoratorException(
+                f"Parametrization is invalid: the following parameters don't appear in the function itself: {', '.join(missing_parameters)}"
+            )
 
     def format_doc_string(self, doc: str, output_name: str) -> str:
         """Helper function to format a function documentation string.
@@ -211,15 +249,21 @@ class parameterize(function_modifiers_base.NodeExpander):
             return None
         parametrization = self.parametrization[output_name]
         upstream_dependencies = {
-            parameter: replacement.source for parameter, replacement in parametrization.items()
-            if replacement.get_dependency_type() == ParametrizedDependencySource.UPSTREAM}
+            parameter: replacement.source
+            for parameter, replacement in parametrization.items()
+            if replacement.get_dependency_type() == ParametrizedDependencySource.UPSTREAM
+        }
         literal_dependencies = {
-            parameter: replacement.value for parameter, replacement in parametrization.items()
-            if replacement.get_dependency_type() == ParametrizedDependencySource.LITERAL}
+            parameter: replacement.value
+            for parameter, replacement in parametrization.items()
+            if replacement.get_dependency_type() == ParametrizedDependencySource.LITERAL
+        }
         return doc.format_map(
             IdentityDict(
                 **{self.RESERVED_KWARG: output_name},
-                **{**upstream_dependencies, **literal_dependencies}))
+                **{**upstream_dependencies, **literal_dependencies},
+            )
+        )
 
 
 class parameterize_values(parameterize):
@@ -233,17 +277,23 @@ class parameterize_values(parameterize):
         for node_ in assigned_output.keys():
             if not isinstance(node_, Tuple):
                 raise InvalidDecoratorException(
-                    f'assigned_output key is incorrect: {node_}. The parameterized decorator needs a dict of '
-                    '[name, doc string] -> value to function.')
-        super(parameterize_values, self).__init__(**{output: ({parameter: value(literal_value)}, documentation) for (output, documentation), literal_value in assigned_output.items()})
+                    f"assigned_output key is incorrect: {node_}. The parameterized decorator needs a dict of "
+                    "[name, doc string] -> value to function."
+                )
+        super(parameterize_values, self).__init__(
+            **{
+                output: ({parameter: value(literal_value)}, documentation)
+                for (output, documentation), literal_value in assigned_output.items()
+            }
+        )
 
 
 @deprecation.deprecated(
     warn_starting=(1, 10, 0),
     fail_starting=(2, 0, 0),
     use_this=parameterize_values,
-    explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
-    migration_guide='https://github.com/stitchfix/hamilton/blob/main/decorators.md#migrating-parameterized'
+    explanation="We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs",
+    migration_guide="https://github.com/stitchfix/hamilton/blob/main/decorators.md#migrating-parameterized",
 )
 class parametrized(parameterize_values):
     pass
@@ -270,20 +320,28 @@ class parameterize_sources(parameterize):
         """
         self.parametrization = parameterization
         if not parameterization:
-            raise ValueError(f'Cannot pass empty/None dictionary to parameterize_sources')
+            raise ValueError(f"Cannot pass empty/None dictionary to parameterize_sources")
         for output, mappings in parameterization.items():
             if not mappings:
-                raise ValueError(f'Error, {output} has a none/empty dictionary mapping. Please fill it.')
+                raise ValueError(
+                    f"Error, {output} has a none/empty dictionary mapping. Please fill it."
+                )
         super(parameterize_sources, self).__init__(
-            **{output: {parameter: source(upstream_node) for parameter, upstream_node in mapping.items()} for output, mapping in parameterization.items()})
+            **{
+                output: {
+                    parameter: source(upstream_node) for parameter, upstream_node in mapping.items()
+                }
+                for output, mapping in parameterization.items()
+            }
+        )
 
 
 @deprecation.deprecated(
     warn_starting=(1, 10, 0),
     fail_starting=(2, 0, 0),
     use_this=parameterize_sources,
-    explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
-    migration_guide='https://github.com/stitchfix/hamilton/blob/main/decorators.md#migrating-parameterized'
+    explanation="We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs",
+    migration_guide="https://github.com/stitchfix/hamilton/blob/main/decorators.md#migrating-parameterized",
 )
 class parametrized_input(parameterize):
     def __init__(self, parameter: str, variable_inputs: Dict[str, Tuple[str, str]]):
@@ -305,25 +363,29 @@ class parametrized_input(parameterize):
         for value in variable_inputs.values():
             if not isinstance(value, Tuple):
                 raise InvalidDecoratorException(
-                    f'assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of '
-                    'input column -> [name, description] to function.')
+                    f"assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of "
+                    "input column -> [name, description] to function."
+                )
         super(parametrized_input, self).__init__(
-            **{output: ({parameter: source(value)}, documentation) for value, (output, documentation) in variable_inputs.items()})
+            **{
+                output: ({parameter: source(value)}, documentation)
+                for value, (output, documentation) in variable_inputs.items()
+            }
+        )
 
 
 @deprecation.deprecated(
     warn_starting=(1, 10, 0),
     fail_starting=(2, 0, 0),
     use_this=parameterize_sources,
-    explanation='We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs',
-    migration_guide='https://github.com/stitchfix/hamilton/blob/main/decorators.md#migrating-parameterized'
+    explanation="We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs",
+    migration_guide="https://github.com/stitchfix/hamilton/blob/main/decorators.md#migrating-parameterized",
 )
 class parameterized_inputs(parameterize_sources):
     pass
 
 
 class extract_columns(function_modifiers_base.NodeExpander):
-
     def __init__(self, *columns: Union[Tuple[str, str], str], fill_with: Any = None):
         """Constructor for a modifier that expands a single function into the following nodes:
         - n functions, each of which take in the original dataframe and output a specific column
@@ -334,9 +396,13 @@ class extract_columns(function_modifiers_base.NodeExpander):
         Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a column.
         """
         if not columns:
-            raise InvalidDecoratorException('Error empty arguments passed to extract_columns decorator.')
+            raise InvalidDecoratorException(
+                "Error empty arguments passed to extract_columns decorator."
+            )
         elif isinstance(columns[0], list):
-            raise InvalidDecoratorException('Error list passed in. Please `*` in front of it to expand it.')
+            raise InvalidDecoratorException(
+                "Error list passed in. Please `*` in front of it to expand it."
+            )
         self.columns = columns
         self.fill_with = fill_with
 
@@ -349,9 +415,12 @@ class extract_columns(function_modifiers_base.NodeExpander):
         output_type = inspect.signature(fn).return_annotation
         if not issubclass(output_type, pd.DataFrame):
             raise InvalidDecoratorException(
-                f'For extracting columns, output type must be pandas dataframe, not: {output_type}')
+                f"For extracting columns, output type must be pandas dataframe, not: {output_type}"
+            )
 
-    def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    def expand_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         """For each column to extract, output a node that extracts that column. Also, output the original dataframe
         generator.
 
@@ -372,27 +441,42 @@ class extract_columns(function_modifiers_base.NodeExpander):
                         df_generated[col] = self.fill_with
             return df_generated
 
-        output_nodes = [node.Node(node_.name,
-                                  typ=pd.DataFrame,
-                                  doc_string=base_doc,
-                                  callabl=df_generator,
-                                  tags=node_.tags.copy())]
+        output_nodes = [
+            node.Node(
+                node_.name,
+                typ=pd.DataFrame,
+                doc_string=base_doc,
+                callabl=df_generator,
+                tags=node_.tags.copy(),
+            )
+        ]
 
         for column in self.columns:
             doc_string = base_doc  # default doc string of base function.
             if isinstance(column, Tuple):  # Expand tuple into constituents
                 column, doc_string = column
 
-            def extractor_fn(column_to_extract: str = column, **kwargs) -> pd.Series:  # avoiding problems with closures
+            def extractor_fn(
+                column_to_extract: str = column, **kwargs
+            ) -> pd.Series:  # avoiding problems with closures
                 df = kwargs[node_.name]
                 if column_to_extract not in df:
-                    raise InvalidDecoratorException(f'No such column: {column_to_extract} produced by {node_.name}. '
-                                                    f'It only produced {str(df.columns)}')
+                    raise InvalidDecoratorException(
+                        f"No such column: {column_to_extract} produced by {node_.name}. "
+                        f"It only produced {str(df.columns)}"
+                    )
                 return kwargs[node_.name][column_to_extract]
 
             output_nodes.append(
-                node.Node(column, pd.Series, doc_string, extractor_fn,
-                          input_types={node_.name: pd.DataFrame}, tags=node_.tags.copy()))
+                node.Node(
+                    column,
+                    pd.Series,
+                    doc_string,
+                    extractor_fn,
+                    input_types={node_.name: pd.DataFrame},
+                    tags=node_.tags.copy(),
+                )
+            )
         return output_nodes
 
 
@@ -409,20 +493,25 @@ class extract_fields(function_modifiers_base.NodeExpander):
         Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a field value.
         """
         if not fields:
-            raise InvalidDecoratorException('Error an empty dict, or no dict, passed to extract_fields decorator.')
+            raise InvalidDecoratorException(
+                "Error an empty dict, or no dict, passed to extract_fields decorator."
+            )
         elif not isinstance(fields, dict):
-            raise InvalidDecoratorException(f'Error, please pass in a dict, not {type(fields)}')
+            raise InvalidDecoratorException(f"Error, please pass in a dict, not {type(fields)}")
         else:
             errors = []
             for field, field_type in fields.items():
                 if not isinstance(field, str):
-                    errors.append(f'{field} is not a string. All keys must be strings.')
+                    errors.append(f"{field} is not a string. All keys must be strings.")
                 if not isinstance(field_type, type):
-                    errors.append(f'{field} does not declare a type. Instead it passes {field_type}.')
+                    errors.append(
+                        f"{field} does not declare a type. Instead it passes {field_type}."
+                    )
 
             if errors:
-                raise InvalidDecoratorException(f'Error, found these {errors}. '
-                                                f'Please pass in a dict of string to types. ')
+                raise InvalidDecoratorException(
+                    f"Error, found these {errors}. " f"Please pass in a dict of string to types. "
+                )
         self.fields = fields
         self.fill_with = fill_with
 
@@ -435,18 +524,24 @@ class extract_fields(function_modifiers_base.NodeExpander):
         output_type = inspect.signature(fn).return_annotation
         if typing_inspect.is_generic_type(output_type):
             base = typing_inspect.get_origin(output_type)
-            if base == dict or base == typing.Dict:  # different python versions return different things 3.7+ vs 3.6.
+            if (
+                base == dict or base == typing.Dict
+            ):  # different python versions return different things 3.7+ vs 3.6.
                 pass
             else:
                 raise InvalidDecoratorException(
-                    f'For extracting fields, output type must be a dict or typing.Dict, not: {output_type}')
+                    f"For extracting fields, output type must be a dict or typing.Dict, not: {output_type}"
+                )
         elif output_type == dict:
             pass
         else:
             raise InvalidDecoratorException(
-                f'For extracting fields, output type must be a dict or typing.Dict, not: {output_type}')
+                f"For extracting fields, output type must be a dict or typing.Dict, not: {output_type}"
+            )
 
-    def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    def expand_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         """For each field to extract, output a node that extracts that field. Also, output the original TypedDict
         generator.
 
@@ -468,20 +563,40 @@ class extract_fields(function_modifiers_base.NodeExpander):
                         dict_generated[field] = self.fill_with
             return dict_generated
 
-        output_nodes = [node.Node(node_.name, typ=dict, doc_string=base_doc, callabl=dict_generator, tags=node_.tags.copy())]
+        output_nodes = [
+            node.Node(
+                node_.name,
+                typ=dict,
+                doc_string=base_doc,
+                callabl=dict_generator,
+                tags=node_.tags.copy(),
+            )
+        ]
 
         for field, field_type in self.fields.items():
             doc_string = base_doc  # default doc string of base function.
 
-            def extractor_fn(field_to_extract: str = field, **kwargs) -> field_type:  # avoiding problems with closures
+            def extractor_fn(
+                field_to_extract: str = field, **kwargs
+            ) -> field_type:  # avoiding problems with closures
                 dt = kwargs[node_.name]
                 if field_to_extract not in dt:
-                    raise InvalidDecoratorException(f'No such field: {field_to_extract} produced by {node_.name}. '
-                                                    f'It only produced {list(dt.keys())}')
+                    raise InvalidDecoratorException(
+                        f"No such field: {field_to_extract} produced by {node_.name}. "
+                        f"It only produced {list(dt.keys())}"
+                    )
                 return kwargs[node_.name][field_to_extract]
 
             output_nodes.append(
-                node.Node(field, field_type, doc_string, extractor_fn, input_types={node_.name: dict}, tags=node_.tags.copy()))
+                node.Node(
+                    field,
+                    field_type,
+                    doc_string,
+                    extractor_fn,
+                    input_types={node_.name: dict},
+                    tags=node_.tags.copy(),
+                )
+            )
         return output_nodes
 
 
@@ -500,10 +615,14 @@ def ensure_function_empty(fn: Callable):
     Ensures that a function is empty. This is strict definition -- the function must have only one line (and
     possibly a docstring), and that line must say "pass".
     """
-    if fn.__code__.co_code not in {_empty_function.__code__.co_code,
-                                   _empty_function_with_docstring.__code__.co_code}:
-        raise InvalidDecoratorException(f'Function: {fn.__name__} is not empty. Must have only one line that '
-                                        f'consists of "pass"')
+    if fn.__code__.co_code not in {
+        _empty_function.__code__.co_code,
+        _empty_function_with_docstring.__code__.co_code,
+    }:
+        raise InvalidDecoratorException(
+            f"Function: {fn.__name__} is not empty. Must have only one line that "
+            f'consists of "pass"'
+        )
 
 
 class does(function_modifiers_base.NodeCreator):
@@ -522,7 +641,9 @@ class does(function_modifiers_base.NodeCreator):
         annotation_fn = inspect.signature(fn).return_annotation
         annotation_todo = inspect.signature(todo).return_annotation
         if not type_utils.custom_subclass_check(annotation_fn, annotation_todo):
-            raise InvalidDecoratorException(f'Output types: {annotation_fn} and {annotation_todo} are not compatible')
+            raise InvalidDecoratorException(
+                f"Output types: {annotation_fn} and {annotation_todo} are not compatible"
+            )
 
     @staticmethod
     def ensure_function_kwarg_only(fn: Callable):
@@ -531,12 +652,16 @@ class does(function_modifiers_base.NodeCreator):
         """
         parameters = inspect.signature(fn).parameters
         if len(parameters) > 1:
-            raise InvalidDecoratorException('Too many parameters -- for now @does can only use **kwarg functions. '
-                                            f'Found params: {parameters}')
-        (_, parameter), = parameters.items()
+            raise InvalidDecoratorException(
+                "Too many parameters -- for now @does can only use **kwarg functions. "
+                f"Found params: {parameters}"
+            )
+        ((_, parameter),) = parameters.items()
         if not parameter.kind == inspect.Parameter.VAR_KEYWORD:
-            raise InvalidDecoratorException(f'Must have only one parameter, and that parameter must be a **kwargs '
-                                            f'parameter. Instead, found: {parameter}')
+            raise InvalidDecoratorException(
+                f"Must have only one parameter, and that parameter must be a **kwargs "
+                f"parameter. Instead, found: {parameter}"
+            )
 
     def validate(self, fn: Callable):
         """
@@ -561,14 +686,17 @@ class does(function_modifiers_base.NodeCreator):
         return node.Node(
             fn.__name__,
             typ=fn_signature.return_annotation,
-            doc_string=fn.__doc__ if fn.__doc__ is not None else '',
+            doc_string=fn.__doc__ if fn.__doc__ is not None else "",
             callabl=self.replacing_function,
             input_types={key: value.annotation for key, value in fn_signature.parameters.items()},
-            tags=get_default_tags(fn))
+            tags=get_default_tags(fn),
+        )
 
 
 class dynamic_transform(function_modifiers_base.NodeCreator):
-    def __init__(self, transform_cls: Type[models.BaseModel], config_param: str, **extra_transform_params):
+    def __init__(
+        self, transform_cls: Type[models.BaseModel], config_param: str, **extra_transform_params
+    ):
         """Constructs a model. Takes in a model_cls, which has to have a parameter."""
         self.transform_cls = transform_cls
         self.config_param = config_param
@@ -586,29 +714,40 @@ class dynamic_transform(function_modifiers_base.NodeCreator):
         ensure_function_empty(fn)  # it has to look exactly
         signature = inspect.signature(fn)
         if not issubclass(signature.return_annotation, pd.Series):
-            raise InvalidDecoratorException('Models must declare their return type as a pandas Series')
+            raise InvalidDecoratorException(
+                "Models must declare their return type as a pandas Series"
+            )
         if len(signature.parameters) > 0:
-            raise InvalidDecoratorException('Models must have no parameters -- all are passed in through the config')
+            raise InvalidDecoratorException(
+                "Models must have no parameters -- all are passed in through the config"
+            )
 
     def generate_node(self, fn: Callable, config: Dict[str, Any] = None) -> node.Node:
         if self.config_param not in config:
-            raise InvalidDecoratorException(f'Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?')
+            raise InvalidDecoratorException(
+                f"Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?"
+            )
         fn_name = fn.__name__
-        transform = self.transform_cls(config[self.config_param], fn_name, **self.extra_transform_params)
+        transform = self.transform_cls(
+            config[self.config_param], fn_name, **self.extra_transform_params
+        )
         return node.Node(
             name=fn_name,
             typ=inspect.signature(fn).return_annotation,
             doc_string=fn.__doc__,
             callabl=transform.compute,
             input_types={dep: pd.Series for dep in transform.get_dependents()},
-            tags=get_default_tags(fn))
+            tags=get_default_tags(fn),
+        )
 
 
 class model(dynamic_transform):
     """Model, same as a dynamic transform"""
 
     def __init__(self, model_cls, config_param: str, **extra_model_params):
-        super(model, self).__init__(transform_cls=model_cls, config_param=config_param, **extra_model_params)
+        super(model, self).__init__(
+            transform_cls=model_cls, config_param=config_param, **extra_model_params
+        )
 
 
 class config(function_modifiers_base.NodeResolver):
@@ -634,11 +773,13 @@ class config(function_modifiers_base.NodeResolver):
         return fn
 
     def validate(self, fn):
-        if fn.__name__.endswith('__'):
-            raise InvalidDecoratorException('Config will always use the portion of the function name before the last __. For example, signups__v2 will map to signups, whereas')
+        if fn.__name__.endswith("__"):
+            raise InvalidDecoratorException(
+                "Config will always use the portion of the function name before the last __. For example, signups__v2 will map to signups, whereas"
+            )
 
     @staticmethod
-    def when(name=None, **key_value_pairs) -> 'config':
+    def when(name=None, **key_value_pairs) -> "config":
         """Yields a decorator that resolves the function if all keys in the config are equal to the corresponding value
 
         :param key_value_pairs: Keys and corresponding values to look up in the config
@@ -651,7 +792,7 @@ class config(function_modifiers_base.NodeResolver):
         return config(resolves, target_name=name)
 
     @staticmethod
-    def when_not(name=None, **key_value_pairs: Any) -> 'config':
+    def when_not(name=None, **key_value_pairs: Any) -> "config":
         """Yields a decorator that resolves the function if none keys in the config are equal to the corresponding value
 
         :param key_value_pairs: Keys and corresponding values to look up in the config
@@ -664,7 +805,7 @@ class config(function_modifiers_base.NodeResolver):
         return config(resolves, target_name=name)
 
     @staticmethod
-    def when_in(name=None, **key_value_group_pairs: Collection[Any]) -> 'config':
+    def when_in(name=None, **key_value_group_pairs: Collection[Any]) -> "config":
         """Yields a decorator that resolves the function if all of the keys are equal to one of items in the list of values.
 
         :param key_value_group_pairs: pairs of key-value mappings where the value is a list of possible values
@@ -672,12 +813,14 @@ class config(function_modifiers_base.NodeResolver):
         """
 
         def resolves(configuration: Dict[str, Any]) -> bool:
-            return all(configuration.get(key) in value for key, value in key_value_group_pairs.items())
+            return all(
+                configuration.get(key) in value for key, value in key_value_group_pairs.items()
+            )
 
         return config(resolves, target_name=name)
 
     @staticmethod
-    def when_not_in(**key_value_group_pairs: Collection[Any]) -> 'config':
+    def when_not_in(**key_value_group_pairs: Collection[Any]) -> "config":
         """Yields a decorator that resolves the function only if none of the keys are in the list of values.
 
         :param key_value_group_pairs: pairs of key-value mappings where the value is a list of possible values
@@ -697,7 +840,9 @@ class config(function_modifiers_base.NodeResolver):
         """
 
         def resolves(configuration: Dict[str, Any]) -> bool:
-            return all(configuration.get(key) not in value for key, value in key_value_group_pairs.items())
+            return all(
+                configuration.get(key) not in value for key, value in key_value_group_pairs.items()
+            )
 
         return config(resolves)
 
@@ -733,12 +878,12 @@ class tag(function_modifiers_base.NodeDecorator):
     """
 
     RESERVED_TAG_NAMESPACES = [
-        'hamilton',
-        'data_quality',
-        'gdpr',
-        'ccpa',
-        'dag',
-        'module',
+        "hamilton",
+        "data_quality",
+        "gdpr",
+        "ccpa",
+        "dag",
+        "module",
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 
     def __init__(self, **tags: str):
@@ -764,7 +909,8 @@ class tag(function_modifiers_base.NodeDecorator):
             callabl=node_.callable,
             node_source=node_.node_source,
             input_types=node_.input_types,
-            tags=unioned_tags)
+            tags=unioned_tags,
+        )
 
     @staticmethod
     def _key_allowed(key: str) -> bool:
@@ -777,7 +923,7 @@ class tag(function_modifiers_base.NodeDecorator):
         :param key: The key to validate
         :return: True if it is valid, False if not
         """
-        key_components = key.split('.')
+        key_components = key.split(".")
         if len(key_components) == 0:
             # empty string...
             return False
@@ -811,23 +957,24 @@ class tag(function_modifiers_base.NodeDecorator):
             if (not tag._key_allowed(key)) or (not tag._value_allowed(value)):
                 bad_tags.add((key, value))
         if bad_tags:
-            bad_tags_formatted = ','.join([f'{key}={value}' for key, value in bad_tags])
-            raise InvalidDecoratorException(f'The following tags are invalid as tags: {bad_tags_formatted} '
-                                            'Tag keys can be split by ., to represent a hierarchy, '
-                                            'but each element of the hierarchy must be a valid python identifier. '
-                                            'Paths components also cannot be empty. '
-                                            'The value can be anything. Note that the following top-level prefixes are '
-                                            f'reserved as well: {self.RESERVED_TAG_NAMESPACES}')
+            bad_tags_formatted = ",".join([f"{key}={value}" for key, value in bad_tags])
+            raise InvalidDecoratorException(
+                f"The following tags are invalid as tags: {bad_tags_formatted} "
+                "Tag keys can be split by ., to represent a hierarchy, "
+                "but each element of the hierarchy must be a valid python identifier. "
+                "Paths components also cannot be empty. "
+                "The value can be anything. Note that the following top-level prefixes are "
+                f"reserved as well: {self.RESERVED_TAG_NAMESPACES}"
+            )
 
 
 # These are part of the publicly exposed API -- do not change them
 # Tests will catch it if you do!
-IS_DATA_VALIDATOR_TAG = 'hamilton.data_quality.contains_dq_results'
-DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = 'hamilton.data_quality.source_node'
+IS_DATA_VALIDATOR_TAG = "hamilton.data_quality.contains_dq_results"
+DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = "hamilton.data_quality.source_node"
 
 
 class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
-
     @abc.abstractmethod
     def get_validators(self, node_to_validate: node.Node) -> List[dq_base.DataValidator]:
         """Returns a list of validators used to transform the nodes.
@@ -837,24 +984,29 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
         """
         pass
 
-    def transform_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    def transform_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         raw_node = node.Node(
-            name=node_.name + '_raw',  # TODO -- make this unique -- this will break with multiple validation decorators, which we *don't* want
+            name=node_.name
+            + "_raw",  # TODO -- make this unique -- this will break with multiple validation decorators, which we *don't* want
             typ=node_.type,
             doc_string=node_.documentation,
             callabl=node_.callable,
             node_source=node_.node_source,
             input_types=node_.input_types,
-            tags=node_.tags)
+            tags=node_.tags,
+        )
         validators = self.get_validators(node_)
         validator_nodes = []
         validator_name_map = {}
         for validator in validators:
+
             def validation_function(validator_to_call: dq_base.DataValidator = validator, **kwargs):
                 result = list(kwargs.values())[0]  # This should just have one kwarg
                 return validator_to_call.validate(result)
 
-            validator_node_name = node_.name + '_' + validator.name()
+            validator_node_name = node_.name + "_" + validator.name()
             validator_node = node.Node(
                 name=validator_node_name,  # TODO -- determine a good approach towards naming this
                 typ=dq_base.ValidationResult,
@@ -867,13 +1019,16 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
                     **{
                         function_modifiers_base.NodeTransformer.NON_FINAL_TAG: True,  # This is not to be used as a subdag later on
                         IS_DATA_VALIDATOR_TAG: True,
-                        DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG: node_.name
-                    }}
+                        DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG: node_.name,
+                    },
+                },
             )
             validator_name_map[validator_node_name] = validator
             validator_nodes.append(validator_node)
 
-        def final_node_callable(validator_nodes=validator_nodes, validator_name_map=validator_name_map, **kwargs):
+        def final_node_callable(
+            validator_nodes=validator_nodes, validator_name_map=validator_name_map, **kwargs
+        ):
             """Callable for the final node. First calls the action on every node, then
 
             :param validator_nodes:
@@ -900,8 +1055,13 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
             node_source=node_.node_source,
             input_types={
                 raw_node.name: (node_.type, node.DependencyType.REQUIRED),
-                **{validator_node.name: (validator_node.type, node.DependencyType.REQUIRED) for validator_node in validator_nodes}},
-            tags=node_.tags)
+                **{
+                    validator_node.name: (validator_node.type, node.DependencyType.REQUIRED)
+                    for validator_node in validator_nodes
+                },
+            },
+            tags=node_.tags,
+        )
         return [*validator_nodes, final_node, raw_node]
 
     def validate(self, fn: Callable):
@@ -927,12 +1087,15 @@ class check_output(BaseDataValidationDecorator):
             node_to_validate.type,
             importance=self.importance,
             available_validators=self.default_decorator_candidates,
-            **self.default_validator_kwargs)
+            **self.default_validator_kwargs,
+        )
 
-    def __init__(self,
-                 importance: str = dq_base.DataValidationLevel.WARN.value,
-                 default_decorator_candidates: Type[dq_base.BaseDefaultValidator] = None,
-                 **default_validator_kwargs: Any):
+    def __init__(
+        self,
+        importance: str = dq_base.DataValidationLevel.WARN.value,
+        default_decorator_candidates: Type[dq_base.BaseDefaultValidator] = None,
+        **default_validator_kwargs: Any,
+    ):
         """Creates the check_output validator. This constructs the default validator class.
         Note that this creates a whole set of default validators
         TODO -- enable construction of custom validators using check_output.custom(*validators)
@@ -947,15 +1110,18 @@ class check_output(BaseDataValidationDecorator):
         # So, we'll just store the constructor arguments for now and check it in validation
 
     @staticmethod
-    def _validate_constructor_args(*validator: dq_base.DataValidator, importance: str = None, **default_validator_kwargs: Any):
+    def _validate_constructor_args(
+        *validator: dq_base.DataValidator, importance: str = None, **default_validator_kwargs: Any
+    ):
         if len(validator) != 0:
             if importance is not None or len(default_validator_kwargs) > 0:
                 raise ValueError(
-                    f'Can provide *either* a list of custom validators or arguments for the default validator. '
-                    f'Instead received both.')
+                    f"Can provide *either* a list of custom validators or arguments for the default validator. "
+                    f"Instead received both."
+                )
         else:
             if importance is None:
-                raise ValueError(f'Must supply an importance level if using the default validator.')
+                raise ValueError(f"Must supply an importance level if using the default validator.")
 
     def validate(self, fn: Callable):
         """Validates that the check_output node works on the function on which it was called

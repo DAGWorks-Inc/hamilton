@@ -15,35 +15,35 @@ class PanderaDataFrameValidator(base.BaseDefaultValidator):
 
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
-        return issubclass(datatype, pd.DataFrame)  # TODO -- allow for modin, etc. as they come for free with pandera
+        return issubclass(
+            datatype, pd.DataFrame
+        )  # TODO -- allow for modin, etc. as they come for free with pandera
 
     def description(self) -> str:
-        return f'Validates that the returned dataframe matches the pander'
+        return f"Validates that the returned dataframe matches the pander"
 
     def validate(self, data: pd.DataFrame) -> base.ValidationResult:
         try:
             result = self.schema.validate(data, lazy=True, inplace=True)
-            if hasattr(result, 'dask'):
+            if hasattr(result, "dask"):
                 result.compute()
         except pa.errors.SchemaErrors as e:
             return base.ValidationResult(
-                passes=False,
-                message=str(e),
-                diagnostics={'schema_errors': e.schema_errors}
+                passes=False, message=str(e), diagnostics={"schema_errors": e.schema_errors}
             )
         return base.ValidationResult(
             passes=True,
-            message=f'Data passes pandera check for schema {str(self.schema)}'
+            message=f"Data passes pandera check for schema {str(self.schema)}"
             # TDOO -- add diagnostics data with serialized the schema
         )
 
     @classmethod
     def arg(cls) -> str:
-        return 'schema'  # TODO -- determine whether we want to allow other schemas
+        return "schema"  # TODO -- determine whether we want to allow other schemas
 
     @classmethod
     def name(cls) -> str:
-        return 'pandera_schema_validator'
+        return "pandera_schema_validator"
 
 
 class PanderaSeriesSchemaValidator(base.BaseDefaultValidator):
@@ -55,7 +55,9 @@ class PanderaSeriesSchemaValidator(base.BaseDefaultValidator):
 
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
-        return issubclass(datatype, pd.Series)  # TODO -- allow for modin, etc. as they come for free with pandera
+        return issubclass(
+            datatype, pd.Series
+        )  # TODO -- allow for modin, etc. as they come for free with pandera
 
     def description(self) -> str:
         pass
@@ -63,27 +65,25 @@ class PanderaSeriesSchemaValidator(base.BaseDefaultValidator):
     def validate(self, data: pd.Series) -> base.ValidationResult:
         try:
             result = self.schema.validate(data, lazy=True, inplace=True)
-            if hasattr(result, 'dask'):
+            if hasattr(result, "dask"):
                 result.compute()
         except pa.errors.SchemaErrors as e:
             return base.ValidationResult(
-                passes=False,
-                message=str(e),
-                diagnostics={'schema_errors': e.schema_errors}
+                passes=False, message=str(e), diagnostics={"schema_errors": e.schema_errors}
             )
         return base.ValidationResult(
             passes=True,
-            message=f'Data passes pandera check for schema {str(self.schema)}'
+            message=f"Data passes pandera check for schema {str(self.schema)}"
             # TDOO -- add diagnostics data with serialized the schema
         )
 
     @classmethod
     def arg(cls) -> str:
-        return 'schema'  # TODO -- determine whether we want to allow other schemas
+        return "schema"  # TODO -- determine whether we want to allow other schemas
 
     @classmethod
     def name(cls) -> str:
-        return 'pandera_schema_validator'
+        return "pandera_schema_validator"
 
 
 PANDERA_VALIDATORS = [PanderaDataFrameValidator, PanderaSeriesSchemaValidator]

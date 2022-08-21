@@ -1,14 +1,12 @@
 import logging
 import typing
 
+import numpy as np
 import pandas as pd
 import pyspark.pandas as ps
 from pyspark.sql import dataframe
-import numpy as np
 
-
-from hamilton import base
-from hamilton import node
+from hamilton import base, node
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +56,14 @@ class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         :param spine_column: the column we should use first as the spine and then subsequently join against.
         """
         self.spark_session = spark_session
-        if not (isinstance(result_builder, base.PandasDataFrameResult) or
-                isinstance(result_builder, KoalasDataFrameResult)):
-            raise ValueError('SparkKoalasGraphAdapter only supports returning:'
-                             ' a "pandas" DF at the moment, or a "koalas" DF at the moment.')
+        if not (
+            isinstance(result_builder, base.PandasDataFrameResult)
+            or isinstance(result_builder, KoalasDataFrameResult)
+        ):
+            raise ValueError(
+                "SparkKoalasGraphAdapter only supports returning:"
+                ' a "pandas" DF at the moment, or a "koalas" DF at the moment.'
+            )
         self.result_builder = result_builder
         self.spine_column = spine_column
 
@@ -77,7 +79,8 @@ class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         """
         # TODO: flesh this out more
         if (node_type == pd.Series or node_type == ps.Series) and (
-                isinstance(input_value, ps.DataFrame) or isinstance(input_value, ps.Series)):
+            isinstance(input_value, ps.DataFrame) or isinstance(input_value, ps.Series)
+        ):
             return True
         elif node_type == np.array and isinstance(input_value, dataframe.DataFrame):
             return True
@@ -111,11 +114,13 @@ class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         """
         return node.callable(**kwargs)
 
-    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Union[pd.DataFrame, ps.DataFrame]:
+    def build_result(
+        self, **outputs: typing.Dict[str, typing.Any]
+    ) -> typing.Union[pd.DataFrame, ps.DataFrame]:
         # we don't use the actual function for building right now, we use this hacky equivalent
         df = ps.DataFrame(outputs[self.spine_column])
         for k, v in outputs.items():
-            logger.info(f'Got column {k}, with type [{type(v)}].')
+            logger.info(f"Got column {k}, with type [{type(v)}].")
             df[k] = v
         if isinstance(self.result_builder, base.PandasDataFrameResult):
             return df.to_pandas()

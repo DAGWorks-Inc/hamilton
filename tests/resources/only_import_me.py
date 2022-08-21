@@ -2,4 +2,4 @@
 
 
 def this_is_not_something_we_should_import():
-    print('Why am I being printed?')
+    print("Why am I being printed?")

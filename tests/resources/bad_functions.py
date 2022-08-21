@@ -17,9 +17,9 @@ def B(b: int, c: int):
 
 def C(b: int) -> dict:
     """Setting up type mismatch."""
-    return {'hi': 'world'}
+    return {"hi": "world"}
 
 
 def D(C: int) -> int:
     """C is the incorrect type."""
-    return int(C['hi'])
+    return int(C["hi"])

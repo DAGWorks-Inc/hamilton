@@ -1,5 +1,5 @@
 import abc
-from typing import Callable, Dict, Any, Collection, Tuple
+from typing import Any, Callable, Collection, Dict, Tuple
 
 from hamilton import node
 
@@ -14,7 +14,7 @@ def sanitize_function_name(name: str) -> str:
     :param name: Function name
     :return: Sanitized version.
     """
-    last_dunder_index = name.rfind('__')
+    last_dunder_index = name.rfind("__")
     return name[:last_dunder_index] if last_dunder_index != -1 else name
 
 
@@ -58,7 +58,9 @@ class NodeTransformLifecycle(abc.ABC):
         lifecycle_name = self.__class__.get_lifecycle_name()
         if hasattr(fn, self.get_lifecycle_name()):
             if not self.allows_multiple():
-                raise ValueError(f'Got multiple decorators for decorator @{self.__class__}. Only one allowed.')
+                raise ValueError(
+                    f"Got multiple decorators for decorator @{self.__class__}. Only one allowed."
+                )
             curr_value = getattr(fn, lifecycle_name)
             setattr(fn, lifecycle_name, curr_value + [self])
         else:
@@ -91,7 +93,7 @@ class NodeResolver(NodeTransformLifecycle):
 
     @classmethod
     def get_lifecycle_name(cls) -> str:
-        return 'resolve'
+        return "resolve"
 
     @classmethod
     def allows_multiple(cls) -> bool:
@@ -122,7 +124,7 @@ class NodeCreator(NodeTransformLifecycle, abc.ABC):
 
     @classmethod
     def get_lifecycle_name(cls) -> str:
-        return 'generate'
+        return "generate"
 
     @classmethod
     def allows_multiple(cls) -> bool:
@@ -131,7 +133,9 @@ class NodeCreator(NodeTransformLifecycle, abc.ABC):
 
 class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
     @abc.abstractmethod
-    def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    def transform_dag(
+        self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         """Modifies a DAG consisting of a set of nodes. Note that this is to support the following two base classes.
 
         :param nodes: Collection of nodes (not necessarily connected) to modify
@@ -144,16 +148,23 @@ class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
 class NodeExpander(SubDAGModifier):
     """Expands a node into multiple nodes. This is a special case of the SubDAGModifier,
     which allows modification of some portion of the DAG. This just modifies a single node."""
-    EXPAND_NODES = 'expand_nodes'
 
-    def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    EXPAND_NODES = "expand_nodes"
+
+    def transform_dag(
+        self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         if len(nodes) != 1:
-            raise ValueError(f'Cannot call NodeExpander: {self.__class__} on more than one node. This must be called first in the DAG. Called with {nodes}')
-        node_, = nodes
+            raise ValueError(
+                f"Cannot call NodeExpander: {self.__class__} on more than one node. This must be called first in the DAG. Called with {nodes}"
+            )
+        (node_,) = nodes
         return self.expand_node(node_, config, fn)
 
     @abc.abstractmethod
-    def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    def expand_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         """Given a single node, expands into multiple nodes. Note that this node list includes:
         1. Each "output" node (think sink in a DAG)
         2. All intermediate steps
@@ -170,7 +181,7 @@ class NodeExpander(SubDAGModifier):
 
     @classmethod
     def get_lifecycle_name(cls) -> str:
-        return 'expand'
+        return "expand"
 
     @classmethod
     def allows_multiple(cls) -> bool:
@@ -178,10 +189,12 @@ class NodeExpander(SubDAGModifier):
 
 
 class NodeTransformer(SubDAGModifier):
-    NON_FINAL_TAG = 'hamilton.decorators.non_final'  # TODO -- utilize this in _separate_final_nodes
+    NON_FINAL_TAG = "hamilton.decorators.non_final"  # TODO -- utilize this in _separate_final_nodes
 
     @staticmethod
-    def _separate_final_nodes(nodes: Collection[node.Node]) -> Tuple[Collection[node.Node], Collection[node.Node]]:
+    def _separate_final_nodes(
+        nodes: Collection[node.Node],
+    ) -> Tuple[Collection[node.Node], Collection[node.Node]]:
         """Separates out final nodes (sinks) from the nodes.
 
         :param nodes: Nodes to separate out
@@ -190,14 +203,19 @@ class NodeTransformer(SubDAGModifier):
 
         def node_tagged_non_final(node_: node.Node):
             return node_.tags.get(NodeTransformer.NON_FINAL_TAG, False)  # Defaults to final
+
         non_final_nodes = set()
         for node_ in nodes:
             for dep in node_.input_types:
                 if not node_tagged_non_final(node_):
                     non_final_nodes.add(dep)
-        return [node_ for node_ in nodes if node_.name in non_final_nodes], [node_ for node_ in nodes if node_.name not in non_final_nodes]
+        return [node_ for node_ in nodes if node_.name in non_final_nodes], [
+            node_ for node_ in nodes if node_.name not in non_final_nodes
+        ]
 
-    def transform_dag(self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    def transform_dag(
+        self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         """Finds the sources and sinks and runs the transformer on each sink.
         Then returns the result of the entire set of sinks. Note that each sink has to have a unique name.
 
@@ -213,7 +231,9 @@ class NodeTransformer(SubDAGModifier):
         return out
 
     @abc.abstractmethod
-    def transform_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    def transform_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         pass
 
     @abc.abstractmethod
@@ -222,7 +242,7 @@ class NodeTransformer(SubDAGModifier):
 
     @classmethod
     def get_lifecycle_name(cls) -> str:
-        return 'transform'
+        return "transform"
 
     @classmethod
     def allows_multiple(cls) -> bool:
@@ -230,9 +250,11 @@ class NodeTransformer(SubDAGModifier):
 
 
 class NodeDecorator(NodeTransformer, abc.ABC):
-    DECORATE_NODES = 'decorate_nodes'
+    DECORATE_NODES = "decorate_nodes"
 
-    def transform_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    def transform_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         """Transforms the node. Delegates to decorate_node
 
         :param node_: Node to transform
@@ -280,7 +302,9 @@ class DefaultNodeResolver(NodeResolver):
 
 
 class DefaultNodeExpander(NodeExpander):
-    def expand_node(self, node_: node.Node, config: Dict[str, Any], fn: Callable) -> Collection[node.Node]:
+    def expand_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
         return [node_]
 
     def validate(self, fn: Callable):
@@ -326,9 +350,9 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
         fn = resolver.resolve(fn, config)
         if fn is None:
             return []
-    node_creator, = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
+    (node_creator,) = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
     nodes = [node_creator.generate_node(fn, config)]
-    node_expander, = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
+    (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
     nodes = node_expander.transform_dag(nodes, config, fn)
     node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
     for dag_modifier in node_transformers:

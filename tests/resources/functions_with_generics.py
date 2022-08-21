@@ -1,7 +1,7 @@
 """
 Module for functions with genercis to test graph things with.
 """
-from typing import Dict, Mapping, List, Tuple
+from typing import Dict, List, Mapping, Tuple
 
 
 def A(b: Dict, c: int) -> Tuple[Dict, int]:
@@ -15,7 +15,7 @@ def B(A: Tuple[Dict, int]) -> List:
 
 
 def C(B: list) -> Dict:
-    return {'foo': B}
+    return {"foo": B}
 
 
 def D(C: Mapping) -> float:

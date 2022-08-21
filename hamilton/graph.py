@@ -8,11 +8,9 @@ Note: one should largely consider the code in this module to be "private".
 import inspect
 import logging
 from types import ModuleType
-from typing import Type, Dict, Any, Callable, Tuple, Set, Collection, List
+from typing import Any, Callable, Collection, Dict, List, Set, Tuple, Type
 
-from hamilton import function_modifiers_base
-from hamilton import node
-from hamilton import base
+from hamilton import base, function_modifiers_base, node
 from hamilton.type_utils import types_match
 
 logger = logging.getLogger(__name__)
@@ -31,16 +29,23 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
     """
 
     def valid_fn(fn):
-        return (inspect.isfunction(fn)
-                and not fn.__name__.startswith('_')
-                and is_submodule(inspect.getmodule(fn), function_module))
+        return (
+            inspect.isfunction(fn)
+            and not fn.__name__.startswith("_")
+            and is_submodule(inspect.getmodule(fn), function_module)
+        )
 
     return [f for f in inspect.getmembers(function_module, predicate=valid_fn)]
 
 
 def add_dependency(
-        func_node: node.Node, func_name: str, nodes: Dict[str, node.Node], param_name: str, param_type: Type,
-        adapter: base.HamiltonGraphAdapter):
+    func_node: node.Node,
+    func_name: str,
+    nodes: Dict[str, node.Node],
+    param_name: str,
+    param_type: Type,
+    adapter: base.HamiltonGraphAdapter,
+):
     """Adds dependencies to the node objects.
 
     This will add user defined inputs to the dictionary of nodes in the graph.
@@ -56,8 +61,10 @@ def add_dependency(
         # validate types match
         required_node = nodes[param_name]
         if not types_match(adapter, param_type, required_node.type):
-            raise ValueError(f'Error: {func_name} is expecting {param_name}:{param_type}, but found '
-                             f'{param_name}:{required_node.type}. All names & types must match.')
+            raise ValueError(
+                f"Error: {func_name} is expecting {param_name}:{param_type}, but found "
+                f"{param_name}:{required_node.type}. All names & types must match."
+            )
     else:
         # this is a user defined var
         required_node = node.Node(param_name, param_type, node_source=node.NodeSource.EXTERNAL)
@@ -67,7 +74,9 @@ def add_dependency(
     required_node.depended_on_by.append(func_node)
 
 
-def create_function_graph(*modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter) -> Dict[str, node.Node]:
+def create_function_graph(
+    *modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter
+) -> Dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
     :param modules: A set of modules over which one wants to compute the function graph
     :param config: Dictionary that we will inspect to get values from in building the function graph.
@@ -84,8 +93,10 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any], adapter:
             if n.name in config:
                 continue  # This makes sure we overwrite things if they're in the config...
             if n.name in nodes:
-                raise ValueError(f'Cannot define function {n.name} more than once.'
-                                 f' Already defined by function {f}')
+                raise ValueError(
+                    f"Cannot define function {n.name} more than once."
+                    f" Already defined by function {f}"
+                )
             nodes[n.name] = n
     # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
     for node_name, n in list(nodes.items()):
@@ -97,8 +108,9 @@ def create_function_graph(*modules: ModuleType, config: Dict[str, Any], adapter:
     return nodes
 
 
-def create_graphviz_graph(nodes: Set[node.Node], user_nodes: Set[node.Node], comment: str,
-                          graphviz_kwargs: dict) -> 'graphviz.Digraph':
+def create_graphviz_graph(
+    nodes: Set[node.Node], user_nodes: Set[node.Node], comment: str, graphviz_kwargs: dict
+) -> "graphviz.Digraph":
     """Helper function to create a graphviz graph.
 
     :param nodes: The set of computational nodes
@@ -109,11 +121,12 @@ def create_graphviz_graph(nodes: Set[node.Node], user_nodes: Set[node.Node], com
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
     import graphviz
+
     digraph = graphviz.Digraph(comment=comment, **graphviz_kwargs)
     for n in nodes:
         digraph.node(n.name, label=n.name)
     for n in user_nodes:
-        digraph.node(n.name, label=f'UD: {n.name}')
+        digraph.node(n.name, label=f"UD: {n.name}")
 
     for n in list(nodes) + list(user_nodes):
         for d in n.dependencies:
@@ -121,7 +134,9 @@ def create_graphviz_graph(nodes: Set[node.Node], user_nodes: Set[node.Node], com
     return digraph
 
 
-def create_networkx_graph(nodes: Set[node.Node], user_nodes: Set[node.Node], name: str) -> 'networkx.DiGraph':
+def create_networkx_graph(
+    nodes: Set[node.Node], user_nodes: Set[node.Node], name: str
+) -> "networkx.DiGraph":
     """Helper function to create a networkx graph.
 
     :param nodes: The set of computational nodes
@@ -130,11 +145,12 @@ def create_networkx_graph(nodes: Set[node.Node], user_nodes: Set[node.Node], nam
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
     import networkx
+
     digraph = networkx.DiGraph(name=name)
     for n in nodes:
         digraph.add_node(n.name, label=n.name)
     for n in user_nodes:
-        digraph.add_node(n.name, label=f'UD: {n.name}')
+        digraph.add_node(n.name, label=f"UD: {n.name}")
 
     for n in list(nodes) + list(user_nodes):
         for d in n.dependencies:
@@ -148,7 +164,12 @@ class FunctionGraph(object):
     That is, you should not try to build off of it directly without chatting to us first.
     """
 
-    def __init__(self, *modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter = None):
+    def __init__(
+        self,
+        *modules: ModuleType,
+        config: Dict[str, Any],
+        adapter: base.HamiltonGraphAdapter = None,
+    ):
         """Initializes a function graph by crawling through modules. Function graph must have a config,
         as the config could determine the shape of the graph.
 
@@ -170,10 +191,12 @@ class FunctionGraph(object):
     def get_nodes(self) -> List[node.Node]:
         return list(self.nodes.values())
 
-    def display_all(self,
-                    output_file_path: str = 'test-output/graph-all.gv',
-                    render_kwargs: dict = None,
-                    graphviz_kwargs: dict = None):
+    def display_all(
+        self,
+        output_file_path: str = "test-output/graph-all.gv",
+        render_kwargs: dict = None,
+        graphviz_kwargs: dict = None,
+    ):
         """Displays & saves a dot file of the entire DAG structure constructed.
 
         :param output_file_path: the place to save the files.
@@ -193,8 +216,13 @@ class FunctionGraph(object):
             render_kwargs = {}
         if graphviz_kwargs is None:
             graphviz_kwargs = {}
-        self.display(defined_nodes, user_nodes,
-                     output_file_path=output_file_path, render_kwargs=render_kwargs, graphviz_kwargs=graphviz_kwargs)
+        self.display(
+            defined_nodes,
+            user_nodes,
+            output_file_path=output_file_path,
+            render_kwargs=render_kwargs,
+            graphviz_kwargs=graphviz_kwargs,
+        )
 
     def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
         """Checks that the graph created does not contain cycles.
@@ -217,20 +245,22 @@ class FunctionGraph(object):
             import networkx
         except ModuleNotFoundError:
             logger.exception(
-                ' networkx is required for detecting cycles in the function graph. Install it with:'
-                '\n\n  pip install sf-hamilton[visualization] or pip install networkx \n\n'
+                " networkx is required for detecting cycles in the function graph. Install it with:"
+                "\n\n  pip install sf-hamilton[visualization] or pip install networkx \n\n"
             )
             return False
-        digraph = create_networkx_graph(nodes, user_nodes, 'Dependency Graph')
+        digraph = create_networkx_graph(nodes, user_nodes, "Dependency Graph")
         cycles = list(networkx.simple_cycles(digraph))
         return cycles
 
     @staticmethod
-    def display(nodes: Set[node.Node],
-                user_nodes: Set[node.Node],
-                output_file_path: str = 'test-output/graph.gv',
-                render_kwargs: dict = None,
-                graphviz_kwargs: dict = None):
+    def display(
+        nodes: Set[node.Node],
+        user_nodes: Set[node.Node],
+        output_file_path: str = "test-output/graph.gv",
+        render_kwargs: dict = None,
+        graphviz_kwargs: dict = None,
+    ):
         """Function to display the graph represented by the passed in nodes.
 
         :param nodes: the set of nodes that need to be computed.
@@ -245,14 +275,14 @@ class FunctionGraph(object):
             import graphviz
         except ModuleNotFoundError:
             logger.exception(
-                ' graphviz is required for visualizing the function graph. Install it with:'
-                '\n\n  pip install sf-hamilton[visualization] or pip install graphviz \n\n'
+                " graphviz is required for visualizing the function graph. Install it with:"
+                "\n\n  pip install sf-hamilton[visualization] or pip install graphviz \n\n"
             )
             return
         if graphviz_kwargs is None:
             graphviz_kwargs = {}
-        dot = create_graphviz_graph(nodes, user_nodes, 'Dependency Graph', graphviz_kwargs)
-        kwargs = {'view': True}
+        dot = create_graphviz_graph(nodes, user_nodes, "Dependency Graph", graphviz_kwargs)
+        kwargs = {"view": True}
         if render_kwargs and isinstance(render_kwargs, dict):
             kwargs.update(render_kwargs)
         dot.render(output_file_path, **kwargs)
@@ -264,10 +294,14 @@ class FunctionGraph(object):
         :param var_changes: the list of nodes that will change.
         :return: A set of all changed nodes.
         """
-        nodes, user_nodes = self.directional_dfs_traverse(lambda n: n.depended_on_by, starting_nodes=var_changes)
+        nodes, user_nodes = self.directional_dfs_traverse(
+            lambda n: n.depended_on_by, starting_nodes=var_changes
+        )
         return nodes
 
-    def get_upstream_nodes(self, final_vars: List[str], runtime_inputs: Dict[str, Any] = None) -> Tuple[Set[node.Node], Set[node.Node]]:
+    def get_upstream_nodes(
+        self, final_vars: List[str], runtime_inputs: Dict[str, Any] = None
+    ) -> Tuple[Set[node.Node], Set[node.Node]]:
         """Given our function graph, and a list of desired output variables, returns the subgraph required to compute them.
 
         :param final_vars: the list of node names we want.
@@ -285,7 +319,11 @@ class FunctionGraph(object):
             deps = []
             for dep in n.dependencies:
                 # If inputs is None, we want to assume its required, as it is a compile-time dependency
-                if dep.user_defined and dep.name not in runtime_inputs and dep.name not in self.config:
+                if (
+                    dep.user_defined
+                    and dep.name not in runtime_inputs
+                    and dep.name not in self.config
+                ):
                     _, dependency_type = n.input_types[dep.name]
                     if dependency_type == node.DependencyType.OPTIONAL:
                         continue
@@ -294,7 +332,9 @@ class FunctionGraph(object):
 
         return self.directional_dfs_traverse(next_nodes_function, starting_nodes=final_vars)
 
-    def directional_dfs_traverse(self, next_nodes_fn: Callable[[node.Node], Collection[node.Node]], starting_nodes: List[str]):
+    def directional_dfs_traverse(
+        self, next_nodes_fn: Callable[[node.Node], Collection[node.Node]], starting_nodes: List[str]
+    ):
         """Traverses the DAG directionally using a DFS.
 
         :param next_nodes_fn: Function to give the next set of nodes
@@ -321,16 +361,18 @@ class FunctionGraph(object):
                 continue  # collect all missing final variables
             dfs_traverse(self.nodes[var])
         if missing_vars:
-            missing_vars_str = ',\n'.join(missing_vars)
-            raise ValueError(f'Unknown nodes [{missing_vars_str}] requested. Check for typos?')
+            missing_vars_str = ",\n".join(missing_vars)
+            raise ValueError(f"Unknown nodes [{missing_vars_str}] requested. Check for typos?")
         return nodes, user_nodes
 
     @staticmethod
-    def execute_static(nodes: Collection[node.Node],
-                       inputs: Dict[str, Any],
-                       adapter: base.HamiltonGraphAdapter,
-                       computed: Dict[str, Any] = None,
-                       overrides: Dict[str, Any] = None):
+    def execute_static(
+        nodes: Collection[node.Node],
+        inputs: Dict[str, Any],
+        adapter: base.HamiltonGraphAdapter,
+        computed: Dict[str, Any] = None,
+        overrides: Dict[str, Any] = None,
+    ):
         """Executes computation on the given graph, inputs, and memoized computation.
 
         Effectively this is a "private" function and should be viewed as such.
@@ -352,7 +394,9 @@ class FunctionGraph(object):
         if computed is None:
             computed = {}
 
-        def dfs_traverse(node_: node.Node, dependency_type: node.DependencyType = node.DependencyType.REQUIRED):
+        def dfs_traverse(
+            node_: node.Node, dependency_type: node.DependencyType = node.DependencyType.REQUIRED
+        ):
             if node_.name in computed:
                 return
             if node_.name in overrides:
@@ -363,11 +407,13 @@ class FunctionGraph(object):
                     _, node_dependency_type = node_.input_types[n.name]
                     dfs_traverse(n, node_dependency_type)
 
-            logger.debug(f'Computing {node_.name}.')
+            logger.debug(f"Computing {node_.name}.")
             if node_.user_defined:
                 if node_.name not in inputs:
                     if dependency_type != node.DependencyType.OPTIONAL:
-                        raise NotImplementedError(f'{node_.name} was expected to be passed in but was not.')
+                        raise NotImplementedError(
+                            f"{node_.name} was expected to be passed in but was not."
+                        )
                     return
                 value = inputs[node_.name]
             else:
@@ -378,7 +424,7 @@ class FunctionGraph(object):
                 try:
                     value = adapter.execute_node(node_, kwargs)
                 except Exception as e:
-                    logger.exception(f'Node {node_.name} encountered an error')
+                    logger.exception(f"Node {node_.name} encountered an error")
                     raise
             computed[node_.name] = value
 
@@ -400,15 +446,18 @@ class FunctionGraph(object):
         """
         duplicated_inputs = [key for key in inputs if key in config]
         if len(duplicated_inputs) > 0:
-            raise ValueError(f'The following inputs are present in both config and inputs. They must be mutually disjoint. {duplicated_inputs}')
+            raise ValueError(
+                f"The following inputs are present in both config and inputs. They must be mutually disjoint. {duplicated_inputs}"
+            )
         return {**config, **inputs}
 
-    def execute(self,
-                nodes: Collection[node.Node] = None,
-                computed: Dict[str, Any] = None,
-                overrides: Dict[str, Any] = None,
-                inputs: Dict[str, Any] = None
-                ) -> Dict[str, Any]:
+    def execute(
+        self,
+        nodes: Collection[node.Node] = None,
+        computed: Dict[str, Any] = None,
+        overrides: Dict[str, Any] = None,
+        inputs: Dict[str, Any] = None,
+    ) -> Dict[str, Any]:
         """Executes the DAG, given potential inputs/previously computed components.
 
         :param nodes: Nodes to compute

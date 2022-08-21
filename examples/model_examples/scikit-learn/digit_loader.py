@@ -1,11 +1,10 @@
 import numpy as np
-
-from sklearn import datasets
-from sklearn import utils
+from sklearn import datasets, utils
 
 """
 Module to load digit data.
 """
+
 
 def digit_data() -> utils.Bunch:
     return datasets.load_digits()

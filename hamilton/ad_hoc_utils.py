@@ -1,16 +1,14 @@
 """A suite of tools for ad-hoc use"""
 import sys
-from typing import Callable
-from types import ModuleType
-import uuid
-
 import types
+import uuid
+from types import ModuleType
+from typing import Callable
 
 
 def _copy_func(f):
     """Returns a function with the same properties as the original one"""
-    fn = types.FunctionType(f.__code__, f.__globals__, f.__name__,
-                            f.__defaults__, f.__closure__)
+    fn = types.FunctionType(f.__code__, f.__globals__, f.__name__, f.__defaults__, f.__closure__)
     # in case f was given attrs (note this dict is a shallow copy):
     fn.__dict__.update(f.__dict__)
     fn.__annotations__ = f.__annotations__  # No idea why this is not a parameter...
@@ -38,12 +36,14 @@ def create_temporary_module(*functions: Callable, module_name: str = None) -> Mo
     """
     module_name = module_name if module_name is not None else _generate_unique_temp_module_name()
     if module_name in sys.modules:
-        raise ValueError(f'Module already exists with name: {module_name}, please make it unique.')
+        raise ValueError(f"Module already exists with name: {module_name}, please make it unique.")
     module = ModuleType(module_name)
     for fn in map(_copy_func, functions):  # Copies so we don't mess with the original functions
         fn_name = fn.__name__
         if hasattr(module, fn_name):
-            raise ValueError(f'Duplicate/reserved function name: {fn_name} cannot be used to create a dynamic module.')
+            raise ValueError(
+                f"Duplicate/reserved function name: {fn_name} cannot be used to create a dynamic module."
+            )
         fn.__module__ = module.__name__
         setattr(module, fn_name, fn)
     sys.modules[module_name] = module

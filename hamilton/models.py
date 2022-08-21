@@ -1,7 +1,8 @@
 import abc
-from typing import Any, List, Dict
+from typing import Any, Dict, List
 
 import pandas as pd
+
 
 class DynamicTransformBase(abc.ABC):
     """Abstract class for a dynamic transform as seen by hamilton.
@@ -55,6 +56,7 @@ class BaseModel(DynamicTransformBase, abc.ABC):
         #column that is some combinations of other columns using some previously trained model
 
     Note that the model-training is not yet in scope."""
+
     def compute(self, **inputs: Any) -> Any:
         """Delegates to predict function to compute this model's return.
 

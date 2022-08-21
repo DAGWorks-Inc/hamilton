@@ -1,7 +1,7 @@
 import inspect
-from typing import Type, Any
-
 import typing
+from typing import Any, Type
+
 import typing_inspect
 
 from hamilton import base
@@ -26,7 +26,9 @@ def custom_subclass_check(requested_type: Type[Type], param_type: Type[Type]):
         for arg in typing_inspect.get_args(param_type):
             if custom_subclass_check(requested_type, arg):
                 return True
-    if typing_inspect.is_generic_type(requested_type) or typing_inspect.is_tuple_type(requested_type):
+    if typing_inspect.is_generic_type(requested_type) or typing_inspect.is_tuple_type(
+        requested_type
+    ):
         requested_origin_type = typing_inspect.get_origin(requested_type)
         has_generic = True
     if typing_inspect.is_generic_type(param_type) or typing_inspect.is_tuple_type(param_type):
@@ -36,26 +38,36 @@ def custom_subclass_check(requested_type: Type[Type], param_type: Type[Type]):
         if has_generic:  # check the args match or they do not have them defined.
             requested_args = typing_inspect.get_args(requested_type)
             param_args = typing_inspect.get_args(param_type)
-            if (requested_args and param_args
-                    and requested_args != BASE_ARGS_FOR_GENERICS and param_args != BASE_ARGS_FOR_GENERICS):
+            if (
+                requested_args
+                and param_args
+                and requested_args != BASE_ARGS_FOR_GENERICS
+                and param_args != BASE_ARGS_FOR_GENERICS
+            ):
                 return requested_args == param_args
         return True
 
-    if ((typing_inspect.is_generic_type(requested_type) and typing_inspect.is_generic_type(param_type)) or
-            (inspect.isclass(requested_type) and typing_inspect.is_generic_type(param_type))):
+    if (
+        typing_inspect.is_generic_type(requested_type)
+        and typing_inspect.is_generic_type(param_type)
+    ) or (inspect.isclass(requested_type) and typing_inspect.is_generic_type(param_type)):
         # we're comparing two generics that aren't equal -- check if Mapping vs Dict
         # or we're comparing a class to a generic -- check if Mapping vs dict
         # the precedence is that requested will go into the param_type, so the param_type should be more permissive.
         return issubclass(requested_type, param_type)
     # classes - precedence is that requested will go into the param_type, so the param_type should be more permissive.
-    if inspect.isclass(requested_type) and inspect.isclass(param_type) and issubclass(requested_type, param_type):
+    if (
+        inspect.isclass(requested_type)
+        and inspect.isclass(param_type)
+        and issubclass(requested_type, param_type)
+    ):
         return True
     return False
 
 
-def types_match(adapter: base.HamiltonGraphAdapter,
-                param_type: Type[Type],
-                required_node_type: Any) -> bool:
+def types_match(
+    adapter: base.HamiltonGraphAdapter, param_type: Type[Type], required_node_type: Any
+) -> bool:
     """Checks that we have "types" that "match".
 
     Matching can be loose here -- and depends on the adapter being used as to what is

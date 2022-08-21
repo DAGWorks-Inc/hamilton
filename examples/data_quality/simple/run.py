@@ -13,33 +13,35 @@ To run:
 import logging
 import sys
 
-from hamilton import driver
-# we need to tell hamilton where to load function definitions from
-import feature_logic
 import data_loaders
 
-if __name__ == '__main__':
+# we need to tell hamilton where to load function definitions from
+import feature_logic
+
+from hamilton import driver
+
+if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout)
     # passing in execution to help set up the right nodes for the DAG
-    config = {'location': 'Absenteeism_at_work.csv', 'execution': 'normal'}
+    config = {"location": "Absenteeism_at_work.csv", "execution": "normal"}
     dr = driver.Driver(config, data_loaders, feature_logic)  # can pass in multiple modules
     # we need to specify what we want in the final dataframe.
     output_columns = [
-        'age',
-        'age_zero_mean_unit_variance',
-        'has_children',
-        'is_summer',
-        'has_pet',
-        'day_of_the_week_2',
-        'day_of_the_week_3',
-        'day_of_the_week_4',
-        'day_of_the_week_5',
-        'day_of_the_week_6',
-        'seasons_1',
-        'seasons_2',
-        'seasons_3',
-        'seasons_4',
-        'absenteeism_time_in_hours'
+        "age",
+        "age_zero_mean_unit_variance",
+        "has_children",
+        "is_summer",
+        "has_pet",
+        "day_of_the_week_2",
+        "day_of_the_week_3",
+        "day_of_the_week_4",
+        "day_of_the_week_5",
+        "day_of_the_week_6",
+        "seasons_1",
+        "seasons_2",
+        "seasons_3",
+        "seasons_4",
+        "absenteeism_time_in_hours",
     ]
     # To visualize do `pip install sf-hamilton[visualization]` if you want these to work
     # dr.visualize_execution(output_columns, './my_dag.dot', {})

@@ -5,11 +5,12 @@ from typing import Any
 import pytest
 
 from hamilton.experimental import h_async
+
 from .resources import simple_async_module
 
 
 async def async_identity(n: int) -> int:
-    await asyncio.sleep(.01)
+    await asyncio.sleep(0.01)
     return n
 
 
@@ -47,12 +48,14 @@ async def test_process_value_task():
 async def test_driver_end_to_end():
     dr = h_async.AsyncDriver({}, simple_async_module)
     all_vars = [var.name for var in dr.list_available_variables()]
-    result = await dr.raw_execute(final_vars=all_vars, inputs={'external_input': 1})
-    assert result == {'another_async_func': 8,
-                      'async_func_with_param': 4,
-                      'external_input': 1,
-                      'non_async_func_with_decorator': {'result_1': 9, 'result_2': 5},
-                      'result_1': 9,
-                      'result_2': 5,
-                      'simple_async_func': 2,
-                      'simple_non_async_func': 7}
+    result = await dr.raw_execute(final_vars=all_vars, inputs={"external_input": 1})
+    assert result == {
+        "another_async_func": 8,
+        "async_func_with_param": 4,
+        "external_input": 1,
+        "non_async_func_with_decorator": {"result_1": 9, "result_2": 5},
+        "result_1": 9,
+        "result_2": 5,
+        "simple_async_func": 2,
+        "simple_non_async_func": 7,
+    }

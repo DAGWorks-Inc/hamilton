@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Defaults
 _A = 2
@@ -43,12 +43,4 @@ def _do_all(a_val: int = _A, b_val: int = _B, d_val: int = _D, f_val: int = _F) 
     c_val = c(a_val, b_val)
     e_val = e(c_val, d_val)
     g_val = g(e_val, f_val)
-    return {
-        'a': a_val,
-        'b': b_val,
-        'c': c_val,
-        'd': d_val,
-        'e': e_val,
-        'f': f_val,
-        'g': g_val
-    }
+    return {"a": a_val, "b": b_val, "c": c_val, "d": d_val, "e": e_val, "f": f_val, "g": g_val}

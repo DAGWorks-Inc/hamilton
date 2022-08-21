@@ -15,6 +15,7 @@ In real-life practice you would probably do the following:
 """
 import typing
 from functools import partial
+
 import numpy as np
 from numpy.random import default_rng
 from scipy import stats
@@ -25,7 +26,7 @@ def _moving_mean(a, n):
     """Computes the moving mean using numpy constructs."""
     ret = np.cumsum(a, dtype=float, axis=0)
     ret[n:] = ret[n:] - ret[:-n]
-    return ret[n - 1:] / n
+    return ret[n - 1 :] / n
 
 
 def _compute_indices(breakpoints: dict, aqi: np.ndarray, pol: str, con: float) -> float:
@@ -46,7 +47,7 @@ def _compute_indices(breakpoints: dict, aqi: np.ndarray, pol: str, con: float) -
     """
     bp = breakpoints[pol]
 
-    if pol == 'CO':
+    if pol == "CO":
         inc = 0.1
     else:
         inc = 1
@@ -82,8 +83,8 @@ def _compute_indices(breakpoints: dict, aqi: np.ndarray, pol: str, con: float) -
         Ih = aqi[6]
         Il = aqi[5]
     else:
-        print(f'Concentration {con} out of range!')
-        raise ValueError(f'Concentration {con} out of range!')
+        print(f"Concentration {con} out of range!")
+        raise ValueError(f"Concentration {con} out of range!")
 
     return ((Ih - Il) / (Bh - Bl)) * (con - Bl) + Il
 
@@ -91,10 +92,9 @@ def _compute_indices(breakpoints: dict, aqi: np.ndarray, pol: str, con: float) -
 # -- Hamilton functions
 
 
-def pollutant_data(input_file_name: str = 'air-quality-data.csv') -> np.ndarray:
+def pollutant_data(input_file_name: str = "air-quality-data.csv") -> np.ndarray:
     """Returns the raw pollutant data."""
-    return np.loadtxt(input_file_name, dtype=float, delimiter=',',
-                      skiprows=1, usecols=range(1, 8))
+    return np.loadtxt(input_file_name, dtype=float, delimiter=",", skiprows=1, usecols=range(1, 8))
 
 
 def pollutants_A(pollutant_data: np.ndarray) -> np.ndarray:
@@ -119,13 +119,13 @@ def breakpoints() -> dict:
     See https://github.com/numpy/numpy-tutorials/blob/main/content/tutorial-air-quality-analysis.md#calculating-the-air-quality-index
     """
     return {
-        'PM2.5': np.array([0, 31, 61, 91, 121, 251]),
-        'PM10': np.array([0, 51, 101, 251, 351, 431]),
-        'NO2': np.array([0, 41, 81, 181, 281, 401]),
-        'NH3': np.array([0, 201, 401, 801, 1201, 1801]),
-        'SO2': np.array([0, 41, 81, 381, 801, 1601]),
-        'CO': np.array([0, 1.1, 2.1, 10.1, 17.1, 35]),
-        'O3': np.array([0, 51, 101, 169, 209, 749])
+        "PM2.5": np.array([0, 31, 61, 91, 121, 251]),
+        "PM10": np.array([0, 51, 101, 251, 351, 431]),
+        "NO2": np.array([0, 41, 81, 181, 281, 401]),
+        "NH3": np.array([0, 201, 401, 801, 1201, 1801]),
+        "SO2": np.array([0, 41, 81, 381, 801, 1601]),
+        "CO": np.array([0, 1.1, 2.1, 10.1, 17.1, 35]),
+        "O3": np.array([0, 51, 101, 169, 209, 749]),
     }
 
 
@@ -140,7 +140,7 @@ def pollutants_B_8hr_avg(pollutants_B: np.ndarray, pollutants_A_24hr_avg: np.nda
     the length of pollutants_A_24hr_avg. This will also ensure we have concentrations for all the pollutants
     over the same period of time.
     """
-    return _moving_mean(pollutants_B, 8)[-(pollutants_A_24hr_avg.shape[0]):]
+    return _moving_mean(pollutants_B, 8)[-(pollutants_A_24hr_avg.shape[0]) :]
 
 
 def pollutants(pollutants_A_24hr_avg: np.ndarray, pollutants_B_8hr_avg: np.ndarray) -> np.ndarray:
@@ -164,13 +164,18 @@ def sub_indices(pollutants: np.ndarray, breakpoints: dict, AQI: np.ndarray) -> n
     To get back an array with the original shape, we use np.stack.
     """
     vcompute_indices = np.vectorize(partial(_compute_indices, breakpoints, AQI))
-    return np.stack((vcompute_indices('PM2.5', pollutants[..., 0]),
-                     vcompute_indices('PM10', pollutants[..., 1]),
-                     vcompute_indices('NO2', pollutants[..., 2]),
-                     vcompute_indices('NH3', pollutants[..., 3]),
-                     vcompute_indices('SO2', pollutants[..., 4]),
-                     vcompute_indices('CO', pollutants[..., 5]),
-                     vcompute_indices('O3', pollutants[..., 6])), axis=1)
+    return np.stack(
+        (
+            vcompute_indices("PM2.5", pollutants[..., 0]),
+            vcompute_indices("PM10", pollutants[..., 1]),
+            vcompute_indices("NO2", pollutants[..., 2]),
+            vcompute_indices("NH3", pollutants[..., 3]),
+            vcompute_indices("SO2", pollutants[..., 4]),
+            vcompute_indices("CO", pollutants[..., 5]),
+            vcompute_indices("O3", pollutants[..., 6]),
+        ),
+        axis=1,
+    )
 
 
 def aqi_array(sub_indices: np.ndarray) -> np.ndarray:
@@ -178,27 +183,28 @@ def aqi_array(sub_indices: np.ndarray) -> np.ndarray:
     return np.max(sub_indices, axis=1)
 
 
-def datetime_index(pollutants_A_24hr_avg: np.ndarray,
-                   input_file_name: str) -> np.ndarray:
+def datetime_index(pollutants_A_24hr_avg: np.ndarray, input_file_name: str) -> np.ndarray:
     """We will now import the datetime column from our original dataset into a datetime64 dtype array.
     We will use this array to index the AQI array and obtain subsets of the dataset."""
-    return np.loadtxt(input_file_name, dtype='M8[h]', delimiter=',',
-                      skiprows=1, usecols=(0,))[-(pollutants_A_24hr_avg.shape[0]):]
+    return np.loadtxt(input_file_name, dtype="M8[h]", delimiter=",", skiprows=1, usecols=(0,))[
+        -(pollutants_A_24hr_avg.shape[0]) :
+    ]
 
 
-def after_lock(aqi_array: np.ndarray,
-               datetime_index: np.ndarray,
-               after_lock_date: str) -> np.ndarray:
+def after_lock(
+    aqi_array: np.ndarray, datetime_index: np.ndarray, after_lock_date: str
+) -> np.ndarray:
     """Grab period after lock down."""
     return aqi_array[np.where(datetime_index >= np.datetime64(after_lock_date))]
 
 
-def before_lock(aqi_array: np.ndarray,
-                datetime_index: np.ndarray,
-                after_lock: np.ndarray,
-                before_lock_date: str) -> np.ndarray:
+def before_lock(
+    aqi_array: np.ndarray, datetime_index: np.ndarray, after_lock: np.ndarray, before_lock_date: str
+) -> np.ndarray:
     """Grab period before lock down."""
-    return aqi_array[np.where(datetime_index <= np.datetime64(before_lock_date))][-(after_lock.shape[0]):]
+    return aqi_array[np.where(datetime_index <= np.datetime64(before_lock_date))][
+        -(after_lock.shape[0]) :
+    ]
 
 
 def rng() -> typing.Any:

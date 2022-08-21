@@ -3,27 +3,26 @@ import importlib
 import pyspark.pandas as ps
 from pyspark.sql import SparkSession
 
-from hamilton import base
-from hamilton import driver
-from hamilton import log_setup
+from hamilton import base, driver, log_setup
 from hamilton.experimental import h_spark
 
-
-if __name__ == '__main__':
-    log_setup.setup_logging(log_level=log_setup.LOG_LEVELS['INFO'])
+if __name__ == "__main__":
+    log_setup.setup_logging(log_level=log_setup.LOG_LEVELS["INFO"])
     spark = SparkSession.builder.getOrCreate()
     # spark.sparkContext.setLogLevel('info')
-    ps.set_option('compute.ops_on_diff_frames', True)  # we should play around here on how to correctly initialize data.
-    ps.set_option('compute.default_index_type', 'distributed') # this one doesn't seem to work?
+    ps.set_option(
+        "compute.ops_on_diff_frames", True
+    )  # we should play around here on how to correctly initialize data.
+    ps.set_option("compute.default_index_type", "distributed")  # this one doesn't seem to work?
 
     module_names = [
-        'data_loaders',  # functions to help load data
-        'business_logic'  # where our important logic lives
+        "data_loaders",  # functions to help load data
+        "business_logic",  # where our important logic lives
     ]
     modules = [importlib.import_module(m) for m in module_names]
     initial_config_and_or_data = {  # load from actuals or wherever
-        'signups_location': 'some_path',
-        'spend_location': 'some_other_path',
+        "signups_location": "some_path",
+        "spend_location": "some_other_path",
     }
     # df_container = ps.DataFrame(initial_config_and_or_data['spend'])  # assign spine column
     # Proving to myself that koalas works:
@@ -47,18 +46,22 @@ if __name__ == '__main__':
 5     50             0.125      43.333333                       1.257934      400
     """
     # okay hamilton is now doing its thing:
-    skga = h_spark.SparkKoalasGraphAdapter(spark_session=spark,
-                                           result_builder=base.PandasDataFrameResult(),
-                                           # result_builder=h_spark.KoalasDataFrameResult(),
-                                           spine_column='spend')
-    dr = driver.Driver(initial_config_and_or_data, *modules, adapter=skga)  # can pass in multiple modules
+    skga = h_spark.SparkKoalasGraphAdapter(
+        spark_session=spark,
+        result_builder=base.PandasDataFrameResult(),
+        # result_builder=h_spark.KoalasDataFrameResult(),
+        spine_column="spend",
+    )
+    dr = driver.Driver(
+        initial_config_and_or_data, *modules, adapter=skga
+    )  # can pass in multiple modules
     # we need to specify what we want in the final dataframe.
     output_columns = [
-        'spend',
-        'signups',
-        'avg_3wk_spend',
-        'spend_per_signup',
-        'spend_zero_mean_unit_variance'
+        "spend",
+        "signups",
+        "avg_3wk_spend",
+        "spend_per_signup",
+        "spend_zero_mean_unit_variance",
     ]
     # let's create the dataframe!
     df = dr.execute(output_columns)

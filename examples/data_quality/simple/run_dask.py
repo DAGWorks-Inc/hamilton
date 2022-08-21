@@ -19,16 +19,16 @@ To run:
 import logging
 import sys
 
-from dask.distributed import Client
-from dask.distributed import LocalCluster
-from hamilton import base
-from hamilton import driver
-from hamilton.experimental import h_dask
-# we need to tell hamilton where to load function definitions from
-import feature_logic
 import data_loaders
 
-if __name__ == '__main__':
+# we need to tell hamilton where to load function definitions from
+import feature_logic
+from dask.distributed import Client, LocalCluster
+
+from hamilton import base, driver
+from hamilton.experimental import h_dask
+
+if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     logger = logging.getLogger(__name__)
     # Setup a local cluster.
@@ -37,26 +37,28 @@ if __name__ == '__main__':
     client = Client(cluster)
     logger.info(client.cluster)
     # passing in execution to help set up the right nodes for the DAG
-    config = {'location': 'Absenteeism_at_work.csv', 'execution': 'normal'}
+    config = {"location": "Absenteeism_at_work.csv", "execution": "normal"}
     dga = h_dask.DaskGraphAdapter(client, base.PandasDataFrameResult())
-    dr = driver.Driver(config, data_loaders, feature_logic, adapter=dga)  # can pass in multiple modules
+    dr = driver.Driver(
+        config, data_loaders, feature_logic, adapter=dga
+    )  # can pass in multiple modules
     # we need to specify what we want in the final dataframe.
     output_columns = [
-        'age',
-        'age_zero_mean_unit_variance',
-        'has_children',
-        'is_summer',
-        'has_pet',
-        'day_of_the_week_2',
-        'day_of_the_week_3',
-        'day_of_the_week_4',
-        'day_of_the_week_5',
-        'day_of_the_week_6',
-        'seasons_1',
-        'seasons_2',
-        'seasons_3',
-        'seasons_4',
-        'absenteeism_time_in_hours'
+        "age",
+        "age_zero_mean_unit_variance",
+        "has_children",
+        "is_summer",
+        "has_pet",
+        "day_of_the_week_2",
+        "day_of_the_week_3",
+        "day_of_the_week_4",
+        "day_of_the_week_5",
+        "day_of_the_week_6",
+        "seasons_1",
+        "seasons_2",
+        "seasons_3",
+        "seasons_4",
+        "absenteeism_time_in_hours",
     ]
     # To visualize do `pip install sf-hamilton[visualization]` if you want these to work
     # dr.visualize_execution(output_columns, './my_dag.dot', {})

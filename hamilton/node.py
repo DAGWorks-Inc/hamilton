@@ -1,6 +1,6 @@
 import inspect
 from enum import Enum
-from typing import Type, Dict, Any, Callable, List, Tuple, Union, Collection
+from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
 
 """
 Module that contains the primitive components of the graph.
@@ -14,6 +14,7 @@ class NodeSource(Enum):
     Specifies where this node's value originates.
     This can be used by different adapters to flexibly execute a function graph.
     """
+
     STANDARD = 1  # standard dependencies
     EXTERNAL = 2  # This node's value should be taken from cache
     PRIOR_RUN = 3  # This node's value should be taken from a prior run.
@@ -34,14 +35,16 @@ class DependencyType(Enum):
 class Node(object):
     """Object representing a node of computation."""
 
-    def __init__(self,
-                 name: str,
-                 typ: Type,
-                 doc_string: str = '',
-                 callabl: Callable = None,
-                 node_source: NodeSource = NodeSource.STANDARD,
-                 input_types: Dict[str, Union[Type, Tuple[Type, DependencyType]]] = None,
-                 tags: Dict[str, Any] = None):
+    def __init__(
+        self,
+        name: str,
+        typ: Type,
+        doc_string: str = "",
+        callabl: Callable = None,
+        node_source: NodeSource = NodeSource.STANDARD,
+        input_types: Dict[str, Union[Type, Tuple[Type, DependencyType]]] = None,
+        tags: Dict[str, Any] = None,
+    ):
         """Constructor for our Node object.
 
         :param name: the name of the function.
@@ -58,7 +61,7 @@ class Node(object):
         self._name = name
         self._type = typ
         if typ is None or typ == inspect._empty:
-            raise ValueError(f'Missing type for hint for function {name}. Please add one to fix.')
+            raise ValueError(f"Missing type for hint for function {name}. Please add one to fix.")
         self._callable = callabl
         self._doc = doc_string
         self._node_source = node_source
@@ -73,16 +76,26 @@ class Node(object):
                     if isinstance(value, tuple):
                         self._input_types[key] = value
                     else:
-                        self._input_types = {key: (value, DependencyType.REQUIRED) for key, value in input_types.items()}
+                        self._input_types = {
+                            key: (value, DependencyType.REQUIRED)
+                            for key, value in input_types.items()
+                        }
             else:
                 signature = inspect.signature(callabl)
                 for key, value in signature.parameters.items():
                     if value.annotation == inspect._empty:
-                        raise ValueError(f'Missing type hint for {key} in function {name}. Please add one to fix.')
-                    self._input_types[key] = (value.annotation, DependencyType.from_parameter(value))
+                        raise ValueError(
+                            f"Missing type hint for {key} in function {name}. Please add one to fix."
+                        )
+                    self._input_types[key] = (
+                        value.annotation,
+                        DependencyType.from_parameter(value),
+                    )
         elif self.user_defined:
             if input_types is not None:
-                raise ValueError(f'Input types cannot be provided for user-defined node {self.name}')
+                raise ValueError(
+                    f"Input types cannot be provided for user-defined node {self.name}"
+                )
 
     @property
     def documentation(self) -> str:
@@ -114,11 +127,11 @@ class Node(object):
         return self._node_source
 
     @property
-    def dependencies(self) -> List['Node']:
+    def dependencies(self) -> List["Node"]:
         return self._dependencies
 
     @property
-    def depended_on_by(self) -> List['Node']:
+    def depended_on_by(self) -> List["Node"]:
         return self._depended_on_by
 
     @property
@@ -132,30 +145,32 @@ class Node(object):
         return hash(self._name)
 
     def __repr__(self):
-        return f'<{self._name} {self._tags}>'
+        return f"<{self._name} {self._tags}>"
 
-    def __eq__(self, other: 'Node'):
+    def __eq__(self, other: "Node"):
         """Want to deeply compare nodes in a custom way.
 
         Current user is just unit tests. But you never know :)
 
         Note: we only compare names of dependencies because we don't want infinite recursion.
         """
-        return (isinstance(other, Node) and
-                self._name == other.name and
-                self._type == other.type and
-                self._doc == other.documentation and
-                self._tags == other.tags and
-                self.user_defined == other.user_defined and
-                [n.name for n in self.dependencies] == [o.name for o in other.dependencies] and
-                [n.name for n in self.depended_on_by] == [o.name for o in other.depended_on_by] and
-                self.node_source == other.node_source)
+        return (
+            isinstance(other, Node)
+            and self._name == other.name
+            and self._type == other.type
+            and self._doc == other.documentation
+            and self._tags == other.tags
+            and self.user_defined == other.user_defined
+            and [n.name for n in self.dependencies] == [o.name for o in other.dependencies]
+            and [n.name for n in self.depended_on_by] == [o.name for o in other.depended_on_by]
+            and self.node_source == other.node_source
+        )
 
-    def __ne__(self, other: 'Node'):
+    def __ne__(self, other: "Node"):
         return not self.__eq__(other)
 
     @staticmethod
-    def from_fn(fn: Callable, name: str = None) -> 'Node':
+    def from_fn(fn: Callable, name: str = None) -> "Node":
         """Generates a node from a function. Optionally overrides the name.
 
         :param fn: Function to generate the name from
@@ -166,5 +181,10 @@ class Node(object):
             name = fn.__name__
         sig = inspect.signature(fn)
         module = inspect.getmodule(fn).__name__
-        return Node(name, sig.return_annotation, fn.__doc__ if fn.__doc__ else '', callabl=fn,
-                    tags={'module': module})
+        return Node(
+            name,
+            sig.return_annotation,
+            fn.__doc__ if fn.__doc__ else "",
+            callabl=fn,
+            tags={"module": module},
+        )

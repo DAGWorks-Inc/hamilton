@@ -1,11 +1,10 @@
 import numpy as np
-
-from sklearn import datasets
-from sklearn import utils
+from sklearn import datasets, utils
 
 """
 Module to load iris data.
 """
+
 
 def iris_data() -> utils.Bunch:
     return datasets.load_iris()

@@ -1,4 +1,4 @@
-_VALUE = 'value'
+_VALUE = "value"
 
 
 def key() -> str:

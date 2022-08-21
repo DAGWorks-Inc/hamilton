@@ -70,10 +70,10 @@ def age_zero_mean_unit_variance(age_zero_mean: pd.Series, age_std_dev: np.float6
 
 seasons_encoded_schema = pa.DataFrameSchema(
     {
-        'seasons_1': pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
-        'seasons_2': pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
-        'seasons_3': pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
-        'seasons_4': pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
+        "seasons_1": pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
+        "seasons_2": pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
+        "seasons_3": pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
+        "seasons_4": pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
     },
     strict=True,
 )
@@ -87,7 +87,7 @@ def seasons_encoded(seasons: pd.Series) -> pd.DataFrame:
     3 - third season
     4 - fourth season
     """
-    return ps.get_dummies(seasons, prefix='seasons')
+    return ps.get_dummies(seasons, prefix="seasons")
 
 
 seasons_schema = pa.SeriesSchema(
@@ -102,34 +102,34 @@ seasons_schema = pa.SeriesSchema(
 @check_output(schema=seasons_schema)
 def seasons_1(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_1"""
-    return seasons_encoded['seasons_1']
+    return seasons_encoded["seasons_1"]
 
 
 @check_output(schema=seasons_schema)
 def seasons_2(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_2"""
-    return seasons_encoded['seasons_2']
+    return seasons_encoded["seasons_2"]
 
 
 @check_output(schema=seasons_schema)
 def seasons_3(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_3"""
-    return seasons_encoded['seasons_3']
+    return seasons_encoded["seasons_3"]
 
 
 @check_output(schema=seasons_schema)
 def seasons_4(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_4"""
-    return seasons_encoded['seasons_4']
+    return seasons_encoded["seasons_4"]
 
 
 day_of_week_encoded_schema = pa.DataFrameSchema(
     {
-        'day_of_the_week_2': pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
-        'day_of_the_week_3': pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
-        'day_of_the_week_4': pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
-        'day_of_the_week_5': pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
-        'day_of_the_week_6': pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
+        "day_of_the_week_2": pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
+        "day_of_the_week_3": pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
+        "day_of_the_week_4": pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
+        "day_of_the_week_5": pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
+        "day_of_the_week_6": pa.Column(np.int8, checks=[pa.Check.isin([0, 1])], nullable=False),
     },
     strict=True,
 )
@@ -140,7 +140,7 @@ def day_of_week_encoded(day_of_the_week: pd.Series) -> pd.DataFrame:
     """One hot encodes day of week into five dimensions -- Saturday & Sunday weren't present.
     1 - Sunday, 2 - Monday, 3 - Tuesday, 4 - Wednesday, 5 - Thursday, 6 - Friday, 7 - Saturday.
     """
-    return ps.get_dummies(day_of_the_week, prefix='day_of_the_week')
+    return ps.get_dummies(day_of_the_week, prefix="day_of_the_week")
 
 
 day_of_week_schema = pa.SeriesSchema(
@@ -155,31 +155,31 @@ day_of_week_schema = pa.SeriesSchema(
 @check_output(schema=day_of_week_schema)
 def day_of_the_week_2(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_2 column."""
-    return day_of_week_encoded['day_of_the_week_2']
+    return day_of_week_encoded["day_of_the_week_2"]
 
 
 @check_output(schema=day_of_week_schema)
 def day_of_the_week_3(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_3 column."""
-    return day_of_week_encoded['day_of_the_week_3']
+    return day_of_week_encoded["day_of_the_week_3"]
 
 
 @check_output(schema=day_of_week_schema)
 def day_of_the_week_4(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_4 column."""
-    return day_of_week_encoded['day_of_the_week_4']
+    return day_of_week_encoded["day_of_the_week_4"]
 
 
 @check_output(schema=day_of_week_schema)
 def day_of_the_week_5(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_5 column."""
-    return day_of_week_encoded['day_of_the_week_5']
+    return day_of_week_encoded["day_of_the_week_5"]
 
 
 @check_output(schema=day_of_week_schema)
 def day_of_the_week_6(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_6 column."""
-    return day_of_week_encoded['day_of_the_week_6']
+    return day_of_week_encoded["day_of_the_week_6"]
 
 
 has_children_schema = pa.SeriesSchema(

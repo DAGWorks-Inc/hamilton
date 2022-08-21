@@ -2,45 +2,45 @@
 Example script showing how one might setup a generic model training pipeline that is quickly configurable.
 """
 
-from hamilton import driver
-from hamilton import base
-
-import my_train_evaluate_logic
 import digit_loader
 import iris_loader
+import my_train_evaluate_logic
+
+from hamilton import base, driver
 
 
 def get_data_loader(data_set: str):
     """Returns the module to load that will procur data -- the data loaders all have to define the same functions."""
-    if data_set == 'iris':
+    if data_set == "iris":
         return iris_loader
-    elif data_set == 'digits':
+    elif data_set == "digits":
         return digit_loader
     else:
-        raise ValueError(f'Unknown data_name {data_set}.')
+        raise ValueError(f"Unknown data_name {data_set}.")
 
 
 def get_model_config(model_type: str) -> dict:
     """Returns model type specific configuration"""
-    if model_type == 'svm':
-        return {'clf': 'svm', 'gamma': 0.001}
-    elif model_type == 'logistic':
-        return {'logistic': 'svm', 'penalty': 'l2'}
+    if model_type == "svm":
+        return {"clf": "svm", "gamma": 0.001}
+    elif model_type == "logistic":
+        return {"logistic": "svm", "penalty": "l2"}
     else:
-        raise ValueError(f'Unsupported model {model_type}.')
+        raise ValueError(f"Unsupported model {model_type}.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 3:
-        print('Error: required arguments are [iris|digits] [svm|logistic]')
+        print("Error: required arguments are [iris|digits] [svm|logistic]")
         sys.exit(1)
     _data_set = sys.argv[1]  # the data set to load
     _model_type = sys.argv[2]  # the model type to fit and evaluate with
 
     dag_config = {
-        'test_size_fraction': 0.5,
-        'shuffle_train_test_split':  True,
+        "test_size_fraction": 0.5,
+        "shuffle_train_test_split": True,
     }
     # augment config
     dag_config.update(get_model_config(_model_type))
@@ -59,6 +59,6 @@ if __name__ == '__main__':
     dr = driver.Driver(dag_config, data_module, my_train_evaluate_logic, adapter=adapter)
     # ensure you have done "pip install sf-hamilton[visualization]" for the following to work:
     # dr.visualize_execution(['classification_report', 'confusion_matrix', 'fit_clf'], './model_dag.dot', {})
-    results = dr.execute(['classification_report', 'confusion_matrix', 'fit_clf'])
+    results = dr.execute(["classification_report", "confusion_matrix", "fit_clf"])
     for k, v in results.items():
-        print(k, ':\n',  v)
+        print(k, ":\n", v)

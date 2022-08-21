@@ -7,8 +7,8 @@ import collections
 import inspect
 import typing
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import typing_inspect
 
 from . import node
@@ -20,6 +20,7 @@ class ResultMixin(object):
     Why a static function? That's because certain frameworks can only pickle a static function, not an entire
     object.
     """
+
     @staticmethod
     @abc.abstractmethod
     def build_result(**outputs: typing.Dict[str, typing.Any]) -> typing.Any:
@@ -29,6 +30,7 @@ class ResultMixin(object):
 
 class DictResult(ResultMixin):
     """Simple function that returns the dict of column -> value results."""
+
     @staticmethod
     def build_result(**outputs: typing.Dict[str, typing.Any]) -> typing.Dict:
         """This function builds a simple dict of output -> computed values."""
@@ -43,12 +45,12 @@ class PandasDataFrameResult(ResultMixin):
         # TODO check inputs are pd.Series, arrays, or scalars -- else error
         # TODO do a basic index check across pd.Series and flag where mismatches occur?
         if len(outputs) == 1:
-            value, = outputs.values()  # this works because it's length 1.
+            (value,) = outputs.values()  # this works because it's length 1.
             if isinstance(value, pd.DataFrame):
                 return value
             elif isinstance(value, pd.Series):
                 return pd.DataFrame(outputs)
-            raise ValueError(f'Cannot build result. Cannot handle type {value}.')
+            raise ValueError(f"Cannot build result. Cannot handle type {value}.")
         return pd.DataFrame(outputs)
 
 
@@ -68,7 +70,7 @@ class NumpyMatrixResult(ResultMixin):
         # TODO check inputs are all numpy arrays/array like things -- else error
         num_rows = -1
         columns_with_lengths = collections.OrderedDict()
-        for col, val in outputs.items():   # assumption is fixed order
+        for col, val in outputs.items():  # assumption is fixed order
             if isinstance(val, (int, float)):  # TODO add more things here
                 columns_with_lengths[(col, 1)] = val
             else:
@@ -79,8 +81,10 @@ class NumpyMatrixResult(ResultMixin):
                     # we're good
                     pass
                 else:
-                    raise ValueError(f'Error, got non scalar result that mismatches length of other vector. '
-                                     f'Got {length} for {col} instead of {num_rows}.')
+                    raise ValueError(
+                        f"Error, got non scalar result that mismatches length of other vector. "
+                        f"Got {length} for {col} instead of {num_rows}."
+                    )
                 columns_with_lengths[(col, num_rows)] = val
         list_of_columns = []
         for (col, length), val in columns_with_lengths.items():
@@ -89,7 +93,9 @@ class NumpyMatrixResult(ResultMixin):
             elif length == num_rows:
                 list_of_columns.append(list(val))
             else:
-                raise ValueError(f'Do not know how to make this column {col} with length {length }have {num_rows} rows')
+                raise ValueError(
+                    f"Do not know how to make this column {col} with length {length }have {num_rows} rows"
+                )
         # Create the matrix with columns as rows and then transpose
         return np.asmatrix(list_of_columns).T
 
@@ -148,11 +154,18 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
             return True
         elif typing_inspect.is_typevar(node_type):  # skip runtime comparison for now.
             return True
-        elif typing_inspect.is_generic_type(node_type) and typing_inspect.get_origin(node_type) == type(input_value):
+        elif typing_inspect.is_generic_type(node_type) and typing_inspect.get_origin(
+            node_type
+        ) == type(input_value):
             return True
         elif typing_inspect.is_union_type(node_type):
             union_types = typing_inspect.get_args(node_type)
-            return any([SimplePythonDataFrameGraphAdapter.check_input_type(ut, input_value) for ut in union_types])
+            return any(
+                [
+                    SimplePythonDataFrameGraphAdapter.check_input_type(ut, input_value)
+                    for ut in union_types
+                ]
+            )
         elif node_type == type(input_value):
             return True
         return False
@@ -171,7 +184,7 @@ class SimplePythonGraphAdapter(SimplePythonDataFrameGraphAdapter):
     def __init__(self, result_builder: ResultMixin):
         self.result_builder = result_builder
         if self.result_builder is None:
-            raise ValueError('You must provide a ResultMixin object for `result_builder`.')
+            raise ValueError("You must provide a ResultMixin object for `result_builder`.")
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Delegates to the result builder function supplied."""
