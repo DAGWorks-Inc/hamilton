@@ -159,6 +159,7 @@ contact us at algorithms-opensource (at) stitchfix.com.
 
 # Used by
 * Stitch Fix
+* [UK Government Digital Services](https://github.com/alphagov/govuk-feedback-analysis)
 
 To add your company, make a pull request to add it here.
 
