@@ -12,33 +12,32 @@ Hamilton relies on[ python decorators](https://towardsdatascience.com/the-simple
 ```python
 import pandas as pd
 
-from hamilton import function_modifiers
+from hamilton import function_modifiers, value, source
 
 
-@function_modifiers.parametrized(
-    'rolling_lookback',
-    assigned_output={
-        ('avg_2wk_spend', "Average marketing spend looking back 2 weeks"): 2,
-        ('avg_3wk_spend', "Average marketing spend looking back 3 weeks"): 3,
-    }
+@function_modifiers.parameterize(
+    avg_2wk_spend={'rolling_lookback' : value(2)},
+    avg_3wk_spend={'rolling_lookback' : value(3)} 
 )
 def avg_nwk_spend(spend: pd.Series, rolling_lookback: int) -> pd.Series:
-    """Rolling week average spend, parametrized by rolling_lookback"""
+    """Average marketing spend looking back {rolling_lookback} weeks."""
     return spend.rolling(rolling_lookback).mean()
 
 
-@function_modifiers.parametrized_input(
-    'spend',
-    {
-        'avg_2wk_spend': ("acquisition_cost_2wk", "Spend per signup with a two week rolling average "),
-        'avg_3wk_spend': ("acquisition_cost_3wk", "Spend per signup with a three week rolling average")
-    }
+@function_modifiers.parameterize(
+    acquisition_cost_2wk={'spend' : source('avg_2wk_spend')},
+    acquisition_cost_3wk={'spend' : source('avg_3wk_spend')}
 )
 def acquisition_cost(spend: pd.Series, signups: pd.Series) -> pd.Series:
-    """The cost per signup in relation to spend."""
+    """The cost per signup in relation to {spend}."""
     return spend / signups
 ```
 {% endcode %}
+
+In this case we have two separate parameterizations:
+
+1. Parameterizing the value (currying the function) for lookback
+2. Parameterizing the source of the variable spend in acquisition\_cost
 
 All we have to do is modify our driver to run the right module and ask for the right outputs, and we're good to go!
 
@@ -49,7 +48,7 @@ import sys
 
 import pandas as pd
 
-import with_decoratorst  # we import the module here!
+import with_decorators  # we import the module here!
 from hamilton import driver
 
 logger = logging.getLogger(__name__)
@@ -92,5 +91,3 @@ Running the driver now gives you the following:\
 4     40      200                0.2000              0.166667
 5     50      400                0.1125              0.108333
 ```
-
-bash
