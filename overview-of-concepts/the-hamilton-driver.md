@@ -172,7 +172,7 @@ We recommend using option (1) where possible. Option (2) only makes sense if you
 
 ### Visualizing Execution
 
-Hamilton enables you to quickly and easily visualize your entire DAG, as well as the specific execution path to compute an output. Underneath we default to use [graphviz](https://graphviz.org) for visualization.
+Hamilton enables you to quickly and easily visualize your entire DAG, as well as the specific execution path to compute an output. Underneath we default to use [graphviz](https://graphviz.org/) for visualization.
 
 #### Visualize just execution required to create outputs
 
