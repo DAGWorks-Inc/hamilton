@@ -188,3 +188,22 @@ class Node(object):
             callabl=fn,
             tags={"module": module},
         )
+
+    def copy_with(self, **overrides) -> "Node":
+        """Copies a node with the specified overrides for the constructor arguments.
+        Utility function for creating a node -- useful for modifying it.
+
+        :param kwargs: kwargs to use in place of the node. Passed to the constructor.
+        :return: A node copied from self with the specified keyword arguments replaced.
+        """
+        constructor_args = dict(
+            name=self.name,
+            typ=self.type,
+            doc_string=self.documentation,
+            callabl=self.callable,
+            node_source=self.node_source,
+            input_types=self.input_types,
+            tags=self.tags,
+        )
+        constructor_args.update(**overrides)
+        return Node(**constructor_args)

@@ -165,31 +165,58 @@ def my_func(...) -> pd.DataFrame:
 ```
 
 ## @does
-`@does` is a decorator that essentially allows you to run a function over all the input parameters. So you can't pass
-any old function to `@does`, instead the function passed has to take any amount of inputs and process them all in the same way.
+`@does` is a decorator that allows you to replace the decorated function with the behavior from another
+function. This allows for easy code-reuse when building repeated logic. You do this by decorating a
+function with`@does`, which takes in two parameters:
+1. `replacing_function` Required -- a function that takes in a "compatible" set of arguments. This means that it
+will work when passing the corresponding keyword arguments to the decorated function.
+2. `**argument_mapping` -- a mapping of arguments from the replacing function to the replacing function. This makes for easy reuse of
+functions.
+
 ```python
 import pandas as pd
 from hamilton.function_modifiers import does
-import internal_package_with_logic
 
-def sum_series(**series: pd.Series) -> pd.Series:
+def _sum_series(**series: pd.Series) -> pd.Series:
     """This function takes any number of inputs and sums them all together."""
-    ...
+    return sum(series)
 
-@does(sum_series)
+@does(_sum_series)
 def D_XMAS_GC_WEIGHTED_BY_DAY(D_XMAS_GC_WEIGHTED_BY_DAY_1: pd.Series,
                               D_XMAS_GC_WEIGHTED_BY_DAY_2: pd.Series) -> pd.Series:
     """Adds D_XMAS_GC_WEIGHTED_BY_DAY_1 and D_XMAS_GC_WEIGHTED_BY_DAY_2"""
     pass
+```
 
-@does(internal_package_with_logic.identity_function)
-def copy_of_x(x: pd.Series) -> pd.Series:
-    """Just returns x"""
+In the above example `@does` applies `_sum_series` to the function `D_XMAS_GC_WEIGHTED_BY_DAY`.
+Note we don't need any parameter replacement as `_sum_series` takes in just `**kwargs`, enabling it
+to work with any set of parameters (and thus any old function).
+
+```python
+import pandas as pd
+from hamilton.function_modifiers import does
+
+import internal_company_logic
+
+def _load_data(db: str, table: str) -> pd.DataFrame:
+    """Helper function to load data using your internal company logic"""
+    return internal_company_logic.read_table(db=db, table=table)
+
+@does(_load_data, db='marketing_spend_db', table='marketing_spend_table')
+def marketing_spend_data(marketing_spend_db: str, marketing_spend_table: str) -> pd.Series:
+    """Loads marketing spend data from the database"""
+    pass
+
+@does(_load_data, db='client_acquisition_db', table='client_acquisition_table')
+def client_acquisition_data(client_acquisition_db: str, client_acquisition_table: str) -> pd.Series:
+    """Loads client acquisition data from the database"""
     pass
 ```
-The example here is a function, that all that it does, is sum all the parameters together. So we can annotate it with
-the `@does` decorator and pass it the `sum_series` function.
-The `@does` decorator is currently limited to just allow functions that consist only of one argument, a generic `**kwargs`.
+
+In the above example, `@does` applies our internal function `_load_data`, which applies custom
+logic to load a table from a database in the data warehouse. Note that we map the parameters -- in the first example,
+the value of the parameter `marketing_spend_db` is passed to `db`, and the value of the parameter `marketing_spend_table`
+is passed to `table`.
 
 ## @model
 `@model` allows you to abstract a function that is a model. You will need to implement models that make sense for
