@@ -636,20 +636,6 @@ class does(function_modifiers_base.NodeCreator):
         self.argument_mapping = argument_mapping
 
     @staticmethod
-    def ensure_output_types_match(og_function: Callable, replacing_function: Callable):
-        """Ensures that the output types of two functions match.
-        :param og_function: Function we're decorating
-        :param replacing_function: Function that'll replace it with functionality
-        :return: True if they match, false otherwise
-        """
-        annotation_fn = inspect.signature(og_function).return_annotation
-        annotation_todo = inspect.signature(replacing_function).return_annotation
-        if not type_utils.custom_subclass_check(annotation_fn, annotation_todo):
-            raise InvalidDecoratorException(
-                f"Output types: {annotation_fn} and {annotation_todo} are not compatible"
-            )
-
-    @staticmethod
     def map_kwargs(kwargs: Dict[str, Any], argument_mapping: Dict[str, str]) -> Dict[str, Any]:
         """Maps kwargs using the argument mapping.
         This does 2 things:
@@ -750,7 +736,6 @@ class does(function_modifiers_base.NodeCreator):
         does.ensure_function_signature_compatible(
             fn, self.replacing_function, self.argument_mapping
         )
-        does.ensure_output_types_match(fn, self.replacing_function)
 
     def generate_node(self, fn: Callable, config) -> node.Node:
         """Returns one node which has the replaced functionality

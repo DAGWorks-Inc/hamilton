@@ -396,19 +396,6 @@ def test_ensure_function_signatures_compatible(fn, replace_with, argument_mappin
     )
 
 
-def test_compatible_return_types():
-    def returns_int() -> int:
-        return 0
-
-    def returns_str() -> str:
-        return "zero"
-
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
-        does.ensure_output_types_match(returns_int, returns_str)
-
-    does.ensure_output_types_match(returns_int, returns_int)
-
-
 def test_does_function_modifier():
     def sum_(**kwargs: int) -> int:
         return sum(kwargs.values())
