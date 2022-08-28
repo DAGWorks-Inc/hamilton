@@ -14,7 +14,7 @@ For reference https://docs.ray.io/en/latest/auto_examples/testing-tips.html
 
 @pytest.fixture(scope="module")
 def init():
-    ray.init(local_mode=True)  # need local mode, else it can't seem to find the h_ray module.
+    ray.init()
     yield "initialized"
     ray.shutdown()
 
