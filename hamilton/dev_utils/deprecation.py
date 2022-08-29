@@ -159,8 +159,8 @@ class deprecated:
         TODO -- use @singledispatchmethod when we no longer support 3.6/3.7
         https://docs.python.org/3/library/functools.html#functools.singledispatchmethod
 
-        @param fn: function (or class) to decorate
-        @return: The decorated function.
+        :param fn: function (or class) to decorate
+        :return: The decorated function.
         """
         # In this case we just do a standard decorator
         if isinstance(fn, types.FunctionType):

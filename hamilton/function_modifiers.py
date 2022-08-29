@@ -72,8 +72,8 @@ def value(literal_value: Any) -> LiteralDependency:
     """Specifies that a parameterized dependency comes from a "literal" source.
     E.G. value("foo") means that the value is actually the string value "foo"
 
-    @param literal_value: Python literal value to use
-    @return: A LiteralDependency object -- a signifier to the internal framework of the dependency type
+    :param literal_value: Python literal value to use
+    :return: A LiteralDependency object -- a signifier to the internal framework of the dependency type
     """
     if isinstance(literal_value, LiteralDependency):
         return literal_value
@@ -85,8 +85,8 @@ def source(dependency_on: Any) -> UpstreamDependency:
     This means that it comes from a node somewhere else.
     E.G. source("foo") means that it should be assigned the value that "foo" outputs.
 
-    @param dependency_on: Upstream node to come from
-    @return:An UpstreamDependency object -- a signifier to the internal framework of the dependency type.
+    :param dependency_on: Upstream node to come from
+    :return:An UpstreamDependency object -- a signifier to the internal framework of the dependency type.
     """
     if isinstance(dependency_on, UpstreamDependency):
         return dependency_on
