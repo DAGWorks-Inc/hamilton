@@ -20,7 +20,7 @@ class PanderaDataFrameValidator(base.BaseDefaultValidator):
         )  # TODO -- allow for modin, etc. as they come for free with pandera
 
     def description(self) -> str:
-        return f"Validates that the returned dataframe matches the pander"
+        return "Validates that the returned dataframe matches the pander"
 
     def validate(self, data: pd.DataFrame) -> base.ValidationResult:
         try:

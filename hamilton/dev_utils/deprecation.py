@@ -122,7 +122,7 @@ class deprecated:
                 + (
                     [f"For migration, see: {self.migration_guide}."]
                     if self.migration_guide is not None
-                    else [f"This is a drop-in replacement."]
+                    else ["This is a drop-in replacement."]
                 )
             )
             self.fail_action(failure_message)
@@ -140,7 +140,7 @@ class deprecated:
                 + (
                     [f"For migration, see: {self.migration_guide}."]
                     if self.migration_guide is not None
-                    else [f"This is a drop-in replacement."]
+                    else ["This is a drop-in replacement."]
                 )
             )
             self.warn_action(warn_message)

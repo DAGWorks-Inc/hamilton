@@ -221,7 +221,7 @@ class MaxFractionNansValidatorPandasSeries(base.BaseDefaultValidator):
     @staticmethod
     def _validate_max_fraction_nans(max_fraction_nans: float):
         if not (0 <= max_fraction_nans <= 1):
-            raise ValueError(f"Maximum fraction allowed to be nan must be in range [0,1]")
+            raise ValueError("Maximum fraction allowed to be nan must be in range [0,1]")
 
 
 class AllowNaNsValidatorPandasSeries(MaxFractionNansValidatorPandasSeries):
@@ -415,7 +415,7 @@ def _append_pandera_to_default_validators():
         import pandera
     except ModuleNotFoundError:
         logger.info(
-            f"Cannot import pandera from pandera_validators. Run pip install sf-hamilton[pandera] if needed."
+            "Cannot import pandera from pandera_validators. Run pip install sf-hamilton[pandera] if needed."
         )
         return
     from hamilton.data_quality import pandera_validators

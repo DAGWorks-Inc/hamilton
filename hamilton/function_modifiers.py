@@ -320,7 +320,7 @@ class parameterize_sources(parameterize):
         """
         self.parametrization = parameterization
         if not parameterization:
-            raise ValueError(f"Cannot pass empty/None dictionary to parameterize_sources")
+            raise ValueError("Cannot pass empty/None dictionary to parameterize_sources")
         for output, mappings in parameterization.items():
             if not mappings:
                 raise ValueError(
@@ -1116,12 +1116,12 @@ class check_output(BaseDataValidationDecorator):
         if len(validator) != 0:
             if importance is not None or len(default_validator_kwargs) > 0:
                 raise ValueError(
-                    f"Can provide *either* a list of custom validators or arguments for the default validator. "
-                    f"Instead received both."
+                    "Can provide *either* a list of custom validators or arguments for the default validator. "
+                    "Instead received both."
                 )
         else:
             if importance is None:
-                raise ValueError(f"Must supply an importance level if using the default validator.")
+                raise ValueError("Must supply an importance level if using the default validator.")
 
     def validate(self, fn: Callable):
         """Validates that the check_output node works on the function on which it was called

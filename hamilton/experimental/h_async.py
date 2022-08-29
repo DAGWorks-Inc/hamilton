@@ -111,8 +111,8 @@ class AsyncDriver(driver.Driver):
         self.graph.execute(nodes, memoized_computation, overrides, inputs)
         if display_graph:
             raise ValueError(
-                f"display_graph=True is not supported for the async graph adapter. "
-                f"Instead you should be using visualize_execution."
+                "display_graph=True is not supported for the async graph adapter. "
+                "Instead you should be using visualize_execution."
             )
         task_dict = {
             key: asyncio.create_task(process_value(memoized_computation[key])) for key in final_vars
@@ -138,8 +138,8 @@ class AsyncDriver(driver.Driver):
         """
         if display_graph:
             raise ValueError(
-                f"display_graph=True is not supported for the async graph adapter. "
-                f"Instead you should be using visualize_execution."
+                "display_graph=True is not supported for the async graph adapter. "
+                "Instead you should be using visualize_execution."
             )
         try:
             outputs = await self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
