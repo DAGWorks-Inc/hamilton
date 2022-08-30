@@ -171,7 +171,7 @@ function with`@does`, which takes in two parameters:
 1. `replacing_function` Required -- a function that takes in a "compatible" set of arguments. This means that it
 will work when passing the corresponding keyword arguments to the decorated function.
 2. `**argument_mapping` -- a mapping of arguments from the replacing function to the replacing function. This makes for easy reuse of
-functions.
+functions. Confused? See the examples below.
 
 ```python
 import pandas as pd
