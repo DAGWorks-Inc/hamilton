@@ -6,8 +6,8 @@ business-logic reuse. The decorators we've defined are as follows
 
 ## @parameterize
 Expands a single function into n, each of which correspond to a function in which the parameter value is replaced either by:
-1. A specific value
-2. An specific upstream node.
+1. A specified value
+2. The value from a specified upstream node.
 
 Note that this can take the place of any of the `@parameterize` decorators below. In fact, they delegate to this!
 
@@ -31,8 +31,8 @@ also pass documentation. If you don't, it will use the parameterized docstring.
 
 ```python
 @parameterize(
-    D_ELECTION_2016_shifted=(dict(n_off_date=upstream('D_ELECTION_2016'), shift_by=literal(3)), "D_ELECTION_2016 shifted by 3"),
-    SOME_OUTPUT_NAME=(dict(n_off_date=upstream('SOME_INPUT_NAME'), shift_by=literal(1)),"SOME_INPUT_NAME shifted by 1")
+    D_ELECTION_2016_shifted=(dict(n_off_date=source('D_ELECTION_2016'), shift_by=value(3)), "D_ELECTION_2016 shifted by 3"),
+    SOME_OUTPUT_NAME=(dict(n_off_date=source('SOME_INPUT_NAME'), shift_by=value(1)),"SOME_INPUT_NAME shifted by 1")
 )
 def date_shifter(n_off_date: pd.Series, shift_by: int=1) -> pd.Series:
     """{one_off_date} shifted by shift_by to create {output_name}"""

@@ -105,9 +105,9 @@ class parameterize(function_modifiers_base.NodeExpander):
         """Creates a parameterize decorator. For example:
             @parameterize(
                 replace_no_parameters=({}, 'fn with no parameters replaced'),
-                replace_just_upstream_parameter=({'upstream_parameter': upstream('foo_source')}, 'fn with upstream_parameter set to node foo'),
-                replace_just_literal_parameter=({'literal_parameter': literal('bar')}, 'fn with upstream_parameter set to node foo'),
-                replace_both_parameters=({'upstream_parameter': upstream('foo_source'), 'literal_parameter': literal('bar')}, 'fn with both parameters replaced')
+                replace_just_upstream_parameter=({'upstream_parameter': source('foo_source')}, 'fn with upstream_parameter set to node foo'),
+                replace_just_literal_parameter=({'literal_parameter': value('bar')}, 'fn with parameter literal_parameter set to value bar'),
+                replace_both_parameters=({'upstream_parameter': source('foo_source'), 'literal_parameter': value('bar')}, 'fn with both parameters replaced')
             )
             def concat(upstream_parameter: str, literal_parameter: str) -> Any:
                 return f'{upstream_parameter}{literal_parameter}'
@@ -127,7 +127,7 @@ class parameterize(function_modifiers_base.NodeExpander):
                     bad_values.append(value)
         if bad_values:
             raise InvalidDecoratorException(
-                f"@parameterize must specify a dependency type -- either upstream() or literal()."
+                f"@parameterize must specify a dependency type -- either source() or value()."
                 f"The following are not allowed: {bad_values}."
             )
         self.specified_docstrings = {
