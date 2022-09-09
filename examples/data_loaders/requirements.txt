@@ -1,0 +1,2 @@
+click
+duckdb==0.5.0
