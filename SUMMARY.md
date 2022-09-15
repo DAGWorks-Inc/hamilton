@@ -29,7 +29,7 @@
   * [Loading Data](best-practices/loading-data.md)
   * [Output Immutability](best-practices/output-immutability.md)
 * [Extensions](extensions.md)
-* [Talks | Podcasts | Blogs](talks-or-podcasts-or-blogs.md)
+* [Talks | Podcasts | Blogs | Papers](talks-or-podcasts-or-blogs-or-papers.md)
 * [Hamilton Community](hamilton-community.md)
 * [License](license.md)
 * [Contributing](contributing.md)

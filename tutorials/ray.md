@@ -121,4 +121,4 @@ A brief note on caveats with using Hamilton + Ray.
 
 ## To conclude
 
-By using Hamilton, you can organize and scale the human side of writing data transforms (no, I didn’t talk about this in this post, but see [talks-or-podcasts-or-blogs.md](../talks-or-podcasts-or-blogs.md "mention") to convince yourself there 😉). With Ray, you can scale your data workflows to work beyond the limits of your laptop. Together, the skies the limit!
+By using Hamilton, you can organize and scale the human side of writing data transforms (no, I didn’t talk about this in this post, but see [talks-or-podcasts-or-blogs-or-papers.md](../talks-or-podcasts-or-blogs-or-papers.md "mention") to convince yourself there 😉). With Ray, you can scale your data workflows to work beyond the limits of your laptop. Together, the skies the limit!

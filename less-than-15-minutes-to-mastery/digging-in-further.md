@@ -28,6 +28,6 @@ Congratulations! You've completed the intro, and are now on your way to becoming
 
 To see media coverage about Hamilton see:
 
-{% content-ref url="../talks-or-podcasts-or-blogs.md" %}
-[talks-or-podcasts-or-blogs.md](../talks-or-podcasts-or-blogs.md)
+{% content-ref url="../talks-or-podcasts-or-blogs-or-papers.md" %}
+[talks-or-podcasts-or-blogs-or-papers.md](../talks-or-podcasts-or-blogs-or-papers.md)
 {% endcontent-ref %}
