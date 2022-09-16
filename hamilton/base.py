@@ -5,7 +5,7 @@ It cannot import hamilton.graph, or hamilton.driver.
 import abc
 import collections
 import inspect
-import typing
+from typing import Any, Dict, List, Tuple, Type
 
 import numpy as np
 import pandas as pd
@@ -23,7 +23,7 @@ class ResultMixin(object):
 
     @staticmethod
     @abc.abstractmethod
-    def build_result(**outputs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def build_result(**outputs: Dict[str, Any]) -> Any:
         """This function builds the result given the computed values."""
         pass
 
@@ -32,7 +32,7 @@ class DictResult(ResultMixin):
     """Simple function that returns the dict of column -> value results."""
 
     @staticmethod
-    def build_result(**outputs: typing.Dict[str, typing.Any]) -> typing.Dict:
+    def build_result(**outputs: Dict[str, Any]) -> Dict:
         """This function builds a simple dict of output -> computed values."""
         return outputs
 
@@ -41,7 +41,7 @@ class PandasDataFrameResult(ResultMixin):
     """Mixin for building a pandas dataframe from the result"""
 
     @staticmethod
-    def build_result(**outputs: typing.Dict[str, typing.Any]) -> pd.DataFrame:
+    def build_result(**outputs: Dict[str, Any]) -> pd.DataFrame:
         # TODO check inputs are pd.Series, arrays, or scalars -- else error
         # TODO do a basic index check across pd.Series and flag where mismatches occur?
         if len(outputs) == 1:
@@ -61,7 +61,7 @@ class NumpyMatrixResult(ResultMixin):
     """
 
     @staticmethod
-    def build_result(**outputs: typing.Dict[str, typing.Any]) -> np.matrix:
+    def build_result(**outputs: Dict[str, Any]) -> np.matrix:
         """Builds a numpy matrix from the passed in, inputs.
 
         :param outputs: function_name -> np.array.
@@ -108,7 +108,7 @@ class HamiltonGraphAdapter(ResultMixin):
 
     @staticmethod
     @abc.abstractmethod
-    def check_input_type(node_type: typing.Type, input_value: typing.Any) -> bool:
+    def check_input_type(node_type: Type, input_value: Any) -> bool:
         """Used to check whether the user inputs match what the execution strategy & functions can handle.
 
         :param node_type: The type of the node.
@@ -119,7 +119,7 @@ class HamiltonGraphAdapter(ResultMixin):
 
     @staticmethod
     @abc.abstractmethod
-    def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
+    def check_node_type_equivalence(node_type: Type, input_type: Type) -> bool:
         """Used to check whether two types are equivalent.
 
         This is used when the function graph is being created and we're statically type checking the annotations
@@ -132,7 +132,7 @@ class HamiltonGraphAdapter(ResultMixin):
         pass
 
     @abc.abstractmethod
-    def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def execute_node(self, node: node.Node, kwargs: Dict[str, Any]) -> Any:
         """Given a node that represents a hamilton function, execute it.
         Note, in some adapters this might just return some type of "future".
 
@@ -147,8 +147,8 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
     """This is the default (original Hamilton) graph adapter. It uses plain python and builds a dataframe result."""
 
     @staticmethod
-    def check_input_type(node_type: typing.Type, input_value: typing.Any) -> bool:
-        if node_type == typing.Any:
+    def check_input_type(node_type: Type, input_value: Any) -> bool:
+        if node_type == Any:
             return True
         elif inspect.isclass(node_type) and isinstance(input_value, node_type):
             return True
@@ -171,10 +171,10 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
         return False
 
     @staticmethod
-    def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
+    def check_node_type_equivalence(node_type: Type, input_type: Type) -> bool:
         return node_type == input_type
 
-    def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def execute_node(self, node: node.Node, kwargs: Dict[str, Any]) -> Any:
         return node.callable(**kwargs)
 
 
@@ -186,6 +186,6 @@ class SimplePythonGraphAdapter(SimplePythonDataFrameGraphAdapter):
         if self.result_builder is None:
             raise ValueError("You must provide a ResultMixin object for `result_builder`.")
 
-    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def build_result(self, **outputs: Dict[str, Any]) -> Any:
         """Delegates to the result builder function supplied."""
         return self.result_builder.build_result(**outputs)
