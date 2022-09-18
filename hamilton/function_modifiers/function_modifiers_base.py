@@ -361,3 +361,7 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     for node_decorator in node_decorators:
         nodes = node_decorator.transform_dag(nodes, config, fn)
     return nodes
+
+
+class InvalidDecoratorException(Exception):
+    pass
