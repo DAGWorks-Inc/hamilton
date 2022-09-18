@@ -5,20 +5,20 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import hamilton.function_modifiers.function_modifiers_base
 from hamilton import function_modifiers, function_modifiers_base, models, node
 from hamilton.data_quality.base import DataValidationError, ValidationResult
 from hamilton.function_modifiers import (
     DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG,
     IS_DATA_VALIDATOR_TAG,
-    LiteralDependency,
-    UpstreamDependency,
     check_output,
     check_output_custom,
     does,
-    ensure_function_empty,
     source,
     value,
 )
+from hamilton.function_modifiers.dependencies import LiteralDependency, UpstreamDependency
+from hamilton.function_modifiers.macros import ensure_function_empty
 from hamilton.node import DependencyType
 from tests.resources.dq_dummy_examples import (
     DUMMY_VALIDATORS_FOR_TESTING,
@@ -36,18 +36,24 @@ def test_parametrized_invalid_params():
     def no_param_node():
         pass
 
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         annotation.validate(no_param_node)
 
     def wrong_param_node(valid_value):
         pass
 
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         annotation.validate(wrong_param_node)
 
 
 def test_parametrized_single_param_breaks_without_docs():
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         function_modifiers.parameterize_values(
             parameter="parameter", assigned_output={"only_node_name": "only_value"}
         )
@@ -138,7 +144,9 @@ def test_parametrize_sources_validate_param_name():
         """Function with {parameter1} as first input"""
         return parameter1 + parameter2 + static
 
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         annotation.validate(identity)
 
 
@@ -154,7 +162,9 @@ def test_parametrized_inputs_validate_reserved_param():
         """Function with {parameter2} as second input"""
         return output_name + parameter2 + static
 
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         annotation.validate(identity)
 
 
@@ -170,7 +180,9 @@ def test_parametrized_inputs_validate_bad_doc_string():
         """Function with {foo} as second input"""
         return output_name + parameter2 + static
 
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         annotation.validate(identity)
 
 
@@ -206,19 +218,25 @@ def test_invalid_column_extractor():
     def no_param_node() -> int:
         pass
 
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         annotation.validate(no_param_node)
 
 
 def test_extract_columns_invalid_passing_list_to_column_extractor():
     """Ensures that people cannot pass in a list."""
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         function_modifiers.extract_columns(["a", "b", "c"])
 
 
 def test_extract_columns_empty_args():
     """Tests that we fail on empty arguments."""
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         function_modifiers.extract_columns()
 
 
@@ -286,7 +304,9 @@ def test_column_extractor_no_fill_with():
     nodes = list(
         annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator)
     )
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         nodes[1].callable(dummy_df_generator=dummy_df_generator())
 
 
@@ -305,7 +325,9 @@ def test_no_code_validator():
 
     ensure_function_empty(no_code)
     ensure_function_empty(no_code_with_docstring)
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         ensure_function_empty(yes_code)
 
 
@@ -499,7 +521,9 @@ def test_model_modifier():
     def bad_model(col_1: pd.Series, col_2: pd.Series) -> pd.Series:
         return col_1 * 0.5 + col_2 * 0.5
 
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         annotation.validate(bad_model)
 
 
@@ -521,7 +545,9 @@ def test_config_modifier_validate():
     def invalid_function__() -> int:
         pass
 
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         function_modifiers.config.when(key="value").validate(invalid_function__)
 
 
@@ -593,7 +619,9 @@ def test_config_when_with_custom_name():
     ],
 )
 def test_extract_fields_constructor_errors(fields):
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         function_modifiers.extract_fields(fields)
 
 
@@ -632,7 +660,9 @@ def test_extract_fields_validate_errors(return_type):
         return {}
 
     annotation = function_modifiers.extract_fields({"test": int})
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         annotation.validate(return_dict)
 
 
@@ -694,7 +724,9 @@ def test_extract_fields_no_fill_with():
 
     annotation = function_modifiers.extract_fields({"col_4": int})
     nodes = list(annotation.expand_node(node.Node.from_fn(dummy_dict), {}, dummy_dict))
-    with pytest.raises(function_modifiers.InvalidDecoratorException):
+    with pytest.raises(
+        hamilton.function_modifiers.function_modifiers_base.InvalidDecoratorException
+    ):
         nodes[1].callable(dummy_dict=dummy_dict())
 
 
