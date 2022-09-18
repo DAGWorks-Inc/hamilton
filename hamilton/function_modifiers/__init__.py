@@ -10,10 +10,12 @@ from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
 import pandas as pd
 import typing_inspect
 
-from hamilton import function_modifiers_base, models, node
+from hamilton import models, node
 from hamilton.data_quality import base as dq_base
 from hamilton.data_quality import default_validators
 from hamilton.dev_utils import deprecation
+
+from . import function_modifiers_base
 
 logger = logging.getLogger(__name__)
 
