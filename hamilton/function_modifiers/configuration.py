@@ -1,12 +1,12 @@
 from typing import Any, Callable, Collection, Dict
 
-from . import function_modifiers_base
+from . import base
 
 """Decorators that handle the configuration of a function. These can be viewed as
 replacing if/else/switch statements in standard dataflow definition libraries"""
 
 
-class config(function_modifiers_base.NodeResolver):
+class config(base.NodeResolver):
     """Decorator class that resolves a node's function based on  some configuration variable
     Currently, functions that exist in all configurations have to be disjoint.
     E.G. for every config.when(), you can have a config.when_not() that filters the opposite.
@@ -20,7 +20,7 @@ class config(function_modifiers_base.NodeResolver):
     def _get_function_name(self, fn: Callable) -> str:
         if self.target_name is not None:
             return self.target_name
-        return function_modifiers_base.sanitize_function_name(fn.__name__)
+        return base.sanitize_function_name(fn.__name__)
 
     def resolve(self, fn, configuration: Dict[str, Any]) -> Callable:
         if not self.does_resolve(configuration):
@@ -30,7 +30,7 @@ class config(function_modifiers_base.NodeResolver):
 
     def validate(self, fn):
         if fn.__name__.endswith("__"):
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 "Config will always use the portion of the function name before the last __. For example, signups__v2 will map to signups, whereas"
             )
 
