@@ -1,12 +1,12 @@
 from typing import Any, Callable
 
 from hamilton import node
-from hamilton.function_modifiers import function_modifiers_base
+from hamilton.function_modifiers import base
 
 """Decorators that attach metadata to nodes"""
 
 
-class tag(function_modifiers_base.NodeDecorator):
+class tag(base.NodeDecorator):
     """Decorator class that adds a tag to a node. Tags take the form of key/value pairings.
     Tags can have dots to specify namespaces (keys with dots), but this is usually reserved for special cases
     (E.G. subdecorators) that utilize them. Usually one will pass in tags as kwargs, so we expect tags to
@@ -117,7 +117,7 @@ class tag(function_modifiers_base.NodeDecorator):
                 bad_tags.add((key, value))
         if bad_tags:
             bad_tags_formatted = ",".join([f"{key}={value}" for key, value in bad_tags])
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"The following tags are invalid as tags: {bad_tags_formatted} "
                 "Tag keys can be split by ., to represent a hierarchy, "
                 "but each element of the hierarchy must be a valid python identifier. "

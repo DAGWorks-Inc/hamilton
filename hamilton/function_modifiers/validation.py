@@ -4,7 +4,7 @@ from typing import Any, Callable, Collection, Dict, List, Type
 from hamilton import node
 from hamilton.data_quality import base as dq_base
 from hamilton.data_quality import default_validators
-from hamilton.function_modifiers import function_modifiers_base
+from hamilton.function_modifiers import base
 
 """Decorators that validate artifacts of a node"""
 
@@ -12,7 +12,7 @@ IS_DATA_VALIDATOR_TAG = "hamilton.data_quality.contains_dq_results"
 DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = "hamilton.data_quality.source_node"
 
 
-class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
+class BaseDataValidationDecorator(base.NodeTransformer):
     @abc.abstractmethod
     def get_validators(self, node_to_validate: node.Node) -> List[dq_base.DataValidator]:
         """Returns a list of validators used to transform the nodes.
@@ -55,7 +55,7 @@ class BaseDataValidationDecorator(function_modifiers_base.NodeTransformer):
                 tags={
                     **node_.tags,
                     **{
-                        function_modifiers_base.NodeTransformer.NON_FINAL_TAG: True,  # This is not to be used as a subdag later on
+                        base.NodeTransformer.NON_FINAL_TAG: True,  # This is not to be used as a subdag later on
                         IS_DATA_VALIDATOR_TAG: True,
                         DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG: node_.name,
                     },

@@ -4,8 +4,7 @@ from typing import Any, Callable, Dict, List, Type, Union
 import pandas as pd
 
 from hamilton import models, node
-from hamilton.function_modifiers import function_modifiers_base
-from hamilton.function_modifiers_base import InvalidDecoratorException
+from hamilton.function_modifiers import base
 
 """Decorators that replace a function's execution with specified behavior"""
 
@@ -29,13 +28,13 @@ def ensure_function_empty(fn: Callable):
         _empty_function.__code__.co_code,
         _empty_function_with_docstring.__code__.co_code,
     }:
-        raise function_modifiers_base.InvalidDecoratorException(
+        raise base.InvalidDecoratorException(
             f"Function: {fn.__name__} is not empty. Must have only one line that "
             f'consists of "pass"'
         )
 
 
-class does(function_modifiers_base.NodeCreator):
+class does(base.NodeCreator):
     def __init__(self, replacing_function: Callable, **argument_mapping: Union[str, List[str]]):
         """Constructor for a modifier that replaces the annotated functions functionality with something else.
         Right now this has a very strict validation requirements to make compliance with the framework easy.
@@ -118,7 +117,7 @@ class does(function_modifiers_base.NodeCreator):
                 invalid_fn_parameters.append(param_name)
 
         if invalid_fn_parameters:
-            raise InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"Decorated function for @does (and really, all of hamilton), "
                 f"can only consist of keyword-friendly arguments. "
                 f"The following parameters for {og_function.__name__} are not keyword-friendly: {invalid_fn_parameters}"
@@ -126,7 +125,7 @@ class does(function_modifiers_base.NodeCreator):
         if not does.test_function_signatures_compatible(
             inspect.signature(og_function), inspect.signature(replacing_function), argument_mapping
         ):
-            raise InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"The following function signatures are not compatible for use with @does: "
                 f"{og_function.__name__} with signature {inspect.signature(og_function)} "
                 f"and replacing function {replacing_function.__name__} with signature {inspect.signature(replacing_function)}. "
@@ -179,7 +178,7 @@ def get_default_tags(fn: Callable) -> Dict[str, str]:
     return {"module": module_name}
 
 
-class dynamic_transform(function_modifiers_base.NodeCreator):
+class dynamic_transform(base.NodeCreator):
     def __init__(
         self, transform_cls: Type[models.BaseModel], config_param: str, **extra_transform_params
     ):
@@ -200,17 +199,17 @@ class dynamic_transform(function_modifiers_base.NodeCreator):
         ensure_function_empty(fn)  # it has to look exactly
         signature = inspect.signature(fn)
         if not issubclass(signature.return_annotation, pd.Series):
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 "Models must declare their return type as a pandas Series"
             )
         if len(signature.parameters) > 0:
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 "Models must have no parameters -- all are passed in through the config"
             )
 
     def generate_node(self, fn: Callable, config: Dict[str, Any] = None) -> node.Node:
         if self.config_param not in config:
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?"
             )
         fn_name = fn.__name__

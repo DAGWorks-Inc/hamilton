@@ -7,7 +7,7 @@ import typing_inspect
 
 from hamilton import node
 from hamilton.dev_utils import deprecation
-from hamilton.function_modifiers import function_modifiers_base
+from hamilton.function_modifiers import base
 from hamilton.function_modifiers.dependencies import (
     ParametrizedDependency,
     ParametrizedDependencySource,
@@ -18,7 +18,7 @@ from hamilton.function_modifiers.dependencies import (
 """Decorators that allow for les dry code by expanding one node into many"""
 
 
-class parameterize(function_modifiers_base.NodeExpander):
+class parameterize(base.NodeExpander):
     RESERVED_KWARG = "output_name"
 
     def __init__(
@@ -51,7 +51,7 @@ class parameterize(function_modifiers_base.NodeExpander):
                 if not isinstance(value, ParametrizedDependency):
                     bad_values.append(value)
         if bad_values:
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"@parameterize must specify a dependency type -- either source() or value()."
                 f"The following are not allowed: {bad_values}."
             )
@@ -133,13 +133,13 @@ class parameterize(function_modifiers_base.NodeExpander):
                 # TODO -- separate out into the two dependency-types
                 self.format_doc_string(fn.__doc__, output_name)
         except KeyError as e:
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"Function docstring templating is incorrect. "
                 f"Please fix up the docstring {fn.__module__}.{fn.__name__}."
             ) from e
 
         if self.RESERVED_KWARG in func_param_names:
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"Error function {fn.__module__}.{fn.__name__} cannot have `{self.RESERVED_KWARG}` "
                 f"as a parameter it is reserved."
             )
@@ -149,7 +149,7 @@ class parameterize(function_modifiers_base.NodeExpander):
                 if param_to_replace not in func_param_names:
                     missing_parameters.add(param_to_replace)
         if missing_parameters:
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"Parametrization is invalid: the following parameters don't appear in the function itself: {', '.join(missing_parameters)}"
             )
 
@@ -201,7 +201,7 @@ class parameterize_values(parameterize):
         """
         for node_ in assigned_output.keys():
             if not isinstance(node_, Tuple):
-                raise function_modifiers_base.InvalidDecoratorException(
+                raise base.InvalidDecoratorException(
                     f"assigned_output key is incorrect: {node_}. The parameterized decorator needs a dict of "
                     "[name, doc string] -> value to function."
                 )
@@ -287,7 +287,7 @@ class parametrized_input(parameterize):
         """
         for value in variable_inputs.values():
             if not isinstance(value, Tuple):
-                raise function_modifiers_base.InvalidDecoratorException(
+                raise base.InvalidDecoratorException(
                     f"assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of "
                     "input column -> [name, description] to function."
                 )
@@ -310,7 +310,7 @@ class parameterized_inputs(parameterize_sources):
     pass
 
 
-class extract_columns(function_modifiers_base.NodeExpander):
+class extract_columns(base.NodeExpander):
     def __init__(self, *columns: Union[Tuple[str, str], str], fill_with: Any = None):
         """Constructor for a modifier that expands a single function into the following nodes:
         - n functions, each of which take in the original dataframe and output a specific column
@@ -321,11 +321,11 @@ class extract_columns(function_modifiers_base.NodeExpander):
         Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a column.
         """
         if not columns:
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 "Error empty arguments passed to extract_columns decorator."
             )
         elif isinstance(columns[0], list):
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 "Error list passed in. Please `*` in front of it to expand it."
             )
         self.columns = columns
@@ -339,7 +339,7 @@ class extract_columns(function_modifiers_base.NodeExpander):
         """
         output_type = inspect.signature(fn).return_annotation
         if not issubclass(output_type, pd.DataFrame):
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"For extracting columns, output type must be pandas dataframe, not: {output_type}"
             )
 
@@ -377,7 +377,7 @@ class extract_columns(function_modifiers_base.NodeExpander):
             ) -> pd.Series:  # avoiding problems with closures
                 df = kwargs[node_.name]
                 if column_to_extract not in df:
-                    raise function_modifiers_base.InvalidDecoratorException(
+                    raise base.InvalidDecoratorException(
                         f"No such column: {column_to_extract} produced by {node_.name}. "
                         f"It only produced {str(df.columns)}"
                     )
@@ -396,7 +396,7 @@ class extract_columns(function_modifiers_base.NodeExpander):
         return output_nodes
 
 
-class extract_fields(function_modifiers_base.NodeExpander):
+class extract_fields(base.NodeExpander):
     """Extracts fields from a dictionary of output."""
 
     def __init__(self, fields: dict, fill_with: Any = None):
@@ -409,11 +409,11 @@ class extract_fields(function_modifiers_base.NodeExpander):
         Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a field value.
         """
         if not fields:
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 "Error an empty dict, or no dict, passed to extract_fields decorator."
             )
         elif not isinstance(fields, dict):
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"Error, please pass in a dict, not {type(fields)}"
             )
         else:
@@ -427,7 +427,7 @@ class extract_fields(function_modifiers_base.NodeExpander):
                     )
 
             if errors:
-                raise function_modifiers_base.InvalidDecoratorException(
+                raise base.InvalidDecoratorException(
                     f"Error, found these {errors}. " f"Please pass in a dict of string to types. "
                 )
         self.fields = fields
@@ -441,19 +441,19 @@ class extract_fields(function_modifiers_base.NodeExpander):
         """
         output_type = inspect.signature(fn).return_annotation
         if typing_inspect.is_generic_type(output_type):
-            base = typing_inspect.get_origin(output_type)
+            base_type = typing_inspect.get_origin(output_type)
             if (
-                base == dict or base == Dict
+                base_type == dict or base == Dict
             ):  # different python versions return different things 3.7+ vs 3.6.
                 pass
             else:
-                raise function_modifiers_base.InvalidDecoratorException(
+                raise base.InvalidDecoratorException(
                     f"For extracting fields, output type must be a dict or typing.Dict, not: {output_type}"
                 )
         elif output_type == dict:
             pass
         else:
-            raise function_modifiers_base.InvalidDecoratorException(
+            raise base.InvalidDecoratorException(
                 f"For extracting fields, output type must be a dict or typing.Dict, not: {output_type}"
             )
 
@@ -492,7 +492,7 @@ class extract_fields(function_modifiers_base.NodeExpander):
             ) -> field_type:  # avoiding problems with closures
                 dt = kwargs[node_.name]
                 if field_to_extract not in dt:
-                    raise function_modifiers_base.InvalidDecoratorException(
+                    raise base.InvalidDecoratorException(
                         f"No such field: {field_to_extract} produced by {node_.name}. "
                         f"It only produced {list(dt.keys())}"
                     )

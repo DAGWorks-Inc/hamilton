@@ -1,14 +1,6 @@
 import logging
 
-from . import (
-    configuration,
-    dependencies,
-    expanders,
-    function_modifiers_base,
-    macros,
-    metadata,
-    validation,
-)
+from . import base, configuration, dependencies, expanders, macros, metadata, validation
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +14,7 @@ as annotations. They are classes to hold state and subclass common functionality
 # All new user-facing decorators/helper functions should be here
 
 # Backwards-compatibility to be safe
-InvalidDecoratorException = function_modifiers_base.InvalidDecoratorException
+InvalidDecoratorException = base.InvalidDecoratorException
 
 # The config decorator
 config = configuration.config
