@@ -64,7 +64,11 @@ class PandasDataFrameResult(ResultMixin):
         for output_name, output_value in outputs.items():
             if isinstance(output_value, (pd.DataFrame, pd.Series)):
                 dict_key = f"{output_value.index.__class__.__name__}:::{output_value.index.dtype}"
-                if isinstance(output_value.index, pd_extension.NDArrayBackedExtensionIndex):
+                try:
+                    index_type = getattr(pd_extension, "NDArrayBackedExtensionIndex")
+                except AttributeError:  # for python 3.6 & pandas 1.1.5
+                    index_type = getattr(pd_extension, "ExtensionIndex")
+                if isinstance(output_value.index, index_type):
                     # it's a time index -- these will produce garbage if not aligned properly.
                     time_indexes[dict_key].append(output_name)
             else:
