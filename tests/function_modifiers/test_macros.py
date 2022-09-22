@@ -125,7 +125,7 @@ def test_does_function_modifier():
         pass
 
     annotation = does(sum_)
-    node = annotation.generate_node(to_modify, {})
+    (node,) = annotation.generate_nodes(to_modify, {})
     assert node.name == "to_modify"
     assert node.callable(param1=1, param2=1) == 2
     assert node.documentation == to_modify.__doc__
@@ -140,7 +140,7 @@ def test_does_function_modifier_complex_types():
         pass
 
     annotation = does(setify)
-    node = annotation.generate_node(to_modify, {})
+    (node,) = annotation.generate_nodes(to_modify, {})
     assert node.name == "to_modify"
     assert node.callable(param1=[1, 2, 3], param2=[4, 5, 6]) == {1, 2, 3, 4, 5, 6}
     assert node.documentation == to_modify.__doc__
@@ -155,7 +155,7 @@ def test_does_function_modifier_optionals():
         pass
 
     annotation = does(sum_)
-    node_ = annotation.generate_node(to_modify, {})
+    (node_,) = annotation.generate_nodes(to_modify, {})
     assert node_.name == "to_modify"
     assert node_.input_types["param0"][1] == DependencyType.REQUIRED
     assert node_.input_types["param1"][1] == DependencyType.OPTIONAL
@@ -174,7 +174,7 @@ def test_does_with_argument_mapping():
         pass
 
     annotation = does(_sum_multiply, param0="parama", param1="paramb", param2="paramc")
-    node = annotation.generate_node(to_modify, {})
+    (node,) = annotation.generate_nodes(to_modify, {})
     assert node.name == "to_modify"
     assert node.input_types["parama"][1] == DependencyType.REQUIRED
     assert node.input_types["paramb"][1] == DependencyType.OPTIONAL
@@ -209,7 +209,7 @@ def test_model_modifier():
 
     annotation = function_modifiers.model(LinearCombination, "my_column_model_params")
     annotation.validate(my_column)
-    model_node = annotation.generate_node(my_column, config)
+    (model_node,) = annotation.generate_nodes(my_column, config)
     assert model_node.input_types["col_1"][0] == model_node.input_types["col_2"][0] == pd.Series
     assert model_node.type == pd.Series
     pd.testing.assert_series_equal(

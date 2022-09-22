@@ -104,7 +104,7 @@ class NodeCreator(NodeTransformLifecycle, abc.ABC):
     """Abstract class for nodes that "expand" functions into other nodes."""
 
     @abc.abstractmethod
-    def generate_node(self, fn: Callable, config: Dict[str, Any]) -> node.Node:
+    def generate_nodes(self, fn: Callable, config: Dict[str, Any]):
         """Given a function, converts it to a series of nodes that it produces.
 
         :param config:
@@ -129,6 +129,21 @@ class NodeCreator(NodeTransformLifecycle, abc.ABC):
     @classmethod
     def allows_multiple(cls) -> bool:
         return False
+
+
+class SubDAGGenerator(NodeTransformLifecycle, abc.ABC):
+    @abc.abstractmethod
+    def generate_dag(self, fn: Callable, config: Dict[str, Any]):
+        """TODO -- document me
+
+        :param fn:
+        :param config:
+        :return:
+        """
+        pass
+
+    def lifecycle_name(self) -> str:
+        return "generate_dag"
 
 
 class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
@@ -286,8 +301,8 @@ class NodeDecorator(NodeTransformer, abc.ABC):
 
 
 class DefaultNodeCreator(NodeCreator):
-    def generate_node(self, fn: Callable, config: Dict[str, Any]) -> node.Node:
-        return node.Node.from_fn(fn)
+    def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
+        return [node.Node.from_fn(fn)]
 
     def validate(self, fn: Callable):
         pass
@@ -351,7 +366,7 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
         if fn is None:
             return []
     (node_creator,) = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
-    nodes = [node_creator.generate_node(fn, config)]
+    nodes = node_creator.generate_nodes(fn, config)
     (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
     nodes = node_expander.transform_dag(nodes, config, fn)
     node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
