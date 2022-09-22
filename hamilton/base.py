@@ -5,13 +5,17 @@ It cannot import hamilton.graph, or hamilton.driver.
 import abc
 import collections
 import inspect
+import logging
 from typing import Any, Dict, List, Tuple, Type
 
 import numpy as np
 import pandas as pd
 import typing_inspect
+from pandas.core.indexes import extension as pd_extension
 
 from . import node
+
+logger = logging.getLogger(__name__)
 
 
 class ResultMixin(object):
@@ -41,9 +45,95 @@ class PandasDataFrameResult(ResultMixin):
     """Mixin for building a pandas dataframe from the result"""
 
     @staticmethod
+    def pandas_index_types(
+        outputs: Dict[str, Any]
+    ) -> Tuple[Dict[str, List[str]], Dict[str, List[str]], Dict[str, List[str]]]:
+        """This function creates three dictionaries according to whether there is an index type or not.
+
+        The three dicts we create are:
+        1. Dict of index type to list of outputs that match it.
+        2. Dict of time series / categorical index types to list of outputs that match it.
+        3. Dict of `no-index` key to list of outputs with no index type.
+
+        :param outputs: the dict we're trying to create a result from.
+        :return: dict of all index types, dict of time series/categorical index types, dict if there is no index
+        """
+        all_index_types = collections.defaultdict(list)
+        time_indexes = collections.defaultdict(list)
+        no_indexes = collections.defaultdict(list)
+        for output_name, output_value in outputs.items():
+            if isinstance(output_value, (pd.DataFrame, pd.Series)):
+                dict_key = f"{output_value.index.__class__.__name__}:::{output_value.index.dtype}"
+                if isinstance(output_value.index, pd_extension.NDArrayBackedExtensionIndex):
+                    # it's a time index -- these will produce garbage if not aligned properly.
+                    time_indexes[dict_key].append(output_name)
+            else:
+                dict_key = "no-index"
+                no_indexes[dict_key].append(output_name)
+            all_index_types[dict_key].append(output_name)
+        return all_index_types, time_indexes, no_indexes
+
+    @staticmethod
+    def check_pandas_index_types_match(
+        all_index_types: Dict[str, List[str]],
+        time_indexes: Dict[str, List[str]],
+        no_indexes: Dict[str, List[str]],
+    ) -> bool:
+        """Checks that pandas index types match.
+
+        This only logs warning errors, and if debug is enabled, a debug statement to list index types.
+        """
+        no_index_length = len(no_indexes)
+        time_indexes_length = len(time_indexes)
+        all_indexes_length = len(all_index_types)
+        number_with_indexes = all_indexes_length - no_index_length
+        types_match = True  # default to True
+        # if there is more than one time index
+        if time_indexes_length > 1:
+            logger.warning(
+                f"WARNING: Time/Categorical index type mismatches detected - check output to ensure Pandas "
+                f"is doing what you intend to do. Else change the index types to match. Set logger to debug "
+                f"to see index types."
+            )
+            types_match = False
+        # if there is more than one index type and it's not explained by the time indexes then
+        if number_with_indexes > 1 and all_indexes_length > time_indexes_length:
+            logger.warning(
+                f"WARNING: Multiple index types detected - check output to ensure Pandas is "
+                f"doing what you intend to do. Else change the index types to match. Set logger to debug to "
+                f"see index types."
+            )
+            types_match = False
+        elif number_with_indexes == 1 and no_index_length > 0:
+            logger.warning(
+                f"WARNING: a single pandas index was found, but there are also {no_index_length} outputs without "
+                f"an index. Those values will be made constants throughout the values of the index."
+            )
+            # Strictly speaking the index types match -- there is only one -- so setting to True.
+            types_match = True
+        # if all indexes matches no indexes
+        elif no_index_length == all_indexes_length:
+            logger.warning(
+                "It appears no Pandas index type was detected. This will likely break when trying to "
+                "create a DataFrame. E.g. are you requesting all scalar values? Use a different result "
+                "builder or return at least one Pandas object with an index."
+            )
+            types_match = False
+        if logger.isEnabledFor(logging.DEBUG):
+            import pprint
+
+            pretty_string = pprint.pformat(dict(all_index_types))
+            logger.debug(f"Index types encountered:\n{pretty_string}.")
+        return types_match
+
+    @staticmethod
     def build_result(**outputs: Dict[str, Any]) -> pd.DataFrame:
         # TODO check inputs are pd.Series, arrays, or scalars -- else error
-        # TODO do a basic index check across pd.Series and flag where mismatches occur?
+        output_index_type_tuple = PandasDataFrameResult.pandas_index_types(outputs)
+        # this next line just log warnings
+        # we don't actually care about the result since this is the current default behavior.
+        PandasDataFrameResult.check_pandas_index_types_match(*output_index_type_tuple)
+
         if len(outputs) == 1:
             (value,) = outputs.values()  # this works because it's length 1.
             if isinstance(value, pd.DataFrame):
@@ -52,6 +142,37 @@ class PandasDataFrameResult(ResultMixin):
                 return pd.DataFrame(outputs)
             raise ValueError(f"Cannot build result. Cannot handle type {value}.")
         return pd.DataFrame(outputs)
+
+
+class StrictIndexTypePandasDataFrameResult(PandasDataFrameResult):
+    """A ResultBuilder that produces a dataframe only if the index types match exactly.
+
+    Note: If there is no index type on some outputs, e.g. the value is a scalar, as long as there exists a single pandas
+     index type, no error will be thrown, because a dataframe can be easily created.
+
+    To use:
+    from hamilton import base, driver
+    strict_builder = base.StrictIndexTypePandasDataFrameResult()
+    adapter = base.SimplePythonGraphAdapter(strict_builder)
+    ...
+    dr =  driver.Driver(config, *modules, adapter=adapter)
+    df = dr.execute(...)  # this will now error if index types mismatch.
+    """
+
+    @staticmethod
+    def build_result(**outputs: Dict[str, Any]) -> pd.DataFrame:
+        # TODO check inputs are pd.Series, arrays, or scalars -- else error
+        output_index_type_tuple = PandasDataFrameResult.pandas_index_types(outputs)
+        indexes_match = PandasDataFrameResult.check_pandas_index_types_match(
+            *output_index_type_tuple
+        )
+        if not indexes_match:
+            raise ValueError(
+                "Error: pandas index types did not match exactly. "
+                f"Found the following indexes:\n{dict(output_index_type_tuple[0])}"
+            )
+
+        return PandasDataFrameResult.build_result(**outputs)
 
 
 class NumpyMatrixResult(ResultMixin):
