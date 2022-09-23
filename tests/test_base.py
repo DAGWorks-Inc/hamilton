@@ -137,12 +137,23 @@ def test_SimplePythonDataFrameGraphAdapter_check_input_type_mismatch(node_type, 
                 {"a": pd.Series([1, 2, 3]), "b": pd.Series([11, 12, 13]), "c": pd.Series([1, 1, 1])}
             ),
         ),
+        (
+            {
+                "a": pd.Series([1, 2, 3]),
+                "b": pd.Series([11, 12, 13]),
+                "c": pd.Series([11, 12, 13]).index,
+            },
+            pd.DataFrame(
+                {"a": pd.Series([1, 2, 3]), "b": pd.Series([11, 12, 13]), "c": pd.Series([0, 1, 2])}
+            ),
+        ),
     ],
     ids=[
         "test-single-series",
         "test-single-dataframe",
         "test-multiple-series",
         "test-multiple-series-with-scalar",
+        "test-multiple-series-with-index",
     ],
 )
 def test_PandasDataFrameResult_build_result(outputs, expected_result):
@@ -223,6 +234,7 @@ def test_PandasDataFrameResult_build_result_errors(outputs):
             ),
         ),
         ({"a": pd.DataFrame({"a": [1, 2, 3]})}, ({"RangeIndex:::int64": ["a"]}, {}, {})),
+        ({"a": pd.Series([1, 2, 3]).index}, ({"Int64Index:::int64": ["a"]}, {}, {})),
     ],
     ids=[
         "int-index",
@@ -231,6 +243,7 @@ def test_PandasDataFrameResult_build_result_errors(outputs):
         "no-index",
         "multiple-different-indexes",
         "df-index",
+        "index-object",
     ],
 )
 def test_PandasDataFrameResult_pandas_index_types(outputs, expected_result):

@@ -71,6 +71,10 @@ class PandasDataFrameResult(ResultMixin):
                 if isinstance(output_value.index, index_type):
                     # it's a time index -- these will produce garbage if not aligned properly.
                     time_indexes[dict_key].append(output_name)
+            elif isinstance(output_value, pd.Index):
+                # there is no index on this - so it's just an integer one.
+                int_index = pd.Series([1, 2, 3], index=[0, 1, 2])
+                dict_key = f"{int_index.index.__class__.__name__}:::{int_index.dtype}"
             else:
                 dict_key = "no-index"
                 no_indexes[dict_key].append(output_name)
