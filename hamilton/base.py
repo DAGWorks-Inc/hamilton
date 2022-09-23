@@ -6,7 +6,7 @@ import abc
 import collections
 import inspect
 import logging
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Dict, List, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -61,20 +61,39 @@ class PandasDataFrameResult(ResultMixin):
         all_index_types = collections.defaultdict(list)
         time_indexes = collections.defaultdict(list)
         no_indexes = collections.defaultdict(list)
+
+        def index_key_name(pd_object: Union[pd.DataFrame, pd.Series]) -> str:
+            """Creates a string helping identify the index and it's type.
+            Useful for disambiguating time related indexes."""
+            return f"{pd_object.index.__class__.__name__}:::{pd_object.index.dtype}"
+
+        def get_parent_time_index_type():
+            """Helper to pull the right time index parent class."""
+            if hasattr(
+                pd_extension, "NDArrayBackedExtensionIndex"
+            ):  # for python 3.7+ & pandas >= 1.2
+                index_type = pd_extension.NDArrayBackedExtensionIndex
+            elif hasattr(pd_extension, "ExtensionIndex"):  # for python 3.6 & pandas <= 1.2
+                index_type = pd_extension.ExtensionIndex
+            else:
+                index_type = None  # weird case, but not worth breaking for.
+            return index_type
+
         for output_name, output_value in outputs.items():
-            if isinstance(output_value, (pd.DataFrame, pd.Series)):
-                dict_key = f"{output_value.index.__class__.__name__}:::{output_value.index.dtype}"
-                try:
-                    index_type = getattr(pd_extension, "NDArrayBackedExtensionIndex")
-                except AttributeError:  # for python 3.6 & pandas 1.1.5
-                    index_type = getattr(pd_extension, "ExtensionIndex")
-                if isinstance(output_value.index, index_type):
+            if isinstance(
+                output_value, (pd.DataFrame, pd.Series)
+            ):  # if it has an index -- let's grab it's type
+                dict_key = index_key_name(output_value)
+                if isinstance(output_value.index, get_parent_time_index_type()):
                     # it's a time index -- these will produce garbage if not aligned properly.
                     time_indexes[dict_key].append(output_name)
-            elif isinstance(output_value, pd.Index):
-                # there is no index on this - so it's just an integer one.
-                int_index = pd.Series([1, 2, 3], index=[0, 1, 2])
-                dict_key = f"{int_index.index.__class__.__name__}:::{int_index.dtype}"
+            elif isinstance(
+                output_value, pd.Index
+            ):  # there is no index on this - so it's just an integer one.
+                int_index = pd.Series(
+                    [1, 2, 3], index=[0, 1, 2]
+                )  # dummy to get right values for string.
+                dict_key = index_key_name(int_index)
             else:
                 dict_key = "no-index"
                 no_indexes[dict_key].append(output_name)
@@ -175,9 +194,12 @@ class StrictIndexTypePandasDataFrameResult(PandasDataFrameResult):
             *output_index_type_tuple
         )
         if not indexes_match:
+            import pprint
+
+            pretty_string = pprint.pformat(dict(output_index_type_tuple[0]))
             raise ValueError(
                 "Error: pandas index types did not match exactly. "
-                f"Found the following indexes:\n{dict(output_index_type_tuple[0])}"
+                f"Found the following indexes:\n{pretty_string}"
             )
 
         return PandasDataFrameResult.build_result(**outputs)
