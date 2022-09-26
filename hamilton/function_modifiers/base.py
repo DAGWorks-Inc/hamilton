@@ -352,8 +352,9 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
             return []
     (node_creator,) = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
     nodes = [node_creator.generate_node(fn, config)]
-    (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
-    nodes = node_expander.transform_dag(nodes, config, fn)
+    if hasattr(fn, NodeExpander.get_lifecycle_name()):
+        (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
+        nodes = node_expander.transform_dag(nodes, config, fn)
     node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
     for dag_modifier in node_transformers:
         nodes = dag_modifier.transform_dag(nodes, config, fn)
