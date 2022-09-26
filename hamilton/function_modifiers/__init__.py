@@ -4,7 +4,7 @@ from typing import Any, Callable, Collection, Dict, List, Type
 
 from hamilton import node
 
-from . import base, configuration, dependencies, expanders, macros, metadata, validation
+from . import base, configuration, dependencies, expanders, macros, metadata, reuse, validation
 
 logger = logging.getLogger(__name__)
 
@@ -62,3 +62,7 @@ check_output = validation.check_output
 check_output_custom = validation.check_output_custom
 IS_DATA_VALIDATOR_TAG = validation.IS_DATA_VALIDATOR_TAG
 DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = validation.DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG
+
+# reuse-subdag
+
+reuse_functions = reuse.reuse_subdag
