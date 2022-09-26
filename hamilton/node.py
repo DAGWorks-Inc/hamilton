@@ -169,6 +169,10 @@ class Node(object):
     def __ne__(self, other: "Node"):
         return not self.__eq__(other)
 
+    def __call__(self, *args, **kwargs):
+        """Call just delegates to the callable, purely for clean syntactic sugar"""
+        return self.callable(*args, **kwargs)
+
     @staticmethod
     def from_fn(fn: Callable, name: str = None) -> "Node":
         """Generates a node from a function. Optionally overrides the name.
