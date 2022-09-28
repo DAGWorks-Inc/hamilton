@@ -157,9 +157,10 @@ We have a small but active community on [slack](https://join.slack.com/t/hamilto
 Hamilton is released under the [BSD 3-Clause Clear License](LICENSE). If you need to get in touch about something,
 contact us at algorithms-opensource (at) stitchfix.com.
 
-# Used by
+# Used interally by
 * Stitch Fix
 * [UK Government Digital Services](https://github.com/alphagov/govuk-feedback-analysis)
+* IBM
 
 To add your company, make a pull request to add it here.
 
