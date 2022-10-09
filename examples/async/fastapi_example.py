@@ -1,8 +1,7 @@
+import async_module
 import fastapi
 
 from hamilton.experimental import h_async
-
-from . import async_module
 
 app = fastapi.FastAPI()
 
