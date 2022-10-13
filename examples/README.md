@@ -21,3 +21,34 @@ folders.
 Under `model_examples` you'll find a how you could apply Hamilton to model your ML workflow.
 Check it out to get a sense for how Hamilton could make your ML pipelines reusable/general
 components...
+
+## Running examples through docker image
+Examples could also be executed through the provided docker image.
+Each example directory inside docker image contains a `hamilton-env` Python virtual environment.
+`hamilton-env` environment contains all the dependencies required to run the example.
+
+NOTE: If you already have the container image you can skip to container creation (step 3)
+
+1. Change directory to `examples`
+```bash
+cd hamilton/examples
+```
+
+2. Build the container image.
+```bash
+docker build --tag hamilton-example .
+```
+Docker build takes around `6m16.298s` depending on the system configuration and network.
+Alternatively, you can pull the container image from here: ...
+
+3. Creating a container
+```bash
+docker run -it --rm --name hamilton-example hamilton-example
+```
+
+4. Running the `hello_world` example inside the container
+```bash
+cd hamilton/examples/hello_world
+source hamilton-env/bin/activate
+python my_script.py
+```
