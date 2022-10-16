@@ -5,37 +5,15 @@ It should only house the graph & things required to create and traverse one.
 
 Note: one should largely consider the code in this module to be "private".
 """
-import inspect
 import logging
 from types import ModuleType
 from typing import Any, Callable, Collection, Dict, List, Set, Tuple, Type
 
 from hamilton import base, function_modifiers_base, node
+from hamilton.graph_utils import find_functions
 from hamilton.type_utils import types_match
 
 logger = logging.getLogger(__name__)
-
-
-# kind of hacky for now but it will work
-def is_submodule(child: ModuleType, parent: ModuleType):
-    return parent.__name__ in child.__name__
-
-
-def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
-    """Function to determine the set of functions we want to build a graph from.
-
-    This iterates through the function module and grabs all function definitions.
-    :return: list of tuples of (func_name, function).
-    """
-
-    def valid_fn(fn):
-        return (
-            inspect.isfunction(fn)
-            and not fn.__name__.startswith("_")
-            and is_submodule(inspect.getmodule(fn), function_module)
-        )
-
-    return [f for f in inspect.getmembers(function_module, predicate=valid_fn)]
 
 
 def add_dependency(
