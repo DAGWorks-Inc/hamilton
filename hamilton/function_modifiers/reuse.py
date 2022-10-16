@@ -1,32 +1,11 @@
 import inspect
 from types import ModuleType
-from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, List, Type, Union
 
 # Copied this over from function_graph
 # TODO -- determine the best place to put this code
-from hamilton import node
+from hamilton import graph_utils, node
 from hamilton.function_modifiers import base, dependencies
-
-
-def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
-    """Function to determine the set of functions we want to build a graph from.
-
-    This iterates through the function module and grabs all function definitions.
-    :return: list of tuples of (func_name, function).
-    """
-
-    # kind of hacky for now but it will work
-    def is_submodule(child: ModuleType, parent: ModuleType):
-        return parent.__name__ in child.__name__
-
-    def valid_fn(fn):
-        return (
-            inspect.isfunction(fn)
-            and not fn.__name__.startswith("_")
-            and is_submodule(inspect.getmodule(fn), function_module)
-        )
-
-    return [f for f in inspect.getmembers(function_module, predicate=valid_fn)]
 
 
 class MultiOutput:
@@ -154,7 +133,9 @@ class reuse_subdag(base.NodeCreator):
         for item in load_from:
             if isinstance(item, Callable):
                 out.append(item)
-            out.extend([function for _, function in find_functions(function_module=item)])
+            out.extend(
+                [function for _, function in graph_utils.find_functions(function_module=item)]
+            )
         return out
 
     def _collect_nodes(self, original_config: Dict[str, Any]):
@@ -221,7 +202,7 @@ class reuse_subdag(base.NodeCreator):
                 for key in node_.input_types
             }
 
-            # Map of argumnet in function to source, can't be the other way
+            # Map of argument in function to source, can't be the other way
             # around as sources can potentially serve multiple destinations (with the source()) decorator
             def fn(
                 _callabl=node_.callable,

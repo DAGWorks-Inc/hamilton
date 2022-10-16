@@ -6,6 +6,8 @@ from itertools import permutations
 import pandas as pd
 import pytest
 
+import hamilton.graph_utils
+import hamilton.type_utils
 import tests.resources.bad_functions
 import tests.resources.config_modifier
 import tests.resources.cyclic_functions
@@ -30,7 +32,7 @@ def test_find_functions():
         ("B", tests.resources.dummy_functions.B),
         ("C", tests.resources.dummy_functions.C),
     ]
-    actual = graph.find_functions(tests.resources.dummy_functions)
+    actual = hamilton.graph_utils.find_functions(tests.resources.dummy_functions)
     assert len(actual) == len(expected)
     assert actual == expected
 
@@ -47,7 +49,7 @@ def test_find_functions_from_temporary_function_module():
         tests.resources.dummy_functions.B,
         tests.resources.dummy_functions.C,
     )
-    actual = graph.find_functions(func_module)
+    actual = hamilton.graph_utils.find_functions(func_module)
     assert len(actual) == len(expected)
     assert [node_name for node_name, _ in actual] == [node_name for node_name, _ in expected]
     assert [fn.__code__ for _, fn in actual] == [
