@@ -17,11 +17,6 @@ class MultiOutput:
         return self._mapping
 
 
-def get_namespaces(node_: node.Node) -> List[str]:
-    *namespaces, _ = node_.name.split(".")
-    return namespaces
-
-
 def assign_namespace(node_name: str, namespace: str) -> str:
     return f"{namespace}.{node_name}"
 
@@ -38,13 +33,14 @@ def derive_type(dependency: dependencies.LiteralDependency):
     return type(dependency.value)
 
 
-def create_identity_node(from_: str, typ: Type[Type], name: str):
+def create_identity_node(from_: str, typ: Type[Type], name: str, namespace: Tuple[str, ...]):
     """Creates an identity node -- this passes through the exact
     value returned by the upstream node.
 
     :param from_: Source node
     :param typ: Type of the input node
     :param name: Name of the final node to create
+    :param namespace: Namespace of the node
     :return: A node that simply copies the source node
     """
 
@@ -57,6 +53,7 @@ def create_identity_node(from_: str, typ: Type[Type], name: str):
         doc_string="",
         callabl=identity,
         input_types={from_: typ},
+        namespace=namespace
         # TODO -- add tags?
     )
 
@@ -79,19 +76,20 @@ def extract_all_known_types(nodes: Collection[node.Node]) -> Dict[str, Type[Type
     return observed_types
 
 
-def create_static_node(typ: Type, name: str, value: Any) -> node.Node:
+def create_static_node(typ: Type, name: str, value: Any, namespace: Tuple[str, ...]) -> node.Node:
     """Utility function to create a static node -- this helps us bridge nodes together.
 
     :param typ: Type of the node to create
     :param name: Name of the node to create
     :param value: Value that the node's function always returns
+    :param namespace: Namespace of the node
     :return: The instantiated static node
     """
 
     def node_fn(_value=value):
         return _value
 
-    return node.Node(name=name, typ=typ, callabl=node_fn, input_types={})
+    return node.Node(name=name, typ=typ, callabl=node_fn, input_types={}, namespace=namespace)
 
 
 class reuse_subdag(base.NodeCreator):
@@ -158,13 +156,19 @@ class reuse_subdag(base.NodeCreator):
             if value.get_dependency_type() == dependencies.ParametrizedDependencySource.LITERAL:
                 out.append(
                     create_static_node(
-                        typ=derive_type(value), name=new_node_name, value=value.value
+                        typ=derive_type(value),
+                        name=key,
+                        value=value.value,
+                        namespace=(self.namespace,),
                     )
                 )
             elif value.get_dependency_type() == dependencies.ParametrizedDependencySource.UPSTREAM:
                 out.append(
                     create_identity_node(
-                        from_=value.source, typ=node_types[new_node_name], name=new_node_name
+                        from_=value.source,
+                        typ=node_types[new_node_name],
+                        name=key,
+                        namespace=(self.namespace,),
                     )
                 )
         return out
@@ -182,7 +186,7 @@ class reuse_subdag(base.NodeCreator):
         for node_ in nodes:
             new_name = assign_namespace(node_.name, self.namespace)
             new_name_map[node_.name] = new_name
-            current_node_namespaces = get_namespaces(node_)
+            current_node_namespaces = node_.namespace
             if current_node_namespaces:
                 already_namespaced_nodes.append(node_)
         for dep, value in self.with_inputs.items():
@@ -230,9 +234,10 @@ class reuse_subdag(base.NodeCreator):
             from_node_namespaced = assign_namespace(from_node, self.namespace)
             new_nodes.append(
                 create_identity_node(
-                    from_=from_node_namespaced,
+                    from_=assign_namespace(from_node, self.namespace),
                     name=to_node,
                     typ=nodes_by_name[from_node_namespaced].type,
+                    namespace=(),
                 )
             )
         return nodes + new_nodes
