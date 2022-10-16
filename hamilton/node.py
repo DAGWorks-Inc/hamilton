@@ -44,6 +44,7 @@ class Node(object):
         node_source: NodeSource = NodeSource.STANDARD,
         input_types: Dict[str, Union[Type, Tuple[Type, DependencyType]]] = None,
         tags: Dict[str, Any] = None,
+        namespace: Tuple[str, ...] = (),
     ):
         """Constructor for our Node object.
 
@@ -67,7 +68,7 @@ class Node(object):
         self._node_source = node_source
         self._dependencies = []
         self._depended_on_by = []
-
+        self._namespace = namespace
         self._input_types = {}
 
         if self._node_source == NodeSource.STANDARD:
@@ -98,6 +99,10 @@ class Node(object):
                 )
 
     @property
+    def namespace(self) -> Tuple[str, ...]:
+        return self._namespace
+
+    @property
     def documentation(self) -> str:
         return self._doc
 
@@ -107,7 +112,7 @@ class Node(object):
 
     @property
     def name(self) -> str:
-        return self._name
+        return ".".join(self.namespace + (self._name,))
 
     @property
     def type(self) -> Any:
