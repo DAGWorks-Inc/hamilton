@@ -181,8 +181,11 @@ setup guide](developer_setup.md).
 * [Extension Stitch Fix Post](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
 
 # Videos of talks
-* [Hamilton: a python micro-framework for data/feature engineering at Stitch Fix](https://www.youtube.com/watch?v=PDGIt37dov8&ab_channel=AICamp):
+* [Hamilton: a python micro-framework for data/feature engineering at Stitch Fix - 40 mins](https://www.youtube.com/watch?v=PDGIt37dov8&ab_channel=AICamp):
 [![Watch the video](https://img.youtube.com/vi/PDGIt37dov8/hqdefault.jpg)](https://youtu.be/PDGIt37dov8)
+* [Hamilton: a python micro-framework for tidy scalable pandas - ~20 mins](https://www.youtube.com/watch?v=m_rjCzxQj4c&ab_channel=Ponder):
+
+[![Watch the video](https://img.youtube.com/vi/m_rjCzxQj4c/hqdefault.jpg)](https://www.youtube.com/watch?v=m_rjCzxQj4c&ab_channel=Ponder)
 
 
 
