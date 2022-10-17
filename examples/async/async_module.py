@@ -1,11 +1,19 @@
 import asyncio
+import json
+import logging
 
 import aiohttp
 import fastapi
 
+logger = logging.getLogger(__name__)
+
 
 async def request_raw(request: fastapi.Request) -> dict:
-    return await request.json()
+    try:
+        return await request.json()
+    except json.JSONDecodeError as e:
+        logger.warning(f"Unable to get JSON from request. Error is:\n{e}")
+        return {}
 
 
 def foo(request_raw: dict) -> str:
