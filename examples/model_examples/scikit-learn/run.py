@@ -24,7 +24,7 @@ def get_model_config(model_type: str) -> dict:
     if model_type == "svm":
         return {"clf": "svm", "gamma": 0.001}
     elif model_type == "logistic":
-        return {"logistic": "svm", "penalty": "l2"}
+        return {"clf": "logistic", "penalty": "l2"}
     else:
         raise ValueError(f"Unsupported model {model_type}.")
 
