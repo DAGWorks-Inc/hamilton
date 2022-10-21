@@ -240,3 +240,4 @@ To use it hit `option + mouse click` to create multiple cursors. `Esc` to revert
 ## Bug Hunters/Special Mentions
 - Nils Olsson (@nilsso)
 - Michał Siedlaczek (@elshize)
+- Alaa Abedrabbo (@AAbedrabbo)
