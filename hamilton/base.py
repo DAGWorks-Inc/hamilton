@@ -143,7 +143,8 @@ class PandasDataFrameResult(ResultMixin):
             logger.warning(
                 "It appears no Pandas index type was detected. This will likely break when trying to "
                 "create a DataFrame. E.g. are you requesting all scalar values? Use a different result "
-                "builder or return at least one Pandas object with an index."
+                "builder or return at least one Pandas object with an index. "
+                "Ignore this warning if you're using DASK for now."
             )
             types_match = False
         if logger.isEnabledFor(logging.DEBUG):
