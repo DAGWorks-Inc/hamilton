@@ -262,7 +262,7 @@ class reuse_subdag(base.NodeCreator):
         return_type = inspect.signature(fn).return_annotation
         if not isinstance(return_type, MultiOutput):
             raise base.InvalidDecoratorException(
-                f"Output of function {fn.__name__} must be 'MultiNodeOutput'. Instead got {return_type}"
+                f"Output of function {fn.__name__} must be 'MultiOutput'. Instead got {return_type}"
             )
         output_mapping_nodes = set(self.outputs.values())
         type_spec_keys = set(return_type.mapping.keys())
@@ -287,8 +287,8 @@ class reuse_subdag(base.NodeCreator):
     def validate(self, fn):
         """Validates everything we can before the
 
-        :param fn:
-        :return:
+        :param fn: Function that this decorates
+        :raises InvalidDecoratorException: if this is not a valid decorator
         """
 
         self._validate_function_output(fn)
