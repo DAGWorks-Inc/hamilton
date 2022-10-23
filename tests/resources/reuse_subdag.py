@@ -12,6 +12,8 @@ def b() -> int:
 
 
 def _get_submodules():
+    """Utility function to gather fns for reuse so they don't get included in the general function graph"""
+
     @config.when(op="add")
     def d__add(a: int, c: int) -> int:
         return a + c
