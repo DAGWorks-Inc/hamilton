@@ -92,7 +92,7 @@ def create_static_node(typ: Type, name: str, value: Any, namespace: Tuple[str, .
     return node.Node(name=name, typ=typ, callabl=node_fn, input_types={}, namespace=namespace)
 
 
-class reuse_subdag(base.NodeCreator):
+class reuse_functions(base.NodeCreator):
     def __init__(
         self,
         with_inputs: Dict[str, dependencies.ParametrizedDependency],
@@ -110,7 +110,7 @@ class reuse_subdag(base.NodeCreator):
         :param outputs: A dictionary of original node name -> output node name that forms the output of this DAG.
         :param with_config: A configuration dictionary for *just* this subDAG. Note that this passed in value takes precedence.
         """
-        self.subdag_functions = reuse_subdag.collect_functions(load_from)
+        self.subdag_functions = reuse_functions.collect_functions(load_from)
         self.with_inputs = with_inputs
         self.namespace = namespace
         self.outputs = outputs
@@ -126,7 +126,9 @@ class reuse_subdag(base.NodeCreator):
         :return: a list of callables to use to create a DAG.
         """
         if len(load_from) == 0:
-            raise ValueError(f"No functions were passed to {reuse_subdag.__name__}(load_from=...)")
+            raise ValueError(
+                f"No functions were passed to {reuse_functions.__name__}(load_from=...)"
+            )
         out = []
         for item in load_from:
             if isinstance(item, Callable):
