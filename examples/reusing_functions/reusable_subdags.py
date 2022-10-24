@@ -1,70 +1,124 @@
 import pandas as pd
+import unique_users
 
-from hamilton.function_modifiers import extract_columns, reuse, reuse_functions, value
+from hamilton.function_modifiers import reuse, reuse_functions, value
 
 
-@extract_columns("timestamp", "user_id", "region")  # one of "US", "CA" (canada)
-def website_interactions(random_seed: int) -> pd.DataFrame:
+def website_interactions() -> pd.DataFrame:
     """Gives event-driven data with a series
 
     :return: Some mock event data.
     """
-    # TODO -- implement some random data
     data = [
         ("20220901-14:00:00", 1, "US"),
         ("20220901-18:30:00", 2, "US"),
         ("20220901-19:00:00", 1, "US"),
-        ("20220902-08:00:00", 1, "US"),
+        ("20220902-08:00:00", 3, "US"),
         ("20220903-16:00:00", 1, "US"),
-        ("20220907-13:00:00", 1, "US"),
+        ("20220907-13:00:00", 4, "US"),
         ("20220910-14:00:00", 1, "US"),
-        ("20220911-12:00:00", 1, "US"),
+        ("20220911-12:00:00", 3, "US"),
         ("20220914-11:00:00", 1, "US"),
-        ("20220915-07:30:00", 1, "US"),
+        ("20220915-07:30:00", 2, "US"),
         ("20220916-06:00:00", 1, "US"),
-        ("20220917-16:00:00", 1, "US"),
-        ("20220920-17:00:00", 1, "US"),
-        ("20220922-09:30:00", 1, "US"),
+        ("20220917-16:00:00", 2, "US"),
+        ("20220920-17:00:00", 5, "US"),
+        ("20220922-09:30:00", 2, "US"),
         ("20220922-10:00:00", 1, "US"),
-        ("20220924-07:00:00", 1, "US"),
+        ("20220924-07:00:00", 6, "US"),
         ("20220924-08:00:00", 1, "US"),
         ("20220925-21:00:00", 1, "US"),
-        ("20220926-15:30:00", 1, "US"),
+        ("20220926-15:30:00", 2, "US"),
+        ("20220901-14:00:00", 7, "CA"),
+        ("20220901-18:30:00", 8, "CA"),
+        ("20220901-19:00:00", 9, "CA"),
+        ("20220902-08:00:00", 7, "CA"),
+        ("20220903-16:00:00", 10, "CA"),
+        ("20220907-13:00:00", 9, "CA"),
+        ("20220910-14:00:00", 8, "CA"),
+        ("20220911-12:00:00", 11, "CA"),
+        ("20220914-11:00:00", 12, "CA"),
+        ("20220915-07:30:00", 7, "CA"),
+        ("20220916-06:00:00", 9, "CA"),
+        ("20220917-16:00:00", 10, "CA"),
+        ("20220920-17:00:00", 7, "CA"),
+        ("20220922-09:30:00", 11, "CA"),
+        ("20220922-10:00:00", 8, "CA"),
+        ("20220924-07:00:00", 9, "CA"),
+        ("20220924-08:00:00", 10, "CA"),
+        ("20220925-21:00:00", 13, "CA"),
+        ("20220926-15:30:00", 14, "CA"),
     ]
-    return pd.DataFrame(data)
-
-
-def _validate_grain(grain: str):
-    assert grain in ["day", "week"]
-
-
-def interactions_filtered(filtered_interactions: pd.DataFrame, region: str) -> pd.DataFrame:
-    pass
-
-
-def unique_users(filtered_interactions: pd.DataFrame, grain: str) -> pd.Series:
-    """Gives the number of shares traded by the frequency"""
-    assert grain in ["day", "week", "month"]
-    return ...
+    df = (
+        pd.DataFrame(data, columns=["timestamp", "user_id", "region"])
+        .set_index("timestamp")
+        .sort_index()
+    )
+    df.index = pd.DatetimeIndex(df.index)
+    return df
 
 
 @reuse_functions(
-    with_inputs={"grain": value("day")},
-    namespace="daily_users",
-    outputs={"unique_users": "unique_users_daily"},
+    with_inputs={"grain": value("day"), "region": value("US")},
+    namespace="daily_users_US",
+    outputs={"unique_users": "unique_users_daily_US"},
     with_config={"region": "US"},
-    load_from=[unique_users, interactions_filtered],
+    load_from=[unique_users],
 )
-def daily_user_data_US() -> reuse.MultiOutput(unique_users_daily_US=pd.Series):  # noqa: F821
+def daily_user_data_US() -> reuse.MultiOutput(unique_users_daily_US=pd.Series):
     pass
 
 
 @reuse_functions(
-    with_inputs={"grain": value("day")},
-    namespace="daily_users",
-    outputs={"unique_users": "unique_users_daily"},
-    with_config={"region": "CA"},
-    load_from=[unique_users, interactions_filtered],
+    with_inputs={"grain": value("week"), "region": value("US")},
+    namespace="weekly_users_US",
+    outputs={"unique_users": "unique_users_weekly_US"},
+    with_config={"region": "US"},
+    load_from=[unique_users],
 )
-def daily_user_data_CA() -> reuse.MultiOutput(unique_users_daily_CA=pd.Series):  # noqa: F821
+def weekly_user_data_US() -> reuse.MultiOutput(unique_users_weekly_US=pd.Series):
+    pass
+
+
+@reuse_functions(
+    with_inputs={"grain": value("month"), "region": value("US")},
+    namespace="monthly_users_US",
+    outputs={"unique_users": "unique_users_monthly_US"},
+    with_config={"region": "US"},
+    load_from=[unique_users],
+)
+def monthly_user_data_US() -> reuse.MultiOutput(unique_users_monthly_US=pd.Series):
+    pass
+
+
+@reuse_functions(
+    with_inputs={"grain": value("day"), "region": value("CA")},
+    namespace="daily_user_data_CA",
+    outputs={"unique_users": "unique_users_daily_CA"},
+    with_config={"region": "CA"},
+    load_from=[unique_users],
+)
+def daily_user_data_CA() -> reuse.MultiOutput(unique_users_daily_CA=pd.Series):
+    pass
+
+
+@reuse_functions(
+    with_inputs={"grain": value("month"), "region": value("CA")},
+    namespace="weekly_user_data_CA",
+    outputs={"unique_users": "unique_users_weekly_CA"},
+    with_config={"region": "CA"},
+    load_from=[unique_users],
+)
+def weekly_user_data_CA() -> reuse.MultiOutput(unique_users_weekly_CA=pd.Series):
+    pass
+
+
+@reuse_functions(
+    with_inputs={"grain": value("day"), "region": value("CA")},
+    namespace="monthly_user_data_CA",
+    outputs={"unique_users": "unique_users_monthly_CA"},
+    with_config={"region": "CA"},
+    load_from=[unique_users],
+)
+def monthly_user_data_CA() -> reuse.MultiOutput(unique_users_monthly_CA=pd.Series):
     pass
