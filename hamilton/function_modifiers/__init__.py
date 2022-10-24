@@ -65,4 +65,4 @@ DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = validation.DATA_VALIDATOR_ORIGINAL_OUTPUT_T
 
 # reuse-subdag
 
-reuse_functions = reuse.reuse_subdag
+reuse_functions = reuse.reuse_functions

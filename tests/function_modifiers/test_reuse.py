@@ -7,7 +7,7 @@ import tests.resources.reuse_subdag
 from hamilton import ad_hoc_utils, graph
 from hamilton.function_modifiers import base, config, reuse, value
 from hamilton.function_modifiers.dependencies import source
-from hamilton.function_modifiers.reuse import MultiOutput, reuse_subdag
+from hamilton.function_modifiers.reuse import MultiOutput, reuse_functions
 
 
 def test_collect_function_fns():
@@ -16,7 +16,7 @@ def test_collect_function_fns():
     def test_fn(out: int = val) -> int:
         return out
 
-    assert reuse_subdag.collect_functions(load_from=[test_fn])[0]() == test_fn()
+    assert reuse_functions.collect_functions(load_from=[test_fn])[0]() == test_fn()
 
 
 def test_collect_functions_module():
@@ -26,9 +26,9 @@ def test_collect_functions_module():
         return out
 
     assert (
-        reuse_subdag.collect_functions(load_from=[ad_hoc_utils.create_temporary_module(test_fn)])[
-            0
-        ]()
+        reuse_functions.collect_functions(
+            load_from=[ad_hoc_utils.create_temporary_module(test_fn)]
+        )[0]()
         == test_fn()
     )
 
@@ -55,7 +55,7 @@ def test_reuse_subdag_validate_outputs_succeeds():
     def test() -> MultiOutput(foo_result=int, bar_result=str):
         pass
 
-    decorator = reuse.reuse_subdag(
+    decorator = reuse.reuse_functions(
         with_inputs={},
         namespace="baz",
         outputs={"foo": "foo_result", "bar": "bar_result"},
@@ -69,7 +69,7 @@ def test_reuse_subdag_validate_output_incorrect_type():
     def test() -> int:
         pass
 
-    decorator = reuse.reuse_subdag(
+    decorator = reuse.reuse_functions(
         with_inputs={},
         namespace="baz",
         outputs={"foo": "foo_result", "bar": "bar_result"},
@@ -84,7 +84,7 @@ def test_reuse_subdag_validate_output_fails_types_not_provided():
     def test() -> MultiOutput(foo_result=int):
         pass
 
-    decorator = reuse.reuse_subdag(
+    decorator = reuse.reuse_functions(
         with_inputs={},
         namespace="baz",
         outputs={"foo": "foo_result", "bar": "bar_result"},
@@ -99,7 +99,7 @@ def test_reuse_subdag_basic_no_parameterization():
     def test() -> MultiOutput(foo_result=int, bar_result=int):
         pass
 
-    decorator = reuse.reuse_subdag(
+    decorator = reuse.reuse_functions(
         with_inputs={},
         namespace="baz",
         outputs={"foo": "foo_result", "bar": "bar_result"},
@@ -119,7 +119,7 @@ def test_reuse_subdag_basic_simple_parameterization():
     def test() -> MultiOutput(foo_result=int, bar_result=int):
         pass
 
-    decorator = reuse.reuse_subdag(
+    decorator = reuse.reuse_functions(
         with_inputs={"a": value(1), "b": value(2)},
         namespace="baz",
         outputs={"foo": "foo_result", "bar": "bar_result"},
@@ -138,7 +138,7 @@ def test_reuse_subdag_basic_source_parameterization():
     def test() -> MultiOutput(foo_result=int, bar_result=int):
         pass
 
-    decorator = reuse.reuse_subdag(
+    decorator = reuse.reuse_functions(
         with_inputs={"a": source("c"), "b": source("d")},
         namespace="baz",
         outputs={"foo": "foo_result", "bar": "bar_result"},
@@ -158,7 +158,7 @@ def test_reuse_subdag_handles_config_assignment():
     def test() -> MultiOutput(foo_result=int, bar_result=int):
         pass
 
-    decorator = reuse.reuse_subdag(
+    decorator = reuse.reuse_functions(
         with_inputs={"a": value(1)},
         namespace="baz",
         outputs={"foo": "foo_result", "bar": "bar_result"},
