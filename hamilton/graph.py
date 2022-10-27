@@ -21,6 +21,15 @@ def is_submodule(child: ModuleType, parent: ModuleType):
     return parent.__name__ in child.__name__
 
 
+def special_case(current_module: ModuleType, function_module: ModuleType):
+    """Function that allows us to use functions from another module only if
+    the current module has `hamilton_` prepended to it, to indicate that it
+    maps 1-1 with the function module and we want to therefore include these
+    functions for DAG construction.
+    """
+    return "hamilton_" + current_module.__name__ == function_module.__name__
+
+
 def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
     """Function to determine the set of functions we want to build a graph from.
 
@@ -32,7 +41,10 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
         return (
             inspect.isfunction(fn)
             and not fn.__name__.startswith("_")
-            and is_submodule(inspect.getmodule(fn), function_module)
+            and (
+                is_submodule(inspect.getmodule(fn), function_module)
+                or special_case(inspect.getmodule(fn), function_module)
+            )
         )
 
     return [f for f in inspect.getmembers(function_module, predicate=valid_fn)]
