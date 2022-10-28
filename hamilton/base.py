@@ -118,17 +118,17 @@ class PandasDataFrameResult(ResultMixin):
         # if there is more than one time index
         if time_indexes_length > 1:
             logger.warning(
-                f"WARNING: Time/Categorical index type mismatches detected - check output to ensure Pandas "
-                f"is doing what you intend to do. Else change the index types to match. Set logger to debug "
-                f"to see index types."
+                "WARNING: Time/Categorical index type mismatches detected - check output to ensure Pandas "
+                "is doing what you intend to do. Else change the index types to match. Set logger to debug "
+                "to see index types."
             )
             types_match = False
         # if there is more than one index type and it's not explained by the time indexes then
         if number_with_indexes > 1 and all_indexes_length > time_indexes_length:
             logger.warning(
-                f"WARNING: Multiple index types detected - check output to ensure Pandas is "
-                f"doing what you intend to do. Else change the index types to match. Set logger to debug to "
-                f"see index types."
+                "WARNING: Multiple index types detected - check output to ensure Pandas is "
+                "doing what you intend to do. Else change the index types to match. Set logger to debug to "
+                "see index types."
             )
             types_match = False
         elif number_with_indexes == 1 and no_index_length > 0:

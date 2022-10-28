@@ -423,7 +423,7 @@ class FunctionGraph(object):
                         kwargs[dependency.name] = computed[dependency.name]
                 try:
                     value = adapter.execute_node(node_, kwargs)
-                except Exception as e:
+                except Exception:
                     logger.exception(f"Node {node_.name} encountered an error")
                     raise
             computed[node_.name] = value
