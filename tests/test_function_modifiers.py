@@ -740,11 +740,6 @@ def test_tags_invalid_value(value):
     assert not function_modifiers.tag._value_allowed(value)
 
 
-@pytest.mark.parametrize("value", [None, False, [], ["foo", "bar"]])
-def test_tags_invalid_value(value):
-    assert not function_modifiers.tag._value_allowed(value)
-
-
 def test_check_output_node_transform():
     decorator = check_output(
         importance="warn",

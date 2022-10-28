@@ -46,7 +46,6 @@ def test_dask_graph_adapter_simple(client):
 
 def test_smoke_screen_module(client):
     config = {"region": "US"}
-    index = pd.Series(pd.DatetimeIndex(pd.date_range(start="20200101", end="20220801", freq="7d")))
     dr = driver.Driver(config, smoke_screen_module, adapter=h_dask.DaskGraphAdapter(client))
     output_columns = [
         "raw_acquisition_cost",
