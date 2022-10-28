@@ -2,6 +2,8 @@
 
 ## Changes
 
+## How I tested this
+
 ## Notes
 
 ## Checklist
@@ -13,5 +15,3 @@
 - [ ] New functions are documented (with a description, list of inputs, and expected output)
 - [ ] Placeholder code is flagged / future TODOs are captured in comments
 - [ ] Project documentation has been updated if adding/changing functionality.
-
-## How I tested this
