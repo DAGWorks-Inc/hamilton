@@ -1,13 +1,11 @@
 import inspect
 import tempfile
-import typing
 import uuid
 from itertools import permutations
 
 import pandas as pd
 import pytest
 
-import hamilton.type_utils
 import tests.resources.bad_functions
 import tests.resources.config_modifier
 import tests.resources.cyclic_functions

@@ -3,7 +3,7 @@ import inspect
 import logging
 import types
 import typing
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 from hamilton import base, driver, node
 

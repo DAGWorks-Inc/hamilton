@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Type
 
 import pandas as pd
 import pandera as pa

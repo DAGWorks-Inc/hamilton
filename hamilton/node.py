@@ -1,6 +1,6 @@
 import inspect
 from enum import Enum
-from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Tuple, Type, Union
 
 """
 Module that contains the primitive components of the graph.
