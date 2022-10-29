@@ -110,7 +110,7 @@ def create_function_graph(
 
 def create_graphviz_graph(
     nodes: Set[node.Node], user_nodes: Set[node.Node], comment: str, graphviz_kwargs: dict
-) -> "graphviz.Digraph":
+) -> "graphviz.Digraph":  # noqa: F821
     """Helper function to create a graphviz graph.
 
     :param nodes: The set of computational nodes
@@ -136,7 +136,7 @@ def create_graphviz_graph(
 
 def create_networkx_graph(
     nodes: Set[node.Node], user_nodes: Set[node.Node], name: str
-) -> "networkx.DiGraph":
+) -> "networkx.DiGraph":  # noqa: F821
     """Helper function to create a networkx graph.
 
     :param nodes: The set of computational nodes
@@ -272,7 +272,7 @@ class FunctionGraph(object):
         """
         # Check to see if optional dependencies have been installed.
         try:
-            import graphviz
+            import graphviz  # noqa: F401
         except ModuleNotFoundError:
             logger.exception(
                 " graphviz is required for visualizing the function graph. Install it with:"

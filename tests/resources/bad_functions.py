@@ -2,7 +2,7 @@
 Module for more dummy functions to test graph things with.
 """
 # we import this to check we don't pull in this function when parsing this module.
-from tests.resources import only_import_me
+from tests.resources import only_import_me  # noqa: F401
 
 
 def A(b, c) -> int:

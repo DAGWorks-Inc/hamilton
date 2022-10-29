@@ -412,7 +412,7 @@ AVAILABLE_DEFAULT_VALIDATORS = [
 def _append_pandera_to_default_validators():
     """Utility method to append pandera validators as needed"""
     try:
-        import pandera
+        import pandera  # noqa: F401
     except ModuleNotFoundError:
         logger.info(
             "Cannot import pandera from pandera_validators. Run pip install sf-hamilton[pandera] if needed."
