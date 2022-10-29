@@ -9,17 +9,56 @@ This repository is organized as follows:
 
 ## How to contribute
 
-1. Checkout the repo. If external to Stitch Fix, fork the repo.
-2. Create a virtual environment for it. See python algo curriculum slides for details.
-3. Activate the virtual environment and install all dependencies. One for the package, one for making comparisons, one for running unit tests. I.e. `pip install -r requirements*.txt` should install all three for you.
-3. Make pycharm depend on that virtual environment & install required dependencies (it should prompt you because it'll read the requirements.txt file).
-4. `brew install pre-commit` if you haven't.
-5. Run `pre-commit install` from the root of the repository.
-6. Create a branch off of the latest master branch. `git checkout -b my_branch`.
-7. Do you work & commit it.
-8. Push to github and create a PR.
-9. When you push to github circle ci will kick off unit tests and migration tests (for Stitch Fix users only).
+### Set up your local dev environment
 
+Fork this repo and clone your fork. ([GitHub docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/about-forks))
+
+```shell
+GITHUB_USERNAME="YOUR-GITHUB-USERNAME" \
+git clone https://github.com/${GITHUB_USERNAME}/hamilton.git
+cd ./hamilton
+git remote add upstream https://github.com/stitchfix/hamilton.git
+```
+
+Create a virtual environment and install the project's dependencies into it.
+
+```shell
+python -m venv ./venv
+. ./venv/bin/activate
+
+pip install \
+    -r ./requirements.txt \
+    -r ./requirements-dev.txt \
+    -r ./requirements-test.txt
+```
+
+### Create a pull request
+
+Make sure your local copy of the `main` branch is up to date with the official `hamilton` repo.
+
+```shell
+git checkout main
+git pull upstream main
+
+# and might as well update your fork too!
+git push origin main
+```
+
+Create a new branch.
+
+```shell
+git checkout -b feat/somme-feature
+```
+
+Make changes, commit them, and push them to your fork.
+
+```shell
+git push origin HEAD
+```
+
+Test your changes locally by following the steps in ["How to run unit tests"](#how-to-run-unit-tests).
+
+Navigate to https://github.com/stitchfix/hamilton/pulls and open a pull request.
 
 ## How to run unit tests
 
