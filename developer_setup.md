@@ -32,6 +32,12 @@ pip install \
     -r ./requirements-test.txt
 ```
 
+Set up `pre-commit`, which will run some lightweight formatting and linting tasks on every commit.
+
+```shell
+pre-commit install
+```
+
 ### Create a pull request
 
 Make sure your local copy of the `main` branch is up to date with the official `hamilton` repo.
@@ -47,7 +53,7 @@ git push origin main
 Create a new branch.
 
 ```shell
-git checkout -b feat/somme-feature
+git checkout -b feat/some-feature
 ```
 
 Make changes, commit them, and push them to your fork.
@@ -56,7 +62,13 @@ Make changes, commit them, and push them to your fork.
 git push origin HEAD
 ```
 
-Test your changes locally by following the steps in ["How to run unit tests"](#how-to-run-unit-tests).
+Test your changes locally with `pre-commit`...
+
+```shell
+pre-commit run --all-files
+```
+
+...and by following the steps in ["How to run unit tests"](#how-to-run-unit-tests).
 
 Navigate to https://github.com/stitchfix/hamilton/pulls and open a pull request.
 
