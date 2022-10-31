@@ -20,7 +20,7 @@ cd ./hamilton
 git remote add upstream https://github.com/stitchfix/hamilton.git
 ```
 
-Create a virtual environment and install the project's dependencies into it.
+Install the project's dependencies in your preferred method for managing python dependencies. For example, run the following to use `venv`.
 
 ```shell
 python -m venv ./venv
