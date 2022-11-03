@@ -1,323 +1,79 @@
-## Python CircleCI 2.0 configuration file
-##
-## Check https://circleci.com/docs/2.0/language-python/ for more details
-##
-
-version: 2
+version: 2.1
 jobs:
-  build-py36:
+  test:
+    parameters:
+      python-version:
+        type: string
+      task:
+        type: string
     docker:
-      - image: circleci/python:3.6
-
+      - image: circleci/python:<< parameters.python-version >>
+    environment:
+      TASK: << parameters.task >>
     steps:
       - checkout
       - run:
-          name: install hamilton dependencies
-          command: |
-            sudo apt install graphviz
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -r requirements-test.txt
-            pip install -r requirements.txt
-        # run tests!
+          name: install dependencies
+          command: .ci/setup.sh
       - run:
           name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest --cov=hamilton tests/ --ignore tests/integrations
-
-  build-py37:
-    docker:
-      - image: circleci/python:3.7
-
-    steps:
-      - checkout
-      - run:
-          name: install hamilton dependencies
-          command: |
-            sudo apt install graphviz
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -r requirements-test.txt
-            pip install -r requirements.txt
-
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest --cov=hamilton tests/ --ignore tests/integrations
-
-  build-py38:
-    docker:
-      - image: circleci/python:3.8
-
-    steps:
-      - checkout
-      - run:
-          name: install hamilton dependencies
-          command: |
-            sudo apt install graphviz
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -r requirements-test.txt
-            pip install -r requirements.txt
-
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest --cov=hamilton tests/ --ignore tests/integrations
-
-  build-py39:
-    docker:
-      - image: circleci/python:3.9
-
-    steps:
-      - checkout
-      - run:
-          name: install hamilton dependencies
-          command: |
-            sudo apt install graphviz
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -r requirements-test.txt
-            pip install -r requirements.txt
-
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest --cov=hamilton tests/ --ignore tests/integrations
-
-  pre-commit:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-      - run:
-          name: run pre-commit hooks
-          command: |
-            pip install pre-commit
-            pre-commit run --all-files
-  dask-py36:
-    docker:
-      - image: circleci/python:3.6
-
-    steps:
-      - checkout
-      - run:
-          name: install hamilton dependencies + dask
-          command: |
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -r requirements-test.txt
-            pip install -e ".[dask]"
-
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest graph_adapter_tests/h_dask
-  dask-py37:
-    docker:
-      - image: circleci/python:3.7
-
-    steps:
-      - checkout
-      - run:
-          name: install hamilton dependencies + dask
-          command: |
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -r requirements-test.txt
-            pip install -e ".[dask]"
-
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest graph_adapter_tests/h_dask
-  ray-py37:
-    docker:
-      - image: circleci/python:3.7
-
-    steps:
-      - checkout
-      - run:
-          name: install hamilton dependencies + ray
-          command: |
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -r requirements-test.txt
-            pip install -e ".[ray]"
-
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest graph_adapter_tests/h_ray
-  spark-py38:
-    docker:
-      - image: cimg/openjdk:14.0   # need java on it
-
-    steps:
-      - checkout
-      - run:
-          name: install hamilton dependencies + spark
-          command: |
-            # venv & pip weren't installed -- so have to do this hacky stuff
-            sudo apt-get update
-            sudo apt-get install aptitude
-            sudo aptitude install python3.8-venv -y
-            python3.8 -m venv venv
-            . venv/bin/activate
-            python3.8 --version
-            pip3.8 --version
-            pip3.8 install -r requirements-test.txt
-            pip3.8 install -e ".[pyspark]" # note bdist will error, but things install fine enough to run!
-
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest graph_adapter_tests/h_spark
-  integrations-py36:
-    docker:
-      - image: circleci/python:3.6
-    steps:
-      - checkout
-      - run:
-          name: install all python dependencies for integrations
-          command: |
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -e .[pandera] # TODO -- add more as we add more integrations
-            pip install -r requirements-test.txt
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest tests/integrations
-  integrations-py37:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-      - run:
-          name: install all python dependencies for integrations
-          command: |
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -e .[pandera] # TODO -- add more as we add more integrations
-            pip install -r requirements-test.txt
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest tests/integrations
-  integrations-py38:
-    docker:
-      - image: circleci/python:3.8
-    steps:
-      - checkout
-      - run:
-          name: install all python dependencies for integrations
-          command: |
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -e .[pandera] # TODO -- add more as we add more integrations
-            pip install -r requirements-test.txt
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest tests/integrations
-  integrations-py39:
-    docker:
-      - image: circleci/python:3.9
-    steps:
-      - checkout
-      - run:
-          name: install all python dependencies for integrations
-          command: |
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -e .[pandera] # TODO -- add more as we add more integrations
-            pip install -r requirements-test.txt
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest tests/integrations
-  asyncio-py39:
-    docker:
-      - image: circleci/python:3.9
-    steps:
-      - checkout
-      - run:
-          name: install hamilton dependencies + testing dependencies
-          command: |
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            python --version
-            pip --version
-            pip install -e .
-            pip install -r graph_adapter_tests/h_async/requirements-test.txt
-
-      # run tests!
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python -m pytest graph_adapter_tests/h_async
+          command: .ci/test.sh
 workflows:
-  version: 2
   unit-test-workflow:
     jobs:
-      - build-py36
-      - build-py37
-      - build-py38
-      - build-py39
-      - pre-commit
-      - dask-py36
-      - dask-py37
-      - ray-py37
-      - spark-py38
-      - integrations-py36
-      - integrations-py37
-      - integrations-py38
-      - integrations-py39
-      - asyncio-py39
+      - test:
+          name: build-py36
+          python-version: '3.6'
+          task: tests
+      - test:
+          name: build-py37
+          python-version: '3.7'
+          task: tests
+      - test:
+          name: build-py38
+          python-version: '3.8'
+          task: tests
+      - test:
+          name: build-py39
+          python-version: '3.9'
+          task: tests
+      - test:
+          name: pre-commit
+          python-version: '3.9'
+          task: pre-commit
+      - test:
+          name: dask-py36
+          python-version: '3.6'
+          task: dask
+      - test:
+          name: dask-py37
+          python-version: '3.7'
+          task: dask
+      - test:
+          name: ray-py37
+          python-version: '3.7'
+          task: ray
+      - test:
+          name: spark-py38
+          python-version: '3.8'
+          task: pyspark
+      - test:
+          name: integrations-py36
+          python-version: '3.6'
+          task: integrations
+      - test:
+          name: integrations-py37
+          python-version: '3.7'
+          task: integrations
+      - test:
+          name: integrations-py38
+          python-version: '3.8'
+          task: integrations
+      - test:
+          name: integrations-py39
+          python-version: '3.9'
+          task: integrations
+      - test:
+          name: asyncio-py39
+          python-version: '3.9'
+          task: async

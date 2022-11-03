@@ -80,6 +80,42 @@ You need to have installed the `requirements-test.txt` dependencies into the env
 2. Using circle ci locally. The config for this lives in `.circleci/config.yml` which also shows commands to run tests
 from the command line.
 
+### Running tests in Docker
+
+The most reliable way to run `hamilton`'s unit tests is to simulate its continuous integration (CI) environment in docker.
+
+`hamilton`'s CI logic is defined in shell scripts, whose behavior changes based on environment variable `TASK`.
+
+The following values for `TASK` are recognized:
+
+* `async` = unit tests using the async driver
+* `dask` = unit tests using the `dask` adapter
+* `integrations` = tests on integrations with other frameworks
+* `pre-commit` = static analysis (i.e. linting)
+* `pyspark` = unit tests using the `spark` adapter
+* `ray` = unit tests using the `ray` adapter
+* `tests` = core unit tests with minimal requirements
+
+Choose a Python version and task.
+
+```shell
+PYTHON_VERSION='3.8'
+TASK=tests
+```
+
+Then run the tests for that combination in a container.
+
+```shell
+docker run \
+  --rm \
+  --entrypoint="" \
+  -v "$(pwd)":/opt/testing \
+  --workdir /opt/testing \
+  --env TASK=${TASK} \
+  -it circleci/python:${PYTHON_VERSION} \
+  /bin/bash -c '.ci/setup.sh && .ci/test.sh'
+```
+
 ### Using pycharm to execute & debug unit tests
 
 You can debug and execute unit tests in pycharm easily. To set it up, you just hit `Edit configurations` and then
@@ -89,7 +125,8 @@ additional arguments part, you'll then get verbose diffs if any tests fail.
 
 ### Using circle ci locally
 
-You need to install the circleci command line tooling for this to work. See the unit testing algo curriculum slides for details.
+You need to install the circleci command line tooling for this to work.
+See https://circleci.com/docs/local-cli/ for details.
 Once you have installed it you just need to run `circleci local execute` from the root directory and it'll run the entire suite of tests
 that are setup to run each time you push a commit to a branch in github.
 
