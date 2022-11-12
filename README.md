@@ -157,10 +157,15 @@ We have a small but active community on [slack](https://join.slack.com/t/hamilto
 Hamilton is released under the [BSD 3-Clause Clear License](LICENSE). If you need to get in touch about something,
 contact us at algorithms-opensource (at) stitchfix.com.
 
-# Used internally by
-* Stitch Fix
+# Used internally by:
+* [Stitch Fix](https://www.stitchfix.com/)
 * [UK Government Digital Services](https://github.com/alphagov/govuk-feedback-analysis)
-* IBM
+* [IBM](https://www.ibm.com/)
+* [British Cycling](https://www.britishcycling.org.uk/)
+* [PNNL](https://pnnl.gov/) 
+* [Federal Reserve Board](https://www.federalreserve.gov/)
+* [Joby Aviation](https://www.jobyaviation.com/)
+* [Two](https://www.two.inc/)
 
 To add your company, make a pull request to add it here.
 
