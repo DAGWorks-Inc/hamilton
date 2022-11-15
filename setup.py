@@ -76,6 +76,7 @@ setup(
         "ray": ["ray>=2.0.0", "pyarrow"],
         "pyspark": ["pyspark[pandas_on_spark]"],
         "pandera": ["pandera"],
+        "flytekit": ["flytekit"],
     },
     # Relevant project URLs
     project_urls={  # Optional
