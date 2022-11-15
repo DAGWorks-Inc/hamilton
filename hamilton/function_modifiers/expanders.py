@@ -484,6 +484,7 @@ class extract_fields(base.NodeExpander):
             return dict_generated
 
         output_nodes = [node_.copy_with(callabl=dict_generator)]
+
         for field, field_type in self.fields.items():
             doc_string = base_doc  # default doc string of base function.
 
