@@ -12,7 +12,8 @@ Hamilton relies on[ python decorators](https://towardsdatascience.com/the-simple
 ```python
 import pandas as pd
 
-from hamilton import function_modifiers, value, source
+from hamilton import function_modifiers
+from hamilton.function_modifiers import value, source
 
 
 @function_modifiers.parameterize(
