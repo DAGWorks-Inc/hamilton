@@ -67,6 +67,11 @@ class UpstreamDependency(ParametrizedDependency):
         return ParametrizedDependencySource.UPSTREAM
 
 
+@dataclasses.dataclass
+class Output:
+    name: str
+
+
 def value(literal_value: Any) -> LiteralDependency:
     """Specifies that a parameterized dependency comes from a "literal" source.
     E.G. value("foo") means that the value is actually the string value "foo"
@@ -447,6 +452,7 @@ class extract_columns(function_modifiers_base.NodeExpander):
                 doc_string=base_doc,
                 callabl=df_generator,
                 tags=node_.tags.copy(),
+                input_types=node_.input_types,  # TODO -- validate that this will work
             )
         ]
 
