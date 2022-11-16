@@ -19,7 +19,7 @@
 The general purpose micro-framework for creating dataflows from python functions!
 
 Specifically, Hamilton defines a novel paradigm, that allows you to specify a flow of (delayed) execution, that forms a Directed Acyclic Graph (DAG).
-It was original built to solve creating wide (1000+) column dataframes. Core to the design of Hamilton is a clear mapping of
+It was originally built to solve creating wide (1000+) column dataframes. Core to the design of Hamilton is a clear mapping of
 function name to dataflow output. That is, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity,
 easy modifications, with always unit testable and naturally documentable code.
 
