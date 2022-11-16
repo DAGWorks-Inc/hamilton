@@ -162,7 +162,7 @@ contact us at algorithms-opensource (at) stitchfix.com.
 * [UK Government Digital Services](https://github.com/alphagov/govuk-feedback-analysis)
 * [IBM](https://www.ibm.com/)
 * [British Cycling](https://www.britishcycling.org.uk/)
-* [PNNL](https://pnnl.gov/) 
+* [PNNL](https://pnnl.gov/)
 * [Federal Reserve Board](https://www.federalreserve.gov/)
 * [Joby Aviation](https://www.jobyaviation.com/)
 * [Two](https://www.two.inc/)
