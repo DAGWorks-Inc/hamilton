@@ -135,13 +135,74 @@ Note the following:
   * `@config.when_not_in(param=[value1, value2, ...])` Will be included if the parameter is not equal to any of the specified values.
   * `@config` If you're feeling adventurous, you can pass in a lambda function that takes in the entire configuration and resolves to `True` or `False`. You probably don't want to do this.
 
-## @parameterized
+### @check\_output
+
+The `@check_output` decorator enables you to add simple data quality checks to your code.
+
+For example:
+
+```python
+import pandas as pd
+import numpy as np
+from hamilton.function_modifiers import check_output
+
+@check_output(
+    data_type=np.int64,
+    data_in_range=(0,100),
+)
+def some_int_data_between_0_and_100() -> pd.Series:
+    pass
+```
+
+The check\_output validator takes in arguments that each correspond to one of the default validators. These arguments tell it to add the default validator to the list. The above thus creates two validators, one that checks the datatype of the series, and one that checks whether the data is in a certain range.
+
+Note that you can also specify custom decorators using the `@check_output_custom` decorator.
+
+See [data\_quality](https://github.com/stitchfix/hamilton/blob/main/data\_quality.md) for more information on available validators and how to build custom ones.
+
+### @parameterize
+
+Expands a single function into n, each of which correspond to a function in which the parameter value is replaced either by:
+
+1. A specified value
+2. The value from a specified upstream node.
+
+Note that this can take the place of any of the `@parameterize` decorators below. In fact, they delegate to this!
+
+```python
+import pandas as pd
+from hamilton.function_modifiers import parameterize
+from hamilton.function_modifiers import value, source
+
+
+@parameterize(
+    D_ELECTION_2016_shifted=dict(n_off_date=source('D_ELECTION_2016'), shift_by=value(3)),
+    SOME_OUTPUT_NAME=dict(n_off_date=source('SOME_INPUT_NAME'), shift_by=value(1)),
+)
+def date_shifter(n_off_date: pd.Series, shift_by: int = 1) -> pd.Series:
+    """{one_off_date} shifted by shift_by to create {output_name}"""
+    return n_off_date.shift(shift_by)
+```
+
+By choosing `literal` or `upstream`, you can determine the source of your dependency. Note that you can also pass documentation. If you don't, it will use the parameterized docstring.
+
+```python
+@parameterize(
+    D_ELECTION_2016_shifted=(dict(n_off_date=source('D_ELECTION_2016'), shift_by=value(3)), "D_ELECTION_2016 shifted by 3"),
+    SOME_OUTPUT_NAME=(dict(n_off_date=source('SOME_INPUT_NAME'), shift_by=value(1)),"SOME_INPUT_NAME shifted by 1")
+)
+def date_shifter(n_off_date: pd.Series, shift_by: int=1) -> pd.Series:
+    """{one_off_date} shifted by shift_by to create {output_name}"""
+    return n_off_date.shift(shift_by)
+```
+
+### @parameterize\_values (replacing @parametrized)
 
 Expands a single function into n, each of which corresponds to a function in which the parameter value is replaced by that _specific value_.
 
 ```python
 import pandas as pd
-from hamilton.function_modifiers import parametrized
+from hamilton.function_modifiers import parameterize_values
 import internal_package_with_logic
 
 ONE_OFF_DATES = {
@@ -150,7 +211,7 @@ ONE_OFF_DATES = {
     ('SOME_OUTPUT_NAME', 'Doc string for this thing'): 'value to pass to function',
 }
             # parameter matches the name of the argument in the function below
-@parametrized(parameter='one_off_date', assigned_output=ONE_OFF_DATES)
+@parameterize_values(parameter='one_off_date', assigned_output=ONE_OFF_DATES)
 def create_one_off_dates(date_index: pd.Series, one_off_date: str) -> pd.Series:
     """Given a date index, produces a series where a 1 is placed at the date index that would contain that event."""
     one_off_dates = internal_package_with_logic.get_business_week(one_off_date)
@@ -159,16 +220,18 @@ def create_one_off_dates(date_index: pd.Series, one_off_date: str) -> pd.Series:
 
 We see here that `parameterized` allows you keep your code DRY by reusing the same function to create multiple distinct outputs. The _parameter_ key word argument has to match one of the arguments in the function. The rest of the arguments are pulled from outside the DAG. The _assigned\_output_ key word argument takes in a dictionary of tuple(Output Name, Documentation string) -> value.
 
-## @parameterized\_inputs
+Note that `@parametrized` is deprecated, and we intend for you to use `@parameterize_vales`. We're consolidating to make the parameterization decorators more consistent! You have plenty of time to migrate, we wont make this a hard change until we have a Hamilton 2.0.0 to release.
 
-Expands a single function into _n_, each of which corresponds to a function in which the parameters specified are mapped to the specified inputs. Note this decorator and [#parameterized](available-decorators.md#parameterized "mention") are quite similar, except that the input here is another DAG node(s), i.e. column/input, rather than a specific scalar/static value.
+### @parameterize\_sources (replacing @parameterized\_inputs)
+
+Expands a single function into _n_, each of which corresponds to a function in which the parameters specified are mapped to the specified inputs. Note this decorator and `@parameterize_values` are quite similar, except that the input here is another DAG node(s), i.e. column/input, rather than a specific scalar/static value.
 
 ```python
 import pandas as pd
-from hamilton.function_modifiers import parameterized_inputs
+from hamilton.function_modifiers import parameterize_sources
 
 
-@parameterized_inputs(
+@parameterize_sources(
     D_ELECTION_2016_shifted=dict(one_off_date='D_ELECTION_2016'),
     SOME_OUTPUT_NAME=dict(one_off_date='SOME_INPUT_NAME')
 )
@@ -177,13 +240,13 @@ def date_shifter(one_off_date: pd.Series) -> pd.Series:
     return one_off_date.shift(1)
 ```
 
-We see here that `parameterized_inputs` allows you to keep your code DRY by reusing the same function to create multiple distinct outputs. The key word arguments passed have to have the following structure:
+We see here that `parameterize_sources` allows you to keep your code DRY by reusing the same function to create multiple distinct outputs. The key word arguments passed have to have the following structure:
 
 > OUTPUT\_NAME = Mapping of function argument to input that should go into it.
 
 So in the example, `D_ELECTION_2016_shifted` is an _output_ that will correspond to replacing `one_off_date` with `D_ELECTION_2016`. Then similarly `SOME_OUTPUT_NAME` is an _output_ that will correspond to replacing `one_off_date` with `SOME_INPUT_NAME`. The documentation for both uses the same function doc and will replace values that are templatized with the input parameter names, and the reserved value `output_name`.
 
-To help visualize what the above is doing, it is equivalent to writing the following two function definitions:Note that this is equivalent to writing the following two function definitions:
+To help visualize what the above is doing, it is equivalent to writing the following two function definitions:
 
 ```python
 def D_ELECTION_2016_shifted(D_ELECTION_2016: pd.Series) -> pd.Series:
@@ -195,7 +258,27 @@ def SOME_OUTPUT_NAME(SOME_INPUT_NAME: pd.Series) -> pd.Series:
     return SOME_INPUT_NAME.shift(1)
 ```
 
-_Note_: that the different input variables must all have compatible types with the original decorated input variables.
+Note that `@parameterized_inputs` is deprecated, and we intend for you to use `@parameterize_sources`. We're consolidating to make the parameterization decorators more consistent! But we will not break your workflow for a long time.
+
+_Note_: that the different input variables must all have compatible types with the original decorated input variable.
+
+### Migrating @parameterized\*
+
+As we've said above, we're planning on deprecating the following:
+
+* `@parameterized_inputs` (replaced by `@parameterize_sources`)
+* `@parametrized` (replaced by `@parameterize_values`, as that's what its really doing)
+* `@parametrized_input` (deprecated long ago, migrate to `@parameterize_sources` as that is more versatile.)
+
+In other words, we're aligning around the following `@parameterize` implementations:
+
+* `@parameterize` -- this does everything you want
+* `@parameterize_values` -- this just changes the values, does not change the input source
+* `@parameterize_sources`-- this just changes the source of the inputs. We also changed the name from inputs -> sources as it was clearer (values are inputs as well).
+
+The only non-drop-in change you'll have to do is for `@parameterized`. We won't update this until `hamilton==2.0.0`, though, so you'll have time to migrate for a while.
+
+
 
 ## @does
 
