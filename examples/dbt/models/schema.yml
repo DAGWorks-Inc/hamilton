@@ -1,0 +1,12 @@
+
+version: 2
+
+models:
+  - name: raw_passengers
+    description: "Raw passengers on the titanic"
+    columns:
+      - name: id
+        description: "The primary key for this table"
+        tests:
+          - unique
+          - not_null
