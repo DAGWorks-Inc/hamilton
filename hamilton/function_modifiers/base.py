@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Callable, Collection, Dict, Tuple
+from typing import Any, Callable, Collection, Dict, List, Tuple
 
 from hamilton import node
 
@@ -104,7 +104,7 @@ class NodeCreator(NodeTransformLifecycle, abc.ABC):
     """Abstract class for nodes that "expand" functions into other nodes."""
 
     @abc.abstractmethod
-    def generate_node(self, fn: Callable, config: Dict[str, Any]) -> node.Node:
+    def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> List[node.Node]:
         """Given a function, converts it to a series of nodes that it produces.
 
         :param config:
@@ -286,8 +286,8 @@ class NodeDecorator(NodeTransformer, abc.ABC):
 
 
 class DefaultNodeCreator(NodeCreator):
-    def generate_node(self, fn: Callable, config: Dict[str, Any]) -> node.Node:
-        return node.Node.from_fn(fn)
+    def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> List[node.Node]:
+        return [node.Node.from_fn(fn)]
 
     def validate(self, fn: Callable):
         pass
@@ -351,7 +351,7 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
         if fn is None:
             return []
     (node_creator,) = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
-    nodes = [node_creator.generate_node(fn, config)]
+    nodes = node_creator.generate_nodes(fn, config)
     if hasattr(fn, NodeExpander.get_lifecycle_name()):
         (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
         nodes = node_expander.transform_dag(nodes, config, fn)

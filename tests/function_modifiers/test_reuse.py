@@ -238,8 +238,5 @@ def test_reuse_subdag_end_to_end():
     # # Check that the config is assigned and overwritten correctly
     assert fg.nodes["v1.d"].callable(**{"v1.c": 10, "a": 100}) == 100 - 10
     assert fg.nodes["v3.d"].callable(**{"v3.c": 10, "a": 100}) == 100 + 10
-    # Determine algebraically the value of res and ensure that its correct
-    import pdb
-
     res = fg.execute(nodes=[fg.nodes["sum_everything"]])
-    assert res == 318
+    assert res["sum_everything"] == 318

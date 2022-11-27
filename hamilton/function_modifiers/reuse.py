@@ -1,6 +1,6 @@
 import inspect
 from types import ModuleType
-from typing import Any, Callable, Collection, Dict, List, Type, Union
+from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
 
 # Copied this over from function_graph
 # TODO -- determine the best place to put this code

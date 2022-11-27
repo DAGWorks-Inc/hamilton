@@ -47,9 +47,9 @@ class parameterize(base.NodeExpander):
         }
         bad_values = []
         for assigned_output, mapping in self.parametrization.items():
-            for parameter, value in mapping.items():
-                if not isinstance(value, ParametrizedDependency):
-                    bad_values.append(value)
+            for parameter, val in mapping.items():
+                if not isinstance(val, ParametrizedDependency):
+                    bad_values.append(val)
         if bad_values:
             raise base.InvalidDecoratorException(
                 f"@parameterize must specify a dependency type -- either source() or value()."
@@ -97,15 +97,15 @@ class parameterize(base.NodeExpander):
                 return node_.callable(*args, **kwargs)
 
             new_input_types = {}
-            for param, value in node_.input_types.items():
+            for param, val in node_.input_types.items():
                 if param in upstream_dependencies:
                     new_input_types[
                         upstream_dependencies[param].source
-                    ] = value  # We replace with the upstream_dependencies
+                    ] = val  # We replace with the upstream_dependencies
                 elif param not in literal_dependencies:
                     new_input_types[
                         param
-                    ] = value  # We just use the standard one, nothing is getting replaced
+                    ] = val  # We just use the standard one, nothing is getting replaced
 
             nodes.append(
                 node.Node(
@@ -114,10 +114,7 @@ class parameterize(base.NodeExpander):
                     doc_string=docstring,  # TODO -- change docstring
                     callabl=functools.partial(
                         replacement_function,
-                        **{
-                            parameter: value.value
-                            for parameter, value in literal_dependencies.items()
-                        },
+                        **{parameter: val.value for parameter, val in literal_dependencies.items()},
                     ),
                     input_types=new_input_types,
                     tags=node_.tags.copy(),
@@ -285,8 +282,8 @@ class parametrized_input(parameterize):
         :param parameter: Parameter to expand on.
         :param variable_inputs: A map of tuple of [parameter names, documentation] to values
         """
-        for value in variable_inputs.values():
-            if not isinstance(value, Tuple):
+        for val in variable_inputs.values():
+            if not isinstance(val, Tuple):
                 raise base.InvalidDecoratorException(
                     f"assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of "
                     "input column -> [name, description] to function."

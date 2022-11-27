@@ -146,7 +146,7 @@ class does(base.NodeCreator):
             fn, self.replacing_function, self.argument_mapping
         )
 
-    def generate_node(self, fn: Callable, config) -> node.Node:
+    def generate_nodes(self, fn: Callable, config) -> List[node.Node]:
         """Returns one node which has the replaced functionality
         :param fn: Function to decorate
         :param config: Configuration (not used in this)
@@ -154,7 +154,6 @@ class does(base.NodeCreator):
         and the same parameters/types as the original function.
         """
 
-        # @functools.wraps(fn)
         def wrapper_function(**kwargs):
             final_kwarg_values = {
                 key: param_spec.default
@@ -165,7 +164,8 @@ class does(base.NodeCreator):
             final_kwarg_values = does.map_kwargs(final_kwarg_values, self.argument_mapping)
             return self.replacing_function(**final_kwarg_values)
 
-        return node.Node.from_fn(fn).copy_with(callabl=wrapper_function)
+        return [node.Node.from_fn(fn).copy_with(callabl=wrapper_function)]
+
 
 
 def get_default_tags(fn: Callable) -> Dict[str, str]:
@@ -207,7 +207,7 @@ class dynamic_transform(base.NodeCreator):
                 "Models must have no parameters -- all are passed in through the config"
             )
 
-    def generate_node(self, fn: Callable, config: Dict[str, Any] = None) -> node.Node:
+    def generate_nodes(self, fn: Callable, config: Dict[str, Any] = None) -> List[node.Node]:
         if self.config_param not in config:
             raise base.InvalidDecoratorException(
                 f"Configuration has no parameter: {self.config_param}. Did you define it? If so did you spell it right?"
@@ -216,14 +216,16 @@ class dynamic_transform(base.NodeCreator):
         transform = self.transform_cls(
             config[self.config_param], fn_name, **self.extra_transform_params
         )
-        return node.Node(
-            name=fn_name,
-            typ=inspect.signature(fn).return_annotation,
-            doc_string=fn.__doc__,
-            callabl=transform.compute,
-            input_types={dep: pd.Series for dep in transform.get_dependents()},
-            tags=get_default_tags(fn),
-        )
+        return [
+            node.Node(
+                name=fn_name,
+                typ=inspect.signature(fn).return_annotation,
+                doc_string=fn.__doc__,
+                callabl=transform.compute,
+                input_types={dep: pd.Series for dep in transform.get_dependents()},
+                tags=get_default_tags(fn),
+            )
+        ]
 
 
 class model(dynamic_transform):
