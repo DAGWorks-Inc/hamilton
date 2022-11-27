@@ -1,5 +1,5 @@
 def model(dbt, session):
-    """A DBT model that does a lot -- its all delegated to the hamilton framework though.
+    """A DBT model that does a lot -- it's all delegated to the hamilton framework though.
     The goal of this is to show how DBT can work for SQL/orchestration, while Hamilton can
     work for workflow modeling (in both the micro/macro sense) and help integrate python in.
 

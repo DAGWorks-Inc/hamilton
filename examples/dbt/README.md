@@ -3,14 +3,14 @@
 In this example, we're going to show you how easy it is to run Hamilton inside a dbt task. Making use of DBT's exciting new
 [python API](https://docs.getdbt.com/docs/building-a-dbt-project/building-models/python-models), we can blend the two frameworks seamlessly.
 
-While they may look to have similar purposes at first glance, DBT + Hamilton are actually quite complementary.
+While the two frameworks might look similar at first glance, DBT and Hamilton are actually quite complementary.
 
-- DBT is best at managing SQL logic + handling materialization, while Hamilton excels at managing transforms in python
-- DBT contains its own orchestration capabilities, whereas Hamilton will often rely on an external framework to run the code
-- DBT does not model micro-level transformations, whereas Hamilton thrives at enabling a user to specify transformations in a readable, maintainable way.
+- DBT is best at managing SQL logic and handling materialization, while Hamilton excels at modeling transforms in python
+- DBT contains its own orchestration capabilities, whereas Hamilton often relies on an external framework to run the code
+- DBT does not model micro-level transformations, whereas Hamilton thrives at enabling a user to specify them in a readable, maintainable way.
 - DBT is focused on analytic/warehouse-level transformations, whereas Hamilton can thrive at expressing ML-specific transforms.
 
-At a high-level, this example shows how DBT can help you get the data/run large-scale operations in your warehouse,
+At a high-level, DBT can help you get the data/run large-scale operations in your warehouse,
 while Hamilton can help you make a model out of it.
 
 To demonstrate this, we've taken one of our favorite examples of writing data science code [xLaszlo's code quality for DS tutorial](https://github.com/xLaszlo/CQ4DS-notebook-sklearn-refactoring-exercise),
@@ -55,12 +55,12 @@ This will modify a [duckdb file](data/database.duckdb). You can inspect the resu
 We've organized the code into two separate DBT models:
 1. [raw_passengers](models/raw_passengers.sql) This is a simple select and join using duckdb and DBT. Due to the simplicity of DBT -- its just as you would write if it were embedded within a python program, or you were executing SQL on your own!
    It does, however, automatically get materialized.
-2. [predict](models/predict.py)
+2. [train_and_infer](models/train_and_infer.py)
     This uses the data outputted by (1) to do quite a few things:
 
    - feature engineering to extract a test/train set
    - train a model using the train set
-   - run inference over an inference set
+   - run inference over the entire data set
 
     It outputs the inference set. Note it only runs a subset of the DAG -- we could easily add more tasks that output metrics, etc... We just wanted to keep it simple.
     Also note a few oddities in the python model (well-documented) -- including imports. DBT in python is still in beta, and we'll be opening issues/conributing to get it more advanced!
@@ -70,7 +70,7 @@ We've organized the code into two separate DBT models:
 This is just a start, and we think that Hamilton + DBT have a long/exciting future together. In particular, we could:
 
 1. Compile Hamilton to DBT for orchestration -- the new [SQL adapter](https://github.com/stitchfix/hamilton/issues/197) we're working on would compile nicely to a dbt task.
-2. Add more natural integration -- including a dbt plugin for a hamilton task
+2. Add more natural integration -- including a dbt plugin for a hamilton task.
 3. Add more examples with different SQL dialects/different python dialects. _hint_: _we're looking for contributors..._
 
 If you're excited by any of this, drop on by! Some resources to get you help:
