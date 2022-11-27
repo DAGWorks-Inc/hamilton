@@ -3,16 +3,16 @@ def model(dbt, session):
     The goal of this is to show how DBT can work for SQL/orchestration, while Hamilton can
     work for workflow modeling (in both the micro/macro sense) and help integrate python in.
 
-    :param dbt:
-    :param session:
-    :return:
+    :param dbt: DBT object to get refs/whatnot
+    :param session: duckdb session info (as needed)
+    :return: A dataframe containing predictions corresponding to the input data
     """
     raw_passengers_df = dbt.ref("raw_passengers").df()
+    import sys
+
     # This is a quick hack to allow for importing of local libraries
     # This assumes that we're running from within the right directory
     # TODO -- determine a cleaner way to import python modules
-    import sys
-
     sys.path.extend(".")
     # Import our python modules
     import pandas as pd
@@ -20,8 +20,10 @@ def model(dbt, session):
 
     from hamilton import base, driver
 
+    # Instantiate a simple graph adapter to get the base result
     adapter = base.SimplePythonGraphAdapter(base.DictResult())
-    titanic_dag_loading_previous_model = driver.Driver(
+    # DAG for training/inferring on titanic data
+    titanic_dag = driver.Driver(
         {
             "random_state": 5,
             "test_size": 0.2,
@@ -32,11 +34,11 @@ def model(dbt, session):
         model_pipeline,
         adapter=adapter,
     )
-    final_vars = [
-        "model_predict",
-    ]
-    results = titanic_dag_loading_previous_model.execute(
-        final_vars, inputs={"raw_passengers_df": raw_passengers_df}
+    # gather resutls
+    results = titanic_dag.execute(
+        final_vars=["model_predict"], inputs={"raw_passengers_df": raw_passengers_df}
     )
+    # Take the "predictions" result, which is an np array
     predictions = results["model_predict"]
+    # Return a dataframe!
     return pd.DataFrame(predictions, columns=["prediction"])

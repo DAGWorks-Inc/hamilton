@@ -1,2 +1,5 @@
+dbt
+dbt-duckdb
+dbt-python
+scikit-learn
 sf-hamilton
-sklearn
