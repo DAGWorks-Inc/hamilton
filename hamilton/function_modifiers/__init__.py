@@ -33,6 +33,8 @@ UpstreamDependency = dependencies.UpstreamDependency
 parameterize = expanders.parameterize
 parameterize_sources = expanders.parameterize_sources
 parameterize_values = expanders.parameterize_values
+parameterize_extract_columns = expanders.parameterize_extract_columns
+parameterize_frame = expanders.parameterize_extract_columns.from_df
 
 # The older ones that will be deprecated
 parametrized = expanders.parametrized
