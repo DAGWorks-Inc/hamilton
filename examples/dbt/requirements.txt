@@ -1,5 +1,6 @@
 dbt
 dbt-duckdb
+dbt-fal
 dbt-python
 scikit-learn
 sf-hamilton

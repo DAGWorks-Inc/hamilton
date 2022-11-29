@@ -16,6 +16,9 @@ while Hamilton can help you make a model out of it.
 To demonstrate this, we've taken one of our favorite examples of writing data science code [xLaszlo's code quality for DS tutorial](https://github.com/xLaszlo/CQ4DS-notebook-sklearn-refactoring-exercise),
 and re-written it using a combination of DBT + Hamilton. This models the classic titanic problem.
 
+In this case we're using [FAL](https://github.com/fal-ai/fal) to help run python in dbt -- it enables us to manage environments,
+import packages happily, etc...
+
 While the initial example is very simple, it should be enough for you to get started on your own!
 # Running
 
@@ -63,7 +66,8 @@ We've organized the code into two separate DBT models:
    - run inference over the entire data set
 
     It outputs the inference set. Note it only runs a subset of the DAG -- we could easily add more tasks that output metrics, etc... We just wanted to keep it simple.
-    Also note a few oddities in the python model (well-documented) -- including imports. DBT in python is still in beta, and we'll be opening issues/conributing to get it more advanced!
+    DBT in python is still in beta, and we'll be opening issues/contributing to get it more advanced! We're especially excited about FAL as it helps solve some of the
+    uglier python problems we hit along the way.
 
 # Future Directions
 

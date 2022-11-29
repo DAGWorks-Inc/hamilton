@@ -4,3 +4,11 @@ cq4ds:
     dev:
       type: duckdb
       path: 'data/database.duckdb'
+  target: dev_with_fal
+  outputs:
+    dev_with_fal:
+      type: fal
+      db_profile: duckdb
+    duckdb:
+        type: duckdb
+        path: 'data/database.duckdb'
