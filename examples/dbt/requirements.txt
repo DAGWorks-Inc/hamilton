@@ -2,6 +2,6 @@ dbt-core
 dbt-duckdb
 dbt-fal
 dbt-python
-scikit-learn
 pandera
+scikit-learn
 sf-hamilton
