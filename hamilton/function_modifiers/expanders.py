@@ -640,7 +640,7 @@ class parameterize_extract_columns(base.NodeExpander):
         args, dep_types = get_index_levels(parameterization.columns)
         dep_types_converted = [get_dep_type(val) for val in dep_types]
         out = []
-        for _, column_set in df.iterrows():
+        for _, column_set in parameterization.iterrows():
             parameterization = {
                 arg: dep_type(col_value)
                 for arg, col_value, dep_type in zip(args, column_set, dep_types_converted)
