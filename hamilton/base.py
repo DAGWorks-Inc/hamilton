@@ -166,9 +166,12 @@ class PandasDataFrameResult(ResultMixin):
             (value,) = outputs.values()  # this works because it's length 1.
             if isinstance(value, pd.DataFrame):
                 return value
-            elif isinstance(value, pd.Series):
-                return pd.DataFrame(outputs)
-            raise ValueError(f"Cannot build result. Cannot handle type {value}.")
+
+        if not any(pd.api.types.is_list_like(value) for value in outputs.values()):
+            # If we're dealing with all values that don't have any "index" that could be created
+            # (i.e. scalars, objects) coerce the output to a single-row, multi-column dataframe.
+            return pd.DataFrame([outputs])
+
         return pd.DataFrame(outputs)
 
 
