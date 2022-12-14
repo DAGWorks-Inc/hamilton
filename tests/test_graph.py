@@ -14,6 +14,7 @@ import tests.resources.extract_column_nodes
 import tests.resources.extract_columns_execution_count
 import tests.resources.functions_with_generics
 import tests.resources.layered_decorators
+import tests.resources.multiple_decorators_together
 import tests.resources.optional_dependencies
 import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
@@ -357,6 +358,20 @@ def test_end_to_end_with_column_extractor_nodes():
     assert (
         nodes[0].documentation == "Function that should be parametrized to form multiple functions"
     )
+
+
+def test_end_to_end_with_multiple_decorators():
+    """Tests that a simple function graph with multiple decorators on a function works end-to-end"""
+    fg = graph.FunctionGraph(
+        tests.resources.multiple_decorators_together, config={"param0": 3, "param1": 1}
+    )
+    nodes = fg.get_nodes()
+    results = fg.execute(nodes, {}, {})
+    print(results)
+    df_expected = tests.resources.multiple_decorators_together._sum_multiply(3, 1, 2)
+    pd.testing.assert_series_equal(results["param1b"], df_expected["param1b"])
+    pd.testing.assert_frame_equal(results["to_modify"], df_expected)
+    assert nodes[0].documentation == "This sums the inputs it gets..."
 
 
 def test_end_to_end_with_config_modifier():

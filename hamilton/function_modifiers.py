@@ -744,7 +744,8 @@ class does(function_modifiers_base.NodeCreator):
         and the same parameters/types as the original function.
         """
 
-        def replacing_function(__fn=fn, **kwargs):
+        @functools.wraps(fn)
+        def wrapper_function(**kwargs):
             final_kwarg_values = {
                 key: param_spec.default
                 for key, param_spec in inspect.signature(fn).parameters.items()
@@ -754,7 +755,7 @@ class does(function_modifiers_base.NodeCreator):
             final_kwarg_values = does.map_kwargs(final_kwarg_values, self.argument_mapping)
             return self.replacing_function(**final_kwarg_values)
 
-        return node.Node.from_fn(fn).copy_with(callabl=replacing_function)
+        return node.Node.from_fn(fn).copy_with(callabl=wrapper_function)
 
 
 class dynamic_transform(function_modifiers_base.NodeCreator):
