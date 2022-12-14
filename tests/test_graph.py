@@ -367,7 +367,6 @@ def test_end_to_end_with_multiple_decorators():
     )
     nodes = fg.get_nodes()
     results = fg.execute(nodes, {}, {})
-    print(results)
     df_expected = tests.resources.multiple_decorators_together._sum_multiply(3, 1, 2)
     pd.testing.assert_series_equal(results["param1b"], df_expected["param1b"])
     pd.testing.assert_frame_equal(results["to_modify"], df_expected)
