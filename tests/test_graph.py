@@ -14,6 +14,7 @@ import tests.resources.extract_column_nodes
 import tests.resources.extract_columns_execution_count
 import tests.resources.functions_with_generics
 import tests.resources.layered_decorators
+import tests.resources.multiple_decorators_together
 import tests.resources.optional_dependencies
 import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
@@ -357,6 +358,55 @@ def test_end_to_end_with_column_extractor_nodes():
     assert (
         nodes[0].documentation == "Function that should be parametrized to form multiple functions"
     )
+
+
+def test_end_to_end_with_multiple_decorators():
+    """Tests that a simple function graph with multiple decorators on a function works end-to-end"""
+    fg = graph.FunctionGraph(
+        tests.resources.multiple_decorators_together,
+        config={"param0": 3, "param1": 1, "in_value1": 42, "in_value2": "string_value"},
+    )
+    nodes = fg.get_nodes()
+    # To help debug issues:
+    # nodez, user_nodes = fg.get_upstream_nodes([n.name for n in nodes],
+    #                                           {"param0": 3, "param1": 1,
+    #                                            "in_value1": 42, "in_value2": "string_value"})
+    # fg.display(
+    #     nodez,
+    #     user_nodes,
+    #     "all_multiple_decorators",
+    #     render_kwargs=None,
+    #     graphviz_kwargs=None,
+    # )
+    results = fg.execute(nodes, {}, {})
+    df_expected = tests.resources.multiple_decorators_together._sum_multiply(3, 1, 2)
+    dict_expected = tests.resources.multiple_decorators_together._sum(3, 1, 2)
+    pd.testing.assert_series_equal(results["param1b"], df_expected["param1b"])
+    pd.testing.assert_frame_equal(results["to_modify"], df_expected)
+    assert results["total"] == dict_expected["total"]
+    assert results["to_modify_2"] == dict_expected
+    node_dict = {n.name: n for n in nodes}
+    print(sorted(list(node_dict.keys())))
+    assert (
+        node_dict["to_modify"].documentation
+        == "This is a dummy function showing extract_columns with does."
+    )
+    assert (
+        node_dict["to_modify_2"].documentation
+        == "This is a dummy function showing extract_fields with does."
+    )
+    # tag only applies right now to outer most node layer
+    assert node_dict["uber_decorated_function"].tags == {
+        "module": "tests.resources.multiple_decorators_together"
+    }  # tags are not propagated
+    assert node_dict["out_value1"].tags == {
+        "module": "tests.resources.multiple_decorators_together",
+        "test_key": "test-value",
+    }
+    assert node_dict["out_value2"].tags == {
+        "module": "tests.resources.multiple_decorators_together",
+        "test_key": "test-value",
+    }
 
 
 def test_end_to_end_with_config_modifier():

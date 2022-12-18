@@ -431,8 +431,7 @@ class extract_columns(function_modifiers_base.NodeExpander):
         fn = node_.callable
         base_doc = node_.documentation
 
-        @functools.wraps(fn)
-        def df_generator(*args, **kwargs):
+        def df_generator(*args, **kwargs) -> pd.DataFrame:
             df_generated = fn(*args, **kwargs)
             if self.fill_with is not None:
                 for col in self.columns:
@@ -441,12 +440,8 @@ class extract_columns(function_modifiers_base.NodeExpander):
             return df_generated
 
         output_nodes = [
-            node.Node(
-                node_.name,
-                typ=pd.DataFrame,
-                doc_string=base_doc,
+            node_.copy_with(
                 callabl=df_generator,
-                tags=node_.tags.copy(),
             )
         ]
 
@@ -553,7 +548,6 @@ class extract_fields(function_modifiers_base.NodeExpander):
         fn = node_.callable
         base_doc = node_.documentation
 
-        @functools.wraps(fn)
         def dict_generator(*args, **kwargs):
             dict_generated = fn(*args, **kwargs)
             if self.fill_with is not None:
@@ -562,15 +556,7 @@ class extract_fields(function_modifiers_base.NodeExpander):
                         dict_generated[field] = self.fill_with
             return dict_generated
 
-        output_nodes = [
-            node.Node(
-                node_.name,
-                typ=dict,
-                doc_string=base_doc,
-                callabl=dict_generator,
-                tags=node_.tags.copy(),
-            )
-        ]
+        output_nodes = [node_.copy_with(callabl=dict_generator)]
 
         for field, field_type in self.fields.items():
             doc_string = base_doc  # default doc string of base function.
@@ -744,7 +730,8 @@ class does(function_modifiers_base.NodeCreator):
         and the same parameters/types as the original function.
         """
 
-        def replacing_function(__fn=fn, **kwargs):
+        # @functools.wraps(fn)
+        def wrapper_function(**kwargs):
             final_kwarg_values = {
                 key: param_spec.default
                 for key, param_spec in inspect.signature(fn).parameters.items()
@@ -754,7 +741,7 @@ class does(function_modifiers_base.NodeCreator):
             final_kwarg_values = does.map_kwargs(final_kwarg_values, self.argument_mapping)
             return self.replacing_function(**final_kwarg_values)
 
-        return node.Node.from_fn(fn).copy_with(callabl=replacing_function)
+        return node.Node.from_fn(fn).copy_with(callabl=wrapper_function)
 
 
 class dynamic_transform(function_modifiers_base.NodeCreator):
