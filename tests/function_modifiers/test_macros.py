@@ -30,7 +30,7 @@ def test_no_code_validator():
         ensure_function_empty(yes_code)
 
 
-## Functions for  @does -- these are the functions we're "replacing"
+# Functions for  @does -- these are the functions we're "replacing"
 def _no_params() -> int:
     pass
 

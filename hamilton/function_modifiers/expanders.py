@@ -47,9 +47,9 @@ class parameterize(base.NodeExpander):
         }
         bad_values = []
         for assigned_output, mapping in self.parametrization.items():
-            for parameter, value in mapping.items():
-                if not isinstance(value, ParametrizedDependency):
-                    bad_values.append(value)
+            for parameter, parameter_value in mapping.items():
+                if not isinstance(parameter_value, ParametrizedDependency):
+                    bad_values.append(parameter_value)
         if bad_values:
             raise base.InvalidDecoratorException(
                 f"@parameterize must specify a dependency type -- either source() or value()."
@@ -97,15 +97,15 @@ class parameterize(base.NodeExpander):
                 return node_.callable(*args, **kwargs)
 
             new_input_types = {}
-            for param, value in node_.input_types.items():
+            for param, param_value in node_.input_types.items():
                 if param in upstream_dependencies:
                     new_input_types[
                         upstream_dependencies[param].source
-                    ] = value  # We replace with the upstream_dependencies
+                    ] = param_value  # We replace with the upstream_dependencies
                 elif param not in literal_dependencies:
                     new_input_types[
                         param
-                    ] = value  # We just use the standard one, nothing is getting replaced
+                    ] = param_value  # We just use the standard one, nothing is getting replaced
 
             nodes.append(
                 node.Node(
@@ -285,16 +285,16 @@ class parametrized_input(parameterize):
         :param parameter: Parameter to expand on.
         :param variable_inputs: A map of tuple of [parameter names, documentation] to values
         """
-        for value in variable_inputs.values():
-            if not isinstance(value, Tuple):
+        for variable_value_tuple in variable_inputs.values():
+            if not isinstance(variable_value_tuple, Tuple):
                 raise base.InvalidDecoratorException(
                     f"assigned_output key is incorrect: {node}. The parameterized decorator needs a dict of "
                     "input column -> [name, description] to function."
                 )
         super(parametrized_input, self).__init__(
             **{
-                output: ({parameter: source(value)}, documentation)
-                for value, (output, documentation) in variable_inputs.items()
+                output: ({parameter: source(variable_name)}, documentation)
+                for variable_name, (output, documentation) in variable_inputs.items()
             }
         )
 
