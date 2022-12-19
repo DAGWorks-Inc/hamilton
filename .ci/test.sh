@@ -39,6 +39,7 @@ fi
 
 if [[ ${TASK} == "pyspark" ]]; then
     pip install -e '.[pyspark]'
+    pip install numpy<1.24.0 # downgrade until spark fixes their bug
     pytest graph_adapter_tests/h_spark
     exit 0
 fi
