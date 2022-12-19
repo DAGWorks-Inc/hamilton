@@ -194,14 +194,12 @@ setup guide](developer_setup.md).
 [![Watch the video](https://img.youtube.com/vi/m_rjCzxQj4c/hqdefault.jpg)](https://www.youtube.com/watch?v=m_rjCzxQj4c&ab_channel=Ponder)
 
 # Citing Hamilton
-We'd appreciate citing Hamilton by referencing:
+We'd appreciate citing Hamilton by referencing one of the following:
 
 ```
 @inproceedings{DBLP:conf/vldb/KrawczykI22,
-  author    = {Stefan Krawczyk and
-               Elijah ben Izzy},
-  editor    = {Satyanarayana R. Valluri and
-               Mohamed Za{\"{\i}}t},
+  author    = {Stefan Krawczyk and Elijah ben Izzy},
+  editor    = {Satyanarayana R. Valluri and Mohamed Za{\"{\i}}t},
   title     = {Hamilton: a modular open source declarative paradigm for high level
                modeling of dataflows},
   booktitle = {1st International Workshop on Composable Data Management Systems,
@@ -211,6 +209,16 @@ We'd appreciate citing Hamilton by referencing:
   timestamp = {Wed, 19 Oct 2022 16:20:48 +0200},
   biburl    = {https://dblp.org/rec/conf/vldb/KrawczykI22.bib},
   bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{CEURWS:conf/vldb/KrawczykIQ22,
+  author    = {Stefan Krawczyk and Elijah ben Izzy and Danielle Quinn},
+  editor    = {Cinzia Cappiello and Sandra Geisler and Maria-Esther Vidal},
+  title     = {Hamilton: enabling software engineering best practices for data transformations via generalized dataflow graphs},
+  booktitle = {1st International Workshop on Data Ecosystems co-located with 48th International Conference on Very Large Databases (VLDB 2022)},
+  pages     = {41--50},
+  url       = {https://ceur-ws.org/Vol-3306/paper5.pdf},
+  year      = {2022}
 }
 ```
 
