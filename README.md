@@ -193,6 +193,26 @@ setup guide](developer_setup.md).
 
 [![Watch the video](https://img.youtube.com/vi/m_rjCzxQj4c/hqdefault.jpg)](https://www.youtube.com/watch?v=m_rjCzxQj4c&ab_channel=Ponder)
 
+# Citing Hamilton
+We'd appreciate citing Hamilton by referencing:
+
+```
+@inproceedings{DBLP:conf/vldb/KrawczykI22,
+  author    = {Stefan Krawczyk and
+               Elijah ben Izzy},
+  editor    = {Satyanarayana R. Valluri and
+               Mohamed Za{\"{\i}}t},
+  title     = {Hamilton: a modular open source declarative paradigm for high level
+               modeling of dataflows},
+  booktitle = {1st International Workshop on Composable Data Management Systems,
+               CDMS@VLDB 2022, Sydney, Australia, September 9, 2022},
+  year      = {2022},
+  url       = {https://cdmsworkshop.github.io/2022/Proceedings/ShortPapers/Paper6\_StefanKrawczyk.pdf},
+  timestamp = {Wed, 19 Oct 2022 16:20:48 +0200},
+  biburl    = {https://dblp.org/rec/conf/vldb/KrawczykI22.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+```
 
 
 # Prescribed Development Workflow
