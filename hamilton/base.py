@@ -133,18 +133,17 @@ class PandasDataFrameResult(ResultMixin):
             types_match = False
         elif number_with_indexes == 1 and no_index_length > 0:
             logger.warning(
-                f"WARNING: a single pandas index was found, but there are also {no_index_length} outputs without "
-                f"an index. Those values will be made constants throughout the values of the index."
+                f"WARNING: a single pandas index was found, but there are also {len(no_indexes['no-index'])} "
+                "outputs without an index. Please check whether the dataframe created matches what what you "
+                "expect to happen."
             )
             # Strictly speaking the index types match -- there is only one -- so setting to True.
             types_match = True
         # if all indexes matches no indexes
         elif no_index_length == all_indexes_length:
             logger.warning(
-                "It appears no Pandas index type was detected. This will likely break when trying to "
-                "create a DataFrame. E.g. are you requesting all scalar values? Use a different result "
-                "builder or return at least one Pandas object with an index. "
-                "Ignore this warning if you're using DASK for now."
+                "It appears no Pandas index type was detected (ignore this warning if you're using DASK for now.) "
+                "Please check whether the dataframe created matches what what you expect to happen."
             )
             types_match = False
         if logger.isEnabledFor(logging.DEBUG):
