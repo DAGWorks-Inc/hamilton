@@ -1,7 +1,9 @@
 import asyncio
+from unittest import mock
 
 import pytest
 
+from hamilton import base
 from hamilton.experimental import h_async
 
 from .resources import simple_async_module
@@ -57,3 +59,25 @@ async def test_driver_end_to_end():
         "simple_async_func": 2,
         "simple_non_async_func": 7,
     }
+
+
+@pytest.mark.asyncio
+@mock.patch("hamilton.telemetry.send_event_json")
+@mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
+async def test_driver_end_to_end_telemetry(send_event_json):
+    dr = h_async.AsyncDriver({}, simple_async_module, result_builder=base.DictResult())
+    all_vars = [var.name for var in dr.list_available_variables()]
+    result = await dr.execute(final_vars=all_vars, inputs={"external_input": 1})
+    assert result == {
+        "another_async_func": 8,
+        "async_func_with_param": 4,
+        "external_input": 1,
+        "non_async_func_with_decorator": {"result_1": 9, "result_2": 5},
+        "result_1": 9,
+        "result_2": 5,
+        "simple_async_func": 2,
+        "simple_non_async_func": 7,
+    }
+    await asyncio.sleep(1)  # to ensure the last telemetry invocation finishes executing
+    assert send_event_json.called
+    assert len(send_event_json.call_args_list) == 2

@@ -1,4 +1,6 @@
 import abc
+import collections
+import functools
 from typing import Any, Callable, Collection, Dict, List, Tuple
 
 from hamilton import node
@@ -16,6 +18,31 @@ def sanitize_function_name(name: str) -> str:
     """
     last_dunder_index = name.rfind("__")
     return name[:last_dunder_index] if last_dunder_index != -1 else name
+
+
+DECORATOR_COUNTER = collections.defaultdict(int)
+
+
+def track_decorator_usage(call_fn: Callable) -> Callable:
+    """Decorator to wrap the __call__ to count decorator usage.
+
+    :param call_fn: the `__call__` function.
+    :return: the wrapped call function.
+    """
+
+    @functools.wraps(call_fn)
+    def replace__call__(self, fn):
+        global DECORATOR_COUNTER
+        if self.__module__.startswith("hamilton.function_modifiers"):
+            # only capture counts for hamilton decorators
+            DECORATOR_COUNTER[self.__class__.__name__] = (
+                DECORATOR_COUNTER[self.__class__.__name__] + 1
+            )
+        else:
+            DECORATOR_COUNTER["custom_decorator"] = DECORATOR_COUNTER["custom_decorator"] + 1
+        return call_fn(self, fn)
+
+    return replace__call__
 
 
 class NodeTransformLifecycle(abc.ABC):
@@ -47,6 +74,7 @@ class NodeTransformLifecycle(abc.ABC):
         """
         pass
 
+    @track_decorator_usage
     def __call__(self, fn: Callable):
         """Calls the decorator by adding attributes using the get_lifecycle_name string.
         These attributes are the pointer to the decorator object itself, and used later in resolve_nodes below.

@@ -257,6 +257,41 @@ If you are doing a lot of repetitive work, one might consider multiple cursors. 
 
 To use it hit `option + mouse click` to create multiple cursors. `Esc` to revert back to a normal mode.
 
+# Usage analytics & data privacy
+By default, when using Hamilton, it collects anonymous usage data to help improve Hamilton and know where to apply development
+efforts.
+
+We capture two events: one when the `Driver` object is instantiated, and one when the `execute()` call on the `Driver` object completes.
+No user data or potentially sensitive information is or ever will be collected. The captured data is limited to:
+
+* Operating System and Python version
+* A persistent UUID to indentify the session, stored in ~/.hamilton.conf.
+* Error stack trace limited to Hamilton code, if one occurs.
+* Information on what features you're using from Hamilton: decorators, adapters, result builders.
+* How Hamilton is being used: number of final nodes in DAG, number of modules, size of objects passed to `execute()`.
+
+If you're worried, see telemetry.py for details.
+
+If you do not wish to participate, one can opt-out with one of the following methods:
+1. Set it to false programmatically in your code before creating a Hamilton driver:
+   ```python
+   from hamilton import telemetry
+   telemetry.disable_telemetry()
+   ```
+2. Set the key `telemetry_enabled` to `false` in ~/.hamilton.conf under the `DEFAULT` section:
+   ```
+   [DEFAULT]
+   telemetry_enabled = True
+   ```
+3. Set HAMILTON_TELEMETRY_ENABLED=false as an environment variable. Either setting it for your shell session:
+   ```bash
+   export HAMILTON_TELEMETRY_ENABLED=false
+   ```
+   or passing it as part of the run command:
+   ```bash
+   HAMILTON_TELEMETRY_ENABLED=false python NAME_OF_MY_DRIVER.py
+   ```
+
 # Contributors
 
 ## Code Contributors

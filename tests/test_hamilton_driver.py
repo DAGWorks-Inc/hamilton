@@ -1,3 +1,6 @@
+from unittest import mock
+
+import pandas as pd
 import pytest
 
 import tests.resources.cyclic_functions
@@ -51,3 +54,118 @@ def test_driver_variables():
     assert tags["b"] == {"module": "tests.resources.tagging", "test": "b_c"}
     assert tags["c"] == {"module": "tests.resources.tagging", "test": "b_c"}
     assert tags["d"] == {"module": "tests.resources.tagging"}
+
+
+@mock.patch("hamilton.telemetry.send_event_json")
+def test_capture_constructor_telemetry_disabled(send_event_json):
+    """Tests that we don't do anything if telemetry is disabled."""
+    send_event_json.return_value = ""
+    Driver({}, tests.resources.tagging)  # this will exercise things underneath.
+    assert send_event_json.called is False
+
+
+@mock.patch("hamilton.telemetry.get_adapter_name")
+@mock.patch("hamilton.telemetry.send_event_json")
+@mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
+def test_capture_constructor_telemetry_error(send_event_json, get_adapter_name):
+    """Tests that we don't error if an exception occurs"""
+    get_adapter_name.side_effect = ValueError("TELEMETRY ERROR")
+    Driver({}, tests.resources.tagging)  # this will exercise things underneath.
+    assert send_event_json.called is False
+
+
+@mock.patch("hamilton.telemetry.send_event_json")
+@mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
+def test_capture_constructor_telemetry_none_values(send_event_json):
+    """Tests that we don't error if there are none values"""
+    Driver({}, None, None)  # this will exercise things underneath.
+    assert send_event_json.called is True
+
+
+@mock.patch("hamilton.telemetry.send_event_json")
+@mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
+def test_capture_constructor_telemetry(send_event_json):
+    """Tests that we send an event if we could. Validates deterministic parts."""
+    Driver({}, tests.resources.very_simple_dag)
+    # assert send_event_json.called is True
+    assert len(send_event_json.call_args_list) == 1  # only called once
+    # check contents of what it was called with:
+    send_event_json_call = send_event_json.call_args_list[0]
+    actual_event_dict = send_event_json_call[0][0]
+    assert actual_event_dict["api_key"] == "phc_mZg8bkn3yvMxqvZKRlMlxjekFU5DFDdcdAsijJ2EH5e"
+    assert actual_event_dict["event"] == "os_hamilton_run_start"
+    # validate schema
+    expected_properites = {
+        "os_type",
+        "os_version",
+        "python_version",
+        "distinct_id",
+        "hamilton_version",
+        "telemetry_version",
+        "number_of_nodes",
+        "number_of_modules",
+        "number_of_config_items",
+        "decorators_used",
+        "graph_adapter_used",
+        "result_builder_used",
+        "driver_run_id",
+        "error",
+    }
+    actual_properties = actual_event_dict["properties"]
+    assert set(actual_properties.keys()) == expected_properites
+    # validate static parts
+    assert actual_properties["error"] is None
+    assert actual_properties["number_of_nodes"] == 2  # b, and input a
+    assert actual_properties["number_of_modules"] == 1
+    assert actual_properties["number_of_config_items"] == 0
+    assert actual_properties["number_of_config_items"] == 0
+    assert (
+        actual_properties["graph_adapter_used"] == "hamilton.base.SimplePythonDataFrameGraphAdapter"
+    )
+    assert actual_properties["result_builder_used"] == "hamilton.base.PandasDataFrameResult"
+
+
+@mock.patch("hamilton.telemetry.send_event_json")
+def test_capture_execute_telemetry_disabled(send_event_json):
+    """Tests that we don't do anything if telemetry is disabled."""
+    dr = Driver({}, tests.resources.very_simple_dag)
+    results = dr.execute(["b"], inputs={"a": 1})
+    expected = pd.DataFrame([{"b": 1}])
+    pd.testing.assert_frame_equal(results, expected)
+    assert send_event_json.called is False
+
+
+@mock.patch("hamilton.telemetry.send_event_json")
+@mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
+def test_capture_execute_telemetry_error(send_event_json):
+    """Tests that we don't error if an exception occurs"""
+    send_event_json.side_effect = [None, ValueError("FAKE ERROR")]
+    dr = Driver({}, tests.resources.very_simple_dag)
+    results = dr.execute(["b"], inputs={"a": 1})
+    expected = pd.DataFrame([{"b": 1}])
+    pd.testing.assert_frame_equal(results, expected)
+    assert send_event_json.called is True
+    assert len(send_event_json.call_args_list) == 2
+
+
+@mock.patch("hamilton.telemetry.send_event_json")
+@mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
+def test_capture_execute_telemetry(send_event_json):
+    """Happy path with values passed."""
+    dr = Driver({}, tests.resources.very_simple_dag)
+    results = dr.execute(["b"], inputs={"a": 1}, overrides={"b": 2})
+    expected = pd.DataFrame([{"b": 2}])
+    pd.testing.assert_frame_equal(results, expected)
+    assert send_event_json.called is True
+    assert len(send_event_json.call_args_list) == 2
+
+
+@mock.patch("hamilton.telemetry.send_event_json")
+@mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
+def test_capture_execute_telemetry_none_values(send_event_json):
+    """Happy path with none values."""
+    dr = Driver({"a": 1}, tests.resources.very_simple_dag)
+    results = dr.execute(["b"])
+    expected = pd.DataFrame([{"b": 1}])
+    pd.testing.assert_frame_equal(results, expected)
+    assert len(send_event_json.call_args_list) == 2

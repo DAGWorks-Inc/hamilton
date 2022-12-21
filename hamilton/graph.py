@@ -167,6 +167,10 @@ class FunctionGraph(object):
     def config(self):
         return self._config
 
+    @property
+    def decorator_counter(self) -> Dict[str, int]:
+        return fm_base.DECORATOR_COUNTER
+
     def get_nodes(self) -> List[node.Node]:
         return list(self.nodes.values())
 

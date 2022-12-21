@@ -1,11 +1,14 @@
 import logging
+import sys
+import time
 
 # required if we want to run this code stand alone.
 import typing
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from types import ModuleType
-from typing import Any, Collection, Dict, List
+from typing import Any, Collection, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -17,10 +20,12 @@ SLACK_ERROR_MESSAGE = (
 )
 
 if __name__ == "__main__":
+    import base
     import graph
     import node
+    import telemetry
 else:
-    from . import base, graph, node
+    from . import base, graph, node, telemetry
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +58,59 @@ class Driver(object):
         :param adapter: Optional. A way to wire in another way of "executing" a hamilton graph.
                         Defaults to using original Hamilton adapter which is single threaded in memory python.
         """
+        self.driver_run_id = uuid.uuid4()
         if adapter is None:
             adapter = base.SimplePythonDataFrameGraphAdapter()
+        error = None
         try:
             self.graph = graph.FunctionGraph(*modules, config=config, adapter=adapter)
+            self.adapter = adapter
         except Exception as e:
+            error = telemetry.sanitize_error(*sys.exc_info())
             logger.error(SLACK_ERROR_MESSAGE)
             raise e
-        self.adapter = adapter
+        finally:
+            self.capture_constructor_telemetry(error, modules, config, adapter)
+
+    def capture_constructor_telemetry(
+        self,
+        error: Optional[str],
+        modules: Tuple[ModuleType],
+        config: Dict[str, Any],
+        adapter: base.HamiltonGraphAdapter,
+    ):
+        """Captures constructor telemetry.
+
+        Notes:
+        (1) we want to do this in a way that does not break.
+        (2) we need to account for all possible states, e.g. someone passing in None, or assuming that
+        the entire constructor code ran without issue, e.g. `adpater` was assigned to `self`.
+
+        :param error: the sanitized error string to send.
+        :param modules: the list of modules, could be None.
+        :param config: the config dict passed, could be None.
+        :param adapter: the adapter passed in, might not be attached to `self` yet.
+        """
+        if telemetry.is_telemetry_enabled():
+            try:
+                adapter_name = telemetry.get_adapter_name(adapter)
+                result_builder = telemetry.get_result_builder_name(adapter)
+                # being defensive here with ensuring values exist
+                payload = telemetry.create_start_event_json(
+                    len(self.graph.nodes) if hasattr(self, "graph") else 0,
+                    len(modules) if modules else 0,
+                    len(config) if config else 0,
+                    dict(self.graph.decorator_counter) if hasattr(self, "graph") else {},
+                    adapter_name,
+                    result_builder,
+                    self.driver_run_id,
+                    error,
+                )
+                telemetry.send_event_json(payload)
+            except Exception as e:
+                # we don't want this to fail at all!
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Error caught in processing telemetry: {e}")
 
     def _node_is_required_by_anything(self, node_: node.Node) -> bool:
         """Checks dependencies on this node and determines if at least one requires it.
@@ -133,12 +183,62 @@ class Driver(object):
                 "display_graph=True is deprecated. It will be removed in the 2.0.0 release. "
                 "Please use visualize_execution()."
             )
+        start_time = time.time()
+        run_successful = True
+        error = None
         try:
             outputs = self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
-            return self.adapter.build_result(**outputs)
+            result = self.adapter.build_result(**outputs)
+            return result
         except Exception as e:
+            run_successful = False
             logger.error(SLACK_ERROR_MESSAGE)
+            error = telemetry.sanitize_error(*sys.exc_info())
             raise e
+        finally:
+            duration = time.time() - start_time
+            self.capture_execute_telemetry(
+                error, final_vars, inputs, overrides, run_successful, duration
+            )
+
+    def capture_execute_telemetry(
+        self,
+        error: Optional[str],
+        final_vars: List[str],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+        run_successful: bool,
+        duration: float,
+    ):
+        """Captures telemetry after execute has run.
+
+        Notes:
+        (1) we want to be quite defensive in not breaking anyone's code with things we do here.
+        (2) thus we want to double-check that values exist before doing something with them.
+
+        :param error: the sanitized error string to capture, if any.
+        :param final_vars: the list of final variables to get.
+        :param inputs: the inputs to the execute function.
+        :param overrides: any overrides to the execute function.
+        :param run_successful: whether this run was successful.
+        :param duration: time it took to run execute.
+        """
+        if telemetry.is_telemetry_enabled():
+            try:
+                payload = telemetry.create_end_event_json(
+                    run_successful,
+                    duration,
+                    len(final_vars) if final_vars else 0,
+                    len(overrides) if isinstance(overrides, Dict) else 0,
+                    len(inputs) if isinstance(overrides, Dict) else 0,
+                    self.driver_run_id,
+                    error,
+                )
+                telemetry.send_event_json(payload)
+            except Exception as e:
+                # we don't want this to fail at all!
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Error caught in processing telemetry:\n{e}")
 
     def raw_execute(
         self,
@@ -302,7 +402,6 @@ class Driver(object):
 if __name__ == "__main__":
     """some example test code"""
     import importlib
-    import sys
 
     formatter = logging.Formatter("[%(levelname)s] %(asctime)s %(name)s(%(lineno)s): %(message)s")
     stream_handler = logging.StreamHandler(sys.stdout)

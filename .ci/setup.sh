@@ -41,3 +41,6 @@ python --version
 echo "----- pip version -----"
 pip --version
 echo "-----------------------"
+
+# disable telemetry!
+export HAMILTON_TELEMETRY_ENABLED=false

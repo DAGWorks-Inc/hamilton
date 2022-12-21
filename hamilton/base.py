@@ -13,7 +13,10 @@ import pandas as pd
 import typing_inspect
 from pandas.core.indexes import extension as pd_extension
 
-from . import node
+try:
+    from . import node
+except ImportError:
+    import node
 
 logger = logging.getLogger(__name__)
 
