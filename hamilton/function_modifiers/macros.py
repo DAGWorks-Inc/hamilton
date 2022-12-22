@@ -167,7 +167,6 @@ class does(base.NodeCreator):
         return [node.Node.from_fn(fn).copy_with(callabl=wrapper_function)]
 
 
-
 def get_default_tags(fn: Callable) -> Dict[str, str]:
     """Function that encapsulates default tags on a function.
 

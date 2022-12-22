@@ -1,6 +1,5 @@
 import logging
 
-
 from . import base, configuration, dependencies, expanders, macros, metadata, reuse, validation
 
 logger = logging.getLogger(__name__)
