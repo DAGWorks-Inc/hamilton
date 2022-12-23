@@ -1,6 +1,6 @@
 from hamilton import function_modifiers
+from hamilton.experimental.decorators.reuse import MultiOutput, reuse_functions
 from hamilton.function_modifiers.configuration import config
-from hamilton.function_modifiers.reuse import MultiOutput
 
 
 def a() -> int:
@@ -35,7 +35,7 @@ def _get_submodules():
 submodules = _get_submodules()
 
 
-@function_modifiers.reuse_functions(
+@reuse_functions(
     with_inputs={"c": function_modifiers.value(10)},
     namespace="v1",
     outputs={"e": "e_1", "f": "f_1"},
@@ -46,7 +46,7 @@ def subdag_1() -> MultiOutput(e_1=int, f_1=int):
     pass
 
 
-@function_modifiers.reuse_functions(
+@reuse_functions(
     with_inputs={"c": function_modifiers.value(20)},
     namespace="v2",
     outputs={"e": "e_2", "f": "f_2"},
@@ -57,7 +57,7 @@ def subdag_2() -> MultiOutput(e_2=int, f_2=int):
     pass
 
 
-@function_modifiers.reuse_functions(
+@reuse_functions(
     with_inputs={"c": function_modifiers.value(30)},
     namespace="v3",
     outputs={"e": "e_3", "f": "f_3"},
@@ -68,7 +68,7 @@ def subdag_3() -> MultiOutput(e_3=int, f_3=int):
     pass
 
 
-@function_modifiers.reuse_functions(
+@reuse_functions(
     with_inputs={"c": function_modifiers.source("b")},
     namespace="v4",
     outputs={"e": "e_4", "f": "f_4"},

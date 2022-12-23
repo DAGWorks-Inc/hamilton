@@ -5,9 +5,9 @@ import pytest
 
 import tests.resources.reuse_subdag
 from hamilton import ad_hoc_utils, graph
-from hamilton.function_modifiers import base, config, reuse, value
+from hamilton.experimental.decorators import reuse
+from hamilton.function_modifiers import base, config, value
 from hamilton.function_modifiers.dependencies import source
-from hamilton.function_modifiers.reuse import MultiOutput, reuse_functions
 
 
 def test_collect_function_fns():
@@ -16,7 +16,7 @@ def test_collect_function_fns():
     def test_fn(out: int = val) -> int:
         return out
 
-    assert reuse_functions.collect_functions(load_from=[test_fn])[0]() == test_fn()
+    assert reuse.reuse_functions.collect_functions(load_from=[test_fn])[0]() == test_fn()
 
 
 def test_collect_functions_module():
@@ -26,7 +26,7 @@ def test_collect_functions_module():
         return out
 
     assert (
-        reuse_functions.collect_functions(
+        reuse.reuse_functions.collect_functions(
             load_from=[ad_hoc_utils.create_temporary_module(test_fn)]
         )[0]()
         == test_fn()
@@ -52,7 +52,7 @@ def bar__alt() -> int:
 
 
 def test_reuse_subdag_validate_outputs_succeeds():
-    def test() -> MultiOutput(foo_result=int, bar_result=str):
+    def test() -> reuse.MultiOutput(foo_result=int, bar_result=str):
         pass
 
     decorator = reuse.reuse_functions(
@@ -81,7 +81,7 @@ def test_reuse_subdag_validate_output_incorrect_type():
 
 
 def test_reuse_subdag_validate_output_fails_types_not_provided():
-    def test() -> MultiOutput(foo_result=int):
+    def test() -> reuse.MultiOutput(foo_result=int):
         pass
 
     decorator = reuse.reuse_functions(
@@ -96,7 +96,7 @@ def test_reuse_subdag_validate_output_fails_types_not_provided():
 
 
 def test_reuse_subdag_basic_no_parameterization():
-    def test() -> MultiOutput(foo_result=int, bar_result=int):
+    def test() -> reuse.MultiOutput(foo_result=int, bar_result=int):
         pass
 
     decorator = reuse.reuse_functions(
@@ -116,7 +116,7 @@ def test_reuse_subdag_basic_no_parameterization():
 
 
 def test_reuse_subdag_basic_simple_parameterization():
-    def test() -> MultiOutput(foo_result=int, bar_result=int):
+    def test() -> reuse.MultiOutput(foo_result=int, bar_result=int):
         pass
 
     decorator = reuse.reuse_functions(
@@ -135,7 +135,7 @@ def test_reuse_subdag_basic_simple_parameterization():
 
 
 def test_reuse_subdag_basic_source_parameterization():
-    def test() -> MultiOutput(foo_result=int, bar_result=int):
+    def test() -> reuse.MultiOutput(foo_result=int, bar_result=int):
         pass
 
     decorator = reuse.reuse_functions(
@@ -155,7 +155,7 @@ def test_reuse_subdag_basic_source_parameterization():
 
 
 def test_reuse_subdag_handles_config_assignment():
-    def test() -> MultiOutput(foo_result=int, bar_result=int):
+    def test() -> reuse.MultiOutput(foo_result=int, bar_result=int):
         pass
 
     decorator = reuse.reuse_functions(

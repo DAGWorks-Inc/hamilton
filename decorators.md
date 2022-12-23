@@ -368,6 +368,8 @@ See [data_quality](data_quality.md) for more information on available validators
 
 ## @reuse_functions
 
+Currently located under `experimental` -- looking for feedback!
+
 The `@reuse_functions` decorator enables you to rerun components of your DAG with varying parameters. Note that this is immensely powerful -- if we
 draw analogies from Hamilton to standard procedural programming paradigms, we might have the following correspondence:
 
