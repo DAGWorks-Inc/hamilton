@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 
 from hamilton import node
 from hamilton.function_modifiers import base
@@ -59,17 +59,9 @@ class tag(base.NodeDecorator):
         :param node_: Node to decorate
         :return: Copy of the node, with tags assigned
         """
-        unioned_tags = self.tags.copy()
-        unioned_tags.update(node_.tags)
-        return node.Node(
-            name=node_.name,
-            typ=node_.type,
-            doc_string=node_.documentation,
-            callabl=node_.callable,
-            node_source=node_.node_source,
-            input_types=node_.input_types,
-            tags=unioned_tags,
-        )
+        node_tags = node_.tags.copy()
+        node_tags.update(self.tags)
+        return node_.copy_with(tags=node_tags)
 
     @staticmethod
     def _key_allowed(key: str) -> bool:
@@ -125,3 +117,18 @@ class tag(base.NodeDecorator):
                 "The value can be anything. Note that the following top-level prefixes are "
                 f"reserved as well: {self.RESERVED_TAG_NAMESPACES}"
             )
+
+
+class tag_outputs(base.NodeDecorator):
+    def __init__(self, **tag_mapping: Dict[str, str]):
+        """Creates a tag_outputs decorator. Note that this currently does not validate whether the
+        nodes are spelled correctly as it takes in a superset of nodes.
+        :param tag_mapping: Mapping of node name to tags -- this is akin to applying @tag to individual nodes produced by the function
+        """
+        self.tag_mapping = tag_mapping
+
+    def decorate_node(self, node_: node.Node) -> node.Node:
+        """Decorates all final nodes with the specified tags."""
+        new_tags = node_.tags.copy()
+        new_tags.update(self.tag_mapping.get(node_.name, {}))
+        return tag(**new_tags).decorate_node(node_)
