@@ -435,10 +435,11 @@ Let's take a look at a simplified example (in [examples/](examples/reusing_funct
 
 ```python
 @extract_columns("timestamp", "user_id", "region")  # one of "US", "CA" (canada)
-def website_interactions(random_seed: int) -> pd.DataFrame:
+def website_interactions() -> pd.DataFrame:
     return ...
 
-def interactions_filtered(filtered_interactions: pd.DataFrame, region: str) -> pd.DataFrame:
+def interactions_filtered(website_interactions: pd.DataFrame, region: str) -> pd.DataFrame:
+    """Filters interactions by region -- note this will be run differently depending on the region its in"""
     pass
 
 def unique_users(filtered_interactions: pd.DataFrame, grain: str) -> pd.Series:
@@ -453,6 +454,7 @@ def unique_users(filtered_interactions: pd.DataFrame, grain: str) -> pd.Series:
     load_from=[unique_users, interactions_filtered],
 )
 def quarterly_user_data_US() -> reuse.MultiOutput({"unique_users_daily_US": pd.Series}):
+    """Calculates quarterly data for just US users"""
     pass
 
 
@@ -464,6 +466,7 @@ def quarterly_user_data_US() -> reuse.MultiOutput({"unique_users_daily_US": pd.S
     load_from=[unique_users, interactions_filtered],
 )
 def daily_user_data_CA() -> reuse.MultiOutput({"unique_users_daily_CA": pd.Series}):
+    """Calculates quarterly data for just canada users"""
     pass
 ```
 
