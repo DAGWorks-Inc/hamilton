@@ -9,7 +9,8 @@ import logging
 from types import ModuleType
 from typing import Any, Callable, Collection, Dict, List, Set, Tuple, Type
 
-from hamilton import base, function_modifiers_base, node
+from hamilton import base, node
+from hamilton.function_modifiers import base as fm_base
 from hamilton.graph_utils import find_functions
 from hamilton.type_utils import types_match
 
@@ -67,7 +68,7 @@ def create_function_graph(
 
     # create nodes -- easier to just create this in one loop
     for func_name, f in functions:
-        for n in function_modifiers_base.resolve_nodes(f, config):
+        for n in fm_base.resolve_nodes(f, config):
             if n.name in config:
                 continue  # This makes sure we overwrite things if they're in the config...
             if n.name in nodes:
