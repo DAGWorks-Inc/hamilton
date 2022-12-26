@@ -1,17 +1,23 @@
 import async_module
 import fastapi
 
+from hamilton import base
 from hamilton.experimental import h_async
 
 app = fastapi.FastAPI()
+
+# can instantiate a driver once for the life of the app:
+dr = h_async.AsyncDriver({}, async_module, result_builder=base.DictResult())
 
 
 @app.post("/execute")
 async def call(request: fastapi.Request) -> dict:
     """Handler for pipeline call"""
-    dr = h_async.AsyncDriver({}, async_module)
     input_data = {"request": request}
-    return await dr.raw_execute(["pipeline"], inputs=input_data)
+    # Can instantiate a driver within a request as well:
+    # dr = h_async.AsyncDriver({}, async_module, result_builder=base.DictResult())
+    result = await dr.execute(["pipeline"], inputs=input_data)
+    return result
 
 
 if __name__ == "__main__":
