@@ -47,7 +47,7 @@ def avg_3wk_spend(spend: pd.Series) -> pd.Series:
 
 And here’s what I set up in my notebook to be able to use Hamilton and import this module:
 
-Cell 1: This just imports the base things we need.
+Cell 1: This just imports the base things we need; see the pro-tip at the bottom of this page for how to automatically reload changes.
 
 ```
 import importlib
@@ -154,3 +154,27 @@ some_functions.avg_3wk_spend(pd.Series([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
 ```
 
 Which calls the `avg_3wk_spend` function we defined in the `some_functions.py` module.
+
+## Pro-tip: You can use ipython magic to autoreload code
+
+Open a Python module and a Jupyter notebook side-to-side, and then add [%autoreload ipython magic](https://ipython.org/ipython-doc/3/config/extensions/autoreload.html) to the notebook to auto-reload the cell:
+
+```python
+from hamilton.driver import Driver
+import my_module  # data transformation module that I have open in other tab
+
+%load_ext autoreload   # load extension
+%autoreload 1  # configure autoreload to only affect specified files
+%aimport my_module  # specify my_module to be reloaded
+
+hamilton_driver = Driver({}, my_module)
+hamilton_driver.execute(['desired_output1', 'desired_output2'])
+```
+
+You'd then follow the following process:
+
+1. Write your data transformation in the open python module
+2. In the notebook, instantiate a Hamilton driver and test the DAG with a small subset of data.&#x20;
+3. Because of %autoreload, the module is reimported with the latest changes each time the Hamilton DAG is executed. This approach prevents out-of-order notebook executions, and functions always reside in clean .py files.
+
+Credit: [Thierry Jean's blog post](https://medium.com/@thijean/the-perks-of-creating-dataflows-with-hamilton-36e8c56dd2a).
