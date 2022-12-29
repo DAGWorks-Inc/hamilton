@@ -110,8 +110,12 @@ def test_sanitize_error_general():
     except AttributeError:
         actual = telemetry.sanitize_error(*sys.exc_info())
         # this strips the full path -- note: line changes in telemetry.py will change this...
+        # so replace with line XXX
+        import re
+
+        actual = re.sub(r"line \d\d\d", "line XXX", actual)
         expected = (
-            """...<USER_CODE>...\n...hamilton/telemetry.py, line 309, in get_adapter_name\n"""
+            """...<USER_CODE>...\n...hamilton/telemetry.py, line XXX, in get_adapter_name\n"""
         )
         # if this fails -- run it how circleci runs it
         assert actual == expected

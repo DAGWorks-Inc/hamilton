@@ -66,7 +66,9 @@ async def test_driver_end_to_end():
 @mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
 async def test_driver_end_to_end_telemetry(send_event_json):
     dr = h_async.AsyncDriver({}, simple_async_module, result_builder=base.DictResult())
-    all_vars = [var.name for var in dr.list_available_variables()]
+    with mock.patch("hamilton.telemetry.g_telemetry_enabled", False):
+        # don't count this telemetry tracking invocation
+        all_vars = [var.name for var in dr.list_available_variables()]
     result = await dr.execute(final_vars=all_vars, inputs={"external_input": 1})
     assert result == {
         "another_async_func": 8,
