@@ -268,7 +268,7 @@ No user data or potentially sensitive information is or ever will be collected. 
 * A persistent UUID to indentify the session, stored in ~/.hamilton.conf.
 * Error stack trace limited to Hamilton code, if one occurs.
 * Information on what features you're using from Hamilton: decorators, adapters, result builders.
-* How Hamilton is being used: number of final nodes in DAG, number of modules, size of objects passed to `execute()`.
+* How Hamilton is being used: number of final nodes in DAG, number of modules, size of objects passed to `execute()`, the name of the Driver function being invoked.
 
 If you're worried, see telemetry.py for details.
 

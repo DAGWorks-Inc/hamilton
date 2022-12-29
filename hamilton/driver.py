@@ -1,3 +1,4 @@
+import functools
 import logging
 import sys
 import time
@@ -8,7 +9,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from types import ModuleType
-from typing import Any, Collection, Dict, List, Optional, Tuple
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -28,6 +29,36 @@ else:
     from . import base, graph, node, telemetry
 
 logger = logging.getLogger(__name__)
+
+
+def capture_function_usage(call_fn: Callable) -> Callable:
+    """Decorator to wrap some driver functions for telemetry capture.
+
+    We want to use this for non-constructor and non-execute functions.
+    We don't capture information about the arguments at this stage,
+    just the function name.
+
+    :param call_fn: the Driver function to capture.
+    :return: wrapped function.
+    """
+
+    @functools.wraps(call_fn)
+    def wrapped_fn(*args, **kwargs):
+        try:
+            return call_fn(*args, **kwargs)
+        finally:
+            if telemetry.is_telemetry_enabled():
+                try:
+                    function_name = call_fn.__name__
+                    event_json = telemetry.create_driver_function_invocation_event(function_name)
+                    telemetry.send_event_json(event_json)
+                except Exception as e:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.error(
+                            f"Failed to send telemetry for function usage. Encountered:{e}\n"
+                        )
+
+    return wrapped_fn
 
 
 @dataclass
@@ -278,6 +309,7 @@ class Driver(object):
         del memoized_computation  # trying to cleanup some memory
         return outputs
 
+    @capture_function_usage
     def list_available_variables(self) -> List[Variable]:
         """Returns available variables, i.e. outputs.
 
@@ -285,6 +317,7 @@ class Driver(object):
         """
         return [Variable(node.name, node.type, node.tags) for node in self.graph.get_nodes()]
 
+    @capture_function_usage
     def display_all_functions(
         self, output_file_path: str, render_kwargs: dict = None, graphviz_kwargs: dict = None
     ):
@@ -304,6 +337,7 @@ class Driver(object):
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
 
+    @capture_function_usage
     def visualize_execution(
         self,
         final_vars: List[str],
@@ -340,6 +374,7 @@ class Driver(object):
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
 
+    @capture_function_usage
     def has_cycles(self, final_vars: List[str]) -> bool:
         """Checks that the created graph does not have cycles.
 
@@ -350,6 +385,7 @@ class Driver(object):
         nodes, user_nodes = self.graph.get_upstream_nodes(final_vars)
         return self.graph.has_cycles(nodes, user_nodes)
 
+    @capture_function_usage
     def what_is_downstream_of(self, *node_names: str) -> List[Variable]:
         """Tells you what is downstream of this function(s), i.e. node(s).
 
@@ -360,6 +396,7 @@ class Driver(object):
         downstream_nodes = self.graph.get_impacted_nodes(list(node_names))
         return [Variable(node.name, node.type, node.tags) for node in downstream_nodes]
 
+    @capture_function_usage
     def display_downstream_of(
         self, *node_names: str, output_file_path: str, render_kwargs: dict, graphviz_kwargs: dict
     ):
@@ -388,6 +425,7 @@ class Driver(object):
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
 
+    @capture_function_usage
     def what_is_upstream_of(self, *node_names: str) -> List[Variable]:
         """Tells you what is upstream of this function(s), i.e. node(s).
 

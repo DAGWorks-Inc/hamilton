@@ -40,6 +40,7 @@ TRACK_URL = f"{HOST}/capture/"  # https://posthog.com/docs/api/post-only-endpoin
 API_KEY = "phc_mZg8bkn3yvMxqvZKRlMlxjekFU5DFDdcdAsijJ2EH5e"
 START_EVENT = "os_hamilton_run_start"
 END_EVENT = "os_hamilton_run_end"
+DRIVER_FUNCTION = "os_hamilton_driver_function_call"
 TIMEOUT = 2
 MAX_COUNT_SESSION = 1000
 
@@ -220,6 +221,25 @@ def create_end_event_json(
         "number_of_inputs": number_of_inputs,  # how many user provided things are there
         "driver_run_id": str(driver_run_id),  # let's tie this to a particular driver instantiation
         "error": error,  # if there was an error, what was the trace? (limited to Hamilton code)
+    }
+    event["properties"].update(payload)
+    return event
+
+
+def create_driver_function_invocation_event(function_name: str) -> dict:
+    """Function to create payload for tracking function name invocation.
+
+    :param function_name: the name of the driver function
+    :return: dict representing the JSON to send.
+    """
+    event = {
+        "api_key": API_KEY,
+        "event": DRIVER_FUNCTION,
+        "properties": {},
+    }
+    event["properties"].update(BASE_PROPERTIES)
+    payload = {
+        "function_name": function_name,  # what was the name of the driver function?
     }
     event["properties"].update(payload)
     return event
