@@ -1,7 +1,9 @@
 import pandas as pd
 import unique_users
 
-from hamilton.function_modifiers import reuse, reuse_functions, value
+from hamilton.experimental.decorators import reuse
+from hamilton.experimental.decorators.reuse import reuse_functions
+from hamilton.function_modifiers import value
 
 
 def website_interactions() -> pd.DataFrame:
