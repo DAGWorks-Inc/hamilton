@@ -1,6 +1,6 @@
 import functools
 import inspect
-from typing import Any, Callable, Collection, Dict, Tuple, Union
+from typing import Any, Callable, Collection, Dict, Tuple, Type, Union
 
 import pandas as pd
 import typing_inspect
@@ -308,14 +308,23 @@ class parameterized_inputs(parameterize_sources):
 
 
 class extract_columns(base.NodeExpander):
-    def __init__(self, *columns: Union[Tuple[str, str], str], fill_with: Any = None):
+    def __init__(
+        self,
+        *columns: Union[Tuple[str, str], str],
+        fill_with: Any = None,
+        df_type: Type = pd.DataFrame,
+        series_type: Type = pd.Series,
+    ):
         """Constructor for a modifier that expands a single function into the following nodes:
         - n functions, each of which take in the original dataframe and output a specific column
         - 1 function that outputs the original dataframe
 
         :param columns: Columns to extract, that can be a list of tuples of (name, documentation) or just names.
         :param fill_with: If you want to extract a column that doesn't exist, do you want to fill it with a default value?
-        Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a column.
+        Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a column. Note:
+        fill with only works with dataframe libraries that support scalar assignment.
+        :param df_type: The type of the dataframe to return. Defaults to pandas dataframe.
+        :param series_type: The type of the series to return. Defaults to pandas series.
         """
         if not columns:
             raise base.InvalidDecoratorException(
@@ -327,6 +336,8 @@ class extract_columns(base.NodeExpander):
             )
         self.columns = columns
         self.fill_with = fill_with
+        self.df_type = df_type
+        self.series_type = series_type
 
     def validate(self, fn: Callable):
         """A function is invalid if it does not output a dataframe.
@@ -335,9 +346,9 @@ class extract_columns(base.NodeExpander):
         :raises: InvalidDecoratorException If the function does not output a Dataframe
         """
         output_type = inspect.signature(fn).return_annotation
-        if not issubclass(output_type, pd.DataFrame):
+        if not issubclass(output_type, self.df_type):
             raise base.InvalidDecoratorException(
-                f"For extracting columns, output type must be pandas dataframe, not: {output_type}"
+                f"For extracting columns, output type must be {self.df_type}, not: {output_type}"
             )
 
     def expand_node(
@@ -354,13 +365,17 @@ class extract_columns(base.NodeExpander):
         fn = node_.callable
         base_doc = node_.documentation
 
-        def df_generator(*args, **kwargs) -> pd.DataFrame:
+        def df_generator(*args, **kwargs):
             df_generated = fn(*args, **kwargs)
             if self.fill_with is not None:
                 for col in self.columns:
                     if col not in df_generated:
+                        # this wont work for polars for example
                         df_generated[col] = self.fill_with
             return df_generated
+
+        # manually add the type annotation
+        df_generator.__annotations__["return"] = self.df_type
 
         output_nodes = [node_.copy_with(callabl=df_generator)]
 
@@ -371,7 +386,7 @@ class extract_columns(base.NodeExpander):
 
             def extractor_fn(
                 column_to_extract: str = column, **kwargs
-            ) -> pd.Series:  # avoiding problems with closures
+            ):  # avoiding problems with closures
                 df = kwargs[node_.name]
                 if column_to_extract not in df:
                     raise base.InvalidDecoratorException(
@@ -380,13 +395,16 @@ class extract_columns(base.NodeExpander):
                     )
                 return kwargs[node_.name][column_to_extract]
 
+            # manually add the type annotation
+            extractor_fn.__annotations__["return"] = self.series_type
+
             output_nodes.append(
                 node.Node(
                     column,
-                    pd.Series,
+                    self.series_type,
                     doc_string,
                     extractor_fn,
-                    input_types={node_.name: pd.DataFrame},
+                    input_types={node_.name: self.df_type},
                     tags=node_.tags.copy(),
                 )
             )
