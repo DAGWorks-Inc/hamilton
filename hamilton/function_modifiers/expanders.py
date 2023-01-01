@@ -374,9 +374,6 @@ class extract_columns(base.NodeExpander):
                         df_generated[col] = self.fill_with
             return df_generated
 
-        # manually add the type annotation
-        df_generator.__annotations__["return"] = self.df_type
-
         output_nodes = [node_.copy_with(callabl=df_generator)]
 
         for column in self.columns:
@@ -395,16 +392,13 @@ class extract_columns(base.NodeExpander):
                     )
                 return kwargs[node_.name][column_to_extract]
 
-            # manually add the type annotation
-            extractor_fn.__annotations__["return"] = self.series_type
-
             output_nodes.append(
                 node.Node(
                     column,
-                    self.series_type,
+                    self.series_type,  # set output type here
                     doc_string,
                     extractor_fn,
-                    input_types={node_.name: self.df_type},
+                    input_types={node_.name: self.df_type},  # set input type requirement here
                     tags=node_.tags.copy(),
                 )
             )
