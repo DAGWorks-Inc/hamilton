@@ -281,7 +281,7 @@ If you do not wish to participate, one can opt-out with one of the following met
 2. Set the key `telemetry_enabled` to `false` in ~/.hamilton.conf under the `DEFAULT` section:
    ```
    [DEFAULT]
-   telemetry_enabled = True
+   telemetry_enabled = False
    ```
 3. Set HAMILTON_TELEMETRY_ENABLED=false as an environment variable. Either setting it for your shell session:
    ```bash
