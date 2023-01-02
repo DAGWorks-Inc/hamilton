@@ -6,7 +6,7 @@
     <a href="https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg" target="_blank"><img src="https://img.shields.io/badge/Join-Hamilton_Slack-brightgreen?logo=slack" alt="Hamilton Slack"/></a>
         <a href="https://twitter.com/hamilton_os" target="_blank"><img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Twitter"/></a>
         <br/>
-    <a href="https://www.python.org/downloads/" target="_blank"><img src="https://img.shields.io/badge/python-3.6%20|%203.7|%203.8|%203.9-brightgreen.svg" alt="Python supported"/></a>
+    <a href="https://www.python.org/downloads/" target="_blank"><img src="https://img.shields.io/badge/python-3.6%20|%203.7|%203.8|%203.9|%203.10-brightgreen.svg" alt="Python supported"/></a>
     <a href="https://pypi.org/project/sf-hamilton/" target="_blank"><img src="https://badge.fury.io/py/sf-hamilton.svg" alt="PyPi Version"/></a>
     <a href="https://pepy.tech/project/sf-hamilton" target="_blank"><img src="https://pepy.tech/badge/sf-hamilton" alt="Total Downloads"/></a>
     <br/>
