@@ -3,7 +3,7 @@ import polars as pl
 from hamilton.function_modifiers import extract_columns
 
 
-@extract_columns("signups", "spend", df_type=pl.DataFrame, series_type=pl.Series)
+@extract_columns("signups", "spend")  # , df_type=pl.DataFrame, series_type=pl.Series)
 def base_df(base_df_location: str) -> pl.DataFrame:
     """Loads base dataframe of data.
 

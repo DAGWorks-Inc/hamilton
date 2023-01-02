@@ -1,6 +1,6 @@
 import functools
 import inspect
-from typing import Any, Callable, Collection, Dict, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, Optional, Tuple, Type, Union
 
 import pandas as pd
 import typing_inspect
@@ -307,13 +307,66 @@ class parameterized_inputs(parameterize_sources):
     pass
 
 
+# prototyping some functionality here -- use singledispatch which will at run time
+# determine the right function to call.
+@functools.singledispatch
+def get_column(df, column_name: str):
+    raise NotImplementedError()
+
+
+@get_column.register(pd.DataFrame)
+def get_column_pandas(df: pd.DataFrame, column_name: str) -> pd.Series:
+    return df[column_name]
+
+
+# but singledispatch doesn't work with types -- so we need a way to
+# register functions to resolve what the column type is for a given dataframe type.
+df_type_to_column_type_functions = []
+
+
+def register_df_type_to_column_type_function(func: Callable):
+    global df_type_to_column_type_functions
+    df_type_to_column_type_functions.append(func)
+
+
+def pandas_series(dataframe_type: Type) -> Optional[Type]:
+    if dataframe_type == pd.DataFrame:
+        return pd.Series
+    return None
+
+
+register_df_type_to_column_type_function(pandas_series)
+
+try:
+    import polars as pl
+
+    @get_column.register(pl.DataFrame)
+    def get_column_polars(df: pl.DataFrame, column_name: str) -> pl.Series:
+        return df[column_name]
+
+    def polars_series(dataframe_type: Type) -> Optional[Type]:
+        if dataframe_type == pl.DataFrame:
+            return pl.Series
+        return None
+
+    register_df_type_to_column_type_function(polars_series)
+except ModuleNotFoundError:
+    pass
+
+
+def get_column_type_from_df_type(dataframe_type: Type) -> Type:
+    for func in df_type_to_column_type_functions:
+        series_type = func(dataframe_type)
+        if series_type is not None:
+            return series_type
+    raise ValueError(f"Unknown dataframe type: {dataframe_type}. Cannot get Column type.")
+
+
 class extract_columns(base.NodeExpander):
     def __init__(
         self,
         *columns: Union[Tuple[str, str], str],
         fill_with: Any = None,
-        df_type: Type = pd.DataFrame,
-        series_type: Type = pd.Series,
     ):
         """Constructor for a modifier that expands a single function into the following nodes:
         - n functions, each of which take in the original dataframe and output a specific column
@@ -323,8 +376,6 @@ class extract_columns(base.NodeExpander):
         :param fill_with: If you want to extract a column that doesn't exist, do you want to fill it with a default value?
         Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a column. Note:
         fill with only works with dataframe libraries that support scalar assignment.
-        :param df_type: The type of the dataframe to return. Defaults to pandas dataframe.
-        :param series_type: The type of the series to return. Defaults to pandas series.
         """
         if not columns:
             raise base.InvalidDecoratorException(
@@ -336,8 +387,6 @@ class extract_columns(base.NodeExpander):
             )
         self.columns = columns
         self.fill_with = fill_with
-        self.df_type = df_type
-        self.series_type = series_type
 
     def validate(self, fn: Callable):
         """A function is invalid if it does not output a dataframe.
@@ -345,10 +394,13 @@ class extract_columns(base.NodeExpander):
         :param fn: Function to validate.
         :raises: InvalidDecoratorException If the function does not output a Dataframe
         """
+
         output_type = inspect.signature(fn).return_annotation
-        if not issubclass(output_type, self.df_type):
+        try:
+            get_column_type_from_df_type(output_type)
+        except NotImplementedError:
             raise base.InvalidDecoratorException(
-                f"For extracting columns, output type must be {self.df_type}, not: {output_type}"
+                f"Error {fn} does not output a dataframe. The extract_columns decorator needs a function that outputs a dataframe."
             )
 
     def expand_node(
@@ -390,15 +442,18 @@ class extract_columns(base.NodeExpander):
                         f"No such column: {column_to_extract} produced by {node_.name}. "
                         f"It only produced {str(df.columns)}"
                     )
-                return kwargs[node_.name][column_to_extract]
+                return get_column(df, column_to_extract)
+
+            output_type = inspect.signature(fn).return_annotation
+            series_type = get_column_type_from_df_type(output_type)
 
             output_nodes.append(
                 node.Node(
                     column,
-                    self.series_type,  # set output type here
+                    series_type,  # set output type here
                     doc_string,
                     extractor_fn,
-                    input_types={node_.name: self.df_type},  # set input type requirement here
+                    input_types={node_.name: output_type},  # set input type requirement here
                     tags=node_.tags.copy(),
                 )
             )
