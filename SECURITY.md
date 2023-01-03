@@ -3,7 +3,7 @@ The security surface area of Hamilton should be pretty small in comparison to ot
 
 ## Supported Versions
 
-We currently only support the latest version of Hamilton that's been released. 
+We currently only support the latest version of Hamilton that's been released.
 
 | Version | Supported          |
 | ------- | ------------------ |
