@@ -307,6 +307,11 @@ class parameterized_inputs(parameterize_sources):
     pass
 
 
+# HACKS to get quokka working --- DO NOT MERGE!
+import polars as pl
+from pyquokka import datastream as qds
+
+
 class extract_columns(base.NodeExpander):
     def __init__(self, *columns: Union[Tuple[str, str], str], fill_with: Any = None):
         """Constructor for a modifier that expands a single function into the following nodes:
@@ -335,10 +340,11 @@ class extract_columns(base.NodeExpander):
         :raises: InvalidDecoratorException If the function does not output a Dataframe
         """
         output_type = inspect.signature(fn).return_annotation
-        if not issubclass(output_type, pd.DataFrame):
-            raise base.InvalidDecoratorException(
-                f"For extracting columns, output type must be pandas dataframe, not: {output_type}"
-            )
+        print(output_type)
+        # if not issubclass(output_type, pd.DataFrame):
+        #     raise base.InvalidDecoratorException(
+        #         f"For extracting columns, output type must be pandas dataframe, not: {output_type}"
+        #     )
 
     def expand_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
@@ -356,10 +362,10 @@ class extract_columns(base.NodeExpander):
 
         def df_generator(*args, **kwargs) -> pd.DataFrame:
             df_generated = fn(*args, **kwargs)
-            if self.fill_with is not None:
-                for col in self.columns:
-                    if col not in df_generated:
-                        df_generated[col] = self.fill_with
+            # if self.fill_with is not None:
+            #     for col in self.columns:
+            #         if col not in df_generated:
+            #             df_generated[col] = self.fill_with
             return df_generated
 
         output_nodes = [node_.copy_with(callabl=df_generator)]
@@ -373,20 +379,23 @@ class extract_columns(base.NodeExpander):
                 column_to_extract: str = column, **kwargs
             ) -> pd.Series:  # avoiding problems with closures
                 df = kwargs[node_.name]
-                if column_to_extract not in df:
+                print(node_.name, column_to_extract, type(df))
+                if column_to_extract not in df.columns:
                     raise base.InvalidDecoratorException(
                         f"No such column: {column_to_extract} produced by {node_.name}. "
                         f"It only produced {str(df.columns)}"
                     )
-                return kwargs[node_.name][column_to_extract]
+                if isinstance(df, pl.DataFrame):
+                    return df[column_to_extract]
+                return df
 
             output_nodes.append(
                 node.Node(
                     column,
-                    pd.Series,
+                    pl.Series,  # pd.Series,
                     doc_string,
                     extractor_fn,
-                    input_types={node_.name: pd.DataFrame},
+                    input_types={node_.name: qds.DataStream},  # pd.DataFrame},
                     tags=node_.tags.copy(),
                 )
             )
