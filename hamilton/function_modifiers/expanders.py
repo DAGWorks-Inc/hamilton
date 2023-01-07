@@ -389,6 +389,8 @@ class extract_columns(base.NodeExpander):
                     return df[column_to_extract]
                 return df
 
+            tags = node_.tags.copy()
+            tags["__generated_by__"] = "extract_columns"
             output_nodes.append(
                 node.Node(
                     column,
@@ -396,7 +398,7 @@ class extract_columns(base.NodeExpander):
                     doc_string,
                     extractor_fn,
                     input_types={node_.name: qds.DataStream},  # pd.DataFrame},
-                    tags=node_.tags.copy(),
+                    tags=tags,
                 )
             )
         return output_nodes

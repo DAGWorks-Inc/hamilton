@@ -73,16 +73,19 @@ def hello_world_hamilton(qc: QuokkaContext, path: str):
 def hello_world_main(qc, path: str):
     lineitem = qc.read_csv(path, sep="|", has_header=True)
     d = lineitem.filter("l_shipdate <= date '1998-12-01' - interval '90' day")
+    print(len(d.schema))
     d = d.with_column(
         "disc_price",
         lambda x: x["l_extendedprice"] * (1 - x["l_discount"]),
         required_columns={"l_extendedprice", "l_discount"},
     )
+    print(len(d.schema))
     d = d.with_column(
         "charge",
         lambda x: x["l_extendedprice"] * (1 - x["l_discount"]) * (1 + x["l_tax"]),
         required_columns={"l_extendedprice", "l_discount", "l_tax"},
     )
+    print(len(d.schema))
     f = d.groupby(["l_returnflag", "l_linestatus"], orderby=["l_returnflag", "l_linestatus"]).agg(
         {
             "l_quantity": ["sum", "avg"],
@@ -93,15 +96,22 @@ def hello_world_main(qc, path: str):
             "*": "count",
         }
     )
-    return f.collect()
+    print(f.schema)
+    print(len(f.schema))
+    df = f.collect()
+    print(df.columns)
+    print(len(df.columns))
+    return df
 
 
 if __name__ == "__main__":
     qc_ = QuokkaContext()
     path_ = "/Users/stefankrawczyk/Downloads/tpc-h-public/lineitem.tbl"
     df = hello_world_main(qc_, path_)
+    # print(df)
+    # df = hello_world_hamilton(qc_, path_)
+    # print(df)
+    # df = manual_hello_world_hamilton(qc_, path_)
     print(df)
-    df = hello_world_hamilton(qc_, path_)
-    print(df)
-    df = manual_hello_world_hamilton(qc_, path_)
-    print(df)
+    print(len(df.columns))
+    print(df.columns)

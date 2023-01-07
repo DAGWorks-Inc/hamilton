@@ -39,7 +39,11 @@ def charge(l_extendedprice: pl.Series, l_discount: pl.Series, l_tax: pl.Series) 
 def grouped_lineitem(
     l_quantity: pl.Series,
     l_extendedprice: pl.Series,
-    disc_price: pl.Series,
+    disc_price: pl.Series,  # do we do some optional syntax here?
+    # and at run time we check if the column exists, and if so use it. Else skip it.
+    # basically it means that someone could write one function and determine if all are required or not.
+    # and save them from having to update this function if they don't want a particular column being passed
+    # through -- thought downstream of this, they would have to deal with it... so maybe not that valuable?
     charge: pl.Series,
     l_discount: pl.Series,
     l_returnflag: pl.Series,
@@ -55,8 +59,9 @@ def grouped_lineitem(
 
 
 # hack to get around https://github.com/marsupialtail/quokka/issues/23
-@tag(materialize="True")
+# @tag(materialize="True")
 def compute_aggregates(grouped_lineitem: GroupedDataStream) -> DataStream:
+    # Thought: change these into individual functions?
     return grouped_lineitem.agg(
         {
             "l_quantity": ["sum", "avg"],
@@ -67,6 +72,11 @@ def compute_aggregates(grouped_lineitem: GroupedDataStream) -> DataStream:
             "*": "count",
         }
     ).rename({"l_returnflag": "al_returnflag", "l_linestatus": "al_linestatus"})
+
+
+# this doesn't seem like the right thing:
+# def l_quantity_sum(grouped_lineitem: GroupedDataStream) -> pl.Series:
+#     pass
 
 
 # hack to get around `@tag_outputs` not working with `@extract_columns` as expected.
