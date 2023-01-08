@@ -29,3 +29,4 @@ if __name__ == "__main__":
     result = dr.execute(outputs)
     print(result.columns)
     print(result)
+    qc.stop()

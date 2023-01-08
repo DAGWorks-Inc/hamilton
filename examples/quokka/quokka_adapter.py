@@ -11,7 +11,7 @@ class QuokkaGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
     def __init__(self, result_builder: base.ResultMixin = base.DictResult()):
         self.ds_objects = {}
         self.call_count = 0
-        self.result_builder = result_builder
+        self.result_builder = result_builder  # not used...
 
     def _lambda_udf(self, ds: DataStream, udf: Callable) -> DataStream:
         """Function to wrap pulling metadata from a hamilton function"""

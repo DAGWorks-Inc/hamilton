@@ -308,8 +308,20 @@ class parameterized_inputs(parameterize_sources):
 
 
 # HACKS to get quokka working --- DO NOT MERGE!
-import polars as pl
-from pyquokka import datastream as qds
+try:
+    import polars as pl
+    from pyquokka import datastream as qds
+
+    branch = "quokka"
+except ImportError:
+    pass
+try:
+    from pyspark.sql import Column as SparkColumn
+    from pyspark.sql import DataFrame as SparkDataFrame
+
+    branch = "pyspark"
+except ImportError:
+    pass
 
 
 class extract_columns(base.NodeExpander):
@@ -379,25 +391,39 @@ class extract_columns(base.NodeExpander):
                 column_to_extract: str = column, **kwargs
             ) -> pd.Series:  # avoiding problems with closures
                 df = kwargs[node_.name]
-                print(node_.name, column_to_extract, type(df))
+                # print(node_.name, column_to_extract, type(df))
                 if column_to_extract not in df.columns:
                     raise base.InvalidDecoratorException(
                         f"No such column: {column_to_extract} produced by {node_.name}. "
                         f"It only produced {str(df.columns)}"
                     )
-                if isinstance(df, pl.DataFrame):
+                if branch == "pyspark" and isinstance(df, SparkDataFrame):
+                    return df  # df.select(column_to_extract)  # this returns a SparkDataFrame not a column... but yeah
+
+                if branch == "quokka" and isinstance(df, pl.DataFrame):
                     return df[column_to_extract]
                 return df
+
+            if branch == "quokka":
+                output_type = qds.DataStream
+                input_type = pl.Series
+            elif branch == "pyspark":
+                output_type = SparkColumn
+                input_type = SparkDataFrame
+            else:
+                raise ValueError(f"unknow branch {branch}")
 
             tags = node_.tags.copy()
             tags["__generated_by__"] = "extract_columns"
             output_nodes.append(
                 node.Node(
                     column,
-                    pl.Series,  # pd.Series,
+                    input_type,  # SparkColumn,  # pl.Series,  # pd.Series,
                     doc_string,
                     extractor_fn,
-                    input_types={node_.name: qds.DataStream},  # pd.DataFrame},
+                    input_types={
+                        node_.name: output_type
+                    },  # SparkDataFrame}, # qds.DataStream},  # pd.DataFrame},
                     tags=tags,
                 )
             )
