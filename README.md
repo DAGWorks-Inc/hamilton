@@ -166,6 +166,7 @@ contact us at algorithms-opensource (at) stitchfix.com.
 * [Federal Reserve Board](https://www.federalreserve.gov/)
 * [Joby Aviation](https://www.jobyaviation.com/)
 * [Two](https://www.two.inc/)
+* [Transfix](https://transfix.io/)
 
 To add your company, make a pull request to add it here.
 
