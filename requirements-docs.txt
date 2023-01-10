@@ -1,4 +1,4 @@
 -r requirements-dev.txt
-sphinx==5.3.0
-myst-parser==0.18.1
 furo
+myst-parser==0.18.1
+sphinx==5.3.0
