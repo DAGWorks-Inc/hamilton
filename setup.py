@@ -11,7 +11,7 @@ try:
     with open("README.md") as readme_file:
         readme = readme_file.read()
 except Exception:
-    warnings.warn("index.rst not found")
+    warnings.warn("README.md not found")
     readme = None
 
 REQUIREMENTS_FILES = ["requirements.txt"]
