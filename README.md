@@ -167,6 +167,7 @@ contact us at algorithms-opensource (at) stitchfix.com.
 * [Joby Aviation](https://www.jobyaviation.com/)
 * [Two](https://www.two.inc/)
 * [Transfix](https://transfix.io/)
+* [Railofy](https://www.railofy.com)
 
 To add your company, make a pull request to add it here.
 
