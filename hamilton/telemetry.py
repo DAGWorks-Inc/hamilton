@@ -29,8 +29,9 @@ try:
     from . import base
     from .version import VERSION
 except ImportError:
-    import base
     from version import VERSION
+
+    from hamilton import base
 
 logger = logging.getLogger(__name__)
 
