@@ -2,9 +2,9 @@ import functools
 import inspect
 from typing import Any, Callable, Collection, Dict, Tuple, Union
 
-import pandas as pd
 import typing_inspect
 
+from hamilton import base as hamilton_base
 from hamilton import node
 from hamilton.dev_utils import deprecation
 from hamilton.function_modifiers import base
@@ -335,9 +335,12 @@ class extract_columns(base.NodeExpander):
         :raises: InvalidDecoratorException If the function does not output a Dataframe
         """
         output_type = inspect.signature(fn).return_annotation
-        if not issubclass(output_type, pd.DataFrame):
+        try:
+            hamilton_base.get_column_type_from_df_type(output_type)
+        except NotImplementedError:
             raise base.InvalidDecoratorException(
-                f"For extracting columns, output type must be pandas dataframe, not: {output_type}"
+                # TODO: capture was dataframe libraries are supported and print here.
+                f"Error {fn} does not output a type we know about. Is it a dataframe type we support?"
             )
 
     def expand_node(
@@ -354,15 +357,19 @@ class extract_columns(base.NodeExpander):
         fn = node_.callable
         base_doc = node_.documentation
 
-        def df_generator(*args, **kwargs) -> pd.DataFrame:
+        def df_generator(*args, **kwargs) -> Any:
             df_generated = fn(*args, **kwargs)
             if self.fill_with is not None:
                 for col in self.columns:
                     if col not in df_generated:
-                        df_generated[col] = self.fill_with
+                        hamilton_base.fill_with_scalar(df_generated, col, self.fill_with)
+                        assert col in df_generated
             return df_generated
 
         output_nodes = [node_.copy_with(callabl=df_generator)]
+
+        output_type = node_.type
+        series_type = hamilton_base.get_column_type_from_df_type(output_type)
 
         for column in self.columns:
             doc_string = base_doc  # default doc string of base function.
@@ -371,22 +378,22 @@ class extract_columns(base.NodeExpander):
 
             def extractor_fn(
                 column_to_extract: str = column, **kwargs
-            ) -> pd.Series:  # avoiding problems with closures
+            ) -> Any:  # avoiding problems with closures
                 df = kwargs[node_.name]
                 if column_to_extract not in df:
                     raise base.InvalidDecoratorException(
                         f"No such column: {column_to_extract} produced by {node_.name}. "
                         f"It only produced {str(df.columns)}"
                     )
-                return kwargs[node_.name][column_to_extract]
+                return hamilton_base.get_column(df, column_to_extract)
 
             output_nodes.append(
                 node.Node(
                     column,
-                    pd.Series,
+                    series_type,
                     doc_string,
                     extractor_fn,
-                    input_types={node_.name: pd.DataFrame},
+                    input_types={node_.name: output_type},
                     tags=node_.tags.copy(),
                 )
             )
