@@ -3,8 +3,8 @@ from types import ModuleType
 from typing import Callable, List, Tuple
 
 
-def is_submodule(child: ModuleType, parent: ModuleType):
-    return parent.__name__ in child.__name__
+def is_submodule(child: str, parent: str):
+    return parent in child
 
 
 def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
@@ -18,7 +18,7 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
         return (
             inspect.isfunction(fn)
             and not fn.__name__.startswith("_")
-            and is_submodule(inspect.getmodule(fn), function_module)
+            and is_submodule(fn.__module__, function_module.__name__)
         )
 
     return [f for f in inspect.getmembers(function_module, predicate=valid_fn)]

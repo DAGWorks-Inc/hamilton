@@ -189,7 +189,7 @@ class Node(object):
         if name is None:
             name = fn.__name__
         sig = inspect.signature(fn)
-        module = inspect.getmodule(fn).__name__
+        module = fn.__module__
         return Node(
             name,
             sig.return_annotation,
