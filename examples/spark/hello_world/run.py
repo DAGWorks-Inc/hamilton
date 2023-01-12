@@ -23,6 +23,7 @@ if __name__ == "__main__":
     initial_config_and_or_data = {  # load from actuals or wherever
         "signups_location": "some_path",
         "spend_location": "some_other_path",
+        "base_df_location": "some_other_other_path",
     }
     # df_container = ps.DataFrame(initial_config_and_or_data['spend'])  # assign spine column
     # Proving to myself that koalas works:
