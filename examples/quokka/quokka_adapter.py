@@ -44,10 +44,24 @@ class QuokkaGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         actual_kwargs, ds_names = self._sanitize_kwargs(kwargs)
         ds_name_set = set(ds_names.values())
         if node.type == DataStream:
-            # assumption is types into this function are only scalars, or other DataStream/GroupedDataStream objects
-            ds: DataStream = node.callable(**actual_kwargs)
-            self.ds_objects[node.name] = ds
-            return {"__ds_name__": node.name, "__result__": ds}
+            if node.tags.get("operation", None) == "join":
+                left = node.tags["left_on"]
+                right = node.tags["right_on"]
+                left_ds = self.ds_objects[ds_names[left]]
+                right_ds = self.ds_objects[ds_names[right]]
+                ds: DataStream = left_ds.join(
+                    right_ds, left_on=left, right_on=right
+                )  # only do inner for now.
+                if node.tags.get("filter", None):
+                    print(node.tags["filter"])
+                    ds = ds.filter(node.tags["filter"])
+                self.ds_objects[node.name] = ds
+                return {"__ds_name__": node.name, "__result__": ds}
+            else:
+                # assumption is types into this function are only scalars, or other DataStream/GroupedDataStream objects
+                ds: DataStream = node.callable(**actual_kwargs)
+                self.ds_objects[node.name] = ds
+                return {"__ds_name__": node.name, "__result__": ds}
         elif node.type == GroupedDataStream:
             print("got group by", self.call_count, node.name)
             assert len(ds_name_set) == 1, f"Error groupby got multiple DataStreams {ds_names}"
@@ -56,7 +70,7 @@ class QuokkaGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
             ds = ds.select(list(node.input_types.keys()))
             print("after select", ds.schema)
             group_by_cols = node.tags["group_by"].split(",")
-            order_by_cols = node.tags["order_by"].split(",")
+            order_by_cols = node.tags["order_by"].split(",") if "order_by" in node.tags else None
             ds: GroupedDataStream = ds.groupby(group_by_cols, orderby=order_by_cols)
             self.ds_objects[node.name] = ds
             return {"__ds_name__": node.name, "__result__": ds}
@@ -144,6 +158,7 @@ class QuokkaGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         ), f"Error got multiple DataStreams to build result from {ds_names}"
         ds = self.ds_objects[ds_name_set.pop()]
         if isinstance(ds, (DataStream, GroupedDataStream)):
+            print(ds.explain(mode="text"))
             df = ds.collect()
         # if isinstance(ds, pl.DataFrame):
         df = df[list(actual_outputs.keys())]
