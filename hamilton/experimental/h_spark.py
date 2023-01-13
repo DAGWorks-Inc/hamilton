@@ -7,6 +7,7 @@ import pyspark.pandas as ps
 from pyspark.sql import dataframe
 
 from hamilton import base, node
+from hamilton.base import SimplePythonGraphAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         elif node_type == np.array and isinstance(input_value, dataframe.DataFrame):
             return True
 
-        return node_type == typing.Any or isinstance(input_value, node_type)
+        return SimplePythonGraphAdapter.check_input_type(node_type, input_value)
 
     @staticmethod
     def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
