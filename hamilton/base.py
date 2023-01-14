@@ -4,8 +4,6 @@ It cannot import hamilton.graph, or hamilton.driver.
 """
 import abc
 import collections
-import functools
-import importlib
 import inspect
 import logging
 from typing import Any, Dict, List, Tuple, Type, Union
@@ -16,85 +14,21 @@ import typing_inspect
 from pandas.core.indexes import extension as pd_extension
 
 try:
-    from . import node
+    from . import node, registry
 except ImportError:
     import node
+    import registry
 
 logger = logging.getLogger(__name__)
 
-# This is a dictionary of extension name -> dict with dataframe and column types.
-DF_TYPE_AND_COLUMN_TYPES: Dict[str, Dict[str, Type]] = {}
-
-
-@functools.singledispatch
-def get_column(df: Any, column_name: str):
-    """Gets a column from a dataframe.
-
-    Each extension should register a function for this.
-
-    :param df: the dataframe.
-    :param column_name: the column name.
-    :return: the correct "representation" of a column for this "dataframe".
-    """
-    raise NotImplementedError()
-
-
-@functools.singledispatch
-def fill_with_scalar(df: Any, column_name: str, scalar_value: Any) -> Any:
-    """Fills a column with a scalar value.
-
-    :param df: the dataframe.
-    :param column_name: the column to fill.
-    :param scalar_value: the scalar value to fill with.
-    :return: the modified dataframe.
-    """
-    raise NotImplementedError()
-
-
-def get_column_type_from_df_type(dataframe_type: Type) -> Type:
-    """Function to cycle through the registered extensions and return the column type for the dataframe type.
-
-    :param dataframe_type: the dataframe type to find the column type for.
-    :return: the column type.
-    :raises: NotImplementedError if we don't know what the column type is.
-    """
-    for extension, type_map in DF_TYPE_AND_COLUMN_TYPES.items():
-        if dataframe_type == type_map["dataframe_type"]:
-            return type_map["column_type"]
-    raise NotImplementedError(
-        f"Cannot get column type for [{dataframe_type}]. "
-        f"Registered types are {DF_TYPE_AND_COLUMN_TYPES}"
-    )
-
-
-def _load_extension(plugin_module: str):
-    """Given a module name, loads it for Hamilton to use.
-
-    :param plugin_module: the module name sans .py. e.g. pandas, polars, pyspark_pandas.
-    """
-    mod = importlib.import_module(f"hamilton.plugins.{plugin_module}_extensions")
-    assert hasattr(mod, "DATAFRAME_TYPE"), "Error extension mission DATAFRAME_TYPE"
-    assert hasattr(mod, "COLUMN_TYPE"), "Error extension mission COLUMN_TYPE"
-    assert hasattr(
-        mod, f"get_column_{plugin_module}"
-    ), f"Error extension mission get_column_{plugin_module}"
-    assert hasattr(
-        mod, f"fill_with_scalar_{plugin_module}"
-    ), f"Error extension mission fill_with_scalar_{plugin_module}"
-    global DF_TYPE_AND_COLUMN_TYPES
-    DF_TYPE_AND_COLUMN_TYPES[plugin_module] = {
-        "dataframe_type": mod.DATAFRAME_TYPE,
-        "column_type": mod.COLUMN_TYPE,
-    }
-    logger.info(f"Detected {plugin_module} and successfully loaded Hamilton extensions.")
-
-
+# Trigger load of extensions here.
+# We do this here because this module is on the critical path for any user to use Hamilton.
 plugins_modules = ["pandas", "polars", "pyspark_pandas"]
 for plugin_module in plugins_modules:
     try:
-        _load_extension(plugin_module)
+        registry.load_extension(plugin_module)
     except NotImplementedError:
-        logger.debug(f"Skipping load of {plugin_module} extensions.")
+        logger.debug(f"Did not load {plugin_module} extension.")
         pass
 
 

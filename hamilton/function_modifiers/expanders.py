@@ -4,8 +4,7 @@ from typing import Any, Callable, Collection, Dict, Tuple, Union
 
 import typing_inspect
 
-from hamilton import base as hamilton_base
-from hamilton import node
+from hamilton import node, registry
 from hamilton.dev_utils import deprecation
 from hamilton.function_modifiers import base
 from hamilton.function_modifiers.dependencies import (
@@ -336,7 +335,7 @@ class extract_columns(base.NodeExpander):
         """
         output_type = inspect.signature(fn).return_annotation
         try:
-            hamilton_base.get_column_type_from_df_type(output_type)
+            registry.get_column_type_from_df_type(output_type)
         except NotImplementedError:
             raise base.InvalidDecoratorException(
                 # TODO: capture was dataframe libraries are supported and print here.
@@ -362,14 +361,14 @@ class extract_columns(base.NodeExpander):
             if self.fill_with is not None:
                 for col in self.columns:
                     if col not in df_generated:
-                        hamilton_base.fill_with_scalar(df_generated, col, self.fill_with)
+                        registry.fill_with_scalar(df_generated, col, self.fill_with)
                         assert col in df_generated
             return df_generated
 
         output_nodes = [node_.copy_with(callabl=df_generator)]
 
         output_type = node_.type
-        series_type = hamilton_base.get_column_type_from_df_type(output_type)
+        series_type = registry.get_column_type_from_df_type(output_type)
 
         for column in self.columns:
             doc_string = base_doc  # default doc string of base function.
@@ -385,7 +384,7 @@ class extract_columns(base.NodeExpander):
                         f"No such column: {column_to_extract} produced by {node_.name}. "
                         f"It only produced {str(df.columns)}"
                     )
-                return hamilton_base.get_column(df, column_to_extract)
+                return registry.get_column(df, column_to_extract)
 
             output_nodes.append(
                 node.Node(
