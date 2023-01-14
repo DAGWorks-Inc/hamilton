@@ -16,7 +16,7 @@ config = {
 import my_functions  # where our functions are defined
 
 dr = driver.Driver(config, my_functions, adapter=adapter)
-# note -- we cannot request scalar outputs like we could do with Pandas.
+# note -- currently the result builder does not handle mixed outputs, e.g. Series and scalars.
 output_columns = [
     "spend",
     "signups",
