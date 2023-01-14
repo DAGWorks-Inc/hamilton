@@ -59,10 +59,11 @@ class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         if not (
             isinstance(result_builder, base.PandasDataFrameResult)
             or isinstance(result_builder, KoalasDataFrameResult)
+            or isinstance(result_builder, base.DictResult)
         ):
             raise ValueError(
                 "SparkKoalasGraphAdapter only supports returning:"
-                ' a "pandas" DF at the moment, or a "koalas" DF at the moment.'
+                ' a "pandas" DF at the moment, a "koalas" DF at the moment, or a "dict" of results.'
             )
         self.result_builder = result_builder
         self.spine_column = spine_column
@@ -116,7 +117,9 @@ class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
 
     def build_result(
         self, **outputs: typing.Dict[str, typing.Any]
-    ) -> typing.Union[pd.DataFrame, ps.DataFrame]:
+    ) -> typing.Union[pd.DataFrame, ps.DataFrame, dict]:
+        if isinstance(self.result_builder, base.DictResult):
+            return self.result_builder.build_result(**outputs)
         # we don't use the actual function for building right now, we use this hacky equivalent
         df = ps.DataFrame(outputs[self.spine_column])
         for k, v in outputs.items():
