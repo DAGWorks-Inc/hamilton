@@ -1,9 +1,26 @@
 import abc
 import collections
 import functools
+import logging
 from typing import Any, Callable, Collection, Dict, List, Tuple
 
-from hamilton import node
+from hamilton import node, registry
+
+logger = logging.getLogger(__name__)
+
+
+if not registry.INITIALIZED:
+    # Trigger load of extensions here because decorators are the only thing that use the registry
+    # right now. Side note: ray serializes things weirdly, so we need to do this here rather than in
+    # in the other choice of hamilton/base.py.
+    plugins_modules = ["pandas", "polars", "pyspark_pandas"]
+    for plugin_module in plugins_modules:
+        try:
+            registry.load_extension(plugin_module)
+        except NotImplementedError:
+            logger.debug(f"Did not load {plugin_module} extension.")
+            pass
+    registry.INITIALIZED = True
 
 
 def sanitize_function_name(name: str) -> str:

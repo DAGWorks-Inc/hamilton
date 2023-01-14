@@ -5,6 +5,9 @@ from typing import Any, Dict, Type
 
 logger = logging.getLogger(__name__)
 
+# Use this to ensure the registry is loaded only once.
+INITIALIZED = False
+
 # This is a dictionary of extension name -> dict with dataframe and column types.
 DF_TYPE_AND_COLUMN_TYPES: Dict[str, Dict[str, Type]] = {}
 

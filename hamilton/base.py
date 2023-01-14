@@ -14,22 +14,11 @@ import typing_inspect
 from pandas.core.indexes import extension as pd_extension
 
 try:
-    from . import node, registry
+    from . import node
 except ImportError:
     import node
-    import registry
 
 logger = logging.getLogger(__name__)
-
-# Trigger load of extensions here.
-# We do this here because this module is on the critical path for any user to use Hamilton.
-plugins_modules = ["pandas", "polars", "pyspark_pandas"]
-for plugin_module in plugins_modules:
-    try:
-        registry.load_extension(plugin_module)
-    except NotImplementedError:
-        logger.debug(f"Did not load {plugin_module} extension.")
-        pass
 
 
 class ResultMixin(object):
