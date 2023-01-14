@@ -39,6 +39,14 @@ from hamilton.function_modifiers import (
 )
 
 
+def start_date(date_range: Dict[str, str]) -> str:
+    return date_range["start_date"]
+
+
+def end_date(date_range: Dict[str, str]) -> str:
+    return date_range["end_date"]
+
+
 def _identity(**kwargs: int) -> int:
     """The API for this is suboptimal but this will serve for testing."""
     return list(kwargs.values())[0]
@@ -114,3 +122,32 @@ def net_signups(
 @tag(final_output="true")
 def acquisition_cost(signups_source: pd.Series, spend: pd.Series) -> pd.Series:
     return spend / signups_source
+
+
+def _prefix_dict_values(prefix: str, dict_to_prefix: Dict[str, str]):
+    """Smoke screen tests to ensure we can work with complex types.
+    Contrived relationship to the theme...
+
+    :param prefix: Some string
+    :param dict_to_prefix: Some dict of string to string
+    :return: Dict b with a concated to keys
+    """
+    return {k: prefix + v for k, v in dict_to_prefix.items()}
+
+
+def date_prefix() -> str:
+    return "date_"
+
+
+@does(_prefix_dict_values, prefix="date_prefix", dict_to_prefix="date_range")
+def prefixed_date_info(date_prefix: str, date_range: Dict[str, str]) -> Dict[str, str]:
+    """Smoke screen tests to ensure we can work with complex types."""
+
+
+def series_with_start_date_end_date(
+    weeks: pd.Series, prefixed_date_info: Dict[str, str]
+) -> pd.Series:
+    """Smoke screen tests to ensure we can work with complex types."""
+    return weeks.apply(
+        lambda x: prefixed_date_info["start_date"] + "_" + prefixed_date_info["end_date"]
+    )

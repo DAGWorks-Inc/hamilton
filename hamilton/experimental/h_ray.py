@@ -145,7 +145,7 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         # NOTE: the type of a raylet is unknown until they are computed
         if isinstance(input_value, ray._raylet.ObjectRef):
             return True
-        return node_type == typing.Any or isinstance(input_value, node_type)
+        return SimplePythonGraphAdapter.check_input_type(node_type, input_value)
 
     @staticmethod
     def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
