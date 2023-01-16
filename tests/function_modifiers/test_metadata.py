@@ -1,4 +1,10 @@
-from typing import Dict, List, TypedDict
+import sys
+from typing import Dict, List
+
+if sys.version_info < (3, 8):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
 
 import pandas as pd
 import pytest

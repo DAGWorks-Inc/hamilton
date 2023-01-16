@@ -1,5 +1,11 @@
+import sys
 import typing
-from typing import Any, Callable, Dict, Type, TypedDict
+from typing import Any, Callable, Dict, Type
+
+if sys.version_info < (3, 8):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
 
 import typing_inspect
 
