@@ -13,7 +13,7 @@ if not registry.INITIALIZED:
     # Trigger load of extensions here because decorators are the only thing that use the registry
     # right now. Side note: ray serializes things weirdly, so we need to do this here rather than in
     # in the other choice of hamilton/base.py.
-    plugins_modules = ["pandas", "polars", "pyspark_pandas"]
+    plugins_modules = ["pandas", "polars", "pyspark_pandas", "dask"]
     for plugin_module in plugins_modules:
         try:
             registry.load_extension(plugin_module)
