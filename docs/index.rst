@@ -75,14 +75,14 @@ functions!
 Specifically, Hamilton defines a novel paradigm, that allows you to specify a flow of (delayed) execution, that forms a
 Directed Acyclic Graph (DAG). It was original built to solve creating wide (1000+) column dataframes at Stitch Fix. Core
 to the design of Hamilton is a clear mapping of function name to dataflow output. That is, Hamilton forces a certain
-paradigm with writing functions, and aims for DAG clarity, easy modifications, _with always unit testable and naturally
-documentable code!
+paradigm with writing functions, and aims for DAG clarity, easy modifications, *with always unit testable and naturally
+documentable code!*
 
 For the backstory on how Hamilton came about, see our
 `blog post <https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/>`_!
 
 Hamilton's method of defining dataflows presents a new paradigm when it comes to creating, um, dataframes (let's use
-dataframes as an example, otherwise you can create _ANY_ python object). Rather than thinking about manipulating a
+dataframes as an example, otherwise you can create *ANY* python object). Rather than thinking about manipulating a
 central dataframe procedurally, and extracting the data you want, as is normal in some data engineering/data science
 work, you instead think about the column(s) (a.k.a. outputs) you want to create, and what inputs are required.
 There is no need for you to think about maintaining how to create this dataframe, meaning you do not need to think
