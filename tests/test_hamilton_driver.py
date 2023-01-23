@@ -169,3 +169,24 @@ def test_capture_execute_telemetry_none_values(send_event_json):
     expected = pd.DataFrame([{"b": 1}])
     pd.testing.assert_frame_equal(results, expected)
     assert len(send_event_json.call_args_list) == 2
+
+
+def test__node_is_required_by_anything():
+    """Tests that default args are correctly interpreted.
+
+    Specifically, if it's not in the execution path then things should
+    just work. Here I'm being lazy and rather than specifically testing
+    _node_is_required_by_anything() directly, I'm doing it via
+    execute(), which calls it via validate_inputs().
+
+    To understand what's going on see the functions in `test_default_args`.
+    """
+    dr = Driver({"required": 1}, tests.resources.test_default_args)
+    # D is not in the execution path, but requires defaults_to_zero
+    # so this should work.
+    results = dr.execute(["C"])
+    pd.testing.assert_series_equal(results["C"], pd.Series([2], name="C"))
+    with pytest.raises(ValueError):
+        # D is now in the execution path, but requires defaults_to_zero
+        # this should error
+        dr.execute(["D"])

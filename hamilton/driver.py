@@ -9,7 +9,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from types import ModuleType
-from typing import Any, Callable, Collection, Dict, List, Optional, Tuple
+from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple
 
 import pandas as pd
 
@@ -143,24 +143,30 @@ class Driver(object):
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"Error caught in processing telemetry: {e}")
 
-    def _node_is_required_by_anything(self, node_: node.Node) -> bool:
+    def _node_is_required_by_anything(self, node_: node.Node, node_set: Set[node.Node]) -> bool:
         """Checks dependencies on this node and determines if at least one requires it.
 
         Nodes can be optionally depended upon, i.e. the function parameter has a default value. We want to check that
         of the nodes the depend on this one, at least one of them requires it, i.e. the parameter is not optional.
 
         :param node_: node in question
+        :param node_set: checks that we traverse only nodes in the provided set.
         :return: True if it is required by any downstream node, false otherwise
         """
         required = False
         for downstream_node in node_.depended_on_by:
+            if downstream_node not in node_set:
+                continue
             _, dep_type = downstream_node.input_types[node_.name]
             if dep_type == node.DependencyType.REQUIRED:
                 return True
         return required
 
     def validate_inputs(
-        self, user_nodes: Collection[node.Node], inputs: typing.Optional[Dict[str, Any]] = None
+        self,
+        user_nodes: Collection[node.Node],
+        inputs: typing.Optional[Dict[str, Any]] = None,
+        nodes_set: Collection[node.Node] = None,
     ):
         """Validates that inputs meet our expectations. This means that:
         1. The runtime inputs don't clash with the graph's config
@@ -168,14 +174,17 @@ class Driver(object):
 
         :param user_nodes: The required nodes we need for computation.
         :param inputs: the user inputs provided.
+        :param nodes_set: the set of nodes to use for validation; Optional.
         """
         if inputs is None:
             inputs = {}
+        if nodes_set is None:
+            nodes_set = set(self.graph.nodes.values())
         (all_inputs,) = (graph.FunctionGraph.combine_config_and_inputs(self.graph.config, inputs),)
         errors = []
         for user_node in user_nodes:
             if user_node.name not in all_inputs:
-                if self._node_is_required_by_anything(user_node):
+                if self._node_is_required_by_anything(user_node, nodes_set):
                     errors.append(
                         f"Error: Required input {user_node.name} not provided "
                         f"for nodes: {[node.name for node in user_node.depended_on_by]}."
@@ -291,7 +300,7 @@ class Driver(object):
         """
         nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
         self.validate_inputs(
-            user_nodes, inputs
+            user_nodes, inputs, nodes
         )  # TODO -- validate within the function graph itself
         if display_graph:  # deprecated flow.
             logger.warning(
@@ -362,7 +371,7 @@ class Driver(object):
             See https://graphviz.org/doc/info/attrs.html for options.
         """
         nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
-        self.validate_inputs(user_nodes, inputs)
+        self.validate_inputs(user_nodes, inputs, nodes)
         try:
             self.graph.display(
                 nodes,

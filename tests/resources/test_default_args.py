@@ -15,3 +15,8 @@ def B(A: int) -> int:
 
 def C(A: int) -> int:  # empty string doc on purpose.
     return A * 2
+
+
+def D(defaults_to_zero: int) -> int:
+    """This requires the default value."""
+    return defaults_to_zero * 2

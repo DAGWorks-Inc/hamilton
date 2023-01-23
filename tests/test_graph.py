@@ -436,16 +436,22 @@ def test_end_to_end_with_config_modifier():
 def test_non_required_nodes():
     fg = graph.FunctionGraph(tests.resources.test_default_args, config={"required": 10})
     results = fg.execute(
-        [n for n in fg.get_nodes() if n.node_source == NodeSource.STANDARD], {}, {}
+        # D is not on the execution path, so it should not break things
+        [n for n in fg.get_nodes() if n.node_source == NodeSource.STANDARD and n.name != "D"],
+        {},
+        {},
     )
     assert results["A"] == 10
     fg = graph.FunctionGraph(
         tests.resources.test_default_args, config={"required": 10, "defaults_to_zero": 1}
     )
     results = fg.execute(
-        [n for n in fg.get_nodes() if n.node_source == NodeSource.STANDARD], {}, {}
+        [n for n in fg.get_nodes() if n.node_source == NodeSource.STANDARD],
+        {},
+        {},
     )
     assert results["A"] == 11
+    assert results["D"] == 2
 
 
 def test_config_can_override():
