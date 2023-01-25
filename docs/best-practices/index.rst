@@ -3,7 +3,6 @@ Best Practices
 ==============
 
 .. toctree::
-   :hidden:
 
    using-within-your-etl-system
    migrating-to-hamilton

@@ -5,14 +5,14 @@ Code Organization
 Hamilton forces you to put your code into modules that are distinct from where you run your code.
 
 You'll soon find that a single python module does not make sense, and so you'll organically start to (very likely) put
-like functions with like functions, i.e. thus creating domain specific modules --> *use this to your development
-advantage!*
+like functions with like functions, i.e. thus creating domain specific modules --> `use this to your development
+advantage!`
 
 At Stitch Fix we:
 
-1. Use modules to model team thinking, e.g. date\_features.py.
-2. Use modules to helps isolate what you’re working on.
-3. Use modules to replace parts of your Hamilton dataflow very easily for different contexts.
+#. Use modules to model team thinking, e.g. date\_features.py.
+#. Use modules to helps isolate what you’re working on.
+#. Use modules to replace parts of your Hamilton dataflow very easily for different contexts.
 
 Team thinking
 -------------
