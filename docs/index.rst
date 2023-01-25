@@ -41,8 +41,8 @@ Hamilton
    :caption: REFERENCE
    :hidden:
 
-   reference/api-extensions/index
    reference/api-reference/index
+   reference/api-extensions/index
 
 .. toctree::
    :maxdepth: 6
