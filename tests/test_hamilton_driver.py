@@ -5,6 +5,7 @@ import pytest
 
 import tests.resources.cyclic_functions
 import tests.resources.tagging
+import tests.resources.test_default_args
 import tests.resources.very_simple_dag
 from hamilton import base
 from hamilton.driver import Driver
@@ -190,3 +191,35 @@ def test__node_is_required_by_anything():
         # D is now in the execution path, but requires defaults_to_zero
         # this should error
         dr.execute(["D"])
+
+
+def test_using_callables_to_execute():
+    """Test that you can pass a function reference and it will work fine."""
+    dr = Driver({"required": 1}, tests.resources.test_default_args)
+    results = dr.execute(
+        [tests.resources.test_default_args.C, tests.resources.test_default_args.B, "A"]
+    )
+    pd.testing.assert_series_equal(results["C"], pd.Series([2], name="C"))
+    pd.testing.assert_series_equal(results["B"], pd.Series([1], name="B"))
+    pd.testing.assert_series_equal(results["A"], pd.Series([1], name="A"))
+    with pytest.raises(ValueError):
+        dr.execute([tests.resources.cyclic_functions.B])
+
+
+def test__create_final_vars():
+    """Tests that the final vars are created correctly."""
+    dr = Driver({"required": 1}, tests.resources.test_default_args)
+    actual = dr._create_final_vars(
+        ["C", tests.resources.test_default_args.B, tests.resources.test_default_args.A]
+    )
+    expected = ["C", "B", "A"]
+    assert actual == expected
+
+
+def test__create_final_vars_errors():
+    """Tests that we catch functions pointed to in modules that aren't part of the DAG."""
+    dr = Driver({"required": 1}, tests.resources.test_default_args)
+    with pytest.raises(ValueError):
+        dr._create_final_vars(
+            ["C", tests.resources.cyclic_functions.A, tests.resources.cyclic_functions.B]
+        )
