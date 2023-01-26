@@ -2,6 +2,8 @@
 Common Indices
 ==============
 
+If you're creating dataframes, then this will apply to you!
+
 While Hamilton is a general-purpose framework, we've found a common pattern is to manipulate datasets that have shared
 indices (spines) for creating dataframes.
 

@@ -2,6 +2,8 @@
 Output Immutability
 ===================
 
+In Hamilton, functions are only called once!
+
 Immutability means, that once a "data structure", e.g. a column is created, and output by a function, the values in the
 column are not changeable.
 

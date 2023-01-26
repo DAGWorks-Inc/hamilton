@@ -2,6 +2,8 @@
 Code Organization
 =================
 
+Hamilton will force you to organize your code! Here's some tips.
+
 Hamilton forces you to put your code into modules that are distinct from where you run your code.
 
 You'll soon find that a single python module does not make sense, and so you'll organically start to (very likely) put

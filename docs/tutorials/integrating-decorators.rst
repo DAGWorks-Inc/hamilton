@@ -2,6 +2,8 @@
 Integrating Decorators
 ======================
 
+Let's talk about some functionality
+
 This follows up on :doc:`../less-than-15-minutes-to-mastery/index`.
 
 Hamilton relies on `python decorators <https://towardsdatascience.com/the-simplest-tutorial-for-python-decorator-dadbf8f20b0f>`_

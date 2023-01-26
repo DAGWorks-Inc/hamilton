@@ -2,6 +2,8 @@
 Function Modifiers
 ==================
 
+The `@` above Hamilton Functions
+
 Hamilton has a bunch of function modifiers, i.e. python decorators, to modify function behavior.
 
 The behaviors vary based on the function modifier. Please see :doc:`../reference/api-reference/available-decorators` for

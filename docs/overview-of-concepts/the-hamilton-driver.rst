@@ -2,6 +2,8 @@
 The Hamilton Driver
 ===================
 
+Executing your DAGs and processing the results
+
 Writing functions is great, but its meaningless if you have no way to execute them. We currently have a single Hamilton
 Driver, that is responsible for the following:
 

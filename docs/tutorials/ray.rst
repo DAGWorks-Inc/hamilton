@@ -2,6 +2,8 @@
 ⚡ Ray
 ======
 
+This describes how one can get started with Ray in 5 minutes.
+
 For those eager to just see code, please jump right ahead to a full hello world with Ray
 `here <https://github.com/stitchfix/hamilton/tree/main/examples/ray>`_.
 

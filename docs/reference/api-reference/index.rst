@@ -10,6 +10,7 @@ API Reference
    available-result-builders
    available-graph-adapters
 
+Here lies documentation for the public API you can build on top of.
 
 See :doc:`available-decorators` to increase Hamilton functionality, in addition to ways to keep your code DRY.
 

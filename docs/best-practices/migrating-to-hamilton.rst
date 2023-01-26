@@ -2,6 +2,8 @@
 Migrating to Hamilton
 =====================
 
+Here are two suggestions for helping you migrate to Hamilton
+
 Continuous Integration for Comparisons
 --------------------------------------
 

@@ -2,6 +2,8 @@
 Available Result Builders
 =========================
 
+Here we list available result builders.
+
 Use ``from hamilton import base`` to use these Result Builders:
 
 .. list-table::

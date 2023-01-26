@@ -2,6 +2,9 @@
 Extensions
 ==========
 
+Hamilton structurally provides the foundation for several extensions: parallel computation, distributed computation,
+creating optimized machine code, controlling return object types.
+
 Scaling Hamilton: Parallel & Distributed Computation
 ----------------------------------------------------
 

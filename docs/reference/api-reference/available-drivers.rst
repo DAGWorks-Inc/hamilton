@@ -2,6 +2,8 @@
 Available Drivers
 =================
 
+API docs for using the drivers
+
 Currently, we have a `single driver <https://github.com/stitchfix/hamilton/blob/8a08a5e3dd69bbf7ddd83b8053c1ba9ed96ab675/hamilton/driver.py>`_.
 It's highly parameterizable, allowing you to customize:
 

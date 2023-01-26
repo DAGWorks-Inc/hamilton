@@ -2,6 +2,8 @@
 Hamilton Community
 ==================
 
+If you want to bounce ideas, ask questions, or just see what the small community is up to, come find us on discord.
+
 We have a bunch of channels on Slack that are designed to help you get the most out of Hamilton!
 
 Slack space name: `https://hamilton-opensource.slack.com/ <https://hamilton-opensource.slack.com/>`_

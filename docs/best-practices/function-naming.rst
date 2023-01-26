@@ -2,6 +2,8 @@
 Function Naming
 ===============
 
+Function Naming is something to focus on
+
 Here are three important points about function naming:
 
 #. It enables you to define your Hamilton dataflow.

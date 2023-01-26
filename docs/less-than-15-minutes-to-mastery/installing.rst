@@ -2,6 +2,8 @@
 Installing
 ==========
 
+Installing hamilton is easy!
+
 Requirements
 ------------
 

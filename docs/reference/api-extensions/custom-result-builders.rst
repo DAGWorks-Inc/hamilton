@@ -2,6 +2,8 @@
 Custom Result Builders
 ======================
 
+How to build your own Result Builder
+
 Before starting
 ---------------
 

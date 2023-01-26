@@ -2,6 +2,8 @@
 Talks | Podcasts | Blogs
 ========================
 
+This page curates talks, podcasts, and blogs about Hamilton
+
 .. list-table::
    :header-rows: 1
 

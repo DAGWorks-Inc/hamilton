@@ -2,6 +2,8 @@
 Using Hamilton in a notebook
 ============================
 
+A quick five minute primer on using Hamilton in a notebook environment.
+
 This tutorial can also be found `published on TDS <https://towardsdatascience.com/how-to-iterate-with-hamilton-in-a-notebook-8ec0f85851ed>`_.
 
 Step 1 — Install Jupyter & Hamilton

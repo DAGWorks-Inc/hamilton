@@ -2,6 +2,8 @@
 Available Graph Adapters
 ========================
 
+Here we list available graph adapters
+
 Use ``from hamilton import base`` to use these Graph Adapters:
 
 .. list-table::

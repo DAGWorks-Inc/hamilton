@@ -2,6 +2,8 @@
 Decorators
 ==========
 
+Useful ways to help you make the most of Hamilton
+
 While the one to one mapping of node -> function implementation is powerful, it can sometimes lead to repeated code. In
 order to avoid this, Hamilton employs decorators to promote reuse of business logic. In this section we will go over a
 few different classes of decorators with some examples. For reference on specific decorators, see
