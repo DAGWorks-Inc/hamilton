@@ -161,11 +161,14 @@ Open a Python module and a Jupyter notebook side-to-side, and then add [%autorel
 
 ```python
 from hamilton.driver import Driver
-import my_module  # data transformation module that I have open in other tab
 
-%load_ext autoreload   # load extension
-%autoreload 1  # configure autoreload to only affect specified files
-%aimport my_module  # specify my_module to be reloaded
+# load extension
+%load_ext autoreload
+# configure autoreload to only affect specified files
+%autoreload 1  
+# import & specify my_module to be reloaded 
+# i.e. this is the data transformation module that I have open in other tab
+%aimport my_module  
 
 hamilton_driver = Driver({}, my_module)
 hamilton_driver.execute(['desired_output1', 'desired_output2'])
