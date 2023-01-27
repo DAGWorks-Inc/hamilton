@@ -359,7 +359,7 @@ class Driver(object):
     @capture_function_usage
     def display_all_functions(
         self, output_file_path: str, render_kwargs: dict = None, graphviz_kwargs: dict = None
-    ):
+    ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays the graph of all functions loaded!
 
         :param output_file_path: the full URI of path + file name to save the dot file to.
@@ -370,9 +370,11 @@ class Driver(object):
         :param graphviz_kwargs: Optional. Kwargs to be passed to the graphviz graph object to configure it.
             E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
             See https://graphviz.org/doc/info/attrs.html for options.
+        :return: the graphviz object if you want to do more with it.
+            If returned as the result in a Jupyter Notebook cell, it will render.
         """
         try:
-            self.graph.display_all(output_file_path, render_kwargs, graphviz_kwargs)
+            return self.graph.display_all(output_file_path, render_kwargs, graphviz_kwargs)
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
 
@@ -384,7 +386,7 @@ class Driver(object):
         render_kwargs: dict,
         inputs: Dict[str, Any] = None,
         graphviz_kwargs: dict = None,
-    ):
+    ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes Execution.
 
         Note: overrides are not handled at this time.
@@ -399,12 +401,14 @@ class Driver(object):
         :param graphviz_kwargs: Optional. Kwargs to be passed to the graphviz graph object to configure it.
             E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
             See https://graphviz.org/doc/info/attrs.html for options.
+        :return: the graphviz object if you want to do more with it.
+            If returned as the result in a Jupyter Notebook cell, it will render.
         """
         _final_vars = self._create_final_vars(final_vars)
         nodes, user_nodes = self.graph.get_upstream_nodes(_final_vars, inputs)
         self.validate_inputs(user_nodes, inputs, nodes)
         try:
-            self.graph.display(
+            return self.graph.display(
                 nodes,
                 user_nodes,
                 output_file_path,
@@ -440,7 +444,7 @@ class Driver(object):
     @capture_function_usage
     def display_downstream_of(
         self, *node_names: str, output_file_path: str, render_kwargs: dict, graphviz_kwargs: dict
-    ):
+    ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG starting from the passed in function name(s).
 
         Note: for any "node" visualized, we will also add its parents to the visualization as well, so
@@ -448,15 +452,17 @@ class Driver(object):
 
         :param node_names: names of function(s) that are starting points for traversing the graph.
         :param output_file_path: the full URI of path + file name to save the dot file to.
-            E.g. 'some/path/graph.dot'
+            E.g. 'some/path/graph.dot'. Pass in None to skip saving any file.
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
         :param graphviz_kwargs: Kwargs to be passed to the graphviz graph object to configure it.
             E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
+        :return: the graphviz object if you want to do more with it.
+            If returned as the result in a Jupyter Notebook cell, it will render.
         """
         downstream_nodes = self.graph.get_impacted_nodes(list(node_names))
         try:
-            self.graph.display(
+            return self.graph.display(
                 downstream_nodes,
                 set(),
                 output_file_path,

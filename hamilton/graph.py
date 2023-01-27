@@ -7,7 +7,7 @@ Note: one should largely consider the code in this module to be "private".
 """
 import logging
 from types import ModuleType
-from typing import Any, Callable, Collection, Dict, List, Set, Tuple, Type
+from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Type
 
 from hamilton import base, node
 from hamilton.function_modifiers import base as fm_base
@@ -199,7 +199,7 @@ class FunctionGraph(object):
             render_kwargs = {}
         if graphviz_kwargs is None:
             graphviz_kwargs = {}
-        self.display(
+        return self.display(
             defined_nodes,
             user_nodes,
             output_file_path=output_file_path,
@@ -243,12 +243,12 @@ class FunctionGraph(object):
         output_file_path: str = "test-output/graph.gv",
         render_kwargs: dict = None,
         graphviz_kwargs: dict = None,
-    ):
+    ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
         :param nodes: the set of nodes that need to be computed.
         :param user_nodes: the set of inputs that the user provided.
-        :param output_file_path: the path where we want to store the a `dot` file + pdf picture.
+        :param output_file_path: the path where we want to store the `dot` file + pdf picture. Pass in None to not save.
         :param render_kwargs: kwargs to be passed to the render function to visualize.
         :param graphviz_kwargs: kwargs to be passed to the graphviz graph object to configure it.
             e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
@@ -268,7 +268,9 @@ class FunctionGraph(object):
         kwargs = {"view": True}
         if render_kwargs and isinstance(render_kwargs, dict):
             kwargs.update(render_kwargs)
-        dot.render(output_file_path, **kwargs)
+        if output_file_path:
+            dot.render(output_file_path, **kwargs)
+        return dot
 
     def get_impacted_nodes(self, var_changes: List[str]) -> Set[node.Node]:
         """Given our function graph, and a list of nodes that are changed,

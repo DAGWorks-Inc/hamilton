@@ -530,6 +530,23 @@ def test_function_graph_display():
             assert actual == expected
 
 
+def test_function_graph_display_without_saving():
+    """Tests that display works when None is passed in for path"""
+    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    defined_nodes = set()
+    user_nodes = set()
+    for n in fg.get_nodes():
+        if n.user_defined:
+            user_nodes.add(n)
+        else:
+            defined_nodes.add(n)
+    digraph = fg.display(defined_nodes, user_nodes, None)
+    assert digraph is not None
+    import graphviz
+
+    assert isinstance(digraph, graphviz.Digraph)
+
+
 def test_create_graphviz_graph():
     """Tests that we create a graphviz graph"""
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
