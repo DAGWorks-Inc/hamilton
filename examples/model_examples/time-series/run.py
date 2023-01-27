@@ -41,7 +41,7 @@ def main():
         "sales_train_validation_path": "m5-forecasting-accuracy/sales_train_validation.csv",
         "submission_path": "m5-forecasting-accuracy/sample_submission.csv",
         "load_test2": "False",
-        "n_fold": 3,
+        "n_fold": 0,
         "model_params": model_params,
         "num_rows_to_skip": 27500000,  # for training set
     }
