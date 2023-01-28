@@ -39,7 +39,7 @@ To get started, first you need to install hamilton. It is published to pypi unde
 > pip install sf-hamilton
 
 Note: to use the DAG visualization functionality, you should instead do:
-> pip install sf-hamilton[visualization]
+> pip install "sf-hamilton[visualization]"
 
 While it is installing we encourage you to start on the next section.
 
@@ -117,7 +117,7 @@ output_columns = [
 # let's create the dataframe!
 # if you only did `pip install sf-hamilton` earlier:
 df = dr.execute(output_columns)
-# else if you did `pip install sf-hamilton[visualization]` earlier:
+# else if you did `pip install "sf-hamilton[visualization]"` earlier:
 # dr.visualize_execution(output_columns, './my-dag.dot', {})
 print(df)
 ```

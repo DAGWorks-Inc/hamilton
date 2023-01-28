@@ -32,6 +32,6 @@ output_columns = [
 df = dr.execute(output_columns)
 print(df.to_string())
 
-# To visualize do `pip install sf-hamilton[visualization]` if you want these to work
+# To visualize do `pip install "sf-hamilton[visualization]"` if you want these to work
 dr.visualize_execution(output_columns, "./my_dag.dot", {"format": "png"})
 dr.display_all_functions("./my_full_dag.dot", {"format": "png"})

@@ -229,7 +229,7 @@ class FunctionGraph(object):
         except ModuleNotFoundError:
             logger.exception(
                 " networkx is required for detecting cycles in the function graph. Install it with:"
-                "\n\n  pip install sf-hamilton[visualization] or pip install networkx \n\n"
+                '\n\n  pip install "sf-hamilton[visualization]" or pip install networkx \n\n'
             )
             return False
         digraph = create_networkx_graph(nodes, user_nodes, "Dependency Graph")
@@ -259,7 +259,7 @@ class FunctionGraph(object):
         except ModuleNotFoundError:
             logger.exception(
                 " graphviz is required for visualizing the function graph. Install it with:"
-                "\n\n  pip install sf-hamilton[visualization] or pip install graphviz \n\n"
+                '\n\n  pip install "sf-hamilton[visualization]" or pip install graphviz \n\n'
             )
             return
         if graphviz_kwargs is None:

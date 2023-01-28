@@ -56,7 +56,7 @@ if __name__ == "__main__":
         "seasons_4",
         "absenteeism_time_in_hours",
     ]
-    # To visualize do `pip install sf-hamilton[visualization]` if you want these to work
+    # To visualize do `pip install "sf-hamilton[visualization]"` if you want these to work
     # dr.visualize_execution(output_columns, './my_dag.dot', {}, graphviz_kwargs=dict(graph_attr={'ratio': "1"}))
     # dr.display_all_functions('./my_full_dag.dot')
 
