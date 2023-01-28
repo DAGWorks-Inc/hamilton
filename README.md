@@ -91,6 +91,7 @@ Note: functions can take or create scalar values, in addition to any python obje
 
 2. Create a `my_script.py` which is where code will live to tell Hamilton what to do:
 ```python
+import sys
 import logging
 import importlib
 
