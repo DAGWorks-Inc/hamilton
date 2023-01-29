@@ -68,7 +68,7 @@ class deprecated:
         str
     ]  # If this is None, this means that the use_instead is a drop in replacement
     current_version: Union[Tuple[int, int, int], Version] = dataclasses.field(
-        default=CURRENT_VERSION
+        default_factory=lambda: CURRENT_VERSION
     )
     warn_action: Callable[[str], None] = dataclasses.field(default=logger.warning)
     fail_action: Callable[[str], None] = dataclasses.field(
