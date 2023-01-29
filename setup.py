@@ -60,6 +60,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     # Note that this feature requires pep8 >= v9 and a version of setup tools greater than the
     # default version installed with virtualenv. Make sure to update your tools!

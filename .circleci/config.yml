@@ -7,7 +7,7 @@ jobs:
       task:
         type: string
     docker:
-      - image: circleci/python:<< parameters.python-version >>
+      - image: cimg/python:<< parameters.python-version >>
     environment:
       TASK: << parameters.task >>
     steps:
@@ -40,6 +40,10 @@ workflows:
       - test:
           name: build-py310
           python-version: '3.10'
+          task: tests
+      - test:
+          name: build-py311
+          python-version: '3.11'
           task: tests
       - test:
           name: pre-commit
@@ -82,10 +86,18 @@ workflows:
           python-version: '3.10'
           task: integrations
       - test:
+          name: integrations-py311
+          python-version: '3.11'
+          task: integrations
+      - test:
           name: asyncio-py39
           python-version: '3.9'
           task: async
       - test:
           name: asyncio-py310
           python-version: '3.10'
+          task: async
+      - test:
+          name: asyncio-py311
+          python-version: '3.11'
           task: async
