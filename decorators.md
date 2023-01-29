@@ -484,3 +484,65 @@ The inputs to the `reuse_functions` decorator takes in a variety of inputs that 
 - _where_ the produced subDAG shoud live is specified by two parameters. `namespace` gives a namespace under which these nodes live. All this means is that a nodes name will be `{namespace}.{node_name}`.
 `outputs` provides a mapping so you can access these later, without referring to the namespace. E.G. `outputs={"unique_users": "unique_users_daily_US"}` means that the `unique_users` output from this
 subDAG will get mapped to the node name `unique_users_daily_US`. This way you can use it as a function parameter later on.
+
+## @parameterize_extract_columns
+
+`@parameterize_extract_columns` gives you the power of both `@extract_columns` and `@parameterize` in one decorator.
+
+It takes in a list of `Parameterized_Extract` objects, each of which is composed of:
+1. A list of columns to extract, and
+2. A parameterization that gets used
+
+In the following case, we produce four columns, two for each parameterization.
+
+```python
+import pandas as pd
+from function_modifiers import parameterize_extract_columns, ParameterizedExtract, source, value
+@parameterize_extract_columns(
+    ParameterizedExtract(
+        ("outseries1a", "outseries2a"),
+        {"input1": source("inseries1a"), "input2": source("inseries1b"), "input3": value(10)},
+    ),
+    ParameterizedExtract(
+        ("outseries1b", "outseries2b"),
+        {"input1": source("inseries2a"), "input2": source("inseries2b"), "input3": value(100)},
+    ),
+)
+def fn(input1: pd.Series, input2: pd.Series, input3: float) -> pd.DataFrame:
+    return pd.concat([input1 * input2 * input3, input1 + input2 + input3], axis=1)
+```
+
+## @parameterize_frame
+
+`@parameterize_frame` enables you to run parameterize_extract_columns with a dataframe specifying the parameterizations
+-- allowing for less verbose specification. The above example can be rewritten as:
+
+```python
+from plugins.pandas_implementations import parameterized_frame
+ df = pd.DataFrame(
+        [
+            ["outseries1a", "outseries2a", "inseries1a", "inseries2a", 10],
+            ["outseries1b", "outseries2b", "inseries1b", "inseries2b", 100],
+            # ...
+        ],
+        # Have to switch as indices have to be unique
+        columns=[
+            [
+                "output1",
+                "output2",
+                "input1",
+                "input2",
+                "input3",
+            ],  # configure whether column is source or value and also whether it's input ("source", "value") or output ("out")
+            ["out", "out", "source", "source", "value"],
+        ],
+    )
+
+    @parameterize_frame(df)
+    def my_func(input1: pd.Series, input2: pd.Series, input3: float) -> pd.DataFrame:
+        return pd.DataFrame(
+            [input1 * input2 * input3, input1 + input2 + input3]
+        )
+```
+
+Note that we have a double-index. Note that this is still in experimental.

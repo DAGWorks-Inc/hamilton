@@ -463,3 +463,38 @@ def test_parametrized_full_multiple_replacements():
     assert len(nodes) == 4
     # test out that documentation is assigned correctly
     assert [node_.documentation for node_ in nodes] == [args[node_.name][1] for node_ in nodes]
+
+
+def test_parameterized_extract_columns():
+    annotation = function_modifiers.parameterize_extract_columns(
+        function_modifiers.ParameterizedExtract(
+            ("outseries1a", "outseries2a"),
+            {"input1": source("inseries1a"), "input2": source("inseries1b"), "input3": value(10)},
+        ),
+        function_modifiers.ParameterizedExtract(
+            ("outseries1b", "outseries2b"),
+            {"input1": source("inseries2a"), "input2": source("inseries2b"), "input3": value(100)},
+        ),
+    )
+
+    def fn(input1: pd.Series, input2: pd.Series, input3: float) -> pd.DataFrame:
+        return pd.concat([input1 * input2 * input3, input1 + input2 + input3], axis=1)
+
+    nodes = annotation.expand_node(node.Node.from_fn(fn), {}, fn)
+    # For each parameterized set, we have two outputs and the dataframe node
+    assert len(nodes) == 6
+    nodes_by_name = {node_.name: node_ for node_ in nodes}
+    # Test that it produces the expected results
+    pd.testing.assert_frame_equal(
+        nodes_by_name["fn__0"](inseries1a=pd.Series([1]), inseries1b=pd.Series([1])),
+        pd.DataFrame.from_dict({"outseries1a": [10], "outseries2a": [12]}),
+    )
+    pd.testing.assert_frame_equal(
+        nodes_by_name["fn__1"](inseries2a=pd.Series([1]), inseries2b=pd.Series([1])),
+        pd.DataFrame.from_dict({"outseries1b": [100], "outseries2b": [102]}),
+    )
+    # test that each of the "extractor" nodes produces exactly what we expect
+    assert nodes_by_name["outseries1a"](fn__0=pd.DataFrame({"outseries1a": [10]}))[0] == 10
+    assert nodes_by_name["outseries2a"](fn__0=pd.DataFrame({"outseries2a": [20]}))[0] == 20
+    assert nodes_by_name["outseries1b"](fn__1=pd.DataFrame({"outseries1b": [30]}))[0] == 30
+    assert nodes_by_name["outseries2b"](fn__1=pd.DataFrame({"outseries2b": [40]}))[0] == 40

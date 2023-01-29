@@ -34,6 +34,7 @@ parameterize = expanders.parameterize
 parameterize_sources = expanders.parameterize_sources
 parameterize_values = expanders.parameterize_values
 parameterize_extract_columns = expanders.parameterize_extract_columns
+ParameterizedExtract = expanders.ParameterizedExtract
 
 # The older ones that will be deprecated
 parametrized = expanders.parametrized

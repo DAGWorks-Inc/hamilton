@@ -539,8 +539,19 @@ class parameterize_extract_columns(base.NodeExpander):
     def expand_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
+        """Expands a node into multiple, given the extract_config passed to
+        parameterize_extract_columns. Goes through all parameterizations,
+        creates an extract_columns node for each, then delegates to that.
+        Note this calls out to `@parameterize` and `@extract_columns` rather
+        than reimplementing the logic.
+
+        :param node_: Node to expand
+        :param config: Config to use to expand
+        :param fn: Original function
+        :return: The nodes produced by this decorator.
+        """
         output_nodes = []
-        for parameterization in self.extract_config:
+        for i, parameterization in enumerate(self.extract_config):
 
             @functools.wraps(fn)
             def wrapper_fn(*args, _output_columns=parameterization.outputs, **kwargs):
@@ -550,8 +561,11 @@ class parameterize_extract_columns(base.NodeExpander):
 
             new_node = node_.copy_with(callabl=wrapper_fn)
             fn_to_call = wrapper_fn if self.reassign_columns else fn
+            # We have to rename the underlying function so that we do not
+            # get naming collisions. Using __ is cleaner than using a uuid
+            # as it is easier to read/manage and naturally maeks sense.
             parameterization_decorator = parameterize(
-                **{node_.name: parameterization.input_mapping}
+                **{node_.name + f"__{i}": parameterization.input_mapping}
             )
             (parameterized_node,) = parameterization_decorator.expand_node(
                 new_node, config, fn_to_call
