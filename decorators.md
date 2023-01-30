@@ -545,4 +545,6 @@ from experimental.parameterize_frame import parameterize_frame
         )
 ```
 
-Note that we have a double-index. Note that this is still in experimental.
+Note that we have a double-index. Note that this is still in experimental,
+and has the possibility of being changed; we'd love feedback on this
+API if you end up using it!

@@ -2,16 +2,23 @@ from typing import List
 
 import pandas as pd
 
-from hamilton.function_modifiers import base, parameterize_extract_columns, source, value
+from hamilton.function_modifiers import (
+    UpstreamDependency,
+    base,
+    parameterize_extract_columns,
+    source,
+    value,
+)
 from hamilton.function_modifiers.expanders import ParameterizedExtract
 
 
-def _get_dep_type(dep_type: str):
+def _get_dep_type(dep_type: str) -> UpstreamDependency:
+    """Converts dependency type to the type known by function_modifier"""
     if dep_type == "out":
         return None
     if dep_type == "value":
         return value
-    elif dep_type == "source":
+    if dep_type == "source":
         return source
     raise ValueError(f"Invalid dep type: {dep_type}")
 
@@ -108,7 +115,8 @@ if __name__ == "__main__":
                 "input1",
                 "input2",
                 "input3",
-            ],  # configure whether column is source or value and also whether it's input ("source", "value") or output ("out")
+            ],
+            # configure whether column is source or value and also whether it's input ("source", "value") or output ("out")
             ["out", "out", "source", "source", "value"],
         ],
     )  # specify column names (corresponding to function arguments and (if outputting multiple columns) output dataframe columns)
