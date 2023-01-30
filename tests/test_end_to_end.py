@@ -1,5 +1,3 @@
-import sys
-
 import pytest
 
 import hamilton.driver
@@ -34,7 +32,6 @@ def test_data_quality_workflow_fails():
         )
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="requires python3.7")
 def test_smoke_screen_module():
     config = {"region": "US"}
     dr = hamilton.driver.Driver(config, tests.resources.smoke_screen_module)

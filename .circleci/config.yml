@@ -22,10 +22,6 @@ workflows:
   unit-test-workflow:
     jobs:
       - test:
-          name: build-py36
-          python-version: '3.6'
-          task: tests
-      - test:
           name: build-py37
           python-version: '3.7'
           task: tests
@@ -50,10 +46,6 @@ workflows:
           python-version: '3.9'
           task: pre-commit
       - test:
-          name: dask-py36
-          python-version: '3.6'
-          task: dask
-      - test:
           name: dask-py37
           python-version: '3.7'
           task: dask
@@ -65,10 +57,6 @@ workflows:
           name: spark-py38
           python-version: '3.8'
           task: pyspark
-      - test:
-          name: integrations-py36
-          python-version: '3.6'
-          task: integrations
       - test:
           name: integrations-py37
           python-version: '3.7'

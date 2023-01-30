@@ -1,5 +1,3 @@
-import sys
-
 import pandas as pd
 import pytest
 from dask.delayed import delayed
@@ -46,7 +44,6 @@ def test_dask_graph_adapter_simple(client):
     # TODO: do some more asserting?
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="requires python3.7")
 def test_smoke_screen_module(client):
     config = {"region": "US"}
     dr = driver.Driver(config, smoke_screen_module, adapter=h_dask.DaskGraphAdapter(client))

@@ -72,12 +72,8 @@ class PandasDataFrameResult(ResultMixin):
 
         def get_parent_time_index_type():
             """Helper to pull the right time index parent class."""
-            if hasattr(
-                pd_extension, "NDArrayBackedExtensionIndex"
-            ):  # for python 3.7+ & pandas >= 1.2
+            if hasattr(pd_extension, "NDArrayBackedExtensionIndex"):
                 index_type = pd_extension.NDArrayBackedExtensionIndex
-            elif hasattr(pd_extension, "ExtensionIndex"):  # for python 3.6 & pandas <= 1.2
-                index_type = pd_extension.ExtensionIndex
             else:
                 index_type = None  # weird case, but not worth breaking for.
             return index_type

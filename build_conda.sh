@@ -5,7 +5,7 @@ CONDA_HOME=$HOME/anaconda3
 # conda activate && anaconda login
 pkg='sf-hamilton'
 # adjust the Python versions you would like to build
-array=( 3.6 3.7 3.8 3.9 3.10 3.11 )
+array=(3.7 3.8 3.9 3.10 3.11 )
 echo "Building conda package ..."
 cd ~
 # this will create a ~/sf-hamilton directory with metadata to build the package.

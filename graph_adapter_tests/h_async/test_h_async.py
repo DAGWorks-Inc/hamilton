@@ -82,13 +82,8 @@ async def test_driver_end_to_end_telemetry(send_event_json):
     }
     # to ensure the last telemetry invocation finishes executing
     # get all tasks -- and the current task, and await all others.
-    try:
-        # only works for 3.7+
-        tasks = asyncio.all_tasks()
-        current_task = asyncio.current_task()
-        await asyncio.gather(*[t for t in tasks if t != current_task])
-    except AttributeError:
-        # required for 3.6
-        await asyncio.sleep(1)
+    tasks = asyncio.all_tasks()
+    current_task = asyncio.current_task()
+    await asyncio.gather(*[t for t in tasks if t != current_task])
     assert send_event_json.called
     assert len(send_event_json.call_args_list) == 2
