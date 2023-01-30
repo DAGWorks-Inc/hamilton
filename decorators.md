@@ -518,7 +518,7 @@ def fn(input1: pd.Series, input2: pd.Series, input3: float) -> pd.DataFrame:
 -- allowing for less verbose specification. The above example can be rewritten as:
 
 ```python
-from plugins.pandas_implementations import parameterized_frame
+from experimental.parameterize_frame import parameterize_frame
  df = pd.DataFrame(
         [
             ["outseries1a", "outseries2a", "inseries1a", "inseries2a", 10],
