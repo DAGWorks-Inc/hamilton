@@ -33,7 +33,7 @@ For the latest updates, follow us on [twitter](https://twitter.com/hamilton_os)!
 ## Installation
 Requirements:
 
-* Python 3.6+
+* Python 3.7+
 
 To get started, first you need to install hamilton. It is published to pypi under `sf-hamilton`:
 > pip install sf-hamilton
