@@ -307,6 +307,7 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Christopher Prohm (@chmp)
 - James Lamb (@jameslamb)
 - Avnish Pal (@bovem)
+- Sarah Haskins (@frenchfrywpepper)
 
 ## Bug Hunters/Special Mentions
 - Nils Olsson (@nilsso)
