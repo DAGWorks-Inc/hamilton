@@ -113,7 +113,7 @@ output_columns = [
     'spend',  # or module.spend
     'signups',  # or module.signups
     'avg_3wk_spend',  # or module.avg_3wk_spend
-    'spend_per_signup',  # or spend_per_signup
+    'spend_per_signup',  # or module.spend_per_signup
 ]
 # let's create the dataframe!
 # if you only did `pip install sf-hamilton` earlier:
