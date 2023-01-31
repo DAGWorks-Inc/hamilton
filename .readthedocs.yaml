@@ -13,7 +13,7 @@ build:
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
-  fail_on_warning: false
+  fail_on_warning: true
   configuration: docs/conf.py
 
 # Optionally set the version of Python and requirements required to build your docs
