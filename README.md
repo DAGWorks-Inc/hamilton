@@ -106,14 +106,14 @@ initial_columns = {  # load from actuals or wherever -- this is our initial data
 }
 # we need to tell hamilton where to load function definitions from
 module_name = 'my_functions'
-module = importlib.import_module(module_name)
+module = importlib.import_module(module_name) # or we could just do `import my_functions`
 dr = driver.Driver(initial_columns, module)  # can pass in multiple modules
 # we need to specify what we want in the final dataframe.
 output_columns = [
-    'spend',
-    'signups',
-    'avg_3wk_spend',
-    'spend_per_signup',
+    'spend',  # or module.spend
+    'signups',  # or module.signups
+    'avg_3wk_spend',  # or module.avg_3wk_spend
+    'spend_per_signup',  # or spend_per_signup
 ]
 # let's create the dataframe!
 # if you only did `pip install sf-hamilton` earlier:
