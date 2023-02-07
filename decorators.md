@@ -218,38 +218,6 @@ logic to load a table from a database in the data warehouse. Note that we map th
 the value of the parameter `marketing_spend_db` is passed to `db`, and the value of the parameter `marketing_spend_table`
 is passed to `table`.
 
-## @model
-`@model` allows you to abstract a function that is a model. You will need to implement models that make sense for
-your business case. Reach out if you need examples.
-
-Under the hood, they're just DAG nodes whose inputs are determined by a configuration parameter. A model takes in
-two required parameters:
-1. The class it uses to run the model. If external to Stitch Fix you will need to write your own, else internally
-   see the internal docs for this. Basically the class defined determines what the function actually does.
-2. The configuration key that determines how the model functions. This is just the name of a configuration parameter
-   that stores the way the model is run.
-
-The following is an example usage of `@model`:
-
-```python
-import pandas as pd
-from hamilton.function_modifiers import model
-import internal_package_with_logic
-
-@model(internal_package_with_logic.GLM, 'model_p_cancel_manual_res')
-# This runs a GLM (Generalized Linear Model)
-# The associated configuration parameter is 'model_p_cancel_manual_res',
-# which points to the results of loading the model_p_cancel_manual_res table
-def prob_cancel_manual_res() -> pd.Series:
-    pass
-```
-
-`GLM` here is not part of the hamilton framework, and instead a user defined model.
-
-Models (optionally) accept a `output_column` parameter -- this is specifically if the name of the function differs
-from the output column that it should represent. E.G. if you use the model result as an intermediate object, and manipulate
-it all later. At Stitch Fix this is necessary because various dependent columns that a model queries
-(e.g. `MULTIPLIER_...` and `OFFSET_...`) are derived from the model's name.
 
 ## @config.when*
 
@@ -304,6 +272,14 @@ To make this easier, we have a few more `@config` decorators:
     - `@config` If you're feeling adventurous, you can pass in a lambda function that takes in the entire configuration
       and resolves to
     `True` or `False`. You probably don't want to do this.
+
+To pass in the right value, you would provide `param`, e.g. `gender_intent`, or `business_line`, as a field in the dictionary passed to instantiate the driver. E.g.
+```python
+config = {
+  "business_line": "kids"
+}
+dr = driver.Driver(config, module1, ...)
+```
 
 ## @tag and friends
 
@@ -548,3 +524,37 @@ from experimental.parameterize_frame import parameterize_frame
 Note that we have a double-index. Note that this is still in experimental,
 and has the possibility of being changed; we'd love feedback on this
 API if you end up using it!
+
+
+## @model
+`@model` allows you to abstract a function that is a model. You will need to implement models that make sense for
+your business case. Reach out if you need examples.
+
+Under the hood, they're just DAG nodes whose inputs are determined by a configuration parameter. A model takes in
+two required parameters:
+1. The class it uses to run the model. If external to Stitch Fix you will need to write your own, else internally
+   see the internal docs for this. Basically the class defined determines what the function actually does.
+2. The configuration key that determines how the model functions. This is just the name of a configuration parameter
+   that stores the way the model is run.
+
+The following is an example usage of `@model`:
+
+```python
+import pandas as pd
+from hamilton.function_modifiers import model
+import internal_package_with_logic
+
+@model(internal_package_with_logic.GLM, 'model_p_cancel_manual_res')
+# This runs a GLM (Generalized Linear Model)
+# The associated configuration parameter is 'model_p_cancel_manual_res',
+# which points to the results of loading the model_p_cancel_manual_res table
+def prob_cancel_manual_res() -> pd.Series:
+    pass
+```
+
+`GLM` here is not part of the hamilton framework, and instead a user defined model.
+
+Models (optionally) accept a `output_column` parameter -- this is specifically if the name of the function differs
+from the output column that it should represent. E.G. if you use the model result as an intermediate object, and manipulate
+it all later. At Stitch Fix this is necessary because various dependent columns that a model queries
+(e.g. `MULTIPLIER_...` and `OFFSET_...`) are derived from the model's name.
