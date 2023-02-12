@@ -101,15 +101,27 @@ class NodeTransformLifecycle(abc.ABC):
         """
         self.validate(fn)
         lifecycle_name = self.__class__.get_lifecycle_name()
-        if hasattr(fn, self.get_lifecycle_name()):
-            if not self.allows_multiple():
-                raise ValueError(
-                    f"Got multiple decorators for decorator @{self.__class__}. Only one allowed."
-                )
-            curr_value = getattr(fn, lifecycle_name)
-            setattr(fn, lifecycle_name, curr_value + [self])
+        if hasattr(fn, "__augmentations__"):
+            augmentations = getattr(fn, "__augmentations__")
         else:
-            setattr(fn, lifecycle_name, [self])
+            augmentations = []
+        # skip duplicate check
+        augmentations.append(
+            (
+                lifecycle_name,
+                self,
+            )
+        )
+        setattr(fn, "__augmentations__", augmentations)
+        # if hasattr(fn, self.get_lifecycle_name()):
+        #     if not self.allows_multiple():
+        #         raise ValueError(
+        #             f"Got multiple decorators for decorator @{self.__class__}. Only one allowed."
+        #         )
+        #     curr_value = getattr(fn, lifecycle_name)
+        #     setattr(fn, lifecycle_name, curr_value + [self])
+        # else:
+        #     setattr(fn, lifecycle_name, [self])
         return fn
 
 
@@ -390,22 +402,72 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     :param fn: Function to input.
     :return: A list of nodes into which this function transforms.
     """
-    node_resolvers = getattr(fn, NodeResolver.get_lifecycle_name(), [DefaultNodeResolver()])
-    for resolver in node_resolvers:
-        fn = resolver.resolve(fn, config)
-        if fn is None:
-            return []
-    (node_creator,) = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
-    nodes = node_creator.generate_nodes(fn, config)
-    if hasattr(fn, NodeExpander.get_lifecycle_name()):
-        (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
-        nodes = node_expander.transform_dag(nodes, config, fn)
-    node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
-    for dag_modifier in node_transformers:
-        nodes = dag_modifier.transform_dag(nodes, config, fn)
-    node_decorators = getattr(fn, NodeDecorator.get_lifecycle_name(), [DefaultNodeDecorator()])
-    for node_decorator in node_decorators:
-        nodes = node_decorator.transform_dag(nodes, config, fn)
+    _map = {
+        NodeResolver.get_lifecycle_name(): [DefaultNodeResolver()],
+        NodeCreator.get_lifecycle_name(): [DefaultNodeCreator()],
+        NodeExpander.get_lifecycle_name(): [DefaultNodeExpander()],
+        NodeTransformer.get_lifecycle_name(): [],
+        NodeDecorator.get_lifecycle_name(): [DefaultNodeDecorator()],
+    }
+    _seen = set()
+    augmentations = getattr(fn, "__augmentations__", [])
+
+    # node_resolvers = getattr(fn, NodeResolver.get_lifecycle_name(), [DefaultNodeResolver()])
+    def _node_resolvers(_node_resolvers, _nodes, _fn, _config):
+        for resolver in _node_resolvers:
+            _fn = resolver.resolve(_fn, _config)
+            if _fn is None:
+                return []
+        return _nodes, _fn, _config
+
+    # (node_creator,) = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
+    def _node_creators(_node_creator, _nodes, _fn, _config):
+        _nodes = _node_creator.generate_nodes(_fn, _config)
+        return _nodes, _fn, _config
+
+    # nodes = node_creator.generate_nodes(fn, config)
+    def _node_expanders(_node_expanders, _nodes, _config, _fn):
+        _nodes = _node_expanders.transform_dag(_nodes, _config, _fn)
+        return _nodes, _fn, _config
+
+    # if hasattr(fn, NodeExpander.get_lifecycle_name()):
+    #     (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
+    #     nodes = node_expander.transform_dag(nodes, config, fn)
+    # node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
+    def _node_transformers(_node_transformers, _nodes, _config, _fn):
+        for dag_modifier in _node_transformers:
+            _nodes = dag_modifier.transform_dag(_nodes, _config, _fn)
+        return _nodes, _fn, _config
+
+    # node_decorators = getattr(fn, NodeDecorator.get_lifecycle_name(), [DefaultNodeDecorator()])
+
+    def _node_decorators(_node_decorators, _nodes, _config, _fn):
+        for node_decorator in _node_decorators:
+            _nodes = node_decorator.transform_dag(_nodes, _config, _fn)
+        return _nodes, _fn, _config
+
+    _func_map = {
+        NodeResolver.get_lifecycle_name(): _node_resolvers,
+        NodeCreator.get_lifecycle_name(): _node_creators,
+        NodeExpander.get_lifecycle_name(): _node_expanders,
+        NodeTransformer.get_lifecycle_name(): _node_transformers,
+        NodeDecorator.get_lifecycle_name(): _node_decorators,
+    }
+    # for node_decorator in node_decorators:
+    #     nodes = node_decorator.transform_dag(nodes, config, fn)
+    nodes = []
+    for (name, node_modifier) in augmentations:
+        if name in _seen:
+            # TODO: handle duplicate
+            raise ValueError("Duplicate augmentation found: {}".format(name))
+        _seen.add(name)
+        # TODO map the name to the bits of logic required below
+        nodes, fn, config = _func_map[name](node_modifier, nodes, config, fn)
+
+    for k, v in _map.items():
+        if k not in _seen:
+            nodes, fn, config = _func_map[k](v, nodes, config, fn)
+
     return nodes
 
 
