@@ -1,0 +1,44 @@
+"""
+This is part of an ETL that you'd likely have.
+You pull data from a source, and transform it into features, and then save/fit a model with them.
+"""
+import constants
+import features
+import offline_loader
+import pandas as pd
+
+from hamilton import driver
+
+
+def create_features(source_location: str) -> pd.DataFrame:
+    model_features = constants.model_x_features
+    config = {}
+    dr = driver.Driver(config, offline_loader, features)
+    # Visualize the DAG if you need to:
+    # dr.display_all_functions('./offline_my_full_dag.dot', {"format": "png"})
+    # dr.visualize_execution(model_features,
+    #                        './offline_execution.dot',
+    #                        {"format": "png"},
+    #                        inputs={"location": "../data_quality/pandera/Absenteeism_at_work.csv"})
+    df = dr.execute(
+        # add age_mean and age_std_dev to the features
+        model_features + ["age_mean", "age_std_dev"],
+        inputs={"location": source_location},
+    )
+    return df
+
+
+if __name__ == "__main__":
+    # stick in command line args here
+    _source_location = "../../data_quality/pandera/Absenteeism_at_work.csv"
+    _features_df = create_features(_source_location)
+    # we need to store `age_mean` and `age_std_dev` somewhere for the online side.
+    # exercise for the reader: where would you store them for your context?
+    # ideas: with the model? in a database? in a file? in a feature store?
+    _age_mean = _features_df["age_mean"].values[0]
+    _age_std_dev = _features_df["age_std_dev"].values[0]
+    print(_features_df)
+    # Then do something with the features_df, e.g.:
+    #   save_features(features_df[constants.model_x_features], "my_model_features.csv")
+    #   train_model(features_df[constants.model_x_features])
+    #   etc.
