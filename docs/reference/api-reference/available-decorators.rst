@@ -4,7 +4,7 @@ Available Decorators
 
 While the 1:1 mapping of column -> function implementation is powerful, we've implemented a few decorators to promote
 business-logic reuse. The decorators we've defined are as follows (source can be found in
-`function\_modifiers <https://github.com/stitchfix/hamilton/blob/main/hamilton/function\_modifiers.py>`_):
+`function_modifiers <https://github.com/stitchfix/hamilton/blob/main/hamilton/function\_modifiers.py>`_):
 
 @tag
 ----
@@ -184,7 +184,7 @@ of the series, and one that checks whether the data is in a certain range.
 
 Note that you can also specify custom decorators using the ``@check_output_custom`` decorator.
 
-See `data\_quality <https://github.com/stitchfix/hamilton/blob/main/data\_quality.md>`_ for more information on
+See `data_quality <https://github.com/stitchfix/hamilton/blob/main/data\_quality.md>`_ for more information on
 available validators and how to build custom ones.
 
 @parameterize

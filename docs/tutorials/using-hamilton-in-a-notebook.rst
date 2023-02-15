@@ -177,7 +177,7 @@ Pro-tip: You can use ipython magic to autoreload code
 -----------------------------------------------------
 
 Open a Python module and a Jupyter notebook side-to-side, and then add
-`%autoreload ipython magic <https://ipython.org/ipython-doc/3/config/extensions/autoreload.html>`_ to the notebook to
+`autoreload ipython magic <https://ipython.org/ipython-doc/3/config/extensions/autoreload.html>`_ to the notebook to
 auto-reload the cell:
 
 .. code-block:: python

@@ -56,9 +56,9 @@ endeavor to ensure backwards compatible changes when they can be accommodated.
 Ray - Experimental!
 ===================
 
-`Ray <https://ray.io/>`_ is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
+`Ray <https://ray.io>`_ is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
 
-See `https://github.com/stitchfix/hamilton/tree/main/examples/ray <https://github.com/stitchfix/hamilton/tree/main/examples/ray>`_
+See `Scaling Hamilton on Ray <https://github.com/stitchfix/hamilton/tree/main/examples/ry>`_
 for an example of using Ray.
 
 Single Machine:
@@ -79,19 +79,18 @@ in terms of the amount of data it can process.
 Dask - Experimental!
 ====================
 
-`Ray <https://ray.io/>`_ is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
+`Ray <https://ray.io>`_ is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
 
-See `https://github.com/stitchfix/hamilton/tree/main/examples/dask <https://github.com/stitchfix/hamilton/tree/main/examples/dask>`_
+See `Scaling Hamilton on Dask <https://github.com/stitchfix/hamilton/tree/main/examples/dask>`_
 for an example of using Dask to scale Hamilton computation.
 
 Single Machine:
 ***************
 
-`Dask <https://dask.org/>`_ is a very easy way to enable multi-processing on a single machine. This enables you to
+`Dask <https://dask.org>`_ is a very easy way to enable multi-processing on a single machine. This enables you to
 easily make use of multiple CPU cores.
 
-What this doesn't help with is data scale, as you're still limited to what fits in memory on your machine.
-
+What this doesn't help with is data scale, as you're still limited to what fits in memory on your machine
 Distributed Computation:
 ************************
 
@@ -105,7 +104,7 @@ Koalas on Spark, a.k.a. Pandas API on Spark - Experimental!
 was the project code name to implement the `Pandas API on top of Spark <https://spark.apache.org/docs/latest/api/python/user\_guide/pandas\_on\_spark/index.html>`_.
 Hamilton makes it very easy for you to use Koalas on Spark.
 
-See `https://github.com/stitchfix/hamilton/tree/main/examples/spark <https://github.com/stitchfix/hamilton/tree/main/examples/spark>`_
+See `Scaling Hamilton on Koalas <https://github.com/stitchfix/hamilton/tree/main/examples/spark>`_
 for an example of using Koalas on Spark to scale Hamilton computation.
 
 Single Machine:

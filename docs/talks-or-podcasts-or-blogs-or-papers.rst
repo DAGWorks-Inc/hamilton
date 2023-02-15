@@ -12,7 +12,7 @@ This page curates talks, podcasts, and blogs about Hamilton
      - Info / Links
    * - August 2022
      - Hamilton: a modular open source declarative paradigm for high level modeling of dataflows
-     - `Paper <https://cdmsworkshop.github.io/2022/Proceedings/ShortPapers/Paper6\_StefanKrawczyk.pdf>`_ at `CDMS Workshop <https://cdmsworkshop.github.io/2022/overview.html>`_ @ `VLDB2022 <https://vldb.org/2022/>`_
+     - `Paper <https://cdmsworkshop.github.io/2022/Proceedings/ShortPapers/Paper6\_StefanKrawczyk.pdf>`_ at `CDMS Workshop <https://cdmsworkshop.github.io/2022/overview.html>`_ @ `VLDB2022 <https://vldb.org/2022>`_
    * - July 2022
      - Hamilton: A Python Micro-Framework for Data / Feature Engineering @MLOPs World Bay Area
      - `Slides <https://github.com/skrawcz/talks/files/9213924/Hamilton\_.A.Python.Micro-Framework.for.Data.\_.Feature.Engineering.pdf>`_
@@ -35,14 +35,14 @@ This page curates talks, podcasts, and blogs about Hamilton
      - Functions and DAGs: Hamilton, a General Purpose Micro-Framework for Pandas Dataframe Generation
      - `Blog post <https://towardsdatascience.com/functions-dags-introducing-hamilton-a-microframework-for-dataframe-generation-more-8e34b84efc1d>`__
    * - February 2022
-     - [Open Source] Hamilton, a micro framework for creating dataframes, and its application at Stitch Fix @ `Apply(meetup) <https://www.applyconf.com/agenda/open-source-hamilton-a-micro-framework-for-creating-dataframes-and-its-application-at-stitch-fix/>`_
+     - [Open Source] Hamilton, a micro framework for creating dataframes, and its application at Stitch Fix @ `Apply(meetup) <https://www.applyconf.com/agenda/open-source-hamilton-a-micro-framework-for-creating-dataframes-and-its-application-at-stitch-fix>`_
      - 30 minute talk about Hamilton, it's origin, tips on using it, and some exciting extensions & plans - `Youtube <https://www.youtube.com/watch?v=CHfrT5OVjlM>`_. For slides, see below.
    * - October 2022
      - Functions & DAGs: introducing Hamilton, a microframework for dataframe generation
-     - Blog post on Hamilton origins. `https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/ <https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/>`_
+     - Blog post on Hamilton origins. `Blog post <https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton>`_
    * - April 2021
      - Hamilton: a Micro Framework for Creating Dataframes @ applyconf
-     - 10 minute lightning talk on Hamilton `https://www.youtube.com/watch?v=B5Zp\_30Knoo <https://www.youtube.com/watch?v=B5Zp\_30Knoo>`_
+     - 10 minute lightning talk on Hamilton `Youtube video <https://www.youtube.com/watch?v=B5Zp\_30Knoo>`_
 
 Slides
 ------

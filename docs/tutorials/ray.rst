@@ -9,11 +9,11 @@ For those eager to just see code, please jump right ahead to a full hello world 
 
 .. image:: ../_static/Hamilton_ray_post_image.png
 
-For those unfamiliar with `Ray <https://ray.io/>`_, it is an open source framework that can scale python applications
-that came out of `UC Berkeley <https://rise.cs.berkeley.edu/projects/ray/>`_. It has a growing ecosystem of tooling
+For those unfamiliar with `Ray <https://ray.io>`_, it is an open source framework that can scale python applications
+that came out of `UC Berkeley <https://rise.cs.berkeley.edu/projects/ray>`_. It has a growing ecosystem of tooling
 that helps with lots of machine learning related workflows. For example, it sells itself as enabling you to scale from
 your laptop to a cluster very easily, without having to change much code. In terms of real world use, we like to use
-Ray as a very quick way to implement `multiprocessing in python <https://machinelearningmastery.com/multiprocessing-in-python/>`_
+Ray as a very quick way to implement `multiprocessing in python <https://machinelearningmastery.com/multiprocessing-in-python>`_
 without worry about the details!
 
 Ray Primer
@@ -151,7 +151,7 @@ been very stable (hasn’t changed since launch), but to feel good about making 
 think.
 #. We don’t expose all the functionality of Ray, but we could. E.g. memory aware scheduling, or specifying resources for
 specific functions. Let us know if you want something exposed — create an issue on github please — 
-`https://github.com/stitchfix/hamilton <https://github.com/stitchfix/hamilton>`_.
+`stitchfix/hamilton <https://github.com/stitchfix/hamilton>`_.
 
 To conclude
 -----------

@@ -53,8 +53,7 @@ This is easy with the ``check_output`` decorator!
         return avg_3wk_spend / signups
 
 It takes in a series of arguments -- you can discover these by exploring the code (more documentation of specific
-arguments to follow): `https://github.com/stitchfix/hamilton/blob/main/hamilton/data\_quality/default\_validators.py <https://github.com/stitchfix/hamilton/blob/main/hamilton/data\_quality/default\_validators.py>`_.
-
+arguments to follow): `DefaultValidation <https://github.com/stitchfix/hamilton/blob/main/hamilton/data\_quality/default\_validators.py/>`_
 You can also utilize ``pandera`` to the same effect, simply by providing a ``schema`` argument:
 
 .. code-block:: python
@@ -185,6 +184,6 @@ enabling you to programmatically react to them down the line.
 This concludes our brief lessons on managing data quality in Hamilton -- we hope you spin it up and give it a try.
 
 In the mean time, we have more detailed documentation here -
-`https://github.com/stitchfix/hamilton/blob/main/data\_quality.md <https://github.com/stitchfix/hamilton/blob/main/data\_quality.md>`_
+`data_quality.md <https://github.com/stitchfix/hamilton/blob/main/data\_quality.md/>`_
 and some more examples (including distributed systems support) -
-`https://github.com/stitchfix/hamilton/tree/main/examples/data\_quality <https://github.com/stitchfix/hamilton/tree/main/examples/data\_quality>`_.
+`data_quality examples <https://github.com/stitchfix/hamilton/tree/main/examples/data\_quality/>`_.

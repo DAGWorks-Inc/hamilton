@@ -210,7 +210,7 @@ Visualizing Execution
 #####################
 
 Hamilton enables you to quickly and easily visualize your entire DAG, as well as the specific execution path to compute
-an output. Underneath we default to use [graphviz](https://graphviz.org/) for visualization.
+an output. Underneath we default to use `graphviz <https://graphviz.org/>`_ for visualization.
 
 Visualize just execution required to create outputs
 ***************************************************
