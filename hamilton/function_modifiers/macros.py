@@ -226,6 +226,13 @@ class dynamic_transform(base.NodeCreator):
             )
         ]
 
+    def require_config(self) -> List[str]:
+        """Returns the configuration parameters that this model requires
+
+        :return: Just the one config param used by this model
+        """
+        return [self.config_param]
+
 
 class model(dynamic_transform):
     """Model, same as a dynamic transform"""

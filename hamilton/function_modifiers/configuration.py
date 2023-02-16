@@ -1,4 +1,4 @@
-from typing import Any, Callable, Collection, Dict
+from typing import Any, Callable, Collection, Dict, List, Optional
 
 from . import base
 
@@ -13,17 +13,31 @@ class config(base.NodeResolver):
     That said, you can have functions that *only* exist in certain configurations without worrying about it.
     """
 
-    def __init__(self, resolves: Callable[[Dict[str, Any]], bool], target_name: str = None):
+    def __init__(
+        self,
+        resolves: Callable[[Dict[str, Any]], bool],
+        target_name: str = None,
+        config_used: List[str] = None,
+    ):
         self.does_resolve = resolves
         self.target_name = target_name
+        self._config_used = config_used
+
+    def required_config(self) -> Optional[List[str]]:
+        """Nothing is currently required"""
+        return []  # All of these can default to None
+
+    def optional_config(self) -> Dict[str, Any]:
+        """Everything is optional with None as the required value"""
+        return {key: None for key in self._config_used}
 
     def _get_function_name(self, fn: Callable) -> str:
         if self.target_name is not None:
             return self.target_name
         return base.sanitize_function_name(fn.__name__)
 
-    def resolve(self, fn, configuration: Dict[str, Any]) -> Callable:
-        if not self.does_resolve(configuration):
+    def resolve(self, fn, config: Dict[str, Any]) -> Callable:
+        if not self.does_resolve(config):
             return None
         fn.__name__ = self._get_function_name(fn)  # TODO -- copy function to not mutate it
         return fn
@@ -45,7 +59,7 @@ class config(base.NodeResolver):
         def resolves(configuration: Dict[str, Any]) -> bool:
             return all(value == configuration.get(key) for key, value in key_value_pairs.items())
 
-        return config(resolves, target_name=name)
+        return config(resolves, target_name=name, config_used=list(key_value_pairs.keys()))
 
     @staticmethod
     def when_not(name=None, **key_value_pairs: Any) -> "config":
@@ -58,11 +72,12 @@ class config(base.NodeResolver):
         def resolves(configuration: Dict[str, Any]) -> bool:
             return all(value != configuration.get(key) for key, value in key_value_pairs.items())
 
-        return config(resolves, target_name=name)
+        return config(resolves, target_name=name, config_used=list(key_value_pairs.keys()))
 
     @staticmethod
     def when_in(name=None, **key_value_group_pairs: Collection[Any]) -> "config":
-        """Yields a decorator that resolves the function if all of the keys are equal to one of items in the list of values.
+        """Yields a decorator that resolves the function if all of the
+        values corresponding to the config keys are equal to one of items in the list of values.
 
         :param key_value_group_pairs: pairs of key-value mappings where the value is a list of possible values
         :return: a configuration decorator
@@ -73,7 +88,7 @@ class config(base.NodeResolver):
                 configuration.get(key) in value for key, value in key_value_group_pairs.items()
             )
 
-        return config(resolves, target_name=name)
+        return config(resolves, target_name=name, config_used=list(key_value_group_pairs.keys()))
 
     @staticmethod
     def when_not_in(**key_value_group_pairs: Collection[Any]) -> "config":
@@ -100,4 +115,4 @@ class config(base.NodeResolver):
                 configuration.get(key) not in value for key, value in key_value_group_pairs.items()
             )
 
-        return config(resolves)
+        return config(resolves, config_used=list(key_value_group_pairs.keys()))

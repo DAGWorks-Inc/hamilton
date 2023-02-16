@@ -2,7 +2,7 @@ import abc
 import collections
 import functools
 import logging
-from typing import Any, Callable, Collection, Dict, List, Tuple
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple
 
 from hamilton import node, registry
 
@@ -112,16 +112,45 @@ class NodeTransformLifecycle(abc.ABC):
             setattr(fn, lifecycle_name, [self])
         return fn
 
+    def required_config(self) -> Optional[List[str]]:
+        """Declares the required configuration keys for this decorator.
+        Note that these configuration keys will be filtered and passed to the `configuration`
+        parameter of the functions that this decorator uses.
+
+        Note that this currently allows for a "escape hatch".
+        That is, returning None from this function.
+
+        :return: A list of the required configuration keys.
+        """
+        return []
+
+    def optional_config(self) -> Dict[str, Any]:
+        """Declares the optional configuration keys for this decorator.
+        These are configuration keys that can be used by the decorator, but are not required.
+        Along with these we have *defaults*, which we will use to pass to the config.
+
+        :return:
+        """
+        return {}
+
+    @property
+    def name(self) -> str:
+        """Name of the decorator.
+
+        :return: The name of the decorator
+        """
+        return self.__class__.__name__
+
 
 class NodeResolver(NodeTransformLifecycle):
     """Decorator to resolve a nodes function. Can modify anything about the function and is run at DAG creation time."""
 
     @abc.abstractmethod
-    def resolve(self, fn: Callable, configuration: Dict[str, Any]) -> Callable:
+    def resolve(self, fn: Callable, config: Dict[str, Any]) -> Callable:
         """Determines what a function resolves to. Returns None if it should not be included in the DAG.
 
         :param fn: Function to resolve
-        :param configuration: DAG config
+        :param config: DAG config
         :return: A name if it should resolve to something. Otherwise None.
         """
         pass
@@ -339,7 +368,7 @@ class DefaultNodeCreator(NodeCreator):
 
 
 class DefaultNodeResolver(NodeResolver):
-    def resolve(self, fn: Callable, configuration: Dict[str, Any]) -> Callable:
+    def resolve(self, fn: Callable, config: Dict[str, Any]) -> Callable:
         return fn
 
     def validate(self, fn):
@@ -359,6 +388,43 @@ class DefaultNodeExpander(NodeExpander):
 class DefaultNodeDecorator(NodeDecorator):
     def decorate_node(self, node_: node.Node) -> node.Node:
         return node_
+
+
+def merge_configs(
+    name_for_error: str,
+    config: Dict[str, Any],
+    config_required: List[str],
+    config_optional_with_defaults: Dict[str, Any],
+) -> Dict[str, Any]:
+    missing_keys = (
+        set(config_required) - set(config.keys()) - set(config_optional_with_defaults.keys())
+    )
+    if len(missing_keys) > 0:
+        raise ValueError(
+            f"The following configurations are required by {name_for_error}: {missing_keys} b"
+        )
+    config_out = {key: config[key] for key in config_required}
+    for key in config_optional_with_defaults:
+        config_out[key] = config.get(key, config_optional_with_defaults[key])
+    return config_out
+
+
+def filter_config(config: Dict[str, Any], decorator: NodeTransformLifecycle) -> Dict[str, Any]:
+    """Filters the config to only include the keys in config_required
+    TODO -- break this into two so we can make it easier to test.
+
+    :param config: The config to filter
+    :param config_required: The keys to include
+    :param decorator: The decorator that is utilizing the configuration
+    :return: The filtered config
+    """
+    config_required = decorator.required_config()
+    config_optional_with_defaults = decorator.optional_config()
+    if config_required is None:
+        # This is an out to allow for backwards compatibility for the config.resolve decorator
+        # Note this is an internal API, but we made the config with the `resolve` parameter public
+        return config
+    return merge_configs(decorator.name, config, config_required, config_optional_with_defaults)
 
 
 def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
@@ -388,24 +454,26 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     5. Return the final list of nodes.
 
     :param fn: Function to input.
+    :param config: Configuratino to use -- this can be used by decorators to specify
+    which configuration they need.
     :return: A list of nodes into which this function transforms.
     """
     node_resolvers = getattr(fn, NodeResolver.get_lifecycle_name(), [DefaultNodeResolver()])
     for resolver in node_resolvers:
-        fn = resolver.resolve(fn, config)
+        fn = resolver.resolve(fn, config=filter_config(config, resolver))
         if fn is None:
             return []
     (node_creator,) = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
-    nodes = node_creator.generate_nodes(fn, config)
+    nodes = node_creator.generate_nodes(fn, filter_config(config, node_creator))
     if hasattr(fn, NodeExpander.get_lifecycle_name()):
         (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
-        nodes = node_expander.transform_dag(nodes, config, fn)
+        nodes = node_expander.transform_dag(nodes, filter_config(config, node_expander), fn)
     node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
     for dag_modifier in node_transformers:
-        nodes = dag_modifier.transform_dag(nodes, config, fn)
+        nodes = dag_modifier.transform_dag(nodes, filter_config(config, dag_modifier), fn)
     node_decorators = getattr(fn, NodeDecorator.get_lifecycle_name(), [DefaultNodeDecorator()])
     for node_decorator in node_decorators:
-        nodes = node_decorator.transform_dag(nodes, config, fn)
+        nodes = node_decorator.transform_dag(nodes, filter_config(config, node_decorator), fn)
     return nodes
 
 
