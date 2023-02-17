@@ -306,15 +306,10 @@ class NodeTransformer(SubDAGModifier):
         :param nodes: Nodes to separate out
         :return: A tuple consisting of [internal, final] node sets
         """
-
-        def node_tagged_non_final(node_: node.Node):
-            return node_.tags.get(NodeTransformer.NON_FINAL_TAG, False)  # Defaults to final
-
         non_final_nodes = set()
         for node_ in nodes:
             for dep in node_.input_types:
-                if not node_tagged_non_final(node_):
-                    non_final_nodes.add(dep)
+                non_final_nodes.add(dep)
         return [node_ for node_ in nodes if node_.name not in non_final_nodes]
 
     @staticmethod

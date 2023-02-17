@@ -55,7 +55,6 @@ class BaseDataValidationDecorator(base.NodeTransformer):
                 tags={
                     **node_.tags,
                     **{
-                        base.NodeTransformer.NON_FINAL_TAG: True,  # This is not to be used as a subdag later on
                         IS_DATA_VALIDATOR_TAG: True,
                         DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG: node_.name,
                     },
@@ -110,7 +109,7 @@ class check_output_custom(BaseDataValidationDecorator):
     def __init__(self, *validators: dq_base.DataValidator, target_: base.TargetType = None):
         """Creates a check_output_custom decorator. This allows
         passing of custom validators that implement the DataValidator interface.
-        :param __target: The nodes to check the output of. For more detail read the docs in
+        :param target_: The nodes to check the output of. For more detail read the docs in
         function_modifiers.base.NodeTransformer, but your options are:
         1. None: This will check just the "final node" (the node that is returned by the decorated function)
         2. ... (Ellipsis) This will check all nodes in the subDAG created by this
