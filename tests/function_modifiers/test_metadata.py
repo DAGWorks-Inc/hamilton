@@ -108,3 +108,57 @@ def test_tag_outputs_with_overrides():
     assert node_map["b"].tags["tag_b_gets"] == "tag_value_b_gets"
     assert node_map["a"].tags["tag_key_everyone_gets"] == "tag_value_just_a_gets"
     assert node_map["b"].tags["tag_key_everyone_gets"] == "tag_value_everyone_gets"
+
+
+def test_tag_with_extract_target_node():
+    @function_modifiers.tag(target="data", target_="data")
+    @function_modifiers.tag(target="a", target_="a")
+    @function_modifiers.tag(target="b", target_="b")
+    @function_modifiers.extract_columns("a", "b")
+    def data() -> pd.DataFrame:
+        return pd.DataFrame.from_records({"a": [1], "b": [2]})
+
+    nodes = function_modifiers.base.resolve_nodes(data, {})
+    node_map = {node_.name: node_ for node_ in nodes}
+    assert node_map["data"].tags["target"] == "data"
+    assert node_map["a"].tags["target"] == "a"
+    assert node_map["b"].tags["target"] == "b"
+
+
+def test_tag_with_extract_target_all():
+    @function_modifiers.tag(target="data", target_=...)
+    @function_modifiers.extract_columns("a", "b")
+    def data() -> pd.DataFrame:
+        return pd.DataFrame.from_records({"a": [1], "b": [2]})
+
+    nodes = function_modifiers.base.resolve_nodes(data, {})
+    node_map = {node_.name: node_ for node_ in nodes}
+    assert node_map["data"].tags["target"] == "data"
+    assert node_map["a"].tags["target"] == "data"
+    assert node_map["b"].tags["target"] == "data"
+
+
+def test_tag_with_extract_target_limited():
+    @function_modifiers.tag(target="column", target_=["a", "b"])
+    @function_modifiers.extract_columns("a", "b")
+    def data() -> pd.DataFrame:
+        return pd.DataFrame.from_records({"a": [1], "b": [2]})
+
+    nodes = function_modifiers.base.resolve_nodes(data, {})
+    node_map = {node_.name: node_ for node_ in nodes}
+    assert node_map["a"].tags["target"] == "column"
+    assert node_map["b"].tags["target"] == "column"
+    assert node_map["data"].tags.get("target") is None
+
+
+def test_tag_with_extract_target_sinks():
+    @function_modifiers.tag(target="column", target_=None)
+    @function_modifiers.extract_columns("a", "b")
+    def data() -> pd.DataFrame:
+        return pd.DataFrame.from_records({"a": [1], "b": [2]})
+
+    nodes = function_modifiers.base.resolve_nodes(data, {})
+    node_map = {node_.name: node_ for node_ in nodes}
+    assert node_map["a"].tags["target"] == "column"
+    assert node_map["b"].tags["target"] == "column"
+    assert node_map["data"].tags.get("target") is None

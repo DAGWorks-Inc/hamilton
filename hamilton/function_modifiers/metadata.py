@@ -45,12 +45,19 @@ class tag(base.NodeDecorator):
         "module",
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 
-    def __init__(self, **tags: str):
+    def __init__(self, *, target_: base.TargetType = None, **tags: str):
         """Constructor for adding tag annotations to a function.
 
+        :param target_: Target nodes to decorate. This can be one of:
+        -> None: tag all nodes outputted by this that are "final" (E.g. do not have a node
+        outputted by this that depend on them)
+        -> Ellipsis (...) tag *all* nodes outputted by this
+        -> Collection[str] tag *only* the nodes with the specified names
+        -> str: tag *only* the node with the specified name
         :param tags: the keys are always going to be strings, so the type annotation here means the values are strings.
             Implicitly this is `Dict[str, str]` but the PEP guideline is to only annotate it with `str`.
         """
+        super(tag, self).__init__(target=target_)
         self.tags = tags
 
     def decorate_node(self, node_: node.Node) -> node.Node:
@@ -125,6 +132,7 @@ class tag_outputs(base.NodeDecorator):
         nodes are spelled correctly as it takes in a superset of nodes.
         :param tag_mapping: Mapping of node name to tags -- this is akin to applying @tag to individual nodes produced by the function
         """
+        super(base.NodeDecorator, self).__init__(target=None)
         self.tag_mapping = tag_mapping
 
     def decorate_node(self, node_: node.Node) -> node.Node:

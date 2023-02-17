@@ -107,12 +107,20 @@ class BaseDataValidationDecorator(base.NodeTransformer):
 
 
 class check_output_custom(BaseDataValidationDecorator):
-    def __init__(self, *validators: dq_base.DataValidator):
+    def __init__(self, *validators: dq_base.DataValidator, target_: base.TargetType = None):
         """Creates a check_output_custom decorator. This allows
         passing of custom validators that implement the DataValidator interface.
+        :param __target: The nodes to check the output of. For more detail read the docs in
+        function_modifiers.base.NodeTransformer, but your options are:
+        1. None: This will check just the "final node" (the node that is returned by the decorated function)
+        2. ... (Ellipsis) This will check all nodes in the subDAG created by this
+        3. string: This will check the node with the given name
+        4. Collection[str]: This will check all nodes specified in the list
 
+        In all likelihood, you *don't* want ..., but the others are useful.
         :param validator: Validator to use.
         """
+        super(check_output_custom, self).__init__(target=target_)
         self.validators = list(validators)
 
     def get_validators(self, node_to_validate: node.Node) -> List[dq_base.DataValidator]:
@@ -132,15 +140,19 @@ class check_output(BaseDataValidationDecorator):
         self,
         importance: str = dq_base.DataValidationLevel.WARN.value,
         default_decorator_candidates: Type[dq_base.BaseDefaultValidator] = None,
+        target_: base.TargetType = None,
         **default_validator_kwargs: Any,
     ):
         """Creates the check_output validator. This constructs the default validator class.
         Note that this creates a whole set of default validators
         TODO -- enable construction of custom validators using check_output.custom(*validators)
-
         :param importance: For the default validator, how important is it that this passes.
-        :param validator_kwargs: keyword arguments to be passed to the validator
+        :param target -- a target specifying which nodes to decorate. See the docs in checdk_output_custom
+        for a quick overview and the docs in function_modifiers.base.NodeTransformer for more detail.
+        :param default_validator_kwargs: keyword arguments to be passed to the validator
+        :param target_
         """
+        super(check_output, self).__init__(target=target_)
         self.importance = importance
         self.default_validator_kwargs = default_validator_kwargs
         self.default_decorator_candidates = default_decorator_candidates

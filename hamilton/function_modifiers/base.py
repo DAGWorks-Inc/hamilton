@@ -2,7 +2,13 @@ import abc
 import collections
 import functools
 import logging
-from typing import Any, Callable, Collection, Dict, List, Optional, Tuple
+
+try:
+    from types import EllipsisType
+except ImportError:
+    # python3.10 and above
+    EllipsisType = type(...)
+from typing import Any, Callable, Collection, Dict, List, Optional, Union
 
 from hamilton import node, registry
 
@@ -146,7 +152,7 @@ class NodeResolver(NodeTransformLifecycle):
     """Decorator to resolve a nodes function. Can modify anything about the function and is run at DAG creation time."""
 
     @abc.abstractmethod
-    def resolve(self, fn: Callable, config: Dict[str, Any]) -> Callable:
+    def resolve(self, fn: Callable, config: Dict[str, Any]) -> Optional[Callable]:
         """Determines what a function resolves to. Returns None if it should not be included in the DAG.
 
         :param fn: Function to resolve
@@ -262,13 +268,39 @@ class NodeExpander(SubDAGModifier):
         return False
 
 
+TargetType = Union[str, Collection[str], None, EllipsisType]
+
+
 class NodeTransformer(SubDAGModifier):
-    NON_FINAL_TAG = "hamilton.decorators.non_final"  # TODO -- utilize this in _separate_final_nodes
+    def __init__(self, target: TargetType):
+        """Target determines to which node(s) this applies. This represents selection from a subDAG.
+        For the options, consider at the following graph:
+        A -> B -> C
+             \_> D -> E
+
+        1. If it is `None`, it defaults to the "old" behavior. That is, is applies to all "final" DAG
+        nodes. In the subdag. That is, all nodes with out-degree zero/sinks. In the case
+        above, *just* C and E will be transformed.
+
+        2. If it is a string, it will be interpreted as a node name. In the above case, if it is A, it
+        will transform A, B will transform B, etc...
+
+        3. If it is a collection of strings, it will be interpreted as a collection of node names.
+        That is, it will apply to all nodes that are referenced in that collection. In the above case,
+        if it is ["A", "B"], it will transform to A and B.
+
+        4. If it is Ellipsis, it will apply to all nodes in the subDAG. In the above case, it will
+        transform A, B, C, D, and E.
+
+        :param target: Which node(s)/node spec to run transforms on top of. These nodes will get
+        replaced by a list of nodes.
+        """
+        self.target = target
 
     @staticmethod
-    def _separate_final_nodes(
+    def _extract_final_nodes(
         nodes: Collection[node.Node],
-    ) -> Tuple[Collection[node.Node], Collection[node.Node]]:
+    ) -> Collection[node.Node]:
         """Separates out final nodes (sinks) from the nodes.
 
         :param nodes: Nodes to separate out
@@ -283,9 +315,51 @@ class NodeTransformer(SubDAGModifier):
             for dep in node_.input_types:
                 if not node_tagged_non_final(node_):
                     non_final_nodes.add(dep)
-        return [node_ for node_ in nodes if node_.name in non_final_nodes], [
-            node_ for node_ in nodes if node_.name not in non_final_nodes
-        ]
+        return [node_ for node_ in nodes if node_.name not in non_final_nodes]
+
+    @staticmethod
+    def select_nodes(target: TargetType, nodes: Collection[node.Node]) -> Collection[node.Node]:
+        """Resolves all nodes to match the target. This does a resolution on the rules
+        specified in the constructor above, giving a set of nodes that match a target.
+        We then can split them from the remainder of nodes, and just transform them.
+
+        :param target: The target to use to resolve nodes
+        :param nodes: SubDAG to resolve.
+        :return: The set of nodes matching this target
+        """
+        if target is None:
+            return NodeTransformer._extract_final_nodes(nodes)
+        elif target is Ellipsis:
+            return nodes
+        elif isinstance(target, str):
+            out = [node_ for node_ in nodes if node_.name == target]
+            if len(out) == 0:
+                raise InvalidDecoratorException(f"Could not find node {target} in {nodes}")
+            return out
+        elif isinstance(target, Collection):
+            out = [node_ for node_ in nodes if node_.name in target]
+            if len(out) != len(target):
+                raise InvalidDecoratorException(
+                    f"Could not find all nodes {target} in {nodes}. "
+                    f"Missing ({set(target) - set([node_.name for node_ in out])})"
+                )
+            return out
+        else:
+            raise ValueError(f"Invalid target: {target}")
+
+    @staticmethod
+    def compliment(
+        all_nodes: Collection[node.Node], nodes_to_transform: Collection[node.Node]
+    ) -> Collection[node.Node]:
+        """Given a set of nodes, and a set of nodes to transform, returns the set of nodes that
+        are not in the set of nodes to transform.
+
+        :param all_nodes: All nodes in the subdag
+        :param nodes_to_transform: All nodes to transform
+        :return: A collection of nodes that are not in the set of nodes to transform but are in the
+        subdag
+        """
+        return [node_ for node_ in all_nodes if node_ not in nodes_to_transform]
 
     def transform_dag(
         self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
@@ -298,10 +372,11 @@ class NodeTransformer(SubDAGModifier):
         :param fn: Original function that we're utilizing/modifying
         :return: The DAG of nodes in this node
         """
-        internal_nodes, final_nodes = self._separate_final_nodes(nodes)
-        out = list(internal_nodes)
-        for sink in final_nodes:
-            out += list(self.transform_node(sink, config, fn))
+        nodes_to_transform = self.select_nodes(self.target, nodes)
+        nodes_to_keep = self.compliment(nodes, nodes_to_transform)
+        out = list(nodes_to_keep)
+        for node_to_transform in nodes_to_transform:
+            out += list(self.transform_node(node_to_transform, config, fn))
         return out
 
     @abc.abstractmethod
@@ -325,6 +400,14 @@ class NodeTransformer(SubDAGModifier):
 
 class NodeDecorator(NodeTransformer, abc.ABC):
     DECORATE_NODES = "decorate_nodes"
+
+    def __init__(self, target: TargetType):
+        """Initializes a NodeDecorator with a target, to determine *which* nodes to decorate.
+        See documentation in NodeTransformer for more details on what to decorate.
+
+        :param target: Target parameter to resolve set of nodes to transform.
+        """
+        super().__init__(target=target)
 
     def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
@@ -386,22 +469,33 @@ class DefaultNodeExpander(NodeExpander):
 
 
 class DefaultNodeDecorator(NodeDecorator):
+    def __init__(self):
+        super().__init__(target=...)
+
     def decorate_node(self, node_: node.Node) -> node.Node:
         return node_
 
 
-def merge_configs(
+def resolve_config(
     name_for_error: str,
     config: Dict[str, Any],
     config_required: List[str],
     config_optional_with_defaults: Dict[str, Any],
 ) -> Dict[str, Any]:
+    """Resolves the configuration that a decorator utilizes
+
+    :param name_for_error:
+    :param config:
+    :param config_required:
+    :param config_optional_with_defaults:
+    :return:
+    """
     missing_keys = (
         set(config_required) - set(config.keys()) - set(config_optional_with_defaults.keys())
     )
     if len(missing_keys) > 0:
-        raise ValueError(
-            f"The following configurations are required by {name_for_error}: {missing_keys} b"
+        raise MissingConfigParametersException(
+            f"The following configurations are required by {name_for_error}: {missing_keys}"
         )
     config_out = {key: config[key] for key in config_required}
     for key in config_optional_with_defaults:
@@ -424,7 +518,7 @@ def filter_config(config: Dict[str, Any], decorator: NodeTransformLifecycle) -> 
         # This is an out to allow for backwards compatibility for the config.resolve decorator
         # Note this is an internal API, but we made the config with the `resolve` parameter public
         return config
-    return merge_configs(decorator.name, config, config_required, config_optional_with_defaults)
+    return resolve_config(decorator.name, config, config_required, config_optional_with_defaults)
 
 
 def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
@@ -478,4 +572,8 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
 
 
 class InvalidDecoratorException(Exception):
+    pass
+
+
+class MissingConfigParametersException(Exception):
     pass
