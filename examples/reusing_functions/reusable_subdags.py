@@ -1,9 +1,7 @@
 import pandas as pd
 import unique_users
 
-from hamilton.experimental.decorators import reuse
-from hamilton.experimental.decorators.reuse import reuse_functions
-from hamilton.function_modifiers import value
+from hamilton.function_modifiers import subdag, value
 
 
 def website_interactions() -> pd.DataFrame:
@@ -60,67 +58,55 @@ def website_interactions() -> pd.DataFrame:
     return df
 
 
-@reuse_functions(
-    with_inputs={"grain": value("day"), "region": value("US")},
-    namespace="daily_users_US",
-    outputs={"unique_users": "unique_users_daily_US"},
-    with_config={"region": "US"},
-    load_from=[unique_users],
+@subdag(
+    unique_users,
+    inputs={"grain": value("day")},
+    config={"region": "US"},
 )
-def daily_user_data_US() -> reuse.MultiOutput(unique_users_daily_US=pd.Series):
-    pass
+def daily_unique_users_US(unique_users: pd.Series) -> pd.Series:
+    return unique_users
 
 
-@reuse_functions(
-    with_inputs={"grain": value("week"), "region": value("US")},
-    namespace="weekly_users_US",
-    outputs={"unique_users": "unique_users_weekly_US"},
-    with_config={"region": "US"},
-    load_from=[unique_users],
+@subdag(
+    unique_users,
+    inputs={"grain": value("week")},
+    config={"region": "US"},
 )
-def weekly_user_data_US() -> reuse.MultiOutput(unique_users_weekly_US=pd.Series):
-    pass
+def weekly_unique_users_US(unique_users: pd.Series) -> pd.Series:
+    return unique_users
 
 
-@reuse_functions(
-    with_inputs={"grain": value("month"), "region": value("US")},
-    namespace="monthly_users_US",
-    outputs={"unique_users": "unique_users_monthly_US"},
-    with_config={"region": "US"},
-    load_from=[unique_users],
+@subdag(
+    unique_users,
+    inputs={"grain": value("month")},
+    config={"region": "US"},
 )
-def monthly_user_data_US() -> reuse.MultiOutput(unique_users_monthly_US=pd.Series):
-    pass
+def monthly_unique_users_US(unique_users: pd.Series) -> pd.Series:
+    return unique_users
 
 
-@reuse_functions(
-    with_inputs={"grain": value("day"), "region": value("CA")},
-    namespace="daily_user_data_CA",
-    outputs={"unique_users": "unique_users_daily_CA"},
-    with_config={"region": "CA"},
-    load_from=[unique_users],
+@subdag(
+    unique_users,
+    inputs={"grain": value("day")},
+    config={"region": "CA"},
 )
-def daily_user_data_CA() -> reuse.MultiOutput(unique_users_daily_CA=pd.Series):
-    pass
+def daily_unique_users_CA(unique_users: pd.Series) -> pd.Series:
+    return unique_users
 
 
-@reuse_functions(
-    with_inputs={"grain": value("month"), "region": value("CA")},
-    namespace="weekly_user_data_CA",
-    outputs={"unique_users": "unique_users_weekly_CA"},
-    with_config={"region": "CA"},
-    load_from=[unique_users],
+@subdag(
+    unique_users,
+    inputs={"grain": value("week")},
+    config={"region": "CA"},
 )
-def weekly_user_data_CA() -> reuse.MultiOutput(unique_users_weekly_CA=pd.Series):
-    pass
+def weekly_unique_users_CA(unique_users: pd.Series) -> pd.Series:
+    return unique_users
 
 
-@reuse_functions(
-    with_inputs={"grain": value("day"), "region": value("CA")},
-    namespace="monthly_user_data_CA",
-    outputs={"unique_users": "unique_users_monthly_CA"},
-    with_config={"region": "CA"},
-    load_from=[unique_users],
+@subdag(
+    unique_users,
+    inputs={"grain": value("month")},
+    config={"region": "CA"},
 )
-def monthly_user_data_CA() -> reuse.MultiOutput(unique_users_monthly_CA=pd.Series):
-    pass
+def monthly_unique_users_CA(unique_users: pd.Series) -> pd.Series:
+    return unique_users

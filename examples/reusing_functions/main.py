@@ -46,23 +46,28 @@ class TimeSeriesJoinResultsBuilder(ResultMixin):
         return pd.DataFrame(resampled_results).bfill()
 
 
-dr = Driver(
-    {},
-    reusable_subdags,
-    adapter=SimplePythonGraphAdapter(
-        result_builder=TimeSeriesJoinResultsBuilder(upsample_frequency="D")
-    ),
-)
+def main():
+    dr = Driver(
+        {},
+        reusable_subdags,
+        adapter=SimplePythonGraphAdapter(
+            result_builder=TimeSeriesJoinResultsBuilder(upsample_frequency="D")
+        ),
+    )
 
-result = dr.execute(
-    [
-        "unique_users_daily_US",
-        "unique_users_daily_CA",
-        "unique_users_weekly_US",
-        "unique_users_weekly_CA",
-        "unique_users_monthly_US",
-        "unique_users_monthly_CA",
-    ]
-)
+    result = dr.execute(
+        [
+            "daily_unique_users_US",
+            "daily_unique_users_CA",
+            "weekly_unique_users_US",
+            "weekly_unique_users_CA",
+            "monthly_unique_users_US",
+            "monthly_unique_users_CA",
+        ]
+    )
 
-print(result)
+    print(result)
+
+
+if __name__ == "__main__":
+    main()

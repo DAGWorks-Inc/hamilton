@@ -1,12 +1,9 @@
 import collections
 import random
 
-import pytest
-
 import tests.resources.reuse_subdag
 from hamilton import ad_hoc_utils, graph
-from hamilton.experimental.decorators import reuse
-from hamilton.function_modifiers import base, config, value
+from hamilton.function_modifiers import config, recursive, value
 from hamilton.function_modifiers.dependencies import source
 
 
@@ -16,7 +13,7 @@ def test_collect_function_fns():
     def test_fn(out: int = val) -> int:
         return out
 
-    assert reuse.reuse_functions.collect_functions(load_from=[test_fn])[0]() == test_fn()
+    assert recursive.subdag.collect_functions(load_from=[test_fn])[0]() == test_fn()
 
 
 def test_collect_functions_module():
@@ -26,7 +23,7 @@ def test_collect_functions_module():
         return out
 
     assert (
-        reuse.reuse_functions.collect_functions(
+        recursive.subdag.collect_functions(
             load_from=[ad_hoc_utils.create_temporary_module(test_fn)]
         )[0]()
         == test_fn()
@@ -34,7 +31,7 @@ def test_collect_functions_module():
 
 
 def test_assign_namespaces():
-    assert reuse.assign_namespace(node_name="foo", namespace="bar") == "bar.foo"
+    assert recursive.assign_namespace(node_name="foo", namespace="bar") == "bar.foo"
 
 
 def foo(a: int) -> int:
@@ -51,82 +48,44 @@ def bar__alt() -> int:
     return 10
 
 
-def test_reuse_subdag_validate_outputs_succeeds():
-    def test() -> reuse.MultiOutput(foo_result=int, bar_result=str):
-        pass
+def test_reuse_subdag_validate_succeeds():
+    def baz(foo: int, bar: str) -> str:
+        return bar * foo
 
-    decorator = reuse.reuse_functions(
-        with_inputs={},
-        namespace="baz",
-        outputs={"foo": "foo_result", "bar": "bar_result"},
-        with_config={},
-        load_from=[foo, bar],
+    decorator = recursive.subdag(
+        foo,
+        bar,
+        inputs={},
+        config={},
     )
-    decorator.validate(test)
-
-
-def test_reuse_subdag_validate_output_incorrect_type():
-    def test() -> int:
-        pass
-
-    decorator = reuse.reuse_functions(
-        with_inputs={},
-        namespace="baz",
-        outputs={"foo": "foo_result", "bar": "bar_result"},
-        with_config={},
-        load_from=[foo, bar],
-    )
-    with pytest.raises(base.InvalidDecoratorException):
-        decorator.validate(test)
-
-
-def test_reuse_subdag_validate_output_fails_types_not_provided():
-    def test() -> reuse.MultiOutput(foo_result=int):
-        pass
-
-    decorator = reuse.reuse_functions(
-        with_inputs={},
-        namespace="baz",
-        outputs={"foo": "foo_result", "bar": "bar_result"},
-        with_config={},
-        load_from=[foo, bar],
-    )
-    with pytest.raises(base.InvalidDecoratorException):
-        decorator.validate(test)
+    decorator.validate(baz)
 
 
 def test_reuse_subdag_basic_no_parameterization():
-    def test() -> reuse.MultiOutput(foo_result=int, bar_result=int):
-        pass
+    def baz(foo: int, bar: int) -> int:
+        return foo + bar
 
-    decorator = reuse.reuse_functions(
-        with_inputs={},
-        namespace="baz",
-        outputs={"foo": "foo_result", "bar": "bar_result"},
-        with_config={},
-        load_from=[foo, bar],
-    )
-    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(test, {})}
+    decorator = recursive.subdag(foo, bar, inputs={}, config={})
+    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(baz, {})}
     # subdags have prefixed names
     assert "baz.foo" in nodes
     assert "baz.bar" in nodes
     # but we expect our outputs to exist as well
-    assert "bar_result" in nodes
-    assert "foo_result" in nodes
+    assert "baz" in nodes
+    assert nodes["baz"].callable(**{"baz.foo": 10, "baz.bar": 20}) == 30
 
 
 def test_reuse_subdag_basic_simple_parameterization():
-    def test() -> reuse.MultiOutput(foo_result=int, bar_result=int):
-        pass
+    def baz(foo: int, bar: int) -> int:
+        return foo + bar
 
-    decorator = reuse.reuse_functions(
-        with_inputs={"a": value(1), "b": value(2)},
-        namespace="baz",
-        outputs={"foo": "foo_result", "bar": "bar_result"},
-        with_config={},
-        load_from=[foo, bar],
+    decorator = recursive.subdag(
+        foo,
+        bar,
+        config={},
+        inputs={"a": value(1), "b": value(2)},
     )
-    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(test, {})}
+    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(baz, {})}
     # This doesn't necessarily have to be part of the contract, but we're testing now to ensure that it works
     assert "baz.a" in nodes
     assert nodes["baz.a"]() == 1
@@ -135,17 +94,11 @@ def test_reuse_subdag_basic_simple_parameterization():
 
 
 def test_reuse_subdag_basic_source_parameterization():
-    def test() -> reuse.MultiOutput(foo_result=int, bar_result=int):
-        pass
+    def baz(foo: int, bar: int) -> int:
+        return foo + bar
 
-    decorator = reuse.reuse_functions(
-        with_inputs={"a": source("c"), "b": source("d")},
-        namespace="baz",
-        outputs={"foo": "foo_result", "bar": "bar_result"},
-        with_config={},
-        load_from=[foo, bar],
-    )
-    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(test, {})}
+    decorator = recursive.subdag(foo, bar, inputs={"a": source("c"), "b": source("d")}, config={})
+    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(baz, {})}
     # These aren't entirely part of the contract, but they're required for the
     # way we're currently implementing it. See https://github.com/stitchfix/hamilton/issues/201
     assert "baz.a" in nodes
@@ -155,18 +108,34 @@ def test_reuse_subdag_basic_source_parameterization():
 
 
 def test_reuse_subdag_handles_config_assignment():
-    def test() -> reuse.MultiOutput(foo_result=int, bar_result=int):
-        pass
+    def baz(foo: int, bar: int) -> int:
+        return foo + bar
 
-    decorator = reuse.reuse_functions(
-        with_inputs={"a": value(1)},
-        namespace="baz",
-        outputs={"foo": "foo_result", "bar": "bar_result"},
-        with_config={"some_config_param": True},
-        load_from=[foo, bar, bar__alt],
+    decorator = recursive.subdag(
+        foo,
+        bar,
+        bar__alt,
+        inputs={"a": value(1)},
+        config={"some_config_param": True},
     )
-    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(test, {})}
+    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(baz, {})}
     assert nodes["baz.bar"]() == 10
+
+
+def test_reuse_subdag_allows_config_as_input():
+    def baz(foo: int, bar: int) -> int:
+        return foo + bar
+
+    decorator = recursive.subdag(
+        foo,
+        bar,
+        bar__alt,
+        inputs={},
+        config={"some_config_param": False, "b": 100},
+    )
+    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(baz, {})}
+    assert nodes["baz.b"]() == 100
+    assert nodes["baz.bar"](**{"baz.b": 100}) == 100
 
 
 def test_reuse_subdag_end_to_end():

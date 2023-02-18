@@ -1,6 +1,7 @@
 from hamilton import function_modifiers
-from hamilton.experimental.decorators.reuse import MultiOutput, reuse_functions
+from hamilton.function_modifiers import expanders
 from hamilton.function_modifiers.configuration import config
+from hamilton.function_modifiers.recursive import subdag
 
 
 def a() -> int:
@@ -35,48 +36,56 @@ def _get_submodules():
 submodules = _get_submodules()
 
 
-@reuse_functions(
-    with_inputs={"c": function_modifiers.value(10)},
-    namespace="v1",
-    outputs={"e": "e_1", "f": "f_1"},
-    with_config={"op": "subtract"},
-    load_from=_get_submodules(),
+@subdag(
+    *_get_submodules(),
+    inputs={"c": function_modifiers.value(10)},
+    config={"op": "subtract"},
 )
-def subdag_1() -> MultiOutput(e_1=int, f_1=int):
-    pass
+def v1(e: int, f: int) -> dict:
+    return {"e_1": e, "f_1": f}
 
 
-@reuse_functions(
-    with_inputs={"c": function_modifiers.value(20)},
-    namespace="v2",
-    outputs={"e": "e_2", "f": "f_2"},
-    with_config={"op": "subtract"},
-    load_from=_get_submodules(),
+@subdag(
+    *_get_submodules(),
+    inputs={"c": function_modifiers.value(20)},
+    config={"op": "subtract"},
 )
-def subdag_2() -> MultiOutput(e_2=int, f_2=int):
-    pass
+def v2(e: int, f: int) -> dict:
+    return {"e_2": e, "f_2": f}
 
 
-@reuse_functions(
-    with_inputs={"c": function_modifiers.value(30)},
-    namespace="v3",
-    outputs={"e": "e_3", "f": "f_3"},
-    with_config={"op": "add"},
-    load_from=_get_submodules(),
+@subdag(
+    *_get_submodules(),
+    inputs={"c": function_modifiers.value(30)},
+    config={"op": "add"},
 )
-def subdag_3() -> MultiOutput(e_3=int, f_3=int):
-    pass
+def v3(e: int, f: int) -> dict:
+    return {"e_3": e, "f_3": f}
 
 
-@reuse_functions(
-    with_inputs={"c": function_modifiers.source("b")},
-    namespace="v4",
-    outputs={"e": "e_4", "f": "f_4"},
-    with_config={"op": "add"},
-    load_from=_get_submodules(),
+@subdag(
+    *_get_submodules(),
+    inputs={"c": function_modifiers.source("b")},
+    config={"op": "add"},
 )
-def subdag_4() -> MultiOutput(e_4=int, f_4=int):
-    pass
+def v4(e: int, f: int) -> dict:
+    return {"e_4": e, "f_4": f}
+
+
+# This is a little messy because we can't currently use @extract_fields
+# in conjunction with @subdag. So we just extract afterwards..
+@expanders.parameterize(
+    e_1={"output": function_modifiers.source("v1"), "field": function_modifiers.value("e_1")},
+    f_1={"output": function_modifiers.source("v1"), "field": function_modifiers.value("f_1")},
+    e_2={"output": function_modifiers.source("v2"), "field": function_modifiers.value("e_2")},
+    f_2={"output": function_modifiers.source("v2"), "field": function_modifiers.value("f_2")},
+    e_3={"output": function_modifiers.source("v3"), "field": function_modifiers.value("e_3")},
+    f_3={"output": function_modifiers.source("v3"), "field": function_modifiers.value("f_3")},
+    e_4={"output": function_modifiers.source("v4"), "field": function_modifiers.value("e_4")},
+    f_4={"output": function_modifiers.source("v4"), "field": function_modifiers.value("f_4")},
+)
+def extract_all(output: dict, field: str) -> int:
+    return output[field]
 
 
 def _sum(**kwargs: int) -> int:
