@@ -11,15 +11,28 @@ from hamilton import driver
 
 
 def create_features(source_location: str) -> pd.DataFrame:
+    """Extracts and transforms data to create feature set.
+
+    Hamilton functions encode:
+     - pulling the data
+     - transforming the data into features
+
+    Hamilton then handles building a dataframe.
+
+    :param source_location: the location to load data from.
+    :return: a pandas dataframe.
+    """
     model_features = constants.model_x_features
     config = {}
     dr = driver.Driver(config, offline_loader, features)
     # Visualize the DAG if you need to:
     # dr.display_all_functions('./offline_my_full_dag.dot', {"format": "png"})
-    # dr.visualize_execution(model_features,
-    #                        './offline_execution.dot',
-    #                        {"format": "png"},
-    #                        inputs={"location": "../data_quality/pandera/Absenteeism_at_work.csv"})
+    dr.visualize_execution(
+        model_features,
+        "./offline_execution.dot",
+        {"format": "png"},
+        inputs={"location": source_location},
+    )
     df = dr.execute(
         # add age_mean and age_std_dev to the features
         model_features + ["age_mean", "age_std_dev"],
@@ -34,7 +47,8 @@ if __name__ == "__main__":
     _features_df = create_features(_source_location)
     # we need to store `age_mean` and `age_std_dev` somewhere for the online side.
     # exercise for the reader: where would you store them for your context?
-    # ideas: with the model? in a database? in a file? in a feature store?
+    # ideas: with the model? in a database? in a file? in a feature store? (all reasonable answers it just
+    # depends on your context).
     _age_mean = _features_df["age_mean"].values[0]
     _age_std_dev = _features_df["age_std_dev"].values[0]
     print(_features_df)

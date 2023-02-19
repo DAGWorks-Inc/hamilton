@@ -1,3 +1,14 @@
+""""
+This is a simple example of a FastAPI server that uses Hamilton on the request
+path to transform the data into features, and then uses a fake model to make
+a prediction.
+
+The assumption here is that you get all the raw data passed in via the request.
+
+Otherwise for aggregration type features, you need to pass in a stored value
+that we have mocked out with `load_invariant_feature_values`.
+"""
+
 import constants
 import fastapi
 import features
@@ -69,6 +80,15 @@ async def predict_model_version1(request: PredictRequest) -> dict:
     """Illustrates how a prediction could be made that needs to compute some features first.
     In this version we go to the feature store, and then pass in what we get from the feature
     store as overrides to the model.
+
+    If you wanted  to visualize execution, you could do something like:
+        dr.visualize_execution(model_input_features,
+                                './online_execution.dot',
+                                {"format": "png"},
+                                inputs=input_series)
+
+    :param request: the request body.
+    :return: a dictionary with the prediction value.
     """
     # one liner to quickly create some series from the request.
     input_series = pd.DataFrame([request.dict()]).to_dict(orient="series")
@@ -87,6 +107,7 @@ if __name__ == "__main__":
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
+    # here's a request you can cut and past into http://localhost:8000/docs
     example_request_input = {
         "id": 11,
         "reason_for_absence": 26,
@@ -107,5 +128,5 @@ if __name__ == "__main__":
         "pet": 1,
         "weight": 90,
         "height": 172,
-        "body_mass_index": 30,
+        "body_mass_index": 30,  # remove this comma to make it valid json.
     }
