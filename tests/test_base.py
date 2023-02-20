@@ -208,7 +208,9 @@ class _Foo:
                 "a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]}),
                 "b": pd.DataFrame({"c": [1, 3, 5], "d": [14, 15, 16]}),
             },
-            pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13], "c": [1, 3, 5], "d": [14, 15, 16]}),
+            pd.DataFrame(
+                {"a.a": [1, 2, 3], "a.b": [11, 12, 13], "b.c": [1, 3, 5], "b.d": [14, 15, 16]}
+            ),
         ),
         (
             {
@@ -216,7 +218,9 @@ class _Foo:
                 "b": pd.Series([11, 12, 13]),
                 "c": pd.DataFrame({"d": [0, 0, 0]}),
             },
-            pd.DataFrame({"a": pd.Series([1, 2, 3]), "b": pd.Series([11, 12, 13]), "d": [0, 0, 0]}),
+            pd.DataFrame(
+                {"a": pd.Series([1, 2, 3]), "b": pd.Series([11, 12, 13]), "c.d": [0, 0, 0]}
+            ),
         ),
     ],
     ids=[
@@ -284,7 +288,13 @@ def test_PandasDataFrameResult_build_result_errors(outputs):
                 "d": [8, 9, 10],
             },
             pd.DataFrame(
-                {"a": [1, 2, 3], "z": [0, 0, 0], "b": [4, 5, 6], "c": [7, 7, 7], "d": [8, 9, 10]}
+                {
+                    "a.a": [1, 2, 3],
+                    "a.z": [0, 0, 0],
+                    "b": [4, 5, 6],
+                    "c": [7, 7, 7],
+                    "d": [8, 9, 10],
+                }
             ),
         ),
         (
@@ -294,10 +304,10 @@ def test_PandasDataFrameResult_build_result_errors(outputs):
             },
             pd.DataFrame(
                 {
-                    "a": [1, 2, 3, None, None, None],
-                    "b": [11, 12, 13, None, None, None],
-                    "c": [None, None, None, 1, 3, 5],
-                    "d": [None, None, None, 14, 15, 16],
+                    "a.a": [1, 2, 3, None, None, None],
+                    "a.b": [11, 12, 13, None, None, None],
+                    "b.c": [None, None, None, 1, 3, 5],
+                    "b.d": [None, None, None, 14, 15, 16],
                 },
                 index=[0, 1, 2, 3, 4, 5],
             ),
@@ -312,11 +322,11 @@ def test_PandasDataFrameResult_build_result_errors(outputs):
             pd.DataFrame(
                 {
                     "a": [None, 1, 2, 3],
-                    "d": [0, 0, 0, None],
-                    "e": [1, 1, 1, None],
+                    "c.d": [0, 0, 0, None],
+                    "c.e": [1, 1, 1, None],
                     "b": [11, 12, 13, None],
-                    "g": [None, 2, 2, 2],
-                    "h": [None, 3, 3, 3],
+                    "f.g": [None, 2, 2, 2],
+                    "f.h": [None, 3, 3, 3],
                 },
                 index=[0, 1, 2, 3],
             ),
@@ -333,28 +343,6 @@ def test_PandasDataFrameResult_build_dataframe_with_dataframes(outputs, expected
     pdfr = base.PandasDataFrameResult()
     actual = pdfr.build_dataframe_with_dataframes(outputs)
     pd.testing.assert_frame_equal(actual, expected_result)
-
-
-@pytest.mark.parametrize(
-    "outputs",
-    [
-        {"a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]}), "b": pd.Series([4, 5, 6])},
-        {"b": pd.Series([4, 5, 6]), "a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]})},
-        {"a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]}), "b": 7},
-        {"b": 7, "a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]})},
-    ],
-    ids=[
-        "test-df-series-duplicate",
-        "test-series-df-duplicate",
-        "test-df-scalar-duplicate",
-        "test-scalar-df-duplicate",
-    ],
-)
-def test_PandasDataFrameResult_build_dataframe_with_dataframes_error(outputs):
-    """Tests build_dataframe_with_dataframes works as expected"""
-    pdfr = base.PandasDataFrameResult()
-    with pytest.raises(ValueError):
-        pdfr.build_dataframe_with_dataframes(outputs)
 
 
 @pytest.mark.parametrize(

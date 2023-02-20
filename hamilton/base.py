@@ -189,23 +189,25 @@ class PandasDataFrameResult(ResultMixin):
         :param outputs: The outputs to build the dataframe from.
         :return: A dataframe with the outputs.
         """
+
+        def get_output_name(output_name: str, column_name: str) -> str:
+            """Add function prefix to columns.
+            Note this means that they stop being valid python identifiers due to the `.` in the string.
+            """
+            return f"{output_name}.{column_name}"
+
         flattened_outputs = {}
         for name, output in outputs.items():
             if isinstance(output, pd.DataFrame):
-                df_columns = list(output.columns)
-                column_intersection = [
-                    column for column in df_columns if column in flattened_outputs
-                ]
-                if column_intersection:
-                    raise ValueError(
-                        f"Dataframe {name} contains columns {column_intersection} that already exist in the output. "
-                        f"Please rename the columns in {name} to avoid this error."
-                    )
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
-                        f"Unpacking dataframe {name} into dict of series with columns {df_columns}."
+                        f"Unpacking dataframe {name} into dict of series with columns {list(output.columns)}."
                     )
-                df_dict = output.to_dict(orient="series")
+
+                df_dict = {
+                    get_output_name(name, col_name): col_value
+                    for col_name, col_value in output.to_dict(orient="series").items()
+                }
                 flattened_outputs.update(df_dict)
             elif isinstance(output, pd.Series):
                 if name in flattened_outputs:
