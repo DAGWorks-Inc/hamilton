@@ -169,8 +169,61 @@ class PandasDataFrameResult(ResultMixin):
             # If we're dealing with all values that don't have any "index" that could be created
             # (i.e. scalars, objects) coerce the output to a single-row, multi-column dataframe.
             return pd.DataFrame([outputs])
+        #
+        contains_df = any(isinstance(value, pd.DataFrame) for value in outputs.values())
+        if contains_df:
+            # build the dataframe from the outputs
+            return PandasDataFrameResult.build_dataframe_with_dataframes(outputs)
+        # don't do anything special if dataframes aren't in the output.
+        return pd.DataFrame(outputs)  # this does an implicit outer join based on index.
 
-        return pd.DataFrame(outputs)
+    @staticmethod
+    def build_dataframe_with_dataframes(outputs: Dict[str, Any]) -> pd.DataFrame:
+        """Builds a dataframe from the outputs in an "outer join" manner based on index.
+
+        The behavior of pd.Dataframe(outputs) is that it will do an outer join based on indexes of the Series passed in.
+        To handle dataframes, we unpack the dataframe into a dict of series, check to ensure that no columns are
+        redefined in a rolling fashion going in order of the outputs requested. This then results in an "enlarged"
+        outputs dict that is then passed to pd.Dataframe(outputs) to get the final dataframe.
+
+        :param outputs: The outputs to build the dataframe from.
+        :return: A dataframe with the outputs.
+        """
+        flattened_outputs = {}
+        for name, output in outputs.items():
+            if isinstance(output, pd.DataFrame):
+                df_columns = list(output.columns)
+                column_intersection = [
+                    column for column in df_columns if column in flattened_outputs
+                ]
+                if column_intersection:
+                    raise ValueError(
+                        f"Dataframe {name} contains columns {column_intersection} that already exist in the output. "
+                        f"Please rename the columns in {name} to avoid this error."
+                    )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"Unpacking dataframe {name} into dict of series with columns {df_columns}."
+                    )
+                df_dict = output.to_dict(orient="series")
+                flattened_outputs.update(df_dict)
+            elif isinstance(output, pd.Series):
+                if name in flattened_outputs:
+                    raise ValueError(
+                        f"Series {name} already exists in the output. "
+                        f"Please rename the series to avoid this error, or determine from where the initial series is "
+                        f"being added; it may be coming from a dataframe that is being unpacked."
+                    )
+                flattened_outputs[name] = output
+            else:
+                if name in flattened_outputs:
+                    raise ValueError(
+                        f"Non series output {name} already exists in the output. "
+                        f"Please rename this output to avoid this error, or determine from where the initial value is "
+                        f"being added; it may be coming from a dataframe that is being unpacked."
+                    )
+                flattened_outputs[name] = output
+        return pd.DataFrame(flattened_outputs)
 
 
 class StrictIndexTypePandasDataFrameResult(PandasDataFrameResult):

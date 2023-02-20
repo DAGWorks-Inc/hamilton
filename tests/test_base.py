@@ -203,6 +203,21 @@ class _Foo:
             {"a": pd.Series([1, 2, 3]), "b": pd.Series([4, 5, 6])},
             pd.DataFrame({"a": pd.Series([1, 2, 3]), "b": pd.Series([4, 5, 6])}),
         ),
+        (
+            {
+                "a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]}),
+                "b": pd.DataFrame({"c": [1, 3, 5], "d": [14, 15, 16]}),
+            },
+            pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13], "c": [1, 3, 5], "d": [14, 15, 16]}),
+        ),
+        (
+            {
+                "a": pd.Series([1, 2, 3]),
+                "b": pd.Series([11, 12, 13]),
+                "c": pd.DataFrame({"d": [0, 0, 0]}),
+            },
+            pd.DataFrame({"a": pd.Series([1, 2, 3]), "b": pd.Series([11, 12, 13]), "d": [0, 0, 0]}),
+        ),
     ],
     ids=[
         "test-single-scalar",
@@ -225,6 +240,8 @@ class _Foo:
         "test-scalar-and-list",
         "test-scalar-and-dict",
         "test-series-and-list",
+        "test-multiple-dataframes",
+        "test-multiple-series-with-dataframe",
     ],
 )
 def test_PandasDataFrameResult_build_result(outputs, expected_result):
@@ -237,27 +254,12 @@ def test_PandasDataFrameResult_build_result(outputs, expected_result):
 @pytest.mark.parametrize(
     "outputs",
     [
-        (
-            {
-                "a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]}),
-                "b": pd.DataFrame({"c": [1, 3, 5], "d": [14, 15, 16]}),
-            }
-        ),
-        (
-            {
-                "a": pd.Series([1, 2, 3]),
-                "b": pd.Series([11, 12, 13]),
-                "c": pd.DataFrame({"d": [0, 0, 0]}),
-            }
-        ),
         ({"a": [1, 2], "b": {"foo": "bar"}}),
         ({"a": [1, 2], "b": [3, 4, 5]}),
         ({"a": np.array([1, 2]), "b": np.array([3, 4, 5])}),
         ({"a": _gen_ints(3), "b": _gen_ints(4)}),
     ],
     ids=[
-        "test-multiple-dataframes",
-        "test-multiple-series-with-dataframe",
         "test-lists-and-dicts",
         "test-mismatched-lists",
         "test-mismatched-arrays",
@@ -269,6 +271,90 @@ def test_PandasDataFrameResult_build_result_errors(outputs):
     pdfr = base.PandasDataFrameResult()
     with pytest.raises(ValueError):
         pdfr.build_result(**outputs)
+
+
+@pytest.mark.parametrize(
+    "outputs,expected_result",
+    [
+        (
+            {
+                "a": pd.DataFrame({"a": [1, 2, 3], "z": [0, 0, 0]}),
+                "b": pd.Series([4, 5, 6]),
+                "c": 7,
+                "d": [8, 9, 10],
+            },
+            pd.DataFrame(
+                {"a": [1, 2, 3], "z": [0, 0, 0], "b": [4, 5, 6], "c": [7, 7, 7], "d": [8, 9, 10]}
+            ),
+        ),
+        (
+            {
+                "a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]}, index=[0, 1, 2]),
+                "b": pd.DataFrame({"c": [1, 3, 5], "d": [14, 15, 16]}, index=[3, 4, 5]),
+            },
+            pd.DataFrame(
+                {
+                    "a": [1, 2, 3, None, None, None],
+                    "b": [11, 12, 13, None, None, None],
+                    "c": [None, None, None, 1, 3, 5],
+                    "d": [None, None, None, 14, 15, 16],
+                },
+                index=[0, 1, 2, 3, 4, 5],
+            ),
+        ),
+        (
+            {
+                "a": pd.Series([1, 2, 3], index=[1, 2, 3]),
+                "c": pd.DataFrame({"d": [0, 0, 0], "e": [1, 1, 1]}),
+                "b": pd.Series([11, 12, 13]),
+                "f": pd.DataFrame({"g": [2, 2, 2], "h": [3, 3, 3]}, index=[1, 2, 3]),
+            },
+            pd.DataFrame(
+                {
+                    "a": [None, 1, 2, 3],
+                    "d": [0, 0, 0, None],
+                    "e": [1, 1, 1, None],
+                    "b": [11, 12, 13, None],
+                    "g": [None, 2, 2, 2],
+                    "h": [None, 3, 3, 3],
+                },
+                index=[0, 1, 2, 3],
+            ),
+        ),
+    ],
+    ids=[
+        "test-dataframe-scalar-series-list",
+        "test-two-dataframes",
+        "test-order-and-outer-join-preserved",
+    ],
+)
+def test_PandasDataFrameResult_build_dataframe_with_dataframes(outputs, expected_result):
+    """Tests build_dataframe_with_dataframes errors as expected"""
+    pdfr = base.PandasDataFrameResult()
+    actual = pdfr.build_dataframe_with_dataframes(outputs)
+    pd.testing.assert_frame_equal(actual, expected_result)
+
+
+@pytest.mark.parametrize(
+    "outputs",
+    [
+        {"a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]}), "b": pd.Series([4, 5, 6])},
+        {"b": pd.Series([4, 5, 6]), "a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]})},
+        {"a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]}), "b": 7},
+        {"b": 7, "a": pd.DataFrame({"a": [1, 2, 3], "b": [11, 12, 13]})},
+    ],
+    ids=[
+        "test-df-series-duplicate",
+        "test-series-df-duplicate",
+        "test-df-scalar-duplicate",
+        "test-scalar-df-duplicate",
+    ],
+)
+def test_PandasDataFrameResult_build_dataframe_with_dataframes_error(outputs):
+    """Tests build_dataframe_with_dataframes works as expected"""
+    pdfr = base.PandasDataFrameResult()
+    with pytest.raises(ValueError):
+        pdfr.build_dataframe_with_dataframes(outputs)
 
 
 @pytest.mark.parametrize(
