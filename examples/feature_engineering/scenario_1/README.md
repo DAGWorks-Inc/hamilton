@@ -15,10 +15,14 @@ offline setting where you have all the data. In an online setting, computing the
 for `age_mean` and `age_std_dev`. `etl.py` uses `offline_loader.py`, `features.py`, and `named_model_feature_sets.py`.
 2. You then run `fastapi_server.py`, which is the online webservice with the trained model (not shown here). `fastapi_server.py`
 uses `features.py`, and `named_model_feature_sets.py`.
-Note in real-life you would need to figure out a process to inject the aggregate global values for `age_mean` and `age_std_dev`
+Note, in real-life you would need to figure out a process to inject the aggregate global values for `age_mean` and `age_std_dev`
 into the feature computation process. E.g. If you're getting started, these could be hardcoded values, or stored to a file that
 is loaded much like the model, or queried from a database, etc. Though you'll want
 to ensure these values match whatever values the model was trained with. If you need help here, join our slack and we're happy to help you figure this out!
+
+Here's a mental image of how things work and how they relate to the files/modules & Hamilton:
+![offline-online-image](FeaturesExampleScenario1.svg?sanitize=True)
+
 
 Otherwise, here is a description of all the files and what they do:
 
