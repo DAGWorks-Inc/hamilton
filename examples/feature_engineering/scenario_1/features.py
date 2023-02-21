@@ -2,16 +2,20 @@
 Here are some features that are based on the absenteeism data set.
 They are just supposed to be illustrative of the kind of features one might have.
 
-Note: we use check_output to warn us if the output is not what we expect; this is
+Note (1): we use check_output to warn us if the output is not what we expect; this is
 used in both the offline ETL and the online webserivce. Use `check_output` to help
 encode your expectations about the output of your functions and catch bugs early!
+
+Note (2): we can tag the `aggregation` features with whatever key value pair makes sense
+for us to discern/identify that we should not compute these features in an online setting.
 """
 import pandas as pd
 import pandera as pa
 
-from hamilton.function_modifiers import check_output, extract_columns
+from hamilton.function_modifiers import check_output, extract_columns, tag
 
 
+@tag(inject_at_inference_time="True")
 @check_output(range=(20.0, 60.0), data_type=float)
 def age_mean(age: pd.Series) -> float:
     """Average of age"""
@@ -41,6 +45,7 @@ age_std_dev_schema = pa.SeriesSchema(
 )
 
 
+@tag(inject_at_inference_time="True")
 @check_output(range=(0.0, 40.0), data_type=float)
 def age_std_dev(age: pd.Series) -> float:
     """Standard deviation of age."""

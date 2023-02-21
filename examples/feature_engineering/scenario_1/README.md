@@ -34,7 +34,9 @@ Important not, there are two aggregations features defined: `age_mean` and `age_
 `age` column. These make sense to compute in an offline setting as you have all the data, but in an online setting where
 you'd be performing inference, that doesn't makse sense. So for the online case, these computations be "overridden" in
 `fastapi_server.py` with the values that were computed in the offline setting that you have stored (as mentioned above
-and below it's up to you how to store them/sync them).
+and below it's up to you how to store them/sync them). The nice thing in Hamilton is that we can also "tag" these two
+feature transforms with information to indicate to someone reading the code, that they should be overriden in the
+online feature computation context.
 
 ## etl.py
 This script mimics what one might do to fit a model: extract data, transform into features,
