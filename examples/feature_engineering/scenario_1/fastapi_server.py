@@ -9,9 +9,9 @@ Otherwise for aggregration type features, you need to pass in a stored value
 that we have mocked out with `load_invariant_feature_values`.
 """
 
-import constants
 import fastapi
 import features
+import named_model_feature_sets
 import pandas as pd
 import pydantic
 
@@ -21,7 +21,7 @@ from hamilton.experimental import h_async
 app = fastapi.FastAPI()
 
 # know the model schema somehow.
-model_input_features = constants.model_x_features
+model_input_features = named_model_feature_sets.model_x_features
 
 
 def load_invariant_feature_values() -> dict:

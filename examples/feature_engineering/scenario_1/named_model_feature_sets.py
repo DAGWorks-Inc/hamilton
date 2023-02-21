@@ -1,3 +1,9 @@
+"""
+This module is a light weight way to "record" feature sets that are used in a model; just define it in code!
+
+No need for a database! Just use code and `git` to version what is or isn't used/available.
+"""
+
 model_x_features = [
     "is_summer",
     "has_pet",

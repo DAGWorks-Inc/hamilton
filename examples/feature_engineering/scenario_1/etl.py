@@ -2,8 +2,8 @@
 This is part of an ETL that you'd likely have.
 You pull data from a source, and transform it into features, and then save/fit a model with them.
 """
-import constants
 import features
+import named_model_feature_sets
 import offline_loader
 import pandas as pd
 
@@ -22,7 +22,7 @@ def create_features(source_location: str) -> pd.DataFrame:
     :param source_location: the location to load data from.
     :return: a pandas dataframe.
     """
-    model_features = constants.model_x_features
+    model_features = named_model_feature_sets.model_x_features
     config = {}
     dr = driver.Driver(config, offline_loader, features)
     # Visualize the DAG if you need to:
@@ -53,6 +53,6 @@ if __name__ == "__main__":
     _age_std_dev = _features_df["age_std_dev"].values[0]
     print(_features_df)
     # Then do something with the features_df, e.g.:
-    #   save_features(features_df[constants.model_x_features], "my_model_features.csv")
-    #   train_model(features_df[constants.model_x_features])
+    #   save_features(features_df[named_model_feature_sets.model_x_features], "my_model_features.csv")
+    #   train_model(features_df[named_model_feature_sets.model_x_features])
     #   etc.
