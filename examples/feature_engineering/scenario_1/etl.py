@@ -1,6 +1,9 @@
 """
-This is part of an ETL that you'd likely have.
+This is part of an offline ETL that you'd likely have.
 You pull data from a source, and transform it into features, and then save/fit a model with them.
+
+Here we ONLY use Hamilton to create the features, with comment stubs for the rest of the ETL that would normally
+be here.
 """
 import features
 import named_model_feature_sets
@@ -52,7 +55,7 @@ if __name__ == "__main__":
     _age_mean = _features_df["age_mean"].values[0]
     _age_std_dev = _features_df["age_std_dev"].values[0]
     print(_features_df)
-    # Then do something with the features_df, e.g.:
+    # Then do something with the features_df, e.g. define functions to do the following:
     #   save_features(features_df[named_model_feature_sets.model_x_features], "my_model_features.csv")
     #   train_model(features_df[named_model_feature_sets.model_x_features])
     #   etc.

@@ -40,18 +40,17 @@ def fake_model(df: pd.DataFrame) -> pd.Series:
     return df.sum()  # this is nonsensical but provides a single number.
 
 
-# you would load the model from disk or a registry
+# you would load the model from disk or a registry -- here it's a function.
 model = fake_model
 # need to load the invariant features somehow.
 invariant_feature_values = load_invariant_feature_values()
 
-
-# can instantiate an async driver once for the life of the app:
+# we instantiate an async driver once for the life of the app:
 dr = h_async.AsyncDriver({}, features, result_builder=base.SimplePythonDataFrameGraphAdapter())
 
 
 class PredictRequest(pydantic.BaseModel):
-    """Assumption here is that all this data is available for the API."""
+    """Assumption here is that all this data is available via the request that comes in."""
 
     id: int
     reason_for_absence: int

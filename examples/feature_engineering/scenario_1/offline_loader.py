@@ -1,6 +1,7 @@
 """
-Module that contains logic to load data, and is the "base" that we can build off of
-to build our featurization process.
+Module that contains logic to load data for the offline ETL process.
+
+We use this to build our offline ETL featurization process.
 """
 
 from typing import List
@@ -53,7 +54,7 @@ def raw_data(location: str) -> pd.DataFrame:
     df = pd.read_csv(location, sep=";")
     # rename columns to be valid hamilton names -- and lower case it
     df.columns = _sanitize_columns(df.columns)
-    # create proper index -- ID-Month-Day;
+    # create proper index -- ID-Month-Day - to be able to join features appropriately.
     index = (
         df["id"].astype(str)
         + "-"

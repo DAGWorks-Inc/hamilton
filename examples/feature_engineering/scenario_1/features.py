@@ -1,6 +1,10 @@
 """
 Here are some features that are based on the absenteeism data set.
 They are just supposed to be illustrative of the kind of features one might have.
+
+Note: we use check_output to warn us if the output is not what we expect; this is
+used in both the offline ETL and the online webserivce. Use `check_output` to help
+encode your expectations about the output of your functions and catch bugs early!
 """
 import pandas as pd
 import pandera as pa
