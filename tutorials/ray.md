@@ -33,7 +33,8 @@ def my_ray_function():
 
 Then to execute the `my_ray_function` function, you would do:
 
-<pre class="language-python"><code class="lang-python"><strong>my_ray_function.remote()</strong></code></pre>
+<pre class="language-python"><code class="lang-python"><strong>my_ray_function.remote()
+</strong></code></pre>
 
 Which would then tell Ray to schedule the function for execution. To run locally versus on a cluster, all you have to do is instantiate “Ray” differently before calling the above code.
 
@@ -117,7 +118,7 @@ For a full “Ray Hello World” code sample, we direct you to the [examples dir
 A brief note on caveats with using Hamilton + Ray.
 
 1. We are looking to graduate Ray support from "_experimental"_, but to do that we need your feedback! That API has been very stable (hasn’t changed since launch), but to feel good about making it permanent, we’d love to know what you think.
-2. We don’t expose all the functionality of Ray, but we could. E.g. memory aware scheduling, or specifying resources for specific functions. Let us know if you want something exposed — create an issue on github please — [https://github.com/stitchfix/hamilton](https://github.com/stitchfix/hamilton).
+2. We don’t expose all the functionality of Ray, but we could. E.g. memory aware scheduling, or specifying resources for specific functions. Let us know if you want something exposed — create an issue on github please —[ https://github.com/DAGWorks-Inc/hamilton](https://github.com/DAGWorks-Inc/hamilton).
 
 ## To conclude
 

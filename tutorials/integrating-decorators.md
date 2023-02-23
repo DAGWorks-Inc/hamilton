@@ -12,11 +12,11 @@ Hamilton relies on[ python decorators](https://towardsdatascience.com/the-simple
 ```python
 import pandas as pd
 
-from hamilton import function_modifiers
+from hamilton.function_modifiers import parameterize
 from hamilton.function_modifiers import value, source
 
 
-@function_modifiers.parameterize(
+@parameterize(
     avg_2wk_spend={'rolling_lookback' : value(2)},
     avg_3wk_spend={'rolling_lookback' : value(3)} 
 )
@@ -25,7 +25,7 @@ def avg_nwk_spend(spend: pd.Series, rolling_lookback: int) -> pd.Series:
     return spend.rolling(rolling_lookback).mean()
 
 
-@function_modifiers.parameterize(
+@parameterize(
     acquisition_cost_2wk={'spend' : source('avg_2wk_spend')},
     acquisition_cost_3wk={'spend' : source('avg_3wk_spend')}
 )
@@ -80,8 +80,7 @@ if __name__ == '__main__':
 ```
 {% endcode %}
 
-Running the driver now gives you the following:\
-
+Running the driver now gives you the following:
 
 ```
    spend  signups  acquisition_cost_2wk  acquisition_cost_3wk

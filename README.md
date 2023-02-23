@@ -1,6 +1,6 @@
 ---
 description: >-
-  The open source framework Hamilton (https://github.com/stitchfix/hamilton),
+  The open source framework Hamilton (https://github.com/DAGWorks-Inc/hamilton),
   originally built to manage and run Stitch Fix's data pipelines.
 ---
 
@@ -20,7 +20,7 @@ It's a general purpose micro-framework for creating [dataflows](https://en.wikip
 
 Specifically, Hamilton defines a novel paradigm, that allows you to specify a flow of (delayed) execution, that forms a Directed Acyclic Graph (DAG). It was original built to solve creating wide (1000+) column dataframes at Stitch Fix. Core to the design of Hamilton is a clear mapping of function name to dataflow output. That is, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity, easy modifications, _with always unit testable and naturally documentable code!_
 
-For the backstory on how Hamilton came about, see our [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
+For the backstory on how Hamilton came about, see the original Stitch Fix [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
 
 Hamilton's method of defining dataflows presents a new paradigm when it comes to creating, um, dataframes (let's use dataframes as an example, otherwise you can create _ANY_ python object). Rather than thinking about manipulating a central dataframe procedurally, and extracting the data you want, as is normal in some data engineering/data science work, you instead think about the column(s) (a.k.a. outputs) you want to create, and what inputs are required. There is no need for you to think about maintaining how to create this dataframe, meaning you do not need to think about any "glue" code; this is all taken care of by the Hamilton framework. Specifically, Hamilton enables you to run your dataflow with the following steps:
 
@@ -64,7 +64,7 @@ For more information please see [installing.md](less-than-15-minutes-to-mastery/
 
 ## License
 
-Hamilton is released under the [BSD 3-Clause Clear License](https://github.com/stitchfix/hamilton/blob/main/LICENSE). If you need to get in touch about something, contact us at algorithms-opensource (at) stitchfix.com.
+Hamilton is released under the [BSD 3-Clause Clear License](https://github.com/DAGWorks-Inc/hamilton/blob/main/LICENSE).
 
 ## Contributing
 

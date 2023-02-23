@@ -4,7 +4,7 @@ description: API docs for using the drivers
 
 # Available Drivers
 
-Currently, we have a [single driver](https://github.com/stitchfix/hamilton/blob/8a08a5e3dd69bbf7ddd83b8053c1ba9ed96ab675/hamilton/driver.py). It's highly parametrizable, allowing you to customize:
+Currently, we have a single driver. It's highly parametrizable, allowing you to customize:
 
 * The way the DAG is executed (how each node is executed), i.e. either locally, in parallel, or on a cluster!
 * How the results are materialized back to you -- e.g. a DataFrame, a dictionary, your custom object!

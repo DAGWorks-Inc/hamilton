@@ -31,13 +31,13 @@ This is easy with the `check_output` decorator!
 ```python
 import pandas as pd
 import numpy as np
-from hamilton import function_modifiers
+from hamilton.function_modifiers import check_output
 
 def avg_3wk_spend(spend: pd.Series) -> pd.Series:
     """Rolling 3 week average spend."""
     return spend.rolling(3, min_periods=1).mean()
 
-@function_modifiers.check_output(
+@check_output(
     range=(0,1000),
     data_type=np.float64,
     importance="warn"
@@ -53,14 +53,15 @@ You can also utilize `pandera` to the same effect, simply by providing a `schema
 
 ```python
 import pandas as pd
+import pandera as pa
 import numpy as np
-from hamilton import function_modifiers
+from hamilton.function_modifiers import check_output
 
 def avg_3wk_spend(spend: pd.Series) -> pd.Series:
     """Rolling 3 week average spend."""
     return spend.rolling(3, min_periods=1).mean()
 
-@function_modifiers.check_output(
+@check_output(
     schema=pa.SeriesSchema(
         pa.Column(float), 
         pa.Check.in_range(0,1000)),

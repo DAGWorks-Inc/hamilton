@@ -52,7 +52,7 @@ The following implementations are considered experimental because they require m
 
 [Ray](https://ray.io/) is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
 
-See [https://github.com/stitchfix/hamilton/tree/main/examples/ray](https://github.com/stitchfix/hamilton/tree/main/examples/ray) for an example of using Ray.
+See [https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/ray](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/ray) for an example of using Ray.
 
 #### Single Machine:
 
@@ -68,7 +68,7 @@ If you have a Ray cluster setup, then you can farm out Hamilton computation to i
 
 [Ray](https://ray.io/) is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
 
-See [https://github.com/stitchfix/hamilton/tree/main/examples/dask](https://github.com/stitchfix/hamilton/tree/main/examples/dask) for an example of using Dask to scale Hamilton computation.
+See [https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/dask](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/dask) for an example of using Dask to scale Hamilton computation.
 
 #### Single Machine:
 
@@ -84,7 +84,7 @@ If you have a Dask cluster setup, then you can farm out Hamilton computation to 
 
 [Spark](https://spark.apache.org/) is a scalable data processing framework. [Koalas](https://koalas.readthedocs.io/en/latest) was the project code name to implement the [Pandas API on top of Spark](https://spark.apache.org/docs/latest/api/python/user\_guide/pandas\_on\_spark/index.html). Hamilton makes it very easy for you to use Koalas on Spark.
 
-See [https://github.com/stitchfix/hamilton/tree/main/examples/spark](https://github.com/stitchfix/hamilton/tree/main/examples/spark)for an example of using Koalas on Spark to scale Hamilton computation.
+See [https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/spark](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/spark) for an example of using Koalas on Spark to scale Hamilton computation.
 
 #### Single Machine:
 
@@ -104,7 +104,7 @@ This means, that the result of `execute()` can be any python object type!
 
 ### How do you change the type of the object returned?
 
-You need to implement a [ResultMixin](https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L18) if there isn't one already defined for what you want to do. Then you need to provide that to a [GraphAdapter](https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L91), similar to what was presented above.
+You need to implement a ResultMixin if there isn't one already defined for what you want to do. Then you need to provide that to a GraphAdapter, similar to what was presented above.
 
 See [available-result-builders.md](reference/api-reference/available-result-builders.md "mention") for what is provided with Hamilton, or [custom-result-builders.md](reference/api-extensions/custom-result-builders.md "mention") for how to build your own.
 
