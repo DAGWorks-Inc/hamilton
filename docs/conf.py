@@ -7,3 +7,7 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/",
 }
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+]
