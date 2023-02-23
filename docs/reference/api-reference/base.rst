@@ -1,7 +1,5 @@
 API
 ===
 
-.. autosummary::
-   :toctree: generated
-
-   hamilton.base
+.. autoclass:: hamilton.base
+   :members:
