@@ -10,6 +10,7 @@ API Reference
    available-result-builders
    available-graph-adapters
    base
+   api
 
 Here lies documentation for the public API you can build on top of.
 
@@ -23,3 +24,5 @@ See :doc:`available-result-builders` for what comes out of the box for determini
 See :doc:`available-graph-adapters` for ways to execute Hamilton.
 
 See :doc:`base` for references on the base graph adapters and result builders.
+
+See :doc:`api` for summarized things...
