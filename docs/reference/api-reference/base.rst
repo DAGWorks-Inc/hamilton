@@ -1,5 +1,5 @@
 API
 ===
 
-.. autoclass:: hamilton.base
+.. autoclass:: base
    :members:
