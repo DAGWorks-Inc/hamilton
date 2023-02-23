@@ -1,7 +1,7 @@
 <div align="center">
-    <h1>Welcome to Hamilton's Github Repository</h1>
-    <a href="https://circleci.com/gh/stitchfix/hamilton/tree/main" target="_blank">
-      <img src="https://circleci.com/gh/stitchfix/hamilton/tree/main.svg?style=svg" alt="Hamilton CircleCI"/>
+    <h1>Welcome to the official Hamilton Github Repository</h1>
+    <a href="https://circleci.com/gh/DAGWorks-Inc/hamilton/tree/main" target="_blank">
+      <img src="https://circleci.com/gh/DAGWorks-Inc/hamilton/tree/main.svg?style=svg" alt="Hamilton CircleCI"/>
     </a>
     <a href="https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg" target="_blank"><img src="https://img.shields.io/badge/Join-Hamilton_Slack-brightgreen?logo=slack" alt="Hamilton Slack"/></a>
         <a href="https://twitter.com/hamilton_os" target="_blank"><img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Twitter"/></a>
@@ -23,7 +23,7 @@ It was originally built to solve creating wide (1000+) column dataframes. Core t
 function name to dataflow output. That is, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity,
 easy modifications, with always unit testable and naturally documentable code.
 
-For the backstory on how Hamilton came about, see our [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
+For the backstory on how Hamilton came about, see the original Stitch Fix [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/). This repository is maintained by the original creators of Hamilton, who are now part of [DAGWorks inc.](https://dagworks.io/).
 
 # Getting Started
 Here's a quick getting started guide to get you up and running in less than 15 minutes.
@@ -142,13 +142,13 @@ You should see the following image if you ran `dr.visualize_execution(output_col
 Congratulations - you just created your Hamilton dataflow that created a dataframe!
 
 ## Example Hamilton Dataflows
-We have a growing list of examples showcasing how one might use Hamilton. You can find them all under the [`examples/`](https://github.com/stitchfix/hamilton/tree/main/examples) directory.
+We have a growing list of examples showcasing how one might use Hamilton. You can find them all under the [`examples/`](https://github.com/dagworks-inc/hamilton/tree/main/examples) directory.
 E.g.
 
-* [Hello world](https://github.com/stitchfix/hamilton/tree/main/examples/hello_world)
-* Scaling on to [Ray](https://github.com/stitchfix/hamilton/tree/main/examples/ray), [Dask](https://github.com/stitchfix/hamilton/tree/main/examples/dask), or [Pandas on Spark](https://github.com/stitchfix/hamilton/tree/main/examples/spark)
-* Training [a model with scikit-learn](https://github.com/stitchfix/hamilton/tree/main/examples/model_examples)
-* Doing [air quality analysis solely in numpy](https://github.com/stitchfix/hamilton/tree/main/examples/numpy/air-quality-analysis)
+* [Hello world](https://github.com/dagworks-inc/hamilton/tree/main/examples/hello_world)
+* Scaling on to [Ray](https://github.com/dagworks-inc/hamilton/tree/main/examples/ray), [Dask](https://github.com/dagworks-inc/hamilton/tree/main/examples/dask), or [Pandas on Spark](https://github.com/dagworks-inc/hamilton/tree/main/examples/spark)
+* Training [a model with scikit-learn](https://github.com/dagworks-inc/hamilton/tree/main/examples/model_examples)
+* Doing [air quality analysis solely in numpy](https://github.com/dagworks-inc/hamilton/tree/main/examples/numpy/air-quality-analysis)
 
 
 # Slack Community
