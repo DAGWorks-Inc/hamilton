@@ -23,7 +23,11 @@ It was originally built to solve creating wide (1000+) column dataframes. Core t
 function name to dataflow output. That is, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity,
 easy modifications, with always unit testable and naturally documentable code.
 
-For the backstory on how Hamilton came about, see the original Stitch Fix [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/). This repository is maintained by the original creators of Hamilton, who are now part of [DAGWorks inc.](https://dagworks.io/).
+# We forked and lost all our stars 
+This repository is maintained by the original creators of Hamilton, who are now part of [DAGWorks inc.](https://dagworks.io/). We decided to fork the original because Stitch Fix did not want to transfer ownership to us; we had grown the star count in the original repository to 893: <img width="141" alt="Screen Shot 2023-02-23 at 12 58 43 PM" src="https://user-images.githubusercontent.com/2328071/221029806-36a4e088-809b-4b08-9199-2fbf8049be34.png">
+before forking.
+
+For the backstory on how Hamilton came about, see the original Stitch Fix [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/). 
 
 # Getting Started
 Here's a quick getting started guide to get you up and running in less than 15 minutes.
