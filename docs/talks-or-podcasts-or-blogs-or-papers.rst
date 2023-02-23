@@ -18,16 +18,16 @@ This page curates talks, podcasts, and blogs about Hamilton
      - `Slides <https://github.com/skrawcz/talks/files/9213924/Hamilton_.A.Python.Micro-Framework.for.Data._.Feature.Engineering.pdf>`_
    * - July 2022
      - Tidy Production Pandas with Hamilton
-     - `Blog Post <https://towardsdatascience.com/tidy-production-pandas-with-hamilton-3b759a2bf562>`_
+     - `Blog Post <https://towardsdatascience.com/tidy-production-pandas-with-hamilton-3b759a2bf562>`__
    * - June 2022
      - Developing Scalable Feature Engineering DAGs with Metaflow & Hamilton
-     - `Blog post <https://outerbounds.com/blog/developing-scalable-feature-engineering-dags>`_
+     - `Blog post <https://outerbounds.com/blog/developing-scalable-feature-engineering-dags>`__
    * - May 2022
      - How to iterate with Hamilton in a Notebook
-     - `Blog post <https://towardsdatascience.com/how-to-iterate-with-hamilton-in-a-notebook-8ec0f85851ed>`_
+     - `Blog post <https://towardsdatascience.com/how-to-iterate-with-hamilton-in-a-notebook-8ec0f85851ed>`__
    * - May 2022
      - How to Use Hamilton with Pandas in 5 minutes
-     - `Blog post <https://medium.com/@stefan.krawczyk/how-to-use-hamilton-with-pandas-in-5-minutes-89f63e5af8f5>`_
+     - `Blog post <https://medium.com/@stefan.krawczyk/how-to-use-hamilton-with-pandas-in-5-minutes-89f63e5af8f5>`__
    * - May 2022
      - Hamilton: a python micro-framework for data/feature engineering at Stitch Fix
      - `AICamp youtube video <https://www.youtube.com/watch?v=PDGIt37dov8&ab_channel=AICamp>`_
@@ -39,7 +39,7 @@ This page curates talks, podcasts, and blogs about Hamilton
      - 30 minute talk about Hamilton, it's origin, tips on using it, and some exciting extensions & plans - `Youtube <https://www.youtube.com/watch?v=CHfrT5OVjlM>`_. For slides, see below.
    * - October 2022
      - Functions & DAGs: introducing Hamilton, a microframework for dataframe generation
-     - Blog post on Hamilton origins. `Blog post <https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton>`_
+     - Blog post on Hamilton origins. `Blog post <https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton>`__
    * - April 2021
      - Hamilton: a Micro Framework for Creating Dataframes @ applyconf
      - 10 minute lightning talk on Hamilton `Applyconf youtube video <https://www.youtube.com/watch?v=B5Zp_30Knoo>`_
