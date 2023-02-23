@@ -19,7 +19,7 @@ if you write Pandas code!
 All that's needed is to:
 
 #. Import system specific code to setup a client/cluster/etc for that distributed/scalable system.
-#. Import a `GraphAdapter <https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L91>`_ that implements using that distributed/scalable system. See :doc:`reference/api-reference/available-graph-adapters` for what is available.
+#. Import a `GraphAdapter <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L91>`_ that implements using that distributed/scalable system. See :doc:`reference/api-reference/available-graph-adapters` for what is available.
 #. You may need to provide a specific module that knows how to load data into the scalable system.
 #. Pass the modules, and graph adapter to the Hamilton Driver.
 #. Proceed as you would normally.
@@ -58,7 +58,7 @@ Ray - Experimental!
 
 `Ray <https://ray.io>`_ is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
 
-See `Scaling Hamilton on Ray <https://github.com/stitchfix/hamilton/tree/main/examples/ry>`_
+See `Scaling Hamilton on Ray <https://github.com/dagworks-inc/hamilton/tree/main/examples/ry>`_
 for an example of using Ray.
 
 Single Machine:
@@ -81,7 +81,7 @@ Dask - Experimental!
 
 `Ray <https://ray.io>`_ is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
 
-See `Scaling Hamilton on Dask <https://github.com/stitchfix/hamilton/tree/main/examples/dask>`_
+See `Scaling Hamilton on Dask <https://github.com/dagworks-inc/hamilton/tree/main/examples/dask>`_
 for an example of using Dask to scale Hamilton computation.
 
 Single Machine:
@@ -104,7 +104,7 @@ Koalas on Spark, a.k.a. Pandas API on Spark - Experimental!
 was the project code name to implement the `Pandas API on top of Spark <https://spark.apache.org/docs/latest/api/python/user\_guide/pandas\_on\_spark/index.html>`_.
 Hamilton makes it very easy for you to use Koalas on Spark.
 
-See `Scaling Hamilton on Koalas <https://github.com/stitchfix/hamilton/tree/main/examples/spark>`_
+See `Scaling Hamilton on Koalas <https://github.com/dagworks-inc/hamilton/tree/main/examples/spark>`_
 for an example of using Koalas on Spark to scale Hamilton computation.
 
 Single Machine:
@@ -132,9 +132,9 @@ This means, that the result of ``execute()`` can be any python object type!
 How do you change the type of the object returned?
 ==================================================
 
-You need to implement a `ResultMixin <https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L18>`_ if there
+You need to implement a `ResultMixin <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L18>`_ if there
 isn't one already defined for what you want to do. Then you need to provide that to a
-`GraphAdapter <https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L91>`_, similar to what was presented
+`GraphAdapter <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L91>`_, similar to what was presented
 above.
 
 See :doc:`reference/api-reference/available-result-builders` for what is provided with Hamilton, or :doc:`reference/api-extensions/custom-result-builders`

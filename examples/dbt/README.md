@@ -73,7 +73,7 @@ We've organized the code into two separate DBT models:
 
 This is just a start, and we think that Hamilton + DBT have a long/exciting future together. In particular, we could:
 
-1. Compile Hamilton to DBT for orchestration -- the new [SQL adapter](https://github.com/stitchfix/hamilton/issues/197) we're working on would compile nicely to a dbt task.
+1. Compile Hamilton to DBT for orchestration -- the new [SQL adapter](https://github.com/dagworks-inc/hamilton/issues/197) we're working on would compile nicely to a dbt task.
 2. Add more natural integration -- including a dbt plugin for a hamilton task.
 3. Add more examples with different SQL dialects/different python dialects. _hint_: _we're looking for contributors..._
 

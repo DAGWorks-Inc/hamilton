@@ -51,7 +51,7 @@ Hamilton
 
    unorganized-docs/index
 
-The open source framework `Hamilton <https://github.com/stitchfix/hamilton>`_, originally built to manage and run Stitch
+The open source framework `Hamilton <https://github.com/dagworks-inc/hamilton>`_, originally built to manage and run Stitch
 Fix's data pipelines.
 
 .. _getting started:
@@ -142,8 +142,8 @@ For more information please see :doc:`less-than-15-minutes-to-mastery/installing
 License
 ---------------
 
-Hamilton is released under the `BSD 3-Clause Clear License <https://github.com/stitchfix/hamilton/blob/main/LICENSE>`_.
-If you need to get in touch about something, contact us at algorithms-opensource (at) stitchfix.com.
+Hamilton is released under the `BSD 3-Clause Clear License <https://github.com/dagworks-inc/hamilton/blob/main/LICENSE>`_.
+If you need to get in touch about something, contact us at opensource (at) dagworks.io.
 
 .. _contributing:
 

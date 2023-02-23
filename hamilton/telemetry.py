@@ -126,7 +126,7 @@ def is_telemetry_enabled() -> bool:
             # Log only the first time someone calls this function; don't want to spam them.
             logger.warning(
                 "FYI: Hamilton telemetry is enabled. "
-                "See https://github.com/stitchfix/hamilton#usage-analytics--data-privacy for details."
+                "See https://github.com/dagworks-inc/hamilton#usage-analytics--data-privacy for details."
             )
         call_counter += 1
         if call_counter > MAX_COUNT_SESSION:

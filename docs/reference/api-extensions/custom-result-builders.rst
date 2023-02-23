@@ -14,7 +14,7 @@ through it can help ensure we aren't duplicating effort, and we can help steer y
 What you need to do
 -------------------
 
-You need to implement a class that implements a single function - see `github code <https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L18-L28>`_:
+You need to implement a class that implements a single function - see `github code <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L18-L28>`_:
 
 .. code-block:: python
 

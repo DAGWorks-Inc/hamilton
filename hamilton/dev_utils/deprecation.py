@@ -50,7 +50,7 @@ class deprecated:
         fail_starting=(2,0,0),
         use_instead=parameterize_values,
         reason='We have redefined the parameterization decorators to consist of `parametrize`, `parametrize_inputs`, and `parametrize_values`
-        migration_guide="https://github.com/stitchfix/hamilton/..."
+        migration_guide="https://github.com/dagworks-inc/hamilton/..."
     )
     class parameterized(...):
        ...
