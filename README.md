@@ -3,6 +3,9 @@
     <a href="https://circleci.com/gh/DAGWorks-Inc/hamilton/tree/main" target="_blank">
       <img src="https://circleci.com/gh/DAGWorks-Inc/hamilton/tree/main.svg?style=svg" alt="Hamilton CircleCI"/>
     </a>
+    <a href='https://hamilton.readthedocs.io/en/latest/?badge=latest'>
+        <img src='https://readthedocs.org/projects/hamilton/badge/?version=latest' alt='Documentation Status' />
+    </a>
     <a href="https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg" target="_blank"><img src="https://img.shields.io/badge/Join-Hamilton_Slack-brightgreen?logo=slack" alt="Hamilton Slack"/></a>
         <a href="https://twitter.com/hamilton_os" target="_blank"><img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Twitter"/></a>
         <br/>
