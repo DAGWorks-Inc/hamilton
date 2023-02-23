@@ -4,4 +4,4 @@ Dask
 
 'TODO: complete this tutorial'
 
-See examples directory `here <https://github.com/stitchfix/hamilton/blob/main/examples/dask/>`_.
+See examples directory `here <https://github.com/dagworks-inc/hamilton/blob/main/examples/dask/>`_.

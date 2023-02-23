@@ -191,7 +191,7 @@ Scaling Hamilton: Multi-core & Distributed Execution
 This functionality is currently in an "experimental" state. We think the code is solid, but it hasn't been used in a
 production environment for long. Thus the API to these GraphAdapters might change.
 
-See the `experimental <https://github.com/stitchfix/hamilton/tree/main/hamilton/experimental>`_ package for the current
+See the `experimental <https://github.com/dagworks-inc/hamilton/tree/main/hamilton/experimental>`_ package for the current
 implementations. We encourage you to give them a spin and provide us with feedback. See
 :doc:`../reference/api-reference/available-graph-adapters` for more details.
 

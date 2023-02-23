@@ -111,7 +111,7 @@ Caching Data Load for Rapid Iteration
 -------------------------------------
 
 Hamilton does not yet have caching built into the framework. That said, we are
-`working on <https://github.com/stitchfix/hamilton/issues/17>`_ introducing this as a feature and deciding on the scope
+`working on <https://github.com/dagworks-inc/hamilton/issues/17>`_ introducing this as a feature and deciding on the scope
 of the implementation. For now, however, the following decorator/toolset can allow you to cache data loaders based off
 of the parameters as well as the code itself. Use this at your own risk though, as it's not a fully functioning cache.
 This can be used as follows:

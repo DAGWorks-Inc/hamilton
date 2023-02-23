@@ -5,7 +5,7 @@
 This describes how one can get started with Ray in 5 minutes.
 
 For those eager to just see code, please jump right ahead to a full hello world with Ray
-`here <https://github.com/stitchfix/hamilton/tree/main/examples/ray>`_.
+`here <https://github.com/dagworks-inc/hamilton/tree/main/examples/ray>`_.
 
 .. image:: ../_static/Hamilton_ray_post_image.png
 
@@ -139,7 +139,7 @@ To summarize, the recipe for using Ray with Hamilton doesn’t change much from 
 Since it’s so easy to switch to using Ray or not, we’d love some benchmarks/anecdotes to see how much switching to Ray
 improves the speed or scale at which you can operate your dataflow!
 
-For a full “Ray Hello World” code sample, we direct you to the `examples directory here <https://github.com/stitchfix/hamilton/tree/main/examples/ray/hello\_world>`_.
+For a full “Ray Hello World” code sample, we direct you to the `examples directory here <https://github.com/dagworks-inc/hamilton/tree/main/examples/ray/hello\_world>`_.
 
 Caveats
 -------
@@ -151,7 +151,7 @@ been very stable (hasn’t changed since launch), but to feel good about making 
 think.
 #. We don’t expose all the functionality of Ray, but we could. E.g. memory aware scheduling, or specifying resources for
 specific functions. Let us know if you want something exposed — create an issue on github please — 
-`stitchfix/hamilton <https://github.com/stitchfix/hamilton>`_.
+`dagworks-inc/hamilton <https://github.com/dagworks-inc/hamilton>`_.
 
 To conclude
 -----------

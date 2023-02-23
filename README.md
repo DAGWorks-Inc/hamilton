@@ -159,8 +159,7 @@ E.g.
 We have a small but active community on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg). Come join us!
 
 # License
-Hamilton is released under the [BSD 3-Clause Clear License](LICENSE). If you need to get in touch about something,
-contact us at algorithms-opensource (at) stitchfix.com.
+Hamilton is released under the [BSD 3-Clause Clear License](LICENSE).
 
 # Used internally by:
 * [Stitch Fix](https://www.stitchfix.com/)

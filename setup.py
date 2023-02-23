@@ -42,8 +42,8 @@ setup(
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Stefan Krawczyk, Elijah ben Izzy",
-    author_email="skrawczyk@stitchfix.com,elijah.benizzy@stitchfix.com",
-    url="https://github.com/stitchfix/hamilton",
+    author_email="stefan@dagworks.io,elijah@dagworks.io",
+    url="https://github.com/dagworks-inc/hamilton",
     packages=find_packages(exclude=["tests"]),
     include_package_data=True,
     install_requires=load_requirements(),
@@ -79,7 +79,7 @@ setup(
     },
     # Relevant project URLs
     project_urls={  # Optional
-        "Bug Reports": "https://github.com/stitchfix/hamilton/issues",
-        "Source": "https://github.com/stitchfix/hamilton",
+        "Bug Reports": "https://github.com/dagworks-inc/hamilton/issues",
+        "Source": "https://github.com/dagworks-inc/hamilton",
     },
 )
