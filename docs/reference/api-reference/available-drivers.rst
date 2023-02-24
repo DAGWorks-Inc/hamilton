@@ -33,14 +33,17 @@ Instantiation
     config = {}
 
     # 2. we need to tell hamilton where to load function definitions from
+    # option (a) import directly
+    import my_functions
+    # option (b) import programmatically
     module_name = 'my_functions'
-    module = importlib.import_module(module_name)  # or simply "import my_functions"
+    my_functions = importlib.import_module(module_name)
 
     # 3. Determine the return type -- default is a pandas.DataFrame.
     adapter = base.SimplePythonDataFrameGraphAdapter() # See GraphAdapter docs for more details.
 
     # These all feed into creating the driver & thus DAG.
-    dr = driver.Driver(config, module, adapter=adapter)
+    dr = driver.Driver(config, my_functions, adapter=adapter)
 
 Execution
 =========
@@ -76,4 +79,4 @@ that particular node.
 .. code-block:: python
 
     output = ['output1', 'output2', ...]
-    df = dr.execute(output, overrides={'intermediate_node': intermediat_value})
+    df = dr.execute(output, overrides={'intermediate_node': intermediate_value})
