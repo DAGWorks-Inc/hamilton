@@ -6,6 +6,12 @@ Here we list available graph adapters
 
 Use ``from hamilton import base`` to use these Graph Adapters:
 
+.. autoclass:: hamilton.base.SimplePythonDataFrameGraphAdapter
+   :members:
+
+.. autoclass:: hamilton.base.SimplePythonGraphAdapter
+   :members:
+
 .. list-table::
    :header-rows: 1
 
