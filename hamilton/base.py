@@ -239,7 +239,7 @@ class StrictIndexTypePandasDataFrameResult(PandasDataFrameResult):
     strict_builder = base.StrictIndexTypePandasDataFrameResult()
     adapter = base.SimplePythonGraphAdapter(strict_builder)
     ...
-    dr =  driver.Driver(config, *modules, adapter=adapter)
+    dr =  driver.Driver(config, \*modules, adapter=adapter)
     df = dr.execute(...)  # this will now error if index types mismatch.
     """
 
