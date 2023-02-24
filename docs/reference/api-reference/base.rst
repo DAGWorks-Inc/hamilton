@@ -1,5 +1,5 @@
 Hamilton Base
 ===
 
-.. autoclass:: hamilton.base
+.. automodule:: hamilton.base
     :members:
