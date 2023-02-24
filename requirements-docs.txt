@@ -1,23 +1,7 @@
 -r requirements-dev.txt
-DictResult.build_result:1: WARNING: duplicate object description of hamilton.base.DictResult.build_result, other instance in reference/api-reference/available-result-builders, use :noindex: for one of them
-
-DictResult:1: WARNING: duplicate object description of hamilton.base.DictResult, other instance in reference/api-reference/available-result-builders, use :noindex: for one of them
 furo
 myst-parser==0.18.1
-NumpyMatrixResult.build_result:1: WARNING: duplicate object description of hamilton.base.NumpyMatrixResult.build_result, other instance in reference/api-reference/available-result-builders, use :noindex: for one of them
-NumpyMatrixResult:1: WARNING: duplicate object description of hamilton.base.NumpyMatrixResult, other instance in reference/api-reference/available-result-builders, use :noindex: for one of them
 pandas
-PandasDataFrameResult.build_dataframe_with_dataframes:1: WARNING: duplicate object description of hamilton.base.PandasDataFrameResult.build_dataframe_with_dataframes, other instance in reference/api-reference/available-result-builders, use :noindex: for one of them
-PandasDataFrameResult.build_result:1: WARNING: duplicate object description of hamilton.base.PandasDataFrameResult.build_result, other instance in reference/api-reference/available-result-builders, use :noindex: for one of them
-PandasDataFrameResult.check_pandas_index_types_match:1: WARNING: duplicate object description of hamilton.base.PandasDataFrameResult.check_pandas_index_types_match, other instance in reference/api-reference/available-result-builders, use :noindex: for one of them
-PandasDataFrameResult.pandas_index_types:1: WARNING: duplicate object description of hamilton.base.PandasDataFrameResult.pandas_index_types, other instance in reference/api-reference/available-result-builders, use :noindex: for one of them
-PandasDataFrameResult:1: WARNING: duplicate object description of hamilton.base.PandasDataFrameResult, other instance in reference/api-reference/available-result-builders, use :noindex: for one of them
 # have to include all the plugins potentially :/
 polars
-SimplePythonDataFrameGraphAdapter.check_input_type:1: WARNING: duplicate object description of hamilton.base.SimplePythonDataFrameGraphAdapter.check_input_type, other instance in reference/api-reference/available-graph-adapters, use :noindex: for one of them
-SimplePythonDataFrameGraphAdapter.check_node_type_equivalence:1: WARNING: duplicate object description of hamilton.base.SimplePythonDataFrameGraphAdapter.check_node_type_equivalence, other instance in reference/api-reference/available-graph-adapters, use :noindex: for one of them
-SimplePythonDataFrameGraphAdapter.execute_node:1: WARNING: duplicate object description of hamilton.base.SimplePythonDataFrameGraphAdapter.execute_node, other instance in reference/api-reference/available-graph-adapters, use :noindex: for one of them
-SimplePythonDataFrameGraphAdapter:1: WARNING: duplicate object description of hamilton.base.SimplePythonDataFrameGraphAdapter, other instance in reference/api-reference/available-graph-adapters, use :noindex: for one of them
-SimplePythonGraphAdapter.build_result:1: WARNING: duplicate object description of hamilton.base.SimplePythonGraphAdapter.build_result, other instance in reference/api-reference/available-graph-adapters, use :noindex: for one of them
-SimplePythonGraphAdapter:1: WARNING: duplicate object description of hamilton.base.SimplePythonGraphAdapter, other instance in reference/api-reference/available-graph-adapters, use :noindex: for one of them
 sphinx==5.3.0
