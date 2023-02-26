@@ -1,14 +1,14 @@
 ======================
-<15 Minutes to Mastery
+Getting Started
 ======================
 
 .. toctree::
    :hidden:
 
+   tutorial
    installing
-   writing-your-first-dataflow
-   running-your-dataflow
-   digging-in-further
+   run-fist-dataflow
+   next-steps
 
 Get started with Hamilton in under 15 minutes!
 
