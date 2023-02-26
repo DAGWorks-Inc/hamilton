@@ -1,5 +1,5 @@
 ==============
-Common Scenarios
+How To Guides
 ==============
 
 This is the "how to" portion of diataxis.fr. It is an outline for common scenarios that people go through.
