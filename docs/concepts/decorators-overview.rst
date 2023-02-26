@@ -87,4 +87,4 @@ only over dataframes. In fact, it will break if you try it on a function annotat
 widely used transform is ``@parametrized``.
 
 While there are decorators that don't quite fit into the above, these should give you a sense of how and why decorators
-are used. For more information on available decorators, see: :doc:`../reference/api-reference/available-decorators`.
+are used. For more information on available decorators, see: :doc:`../reference/api-reference/decorators`.
