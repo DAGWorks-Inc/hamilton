@@ -1,3 +1,0 @@
-===============
-Decoupling Functions and Execution
-===============
