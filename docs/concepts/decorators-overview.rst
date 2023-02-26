@@ -6,7 +6,7 @@ Overview of Decorators
 While the one to one mapping of node -> function implementation is powerful, it can sometimes lead to repeated code. In
 order to minimize this, Hamilton employs decorators to promote reuse of business logic. In this section we will go over a
 few different classes of decorators with some examples. For reference on specific decorators, see
-:doc:`../reference/api-reference/available-decorators`.
+:doc:`../reference/api-reference/decorators`.
 
 In Hamilton, decorators allow the author of Hamilton dataflows to modify functions as well as their role in the DAG.
 Decorators do one (or multiple) of the following:
