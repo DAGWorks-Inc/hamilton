@@ -1,3 +1,9 @@
+import os
+import sys
+
+# required to get reference documentation to be built
+sys.path.insert(0, os.path.abspath(".."))
+
 project = "Hamilton"
 
 html_theme = "furo"
@@ -7,5 +13,8 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/",
 }
-
-extensions = ["myst_parser"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "myst_parser",
+]
