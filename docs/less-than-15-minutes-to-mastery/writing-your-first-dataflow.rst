@@ -33,10 +33,10 @@ Create a file ``my_functions.py`` and add the following two functions:
 
 An astute observer might ask the following questions:
 
-#. **Why do the parameter names clash with the function names?** This is core to how hamilton works. It utilizes dependency injection to create a DAG of computation. Parameter names tell the framework where your function gets its data.
+#. **Why do the parameter names clash with the function names?** This is core to how hamilton works. It utilizes dependency injection to create a DAG of computation. Parameter names tell the framework where your function gets its data (other functions or input data).
 #. **OK, if the parameter names determine the source of the data, why have we not defined defined `spend` or `signups` as functions?** This is OK, as we will provide this data as an input when we actually want to materialize our functions. The DAG doesn't have to be complete when it is compiled.
-#. **Why is there no main line to call these functions?** Good observation. In fact, we never will call them (directly)! This is one of the core principles of Hamilton. You write individual transforms and the rest is handled by the framework. More on that next.
-#. **The functions all output pandas series. What if I don't want to use series?** You don't have to! Hamilton is not opinionated on the data type you use. The following are all perfectly valid as well (and we support dask/spark/ray/other distributed frameworks).
+#. **Why is there no main line to call these functions?** Good observation. In fact, we will never have to call them (directly)! This is one of the core principles of Hamilton. You write individual transforms and the rest is handled by the framework. More on that next.
+#. **The functions all output pandas series. What if I don't want to use pandas?** You don't have to! Hamilton is not opinionated on the data type you use. Hamilton support *any* valid python object, as well as an array of distributed frameworks including dask, spark, and ray.
 
 Let's add a few more functions to our ``my_functions.py`` file:
 

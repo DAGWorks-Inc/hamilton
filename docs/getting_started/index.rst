@@ -1,14 +1,14 @@
-==============
+====================
 Getting Started
-==============
+====================
 
-Let's get started with Hamilton!
+Welcome to Hamilton's documentation!
 
-This is the tutorial section of the diataxis guide.
-Most of this is taken by tryhamilton.dev but the purpose of this is to get someone comfortable running on their computer,
-after they've seen the basics of the framework (or before, up to them).
+Before diving in, we highly recommend you try Hamilton in your browser at https://www.tryhamilton.dev.
+This is an easy hands-on introduction to hamilton that should get you comfortable with the framework and its basic capabilities.
 
-- TODO -- add link to tryhamilton.dev
+Now that you've played around a bit, the following section of the docs will teach you how to
+install Hamilton and get started with your own project.
 
 .. toctree::
 
