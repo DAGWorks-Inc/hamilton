@@ -13,13 +13,21 @@ class tag(base.NodeDecorator):
     be un-namespaced in most uses.
 
     That is using:
-    > @tag(my_tag='tag_value')
-    > def my_function(...) -> ...:
+
+    .. code-block:: python
+
+       @tag(my_tag='tag_value')
+       def my_function(...) -> ...:
+
     is un-namespaced because you cannot put a `.` in the keyword part (the part before the '=').
 
     But using:
-    > @tag(**{'my.tag': 'tag_value'})
-    > def my_function(...) -> ...:
+
+    .. code-block:: python
+
+       @tag(**{'my.tag': 'tag_value'})
+       def my_function(...) -> ...:
+
     allows you to add dots that allow you to namespace your tags.
 
     Currently, tag values are restricted to allowing strings only, although we may consider changing the in the future
@@ -27,13 +35,16 @@ class tag(base.NodeDecorator):
 
     Hamilton also reserves the right to change the following:
     * adding purely positional arguments
-    * not allowing users to use a certain set of top-level prefixes (E.G. any tag where the top level is one of the
-      values in RESERVED_TAG_PREFIX).
+    * not allowing users to use a certain set of top-level prefixes (E.G. any tag where the top level is one of the \
+    values in RESERVED_TAG_PREFIX).
 
     Example usage:
-    > @tag(foo='bar', a_tag_key='a_tag_value', **{'namespace.tag_key': 'tag_value'})
-    > def my_function(...) -> ...:
-    >   ...
+
+    .. code-block:: python
+
+       @tag(foo='bar', a_tag_key='a_tag_value', **{'namespace.tag_key': 'tag_value'})
+       def my_function(...) -> ...:
+          ...
     """
 
     RESERVED_TAG_NAMESPACES = [
@@ -48,13 +59,14 @@ class tag(base.NodeDecorator):
     def __init__(self, *, target_: base.TargetType = None, **tags: str):
         """Constructor for adding tag annotations to a function.
 
-        :param target_: Target nodes to decorate. This can be one of:
-        -> None: tag all nodes outputted by this that are "final" (E.g. do not have a node
-        outputted by this that depend on them)
-        -> Ellipsis (...) tag *all* nodes outputted by this
-        -> Collection[str] tag *only* the nodes with the specified names
-        -> str: tag *only* the node with the specified name
-        :param tags: the keys are always going to be strings, so the type annotation here means the values are strings.
+        :param target\\_: Target nodes to decorate. This can be one of the following:
+
+            * **None**: tag all nodes outputted by this that are "final" (E.g. do not have a node\
+            outputted by this that depend on them)
+            * **Ellipsis (...)**: tag *all* nodes outputted by this
+            * **Collection[str]**: tag *only* the nodes with the specified names
+            * **str**: tag *only* the node with the specified name
+        :param tags: the keys are always going to be strings, so the type annotation here means the values are strings.\
             Implicitly this is `Dict[str, str]` but the PEP guideline is to only annotate it with `str`.
         """
         super(tag, self).__init__(target=target_)
@@ -128,9 +140,23 @@ class tag(base.NodeDecorator):
 
 class tag_outputs(base.NodeDecorator):
     def __init__(self, **tag_mapping: Dict[str, str]):
-        """Creates a tag_outputs decorator. Note that this currently does not validate whether the
-        nodes are spelled correctly as it takes in a superset of nodes.
-        :param tag_mapping: Mapping of node name to tags -- this is akin to applying @tag to individual nodes produced by the function
+        """Creates a tag_outputs decorator.
+
+        Note that this currently does not validate whether the nodes are spelled correctly as it takes in a superset of\
+        nodes.
+
+        :param tag_mapping: Mapping of output name to tags -- this is akin to applying @tag to individual outputs \
+        produced by the function.
+
+        Example usage:
+
+        .. code-block:: python
+
+           @tag_output(**{'a': {'a_tag': 'a_tag_value'}, 'b': {'b_tag': 'b_tag_value'}})
+           @extract_columns("a", "b")
+           def example_tag_outputs() -> pd.DataFrame:
+               return pd.DataFrame.from_records({"a": [1], "b": [2]})
+
         """
         super(base.NodeDecorator, self).__init__(target=None)
         self.tag_mapping = tag_mapping
