@@ -7,3 +7,5 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/",
 }
+
+extensions = ["myst_parser"]
