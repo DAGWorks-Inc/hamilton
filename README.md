@@ -35,12 +35,13 @@ For the backstory on how Hamilton came about, see the original Stitch Fix [blog 
 # Feature comparison
 Here are common things that Hamilton is compared to, and how Hamilton compares to them.
 
-| Feature                                   | Hamilton | Macro orchestration systems like Airflow | Feast | DBT | Pandas |
+| Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | DBT | Dask |
 |-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:------:|
 | Python 3.7+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅    |
+| Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌    |                          
 | Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
 | Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
-| Can visualize lineage easily              | ✅  |                   ❌                          |   ❌  | ✅  |  ❌    |
+| Can visualize lineage easily              | ✅  |                   ❌                          |   ❌  | ✅  |  ✅    |
 | Is just a library                         | ✅  |                   ❌                          |   ❌  | ❌  |  ✅    |
 | Runs anywhere python runs                 | ✅  |                   ❌                          |   ❌  | ❌  |  ✅    |
 | Built for managing python transformations | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
