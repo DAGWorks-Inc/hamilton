@@ -533,8 +533,7 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     the initial node.
 
     3. If there is a list of node expanders, apply them. Otherwise apply the default
-    nodeexpander This must be a
-    list of length one. This gives out a list of nodes.
+    node expander This must be a list of length one. This gives out a list of nodes.
 
     4. If there is a node transformer, apply that. Note that the node transformer
     gets applied individually to just the sink nodes in the subdag. It subclasses
@@ -543,7 +542,7 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     5. Return the final list of nodes.
 
     :param fn: Function to input.
-    :param config: Configuratino to use -- this can be used by decorators to specify
+    :param config: Configuration to use -- this can be used by decorators to specify
     which configuration they need.
     :return: A list of nodes into which this function transforms.
     """
