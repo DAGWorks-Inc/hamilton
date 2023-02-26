@@ -6,7 +6,7 @@ Hamilton
    :maxdepth: 6
    :hidden:
 
-   getting_started/index
+   getting-started/index
 
 .. toctree::
    :maxdepth: 6
