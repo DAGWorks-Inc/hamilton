@@ -137,7 +137,7 @@ it executes on every column that's extracted.
 ## Handling the results
 
 We utilize tags to index nodes that represent data quality. All data-quality related tags start with the
-prefix `hamilton.data_quality`. Currently there are two:
+prefix `hamilton.data_quality`. Currently, there are two:
 
 1. `hamilton.data_quality.contains_dq_results` -- this is a boolean that tells
 whether a node outputs a data quality results. These are nodes that get injected when
@@ -149,3 +149,58 @@ Note that these tags will not be present if the node is not related to data qual
 don't assume they're in every node.
 
 To query one can simply filter for all the nodes that contain these tags and access the results!
+
+## Configuring data quality
+
+While data quality decorators can be configured in code, we also allow you to configure them as part of the
+`config` dictionary passed to the driver. This enables you to do the following, either on a per-node or global level:
+
+1. Override the importance level
+2. Disable data quality
+
+All configuration keys have two components, joined by a `.` The first component is the prefix `data_quality`, and the second is either
+`node_name` or `global`. The `node_name` component is the name of the node, which indicates that  and the `global` component is the global configuration.
+
+The value will be a dictionary with two possible values:
+
+1. `importance` -- the importance level of the data quality check. Can be either "warn" or "fail"
+2. `enable` -- a boolean indicating whether the data quality check is enabled or not.
+
+The specific node name will take precedence, and `global` will apply after that. The information in the code
+will take third place (although you are unable to disable through code aside from removing/commenting the decorator out).
+
+ Let's look at some examples:
+
+```python
+# This will globally disable *all* data quality checks
+config = {
+    'data_quality.global': {
+        'enable': False
+    },
+}
+# This will set the importance of all decorated nodes to "warn"
+config = {
+    'data_quality.global': {
+        'importance': 'warn'
+    },
+}
+
+# This will disable the data quality check for the node `foo`
+config = {
+    'data_quality.foo': {
+        'enable': False
+    },
+}
+
+# This will set the importance of the node `foo` to "warn"
+config = {
+    'data_quality.foo': {
+        'importance': 'warn'
+    },
+}
+```
+
+Note that the node name refers to the node being decorated. In *most* cases this will be equal to the name of the function, but not in all cases.
+If you have `parameterize`, you'll want to use the name of the specific node (which will correspond most likely to the name of the `target` parameter).
+
+Also note the precedence order. **The node-specific configuration will take precedence over the global configuration.**
