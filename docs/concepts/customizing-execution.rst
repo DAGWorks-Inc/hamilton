@@ -58,7 +58,7 @@ a ``pandas.DataFrame`` when ``.execute()`` is called.
 
 If you want to tell Hamilton to return something else, we suggest starting with the ``base.SimplePythonGraphAdapter``
 and writing a simple class & function that implements the ``base.ResultMixin`` interface and passing that in.  See
-:doc:`../reference/api-reference/available-graph-adapters` and
+:doc:`../reference/api-reference/graph-adapters` and
 :doc:`../reference/api-reference/available-result-builders` for options.
 
 Otherwise, let's quickly walk through some options on how to execute a Hamilton DAG.
