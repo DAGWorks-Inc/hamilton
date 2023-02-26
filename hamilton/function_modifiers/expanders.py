@@ -520,6 +520,14 @@ class extract_fields(base.NodeExpander):
 
 @dataclasses.dataclass
 class ParameterizedExtract:
+    """Dataclass to hold inputs for parameterize_extract_columns.
+
+    :param outputs: A tuple of strings, each of which is the name of an output.
+    :param input_mapping: A dictionary of string to ParametrizedDependency. The string is the name of the python \
+    parameter of the decorated function, and the value is a "source"/"value" which will be passed as input for that
+    parameter to the function.
+    """
+
     outputs: Tuple[str, ...]
     input_mapping: Dict[str, ParametrizedDependency]
 
