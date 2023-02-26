@@ -38,7 +38,7 @@ Here are common things that Hamilton is compared to, and how Hamilton compares t
 | Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | DBT | Dask |
 |-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:------:|
 | Python 3.7+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅    |
-| Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌    |                          
+| Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌    |
 | Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
 | Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
 | Can visualize lineage easily              | ✅  |                   ❌                          |   ❌  | ✅  |  ✅    |
