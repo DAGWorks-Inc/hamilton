@@ -15,4 +15,4 @@ If you need help, you can:
 
 #. Join our `slack community <https://join.slack.com/t/hamilton-opensource/shared\_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_
 #. Open an issue on `github <https://github.com/DAGWorks-Inc/hamilton/issues/new/choose>`_
-#. Reach out to us at os@dagworks.io
+#. Reach out to us at open-source@dagworks.io
