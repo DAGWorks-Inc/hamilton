@@ -1,22 +1,18 @@
-==============
+====================
 Overview of Concepts
-==============
+====================
 
-This is the "explanation" guide from diataxis.
-It explains the concepts, more for readers than doers.
-The goal of this is for someone to read when they're away for a computer
-to grok the basics as well as some more advanced concepts.
+Now that you're familiar with the basics and have run your own dataflow, let's dive into the
+concepts that makes Hamilton unique and powerful.
 
 
 .. toctree::
 
    lexicon
    hamilton-function-structure
-   decoupling-execution
    driver-capabilities
-   graph-adapters
-   result-builders
+   customizing-execution
    decorators-overview
-   best-practices
+   best-practices/index
    extensions
    further-reading
