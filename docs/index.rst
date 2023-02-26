@@ -6,6 +6,46 @@ Hamilton
    :maxdepth: 6
    :hidden:
 
+   getting_started/index
+
+.. toctree::
+   :maxdepth: 6
+   :hidden:
+
+   concepts/index
+
+.. toctree::
+   :maxdepth: 6
+   :hidden:
+
+   common-scenarios/index
+
+.. toctree::
+   :maxdepth: 6
+   :hidden:
+
+   hamilton-community
+   license
+   contributing
+
+.. toctree::
+   :maxdepth: 6
+   :caption: REFERENCE
+   :hidden:
+
+   reference/api-reference/index
+   reference/api-extensions/index
+
+.. toctree::
+   :maxdepth: 6
+   :hidden:
+
+   to_migrate
+
+.. toctree::
+   :maxdepth: 6
+   :hidden:
+
    less-than-15-minutes-to-mastery/index
 
 .. toctree::
