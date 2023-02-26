@@ -18,7 +18,13 @@ Hamilton
    :maxdepth: 6
    :hidden:
 
-   common-scenarios/index
+   how-tos/index
+
+.. toctree::
+   :maxdepth: 6
+   :hidden:
+
+   further-reading
 
 .. toctree::
    :maxdepth: 6
