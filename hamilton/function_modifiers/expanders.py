@@ -291,8 +291,8 @@ class parametrized(parameterize_values):
 
 class parameterize_sources(parameterize):
     """Expands a single function into `n`, each of which corresponds to a function in which the parameters specified \
-    are mapped to the specified inputs. Note this decorator and ``@parameterize_values`` are quite similar, except that\
-    the input here is another DAG node(s), i.e. column/input, rather than a specific scalar/static value.
+    are mapped to the specified inputs. Note this decorator and ``@parameterize_values`` are quite similar, except \
+    that the input here is another DAG node(s), i.e. column/input, rather than a specific scalar/static value.
 
     .. code-block:: python
 
@@ -310,17 +310,18 @@ class parameterize_sources(parameterize):
     """
 
     def __init__(self, **parameterization: Dict[str, Dict[str, str]]):
-        """Constructor for a modifier that expands a single function into n, each of which corresponds to replacing
+        """Constructor for a modifier that expands a single function into n, each of which corresponds to replacing\
         some subset of the specified parameters with specific upstream nodes.
 
         Note this decorator and `@parametrized_input` are similar, except this one allows multiple \
         parameters to be mapped to multiple function arguments (and it fixes the spelling mistake).
 
-        `parameterized_sources` allows you keep your code DRY by reusing the same function but replace the inputs\
-        to create multiple corresponding distinct outputs. We see here that `parameterized_inputs` allows you to keep\
-        your code DRY by reusing the same function to create multiple distinct outputs. The key word arguments passed\
+        `parameterized_sources` allows you keep your code DRY by reusing the same function but replace the inputs \
+        to create multiple corresponding distinct outputs. We see here that `parameterized_inputs` allows you to keep \
+        your code DRY by reusing the same function to create multiple distinct outputs. The key word arguments passed \
         have to have the following structure:
             > OUTPUT_NAME = Mapping of function argument to input that should go into it.
+
         The documentation for the output is taken from the function. The documentation string can be templatized with\
         the parameter names of the function and the reserved value `output_name` - those will be replaced with the\
         corresponding values from the parameterization.
