@@ -89,4 +89,4 @@ production environment for long. Thus the API to these GraphAdapters might chang
 
 See the `experimental <https://github.com/dagworks-inc/hamilton/tree/main/hamilton/experimental>`_ package for the current
 implementations. We encourage you to give them a spin and provide us with feedback. See
-:doc:`../reference/api-reference/available-graph-adapters` for more details.
+:doc:`../reference/api-reference/graph-adapters` for more details.
