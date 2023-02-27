@@ -84,6 +84,59 @@ def create_static_node(typ: Type, name: str, value: Any, namespace: Tuple[str, .
 
 
 class subdag(base.NodeCreator):
+    """The `@subdag` decorator enables you to rerun components of your DAG with varying parameters.
+    That is, it enables you to "chain" what you could express with a driver into a single DAG.
+
+    That is, instead of using Hamilton within itself:
+
+    .. code-block:: python
+
+        def feature_engineering(source_path: str) -> pd.DataFrame:
+            '''You could recursively use Hamilton within itself.'''
+            dr = driver.Driver({}, feature_modules)
+            df = dr.exexcute(["feature_df"], inputs={"path": source_path})
+            return df
+
+    You instead can use the `@subdag` decorator to do the same thing, with the added benefit of visibility into the\
+    whole DAG:
+
+    .. code-block:: python
+
+        @subdag(
+            feature_modules,
+            inputs={"path": source("source_path")},
+            config={}
+        )
+        def feature_engineering(feature_df: pd.DataFrame) -> pd.DataFrame:
+            return feature_df
+
+
+    Note that this is immensely powerful -- if we draw analogies from Hamilton to standard procedural programming \
+    paradigms, we might have the following correspondence:
+
+    - `config.when` + friends -- `if/else` statements
+    - `parameterize`/`extract_columns` -- `for` loop
+    - `does` -- effectively macros
+
+    And so on. `@subdag` takes this one step further:
+
+    - `@subdag` -- subroutine definition
+    E.G. take a certain set of nodes, and run them with specified parameters.
+
+    Why might you want to use this? Let's take a look at some examples:
+
+    1. You have a feature engineering pipeline that you want to run on multiple datasets. If its exactly the same, \
+    this is perfect. If not, this works perfectly as well, you just have to utilize different functions in each or \
+    the `config.when` + `config` parameter to rerun it.
+    2. You want to train multiple models in the same DAG that share some logic (in features or training) -- this \
+    allows you to reuse and continually add more.
+    3. You want to combine multiple similar DAGs (e.g. one for each business line) into one so you can build a \
+    cross-business line model.
+
+    This basically bridges the gap between the flexibility of non-declarative pipelining frameworks with the \
+    readability/maintainability of declarative ones.
+    """
+
     def __init__(
         self,
         *load_from: Union[ModuleType, Callable],
@@ -92,11 +145,11 @@ class subdag(base.NodeCreator):
         ],
         config: Dict[str, Any] = None,
     ):
-        """Initializes a replay decorator. This decorator replays a subdag with a specified configuration.
+        """Adds a subDAG to the main DAG.
 
-        :param load_from: The functions that will be used to generate this subDAG
-        :param namespace: Namespace with which to prefict nodes
-        :param with_inputs: Parameterized dependencies to inject into all sources of this subDAG.
+        :param load_from: The functions that will be used to generate this subDAG.
+        :param namespace: Namespace with which to prefix nodes.
+        :param with_inputs: Parameterized dependencies to inject into all sources of this subDAG.\
         This should *not* be an intermediate node in the subDAG.
         :param outputs: A dictionary of original node name -> output node name that forms the output of this DAG.
         :param with_config: A configuration dictionary for *just* this subDAG. Note that this passed in value takes precedence.

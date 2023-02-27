@@ -61,38 +61,49 @@ def _convert_params_from_df(parameterization: pd.DataFrame) -> List[Parameterize
 
 
 class parameterize_frame(parameterize_extract_columns):
-    """Instiantiates a parameterize_extract decorator using a dataframe to specify a set
-    of extracts + parameterizations.
+    """EXPERIMENTAL! Instantiates a parameterize_extract decorator using a dataframe to specify a set of extracts + \
+    parameterizations.
+
+    This is an experimental decorator and the API may change in the future; please provide feedback
+    whether this API does or does not work for you.
+
     :param parameterization: Parameterization dataframe. This is of a specific shape:
-    1. Index
-    - Level 0: list of parameter names
-    - Level 1: types of things to inject, either
-        - "out" (meaning this is an output),
-        - "value" (meaning this is a literal value)
-        - "source" (meaning this node comes from an upstream value)
-    2. Contents
-    - Each row corresponds to the index. Each of these corresponds to an output node from this.
-    Note your function has to take in the column-names and output a dataframe with those names --
-    we will likely change it so that's not the case, and it can just use the position of the columns.
 
-    E.G.
+        1. Index
+        - Level 0: list of parameter names
+        - Level 1: types of things to inject, either
+            - "out" (meaning this is an output),
+            - "value" (meaning this is a literal value)
+            - "source" (meaning this node comes from an upstream value)
+        2. Contents
+        - Each row corresponds to the index. Each of these corresponds to an output node from this.
+        Note your function has to take in the column-names and output a dataframe with those names --
+        we will likely change it so that's not the case, and it can just use the position of the columns.
 
-    df = pd.DataFrame(
-    [
-        ["outseries1a", "outseries2a", "inseries1a", "inseries2a", 5.0],
-        ["outseries1b", "outseries2b", "inseries1b", "inseries2b", 0.2],
-    ],
-    columns=[
-        ["output1", "output2", "input1", "input2", "input3"],
-        ["out", "out", "source", "source", "value"],
-    ],
-    )  # specify column names (corresponding to function arguments and (if outputting multiple columns) output dataframe columns)
+        E.G.
 
-    @parameterize_frame(df)
-    def my_func(
-        input1: pd.Series, input2: pd.Series, input3: float
-    ) -> pd.DataFrame:
+        .. code-block:: python
 
+            from hamilton.experimental.decorators.parameterize_frame import parameterize_frame
+
+            df = pd.DataFrame(
+            [
+                ["outseries1a", "outseries2a", "inseries1a", "inseries2a", 5.0],
+                ["outseries1b", "outseries2b", "inseries1b", "inseries2b", 0.2],
+            ],
+            # specify column names corresponding to function arguments and
+            # if outputting multiple columns, output dataframe columns.
+            columns=[
+                ["output1", "output2", "input1", "input2", "input3"],
+                ["out", "out", "source", "source", "value"],
+            ],
+            )
+
+            @parameterize_frame(df)
+            def my_func(
+                input1: pd.Series, input2: pd.Series, input3: float
+            ) -> pd.DataFrame:
+                ...
     """
 
     def __init__(self, parameterization: pd.DataFrame):
