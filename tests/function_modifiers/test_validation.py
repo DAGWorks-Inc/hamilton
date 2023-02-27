@@ -1,15 +1,23 @@
+from typing import Any, Dict
+
 import numpy as np
 import pandas as pd
 import pytest
 
-from hamilton import node
-from hamilton.data_quality.base import DataValidationError, ValidationResult
+from hamilton import ad_hoc_utils, driver, node
+from hamilton.data_quality.base import (
+    DataValidationError,
+    DataValidationLevel,
+    DataValidator,
+    ValidationResult,
+)
 from hamilton.function_modifiers import (
     DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG,
     IS_DATA_VALIDATOR_TAG,
     check_output,
     check_output_custom,
 )
+from hamilton.function_modifiers.validation import ValidatorConfig
 from hamilton.node import DependencyType
 from tests.resources.dq_dummy_examples import (
     DUMMY_VALIDATORS_FOR_TESTING,
@@ -154,3 +162,147 @@ def test_data_quality_constants_for_api_consistency():
     # simple tests to test data quality constants remain the same
     assert IS_DATA_VALIDATOR_TAG == "hamilton.data_quality.contains_dq_results"
     assert DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG == "hamilton.data_quality.source_node"
+
+
+@pytest.mark.parametrize(
+    "validator,config,node_name,expected_result",
+    [
+        (
+            SampleDataValidator2(0, "warn"),
+            {},
+            "test",
+            ValidatorConfig(True, DataValidationLevel.WARN),
+        ),
+        (
+            SampleDataValidator2(0, "fail"),
+            {},
+            "test",
+            ValidatorConfig(True, DataValidationLevel.FAIL),
+        ),
+        (
+            SampleDataValidator2(0, "warn"),
+            {"data_quality.test": {"enabled": False}},
+            "test",
+            ValidatorConfig(False, DataValidationLevel.WARN),
+        ),
+        (
+            SampleDataValidator2(0, "warn"),
+            {"data_quality.test": {"enabled": True}},
+            "test",
+            ValidatorConfig(True, DataValidationLevel.WARN),
+        ),
+        (
+            SampleDataValidator2(0, "fail"),
+            {"data_quality.test": {"enabled": False, "importance": "warn"}},
+            "test",
+            ValidatorConfig(False, DataValidationLevel.WARN),
+        ),
+        (
+            SampleDataValidator2(0, "warn"),
+            {"data_quality.global": {"enabled": False}},
+            "test",
+            ValidatorConfig(False, DataValidationLevel.WARN),
+        ),
+        (
+            SampleDataValidator2(0, "warn"),
+            {"data_quality.global": {"enabled": False, "importance": "warn"}},
+            "test",
+            ValidatorConfig(False, DataValidationLevel.WARN),
+        ),
+    ],
+)
+def test_validator_config_derive(
+    validator: DataValidator,
+    config: Dict[str, Any],
+    node_name: str,
+    expected_result: ValidatorConfig,
+):
+    assert ValidatorConfig.from_validator(validator, config, node_name) == expected_result
+
+
+def test_validator_config_produces_no_validation_with_global():
+    decorator = check_output_custom(
+        SampleDataValidator2(dataset_length=1, importance="fail"),
+        SampleDataValidator3(dtype=np.int64, importance="fail"),
+    )
+
+    def fn(input: pd.Series) -> pd.Series:
+        return input
+
+    node_ = node.Node.from_fn(fn)
+    config = {"data_quality.global": {"enabled": False}}
+    subdag = decorator.transform_node(node_, config=config, fn=fn)
+    assert 1 == len(subdag)
+    node_, *_ = subdag
+    assert node_.name == "fn"
+    # Ensure nothing's been messed with
+    pd.testing.assert_series_equal(node_(pd.Series([1.0, 2.0, 3.0])), pd.Series([1.0, 2.0, 3.0]))
+
+
+def test_validator_config_produces_no_validation_with_node_override():
+    decorator = check_output_custom(
+        SampleDataValidator2(dataset_length=1, importance="fail"),
+        SampleDataValidator3(dtype=np.int64, importance="fail"),
+    )
+
+    def fn(input: pd.Series) -> pd.Series:
+        return input
+
+    node_ = node.Node.from_fn(fn)
+    config = {f"data_quality.{node_.name}": {"enabled": False}}
+    subdag = decorator.transform_node(node_, config=config, fn=fn)
+    assert 1 == len(subdag)
+    node_, *_ = subdag
+    assert node_.name == "fn"
+    # Ensure nothing's been messed with
+    pd.testing.assert_series_equal(node_(pd.Series([1.0, 2.0, 3.0])), pd.Series([1.0, 2.0, 3.0]))
+
+
+def test_validator_config_produces_no_validation_with_node_level_override():
+    decorator = check_output_custom(
+        SampleDataValidator2(dataset_length=1, importance="fail"),
+        SampleDataValidator3(dtype=np.int64, importance="fail"),
+    )
+
+    def fn(input: pd.Series) -> pd.Series:
+        return input
+
+    node_ = node.Node.from_fn(fn)
+    config = {f"data_quality.{node_.name}": {"importance": "warn"}}
+    subdag = decorator.transform_node(node_, config=config, fn=fn)
+    assert 4 == len(subdag)
+    nodes_by_name = {n.name: n for n in subdag}
+    # We set this to warn so this should not break
+    nodes_by_name["fn"].callable(
+        fn_raw=pd.Series([1.0, 2.0, 3.0]),
+        fn_dummy_data_validator_2=ValidationResult(False, "", {}),
+        fn_dummy_data_validator_3=ValidationResult(False, "", {}),
+    )
+
+
+def test_data_validator_end_to_end_fails():
+    @check_output_custom(
+        SampleDataValidator2(dataset_length=1, importance="fail"),
+    )
+    def data_quality_check_that_doesnt_pass() -> pd.Series:
+        return pd.Series([1, 2])
+
+    dr = driver.Driver(
+        {}, ad_hoc_utils.create_temporary_module(data_quality_check_that_doesnt_pass)
+    )
+    with pytest.raises(DataValidationError):
+        dr.execute(final_vars=["data_quality_check_that_doesnt_pass"], inputs={})
+
+
+def test_data_validator_end_to_end_succeed_when_node_disabled():
+    @check_output_custom(
+        SampleDataValidator2(dataset_length=1, importance="fail"),
+    )
+    def data_quality_check_that_doesnt_pass() -> pd.Series:
+        return pd.Series([1, 2])
+
+    dr = driver.Driver(
+        {f"data_quality.{data_quality_check_that_doesnt_pass.__name__}": {"enabled": False}},
+        ad_hoc_utils.create_temporary_module(data_quality_check_that_doesnt_pass),
+    )
+    dr.execute(final_vars=["data_quality_check_that_doesnt_pass"], inputs={})

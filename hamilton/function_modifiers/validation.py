@@ -1,6 +1,6 @@
 import abc
 import dataclasses
-from typing import Any, Callable, Collection, Dict, List, Type
+from typing import Any, Callable, Collection, Dict, List, Optional, Type
 
 from hamilton import node
 from hamilton.data_quality import base as dq_base
@@ -20,9 +20,21 @@ class ValidatorConfig:
 
     @staticmethod
     def from_validator(
-        validator: dq_base.DataValidator, config: Dict[str, Any]
+        validator: dq_base.DataValidator,
+        config: Dict[str, Any],
+        node_name: str,
     ) -> "ValidatorConfig":
-        return ValidatorConfig(should_run=True, importance=validator.importance)
+        global_key = "data_quality.global"
+        node_key = f"data_quality.{node_name}"
+        global_config = config.get(global_key, {})
+        node_config = config.get(node_key, {})
+        should_run = global_config.get("enabled", node_config.get("enabled", True))
+        importance = node_config.get(
+            "importance", global_config.get("importance", validator.importance.value)
+        )
+        return ValidatorConfig(
+            should_run=should_run, importance=dq_base.DataValidationLevel(importance)
+        )
 
 
 class BaseDataValidationDecorator(base.NodeTransformer):
@@ -38,10 +50,17 @@ class BaseDataValidationDecorator(base.NodeTransformer):
     def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
-
+        validators = self.get_validators(node_)
+        validator_configs = [
+            ValidatorConfig.from_validator(validator, config, node_.name)
+            for validator in validators
+        ]
+        # If no validators are enabled, return the original node
+        if not any(validator_config.should_run for validator_config in validator_configs):
+            return [node_]
         raw_node = node.Node(
-            name=node_.name
-            + "_raw",  # TODO -- make this unique -- this will break with multiple validation decorators, which we *don't* want
+            name=node_.name + "_raw",
+            # TODO -- make this unique -- this will break with multiple validation decorators, which we *don't* want
             typ=node_.type,
             doc_string=node_.documentation,
             callabl=node_.callable,
@@ -49,11 +68,9 @@ class BaseDataValidationDecorator(base.NodeTransformer):
             input_types=node_.input_types,
             tags=node_.tags,
         )
-        validators = self.get_validators(node_)
         validator_nodes = []
         validator_name_config_map = {}
-        for validator in validators:
-            validator_config = ValidatorConfig.from_validator(validator, config)
+        for validator, validator_config in zip(validators, validator_configs):
             if not validator_config.should_run:
                 continue
 
@@ -120,6 +137,21 @@ class BaseDataValidationDecorator(base.NodeTransformer):
 
     def validate(self, fn: Callable):
         pass
+
+    def optional_config(
+        self, fn: Callable, nodes: Optional[Collection[node.Node]]
+    ) -> Dict[str, Any]:
+        """Returns the configuration for the decorator.
+
+        :param fn: Function to validate
+        :param nodes: Nodes to validate
+        :return: Configuration that gets passed to the decorator
+        """
+        out = {"data_quality.global": {}}
+        if nodes is not None:
+            for node_ in nodes:
+                out[f"data_quality.{node_.name}"] = {}
+        return out
 
 
 class check_output_custom(BaseDataValidationDecorator):

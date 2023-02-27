@@ -118,7 +118,9 @@ class NodeTransformLifecycle(abc.ABC):
             setattr(fn, lifecycle_name, [self])
         return fn
 
-    def required_config(self) -> Optional[List[str]]:
+    def required_config(
+        self, fn: Callable, nodes: Optional[Collection[node.Node]]
+    ) -> Optional[List[str]]:
         """Declares the required configuration keys for this decorator.
         Note that these configuration keys will be filtered and passed to the `configuration`
         parameter of the functions that this decorator uses.
@@ -130,7 +132,9 @@ class NodeTransformLifecycle(abc.ABC):
         """
         return []
 
-    def optional_config(self) -> Dict[str, Any]:
+    def optional_config(
+        self, fn: Callable, nodes: Optional[Collection[node.Node]]
+    ) -> Dict[str, Any]:
         """Declares the optional configuration keys for this decorator.
         These are configuration keys that can be used by the decorator, but are not required.
         Along with these we have *defaults*, which we will use to pass to the config.
@@ -498,17 +502,24 @@ def resolve_config(
     return config_out
 
 
-def filter_config(config: Dict[str, Any], decorator: NodeTransformLifecycle) -> Dict[str, Any]:
+def filter_config(
+    config: Dict[str, Any],
+    decorator: NodeTransformLifecycle,
+    fn: Callable,
+    modifiying_nodes: Optional[Collection[node.Node]] = None,
+) -> Dict[str, Any]:
     """Filters the config to only include the keys in config_required
     TODO -- break this into two so we can make it easier to test.
 
     :param config: The config to filter
+    :param fn: The function we're calling on
+    :param modifiying_nodes: The nodes this decorator is modifying (optional)
     :param config_required: The keys to include
     :param decorator: The decorator that is utilizing the configuration
     :return: The filtered config
     """
-    config_required = decorator.required_config()
-    config_optional_with_defaults = decorator.optional_config()
+    config_required = decorator.required_config(fn, modifiying_nodes)
+    config_optional_with_defaults = decorator.optional_config(fn, modifiying_nodes)
     if config_required is None:
         # This is an out to allow for backwards compatibility for the config.resolve decorator
         # Note this is an internal API, but we made the config with the `resolve` parameter public
@@ -548,20 +559,26 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     """
     node_resolvers = getattr(fn, NodeResolver.get_lifecycle_name(), [DefaultNodeResolver()])
     for resolver in node_resolvers:
-        fn = resolver.resolve(fn, config=filter_config(config, resolver))
+        fn = resolver.resolve(fn, config=filter_config(config, resolver, fn))
         if fn is None:
             return []
     (node_creator,) = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
-    nodes = node_creator.generate_nodes(fn, filter_config(config, node_creator))
+    nodes = node_creator.generate_nodes(fn, filter_config(config, node_creator, fn))
     if hasattr(fn, NodeExpander.get_lifecycle_name()):
         (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
-        nodes = node_expander.transform_dag(nodes, filter_config(config, node_expander), fn)
+        nodes = node_expander.transform_dag(
+            nodes, filter_config(config, node_expander, fn, nodes), fn
+        )
     node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
     for dag_modifier in node_transformers:
-        nodes = dag_modifier.transform_dag(nodes, filter_config(config, dag_modifier), fn)
+        nodes = dag_modifier.transform_dag(
+            nodes, filter_config(config, dag_modifier, fn, nodes), fn
+        )
     node_decorators = getattr(fn, NodeDecorator.get_lifecycle_name(), [DefaultNodeDecorator()])
     for node_decorator in node_decorators:
-        nodes = node_decorator.transform_dag(nodes, filter_config(config, node_decorator), fn)
+        nodes = node_decorator.transform_dag(
+            nodes, filter_config(config, node_decorator, fn, nodes), fn
+        )
     return nodes
 
 

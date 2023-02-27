@@ -164,7 +164,7 @@ All configuration keys have two components, joined by a `.` The first component 
 The value will be a dictionary with two possible values:
 
 1. `importance` -- the importance level of the data quality check. Can be either "warn" or "fail"
-2. `enable` -- a boolean indicating whether the data quality check is enabled or not.
+2. `enabled` -- a boolean indicating whether the data quality check is enabled or not.
 
 The specific node name will take precedence, and `global` will apply after that. The information in the code
 will take third place (although you are unable to disable through code aside from removing/commenting the decorator out).
@@ -175,7 +175,7 @@ will take third place (although you are unable to disable through code aside fro
 # This will globally disable *all* data quality checks
 config = {
     'data_quality.global': {
-        'enable': False
+        'enabled': False
     },
 }
 # This will set the importance of all decorated nodes to "warn"
@@ -188,7 +188,7 @@ config = {
 # This will disable the data quality check for the node `foo`
 config = {
     'data_quality.foo': {
-        'enable': False
+        'enabled': False
     },
 }
 
