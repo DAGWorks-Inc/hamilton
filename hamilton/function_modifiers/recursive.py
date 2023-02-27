@@ -121,6 +121,7 @@ class subdag(base.NodeCreator):
     And so on. `@subdag` takes this one step further:
 
     - `@subdag` -- subroutine definition
+
     E.G. take a certain set of nodes, and run them with specified parameters.
 
     Why might you want to use this? Let's take a look at some examples:

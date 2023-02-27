@@ -11,7 +11,4 @@ Here we have a few documents that need to be subsumed into the rest of the docum
    ../reference/api-reference/available-drivers
    ../best-practices/index
    ../extensions
-   ../less-than-15-minutes-to-mastery/index
-   ../overview-of-concepts/index
    writing-drivers
-   ../tutorials/index

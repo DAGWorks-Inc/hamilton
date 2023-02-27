@@ -70,14 +70,16 @@ class parameterize_frame(parameterize_extract_columns):
     :param parameterization: Parameterization dataframe. This is of a specific shape:
 
         1. Index
-        - Level 0: list of parameter names
-        - Level 1: types of things to inject, either
+          - Level 0: list of parameter names
+          - Level 1: types of things to inject, either
             - "out" (meaning this is an output),
             - "value" (meaning this is a literal value)
             - "source" (meaning this node comes from an upstream value)
+
         2. Contents
-        - Each row corresponds to the index. Each of these corresponds to an output node from this.
-        Note your function has to take in the column-names and output a dataframe with those names --
+          - Each row corresponds to the index. Each of these corresponds to an output node from this.
+
+        Note your function has to take in the column-names and output a dataframe with those names --\
         we will likely change it so that's not the case, and it can just use the position of the columns.
 
         E.G.
@@ -104,6 +106,7 @@ class parameterize_frame(parameterize_extract_columns):
                 input1: pd.Series, input2: pd.Series, input3: float
             ) -> pd.DataFrame:
                 ...
+
     """
 
     def __init__(self, parameterization: pd.DataFrame):
