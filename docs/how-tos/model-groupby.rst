@@ -1,3 +1,0 @@
-==============
-Manage Groupby Operations
-==============
