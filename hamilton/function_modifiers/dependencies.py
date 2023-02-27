@@ -47,13 +47,13 @@ def value(literal_value: Any) -> LiteralDependency:
 
 
 def source(dependency_on: Any) -> UpstreamDependency:
-    """Specifies that a parameterized dependency comes from an "upstream" source.
+    """Specifies that a parameterized dependency comes from an `upstream` source.
 
-    This means that it comes from a node somewhere else.
-    E.G. source("foo") means that it should be assigned the value that "foo" outputs.
+    This means that it comes from a node somewhere else. E.G. source("foo") means that it should be assigned the \
+    value that "foo" outputs.
 
     :param dependency_on: Upstream function (i.e. node) to come from.
-    :return:An UpstreamDependency object -- a signifier to the internal framework of the dependency type.
+    :return: An UpstreamDependency object -- a signifier to the internal framework of the dependency type.
     """
     if isinstance(dependency_on, UpstreamDependency):
         return dependency_on
