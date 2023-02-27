@@ -22,10 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 class ResultMixin(object):
-    """Base class housing the static function.
+    """Abstract base class housing the static function.
 
     Why a static function? That's because certain frameworks can only pickle a static function, not an entire
     object.
+
+    All result builders should inherit from this class and implement the build_result function.
     """
 
     @staticmethod
@@ -36,7 +38,26 @@ class ResultMixin(object):
 
 
 class DictResult(ResultMixin):
-    """Simple function that returns the dict of column -> value results."""
+    """Simple function that returns the dict of column -> value results.
+
+    It returns the results as a dictionary, where the keys map to outputs requested,
+    and values map to what was computed for those values.
+
+    Use this when you want to:
+
+       1. debug dataflows.
+       2. have heterogeneous return types.
+       3. Want to manually transform the result into something of your choosing.
+
+    .. code-block:: python
+
+        from hamilton import base, driver
+        dict_builder = base.DictResult()
+        adapter = base.SimplePythonGraphAdapter(dict_builder)
+        dr =  driver.Driver(config, *modules, adapter=adapter)
+        dict_result = dr.execute([...], inputs=...)
+
+    """
 
     @staticmethod
     def build_result(**outputs: Dict[str, Any]) -> Dict:
@@ -45,7 +66,23 @@ class DictResult(ResultMixin):
 
 
 class PandasDataFrameResult(ResultMixin):
-    """Mixin for building a pandas dataframe from the result"""
+    """Mixin for building a pandas dataframe from the result.
+
+    It returns the results as a Pandas Dataframe, where the columns map to outputs requested, and values map to what\
+    was computed for those values. Note: this only works if the computed values are pandas series, or scalar values.
+
+    Use this when you want to create a pandas dataframe.
+
+    Example:
+
+    .. code-block:: python
+
+        from hamilton import base, driver
+        default_builder = base.PandasDataFrameResult()
+        adapter = base.SimplePythonGraphAdapter(default_builder)
+        dr =  driver.Driver(config, *modules, adapter=adapter)
+        df = dr.execute([...], inputs=...)
+    """
 
     @staticmethod
     def pandas_index_types(
@@ -154,6 +191,13 @@ class PandasDataFrameResult(ResultMixin):
 
     @staticmethod
     def build_result(**outputs: Dict[str, Any]) -> pd.DataFrame:
+        """Builds a Pandas DataFrame from the outputs.
+
+        This function will check the index types of the outputs, and log warnings if they don't match.
+        The behavior of pd.Dataframe(outputs) is that it will do an outer join based on indexes of the Series passed in.
+
+        :param outputs: the outputs to build a dataframe from.
+        """
         # TODO check inputs are pd.Series, arrays, or scalars -- else error
         output_index_type_tuple = PandasDataFrameResult.pandas_index_types(outputs)
         # this next line just log warnings
@@ -231,16 +275,21 @@ class PandasDataFrameResult(ResultMixin):
 class StrictIndexTypePandasDataFrameResult(PandasDataFrameResult):
     """A ResultBuilder that produces a dataframe only if the index types match exactly.
 
-    Note: If there is no index type on some outputs, e.g. the value is a scalar, as long as there exists a single pandas
-     index type, no error will be thrown, because a dataframe can be easily created.
+    Note: If there is no index type on some outputs, e.g. the value is a scalar, as long as there exists a single \
+    pandas index type, no error will be thrown, because a dataframe can be easily created.
+
+    Use this when you want to create a pandas dataframe from the outputs, but you want to ensure that the index types \
+    match exactly.
 
     To use:
-    from hamilton import base, driver
-    strict_builder = base.StrictIndexTypePandasDataFrameResult()
-    adapter = base.SimplePythonGraphAdapter(strict_builder)
-    ...
-    dr =  driver.Driver(config, *modules, adapter=adapter)
-    df = dr.execute(...)  # this will now error if index types mismatch.
+
+    .. code-block:: python
+
+        from hamilton import base, driver
+        strict_builder = base.StrictIndexTypePandasDataFrameResult()
+        adapter = base.SimplePythonGraphAdapter(strict_builder)
+        dr =  driver.Driver(config, *modules, adapter=adapter)
+        df = dr.execute([...], inputs=...)  # this will now error if index types mismatch.
     """
 
     @staticmethod
@@ -265,12 +314,21 @@ class StrictIndexTypePandasDataFrameResult(PandasDataFrameResult):
 class NumpyMatrixResult(ResultMixin):
     """Mixin for building a Numpy Matrix from the result of walking the graph.
 
-    All inputs to the build_result function are expected to be numpy arrays
+    All inputs to the build_result function are expected to be numpy arrays.
+
+    .. code-block:: python
+
+        from hamilton import base, driver
+        adapter = base.SimplePythonGraphAdapter(base.NumpyMatrixResult())
+        dr = driver.Driver(config, *modules, adapter=adapter)
+        numpy_matrix = dr.execute([...], inputs=...)
     """
 
     @staticmethod
     def build_result(**outputs: Dict[str, Any]) -> np.matrix:
         """Builds a numpy matrix from the passed in, inputs.
+
+        Note: this does not check that the inputs are all numpy arrays/array like things.
 
         :param outputs: function_name -> np.array.
         :return: numpy matrix
@@ -352,7 +410,14 @@ class HamiltonGraphAdapter(ResultMixin):
 
 
 class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameResult):
-    """This is the default (original Hamilton) graph adapter. It uses plain python and builds a dataframe result."""
+    """This is the default (original Hamilton) graph adapter. It uses plain python and builds a dataframe result.
+
+    This executes the Hamilton dataflow locally on a machine in a single threaded, single process fashion. It assumes\
+    a pandas dataframe as a result.
+
+    Use this when you want to execute on a single machine, without parallelization, and you want a pandas dataframe \
+    as output.
+    """
 
     @staticmethod
     def check_input_type(node_type: Type, input_value: Any) -> bool:
@@ -387,9 +452,17 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
 
 
 class SimplePythonGraphAdapter(SimplePythonDataFrameGraphAdapter):
-    """This class allows you to swap out the build_result very easily."""
+    """This class allows you to swap out the build_result very easily.
+
+    This executes the Hamilton dataflow locally on a machine in a single threaded, single process fashion. It allows\
+    you to specify a ResultBuilder to control the return type of what ``execute()`` returns.
+    """
 
     def __init__(self, result_builder: ResultMixin):
+        """Allows you to swap out the build_result very easily.
+
+        :param result_builder: A ResultMixin object that will be used to build the result.
+        """
         self.result_builder = result_builder
         if self.result_builder is None:
             raise ValueError("You must provide a ResultMixin object for `result_builder`.")
