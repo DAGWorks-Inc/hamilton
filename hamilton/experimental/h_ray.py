@@ -28,28 +28,46 @@ def raify(fn):
 
 
 class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
-    """Class representing what's required to make Hamilton run on Ray
+    """Class representing what's required to make Hamilton run on Ray.
+
+    This walks the graph and translates it to run onto `Ray <https://ray.io/>`__.
 
     Use `pip install sf-hamilton[ray]` to get the dependencies required to run this.
 
-    Ray is a quick choice to scale computation for any type of Hamilton graph.
+    Use this if:
 
-    # Notes on scaling:
+      * you want to utilize multiple cores on a single machine, or you want to scale to larger data set sizes with\
+        a Ray cluster that you can connect to. Note (1): you are still constrained by machine memory size with Ray; you\
+        can't just scale to any dataset size. Note (2): serialization costs can outweigh the benefits of parallelism \
+        so you should benchmark your code to see if it's worth it.
+
+    Notes on scaling:
+    -----------------
       - Multi-core on single machine ✅
       - Distributed computation on a Ray cluster ✅
       - Scales to any size of data ⛔️; you are LIMITED by the memory on the instance/computer 💻.
 
-    # Function return object types supported:
-     - Works for any python object that can be serialized by the Ray framework. ✅
+    Function return object types supported:
+    ---------------------------------------
+      - Works for any python object that can be serialized by the Ray framework. ✅
 
-    # Pandas?
-     - ⛔️ Ray DOES NOT do anything special about Pandas.
+    Pandas?
+    --------
+      - ⛔️ Ray DOES NOT do anything special about Pandas.
+
+    CAVEATS
+    -------
+      - Serialization costs can outweigh the benefits of parallelism, so you should benchmark your code to see if it's\
+      worth it.
 
     DISCLAIMER -- this class is experimental, so signature changes are a possibility!
     """
 
     def __init__(self, result_builder: base.ResultMixin):
         """Constructor
+
+        You have the ability to pass in a ResultMixin object to the constructor to control the return type that gets \
+        produce by running on Ray.
 
         :param result_builder: Required. An implementation of base.ResultMixin.
         """
@@ -101,26 +119,38 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
 
     Ray workflows is a more robust way to scale computation for any type of Hamilton graph.
 
-    # What's the difference between this and RayGraphAdapter?
-    * Ray workflows offer durable computation. That is, they save and checkpoint each function.
-    * This enables one to run a workflow, and not have to restart it if something fails, assuming correct
-    Ray workflow usage.
+    What's the difference between this and RayGraphAdapter?
+    --------------------------------------------------------
+        * Ray workflows offer durable computation. That is, they save and checkpoint each function.
+        * This enables one to run a workflow, and not have to restart it if something fails, assuming correct\
+        Ray workflow usage.
 
-    # Tips - see https://docs.ray.io/en/latest/workflows/basics.html for the source of the following:
-    1. Functions should be idempotent.
-    2. The workflow ID is what Ray uses to try to resume/restart if run a second time.
-    3. Nothing is run until the entire DAG is walked and setup and build_result is called.
+    Tips
+    ----
+    See https://docs.ray.io/en/latest/workflows/basics.html for the source of the following:
 
-    # Notes on scaling:
+        1. Functions should be idempotent.
+        2. The workflow ID is what Ray uses to try to resume/restart if run a second time.
+        3. Nothing is run until the entire DAG is walked and setup and build_result is called.
+
+    Notes on scaling:
+    -----------------
       - Multi-core on single machine ✅
       - Distributed computation on a Ray cluster ✅
       - Scales to any size of data ⛔️; you are LIMITED by the memory on the instance/computer 💻.
 
-    # Function return object types supported:
-     - Works for any python object that can be serialized by the Ray framework. ✅
+    Function return object types supported:
+    ---------------------------------------
+      - Works for any python object that can be serialized by the Ray framework. ✅
 
-    # Pandas?
-     - ⛔️ Ray DOES NOT do anything special about Pandas.
+    Pandas?
+    --------
+      - ⛔️ Ray DOES NOT do anything special about Pandas.
+
+    CAVEATS
+    -------
+      - Serialization costs can outweigh the benefits of parallelism, so you should benchmark your code to see if it's\
+      worth it.
 
     DISCLAIMER -- this class is experimental, so signature changes are a possibility!
     """

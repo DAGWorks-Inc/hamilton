@@ -44,19 +44,18 @@ For reference we list available decorators for Hamilton here. Note: use
 
 @parameterize*
 ------------------------
-**Classes to help with @parameterize:**
+Classes to help with @parameterize:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: hamilton.function_modifiers.ParameterizedExtract
-   :special-members: __init__
 
 .. autoclass:: hamilton.function_modifiers.source
-   :special-members: __init__
 
 .. autoclass:: hamilton.function_modifiers.value
-   :special-members: __init__
 
 
-**Actual decorators:**
+Actual decorators:
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: hamilton.function_modifiers.parameterize
    :special-members: __init__

@@ -16,36 +16,50 @@ logger = logging.getLogger(__name__)
 
 
 class DaskGraphAdapter(base.HamiltonGraphAdapter):
-    """Class representing what's required to make Hamilton run on Dask
+    """Class representing what's required to make Hamilton run on Dask.
+
+    This walks the graph and translates it to run onto `Dask <https://dask.org/>`__.
 
     Use `pip install sf-hamilton[dask]` to get the dependencies required to run this.
 
-    Dask is a good choice to scale computation when you really can't do things in memory anymore with pandas. For
-    most simple pandas operations, you should not have to do anything to scale!
+    Try this adapter when:
 
-    Dask is also a good choice if you want to scale computation generally -- you'll just have to switch to natively
-    using their object types if that's the case.
+        1. Dask is a good choice to scale computation when you really can't do things in memory anymore with pandas. \
+        For most simple pandas operations, you should not have to do anything to scale!
+        2. Dask is also a good choice if you want to scale computation generally -- you'll just have to switch to\
+        natively using their object types if that's the case.
+        3. Use this if you want to utilize multiple cores on a single machine, or you want to scale to large data set\
+        sizes with a Dask cluster that you can connect to.
 
     Please read the following notes about it:
 
-    # Notes on scaling:
+    Notes on scaling:
+    -----------------
       - Multi-core on single machine ✅
       - Distributed computation on a Dask cluster ✅
       - Scales to any size of data supported by Dask ✅; assuming you load it appropriately via Dask loaders.
 
-    # Function return object types supported:
-     - Works for any python object that can be serialized by the Dask framework. ✅
+    Function return object types supported:
+    ---------------------------------------
+      - Works for any python object that can be serialized by the Dask framework. ✅
 
-    # Pandas?
-     - Dask implements a good subset of the Pandas API:
+    Pandas?
+    -------
+      - Dask implements a good subset of the Pandas API:
        > You might be able to get away with scaling without having to change your code at all!
        > See https://docs.dask.org/en/latest/dataframe-api.html for Pandas supported APIs.
        > If it not supported by their API, you have to then read up and think about how to structure you hamilton
        > function computation -- https://docs.dask.org/en/latest/dataframe.html
 
-    # Loading Data:
-     - see https://docs.dask.org/en/latest/best-practices.html#load-data-with-dask
-     - we recommend creating a python module specifically encapsulating functions that help you load data.
+    Loading Data:
+    -------------
+      - see https://docs.dask.org/en/latest/best-practices.html#load-data-with-dask
+      - we recommend creating a python module specifically encapsulating functions that help you load data.
+
+    CAVEATS
+    -------
+      - Serialization costs can outweigh the benefits of parallelism, so you should benchmark your code to see if it's\
+      worth it.
 
     DISCLAIMER -- this class is experimental, so signature changes are a possibility!
     """
@@ -58,12 +72,15 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
     ):
         """Constructor
 
-        :param dask_client: the dask client -- we don't do anything with it, but thought that it would be useful
+        You have the ability to pass in a ResultMixin object to the constructor to control the return type that gets\
+        produced by running on Dask.
+
+        :param dask_client: the dask client -- we don't do anything with it, but thought that it would be useful\
             to wire through here.
         :param result_builder: The function that will build the result. Optional, defaults to pandas dataframe.
-        :param visualize_kwargs: Arguments to visualize the graph using dask's internals.
-            None, means no visualization.
-            Dict, means visualize -- see https://docs.dask.org/en/latest/api.html?highlight=visualize#dask.visualize
+        :param visualize_kwargs: Arguments to visualize the graph using dask's internals.\
+            **None**, means no visualization.\
+            **Dict**, means visualize -- see https://docs.dask.org/en/latest/api.html?highlight=visualize#dask.visualize\
             for what to pass in.
         """
         self.client = dask_client

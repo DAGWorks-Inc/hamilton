@@ -1,5 +1,11 @@
 -r requirements-dev.txt
+dask[distributed]
 furo
 myst-parser==0.18.1
+# required for all the plugins
+polars
+pyarrow >= 1.0.0
+pyspark
+ray
 sphinx==5.3.0
 sphinx-autobuild
