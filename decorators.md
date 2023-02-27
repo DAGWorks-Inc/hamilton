@@ -525,8 +525,8 @@ def fn(input1: pd.Series, input2: pd.Series, input3: float) -> pd.DataFrame:
 -- allowing for less verbose specification. The above example can be rewritten as:
 
 ```python
-from experimental.parameterize_frame import parameterize_frame
- df = pd.DataFrame(
+from hamilton.experimental.decorators.parameterize_frame import parameterize_frame
+df = pd.DataFrame(
         [
             ["outseries1a", "outseries2a", "inseries1a", "inseries2a", 10],
             ["outseries1b", "outseries2b", "inseries1b", "inseries2b", 100],
@@ -545,11 +545,11 @@ from experimental.parameterize_frame import parameterize_frame
         ],
     )
 
-    @parameterize_frame(df)
-    def my_func(input1: pd.Series, input2: pd.Series, input3: float) -> pd.DataFrame:
-        return pd.DataFrame(
-            [input1 * input2 * input3, input1 + input2 + input3]
-        )
+@parameterize_frame(df)
+def my_func(input1: pd.Series, input2: pd.Series, input3: float) -> pd.DataFrame:
+    return pd.DataFrame(
+        [input1 * input2 * input3, input1 + input2 + input3]
+    )
 ```
 
 Note that we have a double-index. Note that this is still in experimental,
