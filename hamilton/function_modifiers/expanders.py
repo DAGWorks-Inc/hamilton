@@ -81,7 +81,7 @@ class parameterize(base.NodeExpander):
     ):
         """Decorator to use to create many functions.
 
-        :param parametrization: **kwargs with one of two things:
+        :param parametrization: `**kwargs` with one of two things:
 
             - a tuple of assignments (consisting of literals/upstream specifications), and docstring.
             - just assignments, in which case it parametrizes the existing docstring.
@@ -292,20 +292,20 @@ class parametrized(parameterize_values):
 class parameterize_sources(parameterize):
     """Expands a single function into `n`, each of which corresponds to a function in which the parameters specified \
     are mapped to the specified inputs. Note this decorator and ``@parameterize_values`` are quite similar, except that\
-     the input here is another DAG node(s), i.e. column/input, rather than a specific scalar/static value.
+    the input here is another DAG node(s), i.e. column/input, rather than a specific scalar/static value.
 
     .. code-block:: python
 
-        import pandas as pd
-        from hamilton.function_modifiers import parameterize_sources
+       import pandas as pd
+       from hamilton.function_modifiers import parameterize_sources
 
-        @parameterize_sources(
-            D_ELECTION_2016_shifted=dict(one_off_date='D_ELECTION_2016'),
-            SOME_OUTPUT_NAME=dict(one_off_date='SOME_INPUT_NAME')
-        )
-        def date_shifter(one_off_date: pd.Series) -> pd.Series:
-            '''{one_off_date} shifted by 1 to create {output_name}'''
-            return one_off_date.shift(1)
+       @parameterize_sources(
+          D_ELECTION_2016_shifted=dict(one_off_date='D_ELECTION_2016'),
+          SOME_OUTPUT_NAME=dict(one_off_date='SOME_INPUT_NAME')
+       )
+       def date_shifter(one_off_date: pd.Series) -> pd.Series:
+          '''{one_off_date} shifted by 1 to create {output_name}'''
+          return one_off_date.shift(1)
 
     """
 
@@ -313,19 +313,19 @@ class parameterize_sources(parameterize):
         """Constructor for a modifier that expands a single function into n, each of which corresponds to replacing
         some subset of the specified parameters with specific upstream nodes.
 
-        Note this decorator and `@parametrized_input` are similar, except this one allows multiple
+        Note this decorator and `@parametrized_input` are similar, except this one allows multiple \
         parameters to be mapped to multiple function arguments (and it fixes the spelling mistake).
 
-        `parameterized_sources` allows you keep your code DRY by reusing the same function but replace the inputs
-        to create multiple corresponding distinct outputs. We see here that `parameterized_inputs` allows you to keep
-        your code DRY by reusing the same function to create multiple distinct outputs. The key word arguments passed
+        `parameterized_sources` allows you keep your code DRY by reusing the same function but replace the inputs\
+        to create multiple corresponding distinct outputs. We see here that `parameterized_inputs` allows you to keep\
+        your code DRY by reusing the same function to create multiple distinct outputs. The key word arguments passed\
         have to have the following structure:
             > OUTPUT_NAME = Mapping of function argument to input that should go into it.
-        The documentation for the output is taken from the function. The documentation string can be templatized with
-        the parameter names of the function and the reserved value `output_name` - those will be replaced with the
+        The documentation for the output is taken from the function. The documentation string can be templatized with\
+        the parameter names of the function and the reserved value `output_name` - those will be replaced with the\
         corresponding values from the parameterization.
 
-        :param **parameterization: kwargs of output name to dict of parameter mappings.
+        :param \\*\\*parameterization: kwargs of output name to dict of parameter mappings.
         """
         self.parametrization = parameterization
         if not parameterization:
@@ -397,12 +397,14 @@ class parameterized_inputs(parameterize_sources):
 class extract_columns(base.NodeExpander):
     def __init__(self, *columns: Union[Tuple[str, str], str], fill_with: Any = None):
         """Constructor for a modifier that expands a single function into the following nodes:
+
         - n functions, each of which take in the original dataframe and output a specific column
         - 1 function that outputs the original dataframe
 
         :param columns: Columns to extract, that can be a list of tuples of (name, documentation) or just names.
-        :param fill_with: If you want to extract a column that doesn't exist, do you want to fill it with a default value?
-        Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a column.
+        :param fill_with: If you want to extract a column that doesn't exist, do you want to fill it with a default \
+        value? Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a \
+        column.
         """
         if not columns:
             raise base.InvalidDecoratorException(
@@ -497,12 +499,14 @@ class extract_fields(base.NodeExpander):
 
     def __init__(self, fields: dict, fill_with: Any = None):
         """Constructor for a modifier that expands a single function into the following nodes:
+
         - n functions, each of which take in the original dict and output a specific field
         - 1 function that outputs the original dict
 
         :param fields: Fields to extract. A dict of 'field_name' -> 'field_type'.
-        :param fill_with: If you want to extract a field that doesn't exist, do you want to fill it with a default value?
-        Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a field value.
+        :param fill_with: If you want to extract a field that doesn't exist, do you want to fill it with a default \
+        value? Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a \
+        field value.
         """
         if not fields:
             raise base.InvalidDecoratorException(

@@ -48,8 +48,8 @@ def value(literal_value: Any) -> LiteralDependency:
 
 def source(dependency_on: Any) -> UpstreamDependency:
     """Specifies that a parameterized dependency comes from an "upstream" source.
-    This means that it comes from a node somewhere else.
 
+    This means that it comes from a node somewhere else.
     E.G. source("foo") means that it should be assigned the value that "foo" outputs.
 
     :param dependency_on: Upstream function (i.e. node) to come from.
