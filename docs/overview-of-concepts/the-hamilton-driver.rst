@@ -53,8 +53,11 @@ Static dataflows are only so useful. In the real world, we need to be able to co
 the inputs to the DAG as part of the Hamilton driver. The default Hamilton driver comes with three input types that you
 can control. They both take the form ``Dict[str, Any]``, i.e. a dictionary of string keys that maps to any object type.
 
-#. **config** The config is a dictionary of strings to values. This is passed into the constructor of the Hamilton driver, as it is required to create the DAG. It `also` get's passed into the DAG at runtime, so you have access to parameter values. See :doc:`decorators` for how the config can be used.
-#. **inputs** The `runtime inputs` to the DAG. These have to be mutually disjoint from the config -- overrides don't make sense here, as the DAG has been constructed assuming fixed configs.
+#. **config** The config is a dictionary of strings to values. This is passed into the constructor of the Hamilton \
+   driver, as it is required to create the DAG. It `also` get's passed into the DAG at runtime, so you have access to \
+   parameter values. See :doc:`decorators` for how the config can be used.
+#. **inputs** The `runtime inputs` to the DAG. These have to be mutually disjoint from the config -- overrides don't \
+   make sense here, as the DAG has been constructed assuming fixed configs.
 #. **overrides** Values to override nodes in a DAG. During execution, nothing upstream of these are computed.
 
 Let's go through some examples that show you how to write a Hamilton function that allows it to be conditionally used
@@ -136,7 +139,7 @@ something.
             """This function builds the result given the computed values."""
             pass
 
-So we have a few implementations see :doc:`../reference/api-reference/available-result-builders` for the list.
+So we have a few implementations see :doc:`../reference/api-reference/result-builders` for the list.
 
 To use it, it needs to be paired with a GraphAdapter - onto the next section!
 
@@ -162,8 +165,8 @@ a ``pandas.DataFrame`` when ``.execute()`` is called.
 
 If you want to tell Hamilton to return something else, we suggest starting with the ``base.SimplePythonGraphAdapter``
 and writing a simple class & function that implements the ``base.ResultMixin`` interface and passing that in.  See
-:doc:`../reference/api-reference/available-graph-adapters` and
-:doc:`../reference/api-reference/available-result-builders` for options.
+:doc:`../reference/api-reference/graph-adapters` and
+:doc:`../reference/api-reference/result-builders` for options.
 
 Otherwise, let's quickly walk through some options on how to execute a Hamilton DAG.
 
@@ -173,7 +176,8 @@ Local Execution
 You have two options:
 
 #. Do nothing -- and you'll get ``base.SimplePythonDataFrameGraphAdapter`` by default.
-#.  Use ``base.SimplePythonGraphAdapter`` and pass in a subclass of ``base.ResultMixin`` (you can create your own), and then pass that to the constructor of the Driver.
+#. Use ``base.SimplePythonGraphAdapter`` and pass in a subclass of ``base.ResultMixin`` (you can create your own), and\
+   then pass that to the constructor of the Driver.
 
     e.g.
 
@@ -193,7 +197,7 @@ production environment for long. Thus the API to these GraphAdapters might chang
 
 See the `experimental <https://github.com/dagworks-inc/hamilton/tree/main/hamilton/experimental>`_ package for the current
 implementations. We encourage you to give them a spin and provide us with feedback. See
-:doc:`../reference/api-reference/available-graph-adapters` for more details.
+:doc:`../reference/api-reference/graph-adapters` for more details.
 
 Calling Execute()
 #################
@@ -201,7 +205,8 @@ Calling Execute()
 There are two ways to use ``execute()``:
 
 #. Call it once -- you only request the outputs required. E.g. ``dr.execute(['desired_output1', 'desired_output2'])``
-#. Call it in succession by providing it specific inputs, in addition to the outputs required. E.g. ``dr.execute(['desired_output1', 'desired_output2'], inputs={...})``
+#. Call it in succession by providing it specific inputs, in addition to the outputs required. \
+   E.g. ``dr.execute(['desired_output1', 'desired_output2'], inputs={...})``
 
 We recommend using option (1) where possible. Option (2) only makes sense if you want to reuse the dataflow created for
 different data sets, or to chunk over large data or iterate over objects, e.g. images or text.

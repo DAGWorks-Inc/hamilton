@@ -15,4 +15,3 @@ concepts that makes Hamilton unique and powerful.
    decorators-overview
    best-practices/index
    extensions
-   further-reading
