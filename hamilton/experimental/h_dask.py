@@ -31,7 +31,7 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
         3. Use this if you want to utilize multiple cores on a single machine, or you want to scale to large data set\
         sizes with a Dask cluster that you can connect to.
 
-    Please read the following notes about it:
+    Please read the following notes about its limitations.
 
     Notes on scaling:
     -----------------
@@ -45,15 +45,15 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
 
     Pandas?
     -------
-      - Dask implements a good subset of the Pandas API:
-       > You might be able to get away with scaling without having to change your code at all!
-       > See https://docs.dask.org/en/latest/dataframe-api.html for Pandas supported APIs.
-       > If it not supported by their API, you have to then read up and think about how to structure you hamilton
-       > function computation -- https://docs.dask.org/en/latest/dataframe.html
+    Dask implements a good subset of the Pandas API:
+      - You might be able to get away with scaling without having to change your code at all!
+      - See https://docs.dask.org/en/latest/dataframe-api.html for Pandas supported APIs.
+      - If it is not supported by their API, you have to then read up and think about how to structure you hamilton\
+      function computation -- https://docs.dask.org/en/latest/dataframe.html
 
     Loading Data:
     -------------
-      - see https://docs.dask.org/en/latest/best-practices.html#load-data-with-dask
+      - see https://docs.dask.org/en/latest/best-practices.html#load-data-with-dask.
       - we recommend creating a python module specifically encapsulating functions that help you load data.
 
     CAVEATS
