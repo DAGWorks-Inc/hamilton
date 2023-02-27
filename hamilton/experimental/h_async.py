@@ -34,13 +34,16 @@ async def process_value(val: Any) -> Any:
 
 
 class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
+    """Graph adapter for use with the :class:`AsyncDriver` class."""
+
     def __init__(self, result_builder: base.ResultMixin = None):
         """Creates an AsyncGraphAdapter class. Note this will *only* work with the AsyncDriver class.
 
         Some things to note:
-        1. This executes everything at the end (recursively). E.G. the final DAG nodes are awaited
-        2. This does *not* work with decorators when the async function is being decorated. That is
-        because that function is called directly within the decorator, so we cannot await it.
+
+            1. This executes everything at the end (recursively). E.G. the final DAG nodes are awaited
+            2. This does *not* work with decorators when the async function is being decorated. That is\
+            because that function is called directly within the decorator, so we cannot await it.
         """
         super(AsyncGraphAdapter, self).__init__()
         self.result_builder = result_builder if result_builder else base.PandasDataFrameResult()
@@ -83,6 +86,15 @@ class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
 
 
 class AsyncDriver(driver.Driver):
+    """Async driver. This is a driver that uses the AsyncGraphAdapter to execute the graph.
+
+    .. code-block:: python
+
+        dr = h_async.AsyncDriver({}, async_module, result_builder=base.DictResult())
+        df = await dr.execute([...], inputs=...)
+
+    """
+
     def __init__(self, config, *modules, result_builder: Optional[base.ResultMixin] = None):
         """Instantiates an asynchronous driver.
 

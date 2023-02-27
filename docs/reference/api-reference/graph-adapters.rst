@@ -36,6 +36,7 @@ Ray
    :members:
    :inherited-members:
 
+
 Dask
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: hamilton.experimental.h_dask.DaskGraphAdapter
@@ -44,10 +45,17 @@ Dask
    :inherited-members:
 
 
-
 Pandas on Spark (Koalas)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ..  autoclass:: hamilton.experimental.h_spark.SparkKoalasGraphAdapter
+   :special-members: __init__
+   :members:
+   :inherited-members:
+
+
+Async Python
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: hamilton.experimental.h_async.AsyncGraphAdapter
    :special-members: __init__
    :members:
    :inherited-members:

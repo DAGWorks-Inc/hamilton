@@ -73,7 +73,29 @@ class Variable:
 
 
 class Driver(object):
-    """This class orchestrates creating and executing the DAG to create a dataframe."""
+    """This class orchestrates creating and executing the DAG to create a dataframe.
+
+    .. code-block:: python
+
+        from hamilton import driver
+        from hamilton import base
+
+        # 1. Setup config or invariant input.
+        config = {}
+
+        # 2. we need to tell hamilton where to load function definitions from
+        import my_functions
+        # or programmatically (e.g. you can script module loading)
+        module_name = 'my_functions'
+        my_functions = importlib.import_module(module_name)
+
+        # 3. Determine the return type -- default is a pandas.DataFrame.
+        adapter = base.SimplePythonDataFrameGraphAdapter() # See GraphAdapter docs for more details.
+
+        # These all feed into creating the driver & thus DAG.
+        dr = driver.Driver(config, module, adapter=adapter)
+
+    """
 
     def __init__(
         self,
