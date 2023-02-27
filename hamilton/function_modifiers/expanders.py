@@ -19,6 +19,58 @@ from hamilton.function_modifiers.dependencies import (
 
 
 class parameterize(base.NodeExpander):
+    """Decorator to use to create many functions.
+
+    Expands a single function into n, each of which correspond to a function in which the parameter value is replaced\
+    either by:
+
+    #. A specified literal value, denoted value('literal_value').
+    #. The output from a specified upstream function (i.e. node), denoted source('upstream_function_name').
+
+    Note that ``parameterize`` can take the place of ``@parameterize_sources`` or ``@parameterize_values`` decorators \
+    below. In fact, they delegate to this!
+
+    Examples expressing different syntax:
+
+    .. code-block:: python
+
+        @parameterize(
+            # tuple of assignments (consisting of literals/upstream specifications), and docstring.
+            replace_no_parameters=({}, 'fn with no parameters replaced'),
+        )
+        def no_param_function() -> Any:
+            ...
+
+        @parameterize(
+            # tuple of assignments (consisting of literals/upstream specifications), and docstring.
+            replace_just_upstream_parameter=(
+                {'upstream_source': source('foo_source')},
+                'fn with upstream_parameter set to node foo'
+            ),
+        )
+        def param_is_upstream_function(upstream_source: Any) -> Any:
+            '''Doc string that can also be parameterized: {upstream_source}.'''
+            ...
+
+        @parameterize(
+            replace_just_literal_parameter={'literal_parameter': value('bar')},
+        )
+        def param_is_literal_value(literal_parameter: Any) -> Any:
+            '''Doc string that can also be parameterized: {literal_parameter}.'''
+            ...
+
+        @parameterize(
+            replace_both_parameters={
+                'upstream_parameter': source('foo_source'),
+                'literal_parameter': value('bar')
+            }
+        )
+        def concat(upstream_parameter: Any, literal_parameter: str) -> Any:
+            '''Adding {literal_parameter} to {upstream_parameter} to create {output_name}.'''
+            return upstream_parameter + literal_parameter
+
+    """
+
     RESERVED_KWARG = "output_name"
 
     def __init__(
@@ -27,19 +79,12 @@ class parameterize(base.NodeExpander):
             Dict[str, ParametrizedDependency], Tuple[Dict[str, ParametrizedDependency], str]
         ],
     ):
-        """Creates a parameterize decorator. For example:
-            @parameterize(
-                replace_no_parameters=({}, 'fn with no parameters replaced'),
-                replace_just_upstream_parameter=({'upstream_parameter': source('foo_source')}, 'fn with upstream_parameter set to node foo'),
-                replace_just_literal_parameter=({'literal_parameter': value('bar')}, 'fn with parameter literal_parameter set to value bar'),
-                replace_both_parameters=({'upstream_parameter': source('foo_source'), 'literal_parameter': value('bar')}, 'fn with both parameters replaced')
-            )
-            def concat(upstream_parameter: str, literal_parameter: str) -> Any:
-                return f'{upstream_parameter}{literal_parameter}'
+        """Decorator to use to create many functions.
 
         :param parametrization: **kwargs with one of two things:
-            - a tuple of assignments (consisting of literals/upstream specifications), and docstring
-            - just assignments, in which case it parametrizes the existing docstring
+
+            - a tuple of assignments (consisting of literals/upstream specifications), and docstring.
+            - just assignments, in which case it parametrizes the existing docstring.
         """
         self.parametrization = {
             key: (value[0] if isinstance(value, tuple) else value)
@@ -189,6 +234,29 @@ class parameterize(base.NodeExpander):
 
 
 class parameterize_values(parameterize):
+    """Expands a single function into n, each of which corresponds to a function in which the parameter value is \
+    replaced by that `specific value`.
+
+    .. code-block:: python
+
+        import pandas as pd
+        from hamilton.function_modifiers import parameterize_values
+        import internal_package_with_logic
+
+        ONE_OFF_DATES = {
+             #output name        # doc string               # input value to function
+            ('D_ELECTION_2016', 'US Election 2016 Dummy'): '2016-11-12',
+            ('SOME_OUTPUT_NAME', 'Doc string for this thing'): 'value to pass to function',
+        }
+                    # parameter matches the name of the argument in the function below
+        @parameterize_values(parameter='one_off_date', assigned_output=ONE_OFF_DATES)
+        def create_one_off_dates(date_index: pd.Series, one_off_date: str) -> pd.Series:
+            '''Given a date index, produces a series where a 1 is placed at the date index that would contain that event.'''
+            one_off_dates = internal_package_with_logic.get_business_week(one_off_date)
+            return internal_package_with_logic.bool_to_int(date_index.isin([one_off_dates]))
+
+    """
+
     def __init__(self, parameter: str, assigned_output: Dict[Tuple[str, str], Any]):
         """Constructor for a modifier that expands a single function into n, each of which
         corresponds to a function in which the parameter value is replaced by that *specific value*.
@@ -222,6 +290,25 @@ class parametrized(parameterize_values):
 
 
 class parameterize_sources(parameterize):
+    """Expands a single function into `n`, each of which corresponds to a function in which the parameters specified \
+    are mapped to the specified inputs. Note this decorator and ``@parameterize_values`` are quite similar, except that\
+     the input here is another DAG node(s), i.e. column/input, rather than a specific scalar/static value.
+
+    .. code-block:: python
+
+        import pandas as pd
+        from hamilton.function_modifiers import parameterize_sources
+
+        @parameterize_sources(
+            D_ELECTION_2016_shifted=dict(one_off_date='D_ELECTION_2016'),
+            SOME_OUTPUT_NAME=dict(one_off_date='SOME_INPUT_NAME')
+        )
+        def date_shifter(one_off_date: pd.Series) -> pd.Series:
+            '''{one_off_date} shifted by 1 to create {output_name}'''
+            return one_off_date.shift(1)
+
+    """
+
     def __init__(self, **parameterization: Dict[str, Dict[str, str]]):
         """Constructor for a modifier that expands a single function into n, each of which corresponds to replacing
         some subset of the specified parameters with specific upstream nodes.
@@ -276,8 +363,8 @@ class parametrized_input(parameterize):
         The `parameterized_input` allows you keep your code DRY by reusing the same function but replace the inputs
         to create multiple corresponding distinct outputs. The _parameter_ key word argument has to match one of the
         arguments in the function. The rest of the arguments are pulled from items inside the DAG.
-        The _assigned_inputs_ key word argument takes in a
-        dictionary of input_column -> tuple(Output Name, Documentation string).
+        The _assigned_inputs_ key word argument takes in a dictionary of \
+        input_column -> tuple(Output Name, Documentation string).
 
         :param parameter: Parameter to expand on.
         :param variable_inputs: A map of tuple of [parameter names, documentation] to values
@@ -520,11 +607,11 @@ class extract_fields(base.NodeExpander):
 
 @dataclasses.dataclass
 class ParameterizedExtract:
-    """Dataclass to hold inputs for parameterize_extract_columns.
+    """Dataclass to hold inputs for @parameterize and @parameterize_extract_columns.
 
     :param outputs: A tuple of strings, each of which is the name of an output.
     :param input_mapping: A dictionary of string to ParametrizedDependency. The string is the name of the python \
-    parameter of the decorated function, and the value is a "source"/"value" which will be passed as input for that
+    parameter of the decorated function, and the value is a "source"/"value" which will be passed as input for that\
     parameter to the function.
     """
 
@@ -533,13 +620,41 @@ class ParameterizedExtract:
 
 
 class parameterize_extract_columns(base.NodeExpander):
+    """`@parameterize_extract_columns` gives you the power of both `@extract_columns` and `@parameterize` in one\
+     decorator.
+
+    It takes in a list of `Parameterized_Extract` objects, each of which is composed of:
+    1. A list of columns to extract, and
+    2. A parameterization that gets used
+
+    In the following case, we produce four columns, two for each parameterization:
+
+    .. code-block:: python
+
+        import pandas as pd
+        from function_modifiers import parameterize_extract_columns, ParameterizedExtract, source, value
+        @parameterize_extract_columns(
+            ParameterizedExtract(
+                ("outseries1a", "outseries2a"),
+                {"input1": source("inseries1a"), "input2": source("inseries1b"), "input3": value(10)},
+            ),
+            ParameterizedExtract(
+                ("outseries1b", "outseries2b"),
+                {"input1": source("inseries2a"), "input2": source("inseries2b"), "input3": value(100)},
+            ),
+        )
+        def fn(input1: pd.Series, input2: pd.Series, input3: float) -> pd.DataFrame:
+            return pd.concat([input1 * input2 * input3, input1 + input2 + input3], axis=1)
+
+    """
+
     def __init__(self, *extract_config: ParameterizedExtract, reassign_columns: bool = True):
         """Initializes a `parameterized_extract` decorator. Note this currently works for series,
         but the plan is to extend it to fields as well...
 
-        :param extract_config: A configuration consisting of a list ParameterizedExtract classes
+        :param extract_config: A configuration consisting of a list ParameterizedExtract classes\
         These contain the information of a `@parameterized` and `@extract...` together.
-        :param reassign_columns: Whether we want to reassign the columns as part of the function
+        :param reassign_columns: Whether we want to reassign the columns as part of the function.
         """
         self.extract_config = extract_config
         self.reassign_columns = reassign_columns
