@@ -16,7 +16,7 @@ python -m http.server --directory /tmp/mydocs
 ```
 or for auto rebuilding do:
 ```bash
-sphinx-autobuild --watch hamilton/ -a docs /tmp/mydocs
+sphinx-autobuild -W -E -T  --watch hamilton/ -a docs /tmp/mydocs
 ```
 Then it'll be running on port 8000.
 
