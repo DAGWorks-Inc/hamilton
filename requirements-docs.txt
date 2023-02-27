@@ -1,11 +1,18 @@
 -r requirements-dev.txt
+alabaster>=0.7,<0.8,!=0.7.5  # read the docs pins
+commonmark==0.9.1 # read the docs pins
 dask[distributed]
 furo
-myst-parser==0.18.1
+mock==1.0.1 # read the docs pins
+myst-parser==0.18.1  # latest version of myst at this time
+pillow
 # required for all the plugins
 polars
 pyarrow >= 1.0.0
 pyspark
 ray
-sphinx==5.3.0
+readthedocs-sphinx-ext<2.3 # read the docs pins
+recommonmark==0.5.0  # read the docs pins
+sphinx==5.3.0  # pinned due to myst-parser
 sphinx-autobuild
+sphinx-rtd-theme # read the docs pins
