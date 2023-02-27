@@ -2,19 +2,16 @@
 How To Guides
 ==============
 
-This is the "how to" portion of diataxis.fr. It is an outline for common scenarios that people go through.
-
-We'll want to be adding lots more to this over time. The idea here is that we'll send this over to people/have more
-as they want to do more stuff.
+This portion of the documentation goes over the set of common examples for Hamilton usage, so you can apply
+it to your day-to-day work. Each one corresponds to an example in the `examples <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples>`_
+directory. If there's an example you want but don't see, reach out or open an issue on github -- we're always looking to add more.
 
 
 .. toctree::
    load-data
    use-without-pandas
-   use-in-etl-system
    use-in-jupyter-notebook
    run-data-quality-checks
-   model-groupby
    scale-up
    use-for-training-models
    use-with-dbt
