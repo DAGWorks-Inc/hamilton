@@ -22,29 +22,43 @@ class KoalasDataFrameResult(base.ResultMixin):
 
 
 class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
-    """Class representing what's required to make Hamilton run on Spark with Koalas.
+    """Class representing what's required to make Hamilton run on Spark with Koalas, i.e. Pandas on Spark.
+
+    This walks the graph and translates it to run onto `Apache Spark <https://spark.apache.org/">`__ \
+    using the \
+    `Pandas API on Spark <https://spark.apache.org/docs/latest/api/python/user_guide/pandas_on_spark/index.html>`__
 
     Use `pip install sf-hamilton[spark]` to get the dependencies required to run this.
 
-    Currently this class assumes you're running SPARK 3.2+.
+    Currently, this class assumes you're running SPARK 3.2+. You'd generally use this if you have an existing spark \
+    cluster running in your workplace, and you want to scale to very large data set sizes.
 
     Some tips on koalas (before it was merged into spark 3.2):
+
      - https://databricks.com/blog/2020/03/31/10-minutes-from-pandas-to-koalas-on-apache-spark.html
      - https://spark.apache.org/docs/latest/api/python/user_guide/pandas_on_spark/index.html
 
     Spark is a more heavyweight choice to scale computation for Hamilton graphs creating a Pandas Dataframe.
 
-    # Notes on scaling:
+    Notes on scaling:
+    -----------------
       - Multi-core on single machine ✅ (if you setup Spark locally to do so)
       - Distributed computation on a Spark cluster ✅
       - Scales to any size of data as permitted by Spark ✅
 
-    # Function return object types supported:
-     - ⛔ Not generic. This does not work for every Hamilton graph.
-     - ✅ Currently we're targeting this at Pandas/Koalas types [dataframes, series].
+    Function return object types supported:
+    ---------------------------------------
+      - ⛔ Not generic. This does not work for every Hamilton graph.
+      - ✅ Currently we're targeting this at Pandas/Koalas types [dataframes, series].
 
-    # Pandas?
-     - ✅ Koalas on Spark 3.2+ implements a good subset of the pandas API. Keep it simple and you should be good to go!
+    Pandas?
+    -------
+      - ✅ Koalas on Spark 3.2+ implements a good subset of the pandas API. Keep it simple and you should be good to go!
+
+    CAVEATS
+    -------
+      - Serialization costs can outweigh the benefits of parallelism, so you should benchmark your code to see if it's\
+      worth it.
 
     DISCLAIMER -- this class is experimental, so signature changes are a possibility!
     """
@@ -52,7 +66,12 @@ class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
     def __init__(self, spark_session, result_builder: base.ResultMixin, spine_column: str):
         """Constructor
 
-        :param spark_session: the spark session to use
+        You only have the ability to return either a Pandas on Spark Dataframe or a Pandas Dataframe. To do that you \
+        either use the stock \
+        `base.PandasDataFrameResult <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L39>`__ class,\
+         or you use `h_spark.KoalasDataframeResult <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/experimental/h_spark.py#L16>`__.
+
+        :param spark_session: the spark session to use.
         :param result_builder: the function to build the result -- currently on Pandas and Koalas are "supported".
         :param spine_column: the column we should use first as the spine and then subsequently join against.
         """
