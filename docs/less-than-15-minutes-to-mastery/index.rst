@@ -5,10 +5,10 @@ Getting Started
 .. toctree::
    :hidden:
 
-   tutorial
    installing
-   run-fist-dataflow
-   next-steps
+   writing-your-first-dataflow
+   running-your-dataflow
+   digging-in-further
 
 Get started with Hamilton in under 15 minutes!
 

@@ -25,6 +25,7 @@ Hamilton
    :hidden:
 
    further-reading
+   talks-or-podcasts-or-blogs-or-papers
 
 .. toctree::
    :maxdepth: 6
@@ -41,3 +42,10 @@ Hamilton
 
    reference/api-reference/index
    reference/api-extensions/index
+
+.. toctree::
+   :maxdepth: 6
+   :caption: Documentation TODOs
+   :hidden:
+
+   unorganized-docs/index

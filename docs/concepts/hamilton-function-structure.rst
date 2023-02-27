@@ -48,7 +48,7 @@ dataflow?
 OK, but this still doesn't address the problem of reuse. How can we make our code
 `DRY <https://en.wikipedia.org/wiki/Don't\_repeat\_yourself>`_, while maintaining all these great properties? **With
 the Hamilton framework, this is not an inherent trade-off.** By using :doc:`decorators <decorators-overview>`
-and :ref:`parameterizing your dataflow <driver-capabilities>`, you can both have your cake and eat it too.
+and :ref:`parameterizing your dataflow <parameterizing-the-dag>`, you can both have your cake and eat it too.
 
 Modules and Helper Functions
 ----------------------------

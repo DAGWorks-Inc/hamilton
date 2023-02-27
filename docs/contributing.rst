@@ -2,9 +2,7 @@
 Contributing
 ============
 
-For contributing guidelines see github.
+We are open contributions big and small. See our `contributing guidelines <https://github.com/dagworks-inc/hamilton/blob/main/CONTRIBUTING.md>`__.
 
-We open contributions big and small. See our `contributing guidelines <https://github.com/dagworks-inc/hamilton/blob/main/CONTRIBUTING.md>`_.
-
-We also operate under a `Code of Conduct <https://github.com/dagworks-inc/hamilton/blob/main/CODE\_OF\_CONDUCT.md>`_, and
+We also operate under a `Code of Conduct <https://github.com/dagworks-inc/hamilton/blob/main/CODE\_OF\_CONDUCT.md>`__, and
 expect contributors to do the same.

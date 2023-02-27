@@ -4,13 +4,13 @@ Available Drivers
 
 API docs for using the drivers
 
-Currently, we have a `single driver <https://github.com/dagworks-inc/hamilton/blob/8a08a5e3dd69bbf7ddd83b8053c1ba9ed96ab675/hamilton/driver.py>`_.
+Currently, we have a `single driver <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/driver.py>`__.
 It's highly parameterizable, allowing you to customize:
 
 * The way the DAG is executed (how each node is executed), i.e. either locally, in parallel, or on a cluster!
 * How the results are materialized back to you -- e.g. a DataFrame, a dictionary, your custom object!
 
-To tune the above, pass in a Graph Adapter and or Result Builder-- see :doc:`available-result-builders` & :doc:`available-graph-adapters`.
+To tune the above, pass in a Graph Adapter and or Result Builder-- see :doc:`result-builders` & :doc:`graph-adapters`.
 
 Hamilton Driver Usage
 ---------------------
