@@ -49,7 +49,8 @@ Here are common things that Hamilton is compared to, and how Hamilton compares t
 | Is a feature store                        | ❌  |                   ❌                          |   ✅  | ❌  |  ❌    |
 
 # Getting Started
-Here's a quick getting started guide to get you up and running in less than 15 minutes.
+If you don't want to install anything to try Hamilton, we recommend trying [www.tryhamilton.dev](https://www.tryhamilton.dev/?utm_source=README).
+Otherwise, here's a quick getting started guide to get you up and running in less than 15 minutes.
 If you need help join our [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) community to chat/ask Qs/etc.
 For the latest updates, follow us on [twitter](https://twitter.com/hamilton_os)!
 
@@ -178,7 +179,7 @@ E.g.
 We have a small but active community on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg). Come join us!
 
 # License
-Hamilton is released under the [BSD 3-Clause Clear License](LICENSE).
+Hamilton is released under the [BSD 3-Clause Clear License](https://github.com/DAGWorks-Inc/hamilton/blob/main/LICENSE.md).
 
 # Used internally by:
 * [Stitch Fix](https://www.stitchfix.com/)
@@ -195,11 +196,11 @@ Hamilton is released under the [BSD 3-Clause Clear License](LICENSE).
 To add your company, make a pull request to add it here.
 
 # Contributing
-We take contributions, large and small. We operate via a [Code of Conduct](CODE_OF_CONDUCT.md) and expect anyone
+We take contributions, large and small. We operate via a [Code of Conduct](https://github.com/DAGWorks-Inc/hamilton/blob/main/CODE_OF_CONDUCT.md) and expect anyone
 contributing to do the same.
 
-To see how you can contribute, please read our [contributing guidelines](CONTRIBUTING.md) and then our [developer
-setup guide](developer_setup.md).
+To see how you can contribute, please read our [contributing guidelines](https://github.com/DAGWorks-Inc/hamilton/blob/main/CONTRIBUTING.md) and then our [developer
+setup guide](https://github.com/DAGWorks-Inc/hamilton/blob/main/developer_setup.md).
 
 # Blog Posts
 * [(Organic Content) The perks of creating dataflows with Hamilton by Thierry Jean](https://medium.com/@thijean/the-perks-of-creating-dataflows-with-hamilton-36e8c56dd2a)
@@ -251,8 +252,8 @@ We'd appreciate citing Hamilton by referencing one of the following:
 # Prescribed Development Workflow
 In general we prescribe the following:
 
-1. Ensure you understand [Hamilton Basics](basics.md).
-2. Familiarize yourself with some of the [Hamilton decorators](decorators.md). They will help keep your code DRY.
+1. Ensure you understand [Hamilton Basics](https://github.com/DAGWorks-Inc/hamilton/blob/main/basics.md).
+2. Familiarize yourself with some of the [Hamilton decorators](https://github.com/DAGWorks-Inc/hamilton/blob/main/decorators.md). They will help keep your code DRY.
 3. Start creating Hamilton Functions that represent your work. We suggest grouping them in modules where it makes sense.
 4. Write a simple script so that you can easily run things end to end.
 5. Join our [Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) community to chat/ask Qs/etc.
