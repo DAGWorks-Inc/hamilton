@@ -5,15 +5,15 @@
 This describes how one can get started with Ray in 5 minutes.
 
 For those eager to just see code, please jump right ahead to a full hello world with Ray
-`here <https://github.com/dagworks-inc/hamilton/tree/main/examples/ray>`_.
+`here <https://github.com/dagworks-inc/hamilton/tree/main/examples/ray>`__.
 
 .. image:: ../_static/Hamilton_ray_post_image.png
 
-For those unfamiliar with `Ray <https://ray.io>`_, it is an open source framework that can scale python applications
-that came out of `UC Berkeley <https://rise.cs.berkeley.edu/projects/ray>`_. It has a growing ecosystem of tooling
+For those unfamiliar with `Ray <https://ray.io>`__, it is an open source framework that can scale python applications
+that came out of `UC Berkeley <https://rise.cs.berkeley.edu/projects/ray>`__. It has a growing ecosystem of tooling
 that helps with lots of machine learning related workflows. For example, it sells itself as enabling you to scale from
 your laptop to a cluster very easily, without having to change much code. In terms of real world use, we like to use
-Ray as a very quick way to implement `multiprocessing in python <https://machinelearningmastery.com/multiprocessing-in-python>`_
+Ray as a very quick way to implement `multiprocessing in python <https://machinelearningmastery.com/multiprocessing-in-python>`__
 without worry about the details!
 
 Ray Primer
@@ -28,7 +28,7 @@ Ray Usage Premise
 #################
 
 The basic premise to use Ray, is that you have to annotate your functions that you want to be scheduled for execution
-via Ray. For example (from `their documentation <https://docs.ray.io/en/latest/ray-core/tasks.html#ray-remote-functions>`_):
+via Ray. For example (from `their documentation <https://docs.ray.io/en/latest/ray-core/tasks.html#ray-remote-functions>`__):
 
 .. code-block:: python
 
@@ -80,7 +80,7 @@ Ray!` All you need to do, to make Hamilton run on Ray, is provide a `“GraphAda
 class you instantiate.
 
 A GraphAdapter, is just a simple class that has a few functions defined that enable you to augment how your DAG is
-walked and executed. See :doc:`../reference/api-reference/available-graph-adapters` for more information.
+walked and executed. See :doc:`../reference/api-reference/graph-adapters` for more information.
 
 In terms of code to add/change, here’s what’s required to augment standard Hamilton driver code — see **numbered
 comments**:

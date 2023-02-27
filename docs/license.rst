@@ -7,7 +7,7 @@ Hamilton is released under the `BSD 3-Clause Clear License <https://github.com/d
 
 
 Usage analytics & data privacy
--------
+-----------------------------------
 By default, when using Hamilton, it collects anonymous usage data to help improve Hamilton and know where to apply development
 efforts.
 

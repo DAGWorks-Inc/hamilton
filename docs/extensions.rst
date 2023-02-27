@@ -19,7 +19,9 @@ if you write Pandas code!
 All that's needed is to:
 
 #. Import system specific code to setup a client/cluster/etc for that distributed/scalable system.
-#. Import a `GraphAdapter <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L91>`_ that implements using that distributed/scalable system. See :doc:`reference/api-reference/available-graph-adapters` for what is available.
+#. Import a `GraphAdapter <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L91>`_ that implements \
+   using that distributed/scalable system. See :doc:`reference/api-reference/graph-adapters` for what is \
+   available.
 #. You may need to provide a specific module that knows how to load data into the scalable system.
 #. Pass the modules, and graph adapter to the Hamilton Driver.
 #. Proceed as you would normally.
@@ -41,7 +43,7 @@ All that's needed is to:
     output_columns = ['year','week',...,'spend_shift_3weeks_per_signup','special_feature']
     df = dr.execute(output_columns) # only walk DAG for what is needed
 
-See :doc:`reference/api-reference/available-graph-adapters` and :doc:`reference/api-extensions/custom-graph-adapters`
+See :doc:`reference/api-reference/graph-adapters` and :doc:`reference/api-extensions/custom-graph-adapters`
 for options.
 
 A note on the definition of `Experimental`
@@ -101,7 +103,8 @@ Koalas on Spark, a.k.a. Pandas API on Spark - Experimental!
 ===========================================================
 
 `Spark <https://spark.apache.org/>`_ is a scalable data processing framework. `Koalas <https://koalas.readthedocs.io/en/latest>`_
-was the project code name to implement the `Pandas API on top of Spark <https://spark.apache.org/docs/latest/api/python/user\_guide/pandas\_on\_spark/index.html>`_.
+was the project code name to implement the \
+`Pandas API on top of Spark <https://spark.apache.org/docs/latest/api/python/user\_guide/pandas\_on\_spark/index.html>`__.
 Hamilton makes it very easy for you to use Koalas on Spark.
 
 See `Scaling Hamilton on Koalas <https://github.com/dagworks-inc/hamilton/tree/main/examples/spark>`_
@@ -132,13 +135,13 @@ This means, that the result of ``execute()`` can be any python object type!
 How do you change the type of the object returned?
 ==================================================
 
-You need to implement a `ResultMixin <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L18>`_ if there
-isn't one already defined for what you want to do. Then you need to provide that to a
-`GraphAdapter <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L91>`_, similar to what was presented
-above.
+You need to implement a `ResultMixin <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L18>`__ if \
+there isn't one already defined for what you want to do. Then you need to provide that to a \
+`GraphAdapter <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L91>`__, similar to what was \
+presented above.
 
-See :doc:`reference/api-reference/available-result-builders` for what is provided with Hamilton, or :doc:`reference/api-extensions/custom-result-builders`
-for how to build your own.
+See :doc:`reference/api-reference/result-builders` for what is provided with Hamilton, or \
+:doc:`reference/api-extensions/custom-result-builders` for how to build your own.
 
 .. code-block:: python
 

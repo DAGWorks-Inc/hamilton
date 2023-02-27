@@ -2,7 +2,7 @@
 Running Your Dataflow
 =====================
 
-To actually run the dataflow, we'll need to write :doc:`../overview-of-concepts/the-hamilton-driver-capabilities`. Create
+To actually run the dataflow, we'll need to write :doc:`a driver <../concepts/driver-capabilities>`. Create a\
 ``my_script.py`` with the following contents:
 
 .. code-block:: python
@@ -27,7 +27,8 @@ To actually run the dataflow, we'll need to write :doc:`../overview-of-concepts/
             'spend': pd.Series([10, 10, 20, 40, 40, 50], index=index),
         }
         # we need to tell hamilton where to load function definitions from
-        dr = driver.Driver(initial_columns, my_functions)  # can pass in multiple modules
+        config = {} # we don't have any configuration or invariant data for this example.
+        dr = driver.Driver(config, my_functions)  # can pass in multiple modules
         # we need to specify what we want in the final dataframe.
         output_columns = [
             'spend',
@@ -36,7 +37,7 @@ To actually run the dataflow, we'll need to write :doc:`../overview-of-concepts/
             'acquisition_cost',
         ]
         # let's create the dataframe!
-        df = dr.execute(output_columns)
+        df = dr.execute(output_columns, inputs=initial_columns
         # `pip install sf-hamilton[visualization]` earlier you can also do
         # dr.visualize_execution(output_columns,'./my_dag.dot', {})
         print(df)

@@ -32,7 +32,7 @@ something.
             """This function builds the result given the computed values."""
             pass
 
-So we have a few implementations see :doc:`../reference/api-reference/available-result-builders` for the list.
+So we have a few implementations see :doc:`../../reference/api-reference/result-builders` for the list.
 
 To use it, it needs to be paired with a GraphAdapter - onto the next section!
 
