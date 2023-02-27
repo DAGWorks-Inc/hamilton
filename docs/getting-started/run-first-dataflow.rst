@@ -37,7 +37,7 @@ To actually run the dataflow, we'll need to write :doc:`a driver <../concepts/dr
             'acquisition_cost',
         ]
         # let's create the dataframe!
-        df = dr.execute(output_columns, inputs=initial_columns
+        df = dr.execute(output_columns, inputs=initial_columns)
         # `pip install sf-hamilton[visualization]` earlier you can also do
         # dr.visualize_execution(output_columns,'./my_dag.dot', {})
         print(df)
