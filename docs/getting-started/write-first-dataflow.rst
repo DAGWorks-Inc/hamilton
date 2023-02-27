@@ -5,7 +5,7 @@ Writing Your First Dataflow
 Let's get started with a dataflow that computes statistics on a time-series of marketing spend.
 
 We're jumping in head-first. If you want to start with an overview, skip ahead to
-:doc:`../overview-of-concepts/index`.
+:doc:`../concepts/index`.
 
 .. note::
 
