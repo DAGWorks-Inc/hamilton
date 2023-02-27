@@ -32,6 +32,22 @@ before forking.
 
 For the backstory on how Hamilton came about, see the original Stitch Fix [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
 
+# Feature comparison
+Here are common things that Hamilton is compared to, and how Hamilton compares to them.
+
+| Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | DBT | Dask |
+|-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:------:|
+| Python 3.7+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅    |
+| Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌    |
+| Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
+| Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
+| Can visualize lineage easily              | ✅  |                   ❌                          |   ❌  | ✅  |  ✅    |
+| Is just a library                         | ✅  |                   ❌                          |   ❌  | ❌  |  ✅    |
+| Runs anywhere python runs                 | ✅  |                   ❌                          |   ❌  | ❌  |  ✅    |
+| Built for managing python transformations | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
+| Replaces macro orchestration systems      | ❌  |                   ✅                          |   ❌  | ❌  |  ❌    |
+| Is a feature store                        | ❌  |                   ❌                          |   ✅  | ❌  |  ❌    |
+
 # Getting Started
 Here's a quick getting started guide to get you up and running in less than 15 minutes.
 If you need help join our [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) community to chat/ask Qs/etc.
