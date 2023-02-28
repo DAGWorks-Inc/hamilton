@@ -1,10 +1,12 @@
 import inspect
+import sys
 import typing
 from typing import Any, Type
 
 import typing_inspect
 
 from hamilton import base
+from hamilton.registry import COLUMN_TYPE, DF_TYPE_AND_COLUMN_TYPES
 
 BASE_ARGS_FOR_GENERICS = (typing.T,)
 
@@ -90,3 +92,102 @@ def types_match(
     elif adapter.check_node_type_equivalence(required_node_type, param_type):
         return True
     return False
+
+
+_sys_version_info = sys.version_info
+_version_tuple = (_sys_version_info.major, _sys_version_info.minor, _sys_version_info.micro)
+
+# The following is purely for backwards compatibility
+# The behavior of annotated/get_args/get_origin has changed in recent versions
+# So we have to handle it accordingly
+# In 3.8/below we have to use the typing_extensions version
+ANNOTATE_ALLOWED = False
+if _version_tuple < (3, 9, 0):
+    # Before 3.9 we use typing_extensions
+    import typing_extensions
+
+    htype = typing_extensions.Annotated
+
+
+else:
+    ANNOTATE_ALLOWED = True
+    from typing import Annotated, Type
+
+    htype = Annotated
+
+
+if _version_tuple < (3, 9, 0):
+    import typing_extensions
+
+    _get_origin = typing_extensions.get_origin
+    _get_args = typing_extensions.get_args
+else:
+    from typing import get_args as _get_args
+    from typing import get_origin as _get_origin
+
+
+def _is_annotated_type(type_: Type[Type]) -> bool:
+    """Utility function to tell if a type is Annotated"""
+    return _get_origin(type_) == htype
+
+
+# Placeholder exception for invalid hamilton types
+class InvalidTypeException(Exception):
+    pass
+
+
+# Some valid series annotations
+# We will likely have to expand
+_valid_series_annotations = (
+    int,
+    float,
+    str,
+    bool,
+)
+
+
+def _is_valid_series_type(candidate_type: Type[Type]) -> bool:
+    """Tells if something is a valid series type, using the registry we have.
+
+    :param candidate_type: Type to check
+    :return: Whether it is a series (column) type that we have registered
+    """
+    for key, types in DF_TYPE_AND_COLUMN_TYPES.items():
+        if issubclass(candidate_type, types[COLUMN_TYPE]):
+            return True
+    return False
+
+
+def validate_type_annotation(annotation: Type[Type]):
+    """Validates a type annotation for a hamilton function.
+    If it is not an Annotated type, it will be fine.
+    If it is the Annotated type, it will check that
+    it only has one type annotation and that that is valid (currently int, float, str, bool).
+
+    :param annotation: Annotation (e.g. Annotated[pd.Series, int])
+    :raises InvalidTypeException: If the annotation is invalid
+    """
+
+    if not _is_annotated_type(annotation):
+        # In this case we don't care too much -- hamilton accepts anything
+        return True
+    original, *annotations = _get_args(annotation)
+    # TODO -- use extensions/series types to do this more effectively
+    if not (_is_valid_series_type(original)):
+        raise InvalidTypeException(
+            f"Hamilton only accepts annotated types of series or equivalent. Got {original}"
+        )
+    if len(annotations) > 1 or len(annotations) == 0:
+        raise InvalidTypeException(
+            f"Hamilton only accepts one annotation per pd.Series. Got {annotations}"
+        )
+    subclasses_valid_annotation = False
+    (annotation,) = annotations
+    for valid_annotation in _valid_series_annotations:
+        if custom_subclass_check(annotation, valid_annotation):
+            subclasses_valid_annotation = True
+    if not subclasses_valid_annotation:
+        raise InvalidTypeException(
+            f"Hamilton only accepts annotations on series that are subclasses of one of {_valid_series_annotations}. "
+            f"Got {annotation}"
+        )
