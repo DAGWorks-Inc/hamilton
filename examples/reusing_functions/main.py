@@ -8,7 +8,77 @@ from hamilton.driver import Driver
 
 """A pretty simple pipeline to demonstrate function reuse.
 Note that this *also* demonstrates building a custom results builder!
-This one does specific time-series methodology (upsampling...).
+
+Why not use the standard one? Well, because time-series joining is weird.
+In this case, we're running the subdag for different granularities (daily, weekly, and monthly),
+and we want the functions that provide outputs for these granularities to yield one
+row per datapoint. This means that the weekly series will have 7x less much data as the daily
+series. Monthly series will have less than the weekly series, etc...
+
+This results builder handles it by upsampling them all to a specified granularity.
+
+Specifically, it:
+1. Up/down-samples all time-series to the granularity specified in the constructor
+2. Joins them as normal (a full outer join)
+
+Note that pandas also has capabilities for as-of joins, but those tend to be messy and tricky to work
+with. Furthermore, the as-of joins don't usually work with multiple. Upsampling/downsampling does the
+trick quite well and adds more control to the user.
+
+Note that it might be nice to pass in an argument to say which data is the "spine" column,
+allowing us to have a basis of data to join with. For now, however, this should be a useful piece
+of code to help with time-series joining!
+
+Furthermore, you could actually include upsampling *in* the DAG -- this has the added feature of
+encoding an index/spine column, and could be run as the final step for each subdag. Doing so is left
+as an exercise to the reader.
+
+As an example, consider the following outputs:
+1. monthly_unique_users_US
+
+timestamp
+2022-09-30    6
+Freq: M, Name: user_id, dtype: int64
+
+2. weekly_unique_users_US
+
+2022-09-04    3
+2022-09-11    3
+2022-09-18    2
+2022-09-25    4
+2022-10-02    1
+Freq: W-SUN, Name: user_id, dtype: int64
+
+3. daily_unique_users_US
+timestamp
+2022-09-01    2
+2022-09-02    1
+2022-09-03    1
+2022-09-04    0
+...
+2022-09-22    2
+2022-09-23    0
+2022-09-24    2
+2022-09-25    1
+2022-09-26    1
+Freq: D, Name: user_id, dtype: int64
+
+Joining these with upsample granularity of "D" would produce:
+
+            daily_unique_users_US  weekly_unique_users_US  monthly_unique_users_US
+timestamp
+2022-09-01                    2.0                     3.0                      6.0
+2022-09-02                    1.0                     3.0                      6.0
+2022-09-03                    1.0                     3.0                      6.0
+2022-09-04                    0.0                     3.0                      6.0
+2022-09-05                    0.0                     3.0                      6.0
+2022-09-06                    0.0                     3.0                      6.0
+...
+2022-09-28                    NaN                     1.0                      6.0
+2022-09-29                    NaN                     1.0                      6.0
+2022-09-30                    NaN                     1.0                      6.0
+2022-10-01                    NaN                     1.0                      NaN
+2022-10-02                    NaN                     1.0                      NaN
 """
 
 
@@ -65,7 +135,6 @@ def main():
             "monthly_unique_users_CA",
         ]
     )
-
     print(result)
 
 
