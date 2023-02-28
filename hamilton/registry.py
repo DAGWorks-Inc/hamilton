@@ -11,6 +11,9 @@ INITIALIZED = False
 # This is a dictionary of extension name -> dict with dataframe and column types.
 DF_TYPE_AND_COLUMN_TYPES: Dict[str, Dict[str, Type]] = {}
 
+COLUMN_TYPE = "column_type"
+DATAFRAME_TYPE = "dataframe_type"
+
 
 def register_types(extension_name: str, dataframe_type: Type, column_type: Type):
     """Registers the dataframe and column types for the extension.
@@ -21,8 +24,8 @@ def register_types(extension_name: str, dataframe_type: Type, column_type: Type)
     """
     global DF_TYPE_AND_COLUMN_TYPES
     DF_TYPE_AND_COLUMN_TYPES[extension_name] = {
-        "dataframe_type": dataframe_type,
-        "column_type": column_type,
+        DATAFRAME_TYPE: dataframe_type,
+        COLUMN_TYPE: column_type,
     }
 
 
@@ -59,8 +62,8 @@ def get_column_type_from_df_type(dataframe_type: Type) -> Type:
     :raises: NotImplementedError if we don't know what the column type is.
     """
     for extension, type_map in DF_TYPE_AND_COLUMN_TYPES.items():
-        if dataframe_type == type_map["dataframe_type"]:
-            return type_map["column_type"]
+        if dataframe_type == type_map[DATAFRAME_TYPE]:
+            return type_map[COLUMN_TYPE]
     raise NotImplementedError(
         f"Cannot get column type for [{dataframe_type}]. "
         f"Registered types are {DF_TYPE_AND_COLUMN_TYPES}"
