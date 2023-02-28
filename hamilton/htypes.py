@@ -1,7 +1,7 @@
 import inspect
 import sys
 import typing
-from typing import Any, Type
+from typing import Any, Tuple, Type
 
 import typing_inspect
 
@@ -208,3 +208,24 @@ def validate_type_annotation(annotation: Type[Type]):
             f"Hamilton only accepts annotations on series that are subclasses of one of {_valid_series_annotations}. "
             f"Got {annotation}"
         )
+
+
+def get_type_information(some_type: Any) -> Tuple[Type[Type], list]:
+    """Gets the type information for a given type.
+
+    If it is an annotated type, it will return the original type and the annotation.
+    If it is not an annotated type, it will return the type and empty list.
+
+    :param some_type: Type to get information for
+    :return: Tuple of type and list of annotations (or empty list)
+    """
+    if _is_annotated_type(some_type):
+        original, *annotations = _get_args(some_type)
+        return original, annotations
+    return some_type, []
+
+
+if __name__ == "__main__":
+    print(get_type_information(column[list, int]))
+    print(get_type_information(column[list, int, float]))
+    print(get_type_information(float))
