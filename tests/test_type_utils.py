@@ -3,7 +3,7 @@ import typing
 import pandas as pd
 import pytest
 
-from hamilton import base, type_utils
+from hamilton import base, htypes
 
 
 class X:
@@ -55,7 +55,7 @@ custom_type = typing.TypeVar("FOOBAR")
 )
 def test_custom_subclass_check(param_type, required_type, expected):
     """Tests the custom_subclass_check"""
-    actual = type_utils.custom_subclass_check(required_type, param_type)
+    actual = htypes.custom_subclass_check(required_type, param_type)
     assert actual == expected
 
 
@@ -86,7 +86,7 @@ adapter = TestAdapter()
 )
 def test_types_match(adapter, param_type, required_type, expected):
     """Tests the types_match function"""
-    actual = type_utils.types_match(adapter, param_type, required_type)
+    actual = htypes.types_match(adapter, param_type, required_type)
     assert actual == expected
 
 
@@ -98,26 +98,26 @@ def test_types_match(adapter, param_type, required_type, expected):
         float,
         pd.Series,
         pd.DataFrame,
-        type_utils.htype[pd.Series, int],
-        type_utils.htype[pd.Series, float],
-        type_utils.htype[pd.Series, bool],
-        type_utils.htype[pd.Series, str],
+        htypes.column[pd.Series, int],
+        htypes.column[pd.Series, float],
+        htypes.column[pd.Series, bool],
+        htypes.column[pd.Series, str],
     ],
 )
 def test_validate_types_happy(type_):
     """Tests that validate_types works when the type is valid"""
-    type_utils.validate_type_annotation(type_)
+    htypes.validate_type_annotation(type_)
 
 
 @pytest.mark.parametrize(
     "type_",
     [
-        type_utils.htype[pd.DataFrame, int],
-        type_utils.htype[pd.DataFrame, float],
-        type_utils.htype[pd.Series, typing.Dict[str, typing.Any]],
+        htypes.column[pd.DataFrame, int],
+        htypes.column[pd.DataFrame, float],
+        htypes.column[pd.Series, typing.Dict[str, typing.Any]],
     ],
 )
 def test_validate_types_sad(type_):
     """Tests that validate_types works when the type is valid"""
-    with pytest.raises(type_utils.InvalidTypeException):
-        type_utils.validate_type_annotation(type_)
+    with pytest.raises(htypes.InvalidTypeException):
+        htypes.validate_type_annotation(type_)

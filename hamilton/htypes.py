@@ -97,23 +97,40 @@ def types_match(
 _sys_version_info = sys.version_info
 _version_tuple = (_sys_version_info.major, _sys_version_info.minor, _sys_version_info.micro)
 
-# The following is purely for backwards compatibility
-# The behavior of annotated/get_args/get_origin has changed in recent versions
-# So we have to handle it accordingly
-# In 3.8/below we have to use the typing_extensions version
+"""
+The following is purely for backwards compatibility
+The behavior of annotated/get_args/get_origin has changed in recent versions
+So we have to handle it accordingly
+In 3.8/below we have to use the typing_extensions version
+
+Also, note that it is currently called `column`, but
+we will eventually want more options. E.G.
+
+`dataset`
+`scalar`
+`tensor`
+
+etc...
+
+To do this, we'll likely extend from annotated, and add new types.
+See `annotated` source code: https://github.com/python/cpython/blob/3.11/Lib/typing.py#L2122.
+
+We can also potentially add validation in the types, and remove it from the validate.
+"""
+
 ANNOTATE_ALLOWED = False
 if _version_tuple < (3, 9, 0):
     # Before 3.9 we use typing_extensions
     import typing_extensions
 
-    htype = typing_extensions.Annotated
+    column = typing_extensions.Annotated
 
 
 else:
     ANNOTATE_ALLOWED = True
     from typing import Annotated, Type
 
-    htype = Annotated
+    column = Annotated
 
 
 if _version_tuple < (3, 9, 0):
@@ -128,7 +145,7 @@ else:
 
 def _is_annotated_type(type_: Type[Type]) -> bool:
     """Utility function to tell if a type is Annotated"""
-    return _get_origin(type_) == htype
+    return _get_origin(type_) == column
 
 
 # Placeholder exception for invalid hamilton types
