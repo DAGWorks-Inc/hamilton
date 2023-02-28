@@ -12,7 +12,7 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, 
 from hamilton import base, node
 from hamilton.function_modifiers import base as fm_base
 from hamilton.graph_utils import find_functions
-from hamilton.type_utils import types_match
+from hamilton.htypes import types_match
 
 logger = logging.getLogger(__name__)
 

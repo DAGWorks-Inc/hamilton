@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 import hamilton.graph_utils
-import hamilton.type_utils
+import hamilton.htypes
 import tests.resources.bad_functions
 import tests.resources.config_modifier
 import tests.resources.cyclic_functions
