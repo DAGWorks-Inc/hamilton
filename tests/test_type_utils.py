@@ -88,3 +88,36 @@ def test_types_match(adapter, param_type, required_type, expected):
     """Tests the types_match function"""
     actual = type_utils.types_match(adapter, param_type, required_type)
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "type_",
+    [
+        int,
+        bool,
+        float,
+        pd.Series,
+        pd.DataFrame,
+        type_utils.htype[pd.Series, int],
+        type_utils.htype[pd.Series, float],
+        type_utils.htype[pd.Series, bool],
+        type_utils.htype[pd.Series, str],
+    ],
+)
+def test_validate_types_happy(type_):
+    """Tests that validate_types works when the type is valid"""
+    type_utils.validate_type_annotation(type_)
+
+
+@pytest.mark.parametrize(
+    "type_",
+    [
+        type_utils.htype[pd.DataFrame, int],
+        type_utils.htype[pd.DataFrame, float],
+        type_utils.htype[pd.Series, typing.Dict[str, typing.Any]],
+    ],
+)
+def test_validate_types_sad(type_):
+    """Tests that validate_types works when the type is valid"""
+    with pytest.raises(type_utils.InvalidTypeException):
+        type_utils.validate_type_annotation(type_)
