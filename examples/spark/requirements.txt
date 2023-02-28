@@ -1,1 +1,1 @@
-sf-hamilton[pyspark]
+sf-hamilton[pyspark, visualization]
