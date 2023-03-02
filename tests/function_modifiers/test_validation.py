@@ -209,6 +209,30 @@ def test_data_quality_constants_for_api_consistency():
             "test",
             ValidatorConfig(False, DataValidationLevel.WARN),
         ),
+        (
+            SampleDataValidator2(0, "warn"),
+            {
+                "data_quality.global": {"enabled": False, "importance": "warn"},
+                "data_quality.test": {"enabled": True},
+            },
+            "test",
+            ValidatorConfig(True, DataValidationLevel.WARN),
+        ),
+        (
+            SampleDataValidator2(0, "warn"),
+            {"data_quality.global": {"enabled": True}, "data_quality.test": {"importance": "fail"}},
+            "test",
+            ValidatorConfig(True, DataValidationLevel.FAIL),
+        ),
+        (
+            SampleDataValidator2(0, "warn"),
+            {
+                "data_quality.global": {"enabled": False},
+                "data_quality.test": {"enabled": True, "importance": "fail"},
+            },
+            "test",
+            ValidatorConfig(True, DataValidationLevel.FAIL),
+        ),
     ],
 )
 def test_validator_config_derive(

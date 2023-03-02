@@ -28,7 +28,7 @@ class ValidatorConfig:
         node_key = f"data_quality.{node_name}"
         global_config = config.get(global_key, {})
         node_config = config.get(node_key, {})
-        should_run = global_config.get("enabled", node_config.get("enabled", True))
+        should_run = node_config.get("enabled", global_config.get("enabled", True))
         importance = node_config.get(
             "importance", global_config.get("importance", validator.importance.value)
         )
