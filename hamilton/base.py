@@ -32,9 +32,11 @@ class ResultMixin(object):
 
     @staticmethod
     @abc.abstractmethod
-    def build_result(**outputs: Dict[str, Any]) -> Any:
+    def build_result(**outputs: Any) -> Any:
         """This function builds the result given the computed values."""
         pass
+
+    # def valid_inputs(self) -> :
 
 
 class DictResult(ResultMixin):
