@@ -8,10 +8,7 @@
 Hamilton is a general purpose micro-framework for creating dataflows from python functions!
 [Please star it here!](https://github.com/dagworks-inc/hamilton).
 
-Specifically, Hamilton defines a novel paradigm, that allows you to specify a flow of (delayed) execution, that forms a Directed Acyclic Graph (DAG).
-It was originally built to solve creating wide (1000+) column dataframes. Core to the design of Hamilton is a clear mapping of
-function name to dataflow output. That is, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity,
-easy modifications, with always unit testable and naturally documentable code.
+Hamilton is a novel paradigm for specifying a flow of delayed execution in python. It was originally built to simplify the creation of wide (1000+) column dataframes, but works on python objects of any type and dataflows of any complexity. Core to the design of Hamilton is a clear mapping of function name to components of the generated artifact, allowing you to quickly grok the relationship between the code you write and the data you produce. This paradigm makes modifications easy to build and track, ensures code is self-documenting, and makes it natural to unit test your data transformations. When connected together, these functions form a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG), which the Hamilton framework can execute, optimize, and report on.
 
 # Why should you use Hamilton?
 Hamilton's design goal is to make it easier for teams to maintain code that expresses dataflows, a.k.a. pipelines, or workflows.
@@ -34,8 +31,4 @@ Here's a quick overview of benefits that Hamilton provides as compared to other 
 
 
 # How can you get started?
-If you're in a hurry, we recommend trying Hamilton directly in your browser by going to [tryhamilton.dev](https://www.tryhamilton.dev).
-[tryhamilton.dev](https://www.tryhamilton.dev) utilizes pyodide and runs python in the browser - note, a good
-internet connection is recommended.
-
-Otherwise hop on over to our [getting started guide](getting-started/index.rst).
+Hop on over to our [getting started guide](getting-started/index.rst)!
