@@ -1,8 +1,12 @@
+import importlib
+import sys
+
 import pytest
 
 import hamilton.driver
 import tests.resources.data_quality
-import tests.resources.smoke_screen_module
+
+# import tests.resources.smoke_screen_module
 from hamilton.data_quality.base import DataValidationError, ValidationResult
 
 
@@ -32,9 +36,40 @@ def test_data_quality_workflow_fails():
         )
 
 
-def test_smoke_screen_module():
+# Adapted from https://stackoverflow.com/questions/41858147/how-to-modify-imported-source-code-on-the-fly
+# This is needed to decide whether to import annotations...
+def modify_and_import(module_name, package, modification_func):
+    spec = importlib.util.find_spec(module_name, package)
+    source = spec.loader.get_source(module_name)
+    new_source = modification_func(source)
+    module = importlib.util.module_from_spec(spec)
+    codeobj = compile(new_source, module.__spec__.origin, "exec")
+    exec(codeobj, module.__dict__)
+    sys.modules[module_name] = module
+    return module
+
+
+@pytest.mark.parametrize(
+    "future_import_annotations",
+    [
+        True,
+        False,
+    ],
+)
+def test_smoke_screen_module(future_import_annotations, monkeypatch):
+    # Monkeypatch the env
+    # This tells the smoke screen module whether to use the future import
+    modification_func = (
+        lambda source: "\n".join(["from __future__ import annotations"] + source.splitlines())
+        if future_import_annotations
+        else source
+    )
+    # module = importlib.reload(tests.resources.smoke_screen_module)
+    module = modify_and_import(
+        "tests.resources.smoke_screen_module", tests.resources, modification_func
+    )
     config = {"region": "US"}
-    dr = hamilton.driver.Driver(config, tests.resources.smoke_screen_module)
+    dr = hamilton.driver.Driver(config, module)
     output_columns = [
         "raw_acquisition_cost",
         "pessimistic_net_acquisition_cost",

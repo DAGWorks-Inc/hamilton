@@ -1,4 +1,5 @@
 import inspect
+import typing
 from enum import Enum
 from typing import Any, Callable, Dict, List, Tuple, Type, Union
 
@@ -82,14 +83,15 @@ class Node(object):
                             for key, value in input_types.items()
                         }
             else:
+                input_types = typing.get_type_hints(callabl)
                 signature = inspect.signature(callabl)
                 for key, value in signature.parameters.items():
-                    if value.annotation == inspect._empty:
+                    if key not in input_types:
                         raise ValueError(
                             f"Missing type hint for {key} in function {name}. Please add one to fix."
                         )
                     self._input_types[key] = (
-                        value.annotation,
+                        input_types[key],
                         DependencyType.from_parameter(value),
                     )
         elif self.user_defined:
@@ -188,11 +190,11 @@ class Node(object):
         """
         if name is None:
             name = fn.__name__
-        sig = inspect.signature(fn)
+        return_type = typing.get_type_hints(fn)["return"]
         module = inspect.getmodule(fn).__name__
         return Node(
             name,
-            sig.return_annotation,
+            return_type,
             fn.__doc__ if fn.__doc__ else "",
             callabl=fn,
             tags={"module": module},

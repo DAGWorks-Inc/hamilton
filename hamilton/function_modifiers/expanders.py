@@ -1,6 +1,7 @@
 import dataclasses
 import functools
 import inspect
+import typing
 from typing import Any, Callable, Collection, Dict, Tuple, Union
 
 import typing_inspect
@@ -423,7 +424,7 @@ class extract_columns(base.NodeExpander):
         """Validates that the return type of the function is a pandas dataframe.
         :param fn: Function to validate
         """
-        output_type = inspect.signature(fn).return_annotation
+        output_type = typing.get_type_hints(fn).get("return")
         try:
             registry.get_column_type_from_df_type(output_type)
         except NotImplementedError:
@@ -540,7 +541,7 @@ class extract_fields(base.NodeExpander):
         :param fn: Function to validate.
         :raises: InvalidDecoratorException If the function is not annotated with a dict or typing.Dict type as output.
         """
-        output_type = inspect.signature(fn).return_annotation
+        output_type = typing.get_type_hints(fn).get("return")
         if typing_inspect.is_generic_type(output_type):
             base_type = typing_inspect.get_origin(output_type)
             if (
