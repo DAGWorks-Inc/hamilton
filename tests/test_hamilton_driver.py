@@ -8,7 +8,7 @@ import tests.resources.tagging
 import tests.resources.test_default_args
 import tests.resources.very_simple_dag
 from hamilton import base
-from hamilton.driver import Driver
+from hamilton.driver import Driver, Variable
 
 
 def test_driver_validate_input_types():
@@ -210,9 +210,14 @@ def test__create_final_vars():
     """Tests that the final vars are created correctly."""
     dr = Driver({"required": 1}, tests.resources.test_default_args)
     actual = dr._create_final_vars(
-        ["C", tests.resources.test_default_args.B, tests.resources.test_default_args.A]
+        [
+            "C",
+            tests.resources.test_default_args.B,
+            tests.resources.test_default_args.A,
+            Variable("D", int, {}),
+        ]
     )
-    expected = ["C", "B", "A"]
+    expected = ["C", "B", "A", "D"]
     assert actual == expected
 
 
