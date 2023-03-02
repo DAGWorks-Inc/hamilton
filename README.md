@@ -21,13 +21,10 @@
 
 The general purpose micro-framework for creating dataflows from python functions!
 
-Specifically, Hamilton defines a novel paradigm, that allows you to specify a flow of (delayed) execution, that forms a Directed Acyclic Graph (DAG).
-It was originally built to solve creating wide (1000+) column dataframes. Core to the design of Hamilton is a clear mapping of
-function name to dataflow output. That is, Hamilton forces a certain paradigm with writing functions, and aims for DAG clarity,
-easy modifications, with always unit testable and naturally documentable code.
+Hamilton is a novel paradigm for specifying a flow of delayed execution in python. It was originally built to simplify the creation of wide (1000+) column dataframes, but works on python objects of any type and dataflows of any complexity. Core to the design of Hamilton is a clear mapping of function name to components of the generated artifact, allowing you to quickly grok the relationship between the code you write and the data you produce. This paradigm makes modifications easy to build and track, ensures code is self-documenting, and makes it natural to unit test your data transformations. When connected together, these functions form a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG), which the Hamilton framework can execute, optimize, and report on.
 
-# We forked and lost 893 stars
-This repository is maintained by the original creators of Hamilton, who are now part of [DAGWorks inc.](https://dagworks.io/). We decided to fork the original because Stitch Fix did not want to transfer ownership to us; we had grown the star count in the original repository to 893: <img width="141" alt="Screen Shot 2023-02-23 at 12 58 43 PM" src="https://user-images.githubusercontent.com/2328071/221029806-36a4e088-809b-4b08-9199-2fbf8049be34.png">
+# We forked and lost some stars
+This repository is maintained by the original creators of Hamilton, who have since founded [DAGWorks inc.](https://dagworks.io/), a company largely dedicated to building and maintaining the Hamilton library. We decided to fork the original because Stitch Fix did not want to transfer ownership to us; we had grown the star count in the original repository to 893: <img width="141" alt="Screen Shot 2023-02-23 at 12 58 43 PM" src="https://user-images.githubusercontent.com/2328071/221029806-36a4e088-809b-4b08-9199-2fbf8049be34.png">
 before forking.
 
 For the backstory on how Hamilton came about, see the original Stitch Fix [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
