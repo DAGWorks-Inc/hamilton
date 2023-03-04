@@ -1,0 +1,6 @@
+aiohttp
+fastapi
+pandas
+pandera
+sf-hamilton
+uvicorn

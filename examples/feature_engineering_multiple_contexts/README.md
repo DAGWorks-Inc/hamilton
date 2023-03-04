@@ -125,3 +125,11 @@ the code with Hamilton.
 
 # What's next?
 Jump into each directory and read the README, it'll explain how the example is set up and how things should work.
+
+# What are extensions/uses not shown here but we know you can do them
+Here are two ideas that come to mind:
+
+1. Streaming settings. Given the examples, it should be clear how to make it possbile to use Hamilton in a streaming setting.
+2. How to ask Hamilton what features are needed as input to know what to request from the feature store. With tags, and
+querying the DAG at the start of the app, you could dynamically ask Hamilton what's required and then only go to the
+feature store for that data. If this type of example would be of interest, let us know.
