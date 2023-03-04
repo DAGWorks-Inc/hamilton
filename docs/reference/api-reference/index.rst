@@ -10,6 +10,7 @@ API Reference
    graph-adapters
    drivers
    disabling-telemetry
+   caveats
 
 Here lies documentation for the public API you can build on top of.
 
@@ -23,3 +24,5 @@ See :doc:`graph-adapters` for ways to execute Hamilton.
 See :doc:`drivers` for how to call and instantiate a Hamilton dataflow. Right now there are only two!
 
 See :doc:`disabling-telemetry` for how to disable telemetry.
+
+See :doc:`caveats` for implementation details/design decisions that may impact your use of Hamilton.
