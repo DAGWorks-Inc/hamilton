@@ -6,7 +6,7 @@ Hamilton's roots are in time-series offline feature engineering. But it can be u
 offline, streaming, online. All our examples are oriented towards Pandas, but rest assured, you can use Hamilton with
 any python objects, e.g. numpy, polars, and even pyspark.
 
-Here's 20 minute video (`slides <https://github.com/skrawcz/talks/files/9759661/FS.Summit.2022.-.Hamilton.pdf>`__), with
+Here's a 20 minute video (`slides <https://github.com/skrawcz/talks/files/9759661/FS.Summit.2022.-.Hamilton.pdf>`__), with
 brief backstory on Hamilton, and an overview (at around the 8:52 mark) of how to use it for feature engineering which
 was presented at the Feature Store Summit 2022:
 
@@ -16,7 +16,7 @@ was presented at the Feature Store Summit 2022:
 
 Otherwise here we present a high level overview and then direct users to the examples folder for more details. We suggest
 reading the Offline Feature Engineering section first, since it's the most common use case, and helps explain the
-python module structure you should be going for with Hamilton. If you more guidance here, please reach out to us on
+python module structure you should be going for with Hamilton. If you need more guidance here, please reach out to us on
 `slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`__.
 
 
@@ -75,9 +75,7 @@ Right now, there is no specific streaming support. Instead, we model the problem
 has an `inputs=` argument to the `execute()` function in the driver. This allows you to then instantiate a Hamilton
 Driver once, and then call `execute()` multiple times with different inputs. Otherwise you'd have a similar python
 module structure as for offline feature engineering -- perhaps just dropping the data_loader module since you would
-provide the inputs directly to the `execute()` function. Caveat: aggregation features, you likely want to understand
-whether you want to aggregate over the entire stream or just the current batch, or load aggregation values that were
-computed offline.
+provide the inputs directly to the `execute()` function.
 
 Here's a sketch of how you might use Hamilton in conjunction with a Kafka Client:
 
@@ -92,6 +90,12 @@ Here's a sketch of how you might use Hamilton in conjunction with a Kafka Client
             # do something / emit back to kafka, etc.
 
 
+**Caveats to think about**. Here are some things to think about when using Hamilton for streaming feature engineering:
+
+ - aggregation features, you likely want to understand whether you want to aggregate over the entire stream or just \
+   the current batch, or load values that were computed offline.
+
+
 Hamilton Example
 __________________
 Currently we don't have a streaming example. But we are working on it. We direct users to look at the online example
@@ -100,14 +104,19 @@ for now, since conceptually from a modularity stand point, things would be set u
 Online Feature Engineering
 --------------------------
 Online feature engineering can be quite simple or quite complex, depending on your situation. However, good news is,
-that Hamilton should be able to help you in any situation. The modularity of Hamilton allows you to swap our implementations
+that Hamilton should be able to help you in any situation. The modularity of Hamilton allows you to swap out implementations
 of features easily, as well as override values, and even ask the Driver what features are required from the source data
 to create the features that you want. We think Hamilton can help you keep things simple, but then extend to helping you
 handle more complex situations.
 
 The basic structure of your python modules, does not change. Depending on whether you want Hamilton to load data from a feature store,
 or you have all the data passed in, you just need to appropriately segment your feature transforms into modules, or use
-the `@config.*` decorator, to help you segment your feature computation dataflow to give you the flexibilty you need.
+the `@config.*` decorator, to help you segment your feature computation dataflow to give you the flexibility you need.
+
+*Caveats to think about*. Here are some things to think about when using Hamilton for online feature engineering:
+
+ - aggregation features, most likely you'll want to load aggregated feature values that were computed offline, rather \
+   than compute them live.
 
 We skip showing a sketch of structure here, and invite you to look at the examples below.
 
@@ -117,3 +126,12 @@ We direct users to look at `Feature engineering in multiple contexts <https://gi
 that currently describes two scenarios around how you could incorporate Hamilton into an online web-service, and have
 it aligned with your batch offline processes. Note, these examples should give you the high level first principles
 view of how to do things. Since having something running in production , we didn't want to get too specific.
+
+
+FAQ
+----
+
+Q. Can I use Hamilton for feature engineering with Feast?
+__________________________________________________________
+Yes, you can use Hamilton with Feast. Typically people use Hamilton on the offline side to compute features that then
+get pushed to Feast. For the online side it varies as to how to integrate the two.
