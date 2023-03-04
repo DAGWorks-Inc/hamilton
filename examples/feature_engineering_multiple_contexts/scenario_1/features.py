@@ -3,7 +3,7 @@ Here are some features that are based on the absenteeism data set.
 They are just supposed to be illustrative of the kind of features one might have.
 
 Note (1): we use check_output to warn us if the output is not what we expect; this is
-used in both the offline ETL and the online webserivce. Use `check_output` to help
+used in both the offline ETL and the online webservice. Use `check_output` to help
 encode your expectations about the output of your functions and catch bugs early!
 
 Note (2): we can tag the `aggregation` features with whatever key value pair makes sense

@@ -5,7 +5,7 @@ a prediction.
 
 The assumption here is that you get all the raw data passed in via the request.
 
-Otherwise for aggregration type features, you need to pass in a stored value
+Otherwise for aggregation type features, you need to pass in a stored value
 that we have mocked out with `load_invariant_feature_values`.
 """
 

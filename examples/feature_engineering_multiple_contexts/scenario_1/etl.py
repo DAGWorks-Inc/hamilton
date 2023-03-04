@@ -2,8 +2,8 @@
 This is part of an offline ETL that you'd likely have.
 You pull data from a source, and transform it into features, and then save/fit a model with them.
 
-Here we ONLY use Hamilton to create the features, with comment stubs for the rest of the ETL that would normally
-be here.
+Here we ONLY use Hamilton to create the features for your training set, with comment stubs for the rest of the ETL
+that would normally be here.
 """
 import features
 import named_model_feature_sets
@@ -13,8 +13,8 @@ import pandas as pd
 from hamilton import driver
 
 
-def create_features(source_location: str) -> pd.DataFrame:
-    """Extracts and transforms data to create feature set.
+def create_data_set(source_location: str) -> pd.DataFrame:
+    """Extracts and transforms data to create featurized data set.
 
     Hamilton functions encode:
      - pulling the data
@@ -47,15 +47,15 @@ def create_features(source_location: str) -> pd.DataFrame:
 if __name__ == "__main__":
     # stick in command line args here
     _source_location = "../../data_quality/pandera/Absenteeism_at_work.csv"
-    _features_df = create_features(_source_location)
+    _data_set_df = create_data_set(_source_location)
     # we need to store `age_mean` and `age_std_dev` somewhere for the online side.
     # exercise for the reader: where would you store them for your context?
     # ideas: with the model? in a database? in a file? in a feature store? (all reasonable answers it just
     # depends on your context).
-    _age_mean = _features_df["age_mean"].values[0]
-    _age_std_dev = _features_df["age_std_dev"].values[0]
-    print(_features_df)
-    # Then do something with the features_df, e.g. define functions to do the following:
-    #   save_features(features_df[named_model_feature_sets.model_x_features], "my_model_features.csv")
-    #   train_model(features_df[named_model_feature_sets.model_x_features])
+    _age_mean = _data_set_df["age_mean"].values[0]
+    _age_std_dev = _data_set_df["age_std_dev"].values[0]
+    print(_data_set_df)
+    # Then do something with the _data_set_df, e.g. define functions to do the following:
+    #   save_features(_data_set_df[named_model_feature_sets.model_x_features], "my_model_features.csv")
+    #   train_model(_data_set_df[named_model_feature_sets.model_x_features])
     #   etc.

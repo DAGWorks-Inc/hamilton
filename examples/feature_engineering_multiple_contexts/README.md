@@ -1,4 +1,4 @@
-# Feature Engineering
+# Feature Engineering in Multiple Contexts
 
 What is feature engineering? It's the process of transforming data for input to a "model".
 
@@ -115,9 +115,12 @@ In this scenario we assume we are not passed in data, but need to fetch it ourse
 We will pretend to hit a feature store, that will provide us with the required data to compute the features for
 input to the model. This example shows one way to modularize your Hamilton code so that you can swap out the "source"
 of the data. To simplify the example, we assume that we can get all the input data we need from a feature store, rather
-than it also coming in via the request.
+than it also coming in via the request. Note: if using a feature store, which is effectively a cache, you might not need
+Hamilton on the online side, if, and only if, you can get all the data you need from the feature store, without needing
+to perform any computations. In this situation, you would push compute features to the feature store from your offline
+ETL process that creates features.
 
-A good exercise would be to make note of the differences with this scenario (2) and scenario 1 in how they structure
+A good exercise would be to make note of the differences with this scenario (2) and scenario (1) in how they structure
 the code with Hamilton.
 
 # What's next?
