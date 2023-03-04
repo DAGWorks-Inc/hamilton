@@ -10,7 +10,7 @@ Hamilton allows you to:
 
 which allows you to sanely iterate, maintain, and determine what works best for your modeling domain.
 
-In this examples series, we'll skip talking about the benefits of Hamilton here, and instead focus on how to use it
+In this series of examples, we'll skip talking about the benefits of Hamilton here, and instead focus on how to use it
 for feature engineering. But first, some context on what challenges you're likely to face with feature engineering
 in general.
 
@@ -26,8 +26,8 @@ There are certain dimensions that make feature engineering hard:
 
 Have you ever dreaded taking over someone else's code? This is a common problem with feature engineering!
 
-Why? The code for feature engineering is often spread out across many different files, and created by many individuals.
-E.g. scripts, notebooks, libraries, etc., and written in many different ways. This makes it hard to reuse code,
+Why? The code for feature engineering is often spread out across many files, and created by many individuals.
+E.g. scripts, notebooks, libraries, etc., and written in many ways. This makes it hard to reuse code,
 collaborate, discover what code is available, and therefore maintain what is actually being used in "production" and
 what is not.
 
@@ -37,20 +37,21 @@ data is being used and for what purpose is important for the business to easily 
 is not a stakeholder in needing this visibility, they just want to build models, but these concerns are often put on
 their plate to address, which slows down their ability to build and ship features and thus models.
 
-Not having lineage or visbility into what data is being used for what purpose can lead to a lot of problems:
+Not having lineage or visibility into what data is being used for what purpose can lead to a lot of problems:
  - teams break data assumptions without knowing it, e.g. upstream team stops updating data used downstream.
  - teams are not aware of what data is available to them, e.g. duplication of data & effort.
  - teams have to spend time figuring out what data is being used for what purpose, e.g. to audit models.
  - teams struggle to debug inherited feature workflows, e.g. to fix bugs or add new features.
 
+
 ## Deployment: Offline vs online vs streaming needs
 This is a big topic. We wont do it justice here, but let's try to give a brief overview of two main problems:
 
 (1) There are a lot of different deployment needs when you get something to production. For example, you might want to:
- - run a batch job to generate features for a model
- - hit a webservice to make predictions in realtime that needs features computed on the fly, or retrieved from a cache (e.g. feature store).
- - run a streaming job to generate features for a model in realtime
- - require all three or a subset of the above ways of deploying features.
+   - run a batch job to generate features for a model
+   - hit a webservice to make predictions in realtime that needs features computed on the fly, or retrieved from a cache (e.g. feature store).
+   - run a streaming job to generate features for a model in realtime
+   - require all three or a subset of the above ways of deploying features.
 
 So the challenge is, how do you design your processes to take in account your deployment needs?
 
@@ -95,6 +96,8 @@ where Hamilton was used for the feature engineering process -- in that example o
 Assumptions we're using:
 1. You have a fixed set of features that you want to compute for a model that you have determined as being useful a priori.
 2. We are agnostic of the actual model -- and skip any details of that in the examples.
+3. We use Pandas as the data structure in our example here because it's easy to reuse in a batch, and online context. However you
+need not use Pandas if you don't want to.
 
 Let's explain the context of the two scenarios a bit more.
 

@@ -7,6 +7,8 @@ The assumption here is that you get all the raw data passed in via the request.
 
 Otherwise for aggregation type features, you need to pass in a stored value
 that we have mocked out with `load_invariant_feature_values`.
+
+Note: we use the AsyncDriver here because under the hood FastAPI is async.
 """
 
 import fastapi
@@ -26,6 +28,9 @@ model_input_features = named_model_feature_sets.model_x_features
 
 def load_invariant_feature_values() -> dict:
     """This function would load the invariant feature values from a database or file.
+
+    You would customize this to your needs.
+
     :return: a dictionary of invariant feature values.
     """
     return {
@@ -34,19 +39,28 @@ def load_invariant_feature_values() -> dict:
     }
 
 
-def fake_model(df: pd.DataFrame) -> pd.Series:
-    """Function to simulate a model"""
+def fake_model_predict(df: pd.DataFrame) -> pd.Series:
+    """Function to simulate a model
+
+    In real life this could deserialize a model from disk or a registry, and provide the function
+    to use for prediction.
+    """
     # do some transformation.
     return df.sum()  # this is nonsensical but provides a single number.
 
 
 # you would load the model from disk or a registry -- here it's a function.
-model = fake_model
+model_predict = fake_model_predict
 # need to load the invariant features somehow.
 invariant_feature_values = load_invariant_feature_values()
 
-# we instantiate an async driver once for the life of the app:
-dr = h_async.AsyncDriver({}, features, result_builder=base.SimplePythonDataFrameGraphAdapter())
+# We instantiate an async driver once for the life of the app. We use the AsyncDriver here because under the hood
+# FastAPI is async. If you were using Flask, you could use the regular Hamilton driver without issue.
+dr = h_async.AsyncDriver(
+    {},  # no config/invariant inputs in this example.
+    features,  # the module that contains the common feature definitions.
+    result_builder=base.SimplePythonDataFrameGraphAdapter(),
+)
 
 
 class PredictRequest(pydantic.BaseModel):
@@ -96,7 +110,7 @@ async def predict_model_version1(request: PredictRequest) -> dict:
     features = await dr.execute(
         model_input_features, inputs=input_series, overrides=invariant_feature_values
     )
-    prediction = model(features)
+    prediction = model_predict(features)
     return {"prediction": prediction.values[0]}
 
 
