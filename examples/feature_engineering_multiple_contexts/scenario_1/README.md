@@ -58,7 +58,8 @@ Note, you need to store `age_mean` and
 Rather than hardcoding what features the model should have in two places, we define
 it in a single place and import it where needed; this is simple if you can share the code eaisly.
 However, this is something you'll have to determine how to best do in your set up. There are many ways to do this,
-come ask in the slack channel if you need help.
+come ask in the [slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg)
+if you need help.
 
 ## fastapi_server.py
 The FastAPI server that serves the predictions. It's pretty basic and is meant to

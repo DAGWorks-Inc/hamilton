@@ -28,7 +28,7 @@ feature_client = online_loader.FeatureStoreHttpClient("https://my-feature-store.
 
 @app.on_event("startup")
 async def startup():
-    """Starts a client for the life of the app."""
+    """Starts a client for the life of the app. Required for the feature client."""
     feature_client.start()
 
 
@@ -36,20 +36,27 @@ async def startup():
 model_input_features = named_model_feature_sets.model_x_features
 
 
-def fake_model(df: pd.DataFrame) -> pd.Series:
-    """Function to simulate a model"""
+def fake_model_predict(df: pd.DataFrame) -> pd.Series:
+    """Function to simulate a model.
+
+    In real life this could deserialize a model from disk or a registry, and provide the function
+    to use for prediction.
+    """
     # do some transformation.
     return df.sum()  # this is nonsensical but provides a single number.
 
 
 # you would load the model from disk or a registry -- here it's a function.
-model = fake_model
+model_predict = fake_model_predict
 
-# we instantiate an async driver once for the life of the app:
+# We instantiate an async driver once for the life of the app. We use the AsyncDriver here because under the hood
+# FastAPI is async. If you were using Flask, you could use the regular Hamilton driver without issue.
 dr = h_async.AsyncDriver(
+    # pass in feature client because it's invariant to each execution.
+    # pass in execution mode to construct things correctly.
     {"feature_client": feature_client, "execution_mode": "online"},
-    online_loader,
-    features,
+    online_loader,  # includes code to load data from the feature store.
+    features,  # shared module of feature logic
     result_builder=base.SimplePythonDataFrameGraphAdapter(),
 )
 
@@ -87,7 +94,7 @@ async def predict_model_version1(request: PredictRequest) -> dict:
     dr.visualize_execution(
         model_input_features, "./online_execution.dot", {"format": "png"}, inputs=inputs
     )
-    prediction = model(features)
+    prediction = model_predict(features)
     return {"prediction": prediction.values[0]}
 
 
