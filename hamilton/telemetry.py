@@ -125,7 +125,8 @@ def is_telemetry_enabled() -> bool:
         if call_counter == 0:
             # Log only the first time someone calls this function; don't want to spam them.
             logger.warning(
-                "FYI: Hamilton telemetry is enabled. "
+                "Note: Hamilton collects completely anonymous data about usage. "
+                "This will help us improve Hamilton over time. "
                 "See https://github.com/dagworks-inc/hamilton#usage-analytics--data-privacy for details."
             )
         call_counter += 1
