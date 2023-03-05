@@ -57,6 +57,13 @@ def test_driver_variables():
     assert tags["d"] == {"module": "tests.resources.tagging"}
 
 
+def test_driver_external_input():
+    dr = Driver({}, tests.resources.very_simple_dag)
+    input_types = {var.name: var.is_external_input for var in dr.list_available_variables()}
+    assert input_types["a"] is True
+    assert input_types["b"] is False
+
+
 @mock.patch("hamilton.telemetry.send_event_json")
 def test_capture_constructor_telemetry_disabled(send_event_json):
     """Tests that we don't do anything if telemetry is disabled."""
@@ -214,7 +221,7 @@ def test__create_final_vars():
             "C",
             tests.resources.test_default_args.B,
             tests.resources.test_default_args.A,
-            Variable("D", int, {}),
+            Variable("D", int, {}, False),
         ]
     )
     expected = ["C", "B", "A", "D"]
