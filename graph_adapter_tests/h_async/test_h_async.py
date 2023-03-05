@@ -1,6 +1,7 @@
 import asyncio
 from unittest import mock
 
+import pandas as pd
 import pytest
 
 from hamilton import base
@@ -47,15 +48,22 @@ async def test_process_value_task():
 @pytest.mark.asyncio
 async def test_driver_end_to_end():
     dr = h_async.AsyncDriver({}, simple_async_module)
-    all_vars = [var.name for var in dr.list_available_variables()]
+    all_vars = [var.name for var in dr.list_available_variables() if var.name != "return_df"]
     result = await dr.raw_execute(final_vars=all_vars, inputs={"external_input": 1})
+    result["a"] = result["a"].to_dict()  # convert to dict for comparison
+    result["b"] = result["b"].to_dict()  # convert to dict for comparison
     assert result == {
+        "a": pd.Series([1, 2, 3]).to_dict(),
         "another_async_func": 8,
         "async_func_with_param": 4,
+        "b": pd.Series([4, 5, 6]).to_dict(),
         "external_input": 1,
         "non_async_func_with_decorator": {"result_1": 9, "result_2": 5},
         "result_1": 9,
         "result_2": 5,
+        "result_3": 1,
+        "result_4": 2,
+        "return_dict": {"result_3": 1, "result_4": 2},
         "simple_async_func": 2,
         "simple_non_async_func": 7,
     }
@@ -68,15 +76,22 @@ async def test_driver_end_to_end_telemetry(send_event_json):
     dr = h_async.AsyncDriver({}, simple_async_module, result_builder=base.DictResult())
     with mock.patch("hamilton.telemetry.g_telemetry_enabled", False):
         # don't count this telemetry tracking invocation
-        all_vars = [var.name for var in dr.list_available_variables()]
+        all_vars = [var.name for var in dr.list_available_variables() if var.name != "return_df"]
     result = await dr.execute(final_vars=all_vars, inputs={"external_input": 1})
+    result["a"] = result["a"].to_dict()
+    result["b"] = result["b"].to_dict()
     assert result == {
+        "a": pd.Series([1, 2, 3]).to_dict(),
         "another_async_func": 8,
         "async_func_with_param": 4,
+        "b": pd.Series([4, 5, 6]).to_dict(),
         "external_input": 1,
         "non_async_func_with_decorator": {"result_1": 9, "result_2": 5},
         "result_1": 9,
         "result_2": 5,
+        "result_3": 1,
+        "result_4": 2,
+        "return_dict": {"result_3": 1, "result_4": 2},
         "simple_async_func": 2,
         "simple_non_async_func": 7,
     }

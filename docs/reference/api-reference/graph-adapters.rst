@@ -53,6 +53,13 @@ Pandas on Spark (Koalas)
    :inherited-members:
 
 
+PySpark UDFs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..  autoclass:: hamilton.experimental.h_spark.PySparkUDFGraphAdapter
+   :special-members: __init__
+   :members:
+
+
 Async Python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: hamilton.experimental.h_async.AsyncGraphAdapter

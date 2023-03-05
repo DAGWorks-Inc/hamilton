@@ -1,6 +1,7 @@
 import dataclasses
 import functools
 import inspect
+import typing
 from typing import Any, Callable, Collection, Dict, Tuple, Union
 
 import typing_inspect
@@ -423,7 +424,7 @@ class extract_columns(base.NodeExpander):
         """Validates that the return type of the function is a pandas dataframe.
         :param fn: Function to validate
         """
-        output_type = inspect.signature(fn).return_annotation
+        output_type = typing.get_type_hints(fn).get("return")
         try:
             registry.get_column_type_from_df_type(output_type)
         except NotImplementedError:
@@ -454,14 +455,28 @@ class extract_columns(base.NodeExpander):
         fn = node_.callable
         base_doc = node_.documentation
 
-        def df_generator(*args, **kwargs) -> Any:
-            df_generated = fn(*args, **kwargs)
-            if self.fill_with is not None:
-                for col in self.columns:
-                    if col not in df_generated:
-                        registry.fill_with_scalar(df_generated, col, self.fill_with)
-                        assert col in df_generated
-            return df_generated
+        # if fn is an async function
+        if inspect.iscoroutinefunction(fn):
+
+            async def df_generator(*args, **kwargs) -> Any:
+                df_generated = await fn(*args, **kwargs)
+                if self.fill_with is not None:
+                    for col in self.columns:
+                        if col not in df_generated:
+                            registry.fill_with_scalar(df_generated, col, self.fill_with)
+                            assert col in df_generated
+                return df_generated
+
+        else:
+
+            def df_generator(*args, **kwargs) -> Any:
+                df_generated = fn(*args, **kwargs)
+                if self.fill_with is not None:
+                    for col in self.columns:
+                        if col not in df_generated:
+                            registry.fill_with_scalar(df_generated, col, self.fill_with)
+                            assert col in df_generated
+                return df_generated
 
         output_nodes = [node_.copy_with(callabl=df_generator)]
         output_type = node_.type
@@ -471,16 +486,29 @@ class extract_columns(base.NodeExpander):
             if isinstance(column, Tuple):  # Expand tuple into constituents
                 column, doc_string = column
 
-            def extractor_fn(
-                column_to_extract: str = column, **kwargs
-            ) -> Any:  # avoiding problems with closures
-                df = kwargs[node_.name]
-                if column_to_extract not in df:
-                    raise base.InvalidDecoratorException(
-                        f"No such column: {column_to_extract} produced by {node_.name}. "
-                        f"It only produced {str(df.columns)}"
-                    )
-                return registry.get_column(df, column_to_extract)
+            if inspect.iscoroutinefunction(fn):
+
+                async def extractor_fn(column_to_extract: str = column, **kwargs) -> Any:
+                    df = kwargs[node_.name]
+                    if column_to_extract not in df:
+                        raise base.InvalidDecoratorException(
+                            f"No such column: {column_to_extract} produced by {node_.name}. "
+                            f"It only produced {str(df.columns)}"
+                        )
+                    return registry.get_column(df, column_to_extract)
+
+            else:
+
+                def extractor_fn(
+                    column_to_extract: str = column, **kwargs
+                ) -> Any:  # avoiding problems with closures
+                    df = kwargs[node_.name]
+                    if column_to_extract not in df:
+                        raise base.InvalidDecoratorException(
+                            f"No such column: {column_to_extract} produced by {node_.name}. "
+                            f"It only produced {str(df.columns)}"
+                        )
+                    return registry.get_column(df, column_to_extract)
 
             output_nodes.append(
                 node.Node(
@@ -540,7 +568,7 @@ class extract_fields(base.NodeExpander):
         :param fn: Function to validate.
         :raises: InvalidDecoratorException If the function is not annotated with a dict or typing.Dict type as output.
         """
-        output_type = inspect.signature(fn).return_annotation
+        output_type = typing.get_type_hints(fn).get("return")
         if typing_inspect.is_generic_type(output_type):
             base_type = typing_inspect.get_origin(output_type)
             if (
@@ -573,29 +601,56 @@ class extract_fields(base.NodeExpander):
         fn = node_.callable
         base_doc = node_.documentation
 
-        def dict_generator(*args, **kwargs):
-            dict_generated = fn(*args, **kwargs)
-            if self.fill_with is not None:
-                for field in self.fields:
-                    if field not in dict_generated:
-                        dict_generated[field] = self.fill_with
-            return dict_generated
+        # if fn is async
+        if inspect.iscoroutinefunction(fn):
+
+            async def dict_generator(*args, **kwargs):
+                dict_generated = await fn(*args, **kwargs)
+                if self.fill_with is not None:
+                    for field in self.fields:
+                        if field not in dict_generated:
+                            dict_generated[field] = self.fill_with
+                return dict_generated
+
+        else:
+
+            def dict_generator(*args, **kwargs):
+                dict_generated = fn(*args, **kwargs)
+                if self.fill_with is not None:
+                    for field in self.fields:
+                        if field not in dict_generated:
+                            dict_generated[field] = self.fill_with
+                return dict_generated
 
         output_nodes = [node_.copy_with(callabl=dict_generator)]
 
         for field, field_type in self.fields.items():
             doc_string = base_doc  # default doc string of base function.
 
-            def extractor_fn(
-                field_to_extract: str = field, **kwargs
-            ) -> field_type:  # avoiding problems with closures
-                dt = kwargs[node_.name]
-                if field_to_extract not in dt:
-                    raise base.InvalidDecoratorException(
-                        f"No such field: {field_to_extract} produced by {node_.name}. "
-                        f"It only produced {list(dt.keys())}"
-                    )
-                return kwargs[node_.name][field_to_extract]
+            # if fn is async
+            if inspect.iscoroutinefunction(fn):
+
+                async def extractor_fn(field_to_extract: str = field, **kwargs) -> field_type:
+                    dt = kwargs[node_.name]
+                    if field_to_extract not in dt:
+                        raise base.InvalidDecoratorException(
+                            f"No such field: {field_to_extract} produced by {node_.name}. "
+                            f"It only produced {list(dt.keys())}"
+                        )
+                    return kwargs[node_.name][field_to_extract]
+
+            else:
+
+                def extractor_fn(
+                    field_to_extract: str = field, **kwargs
+                ) -> field_type:  # avoiding problems with closures
+                    dt = kwargs[node_.name]
+                    if field_to_extract not in dt:
+                        raise base.InvalidDecoratorException(
+                            f"No such field: {field_to_extract} produced by {node_.name}. "
+                            f"It only produced {list(dt.keys())}"
+                        )
+                    return kwargs[node_.name][field_to_extract]
 
             output_nodes.append(
                 node.Node(

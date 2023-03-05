@@ -1,4 +1,5 @@
 import inspect
+import typing
 from typing import Any, Callable, Dict, List, Type, Union
 
 import pandas as pd
@@ -229,7 +230,7 @@ class dynamic_transform(base.NodeCreator):
 
         ensure_function_empty(fn)  # it has to look exactly
         signature = inspect.signature(fn)
-        if not issubclass(signature.return_annotation, pd.Series):
+        if not issubclass(typing.get_type_hints(fn).get("return"), pd.Series):
             raise base.InvalidDecoratorException(
                 "Models must declare their return type as a pandas Series"
             )
@@ -250,7 +251,7 @@ class dynamic_transform(base.NodeCreator):
         return [
             node.Node(
                 name=fn_name,
-                typ=inspect.signature(fn).return_annotation,
+                typ=typing.get_type_hints(fn).get("return"),
                 doc_string=fn.__doc__,
                 callabl=transform.compute,
                 input_types={dep: pd.Series for dep in transform.get_dependents()},

@@ -226,7 +226,7 @@ class Driver(object):
 
     def execute(
         self,
-        final_vars: List[Union[str, Callable]],
+        final_vars: List[Union[str, Callable, Variable]],
         overrides: Dict[str, Any] = None,
         display_graph: bool = False,
         inputs: Dict[str, Any] = None,
@@ -265,7 +265,7 @@ class Driver(object):
                 error, _final_vars, inputs, overrides, run_successful, duration
             )
 
-    def _create_final_vars(self, final_vars: List[Union[str, Callable]]) -> List[str]:
+    def _create_final_vars(self, final_vars: List[Union[str, Callable, Variable]]) -> List[str]:
         """Creates the final variables list - converting functions names as required.
 
         :param final_vars:
@@ -277,6 +277,8 @@ class Driver(object):
         for final_var in final_vars:
             if isinstance(final_var, str):
                 _final_vars.append(final_var)
+            elif isinstance(final_var, Variable):
+                _final_vars.append(final_var.name)
             elif isinstance(final_var, Callable):
                 if final_var.__module__ in module_set:
                     _final_vars.append(final_var.__name__)
@@ -286,7 +288,9 @@ class Driver(object):
                         f"module given to the driver. Valid choices are {module_set}."
                     )
             else:
-                errors.append(f"Final var {final_var} is not a string or a function.")
+                errors.append(
+                    f"Final var {final_var} is not a string, a function, or a driver.Variable."
+                )
         if errors:
             errors.sort()
             error_str = f"{len(errors)} errors encountered:\n  " + "\n  ".join(errors)
@@ -403,7 +407,7 @@ class Driver(object):
     @capture_function_usage
     def visualize_execution(
         self,
-        final_vars: List[str],
+        final_vars: List[Union[str, Callable, Variable]],
         output_file_path: str,
         render_kwargs: dict,
         inputs: Dict[str, Any] = None,
@@ -441,7 +445,7 @@ class Driver(object):
             logger.warning(f"Unable to import {e}", exc_info=True)
 
     @capture_function_usage
-    def has_cycles(self, final_vars: List[str]) -> bool:
+    def has_cycles(self, final_vars: List[Union[str, Callable, Variable]]) -> bool:
         """Checks that the created graph does not have cycles.
 
         :param final_vars: the outputs we want to compute.

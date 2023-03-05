@@ -12,7 +12,7 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, 
 from hamilton import base, node
 from hamilton.function_modifiers import base as fm_base
 from hamilton.graph_utils import find_functions
-from hamilton.type_utils import types_match
+from hamilton.htypes import types_match
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,10 @@ def add_dependency(
 
 
 def create_function_graph(
-    *modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter
+    *modules: ModuleType,
+    config: Dict[str, Any],
+    adapter: base.HamiltonGraphAdapter,
+    fg: Optional["FunctionGraph"] = None,
 ) -> Dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
     :param modules: A set of modules over which one wants to compute the function graph
@@ -63,7 +66,10 @@ def create_function_graph(
     :return: list of nodes in the graph.
     If it needs to be more complicated, we'll return an actual networkx graph and get all the rest of the logic for free
     """
-    nodes = {}  # name -> Node
+    if fg is None:
+        nodes = {}  # name -> Node
+    else:
+        nodes = fg.nodes
     functions = sum([find_functions(module) for module in modules], [])
 
     # create nodes -- easier to just create this in one loop
