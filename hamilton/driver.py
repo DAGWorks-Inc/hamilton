@@ -69,7 +69,8 @@ class Variable:
 
     name: str
     type: typing.Type
-    tags: Dict[str, str] = field(default_factory=frozenset)
+    tags: Dict[str, str] = field(default_factory=dict)
+    is_external_input: bool = field(default=False)
 
 
 class Driver(object):
@@ -380,7 +381,10 @@ class Driver(object):
 
         :return: list of available variables (i.e. outputs).
         """
-        return [Variable(node.name, node.type, node.tags) for node in self.graph.get_nodes()]
+        return [
+            Variable(node.name, node.type, node.tags, node.user_defined)
+            for node in self.graph.get_nodes()
+        ]
 
     @capture_function_usage
     def display_all_functions(
@@ -465,7 +469,10 @@ class Driver(object):
                 in function names.
         """
         downstream_nodes = self.graph.get_impacted_nodes(list(node_names))
-        return [Variable(node.name, node.type, node.tags) for node in downstream_nodes]
+        return [
+            Variable(node.name, node.type, node.tags, node.user_defined)
+            for node in downstream_nodes
+        ]
 
     @capture_function_usage
     def display_downstream_of(
@@ -507,7 +514,9 @@ class Driver(object):
                 in function names.
         """
         upstream_nodes, _ = self.graph.get_upstream_nodes(list(node_names))
-        return [Variable(node.name, node.type, node.tags) for node in upstream_nodes]
+        return [
+            Variable(node.name, node.type, node.tags, node.user_defined) for node in upstream_nodes
+        ]
 
 
 if __name__ == "__main__":
