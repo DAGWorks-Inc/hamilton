@@ -32,7 +32,7 @@ For the backstory on how Hamilton came about, see the original Stitch Fix [blog 
 # Feature comparison
 Here are common things that Hamilton is compared to, and how Hamilton compares to them.
 
-| Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | DBT | Dask |
+| Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | dbt | Dask |
 |-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:------:|
 | Python 3.7+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅    |
 | Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌    |
