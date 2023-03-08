@@ -379,6 +379,14 @@ class Driver(object):
     def list_available_variables(self) -> List[Variable]:
         """Returns available variables, i.e. outputs.
 
+        These variables corresond 1:1 with nodes in the DAG, and contain the following information:
+        1. name: the name of the node
+        2. tags: the tags associated with this node
+        3. type: The type of data this node returns
+        4. is_external_input: Whether this node represents an external input (required from outside),
+        or not (has a function specifying its behavior).
+
+
         :return: list of available variables (i.e. outputs).
         """
         return [
