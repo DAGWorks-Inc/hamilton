@@ -3,7 +3,7 @@
 There are a lot of MLOps frameworks out there, especially in the pipeline space. This should help you figure out when to
 use Hamilton instead of another framework, in addition to another framework, or when to use another framework altogether.
 
-Let's go over some groups of competitive" or "complimentary" products. For a basic overview,
+Let's go over some groups of "competitive" or "complimentary" products. For a basic overview,
 see the product matrix on the [homepage](../main.md).
 
 ## Orchestration Systems
