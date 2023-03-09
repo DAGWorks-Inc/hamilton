@@ -82,3 +82,8 @@ Actual decorators:
 ------------------------
 .. autoclass:: hamilton.function_modifiers.subdag
    :special-members: __init__
+
+@delay_resolution
+------------------------
+.. autoclass:: hamilton.function_modifiers.resolve
+   :special-members: __init__
