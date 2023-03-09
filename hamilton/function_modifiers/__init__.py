@@ -1,6 +1,16 @@
 import logging
 
-from . import base, configuration, dependencies, expanders, macros, metadata, recursive, validation
+from . import (
+    base,
+    configuration,
+    delayed,
+    dependencies,
+    expanders,
+    macros,
+    metadata,
+    recursive,
+    validation,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +58,7 @@ extract_fields = expanders.extract_fields
 # does decorator
 does = macros.does
 
-# dynamic transform/model decorator
+# resolve transform/model decorator
 dynamic_transform = macros.dynamic_transform
 model = macros.model
 
@@ -65,3 +75,8 @@ DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = validation.DATA_VALIDATOR_ORIGINAL_OUTPUT_T
 # recursive/subdag operators
 
 subdag = recursive.subdag
+
+# resolve/meta stuff -- power user features
+
+resolve = delayed.resolve
+ResolveAt = delayed.ResolveAt
