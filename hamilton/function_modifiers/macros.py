@@ -1,11 +1,16 @@
 import inspect
+import logging
 import typing
 from typing import Any, Callable, Dict, List, Type, Union
 
 import pandas as pd
 
 from hamilton import models, node
+from hamilton.dev_utils.deprecation import deprecated
 from hamilton.function_modifiers import base
+from hamilton.function_modifiers.delayed import resolve as delayed_resolve
+
+logger = logging.getLogger(__name__)
 
 """Decorators that replace a function's execution with specified behavior"""
 
@@ -210,6 +215,16 @@ def get_default_tags(fn: Callable) -> Dict[str, str]:
     return {"module": module_name}
 
 
+@deprecated(
+    warn_starting=(1, 20, 0),
+    fail_starting=(2, 0, 0),
+    use_this=delayed_resolve,
+    explanation="dynamic_transform has been replaced with @resolve -- a cleaner way"
+    "to utilize config for resolving decorators. Note this allows you to use any"
+    "existing decorators.",
+    current_version=(1, 19, 0),
+    migration_guide="https://hamilton.readthedocs.io/reference/api-reference/decorators.html",
+)
 class dynamic_transform(base.NodeCreator):
     def __init__(
         self, transform_cls: Type[models.BaseModel], config_param: str, **extra_transform_params
