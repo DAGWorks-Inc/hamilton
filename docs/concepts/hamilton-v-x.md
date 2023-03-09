@@ -66,7 +66,7 @@ Examples include:
 
 One can think of Hamilton as a "feature store as code". While it does not provide all the capabilities of a standard feature
 store, it provides a source of truth for the code that generated the features, and can be run in a portable
-method. *so*, if your desire is just to be able to run the same code in different environments, and have an online/offline
+method. *So*, if your desire is just to be able to run the same code in different environments, and have an online/offline
 store of features, you can use hamilton both to save the features offline, and generate features online on the fly.
 
 See the [feature engineering example](../how-tos/use-for-feature-engineering.rst) for more possibilities.
