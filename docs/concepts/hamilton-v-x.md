@@ -13,7 +13,7 @@ Examples include:
 - [Luigi](https://github.com/spotify/luigi)
 - [dbt](https://www.getdbt.com/)
 
-Hamilton is not, in itself an orchestration system. While it has rudimentary capabilities
+Hamilton is not, in itself a macro, i.e. high level, task orchestration system. While it has rudimentary capabilities
 to orchestrate (run locally), and the DAG abstraction is very powerful, it does not provision compute,
 or schedule long-running jobs. It tends to work well in conjunction with them. Hamilton provides the capabilities
 of fine-grained lineage, highly readable code, and self-documenting pipelines, which many of these systems lack.
