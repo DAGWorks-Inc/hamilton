@@ -18,8 +18,8 @@ to orchestrate (run locally), and the DAG abstraction is very powerful, it does 
 or schedule long-running jobs. It tends to work well in conjunction with them. Hamilton provides the capabilities
 of fine-grained lineage, highly readable code, and self-documenting pipelines, which many of these systems lack.
 
-Hamilton can be used with an
-orchestration in the following ways:
+Hamilton can be used within any python
+orchestration system in the following ways:
 
 1. _Hamilton DAGs can be called as tasks within an orchestration system's nodes._
 See the [Hamilton + Metaflow] example: https://github.com/outerbounds/hamilton-metaflow. The integration is generally trivial -- all you have to do
