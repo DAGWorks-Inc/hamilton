@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -6,7 +6,8 @@ import pytest
 
 import hamilton.function_modifiers
 from hamilton import function_modifiers, node
-from hamilton.function_modifiers.dependencies import source, value
+from hamilton.function_modifiers import base
+from hamilton.function_modifiers.dependencies import group, source, value
 from hamilton.node import DependencyType
 
 
@@ -498,3 +499,59 @@ def test_parameterized_extract_columns():
     assert nodes_by_name["outseries2a"](fn__0=pd.DataFrame({"outseries2a": [20]}))[0] == 20
     assert nodes_by_name["outseries1b"](fn__1=pd.DataFrame({"outseries1b": [30]}))[0] == 30
     assert nodes_by_name["outseries2b"](fn__1=pd.DataFrame({"outseries2b": [40]}))[0] == 40
+
+
+def test_parametrized_full_replace_groups_with_literal():
+    def add_n(grouped_parameter: List[int]) -> int:
+        return sum(grouped_parameter)
+
+    annotation = function_modifiers.parameterize(
+        replace_just_literal_parameter={"grouped_parameter": group(value(1), value(2), value(3))}
+    )
+    (node_,) = annotation.expand_node(node.Node.from_fn(add_n), {}, concat)
+    assert node_.input_types == {}
+    assert node_.callable() == 6
+
+
+def test_parametrized_full_replace_groups_with_sources():
+    def add_n(grouped_parameter: List[int]) -> int:
+        return sum(grouped_parameter)
+
+    annotation = function_modifiers.parameterize(
+        replace_just_literal_parameter={
+            "grouped_parameter": group(source("foo"), source("bar"), source("baz"))
+        }
+    )
+    (node_,) = annotation.expand_node(node.Node.from_fn(add_n), {}, concat)
+    assert node_.input_types == {
+        "foo": (int, DependencyType.REQUIRED),
+        "bar": (int, DependencyType.REQUIRED),
+        "baz": (int, DependencyType.REQUIRED),
+    }
+    assert node_.callable(foo=1, bar=2, baz=3) == 6
+
+
+def test_parameterized_validate_group():
+    def add_n(grouped_parameter: List[int]) -> int:
+        return sum(grouped_parameter)
+
+    annotation = function_modifiers.parameterize(
+        replace_just_literal_parameter={
+            "grouped_parameter": group(source("foo"), source("bar"), source("baz"))
+        }
+    )
+    annotation.validate(add_n)
+
+
+@pytest.mark.parametrize("annotation", [list, int, pd.Series, float])
+def test_parameterized_validate_group_fails(annotation):
+    def add_n(grouped_parameter: annotation) -> int:
+        return sum(grouped_parameter)
+
+    annotation = function_modifiers.parameterize(
+        replace_just_literal_parameter={
+            "grouped_parameter": group(source("foo"), source("bar"), source("baz"))
+        }
+    )
+    with pytest.raises(base.InvalidDecoratorException):
+        annotation.validate(add_n)

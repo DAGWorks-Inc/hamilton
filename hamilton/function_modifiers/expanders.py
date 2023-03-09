@@ -1,3 +1,4 @@
+import collections
 import dataclasses
 import functools
 import inspect
@@ -10,6 +11,7 @@ from hamilton import node, registry
 from hamilton.dev_utils import deprecation
 from hamilton.function_modifiers import base
 from hamilton.function_modifiers.dependencies import (
+    GroupedListDependency,
     ParametrizedDependency,
     ParametrizedDependencySource,
     source,
@@ -70,6 +72,17 @@ class parameterize(base.NodeExpander):
             '''Adding {literal_parameter} to {upstream_parameter} to create {output_name}.'''
             return upstream_parameter + literal_parameter
 
+    You also have the capability to "group" parameters, which will combine them into a list.
+
+    .. code-block:: python
+        @parameterize(
+            a_plus_b_plus_c={
+                'to_concat' : group(source('a'), value('b'), source('c'))
+            }
+        )
+        def concat(to_concat: List[str]) -> Any:
+            '''Adding {literal_parameter} to {upstream_parameter} to create {output_name}.'''
+            return sum(to_concat, '')
     """
 
     RESERVED_KWARG = "output_name"
@@ -105,6 +118,24 @@ class parameterize(base.NodeExpander):
             key: value[1] for key, value in parametrization.items() if isinstance(value, tuple)
         }
 
+    def split_parameterizations(
+        self, parameterizations: Dict[str, ParametrizedDependency]
+    ) -> Dict[ParametrizedDependencySource, Dict[str, ParametrizedDependency]]:
+        """Split parameterizations into two groups: those that are literal values, and those that are upstream nodes.
+        Will have a key for each existing dependency type.
+
+        :param parameterizations: Passed into @parameterize
+        :return: The parameterizations grouped by dependency type
+        """
+        out = collections.defaultdict(dict)
+        for param_name, replacement in parameterizations.items():
+            out[replacement.get_dependency_type()][param_name] = replacement
+        return out
+
+    def _get_grouped_list_name(self, index: int, arg_name: str):
+        """Gets the name of the arg for a given index in a list of args, using grouped"""
+        return f"__{arg_name}_{index}"
+
     def expand_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
@@ -113,34 +144,57 @@ class parameterize(base.NodeExpander):
             if isinstance(
                 parametrization_with_optional_docstring, tuple
             ):  # In this case it contains the docstring
-                (parametrization,) = parametrization_with_optional_docstring
+                (parameterization,) = parametrization_with_optional_docstring
             else:
-                parametrization = parametrization_with_optional_docstring
+                parameterization = parametrization_with_optional_docstring
             docstring = self.format_doc_string(fn.__doc__, output_node)
-            upstream_dependencies = {
-                parameter: replacement
-                for parameter, replacement in parametrization.items()
-                if replacement.get_dependency_type() == ParametrizedDependencySource.UPSTREAM
-            }
-            literal_dependencies = {
-                parameter: replacement
-                for parameter, replacement in parametrization.items()
-                if replacement.get_dependency_type() == ParametrizedDependencySource.LITERAL
-            }
+            parameterization_splits = self.split_parameterizations(parameterization)
+            upstream_dependencies = parameterization_splits[ParametrizedDependencySource.UPSTREAM]
+            literal_dependencies = parameterization_splits[ParametrizedDependencySource.LITERAL]
+            grouped_dependencies = parameterization_splits[
+                ParametrizedDependencySource.GROUPED_LIST
+            ]
 
             def replacement_function(
                 *args,
                 upstream_dependencies=upstream_dependencies,
                 literal_dependencies=literal_dependencies,
+                grouped_dependencies=grouped_dependencies,
                 **kwargs,
             ):
                 """This function rewrites what is passed in kwargs to the right kwarg for the function."""
-                kwargs = kwargs.copy()
+
+                new_kwargs = kwargs.copy()
                 for dependency, replacement in upstream_dependencies.items():
-                    kwargs[dependency] = kwargs.pop(replacement.source)
+                    new_kwargs[dependency] = new_kwargs.pop(replacement.source)
                 for dependency, replacement in literal_dependencies.items():
-                    kwargs[dependency] = replacement.value
-                return node_.callable(*args, **kwargs)
+                    new_kwargs[dependency] = replacement.value
+                for dependency, replacement in grouped_dependencies.items():
+                    # TODO -- use the code above to make this cleaner
+                    # We should be able to put this logic in the dependency type and use OO programming
+                    # Just not sure about the abstraction yet so we're putting it here
+                    new_kwargs[dependency] = []
+                    for specific_value in replacement.sources:
+                        if (
+                            specific_value.get_dependency_type()
+                            == ParametrizedDependencySource.UPSTREAM
+                        ):
+                            # This will break if we reuse the same parameter as another component
+                            # of the function TODO -- fix it -- we should be able to grab the
+                            #  arguments we already popped from kwargs Alternatively we can do
+                            #  this in two passes (1) we gather all the dependencies we need and
+                            #  then (2) we pop them from kwargs and store them
+                            new_kwargs[dependency].append(new_kwargs.pop(specific_value.source))
+                        elif (
+                            specific_value.get_dependency_type()
+                            == ParametrizedDependencySource.LITERAL
+                        ):
+                            new_kwargs[dependency].append(specific_value.value)
+                        else:
+                            raise ValueError(
+                                f"Grouped dependencies cannot contain type: {specific_value}"
+                            )
+                return node_.callable(*args, **new_kwargs)
 
             new_input_types = {}
             for param, val in node_.input_types.items():
@@ -148,11 +202,20 @@ class parameterize(base.NodeExpander):
                     new_input_types[
                         upstream_dependencies[param].source
                     ] = val  # We replace with the upstream_dependencies
+                elif param in grouped_dependencies:
+                    # These are the components of the individual sequence
+                    # E.G. if the parameter is List[int], the individual type is just int
+                    sequence_component_type = GroupedListDependency.get_type(val[0], param)
+                    grouped_dependency_spec = grouped_dependencies[param]
+                    for dep in grouped_dependency_spec.sources:
+                        if dep.get_dependency_type() == ParametrizedDependencySource.UPSTREAM:
+                            # TODO -- think through what happens if we have optional pieces...
+                            # I think that we shouldn't allow it...
+                            new_input_types[dep.source] = (sequence_component_type, val[1])
                 elif param not in literal_dependencies:
                     new_input_types[
                         param
                     ] = val  # We just use the standard one, nothing is getting replaced
-
             nodes.append(
                 node.Node(
                     name=output_node,
@@ -195,6 +258,31 @@ class parameterize(base.NodeExpander):
             raise base.InvalidDecoratorException(
                 f"Parametrization is invalid: the following parameters don't appear in the function itself: {', '.join(missing_parameters)}"
             )
+        type_hints = typing.get_type_hints(fn)
+        for output_name, mapping in self.parametrization.items():
+            # TODO -- look a the origin type and determine that its a sequence
+            # We can just use the GroupedListDependency to do this
+            invalid_types = []
+            if isinstance(mapping, tuple):
+                mapping = mapping[0]
+            for param, replacement_value in mapping.items():
+                if (
+                    replacement_value.get_dependency_type()
+                    == ParametrizedDependencySource.GROUPED_LIST
+                ):
+                    param_annotation = type_hints[param]
+                    is_generic = typing_inspect.is_generic_type(param_annotation)
+                    if not is_generic:
+                        invalid_types.append((param, param_annotation))
+                    else:
+                        origin = typing_inspect.get_origin(param_annotation)
+                        if origin != list:
+                            invalid_types.append((param, param_annotation))
+            if invalid_types:
+                raise base.InvalidDecoratorException(
+                    f"Validation for fn: {fn.__qualname__} All parameters with a group() parameterization must be annotated as a list:"
+                    f"the following are not: {', '.join([f'{param} ({annotation})' for param, annotation in invalid_types])}"
+                )
 
     def format_doc_string(self, doc: str, output_name: str) -> str:
         """Helper function to format a function documentation string.
