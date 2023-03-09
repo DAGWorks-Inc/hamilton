@@ -91,7 +91,7 @@ Examples include:
 And many others. We've kind of grouped a whole suite of platforms into the same bucket here. These
 tend to have a lot of capabilities all related to ML. Hamilton can be run within these platforms,
 generate features for them to read, save models to their registry, and load models from their registry
-for inference. For example, you could imagine the following pseudocode for a hamilton dag that stores
+for inference. For example, you could imagine the following pseudocode for a Hamilton DAG that stores
 models in a registry.
 
 ```python
