@@ -555,3 +555,13 @@ def test_parameterized_validate_group_fails(annotation):
     )
     with pytest.raises(base.InvalidDecoratorException):
         annotation.validate(add_n)
+
+
+def test_inject():
+    annotation = function_modifiers.inject(nums=group(value(1), value(2), value(3)))
+
+    def summation(nums: List[int]) -> int:
+        return sum(nums)
+
+    (node_,) = annotation.expand_node(node.Node.from_fn(summation), {}, summation)
+    assert node_() == 6

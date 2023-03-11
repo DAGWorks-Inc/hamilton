@@ -75,6 +75,7 @@ class parameterize(base.NodeExpander):
     You also have the capability to "group" parameters, which will combine them into a list.
 
     .. code-block:: python
+
         @parameterize(
             a_plus_b_plus_c={
                 'to_concat' : group(source('a'), value('b'), source('c'))
@@ -86,6 +87,13 @@ class parameterize(base.NodeExpander):
     """
 
     RESERVED_KWARG = "output_name"
+    # This is a kwarg that replaces it with the name of the function
+    # Double underscore means it will not be provided as user-base kwargs
+    # as hamilton is not OK with these output names
+    # We need this as we need to know the name of the function
+    # for the `@inject` usage but its not provided at
+    # construction time, so we provide a placeholder
+    PLACEHOLDER_PARAM_NAME = "__<function_name>"
 
     def __init__(
         self,
@@ -100,12 +108,12 @@ class parameterize(base.NodeExpander):
             - a tuple of assignments (consisting of literals/upstream specifications), and docstring.
             - just assignments, in which case it parametrizes the existing docstring.
         """
-        self.parametrization = {
+        self.parameterization = {
             key: (value[0] if isinstance(value, tuple) else value)
             for key, value in parametrization.items()
         }
         bad_values = []
-        for assigned_output, mapping in self.parametrization.items():
+        for assigned_output, mapping in self.parameterization.items():
             for parameter, val in mapping.items():
                 if not isinstance(val, ParametrizedDependency):
                     bad_values.append(val)
@@ -140,14 +148,16 @@ class parameterize(base.NodeExpander):
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         nodes = []
-        for output_node, parametrization_with_optional_docstring in self.parametrization.items():
+        for output_node, parametrization_with_optional_docstring in self.parameterization.items():
+            if output_node == parameterize.PLACEHOLDER_PARAM_NAME:
+                output_node = node_.name
             if isinstance(
                 parametrization_with_optional_docstring, tuple
             ):  # In this case it contains the docstring
                 (parameterization,) = parametrization_with_optional_docstring
             else:
                 parameterization = parametrization_with_optional_docstring
-            docstring = self.format_doc_string(fn.__doc__, output_node)
+            docstring = self.format_doc_string(fn, output_node)
             parameterization_splits = self.split_parameterizations(parameterization)
             upstream_dependencies = parameterization_splits[ParametrizedDependencySource.UPSTREAM]
             literal_dependencies = parameterization_splits[ParametrizedDependencySource.LITERAL]
@@ -235,7 +245,7 @@ class parameterize(base.NodeExpander):
         signature = inspect.signature(fn)
         func_param_names = set(signature.parameters.keys())
         try:
-            for output_name, mappings in self.parametrization.items():
+            for output_name, mappings in self.parameterization.items():
                 # TODO -- separate out into the two dependency-types
                 self.format_doc_string(fn.__doc__, output_name)
         except KeyError as e:
@@ -250,7 +260,7 @@ class parameterize(base.NodeExpander):
                 f"as a parameter it is reserved."
             )
         missing_parameters = set()
-        for mapping in self.parametrization.values():
+        for mapping in self.parameterization.values():
             for param_to_replace in mapping:
                 if param_to_replace not in func_param_names:
                     missing_parameters.add(param_to_replace)
@@ -259,7 +269,7 @@ class parameterize(base.NodeExpander):
                 f"Parametrization is invalid: the following parameters don't appear in the function itself: {', '.join(missing_parameters)}"
             )
         type_hints = typing.get_type_hints(fn)
-        for output_name, mapping in self.parametrization.items():
+        for output_name, mapping in self.parameterization.items():
             # TODO -- look a the origin type and determine that its a sequence
             # We can just use the GroupedListDependency to do this
             invalid_types = []
@@ -284,7 +294,7 @@ class parameterize(base.NodeExpander):
                     f"the following are not: {', '.join([f'{param} ({annotation})' for param, annotation in invalid_types])}"
                 )
 
-    def format_doc_string(self, doc: str, output_name: str) -> str:
+    def format_doc_string(self, fn: Callable, output_name: str) -> str:
         """Helper function to format a function documentation string.
 
         :param doc: the string template to format
@@ -301,9 +311,13 @@ class parameterize(base.NodeExpander):
 
         if output_name in self.specified_docstrings:
             return self.specified_docstrings[output_name]
+        doc = fn.__doc__
         if doc is None:
             return None
-        parametrization = self.parametrization[output_name]
+        parameterizations = self.parameterization.copy()
+        if self.PLACEHOLDER_PARAM_NAME in parameterizations:
+            parameterizations[fn.__name__] = parameterizations.pop(self.PLACEHOLDER_PARAM_NAME)
+        parametrization = parameterizations[output_name]
         upstream_dependencies = {
             parameter: replacement.source
             for parameter, replacement in parametrization.items()
@@ -852,3 +866,37 @@ class parameterize_extract_columns(base.NodeExpander):
 
     def validate(self, fn: Callable):
         extract_columns.validate_return_type(fn)
+
+
+class inject(parameterize):
+    """
+    @inject allows you to replace parameters with values passed in. You can think of
+    it as a `@parameterize` call that has only one parameterization, the result of which
+    is the name of the function. See the following examples:
+
+    .. code-block:: python
+
+        import pandas as pd
+        from function_modifiers import inject, source, value, group
+
+        @inject(nums=group(source('a'), value(10), source('b'), value(2)))
+        def a_plus_10_plus_b_plus_2(nums: List[int]) -> int:
+            return sum(nums)
+
+        This would be equivalent to:
+
+        @parameterize(
+            a_plus_10_plus_b_plus_2={
+                'nums': group(source('a'), value(10), source('b'), value(2))
+            })
+        def sum_numbers(nums: List[int]) -> int:
+            return sum(nums)
+    """
+
+    def __init__(self, **key_mapping: ParametrizedDependency):
+        """Instantiates an @inject decorator with the given key_mapping.
+
+        :param key_mapping: A dictionary of string to dependency spec.
+        This is the same as the input mapping in `@parameterize`.
+        """
+        super(inject, self).__init__(**{parameterize.PLACEHOLDER_PARAM_NAME: key_mapping})
