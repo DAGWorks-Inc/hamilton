@@ -11,7 +11,6 @@ from hamilton import node, registry
 from hamilton.dev_utils import deprecation
 from hamilton.function_modifiers import base
 from hamilton.function_modifiers.dependencies import (
-    GroupedListDependency,
     ParametrizedDependency,
     ParametrizedDependencySource,
     source,
@@ -161,15 +160,19 @@ class parameterize(base.NodeExpander):
             parameterization_splits = self.split_parameterizations(parameterization)
             upstream_dependencies = parameterization_splits[ParametrizedDependencySource.UPSTREAM]
             literal_dependencies = parameterization_splits[ParametrizedDependencySource.LITERAL]
-            grouped_dependencies = parameterization_splits[
+            grouped_list_dependencies = parameterization_splits[
                 ParametrizedDependencySource.GROUPED_LIST
+            ]
+            grouped_dict_dependencies = parameterization_splits[
+                ParametrizedDependencySource.GROUPED_DICT
             ]
 
             def replacement_function(
                 *args,
                 upstream_dependencies=upstream_dependencies,
                 literal_dependencies=literal_dependencies,
-                grouped_dependencies=grouped_dependencies,
+                grouped_list_dependencies=grouped_list_dependencies,
+                grouped_dict_dependencies=grouped_dict_dependencies,
                 **kwargs,
             ):
                 """This function rewrites what is passed in kwargs to the right kwarg for the function."""
@@ -179,7 +182,12 @@ class parameterize(base.NodeExpander):
                     new_kwargs[dependency] = new_kwargs.pop(replacement.source)
                 for dependency, replacement in literal_dependencies.items():
                     new_kwargs[dependency] = replacement.value
-                for dependency, replacement in grouped_dependencies.items():
+
+                # TODO -- the following two should be able to be merged
+                # We should be able to utilize this as part of the GroupedDependency class and share logic
+                # Not immediately clear what the interface should be and we only have two (list and dict)
+                # So we're going to hold off for now
+                for dependency, replacement in grouped_list_dependencies.items():
                     # TODO -- use the code above to make this cleaner
                     # We should be able to put this logic in the dependency type and use OO programming
                     # Just not sure about the abstraction yet so we're putting it here
@@ -204,9 +212,35 @@ class parameterize(base.NodeExpander):
                             raise ValueError(
                                 f"Grouped dependencies cannot contain type: {specific_value}"
                             )
+                for dependency, replacement in grouped_dict_dependencies.items():
+                    # TODO -- use the code above to make this cleaner
+                    # We should be able to put this logic in the dependency type and use OO programming
+                    # Just not sure about the abstraction yet so we're putting it here
+                    new_kwargs[dependency] = {}
+                    for key, specific_value in replacement.sources.items():
+                        if (
+                            specific_value.get_dependency_type()
+                            == ParametrizedDependencySource.UPSTREAM
+                        ):
+                            # This will break if we reuse the same parameter as another component
+                            # of the function TODO -- fix it -- we should be able to grab the
+                            #  arguments we already popped from kwargs Alternatively we can do
+                            #  this in two passes (1) we gather all the dependencies we need and
+                            #  then (2) we pop them from kwargs and store them
+                            new_kwargs[dependency][key] = new_kwargs.pop(specific_value.source)
+                        elif (
+                            specific_value.get_dependency_type()
+                            == ParametrizedDependencySource.LITERAL
+                        ):
+                            new_kwargs[dependency][key] = specific_value.value
+                        else:
+                            raise ValueError(
+                                f"Grouped dependencies cannot contain type: {specific_value}"
+                            )
                 return node_.callable(*args, **new_kwargs)
 
             new_input_types = {}
+            grouped_dependencies = {**grouped_list_dependencies, **grouped_dict_dependencies}
             for param, val in node_.input_types.items():
                 if param in upstream_dependencies:
                     new_input_types[
@@ -215,9 +249,17 @@ class parameterize(base.NodeExpander):
                 elif param in grouped_dependencies:
                     # These are the components of the individual sequence
                     # E.G. if the parameter is List[int], the individual type is just int
-                    sequence_component_type = GroupedListDependency.get_type(val[0], param)
                     grouped_dependency_spec = grouped_dependencies[param]
-                    for dep in grouped_dependency_spec.sources:
+                    sequence_component_type = grouped_dependency_spec.resolve_dependency_type(
+                        val[0], param
+                    )
+                    unpacked_dependencies = (
+                        grouped_dependency_spec.sources
+                        if grouped_dependency_spec.get_dependency_type()
+                        == ParametrizedDependencySource.GROUPED_LIST
+                        else grouped_dependency_spec.sources.values()
+                    )
+                    for dep in unpacked_dependencies:
                         if dep.get_dependency_type() == ParametrizedDependencySource.UPSTREAM:
                             # TODO -- think through what happens if we have optional pieces...
                             # I think that we shouldn't allow it...
@@ -287,6 +329,29 @@ class parameterize(base.NodeExpander):
                     else:
                         origin = typing_inspect.get_origin(param_annotation)
                         if origin != list:
+                            invalid_types.append((param, param_annotation))
+                    # 3.9 + this works
+                    # 3.8 they changed it, so it gives false positives, but we're OK not fixing
+                    # for older versions of python
+                    args = typing_inspect.get_args(param_annotation)
+                    if not len(args) == 1:
+                        invalid_types.append((param, param_annotation))
+                elif (
+                    replacement_value.get_dependency_type()
+                    == ParametrizedDependencySource.GROUPED_DICT
+                ):
+                    param_annotation = type_hints[param]
+                    is_generic = typing_inspect.is_generic_type(param_annotation)
+                    if not is_generic:
+                        invalid_types.append((param, param_annotation))
+                    else:
+                        origin = typing_inspect.get_origin(param_annotation)
+                        if origin != dict:
+                            invalid_types.append((param, param_annotation))
+                        args = typing_inspect.get_args(param_annotation)
+                        if not len(args) == 2:
+                            invalid_types.append((param, param_annotation))
+                        elif args[0] != str:
                             invalid_types.append((param, param_annotation))
             if invalid_types:
                 raise base.InvalidDecoratorException(
@@ -453,8 +518,10 @@ class parameterize_sources(parameterize):
     warn_starting=(1, 10, 0),
     fail_starting=(2, 0, 0),
     use_this=parameterize_sources,
-    explanation="We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs",
-    migration_guide="https://github.com/dagworks-inc/hamilton/blob/main/decorators.md#migrating-parameterized",
+    explanation="We now support three parametrize decorators. @parameterize, "
+    "@parameterize_values, and @parameterize_inputs",
+    migration_guide="https://github.com/dagworks-inc/hamilton/blob/main/decorators.md#migrating"
+    "-parameterized",
 )
 class parametrized_input(parameterize):
     def __init__(self, parameter: str, variable_inputs: Dict[str, Tuple[str, str]]):
@@ -891,6 +958,10 @@ class inject(parameterize):
             })
         def sum_numbers(nums: List[int]) -> int:
             return sum(nums)
+    Something to note -- we currently do not support the case in which the same parameter is utilized
+    multiple times as an injection. E.G. two lists, a list and a dict, two sources, etc...
+
+    This is considered undefined behavior, and should be avoided.
     """
 
     def __init__(self, **key_mapping: ParametrizedDependency):
