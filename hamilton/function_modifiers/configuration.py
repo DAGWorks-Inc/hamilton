@@ -1,5 +1,6 @@
 from typing import Any, Callable, Collection, Dict, List, Optional
 
+from .. import node
 from . import base
 
 """Decorators that handle the configuration of a function. These can be viewed as
@@ -75,11 +76,11 @@ class config(base.NodeResolver):
         self.target_name = target_name
         self._config_used = config_used
 
-    def required_config(self) -> Optional[List[str]]:
+    def required_config(self, fn: Callable, nodes: Collection[node.Node]) -> Optional[List[str]]:
         """Nothing is currently required"""
         return []  # All of these can default to None
 
-    def optional_config(self) -> Dict[str, Any]:
+    def optional_config(self, fn: Callable, nodes: Collection[node.Node]) -> Dict[str, Any]:
         """Everything is optional with None as the required value"""
         return {key: None for key in self._config_used}
 
