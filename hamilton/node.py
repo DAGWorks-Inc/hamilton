@@ -152,7 +152,7 @@ class Node(object):
         return hash(self._name)
 
     def __repr__(self):
-        return f"<{self._name} {self._tags}>"
+        return f"<{self.name} {self._tags}>"
 
     def __eq__(self, other: "Node"):
         """Want to deeply compare nodes in a custom way.
