@@ -42,7 +42,7 @@ def create_temporary_module(*functions: Callable, module_name: str = None) -> Mo
         fn_name = fn.__name__
         if hasattr(module, fn_name):
             raise ValueError(
-                f"Duplicate/reserved function name: {fn_name} cannot be used to create a dynamic module."
+                f"Duplicate/reserved function name: {fn_name} cannot be used to create a temporary module."
             )
         fn.__module__ = module.__name__
         setattr(module, fn_name, fn)

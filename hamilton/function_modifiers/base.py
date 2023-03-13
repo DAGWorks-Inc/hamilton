@@ -1,6 +1,7 @@
 import abc
 import collections
 import functools
+import itertools
 import logging
 
 try:
@@ -453,16 +454,6 @@ class DefaultNodeResolver(NodeResolver):
         pass
 
 
-class DefaultNodeExpander(NodeExpander):
-    def expand_node(
-        self, node_: node.Node, config: Dict[str, Any], fn: Callable
-    ) -> Collection[node.Node]:
-        return [node_]
-
-    def validate(self, fn: Callable):
-        pass
-
-
 class DefaultNodeDecorator(NodeDecorator):
     def __init__(self):
         super().__init__(target=...)
@@ -498,10 +489,21 @@ def resolve_config(
     return config_out
 
 
+class DynamicResolver(NodeTransformLifecycle):
+    @classmethod
+    def get_lifecycle_name(cls) -> str:
+        return "dynamic"
+
+    @classmethod
+    def allows_multiple(cls) -> bool:
+        return True
+
+    def validate(self, fn: Callable):
+        pass
+
+
 def filter_config(config: Dict[str, Any], decorator: NodeTransformLifecycle) -> Dict[str, Any]:
     """Filters the config to only include the keys in config_required
-    TODO -- break this into two so we can make it easier to test.
-
     :param config: The config to filter
     :param config_required: The keys to include
     :param decorator: The decorator that is utilizing the configuration
@@ -514,6 +516,38 @@ def filter_config(config: Dict[str, Any], decorator: NodeTransformLifecycle) -> 
         # Note this is an internal API, but we made the config with the `resolve` parameter public
         return config
     return resolve_config(decorator.name, config, config_required, config_optional_with_defaults)
+
+
+def get_node_decorators(
+    fn: Callable, config: Dict[str, Any]
+) -> Dict[str, List[NodeTransformLifecycle]]:
+    """Gets the decorators for a function. Contract is this will have one entry
+    for every step of the decorator lifecycle that can always be run (currently everything except NodeExpander)
+
+    :param fn:
+    :return:
+    """
+    defaults = {
+        NodeResolver.get_lifecycle_name(): [DefaultNodeResolver()],
+        NodeCreator.get_lifecycle_name(): [DefaultNodeCreator()],
+        NodeExpander.get_lifecycle_name(): [],
+        NodeTransformer.get_lifecycle_name(): [],
+        NodeDecorator.get_lifecycle_name(): [DefaultNodeDecorator()],
+    }
+    dynamic_decorators = []
+    for dynamic_resolver in getattr(fn, DynamicResolver.get_lifecycle_name(), []):
+        dynamic_decorators.append(dynamic_resolver.resolve(config, fn))
+    all_decorators = list(
+        itertools.chain(
+            *[getattr(fn, lifecycle_step, []) for lifecycle_step in defaults],
+            dynamic_decorators,
+        )
+    )
+    grouped_by_lifecycle_step = collections.defaultdict(list)
+    for decorator in all_decorators:
+        grouped_by_lifecycle_step[decorator.get_lifecycle_name()].append(decorator)
+    defaults.update(grouped_by_lifecycle_step)
+    return defaults
 
 
 def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
@@ -546,21 +580,23 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     which configuration they need.
     :return: A list of nodes into which this function transforms.
     """
-    node_resolvers = getattr(fn, NodeResolver.get_lifecycle_name(), [DefaultNodeResolver()])
+    function_decorators = get_node_decorators(fn, config)
+    node_resolvers = function_decorators[NodeResolver.get_lifecycle_name()]
     for resolver in node_resolvers:
         fn = resolver.resolve(fn, config=filter_config(config, resolver))
         if fn is None:
             return []
-    (node_creator,) = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
+    (node_creator,) = function_decorators[NodeCreator.get_lifecycle_name()]
     nodes = node_creator.generate_nodes(fn, filter_config(config, node_creator))
-    if hasattr(fn, NodeExpander.get_lifecycle_name()):
-        (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
+    node_expanders = function_decorators[NodeExpander.get_lifecycle_name()]
+    if len(node_expanders) > 0:
+        (node_expander,) = node_expanders
         nodes = node_expander.transform_dag(nodes, filter_config(config, node_expander), fn)
-    node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
+    node_transformers = function_decorators[NodeTransformer.get_lifecycle_name()]
     for dag_modifier in node_transformers:
         nodes = dag_modifier.transform_dag(nodes, filter_config(config, dag_modifier), fn)
-    node_decorators = getattr(fn, NodeDecorator.get_lifecycle_name(), [DefaultNodeDecorator()])
-    for node_decorator in node_decorators:
+    function_decorators = function_decorators[NodeDecorator.get_lifecycle_name()]
+    for node_decorator in function_decorators:
         nodes = node_decorator.transform_dag(nodes, filter_config(config, node_decorator), fn)
     return nodes
 

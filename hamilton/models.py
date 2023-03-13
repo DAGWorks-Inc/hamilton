@@ -5,13 +5,13 @@ import pandas as pd
 
 
 class DynamicTransformBase(abc.ABC):
-    """Abstract class for a dynamic transform as seen by hamilton.
+    """Abstract class for a dynamic transform transform as seen by hamilton.
     These are transforms that come from configuration parameters, and define the following:
     1. The nodes that they depend on
     2. What the transform does
 
     Paired with the decorator @dynamic_transform(CLS, config_item, **extra_params) one can write incredibly powerful
-    DAGs that depend on dynamic configs.
+    DAGs that depend on dynamic transform configs.
     """
 
     def __init__(self, config_parameters: Any, name: str):

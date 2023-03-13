@@ -1,13 +1,21 @@
 import importlib
+import os
 import sys
+from unittest import mock
 
 import pytest
 
 import hamilton.driver
 import tests.resources.data_quality
-
-# import tests.resources.smoke_screen_module
+import tests.resources.dynamic_config
+from hamilton import settings
 from hamilton.data_quality.base import DataValidationError, ValidationResult
+
+
+@pytest.fixture(autouse=True)
+def power_user_mode():
+    with mock.patch.dict(os.environ, {"HAMILTON_POWER_USER_MODE": "true"}):
+        yield
 
 
 def test_data_quality_workflow_passes():
@@ -87,3 +95,28 @@ def test_smoke_screen_module(future_import_annotations, monkeypatch):
     assert abs(df.mean()["neutral_net_acquisition_cost"] - 0.405582) < epsilon
     assert abs(df.mean()["optimistic_net_acquisition_cost"] - 0.399363) < epsilon
     assert df["series_with_start_date_end_date"].iloc[0] == "date_20200101_date_20220801"
+
+
+def test_end_to_end_with_dynamic_config():
+    config = {
+        "columns_to_sum_map": {
+            "ab": ["a", "b"],
+            "cd": ["c", "d"],
+            "ed": ["e", "d"],
+            "ae": ["a", "e"],
+            # You can create some crazy self-referential stuff
+            "abcd": ["ab", "cd"],
+            "abcdcd": ["abcd", "cd"],
+        },
+        settings.ENABLE_POWER_USER_MODE: True,
+    }
+    module = tests.resources.dynamic_config
+    dr = hamilton.driver.Driver(config, module)
+
+    out = dr.execute(final_vars=list(config["columns_to_sum_map"].keys()))
+    assert out["ab"][0] == 2
+    assert out["cd"][0] == 2
+    assert out["ed"][0] == 2
+    assert out["ae"][0] == 2
+    assert out["abcd"][0] == 4
+    assert out["abcdcd"][0] == 6
