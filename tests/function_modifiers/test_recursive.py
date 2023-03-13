@@ -1,5 +1,6 @@
 import collections
 import random
+from typing import Tuple
 
 import tests.resources.reuse_subdag
 from hamilton import ad_hoc_utils, graph
@@ -209,3 +210,48 @@ def test_reuse_subdag_end_to_end():
     assert fg.nodes["v3.d"].callable(**{"v3.c": 10, "a": 100}) == 100 + 10
     res = fg.execute(nodes=[fg.nodes["sum_everything"]])
     assert res["sum_everything"] == 318
+
+
+def test_parameterize_subdag():
+    def bar(input_1: int) -> int:
+        return input_1 + 1
+
+    def foo(input_2: int) -> int:
+        return input_2 + 1
+
+    @config.when(baz_version="standard")
+    def baz__standard(foo: int, bar: int) -> int:
+        return foo + bar
+
+    @config.when(baz_version="alternate")
+    def baz__alternate(foo: int, bar: int) -> int:
+        return foo * bar
+
+    def subdag_processor(foo: int, bar: int, baz: int) -> Tuple[int, int, int]:
+        return foo, bar, baz
+
+    fns = [bar, foo, baz__standard, baz__alternate]
+
+    decorator = recursive.parameterized_subdag(
+        *fns,
+        inputs={"input_1": source("external_input_1"), "input_2": source("external_input_2")},
+        config={"baz_version": "standard"},
+        v0={},
+        v1={"config": {"baz_version": "standard"}, "inputs": {"input_1": value(100)}},
+        v2={
+            "config": {"baz_version": "alternate"},
+            "inputs": {"input_2": value(200)},
+        },
+    )
+    dag_generated = decorator.generate_nodes(subdag_processor, {})
+    assert len(dag_generated) == len(set([item.name for item in dag_generated]))
+    nodes_by_name = {node.name: node for node in dag_generated}
+    assert "v0" in nodes_by_name
+    assert "v1" in nodes_by_name
+    assert "v2" in nodes_by_name
+    assert "v0.baz" in nodes_by_name
+    assert "v1.baz" in nodes_by_name
+    assert "v2.baz" in nodes_by_name
+    assert nodes_by_name["v0.baz"].callable(**{"v0.foo": 1, "v0.bar": 2}) == 3
+    assert nodes_by_name["v1.baz"].callable(**{"v1.foo": 1, "v1.bar": 2}) == 3
+    assert nodes_by_name["v2.baz"].callable(**{"v2.foo": 1, "v2.bar": 2}) == 2
