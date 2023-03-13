@@ -1,3 +1,4 @@
+import typing
 from types import ModuleType
 from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
 
@@ -6,6 +7,7 @@ from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
 from hamilton import graph_utils, node
 from hamilton.function_modifiers import base, dependencies
 from hamilton.function_modifiers.base import InvalidDecoratorException
+from hamilton.function_modifiers.dependencies import ParametrizedDependency
 
 
 def assign_namespace(node_name: str, namespace: str) -> str:
@@ -141,24 +143,25 @@ class subdag(base.NodeCreator):
     def __init__(
         self,
         *load_from: Union[ModuleType, Callable],
-        inputs: Dict[
-            str, Union[dependencies.ParametrizedDependency, dependencies.LiteralDependency]
-        ],
+        inputs: Dict[str, ParametrizedDependency],
         config: Dict[str, Any] = None,
+        namespace: str = None,
     ):
         """Adds a subDAG to the main DAG.
 
         :param load_from: The functions that will be used to generate this subDAG.
-        :param namespace: Namespace with which to prefix nodes.
-        :param with_inputs: Parameterized dependencies to inject into all sources of this subDAG.\
+        :param inputs: Parameterized dependencies to inject into all sources of this subDAG.\
         This should *not* be an intermediate node in the subDAG.
-        :param outputs: A dictionary of original node name -> output node name that forms the output of this DAG.
-        :param with_config: A configuration dictionary for *just* this subDAG. Note that this passed in value takes precedence.
+        :param config: A configuration dictionary for *just* this subDAG. Note that this passed in
+        value takes precedence over the DAG's config.
+        :param namespace: Namespace with which to prefix nodes. This is optional -- if not included,
+        this will default to the function name.
         """
         self.subdag_functions = subdag.collect_functions(load_from)
         self.inputs = inputs if inputs is not None else {}
         self.config = config if config is not None else {}
         self._validate_config_inputs(config, inputs)
+        self.namespace = namespace
 
     def _validate_config_inputs(self, config: Dict[str, Any], inputs: Dict[str, Any]):
         """Validates that the inputs specified in the config are valid.
@@ -337,7 +340,7 @@ class subdag(base.NodeCreator):
         # Resolve all nodes from passed in functions
         nodes = self._collect_nodes(original_config=configuration)
         # Derive the namespace under which all these nodes will live
-        namespace = self._derive_namespace(fn)
+        namespace = self._derive_namespace(fn) if self.namespace is None else self.namespace
         # Rename them all to have the right namespace
         nodes = self._add_namespace(nodes, namespace)
         # Create any static input nodes we need to translate
@@ -358,10 +361,117 @@ class subdag(base.NodeCreator):
             )
 
     def validate(self, fn):
-        """Validates everything we can before the
+        """Validates everything we can before we create the subdag.
 
         :param fn: Function that this decorates
         :raises InvalidDecoratorException: if this is not a valid decorator
         """
 
         self._validate_parameterization()
+
+
+class SubdagParams(typing.TypedDict):
+    inputs: Dict[str, ParametrizedDependency]
+    config: Dict[str, Any]
+
+
+class parameterized_subdag(base.NodeCreator):
+    """parameterized subdag is when you want to create multiple subdags at one time.
+    Why do you want to do this?
+
+    1. You have multiple data sets you want to run the same feature engineering pipeline on.
+    2. You want to run some sort of optimization routine with a variety of results
+    3. You want to run some sort of pipeline over slightly different configuration (E.G. region/business line)
+
+    Note that this really is just syntactic sugar for creating multiple subdags, just as `@parameterize
+    is syntactic sugar for creating multiple nodes from a function. That said, it is common that you
+    won't know what you want until compile time (E.G. when you have the config available), so this
+    decorator along with the `@resolve` decorator is a good way to make that feasible. Note that
+    we are getting into *advanced* Hamilton here -- we don't recommend starting with this. In fact,
+    we generally recommend repeating subdags multiple times if you don't have too many. That said,
+    that can get cumbersome if you have a lot, so this decorator is a good way to help with that.
+
+    Let's take a look at an example:
+
+    .. code-block:: python
+
+        @parameterize_subdag(
+            feature_modules,
+            parameterization={
+                "from_datasource_1" : {"inputs" : {"data" : value("datasource_1.csv"}},
+                "from_datasource_2" : {"inputs" : {"data" : value("datasource_2.csv"}},
+                "from_datasource_3" : {
+                    "inputs" : {"data" : value("datasource_3.csv"},
+                    "config" : {"filter" : "only_even_client_ids"}},
+            }
+        )
+        def feature_engineering(feature_df: pd.DataFrame) -> pd.DataFrame:
+            return feature_df
+
+    This is (obviously) contrived, but what it does is create three subdags, each with a different
+    data source. The third one also applies a configuration to that subdag. Note that we can also
+    pass in inputs/config to the decorator itself, which will be applied to all subdags.
+
+    This is effectively the same as the example above.
+
+    .. code-block:: python
+
+        @parameterize_subdag(
+            feature_modules,
+            inputs={"data" : value("datasource_1.csv")},
+            parameterization={
+                "from_datasource_1" : {},
+                "from_datasource_2" : {"inputs" : {"data" : value("datasource_2.csv"}},
+                "from_datasource_3" : {
+                    "inputs" : {"data" : value("datasource_3.csv"},
+                    "config" : {"filter" : "only_even_client_ids"}},
+            }
+        )
+
+    Again, think about whether this feature is really the one you want -- often times, verbose,
+    static DAGs are far more readable than very concise, highly parameterized DAGs.
+    """
+
+    def __init__(
+        self,
+        *load_from: Union[ModuleType, Callable],
+        inputs: Dict[
+            str, Union[dependencies.ParametrizedDependency, dependencies.LiteralDependency]
+        ] = None,
+        config: Dict[str, Any] = None,
+        parameterization: Dict[str, SubdagParams],
+    ):
+        """Initializes a parameterized_subdag decorator.
+
+        :param load_from: Modules to load from
+        :param inputs: Inputs for each subdag generated by the decorated function
+        :param config: Config for each subdag generated by the decorated function
+        :param parameterizations: Inputs/configs for the parameterizations of the subdag.
+        These override anything passed into the decorator.
+        """
+        self.load_from = load_from
+        self.inputs = inputs if inputs is not None else {}
+        self.config = config if config is not None else {}
+        self.parameterization = parameterization
+
+    def _gather_subdag_generators(self) -> List[subdag]:
+        subdag_generators = []
+        for key, parameterization in self.parameterization.items():
+            subdag_generators.append(
+                subdag(
+                    *self.load_from,
+                    inputs={**self.inputs, **parameterization["inputs"]},
+                    config={**self.config, **parameterization["config"]},
+                )
+            )
+        return subdag_generators
+
+    def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> List[node.Node]:
+        generated_nodes = []
+        for subdag_generator in self._gather_subdag_generators():
+            generated_nodes.extend(subdag_generator.generate_nodes(fn, config))
+        return generated_nodes
+
+    def validate(self, fn: Callable):
+        for subdag_generator in self._gather_subdag_generators():
+            subdag_generator.validate(fn)
