@@ -144,7 +144,7 @@ class subdag(base.NodeCreator):
     def __init__(
         self,
         *load_from: Union[ModuleType, Callable],
-        inputs: Dict[str, ParametrizedDependency],
+        inputs: Dict[str, ParametrizedDependency] = None,
         config: Dict[str, Any] = None,
         namespace: str = None,
         final_node_name: str = None,
@@ -164,7 +164,7 @@ class subdag(base.NodeCreator):
         self.subdag_functions = subdag.collect_functions(load_from)
         self.inputs = inputs if inputs is not None else {}
         self.config = config if config is not None else {}
-        self._validate_config_inputs(config, inputs)
+        self._validate_config_inputs(self.config, self.inputs)
         self.namespace = namespace
         self.final_node_name = final_node_name
 

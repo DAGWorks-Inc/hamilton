@@ -139,6 +139,20 @@ def test_reuse_subdag_allows_config_as_input():
     assert nodes["baz.bar"](**{"baz.b": 100}) == 100
 
 
+def test_subdag_empty_config():
+    @config.when_not(some_config_param=False)
+    def baz(foo: int, bar: int) -> int:
+        return foo + bar
+
+    def subdag(baz: int) -> int:
+        return baz
+
+    decorator = recursive.subdag(baz, inputs={})
+    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(subdag, {})}
+    assert "subdag.baz" in nodes
+    assert "subdag" in nodes
+
+
 def test_reuse_subdag_end_to_end():
     fg = graph.FunctionGraph(tests.resources.reuse_subdag, config={"op": "subtract"})
     prefixless_nodes = []
