@@ -190,7 +190,9 @@ class Node(object):
         """
         if name is None:
             name = fn.__name__
-        return_type = typing.get_type_hints(fn)["return"]
+        return_type = typing.get_type_hints(fn).get("return")
+        if return_type is None:
+            raise ValueError(f"Missing type hint for return value in function {fn.__qualname__}.")
         module = inspect.getmodule(fn).__name__
         return Node(
             name,
