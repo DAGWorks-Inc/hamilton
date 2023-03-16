@@ -65,3 +65,4 @@ DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = validation.DATA_VALIDATOR_ORIGINAL_OUTPUT_T
 # recursive/subdag operators
 
 subdag = recursive.subdag
+parameterized_subdag = recursive.parameterized_subdag

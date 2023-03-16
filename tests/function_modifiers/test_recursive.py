@@ -4,7 +4,7 @@ from typing import Tuple
 
 import tests.resources.reuse_subdag
 from hamilton import ad_hoc_utils, graph
-from hamilton.function_modifiers import config, recursive, value
+from hamilton.function_modifiers import config, parameterized_subdag, recursive, value
 from hamilton.function_modifiers.dependencies import source
 
 
@@ -246,7 +246,7 @@ def test_parameterize_subdag():
 
     fns = [bar, foo, baz__standard, baz__alternate]
 
-    decorator = recursive.parameterized_subdag(
+    decorator = parameterized_subdag(
         *fns,
         inputs={"input_1": source("external_input_1"), "input_2": source("external_input_2")},
         config={"baz_version": "standard"},
