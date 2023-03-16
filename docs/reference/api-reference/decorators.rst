@@ -72,6 +72,11 @@ Actual decorators:
 .. autoclass:: hamilton.experimental.decorators.parameterize_frame.parameterize_frame
    :special-members: __init__
 
+@inject
+------------------------
+.. autoclass:: hamilton.function_modifiers.inject
+   :special-members: __init__
+
 @does
 ------------------------
 .. autoclass:: hamilton.function_modifiers.does
@@ -83,7 +88,12 @@ Actual decorators:
 .. autoclass:: hamilton.function_modifiers.subdag
    :special-members: __init__
 
-@delay_resolution
+@parameterize_subdag
+------------------------
+.. autoclass:: hamilton.function_modifiers.parameterized_subdag
+   :special-members: __init__
+
+@resolve
 ------------------------
 .. autoclass:: hamilton.function_modifiers.resolve
    :special-members: __init__
