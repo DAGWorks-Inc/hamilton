@@ -936,8 +936,7 @@ class parameterize_extract_columns(base.NodeExpander):
 
 
 class inject(parameterize):
-    """
-    @inject allows you to replace parameters with values passed in. You can think of
+    """@inject allows you to replace parameters with values passed in. You can think of
     it as a `@parameterize` call that has only one parameterization, the result of which
     is the name of the function. See the following examples:
 
@@ -958,6 +957,7 @@ class inject(parameterize):
             })
         def sum_numbers(nums: List[int]) -> int:
             return sum(nums)
+
     Something to note -- we currently do not support the case in which the same parameter is utilized
     multiple times as an injection. E.G. two lists, a list and a dict, two sources, etc...
 
@@ -968,6 +968,6 @@ class inject(parameterize):
         """Instantiates an @inject decorator with the given key_mapping.
 
         :param key_mapping: A dictionary of string to dependency spec.
-        This is the same as the input mapping in `@parameterize`.
+            This is the same as the input mapping in `@parameterize`.
         """
         super(inject, self).__init__(**{parameterize.PLACEHOLDER_PARAM_NAME: key_mapping})
