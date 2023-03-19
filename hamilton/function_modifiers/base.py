@@ -11,7 +11,7 @@ except ImportError:
     EllipsisType = type(...)
 from typing import Any, Callable, Collection, Dict, List, Optional, Union
 
-from hamilton import node, registry
+from hamilton import node, registry, settings
 
 logger = logging.getLogger(__name__)
 
@@ -476,16 +476,22 @@ def resolve_config(
     :param config_optional_with_defaults:
     :return:
     """
+    config_optional_with_global_defaults_applied = config_optional_with_defaults.copy()
+    config_optional_with_global_defaults_applied[
+        settings.ENABLE_POWER_USER_MODE
+    ] = config_optional_with_global_defaults_applied.get(settings.ENABLE_POWER_USER_MODE, False)
     missing_keys = (
-        set(config_required) - set(config.keys()) - set(config_optional_with_defaults.keys())
+        set(config_required)
+        - set(config.keys())
+        - set(config_optional_with_global_defaults_applied.keys())
     )
     if len(missing_keys) > 0:
         raise MissingConfigParametersException(
             f"The following configurations are required by {name_for_error}: {missing_keys}"
         )
     config_out = {key: config[key] for key in config_required}
-    for key in config_optional_with_defaults:
-        config_out[key] = config.get(key, config_optional_with_defaults[key])
+    for key in config_optional_with_global_defaults_applied:
+        config_out[key] = config.get(key, config_optional_with_global_defaults_applied[key])
     return config_out
 
 

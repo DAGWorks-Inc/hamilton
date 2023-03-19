@@ -9,14 +9,18 @@ CONFIG_WITH_POWER_MODE_ENABLED = {
     settings.ENABLE_POWER_USER_MODE: True,
 }
 
+CONFIG_WITH_POWER_MODE_DISABLED = {
+    settings.ENABLE_POWER_USER_MODE: False,
+}
+
 
 @pytest.mark.parametrize(
     "fn,required,optional",
     [
-        (lambda: 1, [], []),
-        (lambda a, b: 1, ["a", "b"], []),
-        (lambda a, b=1: 1, ["a"], ["b"]),
-        (lambda a=1, b=1: 1, [], ["a", "b"]),
+        (lambda: 1, [], {}),
+        (lambda a, b: 1, ["a", "b"], {}),
+        (lambda a, b=1: 1, ["a"], {"b": 1}),
+        (lambda a=1, b=1: 1, [], {"a": 1, "b": 1}),
     ],
 )
 def test_extract_and_validate_params_happy(fn: Callable, required: Callable, optional: Callable):
@@ -54,14 +58,14 @@ def test_dynamic_resolves():
     assert decorator_resolved.columns == ("a", "b")
 
 
-def test_dynamic_fails_without_config_provided():
+def test_dynamic_fails_without_power_mode_fails():
     decorator = resolve(
         when=ResolveAt.CONFIG_AVAILABLE,
         decorate_with=lambda cols_to_extract: extract_columns(*cols_to_extract),
     )
     with pytest.raises(base.InvalidDecoratorException):
         decorator_resolved = decorator.resolve(
-            CONFIG_WITH_POWER_MODE_ENABLED, fn=test_dynamic_fails_without_config_provided
+            CONFIG_WITH_POWER_MODE_DISABLED, fn=test_dynamic_fails_without_power_mode_fails
         )
         # This uses an internal component of extract_columns
         # We may want to add a little more comprehensive testing
@@ -77,10 +81,9 @@ def test_config_derivation():
         ),
     )
     assert decorator.required_config() == ["cols_to_extract"]
-    assert decorator.optional_config() == [
-        "some_cols_you_might_want_to_extract",
-        settings.ENABLE_POWER_USER_MODE,
-    ]
+    assert decorator.optional_config() == {
+        "some_cols_you_might_want_to_extract": [],
+    }
 
 
 def test_delayed_with_optional():
@@ -114,4 +117,7 @@ def test_delayed_without_power_mode_fails():
         ]: extract_columns(*cols_to_extract + some_cols_you_might_want_to_extract),
     )
     with pytest.raises(base.InvalidDecoratorException):
-        decorator.resolve({"cols_to_extract": ["a", "b"]}, fn=test_delayed_with_optional)
+        decorator.resolve(
+            {"cols_to_extract": ["a", "b"], **CONFIG_WITH_POWER_MODE_DISABLED},
+            fn=test_delayed_with_optional,
+        )
