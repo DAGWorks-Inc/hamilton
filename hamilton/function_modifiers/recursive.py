@@ -256,16 +256,13 @@ class subdag(base.NodeCreator):
         :param nodes:
         :return:
         """
-        already_namespaced_nodes = []
+        # already_namespaced_nodes = []
         new_nodes = []
         new_name_map = {}
         # First pass we validate + collect names so we can alter dependencies
         for node_ in nodes:
             new_name = assign_namespace(node_.name, namespace)
             new_name_map[node_.name] = new_name
-            current_node_namespaces = node_.namespace
-            if current_node_namespaces:
-                already_namespaced_nodes.append(node_)
         for dep, value in self.inputs.items():
             # We create nodes for both namespace assignment and source assignment
             # Why? Cause we need unique parameter names, and with source() some can share params
@@ -274,11 +271,6 @@ class subdag(base.NodeCreator):
         for dep, value in self.config.items():
             new_name_map[dep] = assign_namespace(dep, namespace)
 
-        if already_namespaced_nodes:
-            raise ValueError(
-                f"The following nodes are already namespaced: {already_namespaced_nodes}. "
-                f"We currently do not allow for multiple namespaces (E.G. layered subDAGs)."
-            )
         # Reassign sources
         for node_ in nodes:
             new_name = new_name_map[node_.name]
