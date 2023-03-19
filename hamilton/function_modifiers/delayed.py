@@ -17,7 +17,7 @@ class ResolveAt(enum.Enum):
 VALID_PARAM_KINDS = [inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY]
 
 
-def extract_and_validate_params(fn: Callable) -> Tuple[List[str], List[str]]:
+def extract_and_validate_params(fn: Callable) -> Tuple[List[str], Dict[str, Any]]:
     """Gets the parameters from a function, while validating that
     the function has *only* named arguments.
 
@@ -27,14 +27,14 @@ def extract_and_validate_params(fn: Callable) -> Tuple[List[str], List[str]]:
     """
     invalid_params = []
     required_params = []
-    optional_params = []
+    optional_params = {}
     sig = inspect.signature(fn)
     for key, value in inspect.signature(fn).parameters.items():
         if value.kind not in VALID_PARAM_KINDS:
             invalid_params.append(key)
         else:
             if value.default is not value.empty:
-                optional_params.append(key)
+                optional_params[key] = value.default
             else:
                 required_params.append(key)
     if invalid_params:
@@ -122,11 +122,11 @@ class resolve(DynamicResolver):
     def required_config(self) -> Optional[List[str]]:
         return self._required_config
 
-    def optional_config(self) -> Optional[List[str]]:
-        return self._optional_config + [settings.ENABLE_POWER_USER_MODE]
+    def optional_config(self) -> Optional[Dict[str, Any]]:
+        return self._optional_config
 
     def resolve(self, config: Dict[str, Any], fn: Callable) -> NodeTransformLifecycle:
-        if not config.get(settings.ENABLE_POWER_USER_MODE, False):
+        if not config[settings.ENABLE_POWER_USER_MODE]:
             raise InvalidDecoratorException(
                 "Dynamic functions are only allowed in power user mode!"
                 "Why? This is occasionally needed to enable highly flexible "
