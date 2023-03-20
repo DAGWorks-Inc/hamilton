@@ -33,6 +33,7 @@ config = configuration.config
 # Helper functions to specify dependency sources for parameterization
 value = dependencies.value
 source = dependencies.source
+group = dependencies.group
 
 # These aren't strictly part of the API but we should have them here for safety
 LiteralDependency = dependencies.LiteralDependency
