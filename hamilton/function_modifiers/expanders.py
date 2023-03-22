@@ -565,7 +565,7 @@ class parameterized_inputs(parameterize_sources):
     pass
 
 
-class extract_columns(base.NodeExpander):
+class extract_columns(base.SingleNodeNodeTransformer):
     def __init__(self, *columns: Union[Tuple[str, str], str], fill_with: Any = None):
         """Constructor for a modifier that expands a single function into the following nodes:
 
@@ -577,6 +577,7 @@ class extract_columns(base.NodeExpander):
         value? Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a \
         column.
         """
+        super(extract_columns, self).__init__()
         if not columns:
             raise base.InvalidDecoratorException(
                 "Error empty arguments passed to extract_columns decorator."
@@ -599,7 +600,8 @@ class extract_columns(base.NodeExpander):
         except NotImplementedError:
             raise base.InvalidDecoratorException(
                 # TODO: capture was dataframe libraries are supported and print here.
-                f"Error {fn} does not output a type we know about. Is it a dataframe type we support?"
+                f"Error {fn} does not output a type we know about. Is it a dataframe type we "
+                f"support? "
             )
 
     def validate(self, fn: Callable):
@@ -610,13 +612,13 @@ class extract_columns(base.NodeExpander):
         """
         extract_columns.validate_return_type(fn)
 
-    def expand_node(
+    def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """For each column to extract, output a node that extracts that column. Also, output the original dataframe
         generator.
-
-        :param config:
+        :param node_: Node to transform
+        :param config: Config to use
         :param fn: Function to extract columns from. Must output a dataframe.
         :return: A collection of nodes --
                 one for the original dataframe generator, and another for each column to extract.
@@ -692,7 +694,7 @@ class extract_columns(base.NodeExpander):
         return output_nodes
 
 
-class extract_fields(base.NodeExpander):
+class extract_fields(base.SingleNodeNodeTransformer):
     """Extracts fields from a dictionary of output."""
 
     def __init__(self, fields: dict, fill_with: Any = None):
@@ -706,6 +708,7 @@ class extract_fields(base.NodeExpander):
         value? Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a \
         field value.
         """
+        super(extract_fields, self).__init__()
         if not fields:
             raise base.InvalidDecoratorException(
                 "Error an empty dict, or no dict, passed to extract_fields decorator."
@@ -755,7 +758,7 @@ class extract_fields(base.NodeExpander):
                 f"For extracting fields, output type must be a dict or typing.Dict, not: {output_type}"
             )
 
-    def expand_node(
+    def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """For each field to extract, output a node that extracts that field. Also, output the original TypedDict
@@ -924,7 +927,7 @@ class parameterize_extract_columns(base.NodeExpander):
             )
             extract_columns_decorator = extract_columns(*parameterization.outputs)
             output_nodes.extend(
-                extract_columns_decorator.expand_node(
+                extract_columns_decorator.transform_node(
                     parameterized_node, config, parameterized_node.callable
                 )
             )
