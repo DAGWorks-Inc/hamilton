@@ -3,6 +3,7 @@ import collections
 import functools
 import itertools
 import logging
+from abc import ABC
 
 try:
     from types import EllipsisType
@@ -14,7 +15,6 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Union
 from hamilton import node, registry, settings
 
 logger = logging.getLogger(__name__)
-
 
 if not registry.INITIALIZED:
     # Trigger load of extensions here because decorators are the only thing that use the registry
@@ -273,6 +273,34 @@ TargetType = Union[str, Collection[str], None, EllipsisType]
 
 
 class NodeTransformer(SubDAGModifier):
+    @classmethod
+    def _early_validate_target(cls, target: TargetType, allow_multiple: bool):
+        """Determines whether the target is valid, given that we may or may not
+        want to allow multiple nodes to be transformed.
+
+        If the target type is a single string then we're good.
+        If the target type is a collection of strings, then it has to be a collection of size one.
+        If the target type is None, then we delay checking until later (as there might be just
+        one node transformed in the DAG).
+        If the target type is ellipsis, then we delay checking until later (as there might be
+        just one node transformed in the DAG)
+
+        :param target: How to appply this node. See docs below.
+        :param allow_multiple:  Whether or not this can operate on multiple nodes.
+        :raises InvalidDecoratorException: if the target is invalid given the value of allow_multiple.
+        """
+        if isinstance(target, str):
+            # We're good -- regardless of the value of allow_multiple we'll pass
+            return
+        elif isinstance(target, Collection) and all(isinstance(x, str) for x in target):
+            if len(target) > 1 and not allow_multiple:
+                raise InvalidDecoratorException(f"Cannot have multiple targets for . Got {target}")
+            return
+        elif target is None or target is Ellipsis:
+            return
+        else:
+            raise InvalidDecoratorException(f"Invalid target type for NodeTransformer: {target}")
+
     def __init__(self, target: TargetType):
         """Target determines to which node(s) this applies. This represents selection from a subDAG.
         For the options, consider at the following graph:
@@ -357,6 +385,25 @@ class NodeTransformer(SubDAGModifier):
         """
         return [node_ for node_ in all_nodes if node_ not in nodes_to_transform]
 
+    def transform_targets(
+        self, targets: Collection[node.Node], config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
+        """Transforms a set of target nodes. Note that this is just a loop,
+        but abstracting t away gives subclasses control over how this is done,
+        allowing them to validate beforehand. While we *could* just have this
+        as a `validate`, or `transforms_multiple` function, this is a pretty clean/
+        readable way to do it.
+
+        :param targets: Node Targets to transform
+        :param config: Configuration to use to
+        :param fn: Function being decorated
+        :return: Results of transformations
+        """
+        out = []
+        for node_to_transform in targets:
+            out += list(self.transform_node(node_to_transform, config, fn))
+        return out
+
     def transform_dag(
         self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
@@ -371,8 +418,7 @@ class NodeTransformer(SubDAGModifier):
         nodes_to_transform = self.select_nodes(self.target, nodes)
         nodes_to_keep = self.compliment(nodes, nodes_to_transform)
         out = list(nodes_to_keep)
-        for node_to_transform in nodes_to_transform:
-            out += list(self.transform_node(node_to_transform, config, fn))
+        out += self.transform_targets(nodes_to_transform, config, fn)
         return out
 
     @abc.abstractmethod
@@ -392,6 +438,39 @@ class NodeTransformer(SubDAGModifier):
     @classmethod
     def allows_multiple(cls) -> bool:
         return True
+
+
+class SingleNodeNodeTransformer(NodeTransformer, ABC):
+    """A node transformer that only allows a single node to be transformed.
+    Specifically, this must be applied to a decorator operation that returns
+    a single node (E.G. @subdag). Note that if you have multiple node transformations,
+    the order *does* matter.
+
+    This should end up killing NodeExpander, as it has the same impact, and the same API.
+    """
+
+    def __init__(self):
+        """Initializes the node transformer to only allow a single node to be transformed.
+        Note this passes target=None to the superclass, which means that it will only
+        apply to the 'sink' nodes produced."""
+        super().__init__(target=None)
+
+    def transform_targets(
+        self, targets: Collection[node.Node], config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
+        """Transforms the target set of nodes. Exists to validate the target set.
+
+        :param targets: Targets to transform -- this has to be an array of 1.
+        :param config: Configuration passed into the DAG.
+        :param fn: Function that was decorated.
+        :return: The resulting nodes.
+        """
+        if len(targets) != 1:
+            raise InvalidDecoratorException(
+                f"Expected a single node to transform, but got {len(targets)}. {self.__class__} "
+                f" can only operate on a single node, but multiple nodes were created by {fn.__qualname__}"
+            )
+        return super().transform_targets(targets, config, fn)
 
 
 class NodeDecorator(NodeTransformer, abc.ABC):

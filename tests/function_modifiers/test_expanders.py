@@ -228,7 +228,7 @@ def test_valid_column_extractor():
         return pd.DataFrame({"col_1": [1, 2, 3, 4], "col_2": [11, 12, 13, 14]})
 
     nodes = list(
-        annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator)
+        annotation.transform_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator)
     )
     assert len(nodes) == 3
     assert nodes[0] == node.Node(
@@ -258,7 +258,7 @@ def test_column_extractor_fill_with():
         return pd.DataFrame({"col_1": [1, 2, 3, 4], "col_2": [11, 12, 13, 14]})
 
     annotation = function_modifiers.extract_columns("col_3", fill_with=0)
-    original_node, extracted_column_node = annotation.expand_node(
+    original_node, extracted_column_node = annotation.transform_node(
         node.Node.from_fn(dummy_df), {}, dummy_df
     )
     original_df = original_node.callable()
@@ -276,7 +276,7 @@ def test_column_extractor_no_fill_with():
 
     annotation = function_modifiers.extract_columns("col_3")
     nodes = list(
-        annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator)
+        annotation.transform_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator)
     )
     with pytest.raises(hamilton.function_modifiers.base.InvalidDecoratorException):
         nodes[1].callable(dummy_df_generator=dummy_df_generator())
@@ -348,7 +348,7 @@ def test_valid_extract_fields():
         return {"col_1": [1, 2, 3, 4], "col_2": 1, "col_3": np.ndarray([1, 2, 3, 4])}
 
     nodes = list(
-        annotation.expand_node(node.Node.from_fn(dummy_dict_generator), {}, dummy_dict_generator)
+        annotation.transform_node(node.Node.from_fn(dummy_dict_generator), {}, dummy_dict_generator)
     )
     assert len(nodes) == 4
     assert nodes[0] == node.Node(
@@ -378,7 +378,7 @@ def test_extract_fields_fill_with():
         return {"col_1": [1, 2, 3, 4], "col_2": 1, "col_3": np.ndarray([1, 2, 3, 4])}
 
     annotation = function_modifiers.extract_fields({"col_2": int, "col_4": float}, fill_with=1.0)
-    original_node, extracted_field_node, missing_field_node = annotation.expand_node(
+    original_node, extracted_field_node, missing_field_node = annotation.transform_node(
         node.Node.from_fn(dummy_dict), {}, dummy_dict
     )
     original_dict = original_node.callable()
@@ -394,7 +394,7 @@ def test_extract_fields_no_fill_with():
         return {"col_1": [1, 2, 3, 4], "col_2": 1, "col_3": np.ndarray([1, 2, 3, 4])}
 
     annotation = function_modifiers.extract_fields({"col_4": int})
-    nodes = list(annotation.expand_node(node.Node.from_fn(dummy_dict), {}, dummy_dict))
+    nodes = list(annotation.transform_node(node.Node.from_fn(dummy_dict), {}, dummy_dict))
     with pytest.raises(hamilton.function_modifiers.base.InvalidDecoratorException):
         nodes[1].callable(dummy_dict=dummy_dict())
 
