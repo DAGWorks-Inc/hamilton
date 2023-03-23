@@ -88,7 +88,7 @@ Actual decorators:
 .. autoclass:: hamilton.function_modifiers.subdag
    :special-members: __init__
 
-@parameterize_subdag
+@parameterized_subdag
 ------------------------
 .. autoclass:: hamilton.function_modifiers.parameterized_subdag
    :special-members: __init__

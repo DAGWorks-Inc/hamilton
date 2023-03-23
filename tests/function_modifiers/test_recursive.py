@@ -226,7 +226,7 @@ def test_reuse_subdag_end_to_end():
     assert res["sum_everything"] == 318
 
 
-def test_parameterize_subdag():
+def test_parameterized_subdag():
     def bar(input_1: int) -> int:
         return input_1 + 1
 

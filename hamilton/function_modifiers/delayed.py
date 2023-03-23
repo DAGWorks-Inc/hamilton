@@ -56,16 +56,16 @@ class resolve(DynamicResolver):
     This is particularly useful when you don't know how you want your functions to resolve until
     configuration time. Say, for example, we want to add two series, and we need to pass the set of
     series to add as a configuration parameter, as we'll be changing it regularly. Without this,
-    you would have to have them as part of the the same dataframe. E.G.
+    you would have to have them as part of the same dataframe. E.G.
 
     .. code-block:: python
 
-        @parameterize(
+        @parameterize_values(
             series_sum_1={"s1": "series_1", "s2": "series_2"},
             series_sum_2={"s1": "series_3", "s2": "series_4"},
         )
         def summation(df: pd.DataFrame, s1: str, s2: str) -> pd.Series:
-            return sum(df[item] for item in series_to_sum)
+            return df[s1] + df[s2]
 
     Note that there are a lot of benefits to this code, but it is a workaround for the fact that
     we cannot configure the dependencies. With the `@resolve` decorator, we can actually dynamically
@@ -77,13 +77,13 @@ class resolve(DynamicResolver):
 
         @resolve(
             when=ResolveAt.CONFIG_AVAILABLE
-            decorate_with=lambda first_series_sum, second_series_sum: parameterize(
+            decorate_with=lambda first_series_sum, second_series_sum: parameterize_sources(
                 series_sum_1={"s1": first_series_sum[0], "s2": second_series_sum[1]},
                 series_sum_2={"s1": second_series_sum[1], "s2": second_series_sum[2]},
 
         )
-        def summation(first_series: pd.Series, second_series: pd.Series) -> pd.Series:
-            return first_series + second_series
+        def summation(s1: pd.Series, s2: pd.Series) -> pd.Series:
+            return s1 + s2
 
     Note how this works:
     1. The `decorate_with` argument is a function that gives you the decorator you want to apply.
