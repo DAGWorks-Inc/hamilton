@@ -399,7 +399,7 @@ class parameterized_subdag(base.NodeCreator):
 
     .. code-block:: python
 
-        @parameterize_subdag(
+        @parameterized_subdag(
             feature_modules,
             parameterization={
                 "from_datasource_1" : {"inputs" : {"data" : value("datasource_1.csv"}},
@@ -420,7 +420,7 @@ class parameterized_subdag(base.NodeCreator):
 
     .. code-block:: python
 
-        @parameterize_subdag(
+        @parameterized_subdag(
             feature_modules,
             inputs={"data" : value("datasource_1.csv")},
             from_datasource_1={},
