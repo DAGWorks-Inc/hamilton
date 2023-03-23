@@ -307,3 +307,54 @@ def test_nested_subdag():
     assert res["sum_all"] == sum_all(
         outer_subdag_1(inner_subdag(bar(2), foo(10))), outer_subdag_2(inner_subdag(bar(2), foo(3)))
     )
+
+
+def test_subdag_with_external_nodes_input():
+    def bar(input_1: int) -> int:
+        return input_1 + 1
+
+    def foo(input_2: int) -> int:
+        return input_2 + 1
+
+    @subdag(foo, bar, external_inputs=["baz"])
+    def foo_bar_baz(foo: int, bar: int, baz: int) -> int:
+        return foo + bar + baz
+
+    full_module = ad_hoc_utils.create_temporary_module(foo_bar_baz)
+    fg = graph.FunctionGraph(full_module, config={})
+    # since we've provided it above,
+    assert "baz" in fg.nodes
+    assert fg.nodes["baz"].user_defined
+    res = fg.execute(nodes=[fg.nodes["foo_bar_baz"]], inputs={"input_1": 2, "input_2": 3, "baz": 4})
+    assert res["foo_bar_baz"] == foo_bar_baz(foo(3), bar(2), 4)
+
+
+def test_parameterized_subdag_with_external_inputs_global():
+    def bar(input_1: int) -> int:
+        return input_1 + 1
+
+    def foo(input_2: int) -> int:
+        return input_2 + 1
+
+    @parameterized_subdag(
+        foo,
+        bar,
+        external_inputs=["baz"],
+        foo_bar_baz_input_1={"inputs": {"input_1": value(10), "input_2": value(20)}},
+        foo_bar_baz_input_2={"inputs": {"input_1": value(30), "input_2": value(40)}},
+    )
+    def foo_bar_baz(foo: int, bar: int, baz: int) -> int:
+        return foo + bar + baz
+
+    def foo_bar_baz_summed(foo_bar_baz_input_1: int, foo_bar_baz_input_2: int) -> int:
+        return foo_bar_baz_input_1 + foo_bar_baz_input_2
+
+    full_module = ad_hoc_utils.create_temporary_module(foo_bar_baz, foo_bar_baz_summed)
+    fg = graph.FunctionGraph(full_module, config={})
+    # since we've provided it above,
+    assert "baz" in fg.nodes
+    assert fg.nodes["baz"].user_defined
+    res = fg.execute(nodes=[fg.nodes["foo_bar_baz_summed"]], inputs={"baz": 100})
+    assert res["foo_bar_baz_summed"] == foo_bar_baz(foo(10), foo(20), 100) + foo_bar_baz(
+        bar(30), foo(40), 100
+    )
