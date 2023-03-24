@@ -14,4 +14,5 @@ concepts that makes Hamilton unique and powerful.
    customizing-execution
    decorators-overview
    best-practices/index
+   hamilton-v-x
    extensions

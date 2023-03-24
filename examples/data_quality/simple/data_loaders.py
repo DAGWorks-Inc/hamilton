@@ -9,7 +9,6 @@ Note:
 """
 from typing import List
 
-import numpy as np
 import pandas as pd
 
 from hamilton.function_modifiers import config, extract_columns
@@ -60,11 +59,11 @@ def raw_data__base(location: str) -> pd.DataFrame:
     df.columns = _sanitize_columns(df.columns)
     # create proper index -- ID-Month-Day;
     index = (
-        df["id"].astype(np.str)
+        df["id"].astype(str)
         + "-"
-        + df["month_of_absence"].astype(np.str)
+        + df["month_of_absence"].astype(str)
         + "-"
-        + df["day_of_the_week"].astype(np.str)
+        + df["day_of_the_week"].astype(str)
     )
     df.index = index
     return df
@@ -107,11 +106,11 @@ def raw_data__spark(location: str) -> pd.DataFrame:
     df.columns = _sanitize_columns(df.columns)
     # create proper index -- ID-Month-Day;
     index = (
-        df["id"].astype(np.str)
+        df["id"].astype(str)
         + "-"
-        + df["month_of_absence"].astype(np.str)
+        + df["month_of_absence"].astype(str)
         + "-"
-        + df["day_of_the_week"].astype(np.str)
+        + df["day_of_the_week"].astype(str)
     )
     df.index = index
     df["index_col"] = df.index

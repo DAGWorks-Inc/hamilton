@@ -2,7 +2,7 @@ from typing import Collection, Dict, List
 
 import pytest as pytest
 
-from hamilton import node
+from hamilton import node, settings
 from hamilton.function_modifiers import InvalidDecoratorException, base
 from hamilton.function_modifiers.base import (
     MissingConfigParametersException,
@@ -11,16 +11,36 @@ from hamilton.function_modifiers.base import (
 )
 from hamilton.node import Node
 
+power_mode_k = settings.ENABLE_POWER_USER_MODE
+
 
 @pytest.mark.parametrize(
     "config,config_required,config_optional_with_defaults,expected",
     [
-        ({"foo": 1}, ["foo"], {}, {"foo": 1}),
-        ({"foo": 1, "bar": 2}, ["foo"], {}, {"foo": 1}),
-        ({"foo": 1, "bar": 2}, ["foo"], {"bar": 3}, {"foo": 1, "bar": 2}),
-        ({"foo": 1}, [], {"bar": 3}, {"bar": 3}),
+        ({"foo": 1}, ["foo"], {}, {"foo": 1, power_mode_k: False}),
+        ({"foo": 1, "bar": 2}, ["foo"], {}, {"foo": 1, power_mode_k: False}),
+        ({"foo": 1, "bar": 2}, ["foo"], {"bar": 3}, {"foo": 1, "bar": 2, power_mode_k: False}),
+        ({"foo": 1}, [], {"bar": 3}, {"bar": 3, power_mode_k: False}),
+        ({"foo": 1, power_mode_k: True}, ["foo"], {}, {"foo": 1, power_mode_k: True}),
+        ({"foo": 1, "bar": 2, power_mode_k: True}, ["foo"], {}, {"foo": 1, power_mode_k: True}),
+        (
+            {"foo": 1, "bar": 2, power_mode_k: True},
+            ["foo"],
+            {"bar": 3},
+            {"foo": 1, "bar": 2, power_mode_k: True},
+        ),
+        ({"foo": 1, power_mode_k: True}, [], {"bar": 3}, {"bar": 3, power_mode_k: True}),
     ],
-    ids=["all_present", "all_present_extra", "no_apply_default", "yes_apply_default"],
+    ids=[
+        "all_present",
+        "all_present_extra",
+        "no_apply_default",
+        "yes_apply_default",
+        "all_present_with_power_user_mode",
+        "all_present_extra_with_power_user_mode",
+        "no_apply_default_with_power_user_mode",
+        "yes_apply_default_with_power_user_mode",
+    ],
 )
 def test_merge_config_happy(config, config_required, config_optional_with_defaults, expected):
     assert (

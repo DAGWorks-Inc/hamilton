@@ -152,7 +152,7 @@ class Node(object):
         return hash(self._name)
 
     def __repr__(self):
-        return f"<{self._name} {self._tags}>"
+        return f"<{self.name} {self._tags}>"
 
     def __eq__(self, other: "Node"):
         """Want to deeply compare nodes in a custom way.
@@ -190,7 +190,9 @@ class Node(object):
         """
         if name is None:
             name = fn.__name__
-        return_type = typing.get_type_hints(fn)["return"]
+        return_type = typing.get_type_hints(fn).get("return")
+        if return_type is None:
+            raise ValueError(f"Missing type hint for return value in function {fn.__qualname__}.")
         module = inspect.getmodule(fn).__name__
         return Node(
             name,

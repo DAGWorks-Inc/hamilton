@@ -1,6 +1,16 @@
 import logging
 
-from . import base, configuration, dependencies, expanders, macros, metadata, recursive, validation
+from . import (
+    base,
+    configuration,
+    delayed,
+    dependencies,
+    expanders,
+    macros,
+    metadata,
+    recursive,
+    validation,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +33,7 @@ config = configuration.config
 # Helper functions to specify dependency sources for parameterization
 value = dependencies.value
 source = dependencies.source
+group = dependencies.group
 
 # These aren't strictly part of the API but we should have them here for safety
 LiteralDependency = dependencies.LiteralDependency
@@ -35,6 +46,7 @@ parameterize_sources = expanders.parameterize_sources
 parameterize_values = expanders.parameterize_values
 parameterize_extract_columns = expanders.parameterize_extract_columns
 ParameterizedExtract = expanders.ParameterizedExtract
+inject = expanders.inject
 
 # The older ones that will be deprecated
 parametrized = expanders.parametrized
@@ -48,7 +60,7 @@ extract_fields = expanders.extract_fields
 # does decorator
 does = macros.does
 
-# dynamic transform/model decorator
+# resolve transform/model decorator
 dynamic_transform = macros.dynamic_transform
 model = macros.model
 
@@ -65,3 +77,9 @@ DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG = validation.DATA_VALIDATOR_ORIGINAL_OUTPUT_T
 # recursive/subdag operators
 
 subdag = recursive.subdag
+parameterized_subdag = recursive.parameterized_subdag
+
+# resolve/meta stuff -- power user features
+
+resolve = delayed.resolve
+ResolveAt = delayed.ResolveAt

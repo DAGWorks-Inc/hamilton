@@ -1,7 +1,9 @@
 import abc
 import collections
 import functools
+import itertools
 import logging
+from abc import ABC
 
 try:
     from types import EllipsisType
@@ -10,10 +12,9 @@ except ImportError:
     EllipsisType = type(...)
 from typing import Any, Callable, Collection, Dict, List, Optional, Union
 
-from hamilton import node, registry
+from hamilton import node, registry, settings
 
 logger = logging.getLogger(__name__)
-
 
 if not registry.INITIALIZED:
     # Trigger load of extensions here because decorators are the only thing that use the registry
@@ -272,6 +273,34 @@ TargetType = Union[str, Collection[str], None, EllipsisType]
 
 
 class NodeTransformer(SubDAGModifier):
+    @classmethod
+    def _early_validate_target(cls, target: TargetType, allow_multiple: bool):
+        """Determines whether the target is valid, given that we may or may not
+        want to allow multiple nodes to be transformed.
+
+        If the target type is a single string then we're good.
+        If the target type is a collection of strings, then it has to be a collection of size one.
+        If the target type is None, then we delay checking until later (as there might be just
+        one node transformed in the DAG).
+        If the target type is ellipsis, then we delay checking until later (as there might be
+        just one node transformed in the DAG)
+
+        :param target: How to appply this node. See docs below.
+        :param allow_multiple:  Whether or not this can operate on multiple nodes.
+        :raises InvalidDecoratorException: if the target is invalid given the value of allow_multiple.
+        """
+        if isinstance(target, str):
+            # We're good -- regardless of the value of allow_multiple we'll pass
+            return
+        elif isinstance(target, Collection) and all(isinstance(x, str) for x in target):
+            if len(target) > 1 and not allow_multiple:
+                raise InvalidDecoratorException(f"Cannot have multiple targets for . Got {target}")
+            return
+        elif target is None or target is Ellipsis:
+            return
+        else:
+            raise InvalidDecoratorException(f"Invalid target type for NodeTransformer: {target}")
+
     def __init__(self, target: TargetType):
         """Target determines to which node(s) this applies. This represents selection from a subDAG.
         For the options, consider at the following graph:
@@ -356,6 +385,25 @@ class NodeTransformer(SubDAGModifier):
         """
         return [node_ for node_ in all_nodes if node_ not in nodes_to_transform]
 
+    def transform_targets(
+        self, targets: Collection[node.Node], config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
+        """Transforms a set of target nodes. Note that this is just a loop,
+        but abstracting t away gives subclasses control over how this is done,
+        allowing them to validate beforehand. While we *could* just have this
+        as a `validate`, or `transforms_multiple` function, this is a pretty clean/
+        readable way to do it.
+
+        :param targets: Node Targets to transform
+        :param config: Configuration to use to
+        :param fn: Function being decorated
+        :return: Results of transformations
+        """
+        out = []
+        for node_to_transform in targets:
+            out += list(self.transform_node(node_to_transform, config, fn))
+        return out
+
     def transform_dag(
         self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
@@ -370,8 +418,7 @@ class NodeTransformer(SubDAGModifier):
         nodes_to_transform = self.select_nodes(self.target, nodes)
         nodes_to_keep = self.compliment(nodes, nodes_to_transform)
         out = list(nodes_to_keep)
-        for node_to_transform in nodes_to_transform:
-            out += list(self.transform_node(node_to_transform, config, fn))
+        out += self.transform_targets(nodes_to_transform, config, fn)
         return out
 
     @abc.abstractmethod
@@ -391,6 +438,39 @@ class NodeTransformer(SubDAGModifier):
     @classmethod
     def allows_multiple(cls) -> bool:
         return True
+
+
+class SingleNodeNodeTransformer(NodeTransformer, ABC):
+    """A node transformer that only allows a single node to be transformed.
+    Specifically, this must be applied to a decorator operation that returns
+    a single node (E.G. @subdag). Note that if you have multiple node transformations,
+    the order *does* matter.
+
+    This should end up killing NodeExpander, as it has the same impact, and the same API.
+    """
+
+    def __init__(self):
+        """Initializes the node transformer to only allow a single node to be transformed.
+        Note this passes target=None to the superclass, which means that it will only
+        apply to the 'sink' nodes produced."""
+        super().__init__(target=None)
+
+    def transform_targets(
+        self, targets: Collection[node.Node], config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
+        """Transforms the target set of nodes. Exists to validate the target set.
+
+        :param targets: Targets to transform -- this has to be an array of 1.
+        :param config: Configuration passed into the DAG.
+        :param fn: Function that was decorated.
+        :return: The resulting nodes.
+        """
+        if len(targets) != 1:
+            raise InvalidDecoratorException(
+                f"Expected a single node to transform, but got {len(targets)}. {self.__class__} "
+                f" can only operate on a single node, but multiple nodes were created by {fn.__qualname__}"
+            )
+        return super().transform_targets(targets, config, fn)
 
 
 class NodeDecorator(NodeTransformer, abc.ABC):
@@ -453,16 +533,6 @@ class DefaultNodeResolver(NodeResolver):
         pass
 
 
-class DefaultNodeExpander(NodeExpander):
-    def expand_node(
-        self, node_: node.Node, config: Dict[str, Any], fn: Callable
-    ) -> Collection[node.Node]:
-        return [node_]
-
-    def validate(self, fn: Callable):
-        pass
-
-
 class DefaultNodeDecorator(NodeDecorator):
     def __init__(self):
         super().__init__(target=...)
@@ -485,23 +555,40 @@ def resolve_config(
     :param config_optional_with_defaults:
     :return:
     """
+    config_optional_with_global_defaults_applied = config_optional_with_defaults.copy()
+    config_optional_with_global_defaults_applied[
+        settings.ENABLE_POWER_USER_MODE
+    ] = config_optional_with_global_defaults_applied.get(settings.ENABLE_POWER_USER_MODE, False)
     missing_keys = (
-        set(config_required) - set(config.keys()) - set(config_optional_with_defaults.keys())
+        set(config_required)
+        - set(config.keys())
+        - set(config_optional_with_global_defaults_applied.keys())
     )
     if len(missing_keys) > 0:
         raise MissingConfigParametersException(
             f"The following configurations are required by {name_for_error}: {missing_keys}"
         )
     config_out = {key: config[key] for key in config_required}
-    for key in config_optional_with_defaults:
-        config_out[key] = config.get(key, config_optional_with_defaults[key])
+    for key in config_optional_with_global_defaults_applied:
+        config_out[key] = config.get(key, config_optional_with_global_defaults_applied[key])
     return config_out
+
+
+class DynamicResolver(NodeTransformLifecycle):
+    @classmethod
+    def get_lifecycle_name(cls) -> str:
+        return "dynamic"
+
+    @classmethod
+    def allows_multiple(cls) -> bool:
+        return True
+
+    def validate(self, fn: Callable):
+        pass
 
 
 def filter_config(config: Dict[str, Any], decorator: NodeTransformLifecycle) -> Dict[str, Any]:
     """Filters the config to only include the keys in config_required
-    TODO -- break this into two so we can make it easier to test.
-
     :param config: The config to filter
     :param config_required: The keys to include
     :param decorator: The decorator that is utilizing the configuration
@@ -514,6 +601,38 @@ def filter_config(config: Dict[str, Any], decorator: NodeTransformLifecycle) -> 
         # Note this is an internal API, but we made the config with the `resolve` parameter public
         return config
     return resolve_config(decorator.name, config, config_required, config_optional_with_defaults)
+
+
+def get_node_decorators(
+    fn: Callable, config: Dict[str, Any]
+) -> Dict[str, List[NodeTransformLifecycle]]:
+    """Gets the decorators for a function. Contract is this will have one entry
+    for every step of the decorator lifecycle that can always be run (currently everything except NodeExpander)
+
+    :param fn:
+    :return:
+    """
+    defaults = {
+        NodeResolver.get_lifecycle_name(): [DefaultNodeResolver()],
+        NodeCreator.get_lifecycle_name(): [DefaultNodeCreator()],
+        NodeExpander.get_lifecycle_name(): [],
+        NodeTransformer.get_lifecycle_name(): [],
+        NodeDecorator.get_lifecycle_name(): [DefaultNodeDecorator()],
+    }
+    dynamic_decorators = []
+    for dynamic_resolver in getattr(fn, DynamicResolver.get_lifecycle_name(), []):
+        dynamic_decorators.append(dynamic_resolver.resolve(config, fn))
+    all_decorators = list(
+        itertools.chain(
+            *[getattr(fn, lifecycle_step, []) for lifecycle_step in defaults],
+            dynamic_decorators,
+        )
+    )
+    grouped_by_lifecycle_step = collections.defaultdict(list)
+    for decorator in all_decorators:
+        grouped_by_lifecycle_step[decorator.get_lifecycle_name()].append(decorator)
+    defaults.update(grouped_by_lifecycle_step)
+    return defaults
 
 
 def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
@@ -546,21 +665,23 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     which configuration they need.
     :return: A list of nodes into which this function transforms.
     """
-    node_resolvers = getattr(fn, NodeResolver.get_lifecycle_name(), [DefaultNodeResolver()])
+    function_decorators = get_node_decorators(fn, config)
+    node_resolvers = function_decorators[NodeResolver.get_lifecycle_name()]
     for resolver in node_resolvers:
         fn = resolver.resolve(fn, config=filter_config(config, resolver))
         if fn is None:
             return []
-    (node_creator,) = getattr(fn, NodeCreator.get_lifecycle_name(), [DefaultNodeCreator()])
+    (node_creator,) = function_decorators[NodeCreator.get_lifecycle_name()]
     nodes = node_creator.generate_nodes(fn, filter_config(config, node_creator))
-    if hasattr(fn, NodeExpander.get_lifecycle_name()):
-        (node_expander,) = getattr(fn, NodeExpander.get_lifecycle_name(), [DefaultNodeExpander()])
+    node_expanders = function_decorators[NodeExpander.get_lifecycle_name()]
+    if len(node_expanders) > 0:
+        (node_expander,) = node_expanders
         nodes = node_expander.transform_dag(nodes, filter_config(config, node_expander), fn)
-    node_transformers = getattr(fn, NodeTransformer.get_lifecycle_name(), [])
+    node_transformers = function_decorators[NodeTransformer.get_lifecycle_name()]
     for dag_modifier in node_transformers:
         nodes = dag_modifier.transform_dag(nodes, filter_config(config, dag_modifier), fn)
-    node_decorators = getattr(fn, NodeDecorator.get_lifecycle_name(), [DefaultNodeDecorator()])
-    for node_decorator in node_decorators:
+    function_decorators = function_decorators[NodeDecorator.get_lifecycle_name()]
+    for node_decorator in function_decorators:
         nodes = node_decorator.transform_dag(nodes, filter_config(config, node_decorator), fn)
     return nodes
 

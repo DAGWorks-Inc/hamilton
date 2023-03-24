@@ -1,3 +1,4 @@
+import collections
 import dataclasses
 import functools
 import inspect
@@ -70,9 +71,28 @@ class parameterize(base.NodeExpander):
             '''Adding {literal_parameter} to {upstream_parameter} to create {output_name}.'''
             return upstream_parameter + literal_parameter
 
+    You also have the capability to "group" parameters, which will combine them into a list.
+
+    .. code-block:: python
+
+        @parameterize(
+            a_plus_b_plus_c={
+                'to_concat' : group(source('a'), value('b'), source('c'))
+            }
+        )
+        def concat(to_concat: List[str]) -> Any:
+            '''Adding {literal_parameter} to {upstream_parameter} to create {output_name}.'''
+            return sum(to_concat, '')
     """
 
     RESERVED_KWARG = "output_name"
+    # This is a kwarg that replaces it with the name of the function
+    # Double underscore means it will not be provided as user-base kwargs
+    # as hamilton is not OK with these output names
+    # We need this as we need to know the name of the function
+    # for the `@inject` usage but its not provided at
+    # construction time, so we provide a placeholder
+    PLACEHOLDER_PARAM_NAME = "__<function_name>"
 
     def __init__(
         self,
@@ -87,12 +107,12 @@ class parameterize(base.NodeExpander):
             - a tuple of assignments (consisting of literals/upstream specifications), and docstring.
             - just assignments, in which case it parametrizes the existing docstring.
         """
-        self.parametrization = {
+        self.parameterization = {
             key: (value[0] if isinstance(value, tuple) else value)
             for key, value in parametrization.items()
         }
         bad_values = []
-        for assigned_output, mapping in self.parametrization.items():
+        for assigned_output, mapping in self.parameterization.items():
             for parameter, val in mapping.items():
                 if not isinstance(val, ParametrizedDependency):
                     bad_values.append(val)
@@ -105,54 +125,149 @@ class parameterize(base.NodeExpander):
             key: value[1] for key, value in parametrization.items() if isinstance(value, tuple)
         }
 
+    def split_parameterizations(
+        self, parameterizations: Dict[str, ParametrizedDependency]
+    ) -> Dict[ParametrizedDependencySource, Dict[str, ParametrizedDependency]]:
+        """Split parameterizations into two groups: those that are literal values, and those that are upstream nodes.
+        Will have a key for each existing dependency type.
+
+        :param parameterizations: Passed into @parameterize
+        :return: The parameterizations grouped by dependency type
+        """
+        out = collections.defaultdict(dict)
+        for param_name, replacement in parameterizations.items():
+            out[replacement.get_dependency_type()][param_name] = replacement
+        return out
+
+    def _get_grouped_list_name(self, index: int, arg_name: str):
+        """Gets the name of the arg for a given index in a list of args, using grouped"""
+        return f"__{arg_name}_{index}"
+
     def expand_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         nodes = []
-        for output_node, parametrization_with_optional_docstring in self.parametrization.items():
+        for output_node, parametrization_with_optional_docstring in self.parameterization.items():
+            if output_node == parameterize.PLACEHOLDER_PARAM_NAME:
+                output_node = node_.name
             if isinstance(
                 parametrization_with_optional_docstring, tuple
             ):  # In this case it contains the docstring
-                (parametrization,) = parametrization_with_optional_docstring
+                (parameterization,) = parametrization_with_optional_docstring
             else:
-                parametrization = parametrization_with_optional_docstring
-            docstring = self.format_doc_string(fn.__doc__, output_node)
-            upstream_dependencies = {
-                parameter: replacement
-                for parameter, replacement in parametrization.items()
-                if replacement.get_dependency_type() == ParametrizedDependencySource.UPSTREAM
-            }
-            literal_dependencies = {
-                parameter: replacement
-                for parameter, replacement in parametrization.items()
-                if replacement.get_dependency_type() == ParametrizedDependencySource.LITERAL
-            }
+                parameterization = parametrization_with_optional_docstring
+            docstring = self.format_doc_string(fn, output_node)
+            parameterization_splits = self.split_parameterizations(parameterization)
+            upstream_dependencies = parameterization_splits[ParametrizedDependencySource.UPSTREAM]
+            literal_dependencies = parameterization_splits[ParametrizedDependencySource.LITERAL]
+            grouped_list_dependencies = parameterization_splits[
+                ParametrizedDependencySource.GROUPED_LIST
+            ]
+            grouped_dict_dependencies = parameterization_splits[
+                ParametrizedDependencySource.GROUPED_DICT
+            ]
 
             def replacement_function(
                 *args,
                 upstream_dependencies=upstream_dependencies,
                 literal_dependencies=literal_dependencies,
+                grouped_list_dependencies=grouped_list_dependencies,
+                grouped_dict_dependencies=grouped_dict_dependencies,
                 **kwargs,
             ):
                 """This function rewrites what is passed in kwargs to the right kwarg for the function."""
-                kwargs = kwargs.copy()
+
+                new_kwargs = kwargs.copy()
                 for dependency, replacement in upstream_dependencies.items():
-                    kwargs[dependency] = kwargs.pop(replacement.source)
+                    new_kwargs[dependency] = new_kwargs.pop(replacement.source)
                 for dependency, replacement in literal_dependencies.items():
-                    kwargs[dependency] = replacement.value
-                return node_.callable(*args, **kwargs)
+                    new_kwargs[dependency] = replacement.value
+
+                # TODO -- the following two should be able to be merged
+                # We should be able to utilize this as part of the GroupedDependency class and share logic
+                # Not immediately clear what the interface should be and we only have two (list and dict)
+                # So we're going to hold off for now
+                for dependency, replacement in grouped_list_dependencies.items():
+                    # TODO -- use the code above to make this cleaner
+                    # We should be able to put this logic in the dependency type and use OO programming
+                    # Just not sure about the abstraction yet so we're putting it here
+                    new_kwargs[dependency] = []
+                    for specific_value in replacement.sources:
+                        if (
+                            specific_value.get_dependency_type()
+                            == ParametrizedDependencySource.UPSTREAM
+                        ):
+                            # This will break if we reuse the same parameter as another component
+                            # of the function TODO -- fix it -- we should be able to grab the
+                            #  arguments we already popped from kwargs Alternatively we can do
+                            #  this in two passes (1) we gather all the dependencies we need and
+                            #  then (2) we pop them from kwargs and store them
+                            new_kwargs[dependency].append(new_kwargs.pop(specific_value.source))
+                        elif (
+                            specific_value.get_dependency_type()
+                            == ParametrizedDependencySource.LITERAL
+                        ):
+                            new_kwargs[dependency].append(specific_value.value)
+                        else:
+                            raise ValueError(
+                                f"Grouped dependencies cannot contain type: {specific_value}"
+                            )
+                for dependency, replacement in grouped_dict_dependencies.items():
+                    # TODO -- use the code above to make this cleaner
+                    # We should be able to put this logic in the dependency type and use OO programming
+                    # Just not sure about the abstraction yet so we're putting it here
+                    new_kwargs[dependency] = {}
+                    for key, specific_value in replacement.sources.items():
+                        if (
+                            specific_value.get_dependency_type()
+                            == ParametrizedDependencySource.UPSTREAM
+                        ):
+                            # This will break if we reuse the same parameter as another component
+                            # of the function TODO -- fix it -- we should be able to grab the
+                            #  arguments we already popped from kwargs Alternatively we can do
+                            #  this in two passes (1) we gather all the dependencies we need and
+                            #  then (2) we pop them from kwargs and store them
+                            new_kwargs[dependency][key] = new_kwargs.pop(specific_value.source)
+                        elif (
+                            specific_value.get_dependency_type()
+                            == ParametrizedDependencySource.LITERAL
+                        ):
+                            new_kwargs[dependency][key] = specific_value.value
+                        else:
+                            raise ValueError(
+                                f"Grouped dependencies cannot contain type: {specific_value}"
+                            )
+                return node_.callable(*args, **new_kwargs)
 
             new_input_types = {}
+            grouped_dependencies = {**grouped_list_dependencies, **grouped_dict_dependencies}
             for param, val in node_.input_types.items():
                 if param in upstream_dependencies:
                     new_input_types[
                         upstream_dependencies[param].source
                     ] = val  # We replace with the upstream_dependencies
+                elif param in grouped_dependencies:
+                    # These are the components of the individual sequence
+                    # E.G. if the parameter is List[int], the individual type is just int
+                    grouped_dependency_spec = grouped_dependencies[param]
+                    sequence_component_type = grouped_dependency_spec.resolve_dependency_type(
+                        val[0], param
+                    )
+                    unpacked_dependencies = (
+                        grouped_dependency_spec.sources
+                        if grouped_dependency_spec.get_dependency_type()
+                        == ParametrizedDependencySource.GROUPED_LIST
+                        else grouped_dependency_spec.sources.values()
+                    )
+                    for dep in unpacked_dependencies:
+                        if dep.get_dependency_type() == ParametrizedDependencySource.UPSTREAM:
+                            # TODO -- think through what happens if we have optional pieces...
+                            # I think that we shouldn't allow it...
+                            new_input_types[dep.source] = (sequence_component_type, val[1])
                 elif param not in literal_dependencies:
                     new_input_types[
                         param
                     ] = val  # We just use the standard one, nothing is getting replaced
-
             nodes.append(
                 node.Node(
                     name=output_node,
@@ -172,7 +287,7 @@ class parameterize(base.NodeExpander):
         signature = inspect.signature(fn)
         func_param_names = set(signature.parameters.keys())
         try:
-            for output_name, mappings in self.parametrization.items():
+            for output_name, mappings in self.parameterization.items():
                 # TODO -- separate out into the two dependency-types
                 self.format_doc_string(fn.__doc__, output_name)
         except KeyError as e:
@@ -187,7 +302,7 @@ class parameterize(base.NodeExpander):
                 f"as a parameter it is reserved."
             )
         missing_parameters = set()
-        for mapping in self.parametrization.values():
+        for mapping in self.parameterization.values():
             for param_to_replace in mapping:
                 if param_to_replace not in func_param_names:
                     missing_parameters.add(param_to_replace)
@@ -195,8 +310,56 @@ class parameterize(base.NodeExpander):
             raise base.InvalidDecoratorException(
                 f"Parametrization is invalid: the following parameters don't appear in the function itself: {', '.join(missing_parameters)}"
             )
+        type_hints = typing.get_type_hints(fn)
+        for output_name, mapping in self.parameterization.items():
+            # TODO -- look a the origin type and determine that its a sequence
+            # We can just use the GroupedListDependency to do this
+            invalid_types = []
+            if isinstance(mapping, tuple):
+                mapping = mapping[0]
+            for param, replacement_value in mapping.items():
+                if (
+                    replacement_value.get_dependency_type()
+                    == ParametrizedDependencySource.GROUPED_LIST
+                ):
+                    param_annotation = type_hints[param]
+                    is_generic = typing_inspect.is_generic_type(param_annotation)
+                    if not is_generic:
+                        invalid_types.append((param, param_annotation))
+                    else:
+                        origin = typing_inspect.get_origin(param_annotation)
+                        if origin != list:
+                            invalid_types.append((param, param_annotation))
+                    # 3.9 + this works
+                    # 3.8 they changed it, so it gives false positives, but we're OK not fixing
+                    # for older versions of python
+                    args = typing_inspect.get_args(param_annotation)
+                    if not len(args) == 1:
+                        invalid_types.append((param, param_annotation))
+                elif (
+                    replacement_value.get_dependency_type()
+                    == ParametrizedDependencySource.GROUPED_DICT
+                ):
+                    param_annotation = type_hints[param]
+                    is_generic = typing_inspect.is_generic_type(param_annotation)
+                    if not is_generic:
+                        invalid_types.append((param, param_annotation))
+                    else:
+                        origin = typing_inspect.get_origin(param_annotation)
+                        if origin != dict:
+                            invalid_types.append((param, param_annotation))
+                        args = typing_inspect.get_args(param_annotation)
+                        if not len(args) == 2:
+                            invalid_types.append((param, param_annotation))
+                        elif args[0] != str:
+                            invalid_types.append((param, param_annotation))
+            if invalid_types:
+                raise base.InvalidDecoratorException(
+                    f"Validation for fn: {fn.__qualname__} All parameters with a group() parameterization must be annotated as a list:"
+                    f"the following are not: {', '.join([f'{param} ({annotation})' for param, annotation in invalid_types])}"
+                )
 
-    def format_doc_string(self, doc: str, output_name: str) -> str:
+    def format_doc_string(self, fn: Callable, output_name: str) -> str:
         """Helper function to format a function documentation string.
 
         :param doc: the string template to format
@@ -213,9 +376,13 @@ class parameterize(base.NodeExpander):
 
         if output_name in self.specified_docstrings:
             return self.specified_docstrings[output_name]
+        doc = fn.__doc__
         if doc is None:
             return None
-        parametrization = self.parametrization[output_name]
+        parameterizations = self.parameterization.copy()
+        if self.PLACEHOLDER_PARAM_NAME in parameterizations:
+            parameterizations[fn.__name__] = parameterizations.pop(self.PLACEHOLDER_PARAM_NAME)
+        parametrization = parameterizations[output_name]
         upstream_dependencies = {
             parameter: replacement.source
             for parameter, replacement in parametrization.items()
@@ -351,8 +518,10 @@ class parameterize_sources(parameterize):
     warn_starting=(1, 10, 0),
     fail_starting=(2, 0, 0),
     use_this=parameterize_sources,
-    explanation="We now support three parametrize decorators. @parameterize, @parameterize_values, and @parameterize_inputs",
-    migration_guide="https://github.com/dagworks-inc/hamilton/blob/main/decorators.md#migrating-parameterized",
+    explanation="We now support three parametrize decorators. @parameterize, "
+    "@parameterize_values, and @parameterize_inputs",
+    migration_guide="https://github.com/dagworks-inc/hamilton/blob/main/decorators.md#migrating"
+    "-parameterized",
 )
 class parametrized_input(parameterize):
     def __init__(self, parameter: str, variable_inputs: Dict[str, Tuple[str, str]]):
@@ -396,7 +565,7 @@ class parameterized_inputs(parameterize_sources):
     pass
 
 
-class extract_columns(base.NodeExpander):
+class extract_columns(base.SingleNodeNodeTransformer):
     def __init__(self, *columns: Union[Tuple[str, str], str], fill_with: Any = None):
         """Constructor for a modifier that expands a single function into the following nodes:
 
@@ -408,6 +577,7 @@ class extract_columns(base.NodeExpander):
         value? Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a \
         column.
         """
+        super(extract_columns, self).__init__()
         if not columns:
             raise base.InvalidDecoratorException(
                 "Error empty arguments passed to extract_columns decorator."
@@ -430,7 +600,8 @@ class extract_columns(base.NodeExpander):
         except NotImplementedError:
             raise base.InvalidDecoratorException(
                 # TODO: capture was dataframe libraries are supported and print here.
-                f"Error {fn} does not output a type we know about. Is it a dataframe type we support?"
+                f"Error {fn} does not output a type we know about. Is it a dataframe type we "
+                f"support? "
             )
 
     def validate(self, fn: Callable):
@@ -441,13 +612,13 @@ class extract_columns(base.NodeExpander):
         """
         extract_columns.validate_return_type(fn)
 
-    def expand_node(
+    def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """For each column to extract, output a node that extracts that column. Also, output the original dataframe
         generator.
-
-        :param config:
+        :param node_: Node to transform
+        :param config: Config to use
         :param fn: Function to extract columns from. Must output a dataframe.
         :return: A collection of nodes --
                 one for the original dataframe generator, and another for each column to extract.
@@ -523,7 +694,7 @@ class extract_columns(base.NodeExpander):
         return output_nodes
 
 
-class extract_fields(base.NodeExpander):
+class extract_fields(base.SingleNodeNodeTransformer):
     """Extracts fields from a dictionary of output."""
 
     def __init__(self, fields: dict, fill_with: Any = None):
@@ -537,6 +708,7 @@ class extract_fields(base.NodeExpander):
         value? Or do you want to error out? Leave empty/None to error out, set fill_value to dynamically create a \
         field value.
         """
+        super(extract_fields, self).__init__()
         if not fields:
             raise base.InvalidDecoratorException(
                 "Error an empty dict, or no dict, passed to extract_fields decorator."
@@ -586,7 +758,7 @@ class extract_fields(base.NodeExpander):
                 f"For extracting fields, output type must be a dict or typing.Dict, not: {output_type}"
             )
 
-    def expand_node(
+    def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """For each field to extract, output a node that extracts that field. Also, output the original TypedDict
@@ -755,7 +927,7 @@ class parameterize_extract_columns(base.NodeExpander):
             )
             extract_columns_decorator = extract_columns(*parameterization.outputs)
             output_nodes.extend(
-                extract_columns_decorator.expand_node(
+                extract_columns_decorator.transform_node(
                     parameterized_node, config, parameterized_node.callable
                 )
             )
@@ -764,3 +936,41 @@ class parameterize_extract_columns(base.NodeExpander):
 
     def validate(self, fn: Callable):
         extract_columns.validate_return_type(fn)
+
+
+class inject(parameterize):
+    """@inject allows you to replace parameters with values passed in. You can think of
+    it as a `@parameterize` call that has only one parameterization, the result of which
+    is the name of the function. See the following examples:
+
+    .. code-block:: python
+
+        import pandas as pd
+        from function_modifiers import inject, source, value, group
+
+        @inject(nums=group(source('a'), value(10), source('b'), value(2)))
+        def a_plus_10_plus_b_plus_2(nums: List[int]) -> int:
+            return sum(nums)
+
+        This would be equivalent to:
+
+        @parameterize(
+            a_plus_10_plus_b_plus_2={
+                'nums': group(source('a'), value(10), source('b'), value(2))
+            })
+        def sum_numbers(nums: List[int]) -> int:
+            return sum(nums)
+
+    Something to note -- we currently do not support the case in which the same parameter is utilized
+    multiple times as an injection. E.G. two lists, a list and a dict, two sources, etc...
+
+    This is considered undefined behavior, and should be avoided.
+    """
+
+    def __init__(self, **key_mapping: ParametrizedDependency):
+        """Instantiates an @inject decorator with the given key_mapping.
+
+        :param key_mapping: A dictionary of string to dependency spec.
+            This is the same as the input mapping in `@parameterize`.
+        """
+        super(inject, self).__init__(**{parameterize.PLACEHOLDER_PARAM_NAME: key_mapping})

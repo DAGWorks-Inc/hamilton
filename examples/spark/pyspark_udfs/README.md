@@ -1,4 +1,4 @@
-# Hamilton to help manage your pyspark UDFs
+# Using Hamilton to help manage your pyspark UDFs
 
 Here we have a version of the Hamilton hello world example showing how you can take some Hamilton functions and then
 easily run them as pyspark UDFs.

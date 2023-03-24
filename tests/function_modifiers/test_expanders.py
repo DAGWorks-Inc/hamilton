@@ -1,4 +1,5 @@
-from typing import Any, Dict
+import sys
+from typing import Any, Dict, List, Type
 
 import numpy as np
 import pandas as pd
@@ -6,7 +7,15 @@ import pytest
 
 import hamilton.function_modifiers
 from hamilton import function_modifiers, node
-from hamilton.function_modifiers.dependencies import source, value
+from hamilton.function_modifiers import base
+from hamilton.function_modifiers.dependencies import (
+    GroupedDependency,
+    GroupedDictDependency,
+    GroupedListDependency,
+    group,
+    source,
+    value,
+)
 from hamilton.node import DependencyType
 
 
@@ -219,7 +228,7 @@ def test_valid_column_extractor():
         return pd.DataFrame({"col_1": [1, 2, 3, 4], "col_2": [11, 12, 13, 14]})
 
     nodes = list(
-        annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator)
+        annotation.transform_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator)
     )
     assert len(nodes) == 3
     assert nodes[0] == node.Node(
@@ -249,7 +258,7 @@ def test_column_extractor_fill_with():
         return pd.DataFrame({"col_1": [1, 2, 3, 4], "col_2": [11, 12, 13, 14]})
 
     annotation = function_modifiers.extract_columns("col_3", fill_with=0)
-    original_node, extracted_column_node = annotation.expand_node(
+    original_node, extracted_column_node = annotation.transform_node(
         node.Node.from_fn(dummy_df), {}, dummy_df
     )
     original_df = original_node.callable()
@@ -267,7 +276,7 @@ def test_column_extractor_no_fill_with():
 
     annotation = function_modifiers.extract_columns("col_3")
     nodes = list(
-        annotation.expand_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator)
+        annotation.transform_node(node.Node.from_fn(dummy_df_generator), {}, dummy_df_generator)
     )
     with pytest.raises(hamilton.function_modifiers.base.InvalidDecoratorException):
         nodes[1].callable(dummy_df_generator=dummy_df_generator())
@@ -339,7 +348,7 @@ def test_valid_extract_fields():
         return {"col_1": [1, 2, 3, 4], "col_2": 1, "col_3": np.ndarray([1, 2, 3, 4])}
 
     nodes = list(
-        annotation.expand_node(node.Node.from_fn(dummy_dict_generator), {}, dummy_dict_generator)
+        annotation.transform_node(node.Node.from_fn(dummy_dict_generator), {}, dummy_dict_generator)
     )
     assert len(nodes) == 4
     assert nodes[0] == node.Node(
@@ -369,7 +378,7 @@ def test_extract_fields_fill_with():
         return {"col_1": [1, 2, 3, 4], "col_2": 1, "col_3": np.ndarray([1, 2, 3, 4])}
 
     annotation = function_modifiers.extract_fields({"col_2": int, "col_4": float}, fill_with=1.0)
-    original_node, extracted_field_node, missing_field_node = annotation.expand_node(
+    original_node, extracted_field_node, missing_field_node = annotation.transform_node(
         node.Node.from_fn(dummy_dict), {}, dummy_dict
     )
     original_dict = original_node.callable()
@@ -385,7 +394,7 @@ def test_extract_fields_no_fill_with():
         return {"col_1": [1, 2, 3, 4], "col_2": 1, "col_3": np.ndarray([1, 2, 3, 4])}
 
     annotation = function_modifiers.extract_fields({"col_4": int})
-    nodes = list(annotation.expand_node(node.Node.from_fn(dummy_dict), {}, dummy_dict))
+    nodes = list(annotation.transform_node(node.Node.from_fn(dummy_dict), {}, dummy_dict))
     with pytest.raises(hamilton.function_modifiers.base.InvalidDecoratorException):
         nodes[1].callable(dummy_dict=dummy_dict())
 
@@ -498,3 +507,196 @@ def test_parameterized_extract_columns():
     assert nodes_by_name["outseries2a"](fn__0=pd.DataFrame({"outseries2a": [20]}))[0] == 20
     assert nodes_by_name["outseries1b"](fn__1=pd.DataFrame({"outseries1b": [30]}))[0] == 30
     assert nodes_by_name["outseries2b"](fn__1=pd.DataFrame({"outseries2b": [40]}))[0] == 40
+
+
+def test_parametrized_full_replace_groups_with_literal():
+    def add_n(grouped_parameter: List[int]) -> int:
+        return sum(grouped_parameter)
+
+    annotation = function_modifiers.parameterize(
+        replace_just_literal_parameter={"grouped_parameter": group(value(1), value(2), value(3))}
+    )
+    (node_,) = annotation.expand_node(node.Node.from_fn(add_n), {}, concat)
+    assert node_.input_types == {}
+    assert node_.callable() == 6
+
+
+def test_parametrized_full_replace_groups_with_sources():
+    def add_n(grouped_parameter: List[int]) -> int:
+        return sum(grouped_parameter)
+
+    annotation = function_modifiers.parameterize(
+        replace_just_literal_parameter={
+            "grouped_parameter": group(source("foo"), source("bar"), source("baz"))
+        }
+    )
+    (node_,) = annotation.expand_node(node.Node.from_fn(add_n), {}, concat)
+    assert node_.input_types == {
+        "foo": (int, DependencyType.REQUIRED),
+        "bar": (int, DependencyType.REQUIRED),
+        "baz": (int, DependencyType.REQUIRED),
+    }
+    assert node_.callable(foo=1, bar=2, baz=3) == 6
+
+
+def test_parameterized_validate_group():
+    def add_n(grouped_parameter: List[int]) -> int:
+        return sum(grouped_parameter)
+
+    annotation = function_modifiers.parameterize(
+        replace_just_literal_parameter={
+            "grouped_parameter": group(source("foo"), source("bar"), source("baz"))
+        }
+    )
+    annotation.validate(add_n)
+
+
+@pytest.mark.parametrize("annotation", [list, int, pd.Series, float])
+def test_parameterized_validate_group_fails(annotation):
+    def add_n(grouped_parameter: annotation) -> int:
+        return sum(grouped_parameter)
+
+    annotation = function_modifiers.parameterize(
+        replace_just_literal_parameter={
+            "grouped_parameter": group(source("foo"), source("bar"), source("baz"))
+        }
+    )
+    with pytest.raises(base.InvalidDecoratorException):
+        annotation.validate(add_n)
+
+
+def test_inject_list():
+    annotation = function_modifiers.inject(nums=group(value(1), value(2), value(3)))
+
+    def summation(nums: List[int]) -> int:
+        return sum(nums)
+
+    (node_,) = annotation.expand_node(node.Node.from_fn(summation), {}, summation)
+    assert node_() == 6
+
+
+def test_inject_dict():
+    annotation = function_modifiers.inject(nums=group(one=value(1), two=value(2), three=value(3)))
+
+    def summation(nums: Dict[str, int]) -> int:
+        return nums["one"] + nums["two"] + nums["three"]
+
+    (node_,) = annotation.expand_node(node.Node.from_fn(summation), {}, summation)
+    assert node_() == 6
+
+
+def test_inject_list_source():
+    annotation = function_modifiers.inject(
+        nums=group(source("one_source"), source("two_source"), source("three_source"))
+    )
+
+    def summation(nums: List[int]) -> int:
+        return sum(nums)
+
+    (node_,) = annotation.expand_node(node.Node.from_fn(summation), {}, summation)
+    assert node_(one_source=1, two_source=2, three_source=3) == 6
+
+
+def test_inject_dict_source():
+    annotation = function_modifiers.inject(
+        nums=group(one=source("one_source"), two=source("two_source"), three=source("three_source"))
+    )
+
+    def summation(nums: Dict[str, int]) -> int:
+        return nums["one"] + nums["two"] + nums["three"]
+
+    (node_,) = annotation.expand_node(node.Node.from_fn(summation), {}, summation)
+    assert node_(one_source=1, two_source=2, three_source=3) == 6
+
+
+def test_inject_multiple_things():
+    def contrived_function(
+        int_list: List[int],
+        int_dict: Dict[str, int],
+        int_value_injected: int,
+        int_value_not_injected: int,
+    ) -> int:
+        return sum(int_list) + sum(int_dict.values()) + int_value_injected + int_value_not_injected
+
+    annotation = function_modifiers.inject(
+        int_list=group(value(1), value(2), source("three_source")),
+        int_dict=group(one=value(4), two=value(5), three=source("six_source")),
+        int_value_injected=value(7),
+    )
+    (node_,) = annotation.expand_node(node.Node.from_fn(contrived_function), {}, contrived_function)
+    assert node_(int_value_not_injected=8, three_source=3, six_source=6) == 8 * (8 + 1) // 2
+
+
+@pytest.mark.parametrize(
+    "annotated_type,cls,expected",
+    [
+        (List[int], GroupedListDependency, int),
+        (List[List[int]], GroupedListDependency, List[int]),
+        (List[pd.Series], GroupedListDependency, pd.Series),
+        (Dict[str, pd.Series], GroupedDictDependency, pd.Series),
+        (Dict[str, List[int]], GroupedDictDependency, List[int]),
+        (Dict[str, int], GroupedDictDependency, int),
+    ],
+)
+def test_resolve_dependency_type_happy(
+    annotated_type: Type[Type], cls: Type[GroupedDependency], expected: Type[Type]
+):
+    assert cls.resolve_dependency_type(annotated_type, "test") == expected
+
+
+@pytest.mark.parametrize(
+    "annotated_type,cls",
+    [
+        (int, GroupedDictDependency),
+        (int, GroupedListDependency),
+        (List[int], GroupedDictDependency),
+        (Dict[str, int], GroupedListDependency),
+        (pd.Series, GroupedDictDependency),
+        (pd.Series, GroupedListDependency),
+        (pd.DataFrame, GroupedDictDependency),
+        (pd.DataFrame, GroupedListDependency),
+        (Dict[int, str], GroupedDictDependency),
+    ],
+)
+def test_resolve_dependency_type_sad(annotated_type: Type[Type], cls: Type[GroupedDependency]):
+    with pytest.raises(base.InvalidDecoratorException):
+        cls.resolve_dependency_type(annotated_type, "test")
+
+
+def test_inject_misconfigured_param_type_list():
+    def foo(x: int) -> int:
+        return x
+
+    annotation = function_modifiers.inject(x=group(value(1), value(2)))
+    with pytest.raises(base.InvalidDecoratorException):
+        annotation.validate(foo)
+
+
+def test_inject_misconfigured_param_type_dict():
+    def foo(x: int) -> int:
+        return x
+
+    annotation = function_modifiers.inject(x=group(foo=value(1), bar=value(2)))
+    with pytest.raises(base.InvalidDecoratorException):
+        annotation.validate(foo)
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9, 0), reason="Stricter type-checking only works on python 3.9+"
+)
+def test_inject_misconfigured_param_untyped_generic_list():
+    def foo(x: List) -> int:
+        return sum(x)
+
+    annotation = function_modifiers.inject(x=group(value(1), value(2)))
+    with pytest.raises(base.InvalidDecoratorException):
+        annotation.validate(foo)
+
+
+def test_inject_misconfigured_param_untyped_generic_dict():
+    def foo(x: Dict) -> int:
+        return sum(x)
+
+    annotation = function_modifiers.inject(x=group(a=value(1), b=value(2)))
+    with pytest.raises(base.InvalidDecoratorException):
+        annotation.validate(foo)
