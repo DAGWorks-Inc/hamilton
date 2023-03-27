@@ -1,5 +1,5 @@
 from types import ModuleType
-from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -387,6 +387,20 @@ class subdag(base.NodeCreator):
 
         self._validate_parameterization()
 
+    def required_config(self) -> Optional[List[str]]:
+        """Currently we do not filter for subdag as we do not *statically* know what configuration
+        is required. This is because we need to parse the function so that we can figure it out,
+        and that is not available at the time that we call required_config. We need to think about
+        the best way to do this, but its likely that we'll want to allow required_config to consume
+        the function itself, and pass it in when its called with that.
+
+        That said, we don't have sufficient justification to do that yet, so we're just going to
+        return None for now, meaning that it has access to all configuration variables.
+
+        :return:
+        """
+        return None
+
 
 class SubdagParams(TypedDict):
     inputs: NotRequired[Dict[str, ParametrizedDependency]]
@@ -511,3 +525,10 @@ class parameterized_subdag(base.NodeCreator):
     def validate(self, fn: Callable):
         for subdag_generator in self._gather_subdag_generators():
             subdag_generator.validate(fn)
+
+    def required_config(self) -> Optional[List[str]]:
+        """See note for subdag.required_config -- this is the same pattern.
+
+        :return: Any required config items.
+        """
+        return None
