@@ -10,3 +10,8 @@ In this case, we are calculating unique website visitors from the following set 
 
 You can find the code in [unique_users.py](unique_users.py) and [reusable_subdags.py](reusable_subdags.py)
 and look at how we run it in [main.py](main.py).
+
+# Visualizing Execution
+Here you can see the resulting shape of the DAG that will be executed:
+
+![reusable_subdags](reusable_subdags.png)

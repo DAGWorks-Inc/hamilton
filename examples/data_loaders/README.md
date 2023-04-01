@@ -37,3 +37,14 @@ To load/analyze the data, you can run the script `run.py`
 
 Note that you, as the user, have to manually handle connections/whatnot for duckdb.
 We are currently designing the ability to do this natively in hamilton: https://github.com/dagworks-inc/hamilton/issues/197.
+
+# Execution Graphs
+You'll see that the execution graphs are practically the same, except for the top part. Which is exactly what we want,
+because the data_loader modules defines the same set of functions, but have different requirements for getting the data!
+
+## CSV
+![csv](csv_execution_graph.png)
+## DuckDB
+![duckdb](duckdb_execution_graph.png)
+## Mock
+![mock](mock_execution_graph.png)

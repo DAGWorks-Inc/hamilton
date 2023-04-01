@@ -23,3 +23,12 @@ house the same function names as they should map to the inputs required by funct
 ## running it
 * run.py houses the "driver code" required to stitch everything together. It is responsible for creating the
 right configuration to create the DAG, as well as determining what python modules should be loaded.
+
+# Visualization of execution
+Here is the graph of execution for the digits data set and logistic regression model:
+
+![model_dag_digits_logistic.dot.png](model_dag_digits_logistic.dot.png)
+
+Here is the graph of execution for the iris data set and SVM model:
+
+![model_dag_iris_svm](model_dag_iris_svm.dot.png)

@@ -97,7 +97,7 @@ class subdag(base.NodeCreator):
         def feature_engineering(source_path: str) -> pd.DataFrame:
             '''You could recursively use Hamilton within itself.'''
             dr = driver.Driver({}, feature_modules)
-            df = dr.exexcute(["feature_df"], inputs={"path": source_path})
+            df = dr.execute(["feature_df"], inputs={"path": source_path})
             return df
 
     You instead can use the `@subdag` decorator to do the same thing, with the added benefit of visibility into the\

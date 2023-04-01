@@ -20,3 +20,8 @@ To run things:
 
 If you have questions, or need help with this example,
 join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg), and we'll try to help!
+
+# Visualizing Execution
+Here is the graph of execution - pretty simple, right?
+
+![my_dag](my_dag.dot.png)

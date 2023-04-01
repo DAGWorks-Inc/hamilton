@@ -98,7 +98,10 @@ class HamiltonTransformer(BaseEstimator, TransformerMixin):
             X = X.to_dict(orient="series")
 
         X_t = self.driver_.execute(final_vars=self.final_vars, overrides=self.overrides_, inputs=X)
-
+        # self.driver_.visualize_execution(final_vars=self.final_vars,
+        #                                  output_file_path="./scikit_transformer",
+        #                                  render_kwargs={"format": "png"},
+        #                                  inputs=X)
         self.n_features_out_ = len(self.final_vars)
         self.feature_names_out_ = X_t.columns.to_list()
         return X_t

@@ -45,7 +45,7 @@ if __name__ == "__main__":
     ]
     df = dr.execute(output_columns)
     # To visualize do `pip install "sf-hamilton[visualization]"` if you want these to work
-    # dr.visualize_execution(output_columns, './my_dag.dot', {})
+    # dr.visualize_execution(output_columns, './hello_world_dask', {"format": "png"})
     # dr.display_all_functions('./my_full_dag.dot')
     logger.info(df.to_string())
     client.shutdown()

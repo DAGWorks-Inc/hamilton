@@ -20,6 +20,10 @@ For the vanilla Ray implementation use:
 
 > python run.py
 
+Here is the visualization of the execution:
+
+![ray_dag](ray_dag.png)
+
 For the [Ray Workflow](https://docs.ray.io/en/latest/workflows/concepts.html) implementation use:
 
 > python run_rayworkflow.py
