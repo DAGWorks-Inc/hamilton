@@ -31,18 +31,21 @@ def duckdb():
         {"db_path": "./test_data/database.duckdb"}, load_data_duckdb, prep_data
     )
     print(driver.execute(VARS))
+    # driver.visualize_execution(VARS, './duckdb_execution_graph', {"format": "png"})
 
 
 @main.command()
 def csv():
     driver = hamilton.driver.Driver({"db_path": "test_data"}, load_data_csv, prep_data)
     print(driver.execute(VARS))
+    # driver.visualize_execution(VARS, './csv_execution_graph', {"format": "png"})
 
 
 @main.command()
 def mock():
     driver = hamilton.driver.Driver({}, load_data_mock, prep_data)
     print(driver.execute(VARS))
+    # driver.visualize_execution(VARS, './mock_execution_graph', {"format": "png"})
 
 
 if __name__ == "__main__":

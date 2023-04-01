@@ -40,6 +40,10 @@ is awaited.
 Any node inputs are awaited on prior to node computation if they are awaitable, so you can pass
 in external tasks as inputs if you want.
 
+Here is the execution visualized:
+
+![pipeline](pipeline.dot.png)
+
 ## Caveats
 
 1. This will break in certain cases when decorating an async function (E.G. with `extract_outputs`).

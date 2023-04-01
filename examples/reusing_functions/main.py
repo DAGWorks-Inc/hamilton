@@ -135,6 +135,14 @@ def main():
             "monthly_unique_users_CA",
         ]
     )
+    # dr.visualize_execution([
+    #         "daily_unique_users_US",
+    #         "daily_unique_users_CA",
+    #         "weekly_unique_users_US",
+    #         "weekly_unique_users_CA",
+    #         "monthly_unique_users_US",
+    #         "monthly_unique_users_CA",
+    #     ], "./reusable_subdags", {"format": "png"})
     print(result)
 
 

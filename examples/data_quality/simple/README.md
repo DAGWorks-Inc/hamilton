@@ -65,3 +65,20 @@ It is best practice to create a python virtual environment for each project/exam
 It is best practice to create a python virtual environment for each project/example. We omit showing that step here.
 > pip install -r requirements-spark.txt
 > python run_spark.py
+
+
+# Visualizing Execution
+Again you'll see that the visualizations don't change much between the different ways of executing. But to help you
+visualize what's going on, here is the output of `visualize_execution` for each of them.
+
+## Vanilla Hamilton
+![run](./run.png)
+
+## Dask
+![run_dask](./run_dask.png)
+
+## Ray
+![run_ray](./run_ray.png)
+
+## Pandas on Spark
+![run_spark](./run_spark.png)

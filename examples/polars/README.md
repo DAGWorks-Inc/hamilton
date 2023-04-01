@@ -17,6 +17,11 @@ To run things:
 > python my_script.py
 ```
 
+# Visualizing Execution
+Here is the graph of execution - which should look the same as the pandas example:
+
+![polars](polars.png)
+
 # Caveat with Polars
 There is one major caveat with Polars to be aware of: THERE IS NO INDEX IN POLARS LIKE THERE IS WITH PANDAS.
 

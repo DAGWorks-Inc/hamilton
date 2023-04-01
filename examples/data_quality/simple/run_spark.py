@@ -65,7 +65,7 @@ if __name__ == "__main__":
         "index_col",
     ]
     # To visualize do `pip install "sf-hamilton[visualization]"` if you want these to work
-    # dr.visualize_execution(output_columns, './my_dag.dot', {})
+    # dr.visualize_execution(output_columns, './run_spark', {"format": "png"})
     # dr.display_all_functions('./my_full_dag.dot')
 
     # let's create the dataframe!

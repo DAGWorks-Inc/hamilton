@@ -17,6 +17,7 @@ async def call(request: fastapi.Request) -> dict:
     # Can instantiate a driver within a request as well:
     # dr = h_async.AsyncDriver({}, async_module, result_builder=base.DictResult())
     result = await dr.execute(["pipeline"], inputs=input_data)
+    # dr.visualize_execution(["pipeline"], "./pipeline.dot", {"format": "png"}, inputs=input_data)
     return result
 
 

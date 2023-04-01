@@ -11,6 +11,10 @@ To run things:
 ```bash
 > python run.py
 ```
+# DAG Visualization:
+Here is the visualization of the execution that the transformer currently performs if you run `run.py`:
+
+![scikit_transformer](scikit_transformer.png)
 
 # Limitations and TODOs
 - The current implementation relies on Hamilton defaults' `base.HamiltonGraphAdapter` and `base.PandasDataFrameResult` which limits the compatibility with other computation engines supported by Hamilton
