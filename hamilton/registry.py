@@ -1,3 +1,4 @@
+import collections
 import functools
 import importlib
 import logging
@@ -84,3 +85,15 @@ def load_extension(plugin_module: str):
         mod, f"fill_with_scalar_{plugin_module}"
     ), f"Error extension missing fill_with_scalar_{plugin_module}"
     logger.info(f"Detected {plugin_module} and successfully loaded Hamilton extensions.")
+
+
+ADAPTER_REGISTRY = collections.defaultdict(list)
+
+
+def register_adapter(adapter: Any):
+    """Registers a adapter. Note that the type is any,
+    because we can't import it here due to circular imports.
+
+    :param adapter: the adapter to register.
+    """
+    ADAPTER_REGISTRY[adapter.name()].append(adapter)
