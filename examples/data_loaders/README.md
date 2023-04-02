@@ -11,7 +11,7 @@ which will make your dataflow easier to maintain in the long run.
 The goal is to show you two things:
 
 1. How to load data from various sources
-2. How to switch the sources of data you're loading from by swapping out modules, using[polymorphism](https://en.wikipedia.org/wiki/Polymorphism_(computer_science))
+2. How to switch the sources of data you're loading from by swapping out modules, using [polymorphism](https://en.wikipedia.org/wiki/Polymorphism_(computer_science))
 
 As such, we have three data loaders to use:
 
