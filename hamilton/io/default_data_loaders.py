@@ -2,27 +2,11 @@ import dataclasses
 import json
 import os
 import pickle
-from datetime import datetime
 from typing import Any, Dict, Tuple, Type
 
 from hamilton.htypes import custom_subclass_check
 from hamilton.io.data_loaders import DataLoader, LoadType
-
-
-def get_file_loading_metadata(path: str) -> Dict[str, Any]:
-    """Gives metadata from loading a file.
-    This includes:
-    - the file size
-    - the file path
-    - the last modified time
-    - the current time
-    """
-    return {
-        "file_size": os.path.getsize(path),
-        "file_path": path,
-        "file_last_modified": os.path.getmtime(path),
-        "file_loaded_at": datetime.now().utcnow().timestamp(),
-    }
+from hamilton.io.utils import get_file_loading_metadata
 
 
 @dataclasses.dataclass

@@ -45,7 +45,9 @@ class LoaderFactory:
         )
         if len(missing_params) > 0:
             raise InvalidDecoratorException(
-                f"Missing required parameters for loader : {self.loader_cls}: {missing_params}"
+                f"Missing required parameters for loader : {self.loader_cls}: {missing_params}. "
+                f"Required parameters/types are: {required_args}. Optional parameters/types are: "
+                f"{optional_args}. "
             )
         if len(extra_params) > 0:
             raise InvalidDecoratorException(
@@ -232,10 +234,82 @@ class load_from__meta__(type):
     def __getattr__(cls, item: str):
         if item in ADAPTER_REGISTRY:
             return load_from.decorator_factory(ADAPTER_REGISTRY[item])
-        return super().__getattribute__(item)
+        try:
+            return super().__getattribute__(item)
+        except AttributeError as e:
+            raise AttributeError(
+                f"No loader named: {item} available for {cls.__name__}. "
+                f"Available loaders are: {ADAPTER_REGISTRY.keys()}. "
+                f"If you've gotten to this point, you either (1) spelled the "
+                f"loader name wrong, (2) are trying to use a loader that does"
+                f"not exist (yet), or (3) have implemented it and "
+            ) from e
+
 
 
 class load_from(metaclass=load_from__meta__):
+    """Decorator to inject externally loaded data into a function. Ideally, anything that is not
+    a pure transform should either call this, or accept inputs from an external location.
+
+    This decorator functions by "injecting" a parameter into the function. For example,
+    the following code will load the json file, and inject it into the function as the parameter
+    `input_data`. Note that the path for the JSON file comes from another node called
+    raw_data_path (which could also be passed in as an external input).
+
+    .. code-block:: python
+
+        @load_from.json(path=source("raw_data_path"))
+        def raw_data(input_data: dict) -> dict:
+            return input_data
+
+    The decorator can also be used with `value` to inject a constant value into the loader.
+    In the following case, we use the literal value "some/path.json" as the path to the JSON file.
+
+    .. code-block:: python
+
+        @load_from.json(path=value("some/path.json"))
+        def raw_data(input_data: dict) -> dict:
+            return input_data
+
+    You can also utilize the `inject_` parameter in the loader if you want to inject the data
+    into a specific param. For example, the following code will load the json file, and inject it
+    into the function as the parameter `data`.
+
+    .. code-block:: python
+
+        @load_from.json(path=source("raw_data_path"), inject_="data")
+        def raw_data(data: dict, valid_keys: List[str]) -> dict:
+            return [item for item in data if item in valid_keys]
+
+
+    This is a highly pluggable functionality -- here's the basics of how it works:
+
+    1. Every "key" (json above, but others include csv, literal, file, pickle, etc...) corresponds
+    to a set of loader classes. For example, the json key corresponds to the JSONLoader class in
+    default_data_loaders. They implement the classmethod `name`. Once they are registered with the
+    central registry they pick
+
+    2. Every data loader class (which are all dataclasses) implements the `applies_to` method,
+    which takes a type and returns True if it can load data of that type. For example,
+    the JSONLoader class can load data of type `dict`. Note that the applies_to is read in
+    reverse order, so the most recently registered loader class is the one that is used. That
+    way, you can register custom ones.
+
+    3. The loader class is instantiated with the kwargs passed to the decorator. For example, the
+    JSONLoader class takes a `path` kwarg, which is the path to the JSON file.
+
+    4. The decorator then creates a node that loads the data, and modifies the node that runs the
+    function to accept that. It also returns metadata (customizable at the loader-class-level) to
+    enable debugging after the fact. This is unstructured, but can be used down the line to describe
+    any metadata to help debug.
+
+    The "core" hamilton library contains a few basic data loaders that can be implemented within
+    the confines of python's standard library. pandas_extensions contains a few more that require
+    pandas to be installed.
+
+    Note that these can have `default` arguments, specified by defaults in the dataclass fields.
+    """
+
     def __call__(self, *args, **kwargs):
         return LoadFromDecorator(*args, **kwargs)
 
