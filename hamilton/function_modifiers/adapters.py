@@ -246,7 +246,6 @@ class load_from__meta__(type):
             ) from e
 
 
-
 class load_from(metaclass=load_from__meta__):
     """Decorator to inject externally loaded data into a function. Ideally, anything that is not
     a pure transform should either call this, or accept inputs from an external location.
@@ -317,8 +316,8 @@ class load_from(metaclass=load_from__meta__):
     def decorator_factory(
         cls, loaders: typing.Sequence[Type[DataLoader]]
     ) -> Callable[..., LoadFromDecorator]:
-        """Effectively a partial function for the load_from decorator. Broken into its own (rather than
-        using functools.partial) as it is a little clearer to parse.
+        """Effectively a partial function for the load_from decorator. Broken into its own (
+        rather than using functools.partial) as it is a little clearer to parse.
 
         :param loaders: Options of data loader classes to use
         :return: The data loader decorator.
