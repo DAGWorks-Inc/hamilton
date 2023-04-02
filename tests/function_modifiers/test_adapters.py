@@ -126,6 +126,22 @@ def test_load_from_decorator_validate_fails_inject_not_in_fn():
         decorator.validate(fn)
 
 
+def test_load_from_decorator_validate_fails_inject_missing_param():
+    decorator = LoadFromDecorator(
+        [MockDataLoader],
+        required_param=source("1"),
+        required_param_2=value(2),
+        # This is commented out cause it'll be missing
+        # required_param_3=value("3"),
+    )
+
+    def fn(data: int) -> int:
+        return data
+
+    with pytest.raises(fm_base.InvalidDecoratorException):
+        decorator.validate(fn)
+
+
 @dataclasses.dataclass
 class StringDataLoader(DataLoader):
     @classmethod
@@ -297,3 +313,9 @@ def test_load_from_decorator_json_file(source_):
         ["mean_age"], inputs={"test_data": "tests/resources/data/test_load_from_data.json"}
     )
     assert result["mean_age"] - 32.33333 < 0.0001
+
+
+def test_loader_fails_for_missing_attribute():
+    with pytest.raises(AttributeError):
+        load_from.not_a_loader(param=value("foo"))
+
