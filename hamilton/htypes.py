@@ -11,7 +11,7 @@ from hamilton.registry import COLUMN_TYPE, DF_TYPE_AND_COLUMN_TYPES
 BASE_ARGS_FOR_GENERICS = (typing.T,)
 
 
-def custom_subclass_check(requested_type: Type[Type], param_type: Type[Type]):
+def custom_subclass_check(requested_type: Type, param_type: Type):
     """This is a custom check around generics & classes. It probably misses a few edge cases.
 
     We will likely need to revisit this in the future (perhaps integrate with graphadapter?)

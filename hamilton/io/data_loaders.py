@@ -1,9 +1,9 @@
 import abc
 import dataclasses
 import typing
-from typing import Any, Dict, Tuple, Type, TypeVar
+from typing import Any, Collection, Dict, Tuple, Type
 
-LoadType = TypeVar("LoadType")
+from hamilton.htypes import custom_subclass_check
 
 
 class DataLoader(abc.ABC):
@@ -20,6 +20,23 @@ class DataLoader(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
+    def load_targets(cls) -> Collection[Type]:
+        """Returns the types that this data loader can load to.
+        These will be checked against the desired type to determine
+        whether this is a suitable loader for that type.
+
+        Note that a loader can load to multiple types. This is the function to
+        override if you want to add a new type to a data loader.
+
+        Note if you have any specific requirements for loading types (generic/whatnot),
+        you can override applies_to as well, but it will make it much harder to document/determine
+        what is happening.
+
+        :return:
+        """
+        pass
+
+    @classmethod
     def applies_to(cls, type_: Type[Type]) -> bool:
         """Tells whether or not this data loader can load to a specific type.
         For instance, a CSV data loader might be able to load to a dataframe,
@@ -31,10 +48,13 @@ class DataLoader(abc.ABC):
         :param type_: Candidate type
         :return: True if this data loader can load to the type, False otherwise.
         """
-        pass
+        for load_to in cls.load_targets():
+            if custom_subclass_check(load_to, type_):
+                return True
+        return False
 
     @abc.abstractmethod
-    def load_data(self, type_: Type[LoadType]) -> Tuple[LoadType, Dict[str, Any]]:
+    def load_data(self, type_: Type[Type]) -> Tuple[Type, Dict[str, Any]]:
         """Loads the data from the data source.
         Note this uses the constructor parameters to determine
         how to load the data.
