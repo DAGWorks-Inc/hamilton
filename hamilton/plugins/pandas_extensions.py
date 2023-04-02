@@ -1,4 +1,9 @@
-from typing import Any
+import abc
+import dataclasses
+from typing import Any, Dict, Tuple, Type
+
+from hamilton.io import utils
+from hamilton.io.data_loaders import DataLoader, LoadType
 
 try:
     import pandas as pd
@@ -28,3 +33,77 @@ def register_types():
 
 
 register_types()
+
+
+class DataFrameDataLoader(DataLoader, abc.ABC):
+    """Base class for data loaders that load dataframes."""
+
+    @classmethod
+    def applies_to(cls, type_: Type[Type]) -> bool:
+        return issubclass(DATAFRAME_TYPE, type_)
+
+    @abc.abstractmethod
+    def load_data(self, type_: Type[DATAFRAME_TYPE]) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        pass
+
+
+@dataclasses.dataclass
+class CSVDataLoader(DataFrameDataLoader):
+    """Data loader for CSV files. Note that this currently does not support the wide array of
+    data loading functionality that pandas does. We will be adding this in over time, but for now
+    you can subclass this or open up an issue if this doesn't have what you want."""
+
+    path: str
+
+    def load_data(self, type_: Type[LoadType]) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        df = pd.read_csv(self.path)
+        metadata = utils.get_file_loading_metadata(self.path)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "csv"
+
+
+@dataclasses.dataclass
+class FeatureDataLoader(DataFrameDataLoader):
+    """Data loader for CSV files. Note that this currently does not support the wide array of
+    data loading functionality that pandas does. We will be adding this in over time, but for now
+    you can subclass this or open up an issue if this doesn't have what you want."""
+
+    path: str
+
+    def load_data(self, type_: Type[DATAFRAME_TYPE]) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pd.read_feather(self.path)
+        metadata = utils.get_file_loading_metadata(self.path)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "feather"
+
+
+@dataclasses.dataclass
+class ParquetDataLoader(DataFrameDataLoader):
+    """Data loader for CSV files. Note that this currently does not support the wide array of
+    data loading functionality that pandas does. We will be adding this in over time, but for now
+    you can subclass this or open up an issue if this doesn't have what you want."""
+
+    path: str
+
+    def load_data(self, type_: Type[DATAFRAME_TYPE]) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pd.read_parquet(self.path)
+        metadata = utils.get_file_loading_metadata(self.path)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "parquet"
+
+
+def register_data_loaders():
+    """Function to register the data loaders for this extension."""
+    for loader in [CSVDataLoader, FeatureDataLoader, ParquetDataLoader]:
+        registry.register_adapter(loader)
+
+register_data_loaders()

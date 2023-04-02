@@ -2,6 +2,7 @@ import dataclasses
 from collections import Counter
 from typing import Any, Dict, Tuple, Type
 
+import pandas as pd
 import pytest
 
 from hamilton import ad_hoc_utils, base, driver, graph
@@ -319,3 +320,21 @@ def test_loader_fails_for_missing_attribute():
     with pytest.raises(AttributeError):
         load_from.not_a_loader(param=value("foo"))
 
+
+def test_pandas_extensions():
+    @load_from.csv(path=value("tests/resources/data/test_load_from_data.csv"))
+    def df(data: pd.DataFrame) -> pd.DataFrame:
+        return data
+
+    config = {}
+    dr = driver.Driver(
+        config,
+        ad_hoc_utils.create_temporary_module(df),
+        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+    )
+    result = dr.execute(
+        ["df"],
+        inputs={"test_data": "tests/resources/data/test_load_from_data.csv"},
+    )
+    assert result["df"].shape == (3, 5)
+    assert result["df"].loc[0, "firstName"] == "John"

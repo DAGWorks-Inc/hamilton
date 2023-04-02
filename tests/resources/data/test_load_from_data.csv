@@ -1,0 +1,4 @@
+firstName,lastName,age,department,email
+John,Doe,25,IT,john.doe@example.com
+Jane,Smith,32,HR,jane.smith@example.com
+Bob,Johnson,40,Marketing,bob.johnson@example.com
