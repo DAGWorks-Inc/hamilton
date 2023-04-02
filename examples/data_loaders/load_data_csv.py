@@ -1,29 +1,30 @@
-import os
-
 import pandas as pd
 
+from hamilton.function_modifiers import value
+from hamilton.function_modifiers.adapters import load_from
 
-def spend(db_path: str) -> pd.DataFrame:
+
+@load_from.csv(path=value("marketing_spend.csv"))
+def spend(data: pd.DataFrame) -> pd.DataFrame:
     """Takes in the dataframe and then generates a date index column to it,
     where each row is a day starting from 2020-01-01"""
-    df = pd.read_csv(os.path.join(db_path, "marketing_spend.csv"))
-    df["date"] = pd.date_range(start="2020-01-01", periods=len(df), freq="D")
-    return df
+    data["date"] = pd.date_range(start="2020-01-01", periods=len(data), freq="D")
+    return data
 
 
-def churn(db_path: str) -> pd.DataFrame:
+@load_from.csv(path=value("churn.csv"))
+def churn(data: pd.DataFrame) -> pd.DataFrame:
     """Takes in the dataframe and then generates a date index column to it,
     where each row is a day starting from 2020-01-01
     """
-    df = pd.read_csv(os.path.join(db_path, "churn.csv"))
-    df["date"] = pd.date_range(start="2020-01-01", periods=len(df), freq="D")
-    return df
+    data["date"] = pd.date_range(start="2020-01-01", periods=len(data), freq="D")
+    return data
 
 
-def signups(db_path: str) -> pd.DataFrame:
+@load_from.csv(path=value("signups.csv"))
+def signups(data: pd.DataFrame) -> pd.DataFrame:
     """Takes in the dataframe and then generates a date index column to it,
     where each row is a day starting from 2020-01-01
     """
-    df = pd.read_csv(os.path.join(db_path, "signups.csv"))
-    df["date"] = pd.date_range(start="2020-01-01", periods=len(df), freq="D")
-    return df
+    data["date"] = pd.date_range(start="2020-01-01", periods=len(data), freq="D")
+    return data
