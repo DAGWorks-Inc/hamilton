@@ -1,7 +1,7 @@
 import dataclasses
-from typing import Any, Dict, Tuple, Type
+from typing import Any, Collection, Dict, Tuple, Type
 
-from hamilton.io.data_loaders import DataLoader, LoadType
+from hamilton.io.data_loaders import DataLoader
 
 
 @dataclasses.dataclass
@@ -10,10 +10,10 @@ class MockDataLoader(DataLoader):
     default_param: int = 1
 
     @classmethod
-    def applies_to(cls, type_: Type[Type]) -> bool:
-        return True
+    def load_targets(cls) -> Collection[Type]:
+        return [bool]
 
-    def load_data(self, type_: Type[LoadType]) -> Tuple[LoadType, Dict[str, Any]]:
+    def load_data(self, type_: Type) -> Tuple[int, Dict[str, Any]]:
         pass
 
     @classmethod

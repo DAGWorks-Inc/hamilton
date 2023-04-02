@@ -1,6 +1,6 @@
 import dataclasses
 from collections import Counter
-from typing import Any, Dict, Tuple, Type
+from typing import Any, Collection, Dict, Tuple, Type
 
 import pandas as pd
 import pytest
@@ -9,7 +9,7 @@ from hamilton import ad_hoc_utils, base, driver, graph
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers import source, value
 from hamilton.function_modifiers.adapters import LoadFromDecorator, load_from
-from hamilton.io.data_loaders import DataLoader, LoadType
+from hamilton.io.data_loaders import DataLoader
 from hamilton.registry import ADAPTER_REGISTRY
 
 
@@ -41,8 +41,8 @@ class MockDataLoader(DataLoader):
     default_param_3: str = "6"
 
     @classmethod
-    def applies_to(cls, type_: Type[Type]) -> bool:
-        return issubclass(type_, int)
+    def load_targets(cls) -> Collection[Type]:
+        return [int]
 
     def load_data(self, type_: Type[int]) -> Tuple[int, Dict[str, Any]]:
         return ..., {"required_param": self.required_param, "default_param": self.default_param}
@@ -145,39 +145,39 @@ def test_load_from_decorator_validate_fails_inject_missing_param():
 
 @dataclasses.dataclass
 class StringDataLoader(DataLoader):
-    @classmethod
-    def applies_to(cls, type_: Type[Type]) -> bool:
-        return issubclass(str, type_)
-
-    def load_data(self, type_: Type[LoadType]) -> Tuple[LoadType, Dict[str, Any]]:
+    def load_data(self, type_: Type) -> Tuple[str, Dict[str, Any]]:
         return "foo", {"loader": "string_data_loader"}
 
     @classmethod
     def name(cls) -> str:
         return "dummy"
 
+    @classmethod
+    def load_targets(cls) -> Collection[Type]:
+        return [str]
+
 
 @dataclasses.dataclass
 class IntDataLoader(DataLoader):
-    @classmethod
-    def applies_to(cls, type_: Type[Type]) -> bool:
-        return issubclass(int, type_)
-
-    def load_data(self, type_: Type[LoadType]) -> Tuple[LoadType, Dict[str, Any]]:
+    def load_data(self, type_: Type) -> Tuple[int, Dict[str, Any]]:
         return 1, {"loader": "int_data_loader"}
 
     @classmethod
     def name(cls) -> str:
         return "dummy"
 
+    @classmethod
+    def load_targets(cls) -> Collection[Type]:
+        return [int]
+
 
 @dataclasses.dataclass
 class IntDataLoaderClass2(DataLoader):
     @classmethod
-    def applies_to(cls, type_: Type[Type]) -> bool:
-        return issubclass(int, type_)
+    def load_targets(cls) -> Collection[Type]:
+        return [int]
 
-    def load_data(self, type_: Type[LoadType]) -> Tuple[LoadType, Dict[str, Any]]:
+    def load_data(self, type_: Type) -> Tuple[int, Dict[str, Any]]:
         return 2, {"loader": "int_data_loader_class_2"}
 
     @classmethod

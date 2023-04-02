@@ -1,9 +1,9 @@
 import abc
 import dataclasses
-from typing import Any, Dict, Tuple, Type
+from typing import Any, Collection, Dict, Tuple, Type
 
 from hamilton.io import utils
-from hamilton.io.data_loaders import DataLoader, LoadType
+from hamilton.io.data_loaders import DataLoader
 
 try:
     import pandas as pd
@@ -36,11 +36,11 @@ register_types()
 
 
 class DataFrameDataLoader(DataLoader, abc.ABC):
-    """Base class for data loaders that load dataframes."""
+    """Base class for data loaders that load pandas dataframes."""
 
     @classmethod
-    def applies_to(cls, type_: Type[Type]) -> bool:
-        return issubclass(DATAFRAME_TYPE, type_)
+    def load_targets(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
 
     @abc.abstractmethod
     def load_data(self, type_: Type[DATAFRAME_TYPE]) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
@@ -55,7 +55,7 @@ class CSVDataLoader(DataFrameDataLoader):
 
     path: str
 
-    def load_data(self, type_: Type[LoadType]) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def load_data(self, type_: Type) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         df = pd.read_csv(self.path)
         metadata = utils.get_file_loading_metadata(self.path)
         return df, metadata
@@ -66,8 +66,8 @@ class CSVDataLoader(DataFrameDataLoader):
 
 
 @dataclasses.dataclass
-class FeatureDataLoader(DataFrameDataLoader):
-    """Data loader for CSV files. Note that this currently does not support the wide array of
+class FeatherDataLoader(DataFrameDataLoader):
+    """Data loader for feather files. Note that this currently does not support the wide array of
     data loading functionality that pandas does. We will be adding this in over time, but for now
     you can subclass this or open up an issue if this doesn't have what you want."""
 
@@ -85,7 +85,7 @@ class FeatureDataLoader(DataFrameDataLoader):
 
 @dataclasses.dataclass
 class ParquetDataLoader(DataFrameDataLoader):
-    """Data loader for CSV files. Note that this currently does not support the wide array of
+    """Data loader for feather files. Note that this currently does not support the wide array of
     data loading functionality that pandas does. We will be adding this in over time, but for now
     you can subclass this or open up an issue if this doesn't have what you want."""
 
@@ -103,7 +103,8 @@ class ParquetDataLoader(DataFrameDataLoader):
 
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
-    for loader in [CSVDataLoader, FeatureDataLoader, ParquetDataLoader]:
+    for loader in [CSVDataLoader, FeatherDataLoader, ParquetDataLoader]:
         registry.register_adapter(loader)
+
 
 register_data_loaders()
