@@ -1,9 +1,10 @@
 import click
+import load_data_csv
+import load_data_duckdb
 import load_data_mock
 import prep_data
 
 import hamilton.driver
-from examples.data_loaders import load_data_csv, load_data_duckdb
 
 
 @click.group()
@@ -38,7 +39,7 @@ def duckdb():
 def csv():
     driver = hamilton.driver.Driver({"db_path": "test_data"}, load_data_csv, prep_data)
     print(driver.execute(VARS))
-    # driver.visualize_execution(VARS, './csv_execution_graph', {"format": "png"})
+    driver.visualize_execution(VARS, "./csv_execution_graph", {"format": "png"})
 
 
 @main.command()
