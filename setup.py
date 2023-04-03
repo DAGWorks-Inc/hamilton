@@ -74,7 +74,8 @@ setup(
         "dask-diagnostics": ["dask[diagnostics]"],
         "dask-distributed": ["dask[distributed]"],
         "ray": ["ray>=2.0.0", "pyarrow"],
-        "pyspark": ["pyspark[pandas_on_spark]"],
+        "pyspark": ["pyspark[pandas_on_spark]", "pandas<2.0"],  # I'm sure they'll add support soon,
+        # but for now its not compatible
         "pandera": ["pandera"],
     },
     # Relevant project URLs
