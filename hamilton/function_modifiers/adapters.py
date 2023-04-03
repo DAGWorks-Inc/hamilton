@@ -288,9 +288,9 @@ class load_from(metaclass=load_from__meta__):
     default_data_loaders. They implement the classmethod `name`. Once they are registered with the
     central registry they pick
 
-    2. Every data loader class (which are all dataclasses) implements the `applies_to` method,
-    which takes a type and returns True if it can load data of that type. For example,
-    the JSONLoader class can load data of type `dict`. Note that the applies_to is read in
+    2. Every data loader class (which are all dataclasses) implements the `load_targets` method,
+    which returns a list of types it can load to. For example, the JSONLoader class can load data
+    of type `dict`. Note that the set of potential loading candidate classes are evaluated in
     reverse order, so the most recently registered loader class is the one that is used. That
     way, you can register custom ones.
 
