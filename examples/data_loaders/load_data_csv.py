@@ -1,10 +1,9 @@
 import pandas as pd
 
-from hamilton.function_modifiers import value
-from hamilton.function_modifiers.adapters import load_from
+from hamilton.function_modifiers import load_from, value
 
 
-@load_from.csv(path=value("marketing_spend.csv"))
+@load_from.csv(path=value("test_data/marketing_spend.csv"))
 def spend(data: pd.DataFrame) -> pd.DataFrame:
     """Takes in the dataframe and then generates a date index column to it,
     where each row is a day starting from 2020-01-01"""
@@ -12,7 +11,7 @@ def spend(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-@load_from.csv(path=value("churn.csv"))
+@load_from.csv(path=value("test_data/churn.csv"))
 def churn(data: pd.DataFrame) -> pd.DataFrame:
     """Takes in the dataframe and then generates a date index column to it,
     where each row is a day starting from 2020-01-01
@@ -21,7 +20,7 @@ def churn(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-@load_from.csv(path=value("signups.csv"))
+@load_from.csv(path=value("test_data/signups.csv"))
 def signups(data: pd.DataFrame) -> pd.DataFrame:
     """Takes in the dataframe and then generates a date index column to it,
     where each row is a day starting from 2020-01-01

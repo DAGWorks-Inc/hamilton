@@ -1,6 +1,7 @@
 import logging
 
 from . import (
+    adapters,
     base,
     configuration,
     delayed,
@@ -83,3 +84,6 @@ parameterized_subdag = recursive.parameterized_subdag
 
 resolve = delayed.resolve
 ResolveAt = delayed.ResolveAt
+
+# materialization stuff
+load_from = adapters.load_from
