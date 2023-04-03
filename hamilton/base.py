@@ -423,7 +423,13 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
     def check_input_type(node_type: Type, input_value: Any) -> bool:
         if node_type == Any:
             return True
-        elif inspect.isclass(node_type) and isinstance(input_value, node_type):
+        # In the case of dict[str, Any] (or equivalent) in python 3.9 +
+        # we need to double-check that its not generic, as the isinstance clause will break this
+        elif (
+            inspect.isclass(node_type)
+            and not typing_inspect.is_generic_type(node_type)
+            and isinstance(input_value, node_type)
+        ):
             return True
         elif typing_inspect.is_typevar(node_type):  # skip runtime comparison for now.
             return True
