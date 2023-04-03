@@ -1,4 +1,5 @@
 import collections
+import sys
 import typing
 
 import numpy as np
@@ -82,6 +83,32 @@ def test_SimplePythonDataFrameGraphAdapter_check_input_type_match(node_type, inp
     """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
     adapter = base.SimplePythonDataFrameGraphAdapter()
     actual = adapter.check_input_type(node_type, input_value)
+    assert actual is True
+
+
+# We cannot parameterize this as the parameterization cannot be
+# included if the
+@pytest.mark.skipif(
+    sys.version_info < (3, 9, 0),
+    reason="Type hinting generics in standard collections " "is only supported in 3.9+",
+)
+def test_SimplePythonDataFrameGraphAdapter_subscripted_generics_dict_str_Any():
+    """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
+    adapter = base.SimplePythonDataFrameGraphAdapter()
+    actual = adapter.check_input_type(dict[str, typing.Any], {})
+    assert actual is True
+
+
+# We cannot parameterize this as the parameterization cannot be
+# included if the
+@pytest.mark.skipif(
+    sys.version_info < (3, 9, 0),
+    reason="Type hinting generics in standard collections " "is only supported in 3.9+",
+)
+def test_SimplePythonDataFrameGraphAdapter_subscripted_generics_list_Any():
+    """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
+    adapter = base.SimplePythonDataFrameGraphAdapter()
+    actual = adapter.check_input_type(list[typing.Any], [])
     assert actual is True
 
 
