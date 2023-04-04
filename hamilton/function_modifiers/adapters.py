@@ -368,10 +368,10 @@ class save_to__meta__(type):
         except AttributeError as e:
             raise AttributeError(
                 f"No saver named: {item} available for {cls.__name__}. "
-                f"Available data savers are: {SAVER_REGISTRY.keys()}. "
+                f"Available data savers are: {list(SAVER_REGISTRY.keys())}. "
                 f"If you've gotten to this point, you either (1) spelled the "
                 f"loader name wrong, (2) are trying to use a saver that does"
-                f"not exist (yet)"
+                f"not exist (yet)."
             ) from e
 
 
@@ -382,6 +382,7 @@ class SaveToDecorator(SingleNodeNodeTransformer):
         artifact_name_: str = None,
         **kwargs: ParametrizedDependency,
     ):
+        super(SaveToDecorator, self).__init__()
         self.artifact_name = artifact_name_
         self.saver_classes = saver_classes_
         self.kwargs = kwargs
@@ -464,7 +465,7 @@ class SaveToDecorator(SingleNodeNodeTransformer):
         pass
 
 
-class save_to(metaclass=load_from__meta__):
+class save_to(metaclass=save_to__meta__):
     """Decorator that outputs data to some external source. You can think
     about this as the inverse of load_from.
 

@@ -7,7 +7,7 @@ import pytest
 
 from hamilton import ad_hoc_utils, base, driver, graph, node
 from hamilton.function_modifiers import base as fm_base
-from hamilton.function_modifiers import source, value
+from hamilton.function_modifiers import save_to, source, value
 from hamilton.function_modifiers.adapters import (
     LoadFromDecorator,
     SaveToDecorator,
@@ -47,7 +47,7 @@ class MockDataLoader(DataLoader):
     default_param_3: str = "6"
 
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [int]
 
     def load_data(self, type_: Type[int]) -> Tuple[int, Dict[str, Any]]:
@@ -158,7 +158,7 @@ class StringDataLoader(DataLoader):
         return "dummy"
 
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [str]
 
 
@@ -172,14 +172,14 @@ class IntDataLoader(DataLoader):
         return "dummy"
 
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [int]
 
 
 @dataclasses.dataclass
 class IntDataLoader2(DataLoader):
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [int]
 
     def load_data(self, type_: Type) -> Tuple[int, Dict[str, Any]]:
@@ -344,8 +344,12 @@ def test_loader_fails_for_missing_attribute():
         load_from.not_a_loader(param=value("foo"))
 
 
-def test_pandas_extensions():
-    @load_from.csv(path=value("tests/resources/data/test_load_from_data.csv"))
+def test_pandas_extensions_end_to_end(tmp_path_factory):
+    output_path = tmp_path_factory.mktemp("test_pandas_extensions_end_to_end") / "output.csv"
+    input_path = "tests/resources/data/test_load_from_data.csv"
+
+    @save_to.csv(path=source("output_path"), artifact_name_="save_df")
+    @load_from.csv(path=source("input_path"))
     def df(data: pd.DataFrame) -> pd.DataFrame:
         return data
 
@@ -355,12 +359,21 @@ def test_pandas_extensions():
         ad_hoc_utils.create_temporary_module(df),
         adapter=base.SimplePythonGraphAdapter(base.DictResult()),
     )
+    # run once to check that loading is correct
     result = dr.execute(
-        ["df"],
-        inputs={"test_data": "tests/resources/data/test_load_from_data.csv"},
+        ["df", "save_df"],
+        inputs={"input_path": input_path, "output_path": output_path},
     )
     assert result["df"].shape == (3, 5)
     assert result["df"].loc[0, "firstName"] == "John"
+
+    #
+    result_just_read = dr.execute(
+        ["df"],
+        inputs={"input_path": output_path},
+    )
+    # This is just reading the same file we wrote out, so it should be the same
+    pd.testing.assert_frame_equal(result["df"], result_just_read["df"])
 
 
 @dataclasses.dataclass
@@ -374,7 +387,7 @@ class MarkingSaver(DataSaver):
         return {}
 
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [int]
 
     @classmethod

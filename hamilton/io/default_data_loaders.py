@@ -13,7 +13,7 @@ class JSONDataAdapter(DataLoader, DataSaver):
     path: str
 
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [dict]
 
     def load_data(self, type_: Type) -> Tuple[dict, Dict[str, Any]]:
@@ -40,7 +40,7 @@ class RawFileDataLoader(DataLoader, DataSaver):
             return f.read(), get_file_loading_metadata(self.path)
 
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [str]
 
     @classmethod
@@ -58,7 +58,7 @@ class PickleLoader(DataLoader):
     path: str
 
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [object]
 
     @classmethod
@@ -87,7 +87,7 @@ class EnvVarDataLoader(DataLoader):
         return "environment"
 
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [dict]
 
 
@@ -96,7 +96,7 @@ class LiteralValueDataLoader(DataLoader):
     value: Any
 
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [Any]
 
     def load_data(self, type_: Type) -> Tuple[dict, Dict[str, Any]]:
