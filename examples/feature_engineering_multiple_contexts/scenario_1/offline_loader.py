@@ -8,7 +8,7 @@ from typing import List
 
 import pandas as pd
 
-from hamilton.function_modifiers import extract_columns
+from hamilton.function_modifiers import extract_columns, load_from, source, value
 
 # full set of available columns from the data source
 data_columns = [
@@ -46,12 +46,12 @@ def _sanitize_columns(df_columns: List[str]) -> List[str]:
 
 
 @extract_columns(*data_columns)
-def raw_data(location: str) -> pd.DataFrame:
+@load_from.csv(path=source("location"), sep=value(";"))
+def raw_data(df: pd.DataFrame) -> pd.DataFrame:
     """Extracts the raw data, renames the columns to be valid python variable names, and assigns an index.
     :param location: the location to load from
     :return:
     """
-    df = pd.read_csv(location, sep=";")
     # rename columns to be valid hamilton names -- and lower case it
     df.columns = _sanitize_columns(df.columns)
     # create proper index -- ID-Month-Day - to be able to join features appropriately.

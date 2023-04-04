@@ -70,13 +70,26 @@ class CSVDataAdapter(DataFrameDataLoader):
     """
 
     path: str
+    sep: str = None
+
+    def _get_loading_kwargs(self):
+        kwargs = {}
+        if self.sep is not None:
+            kwargs["sep"] = self.sep
+        return kwargs
+
+    def _get_saving_kwargs(self):
+        kwargs = {"index": False}
+        if self.sep is not None:
+            kwargs["sep"] = self.sep
+        return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.to_csv(self.path, index=False)
+        data.to_csv(self.path, **self._get_saving_kwargs())
         return utils.get_file_loading_metadata(self.path)
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pd.read_csv(self.path)
+        df = pd.read_csv(self.path, **self._get_loading_kwargs())
         metadata = utils.get_file_loading_metadata(self.path)
         return df, metadata
 
