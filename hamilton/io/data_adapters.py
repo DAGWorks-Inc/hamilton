@@ -9,7 +9,7 @@ from hamilton.htypes import custom_subclass_check
 class AdapterCommon(abc.ABC):
     @classmethod
     @abc.abstractmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         """Returns the types that this data loader can load to.
         These will be checked against the desired type to determine
         whether this is a suitable loader for that type.
@@ -37,7 +37,7 @@ class AdapterCommon(abc.ABC):
         :param type_: Candidate type
         :return: True if this data loader can load to the type, False otherwise.
         """
-        for load_to in cls.load_targets():
+        for load_to in cls.applicable_types():
             if custom_subclass_check(load_to, type_):
                 return True
         return False

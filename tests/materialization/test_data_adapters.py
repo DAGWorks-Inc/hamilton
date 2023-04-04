@@ -10,7 +10,7 @@ class MockDataLoader(DataLoader):
     default_param: int = 1
 
     @classmethod
-    def load_targets(cls) -> Collection[Type]:
+    def applicable_types(cls) -> Collection[Type]:
         return [bool]
 
     def load_data(self, type_: Type) -> Tuple[int, Dict[str, Any]]:
