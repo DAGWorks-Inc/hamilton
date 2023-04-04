@@ -1,27 +1,33 @@
 import dataclasses
 from collections import Counter
-from typing import Any, Collection, Dict, Tuple, Type
+from typing import Any, Collection, Dict, List, Tuple, Type
 
 import pandas as pd
 import pytest
 
-from hamilton import ad_hoc_utils, base, driver, graph
+from hamilton import ad_hoc_utils, base, driver, graph, node
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers import source, value
-from hamilton.function_modifiers.adapters import LoadFromDecorator, load_from
-from hamilton.io.data_loaders import DataLoader
-from hamilton.registry import ADAPTER_REGISTRY
+from hamilton.function_modifiers.adapters import (
+    LoadFromDecorator,
+    SaveToDecorator,
+    load_from,
+    resolve_adapter_class,
+    resolve_kwargs,
+)
+from hamilton.io.data_adapters import DataLoader, DataSaver
+from hamilton.registry import LOADER_REGISTRY
 
 
 def test_default_adapters_are_available():
-    assert len(ADAPTER_REGISTRY) > 0
+    assert len(LOADER_REGISTRY) > 0
 
 
 def test_default_adapters_are_registered_once():
-    assert "json" in ADAPTER_REGISTRY
+    assert "json" in LOADER_REGISTRY
     count_unique = {
         key: Counter([value.__class__.__qualname__ for value in values])
-        for key, values in ADAPTER_REGISTRY.items()
+        for key, values in LOADER_REGISTRY.items()
     }
     for key, value_ in count_unique.items():
         for impl, count in value_.items():
@@ -53,8 +59,7 @@ class MockDataLoader(DataLoader):
 
 
 def test_load_from_decorator_resolve_kwargs():
-    decorator = LoadFromDecorator(
-        [MockDataLoader],
+    kwargs = dict(
         required_param=source("1"),
         required_param_2=value(2),
         required_param_3=value("3"),
@@ -62,7 +67,7 @@ def test_load_from_decorator_resolve_kwargs():
         default_param_2=value(5),
     )
 
-    dependency_kwargs, literal_kwargs = decorator.resolve_kwargs()
+    dependency_kwargs, literal_kwargs = resolve_kwargs(kwargs)
     assert dependency_kwargs == {"required_param": "1", "default_param": "4"}
     assert literal_kwargs == {"required_param_2": 2, "required_param_3": "3", "default_param_2": 5}
 
@@ -172,7 +177,7 @@ class IntDataLoader(DataLoader):
 
 
 @dataclasses.dataclass
-class IntDataLoaderClass2(DataLoader):
+class IntDataLoader2(DataLoader):
     @classmethod
     def load_targets(cls) -> Collection[Type]:
         return [int]
@@ -237,9 +242,27 @@ def test_validate_selects_correct_type():
 
 # Note that this tests an internal API, but we would like to test this to ensure
 # class selection is correct
-def test_load_from_resolves_correct_class():
+@pytest.mark.parametrize(
+    "type_,classes,correct_class",
+    [
+        (str, [StringDataLoader, IntDataLoader, IntDataLoader2], StringDataLoader),
+        (int, [StringDataLoader, IntDataLoader, IntDataLoader2], IntDataLoader2),
+        (int, [IntDataLoader2, IntDataLoader], IntDataLoader),
+        (int, [IntDataLoader, IntDataLoader2], IntDataLoader2),
+        (int, [StringDataLoader], None),
+        (str, [IntDataLoader], None),
+        (dict, [IntDataLoader], None),
+    ],
+)
+def test_resolve_correct_loader_class(
+    type_: Type[Type], classes: List[Type[DataLoader]], correct_class: Type[DataLoader]
+):
+    assert resolve_adapter_class(type_, classes) == correct_class
+
+
+def test_decorator_validate():
     decorator = LoadFromDecorator(
-        [StringDataLoader, IntDataLoader, IntDataLoaderClass2],
+        [StringDataLoader, IntDataLoader, IntDataLoader2],
     )
 
     def fn_str_inject(injected_data: str) -> str:
@@ -252,11 +275,11 @@ def test_load_from_resolves_correct_class():
         return injected_data
 
     # This is valid as there is one parameter and its a type that the decorator supports
-    assert decorator._resolve_loader_class(fn_str_inject) == StringDataLoader
-    assert decorator._resolve_loader_class(fn_int_inject) == IntDataLoaderClass2
+    decorator.validate(fn_str_inject)
+    decorator.validate(fn_int_inject)
     # This is invalid as there is one parameter and it is not a type that the decorator supports
     with pytest.raises(fm_base.InvalidDecoratorException):
-        decorator._resolve_loader_class(fn_bool_inject)
+        decorator.validate(fn_bool_inject)
 
 
 # End-to-end tests are probably cleanest
@@ -265,7 +288,7 @@ def test_load_from_resolves_correct_class():
 # We don't test the driver, we just use the function_graph to tests the nodes
 def test_load_from_decorator_end_to_end():
     @LoadFromDecorator(
-        [StringDataLoader, IntDataLoader, IntDataLoaderClass2],
+        [StringDataLoader, IntDataLoader, IntDataLoader2],
     )
     def fn_str_inject(injected_data: str) -> str:
         return injected_data
@@ -338,3 +361,47 @@ def test_pandas_extensions():
     )
     assert result["df"].shape == (3, 5)
     assert result["df"].loc[0, "firstName"] == "John"
+
+
+@dataclasses.dataclass
+class MarkingSaver(DataSaver):
+    markers: set
+    more_markers: set
+
+    def save_data(self, data: int) -> Dict[str, Any]:
+        self.markers.add(data)
+        self.more_markers.add(data)
+        return {}
+
+    @classmethod
+    def load_targets(cls) -> Collection[Type]:
+        return [int]
+
+    @classmethod
+    def name(cls) -> str:
+        return "marker"
+
+
+def test_save_to_decorator():
+    def fn() -> int:
+        return 1
+
+    marking_set = set()
+    marking_set_2 = set()
+    decorator = SaveToDecorator(
+        [MarkingSaver],
+        artifact_name_="save_fn",
+        markers=value(marking_set),
+        more_markers=source("more_markers"),
+    )
+    node_ = node.Node.from_fn(fn)
+    nodes = decorator.transform_node(node_, {}, fn)
+    assert len(nodes) == 2
+    nodes_by_name = {node_.name: node_ for node_ in nodes}
+    assert "save_fn" in nodes_by_name
+    assert "fn" in nodes_by_name
+    assert sorted(nodes_by_name["save_fn"].input_types.keys()) == ["fn", "more_markers"]
+    assert nodes_by_name["save_fn"](**{"fn": 1, "more_markers": marking_set_2}) == {}
+    # Check that the markers are updated, ensuring that the save_fn is called
+    assert marking_set_2 == {1}
+    assert marking_set == {1}

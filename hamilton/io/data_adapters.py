@@ -6,18 +6,7 @@ from typing import Any, Collection, Dict, Tuple, Type
 from hamilton.htypes import custom_subclass_check
 
 
-class DataLoader(abc.ABC):
-    """Base class for data loaders. Data loaders are used to load data from a data source.
-    Note that they are inherently polymorphic -- they declare what type(s) they can load to,
-    and may choose to load differently depending on the type they are loading to.
-
-    Note that this is not yet a public-facing API -- the current set of data loaders will
-    be managed by the library, and the user will not be able to create their own.
-
-    We intend to change this and provide an extensible user-facing API,
-    but if you subclass this, beware! It might change.
-    """
-
+class AdapterCommon(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def load_targets(cls) -> Collection[Type]:
@@ -52,16 +41,6 @@ class DataLoader(abc.ABC):
             if custom_subclass_check(load_to, type_):
                 return True
         return False
-
-    @abc.abstractmethod
-    def load_data(self, type_: Type[Type]) -> Tuple[Type, Dict[str, Any]]:
-        """Loads the data from the data source.
-        Note this uses the constructor parameters to determine
-        how to load the data.
-
-        :return: The type specified
-        """
-        pass
 
     @classmethod
     @abc.abstractmethod
@@ -110,3 +89,79 @@ class DataLoader(abc.ABC):
             for field in dataclasses.fields(cls)
             if field.default != dataclasses.MISSING
         }
+
+    @classmethod
+    def can_load(cls) -> bool:
+        """Returns whether this adapter can "load" data.
+        Subclasses are meant to implement this function to
+        tell the framework what to do with them.
+
+        :return:
+        """
+        return False
+
+    @classmethod
+    def can_save(cls) -> bool:
+        """Returns whether this adapter can "save" data.
+        Subclasses are meant to implement this function to
+        tell the framework what to do with them.
+
+        :return:
+        """
+        return False
+
+
+class DataLoader(AdapterCommon, abc.ABC):
+    """Base class for data loaders. Data loaders are used to load data from a data source.
+    Note that they are inherently polymorphic -- they declare what type(s) they can load to,
+    and may choose to load differently depending on the type they are loading to.
+
+    Note that this is not yet a public-facing API -- the current set of data loaders will
+    be managed by the library, and the user will not be able to create their own.
+
+    We intend to change this and provide an extensible user-facing API,
+    but if you subclass this, beware! It might change.
+    """
+
+    @abc.abstractmethod
+    def load_data(self, type_: Type[Type]) -> Tuple[Type, Dict[str, Any]]:
+        """Loads the data from the data source.
+        Note this uses the constructor parameters to determine
+        how to load the data.
+
+        :return: The type specified
+        """
+        pass
+
+    @classmethod
+    def can_load(cls) -> bool:
+        return True
+
+
+class DataSaver(AdapterCommon, abc.ABC):
+    """Base class for data savers. Data savers are used to save data to a data source.
+    Note that they are inherently polymorphic -- they declare what type(s) they can save from,
+    and may choose to save differently depending on the type they are saving from.
+
+    Note that this is not yet a public-facing API -- the current set of data savers will
+    be managed by the library, and the user will not be able to create their own.
+
+    We intend to change this and provide an extensible user-facing API,
+    but if you subclass this, beware! It might change.
+    """
+
+    @abc.abstractmethod
+    def save_data(self, data: Any) -> Dict[str, Any]:
+        """Saves the data to the data source.
+        Note this uses the constructor parameters to determine
+        how to save the data.
+
+        :return: Any relevant metadata. This is up the the data saver, but will likely
+        include the URI, etc... This is going to be similar to the metadata returned
+        by the data loader in the loading tuple.
+        """
+        pass
+
+    @classmethod
+    def can_save(cls) -> bool:
+        return True

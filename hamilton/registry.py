@@ -87,7 +87,8 @@ def load_extension(plugin_module: str):
     logger.info(f"Detected {plugin_module} and successfully loaded Hamilton extensions.")
 
 
-ADAPTER_REGISTRY = collections.defaultdict(list)
+LOADER_REGISTRY = collections.defaultdict(list)
+SAVER_REGISTRY = collections.defaultdict(list)
 
 
 def register_adapter(adapter: Any):
@@ -96,4 +97,7 @@ def register_adapter(adapter: Any):
 
     :param adapter: the adapter to register.
     """
-    ADAPTER_REGISTRY[adapter.name()].append(adapter)
+    if adapter.can_load():
+        LOADER_REGISTRY[adapter.name()].append(adapter)
+    if adapter.can_save():
+        SAVER_REGISTRY[adapter.name()].append(adapter)
