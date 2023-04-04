@@ -4,12 +4,12 @@ import os
 import pickle
 from typing import Any, Collection, Dict, Tuple, Type
 
-from hamilton.io.data_loaders import DataLoader
+from hamilton.io.data_adapters import DataLoader, DataSaver
 from hamilton.io.utils import get_file_loading_metadata
 
 
 @dataclasses.dataclass
-class JSONDataLoader(DataLoader):
+class JSONDataAdapter(DataLoader, DataSaver):
     path: str
 
     @classmethod
@@ -24,25 +24,14 @@ class JSONDataLoader(DataLoader):
     def name(cls) -> str:
         return "json"
 
-
-@dataclasses.dataclass
-class LiteralValueDataLoader(DataLoader):
-    value: Any
-
-    @classmethod
-    def load_targets(cls) -> Collection[Type]:
-        return [Any]
-
-    def load_data(self, type_: Type) -> Tuple[dict, Dict[str, Any]]:
-        return self.value, {}
-
-    @classmethod
-    def name(cls) -> str:
-        return "literal"
+    def save_data(self, data: Any) -> Dict[str, Any]:
+        with open(self.path, "w") as f:
+            json.dump(data, f)
+        return get_file_loading_metadata(self.path)
 
 
 @dataclasses.dataclass
-class RawFileDataLoader(DataLoader):
+class RawFileDataLoader(DataLoader, DataSaver):
     path: str
     encoding: str = "utf-8"
 
@@ -58,22 +47,32 @@ class RawFileDataLoader(DataLoader):
     def name(cls) -> str:
         return "file"
 
+    def save_data(self, data: Any) -> Dict[str, Any]:
+        with open(self.path, "w", encoding=self.encoding) as f:
+            f.write(data)
+        return get_file_loading_metadata(self.path)
+
 
 @dataclasses.dataclass
 class PickleLoader(DataLoader):
     path: str
 
-    def load_data(self, type_: Type[dict]) -> Tuple[str, Dict[str, Any]]:
-        with open(self.path, "rb") as f:
-            return pickle.load(f), get_file_loading_metadata(self.path)
-
     @classmethod
     def load_targets(cls) -> Collection[Type]:
-        return [str]
+        return [object]
 
     @classmethod
     def name(cls) -> str:
         return "pickle"
+
+    def load_data(self, type_: Type[dict]) -> Tuple[str, Dict[str, Any]]:
+        with open(self.path, "rb") as f:
+            return pickle.load(f), get_file_loading_metadata(self.path)
+
+    def save_data(self, data: Any) -> Dict[str, Any]:
+        with open(self.path, "wb") as f:
+            pickle.dump(data, f)
+        return get_file_loading_metadata(self.path)
 
 
 @dataclasses.dataclass
@@ -92,8 +91,24 @@ class EnvVarDataLoader(DataLoader):
         return [dict]
 
 
-DATA_LOADERS = [
-    JSONDataLoader,
+@dataclasses.dataclass
+class LiteralValueDataLoader(DataLoader):
+    value: Any
+
+    @classmethod
+    def load_targets(cls) -> Collection[Type]:
+        return [Any]
+
+    def load_data(self, type_: Type) -> Tuple[dict, Dict[str, Any]]:
+        return self.value, {}
+
+    @classmethod
+    def name(cls) -> str:
+        return "literal"
+
+
+DATA_ADAPTERS = [
+    JSONDataAdapter,
     LiteralValueDataLoader,
     RawFileDataLoader,
     PickleLoader,

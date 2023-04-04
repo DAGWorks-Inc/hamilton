@@ -87,3 +87,4 @@ ResolveAt = delayed.ResolveAt
 
 # materialization stuff
 load_from = adapters.load_from
+save_to = adapters.save_to

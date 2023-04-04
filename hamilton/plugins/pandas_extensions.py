@@ -3,7 +3,7 @@ import dataclasses
 from typing import Any, Collection, Dict, Tuple, Type
 
 from hamilton.io import utils
-from hamilton.io.data_loaders import DataLoader
+from hamilton.io.data_adapters import DataLoader
 
 try:
     import pandas as pd
