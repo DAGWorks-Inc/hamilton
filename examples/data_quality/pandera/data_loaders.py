@@ -13,7 +13,7 @@ from typing import List
 
 import pandas as pd
 
-from hamilton.function_modifiers import config, extract_columns
+from hamilton.function_modifiers import config, extract_columns, load_from, source, value
 
 data_columns = [
     "id",
@@ -51,12 +51,13 @@ def _sanitize_columns(df_columns: List[str]) -> List[str]:
 
 @config.when_not_in(execution=["dask", "spark"])
 @extract_columns(*data_columns)
-def raw_data__base(location: str) -> pd.DataFrame:
+@load_from.csv(path=source("location"), sep=value(";"))
+def raw_data__base(df: pd.DataFrame) -> pd.DataFrame:
     """Extracts the raw data, renames the columns to be valid python variable names, and assigns an index.
     :param location: the location to load from
     :return:
     """
-    df = pd.read_csv(location, sep=";")
+
     # rename columns to be valid hamilton names -- and lower case it
     df.columns = _sanitize_columns(df.columns)
     # create proper index -- ID-Month-Day;
@@ -97,13 +98,13 @@ def raw_data__dask(location: str, block_size: str = "10KB") -> pd.DataFrame:
 
 @config.when(execution="spark")
 @extract_columns("index_col", *data_columns)
-def raw_data__spark(location: str) -> pd.DataFrame:
+@load_from.csv(path=source("location"), sep=value(";"))
+def raw_data__spark(df: pd.DataFrame) -> pd.DataFrame:
     """Extracts the raw data, renames the columns to be valid python variable names, and assigns an index.
     :param location: the location to load from
     :param number_partitions: number of partitions to partition the data for dask.
     :return: dask dataframe
     """
-    df = pd.read_csv(location, sep=";")
     # rename columns to be valid hamilton names -- and lower case it
     df.columns = _sanitize_columns(df.columns)
     # create proper index -- ID-Month-Day;
