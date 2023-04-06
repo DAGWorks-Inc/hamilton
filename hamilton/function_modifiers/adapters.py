@@ -171,11 +171,9 @@ class LoadFromDecorator(NodeCreator):
         }
         input_types.update(
             {
-                (get_input_type_key(key) if key not in dependencies else dependencies[key]): (
-                    Any,
-                    DependencyType.OPTIONAL,
-                )
+                dependencies[key]: (Any, DependencyType.OPTIONAL)
                 for key in loader_cls.get_optional_arguments()
+                if key in dependencies
             }
         )
         # Take out all the resolved kwargs, as they are not dependencies, and will be filled out
@@ -438,11 +436,9 @@ class SaveToDecorator(SingleNodeNodeTransformer):
         }
         input_types.update(
             {
-                (get_input_type_key(key) if key not in dependencies else dependencies[key]): (
-                    Any,
-                    DependencyType.OPTIONAL,
-                )
+                dependencies[key]: (Any, DependencyType.OPTIONAL)
                 for key in saver_cls.get_optional_arguments()
+                if key in dependencies
             }
         )
         # Take out all the resolved kwargs, as they are not dependencies, and will be filled out

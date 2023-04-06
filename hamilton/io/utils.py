@@ -12,8 +12,8 @@ def get_file_loading_metadata(path: str) -> Dict[str, Any]:
     - the current time
     """
     return {
-        "file_size": os.path.getsize(path),
-        "file_path": path,
-        "file_last_modified": os.path.getmtime(path),
-        "file_loaded_at": datetime.now().utcnow().timestamp(),
+        "size": os.path.getsize(path),
+        "path": path,
+        "last_modified": os.path.getmtime(path),
+        "loaded_at": datetime.now().utcnow().timestamp(),
     }
