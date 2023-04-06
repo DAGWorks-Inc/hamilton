@@ -348,7 +348,7 @@ def test_pandas_extensions_end_to_end(tmp_path_factory):
     output_path = tmp_path_factory.mktemp("test_pandas_extensions_end_to_end") / "output.csv"
     input_path = "tests/resources/data/test_load_from_data.csv"
 
-    @save_to.csv(path=source("output_path"), artifact_name_="save_df")
+    @save_to.csv(path=source("output_path"), node_name_="save_df")
     @load_from.csv(path=source("input_path"))
     def df(data: pd.DataFrame) -> pd.DataFrame:
         return data
@@ -403,7 +403,7 @@ def test_save_to_decorator():
     marking_set_2 = set()
     decorator = SaveToDecorator(
         [MarkingSaver],
-        artifact_name_="save_fn",
+        node_name_="save_fn",
         markers=value(marking_set),
         more_markers=source("more_markers"),
     )

@@ -102,3 +102,8 @@ Actual decorators:
 ------------------------
 .. autoclass:: hamilton.function_modifiers.load_from
    :special-members: __init__
+
+@save_to
+------------------------
+.. autoclass:: hamilton.function_modifiers.save_to
+   :special-members: __init__
