@@ -39,7 +39,7 @@ def duckdb():
 def csv():
     driver = hamilton.driver.Driver({"db_path": "test_data"}, load_data_csv, prep_data)
     print(driver.execute(VARS))
-    driver.visualize_execution(VARS, "./csv_execution_graph", {"format": "png"})
+    # driver.visualize_execution(VARS, "./csv_execution_graph", {"format": "png"})
 
 
 @main.command()

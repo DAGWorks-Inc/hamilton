@@ -418,3 +418,33 @@ def test_save_to_decorator():
     # Check that the markers are updated, ensuring that the save_fn is called
     assert marking_set_2 == {1}
     assert marking_set == {1}
+
+
+@dataclasses.dataclass
+class OptionalParamDataLoader(DataLoader):
+    param: int = 1
+
+    def load_data(self, type_: Type[int]) -> Tuple[int, Dict[str, Any]]:
+        return self.param, {}
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [int]
+
+    @classmethod
+    def name(cls) -> str:
+        return "optional"
+
+
+def test_adapters_optional_params():
+    @LoadFromDecorator([OptionalParamDataLoader])
+    def foo(param: int) -> int:
+        return param
+
+    fg = graph.create_function_graph(
+        ad_hoc_utils.create_temporary_module(foo),
+        config={},
+        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+    )
+    assert len(fg) == 2
+    assert "foo" in fg

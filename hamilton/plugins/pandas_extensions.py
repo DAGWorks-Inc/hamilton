@@ -90,7 +90,11 @@ class CSVDataAdapter(DataFrameDataLoader):
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pd.read_csv(self.path, **self._get_loading_kwargs())
-        metadata = utils.get_file_loading_metadata(self.path)
+        # Pandas allows URLs for paths in load_csv...
+        if str(self.path).startswith("https://"):
+            metadata = {"path": self.path}
+        else:
+            metadata = utils.get_file_loading_metadata(self.path)
         return df, metadata
 
     @classmethod
