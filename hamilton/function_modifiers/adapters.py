@@ -254,6 +254,13 @@ class LoadFromDecorator(NodeCreator):
 
 
 class load_from__meta__(type):
+    """Metaclass for the load_from decorator. This is specifically to allow class access method.
+    Note that there *is* another way to do this -- we couold add attributes dynamically on the
+    class in registry, or make it a function that just proxies to the decorator. We can always
+    change this up, but this felt like a pretty clean way of doing it, where we can decouple the
+    registry from the decorator class.
+    """
+
     def __getattr__(cls, item: str):
         if item in LOADER_REGISTRY:
             return load_from.decorator_factory(LOADER_REGISTRY[item])
@@ -358,6 +365,8 @@ class load_from(metaclass=load_from__meta__):
 
 
 class save_to__meta__(type):
+    """See note on load_from__meta__ for details on how this works."""
+
     def __getattr__(cls, item: str):
         if item in SAVER_REGISTRY:
             return save_to.decorator_factory(SAVER_REGISTRY[item])
@@ -377,11 +386,11 @@ class SaveToDecorator(SingleNodeNodeTransformer):
     def __init__(
         self,
         saver_classes_: typing.Sequence[Type[DataSaver]],
-        artifact_name_: str = None,
+        node_name_: str = None,
         **kwargs: ParametrizedDependency,
     ):
         super(SaveToDecorator, self).__init__()
-        self.artifact_name = artifact_name_
+        self.artifact_name = node_name_
         self.saver_classes = saver_classes_
         self.kwargs = kwargs
 
@@ -494,7 +503,7 @@ class save_to(metaclass=save_to__meta__):
         dr = driver.Driver(my_module)
         output = dr.execute(['final_output'], {'raw_data_path': '/path/my_data.json'})
 
-    You would *just* the final result, and nothing would be saved.
+    You would *just* get the final result, and nothing would be saved.
 
     If you called this with the driver:
 

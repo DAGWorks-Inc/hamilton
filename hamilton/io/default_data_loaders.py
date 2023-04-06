@@ -5,7 +5,7 @@ import pickle
 from typing import Any, Collection, Dict, Tuple, Type
 
 from hamilton.io.data_adapters import DataLoader, DataSaver
-from hamilton.io.utils import get_file_loading_metadata
+from hamilton.io.utils import get_file_metadata
 
 
 @dataclasses.dataclass
@@ -18,7 +18,7 @@ class JSONDataAdapter(DataLoader, DataSaver):
 
     def load_data(self, type_: Type) -> Tuple[dict, Dict[str, Any]]:
         with open(self.path, "r") as f:
-            return json.load(f), get_file_loading_metadata(self.path)
+            return json.load(f), get_file_metadata(self.path)
 
     @classmethod
     def name(cls) -> str:
@@ -27,7 +27,7 @@ class JSONDataAdapter(DataLoader, DataSaver):
     def save_data(self, data: Any) -> Dict[str, Any]:
         with open(self.path, "w") as f:
             json.dump(data, f)
-        return get_file_loading_metadata(self.path)
+        return get_file_metadata(self.path)
 
 
 @dataclasses.dataclass
@@ -37,7 +37,7 @@ class RawFileDataLoader(DataLoader, DataSaver):
 
     def load_data(self, type_: Type) -> Tuple[str, Dict[str, Any]]:
         with open(self.path, "r", encoding=self.encoding) as f:
-            return f.read(), get_file_loading_metadata(self.path)
+            return f.read(), get_file_metadata(self.path)
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -50,7 +50,7 @@ class RawFileDataLoader(DataLoader, DataSaver):
     def save_data(self, data: Any) -> Dict[str, Any]:
         with open(self.path, "w", encoding=self.encoding) as f:
             f.write(data)
-        return get_file_loading_metadata(self.path)
+        return get_file_metadata(self.path)
 
 
 @dataclasses.dataclass
@@ -67,12 +67,12 @@ class PickleLoader(DataLoader):
 
     def load_data(self, type_: Type[dict]) -> Tuple[str, Dict[str, Any]]:
         with open(self.path, "rb") as f:
-            return pickle.load(f), get_file_loading_metadata(self.path)
+            return pickle.load(f), get_file_metadata(self.path)
 
     def save_data(self, data: Any) -> Dict[str, Any]:
         with open(self.path, "wb") as f:
             pickle.dump(data, f)
-        return get_file_loading_metadata(self.path)
+        return get_file_metadata(self.path)
 
 
 @dataclasses.dataclass

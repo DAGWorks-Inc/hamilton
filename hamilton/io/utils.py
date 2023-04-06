@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Dict
 
 
-def get_file_loading_metadata(path: str) -> Dict[str, Any]:
+def get_file_metadata(path: str) -> Dict[str, Any]:
     """Gives metadata from loading a file.
     This includes:
     - the file size
@@ -15,5 +15,5 @@ def get_file_loading_metadata(path: str) -> Dict[str, Any]:
         "size": os.path.getsize(path),
         "path": path,
         "last_modified": os.path.getmtime(path),
-        "loaded_at": datetime.now().utcnow().timestamp(),
+        "timestamp": datetime.now().utcnow().timestamp(),
     }

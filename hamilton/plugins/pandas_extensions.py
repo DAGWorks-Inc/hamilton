@@ -86,7 +86,7 @@ class CSVDataAdapter(DataFrameDataLoader):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_csv(self.path, **self._get_saving_kwargs())
-        return utils.get_file_loading_metadata(self.path)
+        return utils.get_file_metadata(self.path)
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pd.read_csv(self.path, **self._get_loading_kwargs())
@@ -94,7 +94,7 @@ class CSVDataAdapter(DataFrameDataLoader):
         if str(self.path).startswith("https://"):
             metadata = {"path": self.path}
         else:
-            metadata = utils.get_file_loading_metadata(self.path)
+            metadata = utils.get_file_metadata(self.path)
         return df, metadata
 
     @classmethod
@@ -112,11 +112,11 @@ class FeatherDataLoader(DataFrameDataLoader):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_feather(self.path)
-        return utils.get_file_loading_metadata(self.path)
+        return utils.get_file_metadata(self.path)
 
     def load_data(self, type_: Type[DATAFRAME_TYPE]) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pd.read_feather(self.path)
-        metadata = utils.get_file_loading_metadata(self.path)
+        metadata = utils.get_file_metadata(self.path)
         return df, metadata
 
     @classmethod
@@ -134,12 +134,12 @@ class ParquetDataLoader(DataFrameDataLoader):
 
     def load_data(self, type_: Type[DATAFRAME_TYPE]) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pd.read_parquet(self.path)
-        metadata = utils.get_file_loading_metadata(self.path)
+        metadata = utils.get_file_metadata(self.path)
         return df, metadata
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_parquet(self.path)
-        return utils.get_file_loading_metadata(self.path)
+        return utils.get_file_metadata(self.path)
 
     @classmethod
     def name(cls) -> str:
