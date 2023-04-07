@@ -58,6 +58,28 @@ class MockDataLoader(DataLoader):
         return "mock"
 
 
+def test_load_from_decorator():
+    def fn(data: int) -> int:
+        return data
+
+    decorator = LoadFromDecorator(
+        [MockDataLoader],
+        required_param=value("1"),
+        required_param_2=value("2"),
+        required_param_3=value("3"),
+    )
+    nodes = decorator.generate_nodes(fn, {})
+    assert len(nodes) == 2
+    nodes_by_name = {node_.name: node_ for node_ in nodes}
+    assert len(nodes_by_name) == 2
+    assert "fn" in nodes_by_name
+    assert nodes_by_name["load_data.fn.data"].tags == {
+        "hamilton.data_loader.source": "mock",
+        "hamilton.data_loader": True,
+        "hamilton.data_loader.classname": MockDataLoader.__qualname__,
+    }
+
+
 def test_load_from_decorator_resolve_kwargs():
     kwargs = dict(
         required_param=source("1"),
@@ -413,8 +435,14 @@ def test_save_to_decorator():
     nodes_by_name = {node_.name: node_ for node_ in nodes}
     assert "save_fn" in nodes_by_name
     assert "fn" in nodes_by_name
-    assert sorted(nodes_by_name["save_fn"].input_types.keys()) == ["fn", "more_markers"]
-    assert nodes_by_name["save_fn"](**{"fn": 1, "more_markers": marking_set_2}) == {}
+    save_fn_node = nodes_by_name["save_fn"]
+    assert sorted(save_fn_node.input_types.keys()) == ["fn", "more_markers"]
+    assert save_fn_node(**{"fn": 1, "more_markers": marking_set_2}) == {}
+    assert save_fn_node.tags == {
+        "hamilton.data_saver": True,
+        "hamilton.data_saver.sink": "marker",
+        "hamilton.data_saver.classname": MarkingSaver.__qualname__,
+    }
     # Check that the markers are updated, ensuring that the save_fn is called
     assert marking_set_2 == {1}
     assert marking_set == {1}
