@@ -189,6 +189,11 @@ class LoadFromDecorator(NodeCreator):
             typ=Tuple[Dict[str, Any], load_type],
             input_types=input_types,
             namespace=("load_data", fn.__name__),
+            tags={
+                "hamilton.data_loader": True,
+                "hamilton.data_loader.source": f"{loader_cls.name()}",
+                "hamilton.data_loader.classname": f"{loader_cls.__qualname__}",
+            },
         )
 
         # the inject node is the node that takes the data from the data source, and injects it into
@@ -219,6 +224,12 @@ class LoadFromDecorator(NodeCreator):
         """
         sig = inspect.signature(fn)
         if self.inject is None:
+            if len(sig.parameters) == 0:
+                raise InvalidDecoratorException(
+                    f"The function: {fn.__qualname__} has no parameters. "
+                    f"The data loader functionality injects the loaded data "
+                    f"into the function, so you must have at least one parameter."
+                )
             if len(sig.parameters) != 1:
                 raise InvalidDecoratorException(
                     f"If you have multiple parameters in the signature, "
@@ -463,6 +474,11 @@ class SaveToDecorator(SingleNodeNodeTransformer):
             typ=Dict[str, Any],
             input_types=input_types,
             namespace=artifact_namespace,
+            tags={
+                "hamilton.data_saver": True,
+                "hamilton.data_saver.sink": f"{saver_cls.name()}",
+                "hamilton.data_saver.classname": f"{saver_cls.__qualname__}",
+            },
         )
         return [save_node, node_]
 
