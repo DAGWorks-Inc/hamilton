@@ -318,12 +318,14 @@ class parameterize(base.NodeExpander):
             if isinstance(mapping, tuple):
                 mapping = mapping[0]
             for param, replacement_value in mapping.items():
+                param_annotation = type_hints[param]
+                if typing_inspect.is_optional_type(param_annotation):
+                    param_annotation = typing_inspect.get_args(param_annotation)[0]
+                is_generic = typing_inspect.is_generic_type(param_annotation)
                 if (
                     replacement_value.get_dependency_type()
                     == ParametrizedDependencySource.GROUPED_LIST
                 ):
-                    param_annotation = type_hints[param]
-                    is_generic = typing_inspect.is_generic_type(param_annotation)
                     if not is_generic:
                         invalid_types.append((param, param_annotation))
                     else:
@@ -340,8 +342,6 @@ class parameterize(base.NodeExpander):
                     replacement_value.get_dependency_type()
                     == ParametrizedDependencySource.GROUPED_DICT
                 ):
-                    param_annotation = type_hints[param]
-                    is_generic = typing_inspect.is_generic_type(param_annotation)
                     if not is_generic:
                         invalid_types.append((param, param_annotation))
                     else:
