@@ -397,11 +397,11 @@ class SaveToDecorator(SingleNodeNodeTransformer):
     def __init__(
         self,
         saver_classes_: typing.Sequence[Type[DataSaver]],
-        node_name_: str = None,
+        output_name_: str = None,
         **kwargs: ParametrizedDependency,
     ):
         super(SaveToDecorator, self).__init__()
-        self.artifact_name = node_name_
+        self.artifact_name = output_name_
         self.saver_classes = saver_classes_
         self.kwargs = kwargs
 
@@ -502,7 +502,7 @@ class save_to(metaclass=save_to__meta__):
 
     .. code-block:: python
 
-        @save_to.json(path=source("raw_data_path"), artifact_="data_save_output")
+        @save_to.json(path=source("raw_data_path"), output_name_="data_save_output")
         def final_output(data: dict, valid_keys: List[str]) -> dict:
             return [item for item in data if item in valid_keys]
 
@@ -535,7 +535,7 @@ class save_to(metaclass=save_to__meta__):
 
     .. code-block:: python
 
-        @save_to.json(path=value('/path/my_data.json'), artifact_="data_save_output")
+        @save_to.json(path=value('/path/my_data.json'), output_name_="data_save_output")
         def final_output(data: dict, valid_keys: List[str]) -> dict:
             return [item for item in data if item in valid_keys]
 
