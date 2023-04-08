@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Optional, Type
 
 import numpy as np
 import pandas as pd
@@ -636,6 +636,8 @@ def test_inject_multiple_things():
         (Dict[str, pd.Series], GroupedDictDependency, pd.Series),
         (Dict[str, List[int]], GroupedDictDependency, List[int]),
         (Dict[str, int], GroupedDictDependency, int),
+        (Optional[Dict[str, int]], GroupedDictDependency, int),
+        (Optional[List[int]], GroupedListDependency, int),
     ],
 )
 def test_resolve_dependency_type_happy(
