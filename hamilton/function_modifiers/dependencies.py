@@ -97,6 +97,10 @@ class GroupedDictDependency(ParametrizedDependency):
 
     @classmethod
     def resolve_dependency_type(cls, annotated_type: Type[Mapping[str, Type]], param_name: str):
+        if typing_inspect.is_optional_type(
+            annotated_type
+        ):  # need to pull out the type from Optional.
+            annotated_type = typing_inspect.get_args(annotated_type)[0]
         origin = typing_inspect.get_origin(annotated_type)
         if origin is None or not issubclass(origin, typing.Mapping):
             raise InvalidDecoratorException(
