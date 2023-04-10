@@ -430,12 +430,11 @@ class parameterized_subdag(base.NodeCreator):
 
         @parameterized_subdag(
             feature_modules,
-            parameterization={
-                "from_datasource_1" : {"inputs" : {"data" : value("datasource_1.csv"}},
-                "from_datasource_2" : {"inputs" : {"data" : value("datasource_2.csv"}},
-                "from_datasource_3" : {
-                    "inputs" : {"data" : value("datasource_3.csv"},
-                    "config" : {"filter" : "only_even_client_ids"}},
+            from_datasource_1={"inputs" : {"data" : value("datasource_1.csv"}},
+            from_datasource_2={"inputs" : {"data" : value("datasource_2.csv"}},
+            from_datasource_3={
+                "inputs" : {"data" : value("datasource_3.csv"},
+                "config" : {"filter" : "only_even_client_ids"}
             }
         )
         def feature_engineering(feature_df: pd.DataFrame) -> pd.DataFrame:
