@@ -154,3 +154,19 @@ def test_data_quality_constants_for_api_consistency():
     # simple tests to test data quality constants remain the same
     assert IS_DATA_VALIDATOR_TAG == "hamilton.data_quality.contains_dq_results"
     assert DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG == "hamilton.data_quality.source_node"
+
+
+def test_check_output_validation_error():
+    """Tests that we wrap an error raised appropriately."""
+    decorator = check_output(
+        importance="warn",
+        dtype=np.int64,
+    )
+
+    def fn(input: pd.Series) -> pd.DataFrame:
+        return pd.DataFrame({"a": input})
+
+    node_ = node.Node.from_fn(fn)
+    with pytest.raises(ValueError) as e:
+        decorator.transform_node(node_, config={}, fn=fn)
+        assert "Could not resolve validators for @check_output for function [fn]" in str(e)

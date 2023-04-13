@@ -455,6 +455,6 @@ def resolve_default_validators(
                 f"No registered subclass of BaseDefaultValidator is available "
                 f"for arg: {key} and type {output_type}. This either means (a) this arg-type "
                 f"contribution isn't supported or (b) this has not been added yet (but should be). "
-                f"In the case of (b), we welcome contributions. Get started at github.com/dagworks-inc/hamilton"
+                f"In the case of (b), we welcome contributions. Get started at github.com/dagworks-inc/hamilton."
             )
     return validators
