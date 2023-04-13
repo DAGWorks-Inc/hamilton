@@ -8,7 +8,11 @@ from typing_extensions import NotRequired, TypedDict
 from hamilton import graph_utils, node
 from hamilton.function_modifiers import base, dependencies
 from hamilton.function_modifiers.base import InvalidDecoratorException
-from hamilton.function_modifiers.dependencies import ParametrizedDependency
+from hamilton.function_modifiers.dependencies import (
+    LiteralDependency,
+    ParametrizedDependency,
+    UpstreamDependency,
+)
 
 
 def assign_namespace(node_name: str, namespace: str) -> str:
@@ -84,6 +88,29 @@ def create_static_node(typ: Type, name: str, value: Any, namespace: Tuple[str, .
         return _value
 
     return node.Node(name=name, typ=typ, callabl=node_fn, input_types={}, namespace=namespace)
+
+
+def _validate_config_inputs(config: Dict[str, Any], inputs: Dict[str, Any]):
+    """Validates that the inputs specified in the config are valid.
+
+    :param original_config: Original configuration
+    :return: None
+    """
+    # TODO -- implement this
+    shared_keys = set(config.keys()).intersection(set(inputs.keys()))
+    if shared_keys:
+        raise InvalidDecoratorException(
+            f"Config keys {shared_keys} are shared with inputs. This is not allowed."
+            f"Instead, please specify the inputs you need *just* as part of the config. "
+            f"That way, you only write them once! Or, if you don't need them as a config item,"
+            f"just use them in inputs."
+        )
+    for key, value in inputs.items():
+        if not isinstance(value, (UpstreamDependency, LiteralDependency)):
+            raise InvalidDecoratorException(
+                f"Input {key} must be either an UpstreamDependency or a LiteralDependency ,"
+                f" not {type(value)}."
+            )
 
 
 class subdag(base.NodeCreator):
@@ -173,25 +200,9 @@ class subdag(base.NodeCreator):
         self.inputs = inputs if inputs is not None else {}
         self.config = config if config is not None else {}
         self.external_inputs = external_inputs if external_inputs is not None else []
-        self._validate_config_inputs(self.config, self.inputs)
+        _validate_config_inputs(self.config, self.inputs)
         self.namespace = namespace
         self.final_node_name = final_node_name
-
-    def _validate_config_inputs(self, config: Dict[str, Any], inputs: Dict[str, Any]):
-        """Validates that the inputs specified in the config are valid.
-
-        :param original_config: Original configuration
-        :return: None
-        """
-        # TODO -- implement this
-        shared_keys = set(config.keys()).intersection(set(inputs.keys()))
-        if shared_keys:
-            raise InvalidDecoratorException(
-                f"Config keys {shared_keys} are shared with inputs. This is not allowed."
-                f"Instead, please specify the inputs you need *just* as part of the config. "
-                f"That way, you only write them once! Or, if you don't need them as a config item,"
-                f"just use them in inputs."
-            )
 
     @staticmethod
     def collect_functions(
