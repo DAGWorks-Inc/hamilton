@@ -175,12 +175,19 @@ class check_output(BaseDataValidationDecorator):
     """
 
     def get_validators(self, node_to_validate: node.Node) -> List[dq_base.DataValidator]:
-        return default_validators.resolve_default_validators(
-            node_to_validate.type,
-            importance=self.importance,
-            available_validators=self.default_decorator_candidates,
-            **self.default_validator_kwargs,
-        )
+        try:
+            return default_validators.resolve_default_validators(
+                node_to_validate.type,
+                importance=self.importance,
+                available_validators=self.default_decorator_candidates,
+                **self.default_validator_kwargs,
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"Could not resolve validators for @check_output for function [{node_to_validate.name}]. "
+                f"Please check that `target_` is set correctly if you're using that argument.\n"
+                f"Actual error: {e}"
+            ) from e
 
     def __init__(
         self,
