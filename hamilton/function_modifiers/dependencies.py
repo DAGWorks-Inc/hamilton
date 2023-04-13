@@ -2,7 +2,7 @@ import abc
 import dataclasses
 import enum
 import typing
-from typing import Any, List, Mapping, Sequence, Type
+from typing import Any, Dict, List, Mapping, Sequence, Type
 
 import typing_inspect
 
@@ -59,7 +59,7 @@ class GroupedDependency(ParametrizedDependency, abc.ABC):
 
 
 @dataclasses.dataclass
-class GroupedListDependency(ParametrizedDependency):
+class GroupedListDependency(GroupedDependency):
     sources: List[ParametrizedDependency]
 
     @classmethod
@@ -89,7 +89,7 @@ class GroupedListDependency(ParametrizedDependency):
 
 
 @dataclasses.dataclass
-class GroupedDictDependency(ParametrizedDependency):
+class GroupedDictDependency(GroupedDependency):
     sources: typing.Dict[str, ParametrizedDependency]
 
     def get_dependency_type(self) -> ParametrizedDependencySource:
@@ -123,8 +123,8 @@ def value(literal_value: Any) -> LiteralDependency:
 
     E.G. value("foo") means that the value is actually the string value "foo".
 
-    :param literal_value: Python literal value to use.
-    :return: A LiteralDependency object -- a signifier to the internal framework of the dependency type.
+    :param literal_value: Python literal value to use. :return: A LiteralDependency object -- a
+    signifier to the internal framework of the dependency type.
     """
     if isinstance(literal_value, LiteralDependency):
         return literal_value
@@ -134,20 +134,52 @@ def value(literal_value: Any) -> LiteralDependency:
 def source(dependency_on: Any) -> UpstreamDependency:
     """Specifies that a parameterized dependency comes from an `upstream` source.
 
-    This means that it comes from a node somewhere else. E.G. source("foo") means that it should be assigned the \
-    value that "foo" outputs.
+    This means that it comes from a node somewhere else. E.G. source("foo") means that it should
+    be assigned the value that "foo" outputs.
 
-    :param dependency_on: Upstream function (i.e. node) to come from.
-    :return: An UpstreamDependency object -- a signifier to the internal framework of the dependency type.
+    :param dependency_on: Upstream function (i.e. node) to come from. :return: An
+    UpstreamDependency object -- a signifier to the internal framework of the dependency type.
     """
     if isinstance(dependency_on, UpstreamDependency):
         return dependency_on
     return UpstreamDependency(source=dependency_on)
 
 
+def _validate_group_params(
+    dependency_args: List[ParametrizedDependency],
+    dependecy_kwargs: Dict[str, ParametrizedDependency],
+):
+    """Validates the following for params to group(...):
+    1. That either dependency_args or dependency_kwargs is non-empty, but not both.
+    2. That all values in dependency_args are of type either LiteralDependency or UpstreamDependency.
+
+    :param dependency_args: List of dependencies.
+    :param dependecy_kwargs: Dict of dependencies.
+    :raises: InvalidDecoratorException if the above conditions are not met.
+    """
+    if dependency_args and dependecy_kwargs:
+        raise InvalidDecoratorException(
+            "group() can either represent a dictionary or a list of dependencies, not both!"
+        )
+    if dependency_args:
+        for dependency in dependency_args:
+            if not isinstance(dependency, (LiteralDependency, UpstreamDependency)):
+                raise InvalidDecoratorException(
+                    f"Dependency: {dependency} is not a valid dependency type for group(), must be "
+                    f"a LiteralDependency or UpstreamDependency."
+                )
+    if dependecy_kwargs:
+        for dependency in dependecy_kwargs.values():
+            if not isinstance(dependency, (LiteralDependency, UpstreamDependency)):
+                raise InvalidDecoratorException(
+                    f"Dependency: {dependency} is not a valid dependency type for group(), must be "
+                    f"a LiteralDependency or UpstreamDependency."
+                )
+
+
 def group(
     *dependency_args: ParametrizedDependency, **dependency_kwargs: ParametrizedDependency
-) -> GroupedListDependency:
+) -> GroupedDependency:
     """Specifies that a parameterized dependency comes from a "grouped" source.
 
     This means that it gets injected into a list of dependencies that are grouped together. E.G.
@@ -160,10 +192,7 @@ def group(
     :param dependencies: Dependencies, list of dependencies
     :return:
     """
-    if dependency_args and dependency_kwargs:
-        raise ValueError(
-            "group() can either represent a dictionary or a list of dpeendencies, " "not both!"
-        )
+    _validate_group_params(dependency_args, dependency_kwargs)
     if dependency_args:
         return GroupedListDependency(sources=list(dependency_args))
     return GroupedDictDependency(sources=dependency_kwargs)
