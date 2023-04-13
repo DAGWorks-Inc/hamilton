@@ -2,10 +2,20 @@ import collections
 import random
 from typing import Tuple
 
+import pytest
+
 import tests.resources.reuse_subdag
 from hamilton import ad_hoc_utils, graph
-from hamilton.function_modifiers import config, parameterized_subdag, recursive, subdag, value
+from hamilton.function_modifiers import (
+    InvalidDecoratorException,
+    config,
+    parameterized_subdag,
+    recursive,
+    subdag,
+    value,
+)
 from hamilton.function_modifiers.dependencies import source
+from hamilton.function_modifiers.recursive import _validate_config_inputs
 
 
 def test_collect_function_fns():
@@ -472,3 +482,27 @@ def test_nested_parameterized_subdag_with_config():
     assert res["sum_all"] == sum_all(
         outer_subdag_n(inner_subdag(bar(2), foo(10))), outer_subdag_n(inner_subdag(bar(2), foo(3)))
     )
+
+
+@pytest.mark.parametrize(
+    "config, inputs",
+    [
+        ({"foo": "bar"}, {}),
+        ({"foo": "bar"}, {"input": source("foo")}),
+        ({"foo": "bar"}, {"input": source("foo"), "input_2": value("foo")}),
+    ],
+)
+def test_recursive_validate_config_inputs_happy(config, inputs):
+    _validate_config_inputs(config, inputs)
+
+
+@pytest.mark.parametrize(
+    "config, inputs",
+    [
+        ({"foo": "bar"}, {"foo": source("baz")}),
+        ({"foo": "bar"}, {"input": "baz"}),
+    ],
+)
+def test_recursive_validate_config_inputs_sad(config, inputs):
+    with pytest.raises(InvalidDecoratorException):
+        _validate_config_inputs(config, inputs)
