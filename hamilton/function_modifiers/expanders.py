@@ -694,6 +694,41 @@ class extract_columns(base.SingleNodeNodeTransformer):
         return output_nodes
 
 
+def _validate_extract_fields(fields: dict):
+    """Validates the fields dict for extract field.
+    Rules are:
+    - All keys must be strings
+    - All values must be types
+    - It must not be empty
+
+    :param fields: Constructor argument to extract_fields
+    :raises InvalidDecoratorException: If the fields dict is invalid.
+    """
+    if not fields:
+        raise base.InvalidDecoratorException(
+            "Error an empty dict, or no dict, passed to extract_fields decorator."
+        )
+    elif not isinstance(fields, dict):
+        raise base.InvalidDecoratorException(f"Error, please pass in a dict, not {type(fields)}")
+    else:
+        errors = []
+        for field, field_type in fields.items():
+            if not isinstance(field, str):
+                errors.append(f"{field} is not a string. All keys must be strings.")
+
+            if not (
+                isinstance(field_type, type)
+                or typing_inspect.is_generic_type(field_type)
+                or typing_inspect.is_union_type(field_type)
+            ):
+                errors.append(f"{field} does not declare a type. Instead it passes {field_type}.")
+
+        if errors:
+            raise base.InvalidDecoratorException(
+                f"Error, found these {errors}. " f"Please pass in a dict of string to types. "
+            )
+
+
 class extract_fields(base.SingleNodeNodeTransformer):
     """Extracts fields from a dictionary of output."""
 
@@ -709,28 +744,7 @@ class extract_fields(base.SingleNodeNodeTransformer):
         field value.
         """
         super(extract_fields, self).__init__()
-        if not fields:
-            raise base.InvalidDecoratorException(
-                "Error an empty dict, or no dict, passed to extract_fields decorator."
-            )
-        elif not isinstance(fields, dict):
-            raise base.InvalidDecoratorException(
-                f"Error, please pass in a dict, not {type(fields)}"
-            )
-        else:
-            errors = []
-            for field, field_type in fields.items():
-                if not isinstance(field, str):
-                    errors.append(f"{field} is not a string. All keys must be strings.")
-                if not isinstance(field_type, type):
-                    errors.append(
-                        f"{field} does not declare a type. Instead it passes {field_type}."
-                    )
-
-            if errors:
-                raise base.InvalidDecoratorException(
-                    f"Error, found these {errors}. " f"Please pass in a dict of string to types. "
-                )
+        _validate_extract_fields(fields)
         self.fields = fields
         self.fill_with = fill_with
 
