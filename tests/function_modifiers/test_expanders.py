@@ -7,7 +7,7 @@ import pytest
 
 import hamilton.function_modifiers
 from hamilton import function_modifiers, node
-from hamilton.function_modifiers import base
+from hamilton.function_modifiers import base, expanders
 from hamilton.function_modifiers.dependencies import (
     GroupedDependency,
     GroupedDictDependency,
@@ -285,38 +285,40 @@ def test_column_extractor_no_fill_with():
 @pytest.mark.parametrize(
     "fields",
     [
-        (None),  # empty
-        ("string_input"),  # not a dict
-        (["string_input"]),  # not a dict
-        ({}),  # empty dict
-        ({1: "string", "field": str}),  # invalid dict
-        ({"field": lambda x: x, "field2": int}),  # invalid dict
+        None,  # empty
+        "string_input",  # not a dict
+        ["string_input"],  # not a dict
+        {},  # empty dict
+        {1: "string", "field": str},  # invalid dict
+        {"field": lambda x: x, "field2": int},  # invalid dict
     ],
 )
-def test_extract_fields_constructor_errors(fields):
+def test_validate_extract_fields(fields):
     with pytest.raises(hamilton.function_modifiers.base.InvalidDecoratorException):
-        function_modifiers.extract_fields(fields)
+        expanders._validate_extract_fields(fields)
 
 
 @pytest.mark.parametrize(
     "fields",
     [
-        ({"field": np.ndarray, "field2": str}),
-        ({"field": dict, "field2": int, "field3": list, "field4": float, "field5": str}),
+        {"field": np.ndarray, "field2": str},
+        {"field": dict, "field2": int, "field3": list, "field4": float, "field5": str},
+        {"field": List[str]},
+        {"field": Dict[str, List[str]]},
     ],
 )
 def test_extract_fields_constructor_happy(fields):
     """Tests that we are happy with good arguments."""
-    function_modifiers.extract_fields(fields)
+    expanders._validate_extract_fields(fields)
 
 
 @pytest.mark.parametrize(
     "return_type",
     [
-        (dict),
-        (Dict),
-        (Dict[str, str]),
-        (Dict[str, Any]),
+        dict,
+        Dict,
+        Dict[str, str],
+        Dict[str, Any],
     ],
 )
 def test_extract_fields_validate_happy(return_type):
