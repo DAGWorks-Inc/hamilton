@@ -665,25 +665,28 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     which configuration they need.
     :return: A list of nodes into which this function transforms.
     """
-    function_decorators = get_node_decorators(fn, config)
-    node_resolvers = function_decorators[NodeResolver.get_lifecycle_name()]
-    for resolver in node_resolvers:
-        fn = resolver.resolve(fn, config=filter_config(config, resolver))
-        if fn is None:
-            return []
-    (node_creator,) = function_decorators[NodeCreator.get_lifecycle_name()]
-    nodes = node_creator.generate_nodes(fn, filter_config(config, node_creator))
-    node_expanders = function_decorators[NodeExpander.get_lifecycle_name()]
-    if len(node_expanders) > 0:
-        (node_expander,) = node_expanders
-        nodes = node_expander.transform_dag(nodes, filter_config(config, node_expander), fn)
-    node_transformers = function_decorators[NodeTransformer.get_lifecycle_name()]
-    for dag_modifier in node_transformers:
-        nodes = dag_modifier.transform_dag(nodes, filter_config(config, dag_modifier), fn)
-    function_decorators = function_decorators[NodeDecorator.get_lifecycle_name()]
-    for node_decorator in function_decorators:
-        nodes = node_decorator.transform_dag(nodes, filter_config(config, node_decorator), fn)
-    return nodes
+    try:
+        function_decorators = get_node_decorators(fn, config)
+        node_resolvers = function_decorators[NodeResolver.get_lifecycle_name()]
+        for resolver in node_resolvers:
+            fn = resolver.resolve(fn, config=filter_config(config, resolver))
+            if fn is None:
+                return []
+        (node_creator,) = function_decorators[NodeCreator.get_lifecycle_name()]
+        nodes = node_creator.generate_nodes(fn, filter_config(config, node_creator))
+        node_expanders = function_decorators[NodeExpander.get_lifecycle_name()]
+        if len(node_expanders) > 0:
+            (node_expander,) = node_expanders
+            nodes = node_expander.transform_dag(nodes, filter_config(config, node_expander), fn)
+        node_transformers = function_decorators[NodeTransformer.get_lifecycle_name()]
+        for dag_modifier in node_transformers:
+            nodes = dag_modifier.transform_dag(nodes, filter_config(config, dag_modifier), fn)
+        function_decorators = function_decorators[NodeDecorator.get_lifecycle_name()]
+        for node_decorator in function_decorators:
+            nodes = node_decorator.transform_dag(nodes, filter_config(config, node_decorator), fn)
+        return nodes
+    except InvalidDecoratorException as e:
+        raise InvalidDecoratorException(f"Invalid decorator {e} for function {fn.__name__}.") from e
 
 
 class InvalidDecoratorException(Exception):
