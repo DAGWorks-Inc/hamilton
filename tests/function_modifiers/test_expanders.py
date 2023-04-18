@@ -704,3 +704,25 @@ def test_inject_misconfigured_param_untyped_generic_dict():
     annotation = function_modifiers.inject(x=group(a=value(1), b=value(2)))
     with pytest.raises(base.InvalidDecoratorException):
         annotation.validate(foo)
+
+
+def test_parameterize_repeated_sources():
+    def foo(x: int, y: int) -> int:
+        return x + y
+
+    annotation = function_modifiers.parameterize(
+        foo=dict(x=source("x"), y=source("x")),
+    )
+    (node_,) = annotation.expand_node(node.Node.from_fn(foo), {}, foo)
+    assert node_(x=1) == 2
+
+
+def test_parameterize_repeated_sources_with_group():
+    def foo(x: List[int]) -> int:
+        return sum(x)
+
+    annotation = function_modifiers.parameterize(
+        foo=dict(x=group(source("x"), source("x"))),
+    )
+    (node_,) = annotation.expand_node(node.Node.from_fn(foo), {}, foo)
+    assert node_(x=1) == 2
