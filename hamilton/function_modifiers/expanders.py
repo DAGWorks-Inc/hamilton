@@ -173,70 +173,57 @@ class parameterize(base.NodeExpander):
                 literal_dependencies=literal_dependencies,
                 grouped_list_dependencies=grouped_list_dependencies,
                 grouped_dict_dependencies=grouped_dict_dependencies,
+                former_inputs=list(node_.input_types.keys()),
                 **kwargs,
             ):
-                """This function rewrites what is passed in kwargs to the right kwarg for the function."""
+                """This function rewrites what is passed in kwargs to the right kwarg for the function.
+                The passed in kwargs are all the dependencies of this node. Note that we actually have the "former inputs",
+                which are what the node declares as its dependencies. So, we just have to loop through all of them to
+                get the "new" value. This "new" value comes from the parameterization.
 
-                new_kwargs = kwargs.copy()
-                for dependency, replacement in upstream_dependencies.items():
-                    new_kwargs[dependency] = new_kwargs.pop(replacement.source)
-                for dependency, replacement in literal_dependencies.items():
-                    new_kwargs[dependency] = replacement.value
+                Note that much of this code should *probably* live within the source/value/grouped functions, but
+                it is here as we're not 100% sure about the abstraction.
 
-                # TODO -- the following two should be able to be merged
-                # We should be able to utilize this as part of the GroupedDependency class and share logic
-                # Not immediately clear what the interface should be and we only have two (list and dict)
-                # So we're going to hold off for now
-                for dependency, replacement in grouped_list_dependencies.items():
-                    # TODO -- use the code above to make this cleaner
-                    # We should be able to put this logic in the dependency type and use OO programming
-                    # Just not sure about the abstraction yet so we're putting it here
-                    new_kwargs[dependency] = []
-                    for specific_value in replacement.sources:
-                        if (
-                            specific_value.get_dependency_type()
-                            == ParametrizedDependencySource.UPSTREAM
-                        ):
-                            # This will break if we reuse the same parameter as another component
-                            # of the function TODO -- fix it -- we should be able to grab the
-                            #  arguments we already popped from kwargs Alternatively we can do
-                            #  this in two passes (1) we gather all the dependencies we need and
-                            #  then (2) we pop them from kwargs and store them
-                            new_kwargs[dependency].append(new_kwargs.pop(specific_value.source))
-                        elif (
-                            specific_value.get_dependency_type()
-                            == ParametrizedDependencySource.LITERAL
-                        ):
-                            new_kwargs[dependency].append(specific_value.value)
-                        else:
-                            raise ValueError(
-                                f"Grouped dependencies cannot contain type: {specific_value}"
+                TODO -- think about how the grouped/source/literal functions should be able to grab the values from kwargs/args.
+                Should be easy -- they should just have something like a "resolve(**kwargs)" function that they can call.
+                """
+                new_kwargs = {}
+                for node_input in former_inputs:
+                    if node_input in upstream_dependencies:
+                        # If the node is specified by `source`, then we get the value from the kwargs
+                        new_kwargs[node_input] = kwargs[upstream_dependencies[node_input].source]
+                    elif node_input in literal_dependencies:
+                        # If the node is specified by `value`, then we get the literal value (no need for kwargs)
+                        new_kwargs[node_input] = literal_dependencies[node_input].value
+                    elif node_input in grouped_list_dependencies:
+                        # If the node is specified by `group`, then we get the list of values from the kwargs or the literal
+                        new_kwargs[node_input] = []
+                        for replacement in grouped_list_dependencies[node_input].sources:
+                            resolved_value = (
+                                kwargs[replacement.source]
+                                if replacement.get_dependency_type()
+                                == ParametrizedDependencySource.UPSTREAM
+                                else replacement.value
                             )
-                for dependency, replacement in grouped_dict_dependencies.items():
-                    # TODO -- use the code above to make this cleaner
-                    # We should be able to put this logic in the dependency type and use OO programming
-                    # Just not sure about the abstraction yet so we're putting it here
-                    new_kwargs[dependency] = {}
-                    for key, specific_value in replacement.sources.items():
-                        if (
-                            specific_value.get_dependency_type()
-                            == ParametrizedDependencySource.UPSTREAM
-                        ):
-                            # This will break if we reuse the same parameter as another component
-                            # of the function TODO -- fix it -- we should be able to grab the
-                            #  arguments we already popped from kwargs Alternatively we can do
-                            #  this in two passes (1) we gather all the dependencies we need and
-                            #  then (2) we pop them from kwargs and store them
-                            new_kwargs[dependency][key] = new_kwargs.pop(specific_value.source)
-                        elif (
-                            specific_value.get_dependency_type()
-                            == ParametrizedDependencySource.LITERAL
-                        ):
-                            new_kwargs[dependency][key] = specific_value.value
-                        else:
-                            raise ValueError(
-                                f"Grouped dependencies cannot contain type: {specific_value}"
+                            new_kwargs[node_input].append(resolved_value)
+                    elif node_input in grouped_dict_dependencies:
+                        # If the node is specified by `group`, then we get the dict of values from the kwargs or the literal
+                        new_kwargs[node_input] = {}
+                        for dependency, replacement in grouped_dict_dependencies[
+                            node_input
+                        ].sources.items():
+                            resolved_value = (
+                                kwargs[replacement.source]
+                                if replacement.get_dependency_type()
+                                == ParametrizedDependencySource.UPSTREAM
+                                else replacement.value
                             )
+                            new_kwargs[node_input][dependency] = resolved_value
+                    elif node_input in kwargs:
+                        new_kwargs[node_input] = kwargs[node_input]
+                    # This case is left blank for optional parameters. If we error here, we'll break
+                    # the (supported) case of optionals. We do know whether its optional but for
+                    # now the error will be clear enough
                 return node_.callable(*args, **new_kwargs)
 
             new_input_types = {}
