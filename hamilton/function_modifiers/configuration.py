@@ -76,12 +76,22 @@ class config(base.NodeResolver):
         self._config_used = config_used
 
     def required_config(self) -> Optional[List[str]]:
-        """Nothing is currently required"""
-        return []  # All of these can default to None
+        """This returns the required configuration elements. Note that "none"
+        is a sentinel value that means that we actaully don't know what
+        it uses. If either required or optional configs are None, we
+        pass the entire configuration.
 
-    def optional_config(self) -> Dict[str, Any]:
+        Note that this can still return None due to the @config(resolver) decorator.
+        We will likely be deprecating this in 2.0, in favor of a (to be added) config.custom.
+        Still thinking this over...
+
+        :return: The list of required config elements, or None if we don't have any idea.
+        """
+        return None if self._config_used is None else []
+
+    def optional_config(self) -> Optional[Dict[str, Any]]:
         """Everything is optional with None as the required value"""
-        return {key: None for key in self._config_used}
+        return {key: None for key in self._config_used} if self._config_used is not None else None
 
     def _get_function_name(self, fn: Callable) -> str:
         if self.target_name is not None:

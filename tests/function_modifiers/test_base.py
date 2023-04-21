@@ -17,6 +17,7 @@ power_mode_k = settings.ENABLE_POWER_USER_MODE
 @pytest.mark.parametrize(
     "config,config_required,config_optional_with_defaults,expected",
     [
+        ({"foo": 1}, ["foo"], None, {"foo": 1, power_mode_k: False}),
         ({"foo": 1}, ["foo"], {}, {"foo": 1, power_mode_k: False}),
         ({"foo": 1, "bar": 2}, ["foo"], {}, {"foo": 1, power_mode_k: False}),
         ({"foo": 1, "bar": 2}, ["foo"], {"bar": 3}, {"foo": 1, "bar": 2, power_mode_k: False}),
@@ -32,6 +33,7 @@ power_mode_k = settings.ENABLE_POWER_USER_MODE
         ({"foo": 1, power_mode_k: True}, [], {"bar": 3}, {"bar": 3, power_mode_k: True}),
     ],
     ids=[
+        "all_present_no_optional",
         "all_present",
         "all_present_extra",
         "no_apply_default",

@@ -80,3 +80,30 @@ def test_config_when_with_custom_name():
 
     annotation = function_modifiers.config.when(key="value", name="new_function_name")
     assert annotation.resolve(config_when_fn, {"key": "value"}).__name__ == "new_function_name"
+
+
+def test_config_base_resolve_nodes():
+    def config_fn() -> int:
+        pass
+
+    annotation = function_modifiers.config(lambda conf: conf["key"] == "value")
+    assert annotation.resolve(config_fn, {"key": "value"}) is not None
+
+
+def test_config_base_resolve_nodes_no_resolve():
+    def config_fn() -> int:
+        pass
+
+    annotation = function_modifiers.config(lambda conf: conf.get("key") == "value")
+    assert annotation.resolve(config_fn, {}) is None
+
+
+def test_config_base_resolve_nodes_end_to_end():
+    def config_fn() -> int:
+        pass
+
+    # tests that the full resolver works
+    annotation = function_modifiers.config(lambda conf: conf.get("key") == "value")
+    config_fn = annotation(config_fn)
+    nodes = base.resolve_nodes(config_fn, {})
+    assert len(nodes) == 0
