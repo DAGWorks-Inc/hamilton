@@ -131,12 +131,14 @@ class NodeTransformLifecycle(abc.ABC):
         """
         return []
 
-    def optional_config(self) -> Dict[str, Any]:
+    def optional_config(self) -> Optional[Dict[str, Any]]:
         """Declares the optional configuration keys for this decorator.
         These are configuration keys that can be used by the decorator, but are not required.
         Along with these we have *defaults*, which we will use to pass to the config.
 
-        :return:
+        :return: The optional configuration keys with defaults. Note that this will return None
+        if we have no idea what they are, which bypasses the configuration filtering we use entirely.
+        This is mainly for the legacy API.
         """
         return {}
 
@@ -544,7 +546,7 @@ class DefaultNodeDecorator(NodeDecorator):
 def resolve_config(
     name_for_error: str,
     config: Dict[str, Any],
-    config_required: List[str],
+    config_required: Optional[List[str]],
     config_optional_with_defaults: Dict[str, Any],
 ) -> Dict[str, Any]:
     """Resolves the configuration that a decorator utilizes
@@ -555,7 +557,14 @@ def resolve_config(
     :param config_optional_with_defaults:
     :return:
     """
-    config_optional_with_global_defaults_applied = config_optional_with_defaults.copy()
+    if config_required is None:
+        # This is an out to allow for backwards compatibility for the config.resolve decorator
+        # Note this is an internal API, but we made the config with the `resolve` parameter public
+        return config
+    # Validate that all required parameters are present, so we fake the optional parameters for now
+    config_optional_with_global_defaults_applied = (
+        config_optional_with_defaults.copy() if config_optional_with_defaults is not None else {}
+    )
     config_optional_with_global_defaults_applied[
         settings.ENABLE_POWER_USER_MODE
     ] = config_optional_with_global_defaults_applied.get(settings.ENABLE_POWER_USER_MODE, False)
@@ -596,10 +605,7 @@ def filter_config(config: Dict[str, Any], decorator: NodeTransformLifecycle) -> 
     """
     config_required = decorator.required_config()
     config_optional_with_defaults = decorator.optional_config()
-    if config_required is None:
-        # This is an out to allow for backwards compatibility for the config.resolve decorator
-        # Note this is an internal API, but we made the config with the `resolve` parameter public
-        return config
+    print(decorator, config_required, config_optional_with_defaults)
     return resolve_config(decorator.name, config, config_required, config_optional_with_defaults)
 
 
