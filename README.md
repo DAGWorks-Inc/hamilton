@@ -340,3 +340,4 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Gourav Kumar (@gms101)
 - Amos Aikman (@amosaikman)
 - Ankush Kundaliya (@akundaliya)
+- David Weselowski (@j7zAhU)
