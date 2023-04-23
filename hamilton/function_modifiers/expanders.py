@@ -276,7 +276,9 @@ class parameterize(base.NodeExpander):
         try:
             for output_name, mappings in self.parameterization.items():
                 # TODO -- separate out into the two dependency-types
-                self.format_doc_string(fn.__doc__, output_name)
+                if output_name == self.PLACEHOLDER_PARAM_NAME:
+                    output_name = fn.__name__
+                self.format_doc_string(fn, output_name)
         except KeyError as e:
             raise base.InvalidDecoratorException(
                 f"Function docstring templating is incorrect. "

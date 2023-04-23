@@ -706,6 +706,28 @@ def test_inject_misconfigured_param_untyped_generic_dict():
         annotation.validate(foo)
 
 
+def test_inject_validate_with_docstring():
+    def foo(x: int) -> int:
+        """Docstring..."""
+        return x
+
+    annotation = function_modifiers.inject(x=value(1))
+    annotation.validate(foo)
+    (node_,) = annotation.expand_node(node.Node.from_fn(foo), {}, foo)
+    assert node_.documentation == "Docstring..."
+
+
+def test_inject_validate_with_docstring_replacement():
+    def foo(x: int) -> int:
+        """Docstring. x={x} is injected."""
+        return x
+
+    annotation = function_modifiers.inject(x=value(1))
+    annotation.validate(foo)
+    (node_,) = annotation.expand_node(node.Node.from_fn(foo), {}, foo)
+    assert node_.documentation == "Docstring. x=1 is injected."
+
+
 def test_parameterize_repeated_sources():
     def foo(x: int, y: int) -> int:
         return x + y

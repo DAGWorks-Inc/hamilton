@@ -605,7 +605,6 @@ def filter_config(config: Dict[str, Any], decorator: NodeTransformLifecycle) -> 
     """
     config_required = decorator.required_config()
     config_optional_with_defaults = decorator.optional_config()
-    print(decorator, config_required, config_optional_with_defaults)
     return resolve_config(decorator.name, config, config_required, config_optional_with_defaults)
 
 
