@@ -6,7 +6,7 @@ description: This describes how one can get started with Ray in 5 minutes.
 
 For those eager to just see code, please jump right ahead to a full hello world with Ray [here](https://github.com/stitchfix/hamilton/tree/main/examples/ray).
 
-<figure><img src="../.gitbook/assets/Hamilton + ray post image.png" alt=""><figcaption><p>Hamilton + Ray.</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Hamilton + ray post image.png" alt=""><figcaption><p>Hamilton + Ray.</p></figcaption></figure>
 
 For those unfamiliar with [Ray](https://ray.io/), it is an open source framework that can scale python applications that came out of [UC Berkeley](https://rise.cs.berkeley.edu/projects/ray/). It has a growing ecosystem of tooling that helps with lots of machine learning related workflows. For example, it sells itself as enabling you to scale from your laptop to a cluster very easily, without having to change much code. In terms of real world use, we like to use Ray as a very quick way to implement [multiprocessing in python](https://machinelearningmastery.com/multiprocessing-in-python/) without worry about the details!
 
@@ -54,11 +54,11 @@ To use Ray with Hamilton, you first need to install it.
 pip install "sf-hamilton[ray]"
 ```
 
-Next, with Hamilton by default, all your logic is written as python functions. So you write your Hamilton functions as you normally would.&#x20;
+Next, with Hamilton by default, all your logic is written as python functions. So you write your Hamilton functions as you normally would.
 
-At the Hamilton framework level, Hamilton can easily inject `@ray.remote` for every single function in the directed acyclic graph (DAG) your functions define. That is_, you don’t have to change any of your Hamilton code to make use of Ray!_ All you need to do, to make Hamilton run on Ray, is provide a “_GraphAdapter”_ object to the Hamilton “_Driver”_ class you instantiate.&#x20;
+At the Hamilton framework level, Hamilton can easily inject `@ray.remote` for every single function in the directed acyclic graph (DAG) your functions define. That is\_, you don’t have to change any of your Hamilton code to make use of Ray!\_ All you need to do, to make Hamilton run on Ray, is provide a “_GraphAdapter”_ object to the Hamilton “_Driver”_ class you instantiate.
 
-A GraphAdapter, is just a simple class that has a few functions defined that enable you to augment how your DAG is walked and executed. See [available-graph-adapters.md](../reference/api-reference/available-graph-adapters.md "mention") for more information.
+A GraphAdapter, is just a simple class that has a few functions defined that enable you to augment how your DAG is walked and executed. See [available-graph-adapters.md](../api-reference/available-graph-adapters.md "mention") for more information.
 
 In terms of code to add/change, here’s what’s required to augment standard Hamilton driver code — see **numbered comments**:
 

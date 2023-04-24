@@ -4,11 +4,11 @@ description: Useful ways to help you make the most of Hamilton
 
 # Decorators
 
-While the one to one mapping of node -> function implementation is powerful, it can sometimes lead to repeated code. In order to avoid this, Hamilton employs decorators to promote reuse of business logic. In this section we will go over a few different classes of decorators with some examples. For reference on specific decorators, see [available-decorators.md](../reference/api-reference/available-decorators.md "mention"). &#x20;
+While the one to one mapping of node -> function implementation is powerful, it can sometimes lead to repeated code. In order to avoid this, Hamilton employs decorators to promote reuse of business logic. In this section we will go over a few different classes of decorators with some examples. For reference on specific decorators, see [available-decorators.md](../api-reference/available-decorators.md "mention").
 
 In Hamilton, decorators allow the author of Hamilton dataflows to modify functions as well as their role in the DAG. Decorators do one (or multiple) of the following:
 
-**Determine whether a function should exist as a transform in the DAG.**&#x20;
+**Determine whether a function should exist as a transform in the DAG.**
 
 `@config.when` is the primary example of this. It allows the user to determine nodes that are only present in certain DAG configurations. For instance, say that your company has different marketing spend source in different geographic regions. You might write code that looks like this:
 
@@ -50,7 +50,7 @@ def marketing_spend(tv_spend: pd.Series, radio_spend: pd.Series):
     pass
 ```
 
-Note that we have no implementation for the functions! They're automagically replaced. There are other decorators that similar things.&#x20;
+Note that we have no implementation for the functions! They're automagically replaced. There are other decorators that similar things.
 
 **Split the function into multiple nodes in the DAG**
 
@@ -71,6 +71,6 @@ The `marketing_spend_df` function becomes three separate available datums from t
 
 While there are decorators that don't quite fit into the above, these should give you a sense of how and why decorators are used. For more information on available decorators, see:
 
-{% content-ref url="../reference/api-reference/available-decorators.md" %}
-[available-decorators.md](../reference/api-reference/available-decorators.md)
+{% content-ref url="../api-reference/available-decorators.md" %}
+[available-decorators.md](../api-reference/available-decorators.md)
 {% endcontent-ref %}

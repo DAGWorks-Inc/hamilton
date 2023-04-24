@@ -18,7 +18,7 @@ Well, with the simple change of some driver script code, you can very easily sca
 All that's needed is to:
 
 1. Import system specific code to setup a client/cluster/etc for that distributed/scalable system.
-2. Import a [GraphAdapter](https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L91) that implements using that distributed/scalable system. See [available-graph-adapters.md](reference/api-reference/available-graph-adapters.md "mention") for what is available.
+2. Import a [GraphAdapter](https://github.com/stitchfix/hamilton/blob/main/hamilton/base.py#L91) that implements using that distributed/scalable system. See [available-graph-adapters.md](api-reference/available-graph-adapters.md "mention") for what is available.
 3. You may need to provide a specific module that knows how to load data into the scalable system.
 4. Pass the modules, and graph adapter to the Hamilton Driver.
 5. Proceed as you would normally.
@@ -40,7 +40,7 @@ output_columns = ['year','week',...,'spend_shift_3weeks_per_signup','special_fea
 df = dr.execute(output_columns) # only walk DAG for what is needed
 ```
 
-See [available-graph-adapters.md](reference/api-reference/available-graph-adapters.md "mention") and [custom-graph-adapters.md](reference/api-extensions/custom-graph-adapters.md "mention") for options.
+See [available-graph-adapters.md](api-reference/available-graph-adapters.md "mention") and [custom-graph-adapters.md](api-extensions/custom-graph-adapters.md "mention") for options.
 
 ### A note on the definition of _Experimental_
 
@@ -78,7 +78,7 @@ What this doesn't help with is data scale, as you're still limited to what fits 
 
 #### Distributed Computation:
 
-If you have a Dask cluster setup, then you can farm out Hamilton computation to it. This enables lots of parallel compute, and the ability to scale to petabyte scale data set sizes.&#x20;
+If you have a Dask cluster setup, then you can farm out Hamilton computation to it. This enables lots of parallel compute, and the ability to scale to petabyte scale data set sizes.
 
 ### Koalas on Spark, a.k.a. Pandas API on Spark - Experimental!
 
@@ -106,7 +106,7 @@ This means, that the result of `execute()` can be any python object type!
 
 You need to implement a ResultMixin if there isn't one already defined for what you want to do. Then you need to provide that to a GraphAdapter, similar to what was presented above.
 
-See [available-result-builders.md](reference/api-reference/available-result-builders.md "mention") for what is provided with Hamilton, or [custom-result-builders.md](reference/api-extensions/custom-result-builders.md "mention") for how to build your own.
+See [available-result-builders.md](api-reference/available-result-builders.md "mention") for what is provided with Hamilton, or [custom-result-builders.md](api-extensions/custom-result-builders.md "mention") for how to build your own.
 
 ```python
 from dask.distributed import Client    

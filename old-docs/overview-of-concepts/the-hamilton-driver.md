@@ -11,7 +11,7 @@ Writing functions is great, but its meaningless if you have no way to execute th
 3. Assembling the results.
 4. Enabling you to visualize the DAG.
 
-It is provided as an easy way for the user to specify the data she wants without dealing with the complexities of DAGs, function graphs, or nodes.&#x20;
+It is provided as an easy way for the user to specify the data she wants without dealing with the complexities of DAGs, function graphs, or nodes.
 
 The basic structure of using the Hamilton Driver is:
 
@@ -45,9 +45,9 @@ Note, currently, the stock Hamilton driver, is the API interface to use, to exec
 
 Static dataflows are only so useful. In the real world, we need to be able to configure both the shape of the DAG and the inputs to the DAG as part of the Hamilton driver. The default Hamilton driver comes with three input types that you can control. They both take the form `Dict[str, Any]`, i.e. a dictionary of string keys that maps to any object type.
 
-1. **config** The config is a dictionary of strings to values. This is passed into the constructor of the Hamilton driver, as it is required to create the DAG. It _also_ get's passed into the DAG at runtime, so you have access to parameter values. See [decorators](decorators.md) for how the config can be used.&#x20;
-2. **inputs **_****_ The _runtime inputs_ to the DAG. These have to be mutually disjoint from the config -- overrides don't make sense here, as the DAG has been constructed assuming fixed configs.
-3. **overrides** Values to override nodes in a DAG. During execution, nothing upstream of these are computed.&#x20;
+1. **config** The config is a dictionary of strings to values. This is passed into the constructor of the Hamilton driver, as it is required to create the DAG. It _also_ get's passed into the DAG at runtime, so you have access to parameter values. See [decorators](decorators.md) for how the config can be used.
+2. \*\*inputs \*\*_\*\*\*\*_ The _runtime inputs_ to the DAG. These have to be mutually disjoint from the config -- overrides don't make sense here, as the DAG has been constructed assuming fixed configs.
+3. **overrides** Values to override nodes in a DAG. During execution, nothing upstream of these are computed.
 
 Let's go through some examples that show you how to write a Hamilton function that allows it to be conditionally used depending on configuration.
 
@@ -67,7 +67,7 @@ def avg_rolling_spend__US(spend: pd.Series) -> pd.Series:
 
 When the graph is compiled, the implementation of `avg_rolling_spend` varies based off of the configuration value. You would construct the driver with `config={'region' : 'US'}` , to get the desired behavior.
 
-**You want to pass in the region/business line to change the behavior or a transform.** Say you have a big dataframe of marketing spend with columns representing the region, and also want to filter it out for the individual region. You would define the transform function as follows.&#x20;
+**You want to pass in the region/business line to change the behavior or a transform.** Say you have a big dataframe of marketing spend with columns representing the region, and also want to filter it out for the individual region. You would define the transform function as follows.
 
 ```python
 def avg_rolling_spend(spend_by_country: pd.DataFrame, region: str) -> pd.Series:
@@ -118,7 +118,7 @@ class ResultMixin(object):
         pass
 ```
 
-So we have a few implementations see [available-result-builders.md](../reference/api-reference/available-result-builders.md "mention") for the list.
+So we have a few implementations see [available-result-builders.md](../api-reference/available-result-builders.md "mention") for the list.
 
 To use it, it needs to be paired with a GraphAdapter - onto the next section!
 
@@ -135,9 +135,9 @@ class HamiltonGraphAdapter(ResultMixin):
     # four functions not shown
 ```
 
-The default GraphAdapter is the `base`.`SimplePythonDataFrameGraphAdapter` which by default makes Hamilton try to build a pandas.DataFrame when `.execute()` is called.&#x20;
+The default GraphAdapter is the `base`.`SimplePythonDataFrameGraphAdapter` which by default makes Hamilton try to build a pandas.DataFrame when `.execute()` is called.
 
-If you want to tell Hamilton to return something else, we suggest starting with the `base.SimplePythonGraphAdapter` and writing a simple class & function that implements the `base.ResultMixin` interface and passing that in.  See [available-graph-adapters.md](../reference/api-reference/available-graph-adapters.md "mention") and [available-result-builders.md](../reference/api-reference/available-result-builders.md "mention") for options.
+If you want to tell Hamilton to return something else, we suggest starting with the `base.SimplePythonGraphAdapter` and writing a simple class & function that implements the `base.ResultMixin` interface and passing that in. See [available-graph-adapters.md](../api-reference/available-graph-adapters.md "mention") and [available-result-builders.md](../api-reference/available-result-builders.md "mention") for options.
 
 Otherwise, let's quickly walk through some options on how to execute a Hamilton DAG.
 
@@ -148,18 +148,18 @@ You have two options:
 1. Do nothing -- and you'll get `base`.`SimplePythonDataFrameGraphAdapter` by default.
 2.  Use `base.SimplePythonGraphAdapter` and pass in a subclass of `base.ResultMixin` (you can create your own), and then pass that to the constructor of the Driver.
 
-    e.g. \
+    e.g.\
     `adapter = base.SimplePythonGraphAdapter(base.DictResult())`
 
     `dr = driver.Driver(..., adapter=adapter)`
 
 By passing in `base.DictResult()` we are telling Hamilton that the result of `execute()` should be a dictionary with a map of `output` to computed result.
 
-#### Scaling Hamilton: Multi-core & Distributed  Execution
+#### Scaling Hamilton: Multi-core & Distributed Execution
 
 This functionality is currently in an "experimental" state. We think the code is solid, but it hasn't been used in a production environment for long. Thus the API to these GraphAdapters might change.
 
-See the [`experimental`](https://github.com/stitchfix/hamilton/tree/main/hamilton/experimental) `` package for the current implementations. We encourage you to give them a spin and provide us with feedback. See [available-graph-adapters.md](../reference/api-reference/available-graph-adapters.md "mention") for more details.
+See the [`experimental`](https://github.com/stitchfix/hamilton/tree/main/hamilton/experimental) \`\` package for the current implementations. We encourage you to give them a spin and provide us with feedback. See [available-graph-adapters.md](../api-reference/available-graph-adapters.md "mention") for more details.
 
 ### Calling Execute()
 
@@ -178,13 +178,13 @@ Hamilton enables you to quickly and easily visualize your entire DAG, as well as
 
 `dr.visualize_execution(['desired_output1', 'desired_output2'], './my_file.dot', render_args)`
 
-In addition to specifying the outputs you desire, you need to provide a path to save the created dot file and image, and then provide some  arguments for rendering -- at minimum, pass in an empty dictionary.
+In addition to specifying the outputs you desire, you need to provide a path to save the created dot file and image, and then provide some arguments for rendering -- at minimum, pass in an empty dictionary.
 
 #### Visualize the entire DAG constructed
 
 `dr.display_all_functions('./my_file.dot', render_args)`
 
-You need to provide a path to save the created dot file and image, and then provide some optional arguments for rendering.&#x20;
+You need to provide a path to save the created dot file and image, and then provide some optional arguments for rendering.
 
 ## Should I define my own Driver?
 
@@ -212,6 +212,5 @@ class MyCustomDriver(object):
 
 ```
 
-That way, you can create the right API constructs to invoke Hamilton in your context, and then delegate to the stock Hamilton Driver. By doing so, it will ensure that your code continues to work, \
+That way, you can create the right API constructs to invoke Hamilton in your context, and then delegate to the stock Hamilton Driver. By doing so, it will ensure that your code continues to work,\
 since we intend to honor the Hamilton Driver APIs with backwards compatibility as much as possible.
-
