@@ -53,6 +53,8 @@ Classes to help with @parameterize:
 
 .. autoclass:: hamilton.function_modifiers.value
 
+.. autoclass:: hamilton.function_modifiers.group
+
 
 Actual decorators:
 ^^^^^^^^^^^^^^^^^^^^^^^^^
