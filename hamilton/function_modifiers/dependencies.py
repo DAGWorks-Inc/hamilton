@@ -186,11 +186,15 @@ def group(
     This means that it gets injected into a list of dependencies that are grouped together. E.G.
     dep=group(source("foo"), source("bar")) for the function:
 
-    def f(dep: List[pd.Series]) -> pd.Series:
-        return ...
+    .. code-block:: python
+
+        @inject(dep=group(source("foo"), source("bar")))
+        def f(dep: List[pd.Series]) -> pd.Series:
+            return ...
 
     Would result in dep getting foo and bar dependencies injected.
-    :param dependencies: Dependencies, list of dependencies
+    :param dependency_args: Dependencies, list of dependencies (e.g. source("foo"), source("bar"))
+    :param dependency_kwargs: Dependencies, kwarg dependencies (e.g. foo=source("foo"))
     :return:
     """
     _validate_group_params(dependency_args, dependency_kwargs)
