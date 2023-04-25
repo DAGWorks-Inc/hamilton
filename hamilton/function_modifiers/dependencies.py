@@ -193,6 +193,7 @@ def group(
             return ...
 
     Would result in dep getting foo and bar dependencies injected.
+
     :param dependency_args: Dependencies, list of dependencies (e.g. source("foo"), source("bar"))
     :param dependency_kwargs: Dependencies, kwarg dependencies (e.g. foo=source("foo"))
     :return:
