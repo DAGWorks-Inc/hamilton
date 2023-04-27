@@ -7,7 +7,7 @@ from typing_extensions import NotRequired, TypedDict
 # TODO -- determine the best place to put this code
 from hamilton import graph_utils, node
 from hamilton.function_modifiers import base, dependencies
-from hamilton.function_modifiers.base import InvalidDecoratorException
+from hamilton.function_modifiers.base import InvalidDecoratorException, NodeTransformer
 from hamilton.function_modifiers.dependencies import (
     LiteralDependency,
     ParametrizedDependency,
@@ -31,7 +31,9 @@ def derive_type(dependency: dependencies.LiteralDependency):
     return type(dependency.value)
 
 
-def create_identity_node(from_: str, typ: Type[Type], name: str, namespace: Tuple[str, ...]):
+def create_identity_node(
+    from_: str, typ: Type[Type], name: str, namespace: Tuple[str, ...], tags: Dict[str, Any]
+) -> node.Node:
     """Creates an identity node -- this passes through the exact
     value returned by the upstream node.
 
@@ -51,7 +53,8 @@ def create_identity_node(from_: str, typ: Type[Type], name: str, namespace: Tupl
         doc_string="",
         callabl=identity,
         input_types={from_: typ},
-        namespace=namespace
+        namespace=namespace,
+        tags=tags,
         # TODO -- add tags?
     )
 
@@ -74,7 +77,9 @@ def extract_all_known_types(nodes: Collection[node.Node]) -> Dict[str, Type[Type
     return observed_types
 
 
-def create_static_node(typ: Type, name: str, value: Any, namespace: Tuple[str, ...]) -> node.Node:
+def create_static_node(
+    typ: Type, name: str, value: Any, namespace: Tuple[str, ...], tags: Dict[str, Any]
+) -> node.Node:
     """Utility function to create a static node -- this helps us bridge nodes together.
 
     :param typ: Type of the node to create
@@ -87,7 +92,9 @@ def create_static_node(typ: Type, name: str, value: Any, namespace: Tuple[str, .
     def node_fn(_value=value):
         return _value
 
-    return node.Node(name=name, typ=typ, callabl=node_fn, input_types={}, namespace=namespace)
+    return node.Node(
+        name=name, typ=typ, callabl=node_fn, input_types={}, namespace=namespace, tags=tags
+    )
 
 
 def _validate_config_inputs(config: Dict[str, Any], inputs: Dict[str, Any]):
@@ -111,6 +118,9 @@ def _validate_config_inputs(config: Dict[str, Any], inputs: Dict[str, Any]):
                 f"Input {key} must be either an UpstreamDependency or a LiteralDependency ,"
                 f" not {type(value)}."
             )
+
+
+NON_FINAL_TAGS = {NodeTransformer.NON_FINAL_TAG: True}
 
 
 class subdag(base.NodeCreator):
@@ -228,7 +238,9 @@ class subdag(base.NodeCreator):
         combined_config = dict(original_config, **self.config)
         nodes = []
         for fn in self.subdag_functions:
-            nodes.extend(base.resolve_nodes(fn, combined_config))
+            for node_ in base.resolve_nodes(fn, combined_config):
+                # nodes.append(node_)
+                nodes.append(node_.copy_with(tags={**node_.tags, **NON_FINAL_TAGS}))
         return nodes
 
     def _create_additional_static_nodes(
@@ -248,6 +260,7 @@ class subdag(base.NodeCreator):
                         name=key,
                         value=value.value,
                         namespace=(namespace,),
+                        tags=NON_FINAL_TAGS,
                     )
                 )
             elif value.get_dependency_type() == dependencies.ParametrizedDependencySource.UPSTREAM:
@@ -257,6 +270,7 @@ class subdag(base.NodeCreator):
                         typ=node_types[new_node_name],
                         name=key,
                         namespace=(namespace,),
+                        tags=NON_FINAL_TAGS,
                     )
                 )
         for key, value in self.config.items():
@@ -266,6 +280,7 @@ class subdag(base.NodeCreator):
                     name=key,
                     value=value,
                     namespace=(namespace,),
+                    tags=NON_FINAL_TAGS,
                 )
             )
         return out

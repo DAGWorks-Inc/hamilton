@@ -73,3 +73,24 @@ def test_subdag_and_extract_fields_with_tags():
     assert sorted(nodes_by_name["bar"].input_types.keys()) == ["foo_bar"]
     assert nodes_by_name["foo"].tags["a"] == "b"
     assert nodes_by_name["bar"].tags["a"] == "c"
+
+
+def test_subdag_and_extract_fields_dangling_nodes():
+    def foo() -> int:
+        return 1
+
+    def bar() -> int:
+        return 2
+
+    @extract_fields({"foo": int, "bar": int})
+    @subdag(foo, bar)
+    def foo_bar(foo: int) -> Dict[str, int]:
+        return {"foo": foo, "bar": 5}
+
+    nodes = fm_base.resolve_nodes(foo_bar, {})
+    nodes_by_name = {node.name: node for node in nodes}
+    # Doing this set comparison as I'm not sure that foo_bar.bar should actually be in there
+    assert len({"bar", "foo", "foo_bar", "foo_bar.foo"} - set(nodes_by_name)) == 0
+    # The extraction columns should depend on the thing from which they are extracted
+    assert sorted(nodes_by_name["foo"].input_types.keys()) == ["foo_bar"]
+    assert sorted(nodes_by_name["bar"].input_types.keys()) == ["foo_bar"]

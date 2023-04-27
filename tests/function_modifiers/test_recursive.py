@@ -14,6 +14,7 @@ from hamilton.function_modifiers import (
     subdag,
     value,
 )
+from hamilton.function_modifiers.base import NodeTransformer
 from hamilton.function_modifiers.dependencies import source
 from hamilton.function_modifiers.recursive import _validate_config_inputs
 
@@ -59,7 +60,7 @@ def bar__alt() -> int:
     return 10
 
 
-def test_reuse_subdag_validate_succeeds():
+def test_subdag_validate_succeeds():
     def baz(foo: int, bar: str) -> str:
         return bar * foo
 
@@ -72,7 +73,7 @@ def test_reuse_subdag_validate_succeeds():
     decorator.validate(baz)
 
 
-def test_reuse_subdag_basic_no_parameterization():
+def test_subdag_basic_no_parameterization():
     def baz(foo: int, bar: int) -> int:
         return foo + bar
 
@@ -86,7 +87,18 @@ def test_reuse_subdag_basic_no_parameterization():
     assert nodes["baz"].callable(**{"baz.foo": 10, "baz.bar": 20}) == 30
 
 
-def test_reuse_subdag_basic_simple_parameterization():
+def test_subdag_assigns_non_final_tag():
+    def baz(foo: int, bar: int) -> int:
+        return foo + bar
+
+    decorator = recursive.subdag(foo, bar, inputs={}, config={})
+    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(baz, {})}
+    # subdags ensure that these nodes are non-final
+    assert nodes["baz.foo"].tags[NodeTransformer.NON_FINAL_TAG] is True
+    assert nodes["baz.foo"].tags[NodeTransformer.NON_FINAL_TAG] is True
+
+
+def test_subdag_basic_simple_parameterization():
     def baz(foo: int, bar: int) -> int:
         return foo + bar
 
@@ -104,7 +116,7 @@ def test_reuse_subdag_basic_simple_parameterization():
     assert nodes["baz.b"]() == 2
 
 
-def test_reuse_subdag_basic_source_parameterization():
+def test_subdag_basic_source_parameterization():
     def baz(foo: int, bar: int) -> int:
         return foo + bar
 
@@ -118,7 +130,7 @@ def test_reuse_subdag_basic_source_parameterization():
     assert nodes["baz.b"](d=2) == 2
 
 
-def test_reuse_subdag_handles_config_assignment():
+def test_subdag_handles_config_assignment():
     def baz(foo: int, bar: int) -> int:
         return foo + bar
 
@@ -133,7 +145,7 @@ def test_reuse_subdag_handles_config_assignment():
     assert nodes["baz.bar"]() == 10
 
 
-def test_reuse_subdag_allows_config_as_input():
+def test_subdag_allows_config_as_input():
     def baz(foo: int, bar: int) -> int:
         return foo + bar
 
