@@ -275,6 +275,8 @@ TargetType = Union[str, Collection[str], None, EllipsisType]
 
 
 class NodeTransformer(SubDAGModifier):
+    NON_FINAL_TAG = "hamilton.non_final_node"
+
     @classmethod
     def _early_validate_target(cls, target: TargetType, allow_multiple: bool):
         """Determines whether the target is valid, given that we may or may not
@@ -341,7 +343,12 @@ class NodeTransformer(SubDAGModifier):
         for node_ in nodes:
             for dep in node_.input_types:
                 non_final_nodes.add(dep)
-        return [node_ for node_ in nodes if node_.name not in non_final_nodes]
+        return [
+            node_
+            for node_ in nodes
+            if node_.name not in non_final_nodes
+            and not node_.tags.get(NodeTransformer.NON_FINAL_TAG)
+        ]
 
     @staticmethod
     def select_nodes(target: TargetType, nodes: Collection[node.Node]) -> Collection[node.Node]:
