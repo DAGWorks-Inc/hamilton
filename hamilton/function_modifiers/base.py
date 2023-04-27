@@ -341,7 +341,11 @@ class NodeTransformer(SubDAGModifier):
         for node_ in nodes:
             for dep in node_.input_types:
                 non_final_nodes.add(dep)
-        return [node_ for node_ in nodes if node_.name not in non_final_nodes]
+        return [
+            node_
+            for node_ in nodes
+            if node_.name not in non_final_nodes and not node_.tags.get("hamilton.non_final_node")
+        ]
 
     @staticmethod
     def select_nodes(target: TargetType, nodes: Collection[node.Node]) -> Collection[node.Node]:
