@@ -367,7 +367,7 @@ def test_loader_fails_for_missing_attribute():
 
 
 def test_pandas_extensions_end_to_end(tmp_path_factory):
-    output_path = tmp_path_factory.mktemp("test_pandas_extensions_end_to_end") / "output.csv"
+    output_path = str(tmp_path_factory.mktemp("test_pandas_extensions_end_to_end") / "output.csv")
     input_path = "tests/resources/data/test_load_from_data.csv"
 
     @save_to.csv(path=source("output_path"), output_name_="save_df")
@@ -476,3 +476,39 @@ def test_adapters_optional_params():
     )
     assert len(fg) == 2
     assert "foo" in fg
+
+
+def test_save_to_with_input_from_other_fn():
+    # This tests that we can refer to another node in save_to
+    def output_path() -> str:
+        return "output.json"
+
+    @save_to.json(path=source("output_path"), output_name_="save_fn")
+    def fn() -> dict:
+        return {"a": 1}
+
+    fg = graph.create_function_graph(
+        ad_hoc_utils.create_temporary_module(output_path, fn),
+        config={},
+        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+    )
+
+    assert len(fg) == 3
+
+
+def test_load_from_with_input_from_other_fn():
+    # This tests that we can refer to another node in load_from
+    def input_path() -> str:
+        return "input.json"
+
+    @load_from.json(path=source("input_path"))
+    def fn(data: dict) -> dict:
+        return data
+
+    fg = graph.create_function_graph(
+        ad_hoc_utils.create_temporary_module(input_path, fn),
+        config={},
+        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+    )
+
+    assert len(fg) == 3

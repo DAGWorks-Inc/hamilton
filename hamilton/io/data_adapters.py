@@ -76,7 +76,7 @@ class AdapterCommon(abc.ABC):
         }
 
     @classmethod
-    def get_optional_arguments(cls) -> Dict[str, Tuple[Type[Type], Any]]:
+    def get_optional_arguments(cls) -> Dict[str, Type[Type]]:
         """Gives the optional arguments for the class.
         Note that this just uses the type hints from the dataclass.
 

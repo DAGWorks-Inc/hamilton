@@ -218,7 +218,7 @@ class Driver(object):
             ):
                 errors.append(
                     f"Error: Type requirement mismatch. Expected {user_node.name}:{user_node.type} "
-                    f"got {all_inputs[user_node.name]} instead."
+                    f"got {all_inputs[user_node.name]}:{type(all_inputs[user_node.name])} instead."
                 )
         if errors:
             errors.sort()
