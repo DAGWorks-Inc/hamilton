@@ -166,13 +166,13 @@ class LoadFromDecorator(NodeCreator):
             return key if key not in dependencies else dependencies[key]
 
         input_types = {
-            get_input_type_key(key): (Any, DependencyType.REQUIRED)
-            for key in loader_cls.get_required_arguments()
+            get_input_type_key(key): (type_, DependencyType.REQUIRED)
+            for key, type_ in loader_cls.get_required_arguments().items()
         }
         input_types.update(
             {
-                dependencies[key]: (Any, DependencyType.OPTIONAL)
-                for key in loader_cls.get_optional_arguments()
+                dependencies[key]: (type_, DependencyType.OPTIONAL)
+                for key, type_ in loader_cls.get_optional_arguments().items()
                 if key in dependencies
             }
         )
@@ -451,13 +451,13 @@ class SaveToDecorator(SingleNodeNodeTransformer):
             return key if key not in dependencies else dependencies[key]
 
         input_types = {
-            get_input_type_key(key): (Any, DependencyType.REQUIRED)
-            for key in saver_cls.get_required_arguments()
+            get_input_type_key(key): (type_, DependencyType.REQUIRED)
+            for key, type_ in saver_cls.get_required_arguments().items()
         }
         input_types.update(
             {
-                dependencies[key]: (Any, DependencyType.OPTIONAL)
-                for key in saver_cls.get_optional_arguments()
+                dependencies[key]: (type_, DependencyType.OPTIONAL)
+                for key, type_ in saver_cls.get_optional_arguments().items()
                 if key in dependencies
             }
         )
