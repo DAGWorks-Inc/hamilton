@@ -1,7 +1,7 @@
 import inspect
 import typing
 from enum import Enum
-from typing import Any, Callable, Dict, List, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 """
 Module that contains the primitive components of the graph.
@@ -46,6 +46,7 @@ class Node(object):
         input_types: Dict[str, Union[Type, Tuple[Type, DependencyType]]] = None,
         tags: Dict[str, Any] = None,
         namespace: Tuple[str, ...] = (),
+        originating_functions: Optional[Tuple[Callable, ...]] = None,
     ):
         """Constructor for our Node object.
 
@@ -71,6 +72,7 @@ class Node(object):
         self._depended_on_by = []
         self._namespace = namespace
         self._input_types = {}
+        self._originating_functions = originating_functions
 
         if self._node_source == NodeSource.STANDARD:
             if input_types is not None:
@@ -144,6 +146,16 @@ class Node(object):
     @property
     def tags(self) -> Dict[str, str]:
         return self._tags
+
+    @property
+    def originating_functions(self) -> Optional[Tuple[Callable, ...]]:
+        """Gives all functions from which this node was created. None if the data
+        is not available (it is user-defined, or we have not added it yet). Note that this can be
+        multiple in the case of subdags (the subdag function + the other function). In that case,
+
+        :return: A Tuple consisting of functions from which this node was created.
+        """
+        return self._originating_functions
 
     def add_tag(self, tag_name: str, tag_value: str):
         self._tags[tag_name] = tag_value

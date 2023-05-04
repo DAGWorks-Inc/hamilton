@@ -48,7 +48,7 @@ def test_driver_cycles_execute_recursion_error():
         dr.execute(["C"], inputs={"b": 2, "c": 2})
 
 
-def test_driver_variables():
+def test_driver_variables_exposes_tags():
     dr = Driver({}, tests.resources.tagging)
     tags = {var.name: var.tags for var in dr.list_available_variables()}
     assert tags["a"] == {"module": "tests.resources.tagging", "test": "a"}
@@ -57,11 +57,20 @@ def test_driver_variables():
     assert tags["d"] == {"module": "tests.resources.tagging"}
 
 
-def test_driver_external_input():
+def test_driver_variables_external_input():
     dr = Driver({}, tests.resources.very_simple_dag)
     input_types = {var.name: var.is_external_input for var in dr.list_available_variables()}
     assert input_types["a"] is True
     assert input_types["b"] is False
+
+
+def test_driver_variables_exposes_original_function():
+    dr = Driver({}, tests.resources.very_simple_dag)
+    originating_functions = {
+        var.name: var.originating_functions for var in dr.list_available_variables()
+    }
+    assert originating_functions["b"] == (tests.resources.very_simple_dag.b,)
+    assert originating_functions["a"] is None
 
 
 @mock.patch("hamilton.telemetry.send_event_json")

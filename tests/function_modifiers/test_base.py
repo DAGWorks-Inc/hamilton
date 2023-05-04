@@ -139,3 +139,13 @@ def test_select_nodes_happy(
 def test_select_nodes_sad(target: TargetType, nodes: Collection[node.Node]):
     with pytest.raises(InvalidDecoratorException):
         NodeTransformer.select_nodes(target, nodes)
+
+
+def test_add_fn_metadata():
+    nodes_og = _create_node_set({"d": ["e"]})
+    nodes = base._add_original_function_to_nodes(test_add_fn_metadata, nodes_og)
+    nodes_with_fn_pointer = [
+        n.originating_functions for n in nodes if n.originating_functions is not None
+    ]
+    assert len(nodes_with_fn_pointer) == len(nodes)
+    assert all([n.originating_functions == (test_add_fn_metadata,) for n in nodes])

@@ -647,6 +647,33 @@ def get_node_decorators(
     return defaults
 
 
+def _add_original_function_to_nodes(fn: Callable, nodes: List[node.Node]) -> List[node.Node]:
+    """Adds the original function to the nodes. We do this so that we can have appropriate metadata
+    on the function -- this is valuable to see if/how the function changes over time to manage node
+    versions, etc...
+
+    Note that this will add it so the "external" function is always last. They *should* correspond
+    to namespaces, but this is not
+
+    This is not mutating them, rather
+    copying them with the original function. If it gets slow we *can* mutate them, but
+    this is just another O(n) operation so I'm not concerned.
+
+
+    :param fn: The function to add
+    :param nodes: The nodes to add it to
+    :return: The nodes with the function added
+    """
+    out = []
+    for node_ in nodes:
+        current_originating_functions = node_.originating_functions
+        new_originating_functions = (
+            current_originating_functions if current_originating_functions is not None else ()
+        ) + (fn,)
+        out.append(node_.copy_with(originating_functions=new_originating_functions))
+    return out
+
+
 def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
     """Gets a list of nodes from a function. This is meant to be an abstraction between the node
     and the function that it implements. This will end up coordinating with the decorators we build
@@ -696,7 +723,7 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
         function_decorators = function_decorators[NodeDecorator.get_lifecycle_name()]
         for node_decorator in function_decorators:
             nodes = node_decorator.transform_dag(nodes, filter_config(config, node_decorator), fn)
-        return nodes
+        return _add_original_function_to_nodes(fn, nodes)
     except InvalidDecoratorException as e:
         raise InvalidDecoratorException(f"Invalid decorator {e} for function {fn.__name__}.") from e
 
