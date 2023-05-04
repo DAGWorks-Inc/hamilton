@@ -1,6 +1,4 @@
 try:
-    from .version import VERSION
+    from .version import VERSION as __version__  # noqa: F401
 except ImportError:
-    from version import VERSION
-
-STR_VERSION = ".".join([str(i) for i in VERSION])
+    from version import VERSION as __version__  # noqa: F401
