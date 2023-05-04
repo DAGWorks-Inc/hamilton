@@ -168,7 +168,7 @@ class check_output(BaseDataValidationDecorator):
         schema = pa.DataFrameSchema(...)
 
         @extract_columns('col1', 'col2')
-        @check_output(schema=schema, target_="builds_dataframe, importance="fail")
+        @check_output(schema=schema, target_="builds_dataframe", importance="fail")
         def builds_dataframe(...) -> pd.DataFrame:
             ...
 
