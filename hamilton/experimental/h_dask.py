@@ -113,7 +113,12 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
         :param kwargs: the arguments that should be passed to it.
         :return: returns a dask delayed object.
         """
-        return delayed(node.callable, name=node.name)(**kwargs)
+        # No idea why this works, but it also works with `_` at the end
+        import uuid
+
+        return delayed(node.callable, name=node.name)(
+            **kwargs, dask_key_name=str(node.name) + str(uuid.uuid4())[0:6]
+        )
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
