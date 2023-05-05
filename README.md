@@ -342,3 +342,4 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Ankush Kundaliya (@akundaliya)
 - David Weselowski (@j7zAhU)
 - Peter Robinson (@Peter4137)
+- Seth Stokes (@sT0v)
