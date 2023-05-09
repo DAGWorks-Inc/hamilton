@@ -1,3 +1,8 @@
+# This script is used to create separate python virtual environments for individual examples
+# A python virtual environment named "hamilton-env" is created in every directory containing requirements.txt file
+
+# USAGE (inside hamilton/examples directory): bash make_python_virtualenv.sh
+
 # Get a list of all the folders containing "requirements.txt" file
 export folders=$(find . -name 'requirements*.txt' -printf '%h\n');
 
