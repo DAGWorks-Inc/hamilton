@@ -13,7 +13,7 @@ for folder in $folders; do
     # Change directory
     pushd $folder;
 
-    # Get the name of the requirements file without extension
+    # Get the name of the extension in the requirements file
     req_filename=$(basename -s .txt requirements*.txt | sed 's/requirements-//g' | sed 's/\.txt//g' | tr ' ' '\n' | sort -u | tr '\n' ' ')
     # Remove previous hamilton python virtual environment
     rm -rf ./hamilton-env-$req_filename;
