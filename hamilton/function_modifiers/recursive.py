@@ -1,7 +1,19 @@
+import sys
 from types import ModuleType
 from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
 
-from typing_extensions import NotRequired, TypedDict
+_sys_version_info = sys.version_info
+_version_tuple = (_sys_version_info.major, _sys_version_info.minor, _sys_version_info.micro)
+
+if _version_tuple < (3, 11, 0):
+    from typing_extensions import NotRequired
+else:
+    from typing import NotRequired
+
+if _version_tuple < (3, 8, 0):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
 
 # Copied this over from function_graph
 # TODO -- determine the best place to put this code
