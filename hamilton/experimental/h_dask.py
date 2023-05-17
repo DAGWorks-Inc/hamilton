@@ -6,6 +6,7 @@ import dask.dataframe
 import numpy as np
 import pandas as pd
 from dask import compute
+from dask.base import tokenize
 from dask.delayed import Delayed, delayed
 from dask.distributed import Client as DaskClient
 
@@ -113,7 +114,14 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
         :param kwargs: the arguments that should be passed to it.
         :return: returns a dask delayed object.
         """
-        return delayed(node.callable)(**kwargs)
+        # we want to ensure the name in dask corresponds to the node name, and not the wrapped
+        # function name that hamilton might have wrapped it with.
+        hash = tokenize(kwargs)  # this is what the dask docs recommend.
+        name = node.name + hash
+        dask_key_name = str(node.name) + "_" + hash
+        return delayed(node.callable, name=name)(
+            **kwargs, dask_key_name=dask_key_name  # this is what shows up in the dask console
+        )
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
