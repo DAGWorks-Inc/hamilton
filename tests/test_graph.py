@@ -512,9 +512,9 @@ def test_function_graph_display():
             "digraph {\n",
             "\tA [label=A]\n",
             "\tC [label=C]\n",
-            "\tB [label=B]\n",
-            '\tc [label="UD: c"]\n',
-            '\tb [label="UD: b"]\n',
+            "\tB [label=B shape=rectangle]\n",
+            '\tc [label="Input: c" style=dashed]\n',
+            '\tb [label="Input: b" style=dashed]\n',
             "\tb -> A\n",
             "\tc -> A\n",
             "\tA -> C\n",
@@ -524,7 +524,9 @@ def test_function_graph_display():
     )
     with tempfile.TemporaryDirectory() as tmp_dir:
         path = tmp_dir.join("test.dot")
-        fg.display(defined_nodes, user_nodes, str(path), {"view": False})
+        fg.display(
+            defined_nodes, user_nodes, str(path), {"view": False}, None, {"B": {"is_output": True}}
+        )
         with open(str(path), "r") as dot_file:
             actual = sorted(dot_file.readlines())
             assert actual == expected
@@ -540,7 +542,7 @@ def test_function_graph_display_without_saving():
             user_nodes.add(n)
         else:
             defined_nodes.add(n)
-    digraph = fg.display(defined_nodes, user_nodes, None)
+    digraph = fg.display(defined_nodes, user_nodes, None, node_modifiers={"B": {"is_output": True}})
     assert digraph is not None
     import graphviz
 
@@ -558,13 +560,13 @@ def test_create_graphviz_graph():
             "// test-graph",
             "digraph {",
             "\tgraph [ratio=1]",
-            "\tB [label=B]",
+            "\tB [label=B shape=rectangle]",
             "\tA [label=A]",
             "\tc [label=c]",
             "\tC [label=C]",
             "\tb [label=b]",
-            '\tb [label="UD: b"]',
-            '\tc [label="UD: c"]',
+            '\tb [label="Input: b" style=dashed]',
+            '\tc [label="Input: c" style=dashed]',
             "\tA -> B",
             "\tb -> A",
             "\tc -> A",
@@ -576,7 +578,7 @@ def test_create_graphviz_graph():
     if "" in expected:
         expected.remove("")
     digraph = graph.create_graphviz_graph(
-        nodes, user_nodes, "test-graph", dict(graph_attr={"ratio": "1"})
+        nodes, user_nodes, "test-graph", dict(graph_attr={"ratio": "1"}), {"B": {"is_output": True}}
     )
     actual = sorted(str(digraph).split("\n"))
     if "" in actual:
