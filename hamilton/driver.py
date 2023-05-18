@@ -442,7 +442,13 @@ class Driver(object):
 
         Note: overrides are not handled at this time.
 
-        :param final_vars: the outputs we want to compute.
+        Shapes:
+
+         - ovals are nodes/functions
+         - rectangles are nodes/functions that are requested as output
+         - shapes with dotted lines are inputs required to run the DAG.
+
+        :param final_vars: the outputs we want to compute. They will become rectangles in the graph.
         :param output_file_path: the full URI of path + file name to save the dot file to.
             E.g. 'some/path/graph.dot'
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
@@ -458,6 +464,7 @@ class Driver(object):
         _final_vars = self._create_final_vars(final_vars)
         nodes, user_nodes = self.graph.get_upstream_nodes(_final_vars, inputs)
         self.validate_inputs(user_nodes, inputs, nodes)
+        node_modifiers = {fv: {"is_output": True} for fv in _final_vars}
         try:
             return self.graph.display(
                 nodes,
@@ -465,6 +472,7 @@ class Driver(object):
                 output_file_path,
                 render_kwargs=render_kwargs,
                 graphviz_kwargs=graphviz_kwargs,
+                node_modifiers=node_modifiers,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)

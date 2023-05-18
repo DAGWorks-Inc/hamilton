@@ -94,7 +94,11 @@ def create_function_graph(
 
 
 def create_graphviz_graph(
-    nodes: Set[node.Node], user_nodes: Set[node.Node], comment: str, graphviz_kwargs: dict
+    nodes: Set[node.Node],
+    user_nodes: Set[node.Node],
+    comment: str,
+    graphviz_kwargs: dict,
+    node_modifiers: Dict[str, dict],
 ) -> "graphviz.Digraph":  # noqa: F821
     """Helper function to create a graphviz graph.
 
@@ -103,15 +107,28 @@ def create_graphviz_graph(
     :param comment: The comment to have on the graph.
     :param graphviz_kwargs: kwargs to pass to create the graph.
         e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
+    :param node_modifiers: A dictionary of node names to dictionaries of node attributes to modify.
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
     import graphviz
 
     digraph = graphviz.Digraph(comment=comment, **graphviz_kwargs)
     for n in nodes:
-        digraph.node(n.name, label=n.name)
+        other_args = {}
+        # checks if the node has any modifiers
+        if n.name in node_modifiers:
+            # if node is an output, then modify the node to be a rectangle
+            if node_modifiers[n.name].get("is_output"):
+                other_args["shape"] = "rectangle"
+        digraph.node(n.name, label=n.name, **other_args)
     for n in user_nodes:
-        digraph.node(n.name, label=f"UD: {n.name}")
+        other_args = {"style": "dashed"}
+        # checks if the node has any modifiers
+        if n.name in node_modifiers:
+            # if node is an output, then modify the node to be a rectangle
+            if node_modifiers[n.name].get("is_output"):
+                other_args["shape"] = "rectangle"
+        digraph.node(n.name, label=f"Input: {n.name}", **other_args)
 
     for n in list(nodes) + list(user_nodes):
         for d in n.dependencies:
@@ -246,9 +263,10 @@ class FunctionGraph(object):
     def display(
         nodes: Set[node.Node],
         user_nodes: Set[node.Node],
-        output_file_path: str = "test-output/graph.gv",
+        output_file_path: Optional[str] = "test-output/graph.gv",
         render_kwargs: dict = None,
         graphviz_kwargs: dict = None,
+        node_modifiers: Dict[str, dict] = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
@@ -258,6 +276,8 @@ class FunctionGraph(object):
         :param render_kwargs: kwargs to be passed to the render function to visualize.
         :param graphviz_kwargs: kwargs to be passed to the graphviz graph object to configure it.
             e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
+        :param node_modifiers: a dictionary of node names to a dictionary of attributes to modify.
+        :return: the graphviz graph object if it was created. None if not.
         """
         # Check to see if optional dependencies have been installed.
         try:
@@ -270,7 +290,11 @@ class FunctionGraph(object):
             return
         if graphviz_kwargs is None:
             graphviz_kwargs = {}
-        dot = create_graphviz_graph(nodes, user_nodes, "Dependency Graph", graphviz_kwargs)
+        if node_modifiers is None:
+            node_modifiers = {}
+        dot = create_graphviz_graph(
+            nodes, user_nodes, "Dependency Graph", graphviz_kwargs, node_modifiers
+        )
         kwargs = {"view": True}
         if render_kwargs and isinstance(render_kwargs, dict):
             kwargs.update(render_kwargs)
