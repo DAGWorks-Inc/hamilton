@@ -497,13 +497,12 @@ def test_function_graph_has_cycles_false():
 def test_function_graph_display():
     """Tests that display saves a file"""
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={"b": 1, "c": 2})
-    defined_nodes = set()
-    user_nodes = set()
+    node_modifiers = {"B": {"is_output": True}}
+    all_nodes = set()
     for n in fg.get_nodes():
         if n.user_defined:
-            user_nodes.add(n)
-        else:
-            defined_nodes.add(n)
+            node_modifiers[n.name] = {"is_user_input": True}
+        all_nodes.add(n)
     # hack of a test -- but it works... sort the lines and match them up.
     # why? because for some reason given the same graph, the output file isn't deterministic.
     expected = sorted(
@@ -524,9 +523,7 @@ def test_function_graph_display():
     )
     with tempfile.TemporaryDirectory() as tmp_dir:
         path = tmp_dir.join("test.dot")
-        fg.display(
-            defined_nodes, user_nodes, str(path), {"view": False}, None, {"B": {"is_output": True}}
-        )
+        fg.display(all_nodes, str(path), {"view": False}, None, node_modifiers)
         with open(str(path), "r") as dot_file:
             actual = sorted(dot_file.readlines())
             assert actual == expected
@@ -535,14 +532,13 @@ def test_function_graph_display():
 def test_function_graph_display_without_saving():
     """Tests that display works when None is passed in for path"""
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={"b": 1, "c": 2})
-    defined_nodes = set()
-    user_nodes = set()
+    all_nodes = set()
+    node_modifiers = {"B": {"is_output": True}}
     for n in fg.get_nodes():
         if n.user_defined:
-            user_nodes.add(n)
-        else:
-            defined_nodes.add(n)
-    digraph = fg.display(defined_nodes, user_nodes, None, node_modifiers={"B": {"is_output": True}})
+            node_modifiers[n.name] = {"is_user_input": True}
+        all_nodes.add(n)
+    digraph = fg.display(all_nodes, None, node_modifiers=node_modifiers)
     assert digraph is not None
     import graphviz
 
@@ -553,6 +549,12 @@ def test_create_graphviz_graph():
     """Tests that we create a graphviz graph"""
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
     nodes, user_nodes = fg.get_upstream_nodes(["A", "B", "C"])
+    nodez = nodes.union(user_nodes)
+    node_modifiers = {
+        "b": {"is_user_input": True},
+        "c": {"is_user_input": True},
+        "B": {"is_output": True},
+    }
     # hack of a test -- but it works... sort the lines and match them up.
     # why? because for some reason given the same graph, the output file isn't deterministic.
     expected = sorted(
@@ -562,9 +564,7 @@ def test_create_graphviz_graph():
             "\tgraph [ratio=1]",
             "\tB [label=B shape=rectangle]",
             "\tA [label=A]",
-            "\tc [label=c]",
             "\tC [label=C]",
-            "\tb [label=b]",
             '\tb [label="Input: b" style=dashed]',
             '\tc [label="Input: c" style=dashed]',
             "\tA -> B",
@@ -578,7 +578,7 @@ def test_create_graphviz_graph():
     if "" in expected:
         expected.remove("")
     digraph = graph.create_graphviz_graph(
-        nodes, user_nodes, "test-graph", dict(graph_attr={"ratio": "1"}), {"B": {"is_output": True}}
+        nodez, "test-graph", dict(graph_attr={"ratio": "1"}), node_modifiers, False
     )
     actual = sorted(str(digraph).split("\n"))
     if "" in actual:
