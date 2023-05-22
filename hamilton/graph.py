@@ -95,43 +95,51 @@ def create_function_graph(
 
 def create_graphviz_graph(
     nodes: Set[node.Node],
-    user_nodes: Set[node.Node],
     comment: str,
     graphviz_kwargs: dict,
     node_modifiers: Dict[str, dict],
+    strictly_display_only_nodes_passed_in: bool,
 ) -> "graphviz.Digraph":  # noqa: F821
     """Helper function to create a graphviz graph.
 
     :param nodes: The set of computational nodes
-    :param user_nodes: The set of nodes that the user is providing inputs for.
     :param comment: The comment to have on the graph.
     :param graphviz_kwargs: kwargs to pass to create the graph.
         e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
     :param node_modifiers: A dictionary of node names to dictionaries of node attributes to modify.
+    :param strictly_display_only_nodes_passed_in: If True, only display the nodes passed in. Else defaults to displaying
+        also what nodes a node depends on (i.e. all nodes that feed into it).
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
     import graphviz
 
     digraph = graphviz.Digraph(comment=comment, **graphviz_kwargs)
     for n in nodes:
+        label = n.name
         other_args = {}
         # checks if the node has any modifiers
         if n.name in node_modifiers:
             # if node is an output, then modify the node to be a rectangle
             if node_modifiers[n.name].get("is_output"):
                 other_args["shape"] = "rectangle"
-        digraph.node(n.name, label=n.name, **other_args)
-    for n in user_nodes:
-        other_args = {"style": "dashed"}
-        # checks if the node has any modifiers
-        if n.name in node_modifiers:
-            # if node is an output, then modify the node to be a rectangle
-            if node_modifiers[n.name].get("is_output"):
-                other_args["shape"] = "rectangle"
-        digraph.node(n.name, label=f"Input: {n.name}", **other_args)
+            if node_modifiers[n.name].get("is_path"):
+                other_args["color"] = "red"
+            if node_modifiers[n.name].get("is_user_input"):
+                other_args["style"] = "dashed"
+                label = f"Input: {n.name}"
+        digraph.node(n.name, label=label, **other_args)
 
-    for n in list(nodes) + list(user_nodes):
+    for n in list(nodes):
         for d in n.dependencies:
+            if strictly_display_only_nodes_passed_in and d not in nodes:
+                continue
+            if (
+                d not in nodes
+                and d.name in node_modifiers
+                and node_modifiers[d.name].get("is_user_input")
+            ):
+                digraph.node(d.name, label=f"Input: {d.name}", style="dashed")
+            # print(f"Adding edge from {d.name} to {n.name}")
             digraph.edge(d.name, n.name)
     return digraph
 
@@ -211,23 +219,22 @@ class FunctionGraph(object):
         :param graphviz_kwargs: kwargs to be passed to the graphviz graph object to configure it.
             e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
         """
-        defined_nodes = set()
-        user_nodes = set()
+        all_nodes = set()
+        node_modifiers = {}
         for n in self.nodes.values():
             if n.user_defined:
-                user_nodes.add(n)
-            else:
-                defined_nodes.add(n)
+                node_modifiers[n.name] = {"is_user_input": True}
+            all_nodes.add(n)
         if render_kwargs is None:
             render_kwargs = {}
         if graphviz_kwargs is None:
             graphviz_kwargs = {}
         return self.display(
-            defined_nodes,
-            user_nodes,
+            all_nodes,
             output_file_path=output_file_path,
             render_kwargs=render_kwargs,
             graphviz_kwargs=graphviz_kwargs,
+            node_modifiers=node_modifiers,
         )
 
     def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
@@ -262,21 +269,23 @@ class FunctionGraph(object):
     @staticmethod
     def display(
         nodes: Set[node.Node],
-        user_nodes: Set[node.Node],
         output_file_path: Optional[str] = "test-output/graph.gv",
         render_kwargs: dict = None,
         graphviz_kwargs: dict = None,
         node_modifiers: Dict[str, dict] = None,
+        strictly_display_only_passed_in_nodes: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
         :param nodes: the set of nodes that need to be computed.
-        :param user_nodes: the set of inputs that the user provided.
         :param output_file_path: the path where we want to store the `dot` file + pdf picture. Pass in None to not save.
         :param render_kwargs: kwargs to be passed to the render function to visualize.
         :param graphviz_kwargs: kwargs to be passed to the graphviz graph object to configure it.
             e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
         :param node_modifiers: a dictionary of node names to a dictionary of attributes to modify.
+            e.g. {'node_name': {'is_user_input': True}} will set the node named 'node_name' to be a user input.
+        :param strictly_display_only_passed_in_nodes: if True, only display the nodes passed in.  Else defaults to
+            displaying also what nodes a node depends on (i.e. all nodes that feed into it).
         :return: the graphviz graph object if it was created. None if not.
         """
         # Check to see if optional dependencies have been installed.
@@ -293,7 +302,11 @@ class FunctionGraph(object):
         if node_modifiers is None:
             node_modifiers = {}
         dot = create_graphviz_graph(
-            nodes, user_nodes, "Dependency Graph", graphviz_kwargs, node_modifiers
+            nodes,
+            "Dependency Graph",
+            graphviz_kwargs,
+            node_modifiers,
+            strictly_display_only_passed_in_nodes,
         )
         kwargs = {"view": True}
         if render_kwargs and isinstance(render_kwargs, dict):

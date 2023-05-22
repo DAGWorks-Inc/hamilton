@@ -465,10 +465,13 @@ class Driver(object):
         nodes, user_nodes = self.graph.get_upstream_nodes(_final_vars, inputs)
         self.validate_inputs(user_nodes, inputs, nodes)
         node_modifiers = {fv: {"is_output": True} for fv in _final_vars}
+        for user_node in user_nodes:
+            if user_node.name not in node_modifiers:
+                node_modifiers[user_node.name] = {}
+            node_modifiers[user_node.name]["is_user_input"] = True
         try:
             return self.graph.display(
-                nodes,
-                user_nodes,
+                nodes.union(user_nodes),
                 output_file_path,
                 render_kwargs=render_kwargs,
                 graphviz_kwargs=graphviz_kwargs,
@@ -523,10 +526,10 @@ class Driver(object):
         try:
             return self.graph.display(
                 downstream_nodes,
-                set(),
                 output_file_path,
                 render_kwargs=render_kwargs,
                 graphviz_kwargs=graphviz_kwargs,
+                strictly_display_only_passed_in_nodes=False,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
