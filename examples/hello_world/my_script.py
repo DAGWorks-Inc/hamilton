@@ -34,4 +34,11 @@ print(df.to_string())
 
 # To visualize do `pip install "sf-hamilton[visualization]"` if you want these to work
 dr.visualize_execution(output_columns, "./my_dag.dot", {"format": "png"})
+dr.visualize_path_between(
+    "spend_mean",
+    "spend_zero_mean_unit_variance",
+    "./a_path.dot",
+    {"format": "png"},
+    strict_path_visualization=False,
+)
 # dr.display_all_functions("./my_full_dag.dot", {"format": "png"})

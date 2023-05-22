@@ -545,6 +545,76 @@ class Driver(object):
         upstream_nodes, _ = self.graph.get_upstream_nodes(list(node_names))
         return [Variable.from_node(n) for n in upstream_nodes]
 
+    def visualize_path_between(
+        self,
+        upstream_node_name: str,
+        downstream_node_name: str,
+        output_file_path: Optional[str] = None,
+        render_kwargs: dict = None,
+        graphviz_kwargs: dict = None,
+        strict_path_visualization: bool = False,
+    ) -> Optional["graphviz.Digraph"]:  # noqa F821
+        """Visualizes the path between two nodes.
+
+        This is useful for debugging and understanding the path between two nodes.
+
+        :param upstream_node_name: the name of the node that we want to start from.
+        :param downstream_node_name: the name of the node that we want to end at.
+        :param output_file_path: the full URI of path + file name to save the dot file to.
+            E.g. 'some/path/graph.dot'. Pass in None to skip saving any file.
+        :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
+            If you do not want to view the file, pass in `{'view':False}`.
+        :param graphviz_kwargs: Kwargs to be passed to the graphviz graph object to configure it.
+            E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
+        :param strict_path_visualization: If True, only the nodes in the path will be visualized. If False, the
+            nodes in the path and their dependencies, i.e. parents, will be visualized.
+        :return: graphviz object.
+        :raise ValueError: if the upstream or downstream node names are not found in the graph,
+            or there is no path between them.
+        """
+        if render_kwargs is None:
+            render_kwargs = {}
+        if graphviz_kwargs is None:
+            graphviz_kwargs = {}
+        all_variables = {n.name: n for n in self.graph.get_nodes()}
+        # ensure that the nodes exist
+        if upstream_node_name not in all_variables:
+            raise ValueError(f"Upstream node {upstream_node_name} not found in graph.")
+        if downstream_node_name not in all_variables:
+            raise ValueError(f"Downstream node {downstream_node_name} not found in graph.")
+
+        # set whether the node is user input
+        node_modifiers = {}
+        for n in self.graph.get_nodes():
+            if n.user_defined:
+                node_modifiers[n.name] = {"is_user_input": True}
+
+        # create nodes that constitute the path
+        downstream_nodes = set(self.graph.get_impacted_nodes([upstream_node_name]))
+        upstream_nodes, _ = self.graph.get_upstream_nodes([downstream_node_name])
+        upstream_nodes = set(upstream_nodes)
+        nodes_for_path = downstream_nodes.intersection(upstream_nodes)
+        if len(nodes_for_path) == 0:
+            raise ValueError(
+                f"No path found between {upstream_node_name} and {downstream_node_name}."
+            )
+        # add is path for node_modifier's dict
+        for n in nodes_for_path:
+            if n.name not in node_modifiers:
+                node_modifiers[n.name] = {}
+            node_modifiers[n.name]["is_path"] = True
+        try:
+            return self.graph.display(
+                nodes_for_path,
+                output_file_path,
+                render_kwargs=render_kwargs,
+                graphviz_kwargs=graphviz_kwargs,
+                node_modifiers=node_modifiers,
+                strictly_display_only_passed_in_nodes=strict_path_visualization,
+            )
+        except ImportError as e:
+            logger.warning(f"Unable to import {e}", exc_info=True)
+
 
 if __name__ == "__main__":
     """some example test code"""
