@@ -545,6 +545,47 @@ class Driver(object):
         upstream_nodes, _ = self.graph.get_upstream_nodes(list(node_names))
         return [Variable.from_node(n) for n in upstream_nodes]
 
+    @capture_function_usage
+    def what_is_path_between(
+        self, upstream_node_name: str, downstream_node_name: str
+    ) -> List[Variable]:
+        """Tells you what nodes are on the path between two nodes.
+
+        Note: this is inclusive of the two nodes, and returns an unsorted list of nodes.
+
+        :param upstream_node_name: the name of the node that we want to start from.
+        :param downstream_node_name: the name of the node that we want to end at.
+        :return: Nodes representing the path between the two nodes, inclusive of the two nodes, unsorted.
+            Returns empty list if no path exists.
+        :raise ValueError: if the upstream or downstream node name is not in the graph.
+        """
+        all_variables = {n.name: n for n in self.graph.get_nodes()}
+        # ensure that the nodes exist
+        if upstream_node_name not in all_variables:
+            raise ValueError(f"Upstream node {upstream_node_name} not found in graph.")
+        if downstream_node_name not in all_variables:
+            raise ValueError(f"Downstream node {downstream_node_name} not found in graph.")
+        nodes_for_path = self._get_nodes_between(upstream_node_name, downstream_node_name)
+        return [Variable.from_node(n) for n in nodes_for_path]
+
+    def _get_nodes_between(
+        self, upstream_node_name: str, downstream_node_name: str
+    ) -> Set[node.Node]:
+        """Gets the nodes representing the path between two nodes, inclusive of the two nodes.
+
+        Assumes that the nodes exist in the graph.
+
+        :param upstream_node_name: the name of the node that we want to start from.
+        :param downstream_node_name: the name of the node that we want to end at.
+        :return: set of nodes that comprise the path between the two nodes, inclusive of the two nodes.
+        """
+        downstream_nodes = self.graph.get_impacted_nodes([upstream_node_name])
+        # we skip user_nodes because it'll be the upstream node, or it wont matter.
+        upstream_nodes, _ = self.graph.get_upstream_nodes([downstream_node_name])
+        nodes_for_path = set(downstream_nodes).intersection(set(upstream_nodes))
+        return nodes_for_path
+
+    @capture_function_usage
     def visualize_path_between(
         self,
         upstream_node_name: str,
@@ -590,10 +631,7 @@ class Driver(object):
                 node_modifiers[n.name] = {"is_user_input": True}
 
         # create nodes that constitute the path
-        downstream_nodes = set(self.graph.get_impacted_nodes([upstream_node_name]))
-        upstream_nodes, _ = self.graph.get_upstream_nodes([downstream_node_name])
-        upstream_nodes = set(upstream_nodes)
-        nodes_for_path = downstream_nodes.intersection(upstream_nodes)
+        nodes_for_path = self._get_nodes_between(upstream_node_name, downstream_node_name)
         if len(nodes_for_path) == 0:
             raise ValueError(
                 f"No path found between {upstream_node_name} and {downstream_node_name}."
