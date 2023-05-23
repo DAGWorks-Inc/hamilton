@@ -546,7 +546,7 @@ class Driver(object):
         return [Variable.from_node(n) for n in upstream_nodes]
 
     @capture_function_usage
-    def what_is_path_between(
+    def what_is_the_path_between(
         self, upstream_node_name: str, downstream_node_name: str
     ) -> List[Variable]:
         """Tells you what nodes are on the path between two nodes.
