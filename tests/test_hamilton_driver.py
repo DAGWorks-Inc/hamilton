@@ -244,3 +244,18 @@ def test__create_final_vars_errors():
         dr._create_final_vars(
             ["C", tests.resources.cyclic_functions.A, tests.resources.cyclic_functions.B]
         )
+
+
+def test__get_nodes_between():
+    """Tests that we get the correct nodes on the path between two nodes inclusive."""
+    dr = Driver({}, tests.resources.test_default_args)
+    actual_path = dr._get_nodes_between("required", "C")
+    expected_path = {dr.graph.nodes["required"], dr.graph.nodes["A"], dr.graph.nodes["C"]}
+    assert actual_path == expected_path
+
+
+def test__get_nodes_between_no_path():
+    """Tests that we return empty if no path exists."""
+    dr = Driver({}, tests.resources.test_default_args)
+    actual_path = dr._get_nodes_between("C", "required")
+    assert actual_path == set()
