@@ -1,4 +1,4 @@
-from typing import Type
+from typing import List
 
 import pandas as pd
 
@@ -11,8 +11,8 @@ class SampleDataValidator1(BaseDefaultValidator):
         self.equal_to = equal_to
 
     @classmethod
-    def applies_to(cls, datatype: Type[Type]) -> bool:
-        return datatype == int
+    def applicable_types(cls) -> List[type]:
+        return [int]
 
     def description(self) -> str:
         return "Data must be equal to 10 to be valid"
@@ -60,8 +60,8 @@ class SampleDataValidator2(DataValidator):
         )
 
     @classmethod
-    def applies_to(cls, datatype: Type[Type]) -> bool:
-        return datatype == pd.Series
+    def applicable_types(cls) -> List[type]:
+        return [pd.Series]
 
     @classmethod
     def arg(cls) -> str:
@@ -92,8 +92,8 @@ class SampleDataValidator3(DataValidator):
         )
 
     @classmethod
-    def applies_to(cls, datatype: Type[Type]) -> bool:
-        return datatype == pd.Series
+    def applicable_types(cls) -> List[type]:
+        return [pd.Series]
 
     @classmethod
     def arg(cls) -> str:
