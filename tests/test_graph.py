@@ -497,11 +497,11 @@ def test_function_graph_has_cycles_false():
 def test_function_graph_display():
     """Tests that display saves a file"""
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={"b": 1, "c": 2})
-    node_modifiers = {"B": {"is_output": True}}
+    node_modifiers = {"B": {graph.VisualizationNodeModifiers.IS_OUTPUT}}
     all_nodes = set()
     for n in fg.get_nodes():
         if n.user_defined:
-            node_modifiers[n.name] = {"is_user_input": True}
+            node_modifiers[n.name] = {graph.VisualizationNodeModifiers.IS_USER_INPUT}
         all_nodes.add(n)
     # hack of a test -- but it works... sort the lines and match them up.
     # why? because for some reason given the same graph, the output file isn't deterministic.
@@ -533,10 +533,10 @@ def test_function_graph_display_without_saving():
     """Tests that display works when None is passed in for path"""
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={"b": 1, "c": 2})
     all_nodes = set()
-    node_modifiers = {"B": {"is_output": True}}
+    node_modifiers = {"B": {graph.VisualizationNodeModifiers.IS_OUTPUT}}
     for n in fg.get_nodes():
         if n.user_defined:
-            node_modifiers[n.name] = {"is_user_input": True}
+            node_modifiers[n.name] = {graph.VisualizationNodeModifiers.IS_USER_INPUT}
         all_nodes.add(n)
     digraph = fg.display(all_nodes, None, node_modifiers=node_modifiers)
     assert digraph is not None
@@ -551,9 +551,9 @@ def test_create_graphviz_graph():
     nodes, user_nodes = fg.get_upstream_nodes(["A", "B", "C"])
     nodez = nodes.union(user_nodes)
     node_modifiers = {
-        "b": {"is_user_input": True},
-        "c": {"is_user_input": True},
-        "B": {"is_output": True},
+        "b": {graph.VisualizationNodeModifiers.IS_USER_INPUT},
+        "c": {graph.VisualizationNodeModifiers.IS_USER_INPUT},
+        "B": {graph.VisualizationNodeModifiers.IS_OUTPUT},
     }
     # hack of a test -- but it works... sort the lines and match them up.
     # why? because for some reason given the same graph, the output file isn't deterministic.
