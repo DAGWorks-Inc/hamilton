@@ -298,14 +298,14 @@ def test_get_required_functions():
     assert actual_ud_nodes == expected_user_nodes
 
 
-def test_get_impacted_nodes():
+def test_get_downstream_nodes():
     """Exercises getting the downstream subset of the graph for computation on the toy example we have constructed."""
     nodes = create_testing_nodes()
     var_changes = ["A"]
     expected_nodes = {nodes["B"], nodes["C"], nodes["A"]}
     # expected_nodes = {nodes['A'], nodes['B'], nodes['b'], nodes['c']}  # we skip 'C'
     fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
-    actual_nodes = fg.get_impacted_nodes(var_changes)
+    actual_nodes = fg.get_downstream_nodes(var_changes)
     assert actual_nodes == expected_nodes
 
 
