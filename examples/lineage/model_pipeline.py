@@ -48,7 +48,7 @@ def prefit_random_forest(random_state: int, max_depth: Union[int, None]) -> base
     return RandomForestClassifier(max_depth=max_depth, random_state=random_state)
 
 
-@tag(owner="data-science", importance="prototype", artifact="model")
+@tag(owner="data-science", importance="production", artifact="model")
 def fit_random_forest(
     prefit_random_forest: base.ClassifierMixin,
     X_train: pd.DataFrame,
