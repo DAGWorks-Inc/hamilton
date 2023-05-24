@@ -1,4 +1,4 @@
-from typing import Type
+from typing import List
 
 import pandas as pd
 import pandera as pa
@@ -14,10 +14,8 @@ class PanderaDataFrameValidator(base.BaseDefaultValidator):
         self.schema = schema
 
     @classmethod
-    def applies_to(cls, datatype: Type[Type]) -> bool:
-        return issubclass(
-            datatype, pd.DataFrame
-        )  # TODO -- allow for modin, etc. as they come for free with pandera
+    def applicable_types(cls) -> List[type]:
+        return [pd.DataFrame]
 
     def description(self) -> str:
         return "Validates that the returned dataframe matches the pander"
@@ -54,10 +52,8 @@ class PanderaSeriesSchemaValidator(base.BaseDefaultValidator):
         self.schema = schema
 
     @classmethod
-    def applies_to(cls, datatype: Type[Type]) -> bool:
-        return issubclass(
-            datatype, pd.Series
-        )  # TODO -- allow for modin, etc. as they come for free with pandera
+    def applicable_types(cls) -> List[type]:
+        return [pd.Series]
 
     def description(self) -> str:
         pass
