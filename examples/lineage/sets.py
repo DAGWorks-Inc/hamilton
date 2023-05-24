@@ -5,14 +5,14 @@ from hamilton.function_modifiers import tag
 # --- creating the dataset
 
 
-@tag(owner="data-science", importance="prototype", artifact="training_set")
+@tag(owner="data-science", importance="production", artifact="training_set")
 def training_set_v1(
     pclass: pd.Series,
     age: pd.Series,
     fare: pd.Series,
-    # cabin_category: pd.Series,
+    cabin_category: pd.Series,
     sex_category: pd.Series,
-    # embarked_category: pd.Series,
+    embarked_category: pd.Series,
     family: pd.Series,
 ) -> pd.DataFrame:
     """Creates the dataset -- this is one way to do it. Explicitly make a function.
@@ -31,9 +31,9 @@ def training_set_v1(
             "pclass": pclass,
             "age": age,
             "fare": fare,
-            # "cabin_category": cabin_category,
+            "cabin_category": cabin_category,
             "sex_category": sex_category,
-            # "embarked_category": embarked_category,
+            "embarked_category": embarked_category,
             "family": family,
         }
     )
