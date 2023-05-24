@@ -535,6 +535,41 @@ class Driver(object):
             logger.warning(f"Unable to import {e}", exc_info=True)
 
     @capture_function_usage
+    def display_upstream_of(
+        self, *node_names: str, output_file_path: str, render_kwargs: dict, graphviz_kwargs: dict
+    ) -> Optional["graphviz.Digraph"]:  # noqa F821
+        """Creates a visualization of the DAG going backwards from the passed in function name(s).
+
+        Note: for any "node" visualized, we will also add its parents to the visualization as well, so
+        there could be more nodes visualized than strictly what is downstream of the passed in function name(s).
+
+        :param node_names: names of function(s) that are starting points for traversing the graph.
+        :param output_file_path: the full URI of path + file name to save the dot file to.
+            E.g. 'some/path/graph.dot'. Pass in None to skip saving any file.
+        :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
+            If you do not want to view the file, pass in `{'view':False}`.
+        :param graphviz_kwargs: Kwargs to be passed to the graphviz graph object to configure it.
+            E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
+        :return: the graphviz object if you want to do more with it.
+            If returned as the result in a Jupyter Notebook cell, it will render.
+        """
+        upstream_nodes, user_nodes = self.graph.get_upstream_nodes(list(node_names))
+        node_modifiers = {}
+        for n in user_nodes:
+            node_modifiers[n.name] = {"is_user_input": True}
+        try:
+            return self.graph.display(
+                upstream_nodes,
+                output_file_path,
+                render_kwargs=render_kwargs,
+                graphviz_kwargs=graphviz_kwargs,
+                strictly_display_only_passed_in_nodes=False,
+                node_modifiers=node_modifiers,
+            )
+        except ImportError as e:
+            logger.warning(f"Unable to import {e}", exc_info=True)
+
+    @capture_function_usage
     def what_is_upstream_of(self, *node_names: str) -> List[Variable]:
         """Tells you what is upstream of this function(s), i.e. node(s).
 
