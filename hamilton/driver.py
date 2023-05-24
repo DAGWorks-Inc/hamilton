@@ -500,7 +500,7 @@ class Driver(object):
         :return: list of "variables" (i.e. nodes), inclusive of the function names, that are downstream of the passed
                 in function names.
         """
-        downstream_nodes = self.graph.get_impacted_nodes(list(node_names))
+        downstream_nodes = self.graph.get_downstream_nodes(list(node_names))
         return [Variable.from_node(n) for n in downstream_nodes]
 
     @capture_function_usage
@@ -522,7 +522,7 @@ class Driver(object):
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
-        downstream_nodes = self.graph.get_impacted_nodes(list(node_names))
+        downstream_nodes = self.graph.get_downstream_nodes(list(node_names))
         try:
             return self.graph.display(
                 downstream_nodes,
@@ -614,7 +614,7 @@ class Driver(object):
         :param downstream_node_name: the name of the node that we want to end at.
         :return: set of nodes that comprise the path between the two nodes, inclusive of the two nodes.
         """
-        downstream_nodes = self.graph.get_impacted_nodes([upstream_node_name])
+        downstream_nodes = self.graph.get_downstream_nodes([upstream_node_name])
         # we skip user_nodes because it'll be the upstream node, or it wont matter.
         upstream_nodes, _ = self.graph.get_upstream_nodes([downstream_node_name])
         nodes_for_path = set(downstream_nodes).intersection(set(upstream_nodes))

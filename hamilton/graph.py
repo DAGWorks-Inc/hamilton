@@ -316,6 +316,15 @@ class FunctionGraph(object):
         return dot
 
     def get_impacted_nodes(self, var_changes: List[str]) -> Set[node.Node]:
+        """DEPRECATED - use `get_downstream_nodes` instead."""
+        logger.warning(
+            "FunctionGraph.get_impacted_nodes is deprecated. "
+            "Use `get_downstream_nodes` instead. This function will be removed"
+            "in a future release."
+        )
+        return self.get_downstream_nodes(var_changes)
+
+    def get_downstream_nodes(self, var_changes: List[str]) -> Set[node.Node]:
         """Given our function graph, and a list of nodes that are changed,
         returns the subgraph that they will impact.
 
