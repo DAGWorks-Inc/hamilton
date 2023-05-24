@@ -33,7 +33,7 @@ columns_to_extract = [
 ]
 
 
-@tag_outputs(age={"PII": "true"})  # , sex={"PII": "true"})
+@tag_outputs(age={"PII": "true"}, sex={"PII": "true"})
 @extract_columns(*columns_to_extract)  # expose columns for feature functions
 @tag(
     source="prod.titantic",

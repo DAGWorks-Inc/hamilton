@@ -66,14 +66,14 @@ def sex_encoder(sex: pd.Series) -> preprocessing.LabelEncoder:
     return _label_encoder(sex)
 
 
-# def cabin_encoder(cabin: pd.Series) -> preprocessing.LabelEncoder:
-#     """Creates a label encoder for the cabin feature and fits it to the input series."""
-#     return _label_encoder(cabin)
-#
-#
-# def embarked_encoder(embarked: pd.Series) -> preprocessing.LabelEncoder:
-#     """Creates a label encoder for the embarked feature and fits it to the input series."""
-#     return _label_encoder(embarked)
+def cabin_encoder(cabin: pd.Series) -> preprocessing.LabelEncoder:
+    """Creates a label encoder for the cabin feature and fits it to the input series."""
+    return _label_encoder(cabin)
+
+
+def embarked_encoder(embarked: pd.Series) -> preprocessing.LabelEncoder:
+    """Creates a label encoder for the embarked feature and fits it to the input series."""
+    return _label_encoder(embarked)
 
 
 def sex_category(sex: pd.Series, sex_encoder: preprocessing.LabelEncoder) -> pd.Series:
@@ -81,27 +81,27 @@ def sex_category(sex: pd.Series, sex_encoder: preprocessing.LabelEncoder) -> pd.
     return _label_transformer(sex_encoder, sex)
 
 
-# def cabin_category(cabin: pd.Series, cabin_encoder: preprocessing.LabelEncoder) -> pd.Series:
-#     """Creates cabin category feature."""
-#     return _label_transformer(cabin_encoder, cabin)
-#
-#
-# def embarked_category(
-#     embarked: pd.Series, embarked_encoder: preprocessing.LabelEncoder
-# ) -> pd.Series:
-#     """Creates embarked category feature."""
-#     return _label_transformer(embarked_encoder, embarked)
+def cabin_category(cabin: pd.Series, cabin_encoder: preprocessing.LabelEncoder) -> pd.Series:
+    """Creates cabin category feature."""
+    return _label_transformer(cabin_encoder, cabin)
 
 
-@tag(artifact="encoders", owner="data-science", importance="prototype")
+def embarked_category(
+    embarked: pd.Series, embarked_encoder: preprocessing.LabelEncoder
+) -> pd.Series:
+    """Creates embarked category feature."""
+    return _label_transformer(embarked_encoder, embarked)
+
+
+@tag(artifact="encoders", owner="data-science", importance="production")
 def encoders(
     sex_encoder: preprocessing.LabelEncoder,
-    # cabin_encoder: preprocessing.LabelEncoder,
-    # embarked_encoder: preprocessing.LabelEncoder,
+    cabin_encoder: preprocessing.LabelEncoder,
+    embarked_encoder: preprocessing.LabelEncoder,
 ) -> dict:
     """Bundles up all the encoders so that they can be saved as a single artifact."""
     return {
         "sex_encoder": sex_encoder,
-        # "cabin_encoder": cabin_encoder,
-        # "embarked_encoder": embarked_encoder,
+        "cabin_encoder": cabin_encoder,
+        "embarked_encoder": embarked_encoder,
     }
