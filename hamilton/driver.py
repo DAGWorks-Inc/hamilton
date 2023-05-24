@@ -464,11 +464,11 @@ class Driver(object):
         _final_vars = self._create_final_vars(final_vars)
         nodes, user_nodes = self.graph.get_upstream_nodes(_final_vars, inputs)
         self.validate_inputs(user_nodes, inputs, nodes)
-        node_modifiers = {fv: {"is_output": True} for fv in _final_vars}
+        node_modifiers = {fv: {graph.VisualizationNodeModifiers.IS_OUTPUT} for fv in _final_vars}
         for user_node in user_nodes:
             if user_node.name not in node_modifiers:
-                node_modifiers[user_node.name] = {}
-            node_modifiers[user_node.name]["is_user_input"] = True
+                node_modifiers[user_node.name] = set()
+            node_modifiers[user_node.name].add(graph.VisualizationNodeModifiers.IS_USER_INPUT)
         try:
             return self.graph.display(
                 nodes.union(user_nodes),
@@ -556,7 +556,7 @@ class Driver(object):
         upstream_nodes, user_nodes = self.graph.get_upstream_nodes(list(node_names))
         node_modifiers = {}
         for n in user_nodes:
-            node_modifiers[n.name] = {"is_user_input": True}
+            node_modifiers[n.name] = {graph.VisualizationNodeModifiers.IS_USER_INPUT}
         try:
             return self.graph.display(
                 upstream_nodes,
@@ -663,7 +663,7 @@ class Driver(object):
         node_modifiers = {}
         for n in self.graph.get_nodes():
             if n.user_defined:
-                node_modifiers[n.name] = {"is_user_input": True}
+                node_modifiers[n.name] = {graph.VisualizationNodeModifiers.IS_USER_INPUT}
 
         # create nodes that constitute the path
         nodes_for_path = self._get_nodes_between(upstream_node_name, downstream_node_name)
@@ -674,8 +674,8 @@ class Driver(object):
         # add is path for node_modifier's dict
         for n in nodes_for_path:
             if n.name not in node_modifiers:
-                node_modifiers[n.name] = {}
-            node_modifiers[n.name]["is_path"] = True
+                node_modifiers[n.name] = set()
+            node_modifiers[n.name].add(graph.VisualizationNodeModifiers.IS_PATH)
         try:
             return self.graph.display(
                 nodes_for_path,

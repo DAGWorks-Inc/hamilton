@@ -6,6 +6,7 @@ It should only house the graph & things required to create and traverse one.
 Note: one should largely consider the code in this module to be "private".
 """
 import logging
+from enum import Enum
 from types import ModuleType
 from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Type
 
@@ -15,6 +16,14 @@ from hamilton.graph_utils import find_functions
 from hamilton.htypes import types_match
 
 logger = logging.getLogger(__name__)
+
+
+class VisualizationNodeModifiers(Enum):
+    """Enum of all possible node modifiers for visualization."""
+
+    IS_OUTPUT = 1
+    IS_PATH = 2
+    IS_USER_INPUT = 3
 
 
 def add_dependency(
@@ -97,7 +106,7 @@ def create_graphviz_graph(
     nodes: Set[node.Node],
     comment: str,
     graphviz_kwargs: dict,
-    node_modifiers: Dict[str, dict],
+    node_modifiers: Dict[str, Set[VisualizationNodeModifiers]],
     strictly_display_only_nodes_passed_in: bool,
 ) -> "graphviz.Digraph":  # noqa: F821
     """Helper function to create a graphviz graph.
@@ -119,12 +128,13 @@ def create_graphviz_graph(
         other_args = {}
         # checks if the node has any modifiers
         if n.name in node_modifiers:
+            modifiers = node_modifiers[n.name]
             # if node is an output, then modify the node to be a rectangle
-            if node_modifiers[n.name].get("is_output"):
+            if VisualizationNodeModifiers.IS_OUTPUT in modifiers:
                 other_args["shape"] = "rectangle"
-            if node_modifiers[n.name].get("is_path"):
+            if VisualizationNodeModifiers.IS_PATH in modifiers:
                 other_args["color"] = "red"
-            if node_modifiers[n.name].get("is_user_input"):
+            if VisualizationNodeModifiers.IS_USER_INPUT in modifiers:
                 other_args["style"] = "dashed"
                 label = f"Input: {n.name}"
         digraph.node(n.name, label=label, **other_args)
@@ -136,10 +146,9 @@ def create_graphviz_graph(
             if (
                 d not in nodes
                 and d.name in node_modifiers
-                and node_modifiers[d.name].get("is_user_input")
+                and VisualizationNodeModifiers.IS_USER_INPUT in node_modifiers[d.name]
             ):
                 digraph.node(d.name, label=f"Input: {d.name}", style="dashed")
-            # print(f"Adding edge from {d.name} to {n.name}")
             digraph.edge(d.name, n.name)
     return digraph
 
@@ -223,7 +232,7 @@ class FunctionGraph(object):
         node_modifiers = {}
         for n in self.nodes.values():
             if n.user_defined:
-                node_modifiers[n.name] = {"is_user_input": True}
+                node_modifiers[n.name] = {VisualizationNodeModifiers.IS_USER_INPUT}
             all_nodes.add(n)
         if render_kwargs is None:
             render_kwargs = {}
@@ -272,7 +281,7 @@ class FunctionGraph(object):
         output_file_path: Optional[str] = "test-output/graph.gv",
         render_kwargs: dict = None,
         graphviz_kwargs: dict = None,
-        node_modifiers: Dict[str, dict] = None,
+        node_modifiers: Dict[str, Set[VisualizationNodeModifiers]] = None,
         strictly_display_only_passed_in_nodes: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
@@ -283,7 +292,7 @@ class FunctionGraph(object):
         :param graphviz_kwargs: kwargs to be passed to the graphviz graph object to configure it.
             e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
         :param node_modifiers: a dictionary of node names to a dictionary of attributes to modify.
-            e.g. {'node_name': {'is_user_input': True}} will set the node named 'node_name' to be a user input.
+            e.g. {'node_name': {NodeModifiers.IS_USER_INPUT}} will set the node named 'node_name' to be a user input.
         :param strictly_display_only_passed_in_nodes: if True, only display the nodes passed in.  Else defaults to
             displaying also what nodes a node depends on (i.e. all nodes that feed into it).
         :return: the graphviz graph object if it was created. None if not.
