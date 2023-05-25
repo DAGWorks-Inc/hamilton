@@ -17,6 +17,8 @@ from hamilton.htypes import types_match
 
 logger = logging.getLogger(__name__)
 
+PATH_COLOR = "red"
+
 
 class VisualizationNodeModifiers(Enum):
     """Enum of all possible node modifiers for visualization."""
@@ -133,7 +135,7 @@ def create_graphviz_graph(
             if VisualizationNodeModifiers.IS_OUTPUT in modifiers:
                 other_args["shape"] = "rectangle"
             if VisualizationNodeModifiers.IS_PATH in modifiers:
-                other_args["color"] = "red"
+                other_args["color"] = PATH_COLOR
             if VisualizationNodeModifiers.IS_USER_INPUT in modifiers:
                 other_args["style"] = "dashed"
                 label = f"Input: {n.name}"
@@ -149,7 +151,15 @@ def create_graphviz_graph(
                 and VisualizationNodeModifiers.IS_USER_INPUT in node_modifiers[d.name]
             ):
                 digraph.node(d.name, label=f"Input: {d.name}", style="dashed")
-            digraph.edge(d.name, n.name)
+            from_modifiers = node_modifiers.get(d.name, set())
+            to_modifiers = node_modifiers.get(n.name, set())
+            other_args = {}
+            if (
+                VisualizationNodeModifiers.IS_PATH in from_modifiers
+                and VisualizationNodeModifiers.IS_PATH in to_modifiers
+            ):
+                other_args["color"] = PATH_COLOR
+            digraph.edge(d.name, n.name, **other_args)
     return digraph
 
 
