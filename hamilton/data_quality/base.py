@@ -35,26 +35,12 @@ class DataValidator(abc.ABC):
     def importance(self) -> DataValidationLevel:
         return self._importance
 
-    @classmethod
-    def applies_to(cls, datatype: Type[Type]) -> bool:
-        """Whether or not this data validator can apply to the specified dataset.
-        Note that overriding this is not the intended API (it was the old one),
-        but this will be a stable part of the API moving forward, at least until
-        Hamilton 2.0.
+    @abc.abstractmethod
+    def applies_to(self, datatype: Type[Type]) -> bool:
+        """Whether or not this data validator can apply to the specified dataset
 
-        :param datatype: Datatype to validate.
+        :param datatype:
         :return: True if it can be run on the specified type, false otherwise
-        """
-        for type_ in cls.applicable_types():
-            if type_ == Any or issubclass(type_, datatype):
-                return True
-        return False
-
-    @classmethod
-    def applicable_types(cls) -> List[type]:
-        """Returns the list of classes for which this is valid.
-
-        :return: List of classes
         """
         pass
 
@@ -132,7 +118,7 @@ class BaseDefaultValidator(DataValidator, abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def applicable_types(cls) -> List[type]:
+    def applies_to(cls, datatype: Type[Type]) -> bool:
         pass
 
     @abc.abstractmethod

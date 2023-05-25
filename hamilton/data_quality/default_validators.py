@@ -24,8 +24,8 @@ class DataInRangeValidatorPandasSeries(base.BaseDefaultValidator):
         return "range"
 
     @classmethod
-    def applicable_types(cls) -> List[type]:
-        return [pd.Series]
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)  # TODO -- handle dataframes?
 
     def description(self) -> str:
         return f"Validates that the datapoint falls within the range ({self.range[0]}, {self.range[1]})"
@@ -69,8 +69,8 @@ class DataInValuesValidatorPandasSeries(base.BaseDefaultValidator):
         return "values_in"
 
     @classmethod
-    def applicable_types(cls) -> List[type]:
-        return [pd.Series]
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)  # TODO -- handle dataframes?
 
     def description(self) -> str:
         return f"Validates that all data points are from a fixed set of values: ({self.values}), ignoring NA values."
@@ -113,8 +113,8 @@ class DataInRangeValidatorPrimitives(base.BaseDefaultValidator):
         self.range = range
 
     @classmethod
-    def applicable_types(cls) -> List[type]:
-        return [numbers.Real]
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, numbers.Real)
 
     def description(self) -> str:
         return f"Validates that the datapoint falls within the range ({self.range[0]}, {self.range[1]})"
@@ -151,8 +151,10 @@ class DataInValuesValidatorPrimitives(base.BaseDefaultValidator):
         return "values_in"
 
     @classmethod
-    def applicable_types(cls) -> List[type]:
-        return [numbers.Real, str]
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, numbers.Real) or issubclass(
+            datatype, str
+        )  # TODO support list, dict and typing.* variants
 
     def description(self) -> str:
         return f"Validates that python values are from a fixed set of values: ({self.values})."
@@ -187,8 +189,8 @@ class MaxFractionNansValidatorPandasSeries(base.BaseDefaultValidator):
         return "{0:.2%}".format(fraction)
 
     @classmethod
-    def applicable_types(cls) -> List[type]:
-        return [pd.Series]
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)
 
     def description(self) -> str:
         return f"Validates that no more than {MaxFractionNansValidatorPandasSeries._to_percent(self.max_fraction_nans)} of the data is Nan."
@@ -249,8 +251,8 @@ class DataTypeValidatorPandasSeries(base.BaseDefaultValidator):
         self.datatype = data_type
 
     @classmethod
-    def applicable_types(cls) -> List[type]:
-        return [pd.Series]
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)
 
     def description(self) -> str:
         return f"Validates that the datatype of the pandas series is a subclass of: {self.datatype}"
@@ -280,8 +282,8 @@ class DataTypeValidatorPrimitives(base.BaseDefaultValidator):
         self.datatype = data_type
 
     @classmethod
-    def applicable_types(cls) -> List[type]:
-        return [numbers.Real, str, bool, int, float, list, dict]
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, numbers.Real) or datatype in (str, bool)
 
     def description(self) -> str:
         return f"Validates that the datatype of the pandas series is a subclass of: {self.datatype}"
@@ -310,8 +312,8 @@ class MaxStandardDevValidatorPandasSeries(base.BaseDefaultValidator):
         self.max_standard_dev = max_standard_dev
 
     @classmethod
-    def applicable_types(cls) -> List[type]:
-        return [pd.Series]
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)
 
     def description(self) -> str:
         return f"Validates that the standard deviation of a pandas series is no greater than : {self.max_standard_dev}"
@@ -338,8 +340,8 @@ class MeanInRangeValidatorPandasSeries(base.BaseDefaultValidator):
         self.mean_in_range = mean_in_range
 
     @classmethod
-    def applicable_types(cls) -> List[type]:
-        return [pd.Series]
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return issubclass(datatype, pd.Series)
 
     def description(self) -> str:
         return f"Validates that a pandas series has mean in range [{self.mean_in_range[0]}, {self.mean_in_range[1]}]"
@@ -366,8 +368,8 @@ class AllowNoneValidator(base.BaseDefaultValidator):
         self.allow_none = allow_none
 
     @classmethod
-    def applicable_types(cls) -> List[type]:
-        return [Any]
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return True
 
     def description(self) -> str:
         if self.allow_none:
