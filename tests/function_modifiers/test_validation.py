@@ -33,27 +33,23 @@ def test_check_output_node_transform():
     subdag = decorator.transform_node(node_, config={}, fn=fn)
     assert 4 == len(subdag)
     subdag_as_dict = {node_.name: node_ for node_ in subdag}
-    prefixes = [
+    assert sorted(subdag_as_dict.keys()) == [
         "fn",
         "fn_dummy_data_validator_2",
         "fn_dummy_data_validator_3",
         "fn_raw",
     ]
-    sorted_keys = sorted(subdag_as_dict)
-    assert all([node_name.startswith(prefix) for node_name, prefix in zip(sorted_keys, prefixes)])
-    assert subdag_as_dict[sorted_keys[-1]].input_types["input"][1] == DependencyType.REQUIRED
+    # TODO -- change when we change the naming scheme
+    assert subdag_as_dict["fn_raw"].input_types["input"][1] == DependencyType.REQUIRED
     assert 3 == len(
         subdag_as_dict["fn"].input_types
     )  # Three dependencies -- the two with DQ + the original
     # The final function should take in everything but only use the raw results
-    raw_node_name = sorted_keys[-1]
     assert (
         subdag_as_dict["fn"].callable(
-            **{
-                raw_node_name: "test",
-                "fn_dummy_data_validator_2": ValidationResult(True, "", {}),
-                "fn_dummy_data_validator_3": ValidationResult(True, "", {}),
-            }
+            fn_raw="test",
+            fn_dummy_data_validator_2=ValidationResult(True, "", {}),
+            fn_dummy_data_validator_3=ValidationResult(True, "", {}),
         )
         == "test"
     )
@@ -72,17 +68,14 @@ def test_check_output_custom_node_transform():
     subdag = decorator.transform_node(node_, config={}, fn=fn)
     assert 4 == len(subdag)
     subdag_as_dict = {node_.name: node_ for node_ in subdag}
-    prefixes = [
+    assert sorted(subdag_as_dict.keys()) == [
         "fn",
         "fn_dummy_data_validator_2",
         "fn_dummy_data_validator_3",
         "fn_raw",
     ]
-    sorted_keys = sorted(subdag_as_dict)
-    assert all([node_name.startswith(prefix) for node_name, prefix in zip(sorted_keys, prefixes)])
-    raw_node_name = sorted_keys[-1]
     # TODO -- change when we change the naming scheme
-    assert subdag_as_dict[raw_node_name].input_types["input"][1] == DependencyType.REQUIRED
+    assert subdag_as_dict["fn_raw"].input_types["input"][1] == DependencyType.REQUIRED
     assert 3 == len(
         subdag_as_dict["fn"].input_types
     )  # Three dependencies -- the two with DQ + the original
@@ -105,11 +98,9 @@ def test_check_output_custom_node_transform():
     # The final function should take in everything but only use the raw results
     assert (
         subdag_as_dict["fn"].callable(
-            **{
-                raw_node_name: "test",
-                "fn_dummy_data_validator_2": ValidationResult(True, "", {}),
-                "fn_dummy_data_validator_3": ValidationResult(True, "", {}),
-            }
+            fn_raw="test",
+            fn_dummy_data_validator_2=ValidationResult(True, "", {}),
+            fn_dummy_data_validator_3=ValidationResult(True, "", {}),
         )
         == "test"
     )
@@ -128,15 +119,12 @@ def test_check_output_custom_node_transform_raises_exception_with_failure():
     subdag = decorator.transform_node(node_, config={}, fn=fn)
     assert 4 == len(subdag)
     subdag_as_dict = {node_.name: node_ for node_ in subdag}
-    (raw_node_name,) = [item for item in subdag_as_dict if item.startswith("fn_raw_")]
 
     with pytest.raises(DataValidationError):
         subdag_as_dict["fn"].callable(
-            **{
-                raw_node_name: pd.Series([1.0, 2.0, 3.0]),
-                "fn_dummy_data_validator_2": ValidationResult(False, "", {}),
-                "fn_dummy_data_validator_3": ValidationResult(False, "", {}),
-            }
+            fn_raw=pd.Series([1.0, 2.0, 3.0]),
+            fn_dummy_data_validator_2=ValidationResult(False, "", {}),
+            fn_dummy_data_validator_3=ValidationResult(False, "", {}),
         )
 
 
