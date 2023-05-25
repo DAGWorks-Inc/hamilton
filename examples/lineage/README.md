@@ -193,9 +193,16 @@ To see more code, we invite you to:
 or the [lineage_script](https://github.com/DAGWorks-Inc/hamilton/blob/main/examples/lineage/lineage_script.py)
 to see how to use the Hamilton Driver to ask questions of your DAGs.
 3. We invite you to then go back in time, by checking out this repository and checking out an older commit and
-re-running the script or notebook and seeing how things change. The command to go back in time would be:
+re-running the script or notebook and seeing how things change. The command to "go back in time" would be:
     ```bash
-    git checkout TODO
+    # see current lineage
+    python lineage_script.py
+    # go back in time
+    git checkout 7e2e92a79644b904856c0a81b8faa7f1ae00c64e
+    # see past lineage
+    python lineage_script.py
+    # to reset to current lineage
+    git checkout main
     ```
 
 ## A script you could write to ask questions of your DAGs
