@@ -3,7 +3,6 @@ import collections
 import functools
 import itertools
 import logging
-import uuid
 from abc import ABC
 
 try:
@@ -705,7 +704,6 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     which configuration they need.
     :return: A list of nodes into which this function transforms.
     """
-
     try:
         function_decorators = get_node_decorators(fn, config)
         node_resolvers = function_decorators[NodeResolver.get_lifecycle_name()]
@@ -736,35 +734,3 @@ class InvalidDecoratorException(Exception):
 
 class MissingConfigParametersException(Exception):
     pass
-
-
-def create_anonymous_node_name(original_node_name: str, *suffixes: str) -> str:
-    """Creates an anonymous node name. This is specifically for decorators that
-    rely on temporary /intermediate nodes. Note that these are not part of the contract, and might
-    change at any given point.
-
-    The algorithm that this follows is simple:
-
-    1. Start with the original node name
-    2. Append the suffixes followed by underscores
-    3. If that name is taken, then append a number (_1, _2, etc...) to make it unique.
-
-    Note that the "stability" of this depends on the nodes being processed in a specific order,
-    which should be respected in function_modifiers_base. The order is:
-
-    1. By node lifecycle
-    2. By decorator application order
-
-    The only likely conflicts come from multiple similar decorators (E.G. check_output) decorating
-    the same node.
-
-    :param original_node_name: Name of the original node that this is related to.
-    :param suffixes: Suffixes to append to the original node.
-    :return: new node name
-    """
-    uid = str(uuid.uuid4())[0:8]
-    name = original_node_name
-    for suffix in suffixes:
-        name += f"_{suffix}"
-    name += f"_{uid}"
-    return name
