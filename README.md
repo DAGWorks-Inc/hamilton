@@ -189,6 +189,7 @@ Hamilton is released under the [BSD 3-Clause Clear License](https://github.com/D
 * [Two](https://www.two.inc/)
 * [Transfix](https://transfix.io/)
 * [Railofy](https://www.railofy.com)
+* [Habitat Energy](https://www.habitat.energy/)
 
 To add your company, make a pull request to add it here.
 
