@@ -201,6 +201,7 @@ To see how you can contribute, please read our [contributing guidelines](https:/
 setup guide](https://github.com/DAGWorks-Inc/hamilton/blob/main/developer_setup.md).
 
 # Blog Posts
+* [Lineage + Hamilton in 10 minutes](https://towardsdatascience.com/lineage-hamilton-in-10-minutes-c2b8a944e2e6)
 * [(Organic Content) The perks of creating dataflows with Hamilton by Thierry Jean](https://medium.com/@thijean/the-perks-of-creating-dataflows-with-hamilton-36e8c56dd2a)
 * [Developing Scalable Feature Engineering DAGs with Metaflow & Hamilton](https://outerbounds.com/blog/developing-scalable-feature-engineering-dags)
 * [Tidy Production Pandas with Hamilton](https://towardsdatascience.com/tidy-production-pandas-with-hamilton-3b759a2bf562)
