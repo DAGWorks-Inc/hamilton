@@ -8,23 +8,25 @@ Your organization defines key data transformations in a centralized repository t
 
 
 # File organization
-- **Developer utilities**: `run.py` shows how to use `remove_hamilton()` to undecorate and `use_external_decorators()` to decorate functions modules. `decorator_utilities.py` contains the code powering these functionalities. The section under `if __name__ == "__main__":` shows a step-by-step explanation of the inner workings.
+- **Developer utilities**: `run.py` shows how to use `remove_hamilton()` to undecorate and `use_external_decorators()` to decorate function modules. `decorator_utilities.py` contains the code powering these functionalities. The section under `if __name__ == "__main__":` shows a step-by-step explanation of the inner workings.
 
-- **User defined**: Files created by a user during its project. This includes `my_functions.py` which contains the feature definitions (without Hamilton dependencies) and `external_decorators.py` that assigns decorators to functions stubs.
+- **User defined**: Files created by a user during its project. This includes `my_functions.py` which contains the feature definitions (without Hamilton dependencies) and `external_decorators.py` that assigns decorators to function stubs.
 
 - **Generated**: Files created programmatically by using `decorator_utilities` features. These files can be deleted and regenerated at \*no\* cost. This includes `.py` files with `__decorated` or `__undecorated` suffixes.
 
 
 # How it works (TL;DR)
 1. We read the Python files as text inputs, then parse it with Python's strict grammar (abstract syntax tree).
-2. Since the functions name in `my_functions.py` and `external_decorators.py`, we can precisely take decorators from one file and add it to the other.
-3. We load the edited code as a temporary Python module and decorated functions become available for use!
+2. Since the function names in `my_functions.py` and `external_decorators.py` are matching, we can precisely take decorators from one file and add it to the other.
+3. We load the edited code as a temporary Python module and its decorated functions become available for use!
 
 Detailed explanation in `decorator_utilities.py` under `if __name__ == "__main__":`.
 
 
 # Usage patterns and suggestions
-- This approach makes debugging and version control harder because of multiple files being involved. On the other hand, if you really cannot change your original file, it can provide a more robust sync between it and a copy that has Hamilton decorators
+- Since DAG is defined through 2 files, proper version control requires care. Here's two approach:
+    1. Your code always build the decorated temporary module at runtime. By properly tracking the `functions_module` and the `decorators_module` it is possible to infer the decorated temporary module and rebuild it on demand. The main downside is that on failures, you need access to both files to generated the decorated module for debugging and tracing errors.
+    2. Your code relies on a saved version of the decorated temporary module that is regenerated on changes to `functions_module` or `decorators_module`. This can lead to more predictable behavior and easier bug tracing since the decorated file is easily accessible. However, this file can become out-of-sync if someone directly edits it or it isn't regenerated after edits to the `functions_module` and `decorators_module`.
 - Run your linter, debugger, etc. on generated files
 - The Python built-in packages `importlib`, `ast`, `types`, `typing` are being actively developed and subject to changes. Python version control is important if your system depends on these features.
 
