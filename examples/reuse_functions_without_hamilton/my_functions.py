@@ -16,8 +16,8 @@ Note:
 import numpy as np
 import pandas as pd
 
-import hamilton
-import hamilton.base  # included to show the ast parsing behavior
+import hamilton  # noqa: F401, included to show the ast parsing behavior
+import hamilton.base  # noqa: F401, included to show the ast parsing behavior
 from hamilton.function_modifiers import check_output, config, extract_columns
 
 
@@ -25,8 +25,6 @@ from hamilton.function_modifiers import check_output, config, extract_columns
 @check_output(range=(20.0, 60.0), data_type=np.float64)
 def age_mean(age: pd.Series) -> np.float64:
     """Average of age"""
-    hamilton.__name__  # included to pass flake8
-    hamilton.base.__name__  # included to pass flake8
     return age.mean()
 
 
@@ -48,8 +46,8 @@ def age_zero_mean_unit_variance(age_zero_mean: pd.Series, age_std_dev: np.float6
     return age_zero_mean / age_std_dev
 
 
-@extract_columns("seasons_1", "seasons_2", "seasons_3", "seasons_4")
-def seasons_encodeds(seasons: pd.Series) -> pd.DataFrame:
+@extract_columns("seasons_1", "seasons_2_", "seasons_3_", "seasons_4_")
+def seasons_encoded(seasons: pd.Series) -> pd.DataFrame:
     """One hot encodes seasons into 4 dimensions:
     1 - first season
     2 - second season
@@ -60,7 +58,7 @@ def seasons_encodeds(seasons: pd.Series) -> pd.DataFrame:
 
 
 @config.when_not_in(execution=["spark", "dask"])
-def seasons_encoded__base(seasons: pd.Series) -> pd.DataFrame:
+def seasons_extract__base(seasons: pd.Series) -> pd.DataFrame:
     """One hot encodes seasons into 4 dimensions:
     1 - first season
     2 - second season
@@ -71,27 +69,27 @@ def seasons_encoded__base(seasons: pd.Series) -> pd.DataFrame:
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
-def seasons_1(seasons_encoded: pd.DataFrame) -> pd.Series:
+def extracted_seasons_1(seasons_extract: pd.DataFrame) -> pd.Series:
     """Returns column seasons_1"""
-    return seasons_encoded["seasons_1"]
+    return seasons_extract["seasons_1"]
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
-def seasons_2(seasons_encoded: pd.DataFrame) -> pd.Series:
+def extracted_seasons_2(seasons_extract: pd.DataFrame) -> pd.Series:
     """Returns column seasons_2"""
-    return seasons_encoded["seasons_2"]
+    return seasons_extract["seasons_2"]
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
-def seasons_3(seasons_encoded: pd.DataFrame) -> pd.Series:
+def extracted_seasons_3(seasons_extract: pd.DataFrame) -> pd.Series:
     """Returns column seasons_3"""
-    return seasons_encoded["seasons_3"]
+    return seasons_extract["seasons_3"]
 
 
 @check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
-def seasons_4(seasons_encoded: pd.DataFrame) -> pd.Series:
+def extracted_seasons_4(seasons_extract: pd.DataFrame) -> pd.Series:
     """Returns column seasons_4"""
-    return seasons_encoded["seasons_4"]
+    return seasons_extract["seasons_4"]
 
 
 @config.when_not_in(execution=["spark", "dask"])
