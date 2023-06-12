@@ -8,7 +8,7 @@ Your organization defines key data transformations in a centralized repository t
 
 
 # File organization
-- **Developer utilities**: `run.py` shows how to use `remove_hamilton()` to decorate and `use_external_decorators()` to undecorate functions modules. `decorator_utilities.py` contains the code powering these functionalities. The section under `if __name__ == "__main__":` shows a step-by-step explanation of the inner workings.
+- **Developer utilities**: `run.py` shows how to use `remove_hamilton()` to undecorate and `use_external_decorators()` to decorate functions modules. `decorator_utilities.py` contains the code powering these functionalities. The section under `if __name__ == "__main__":` shows a step-by-step explanation of the inner workings.
 
 - **User defined**: Files created by a user during its project. This includes `my_functions.py` which contains the feature definitions (without Hamilton dependencies) and `external_decorators.py` that assigns decorators to functions stubs.
 
