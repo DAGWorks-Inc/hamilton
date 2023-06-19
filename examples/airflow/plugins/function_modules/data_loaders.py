@@ -47,6 +47,16 @@ def _sanitize_columns(df_columns: List[str]) -> List[str]:
     return [c.strip().replace("/", "_per_").replace(" ", "_").lower() for c in df_columns]
 
 
+@config.when(environment="airflow")
+def execution_environment__airflow() -> str:
+    return "airflow"
+
+
+@config.when_not(environment="airflow")
+def execution_environment__not_airflow() -> str:
+    return "not_airflow"
+
+
 @config.when_not_in(execution=["dask", "spark"])
 @extract_columns(*data_columns)
 @load_from.csv(path=source("location"), sep=value(";"))
