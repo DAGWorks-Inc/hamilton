@@ -12,8 +12,8 @@ html_theme_options = {
     "source_repository": "https://github.com/dagworks-inc/hamilton",
     "source_branch": "main",
     "source_directory": "docs/",
-    "announcement": '📢 Next meet-up with Hamilton: <a target="_blank" href="https://www.meetup.com/pydata-manchester/events/293120608/">'
-    + "June 7th - Manchester 🇬🇧!</a>📢",
+    "announcement": '📢 Next place to find Hamilton: <a target="_blank" href="https://www.scipy2023.scipy.org/">'
+    + "SciPy 2023 Austin, TX!</a>📢",
     "light_css_variables": {
         "color-announcement-background": "#ffba00",
         "color-announcement-text": "#091E42",
