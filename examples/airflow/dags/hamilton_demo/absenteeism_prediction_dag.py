@@ -1,0 +1,132 @@
+"""This is an example project using Hamilton with Apache Airflow
+
+For the purpose of this example, we will read and write data from the Airflow
+installation location (${AIRFLOW_HOME}/plugins/data).
+For production environment, use intermediary storage.
+ref: https://docs.astronomer.io/learn/airflow-passing-data-between-tasks
+"""
+
+import os
+from datetime import datetime
+
+from airflow.decorators import dag, task
+from airflow.operators.python import get_current_context
+
+AIRFLOW_HOME = os.getenv("AIRFLOW_HOME")
+
+
+DEFAULT_DAG_PARAMS = dict(
+    raw_data_location=f"{AIRFLOW_HOME}/plugins/data/raw/Absenteeism_at_work.csv",
+    feature_set=[
+        "age_zero_mean_unit_variance",
+        "has_children",
+        "has_pet",
+        "is_summer",
+        "service_time",
+    ],
+    label="absenteeism_time_in_hours",
+    validation_user_ids=[
+        "1",
+        "2",
+        "4",
+        "15",
+        "17",
+        "24",
+        "36",
+    ],
+    h_prepare_data=dict(
+        development_flag=True,
+    ),
+    h_train_and_evaluate_model=dict(
+        development_flag=True,
+        task="binary_classification",
+        pred_path=f"{AIRFLOW_HOME}/plugins/data/results/val_predictions.csv",
+        model_config={},
+        scorer_name="accuracy",
+        bootstrap_iter=1000,
+    ),
+)
+
+
+@dag(
+    dag_id="hamilton-absenteeism-prediction",
+    description="Predict absenteeism using Hamilton and Airflow",
+    start_date=datetime(2023, 6, 18),
+    params=DEFAULT_DAG_PARAMS,
+)
+def absenteeism_prediction_dag():
+    """Predict absenteeism using Hamilton and Airflow"""
+
+    @task
+    def prepare_data():
+        """Load external data, preprocess dataset, and store cleaned data"""
+        # Python imports
+        import pandas as pd
+
+        # function modules imports from airflow/plugins directory
+        from absenteeism import prepare_data
+
+        from hamilton import driver
+
+        # load DAG params
+        context = get_current_context()
+        PARAMS = context["params"]
+
+        # load external data; could be data from S3, Snowflake, BigQuery, etc.
+        raw_data_location = PARAMS["raw_data_location"]
+        raw_df = pd.read_csv(raw_data_location, sep=";")
+
+        # instantiate Hamilton driver
+        hamilton_config = PARAMS["h_prepare_data"]
+        dr = driver.Driver(hamilton_config, prepare_data)
+
+        # execute Hamilton driver
+        label = PARAMS["label"]
+        features_df = dr.execute(
+            final_vars=prepare_data.ALL_FEATURES + [label],  # store constant in function module
+            inputs={"raw_df": raw_df},
+        )
+
+        # save preprocessed directory for multiple reused
+        features_path = f"{AIRFLOW_HOME}/plugins/data/features/full_feature_set.parquet"
+        features_df.to_parquet(features_path)
+
+        # `return` pushes to Airflow XCom a string path
+        return features_path
+
+    @task
+    def train_and_evaluate_model(features_path: str):
+        """Train and evaluate a machine learning model"""
+        import evaluate_model
+        import train_model
+
+        from hamilton import base, driver
+
+        context = get_current_context()
+        PARAMS = context["params"]
+
+        hamilton_config = PARAMS["h_train_and_evaluate_model"]
+        dr = driver.Driver(
+            hamilton_config,
+            train_model,
+            evaluate_model,  # pass two function module to the Hamilton driver
+            adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+        )
+
+        results = dr.execute(
+            final_vars=["save_validation_preds", "model_results"],
+            inputs={
+                "features_path": features_path,  # value retrieved from Airflow XCom
+                "label": PARAMS["label"],
+                "feature_set": PARAMS["feature_set"],
+                "validation_user_ids": PARAMS["validation_user_ids"],
+            },
+        )
+
+        print(results)
+
+    # having one task per line allows for cleaner git diffs and version control
+    (train_and_evaluate_model(prepare_data()))
+
+
+absenteeism_prediction = absenteeism_prediction_dag()
