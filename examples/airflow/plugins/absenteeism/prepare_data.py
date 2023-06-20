@@ -5,6 +5,17 @@ import pandas as pd
 
 from hamilton.function_modifiers import config, extract_columns
 
+"""Module level constants are convenient when you want your Hamilton driver to
+produce a list of outputs. For example, you can do:
+
+```
+import hamilton
+import prepare_data
+
+dr = hamilton.driver.Driver({}, prepare_data)
+outputs = dr.execute(final_vars=prepare_data.ALL_FEATURES)
+```
+"""
 SOURCE_COLUMNS = [
     "id",
     "reason_for_absence",

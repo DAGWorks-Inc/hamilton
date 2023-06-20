@@ -15,6 +15,17 @@ from airflow.operators.python import get_current_context
 AIRFLOW_HOME = os.getenv("AIRFLOW_HOME")
 
 
+"""Within the DAG config `DEFAULT_DAG_PARAMS`, the dictionaries `h_prepare_data` and
+`h_train_and_evaluate_model` are configs that we will be passed to the Hamilton driver
+of Airflow task `prepare_data` and `train_and_evaluate_model` respectively. The settings
+`feature_set` and `label` are kept outside driver configs since they need to be
+consistent across Airflow tasks.
+
+The top-level config keys (`raw_data_location`, `feature_set`, etc.) are individual
+input box in the Airflow UI, making them easy to edit manually. Therefore, you should
+avoid nested objects. Your configuration should be limited to values that you will need
+to change on the fly.
+"""
 DEFAULT_DAG_PARAMS = dict(
     raw_data_location=f"{AIRFLOW_HOME}/plugins/data/raw/Absenteeism_at_work.csv",
     feature_set=[
@@ -55,7 +66,15 @@ DEFAULT_DAG_PARAMS = dict(
     params=DEFAULT_DAG_PARAMS,
 )
 def absenteeism_prediction_dag():
-    """Predict absenteeism using Hamilton and Airflow"""
+    """Predict absenteeism using Hamilton and Airflow
+
+    The workflow is composed of 2 tasks, each with its own Hamilton driver.
+    Notice that the task `prepare_data` relies on the Python module `prepare_data.py`,
+    while the task `train_and_evaluate_model` relies on two Python modules
+    `train_model.py` and `evaluate_model.py`. Each Python module describes related sets
+    of functions, but in the context of this Airflow DAG it made sense to run the
+    model training and evaluation in the same node!
+    """
 
     @task
     def prepare_data():
@@ -82,8 +101,9 @@ def absenteeism_prediction_dag():
 
         # execute Hamilton driver
         label = PARAMS["label"]
+        # prepare_data.ALL_FEATURES is a constant defined in the module
         features_df = dr.execute(
-            final_vars=prepare_data.ALL_FEATURES + [label],  # store constant in function module
+            final_vars=prepare_data.ALL_FEATURES + [label],
             inputs={"raw_df": raw_df},
         )
 
@@ -125,7 +145,6 @@ def absenteeism_prediction_dag():
 
         print(results)
 
-    # having one task per line allows for cleaner git diffs and version control
     (train_and_evaluate_model(prepare_data()))
 
 
