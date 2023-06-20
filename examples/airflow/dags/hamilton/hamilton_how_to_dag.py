@@ -13,7 +13,13 @@ from airflow.operators.python import get_current_context
 
 AIRFLOW_HOME = os.getenv("AIRFLOW_HOME")
 
-DEFAULT_DAG_PARAMS = dict(hamilton_config=dict(config_type="default_argument_from_dag_file"))
+DEFAULT_DAG_PARAMS = dict(
+    team="payment",
+    hamilton_config=dict(
+        raw_data_path="/some/path/to/file.parquet",
+        season="summer",
+    ),
+)
 
 
 @dag(
@@ -28,10 +34,6 @@ def hamilton_how_to_dag():
         """This is the simplest Hamilton usage pattern. Data is loaded from an external
         source. Then, it's properly formatted to pass it to hamilton.driver.execute().
         The execution results can be handled freely.
-
-        Tips:
-        This approach benefits from the numerous Airflow integration for data loading
-        and saving.
 
         0. import function modules
         1. load data from external source
@@ -76,23 +78,18 @@ def hamilton_how_to_dag():
         results = dr.execute(final_vars=final_vars, inputs=inputs)
 
         # 5. handle results
-        print(results.head())  # print to airflow logs for debugging
+        # print to airflow logs
+        print(results.head())
 
     @task
-    def data_loaders():
+    def data_loaders_and_savers():
         """Data is loaded using Hamilton's own data loading features. At execution,
-        functions decorated with @load_from.* will load the specified source and take it as
-        their node input. The @config.* decorators can be added to implement different
-        behavior based on config (e.g., dev vs. prod).
-
-        Tips:
-        This pattern is useful when you want to execute the same Hamilton DAG from
-        inside or outside Airflow / your production system. For example, you might want to
-        orchestrate 100s of experiments in the cloud, but then rerun failed ones locally for
-        debugging. This is easily achieved by using data_loaders.py on your local machine.
+        functions decorated with @load_from.* will load the specified source and take it
+        as their node input. Similarly, the @save_to.* decorators will save the node
+        output to the specified location. The @config.* decorators can be added to
+        implement different behavior based on config (e.g., dev vs. prod).
 
         It is possible to combine this pattern with directy data loading in Airflow.
-
 
         0. import function and data loading modules
         1. define config
@@ -131,71 +128,52 @@ def hamilton_how_to_dag():
         results = dr.execute(final_vars=final_vars)
 
         # 4. save results
-        print(results.head())  # print to airflow logs for debugging
+        # print to airflow logs
+        print(results.head())
 
     @task
-    def data_savers():
-        """Data is saved using Hamilton's own data saving features. At execution,
-        functions decorated with @save_to.* will save their result to the specified
-        destination after successful execution. The @config.* decorators can be added to
-        implement different behavior based on config (e.g., dev vs. prod).
-
-        Tips:
-        - can quickly change what is stored; useful for debugging
-        - transportable code
-        - would be more verbose otherwise
-
+    def config_from_airflow_dag_file(hamilton_config: dict):
+        """Load config from the @dag(params=) argument defined at the top of the file.
+        The task receives `hamilton_config` from the passed Jinja2 string template
         """
+        from function_modules import feature_logic
+
+        from hamilton import driver
+
+        # print to airflow logs
+        print("config type: ", type(hamilton_config))
+        print("config content: ", hamilton_config)
+
+        dr = driver.Driver(hamilton_config, feature_logic)  # noqa: F841
         ...
 
     @task
-    def config_from_airflow_dag_file(config=None):
-        """value can be passed a Python object or a Jinja2 templated string"""
-
-        print("config type: ", type(config))
-        print("config content: ", config)
-
-    @task
     def config_from_airflow_runtime():
-        """"""
+        """`get_current_context()` retrieves the runtime configuration of the airflow
+        node. The nested object `hamilton_config` can then be retrieved.
+        """
+        from function_modules import feature_logic
+
+        from hamilton import driver
+
         context = get_current_context()
-        print("context", context.keys())
-        print("params", context["params"])
-        dag_run = context["dag_run"]
+        PARAMS = context["params"]
+        hamilton_config = PARAMS.get("hamilton_config")
 
-        if not dag_run.conf.keys():
-            print("dag_run.conf is empty. Did you trigger the DAG with config?")
-            return
+        # print to airflow logs
+        print("config type: ", type(hamilton_config))
+        print("config content: ", hamilton_config)
 
-        config = dag_run.conf.get("hamilton_config")
-        print("dag_run keys", dag_run.conf.keys())
-
-        print("config type: ", type(config))
-        print("config content: ", config)
+        dr = driver.Driver(hamilton_config, feature_logic)  # noqa: F841
+        ...
 
     (
         basic()
-        >> data_loaders()
-        # load config from the file DEFAULT_ARGS dictionary
-        >> config_from_airflow_dag_file(DEFAULT_DAG_PARAMS)
-        # load config from the @dag(params=) argument using Jinja2 templated strings
+        >> data_loaders_and_savers()
+        # Get DAG params nested object using Jinja2 templated strings
         >> config_from_airflow_dag_file("{{params.hamilton_config}}")
         >> config_from_airflow_runtime()
     )
 
 
 hamilton_how_to = hamilton_how_to_dag()
-
-
-# def save_graph_visualization_to_xcom(hdriver) -> str:
-#     """
-
-#     """
-#     import tempfile
-#     from pathlib import Path
-
-#     with tempfile.TemporaryDirectory() as tmpdir:
-#         hdriver.visualize_execution(f"{tmpdir}/graph", render_kwargs={'view':False, "format": "svg"})
-#         svg_string = Path(tmpdir, "graph.svg").read_text()
-
-#     return svg_string
