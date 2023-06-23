@@ -16,18 +16,19 @@ You should use Hamilton if you want a structured and opinionated way to maintain
 
 Here's a quick overview of benefits that Hamilton provides as compared to other tools:
 
-| Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | DBT | Dask |
-|-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:------:|
-| Python 3.7+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅    |
-| Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌    |
-| Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
-| Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
-| Can visualize lineage easily              | ✅  |                   ❌                          |   ❌  | ✅  |  ✅    |
-| Is just a library                         | ✅  |                   ❌                          |   ❌  | ❌  |  ✅    |
-| Runs anywhere python runs                 | ✅  |                   ❌                          |   ❌  | ❌  |  ✅    |
-| Built for managing python transformations | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
-| Replaces macro orchestration systems      | ❌  |                   ✅                          |   ❌  | ❌  |  ❌    |
-| Is a feature store                        | ❌  |                   ❌                          |   ✅  | ❌  |  ❌    |
+| Feature                                    | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | DBT | Dask |
+|--------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:----:|
+| Python 3.7+                                | ✅  |                   ✅                          |   ✅  | ✅  |  ✅   |
+| Helps you structure your code base         | ✅  |                   ❌                          |   ❌  | ✅  |  ❌   |
+| Code is always unit testable               | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Documentation friendly                     | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Can visualize lineage easily               | ✅  |                   ❌                          |   ❌  | ✅  |  ✅   |
+| Is just a library                          | ✅  |                   ❌                          |   ❌  | ❌  |  ✅   |
+| Runs anywhere python runs                  | ✅  |                   ❌                          |   ❌  | ❌  |  ✅   |
+| Built for managing python transformations  | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Can model GenerativeAI/LLM based workflows | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Replaces macro orchestration systems       | ❌  |                   ✅                          |   ❌  | ❌  |  ❌   |
+| Is a feature store                         | ❌  |                   ❌                          |   ✅  | ❌  |  ❌   |
 
 
 # How can you get started?

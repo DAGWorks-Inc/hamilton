@@ -33,17 +33,18 @@ For the backstory on how Hamilton came about, see the original Stitch Fix [blog 
 Here are common things that Hamilton is compared to, and how Hamilton compares to them.
 
 | Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | dbt | Dask |
-|-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:------:|
-| Python 3.7+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅    |
-| Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌    |
-| Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
-| Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
-| Can visualize lineage easily              | ✅  |                   ❌                          |   ❌  | ✅  |  ✅    |
-| Is just a library                         | ✅  |                   ❌                          |   ❌  | ❌  |  ✅    |
-| Runs anywhere python runs                 | ✅  |                   ❌                          |   ❌  | ❌  |  ✅    |
-| Built for managing python transformations | ✅  |                   ❌                          |   ❌  | ❌  |  ❌    |
-| Replaces macro orchestration systems      | ❌  |                   ✅                          |   ❌  | ❌  |  ❌    |
-| Is a feature store                        | ❌  |                   ❌                          |   ✅  | ❌  |  ❌    |
+|-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:----:|
+| Python 3.7+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅   |
+| Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌   |
+| Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Can visualize lineage easily              | ✅  |                   ❌                          |   ❌  | ✅  |  ✅   |
+| Is just a library                         | ✅  |                   ❌                          |   ❌  | ❌  |  ✅   |
+| Runs anywhere python runs                 | ✅  |                   ❌                          |   ❌  | ❌  |  ✅   |
+| Built for managing python transformations | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Can model GenerativeAI/LLM based workflows | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Replaces macro orchestration systems      | ❌  |                   ✅                          |   ❌  | ❌  |  ❌   |
+| Is a feature store                        | ❌  |                   ❌                          |   ✅  | ❌  |  ❌   |
 
 # Getting Started
 If you don't want to install anything to try Hamilton, we recommend trying [www.tryhamilton.dev](https://www.tryhamilton.dev/?utm_source=README).
