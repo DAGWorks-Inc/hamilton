@@ -1,0 +1,6 @@
+https://txt.cohere.com/rss/
+https://engineeringblog.yelp.com/feed.xml
+https://multithreaded.stitchfix.com/feed.xml
+https://huggingface.co/blog/feed.xml
+https://huyenchip.com/feed.xml
+https://engineering.atspotify.com/feed
