@@ -1,0 +1,9 @@
+cohere
+datasets
+numpy
+openai
+pandas
+pinecone-client
+sentence-transformer
+sf-hamilton
+weaviate-client
