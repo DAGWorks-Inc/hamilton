@@ -122,6 +122,7 @@ def call_arxiv_function(messages, full_message):
             logger.info(parsed_output)
             logger.info("Function execution failed")
             logger.info(f"Error message: {e}")
+            raise e
         messages.append(
             {
                 "role": "function",
@@ -162,7 +163,10 @@ if __name__ == "__main__":
     chat_response = chat_completion_with_function_execution(
         paper_conversation.conversation_history, functions=arxiv_functions
     )
-    assistant_message = chat_response
+    if isinstance(chat_response, openai.openai_object.OpenAIObject):
+        assistant_message = chat_response["choices"][0]["message"]["content"]
+    else:
+        assistant_message = chat_response
     paper_conversation.add_message("assistant", assistant_message)
     print(assistant_message)
 
@@ -173,7 +177,11 @@ if __name__ == "__main__":
     updated_response = chat_completion_with_function_execution(
         paper_conversation.conversation_history, functions=arxiv_functions
     )
-    paper_conversation.add_message("assistant", updated_response)
+    if isinstance(updated_response, openai.openai_object.OpenAIObject):
+        assistant_message = updated_response["choices"][0]["message"]["content"]
+    else:
+        assistant_message = updated_response
+    paper_conversation.add_message("assistant", assistant_message)
     print(updated_response)
     paper_conversation.add_message(
         "user",
@@ -182,6 +190,10 @@ if __name__ == "__main__":
     updated_response = chat_completion_with_function_execution(
         paper_conversation.conversation_history, functions=arxiv_functions
     )
+    if isinstance(updated_response, openai.openai_object.OpenAIObject):
+        assistant_message = updated_response["choices"][0]["message"]["content"]
+    else:
+        assistant_message = updated_response
     paper_conversation.add_message("assistant", updated_response)
     print(updated_response)
     print("Conversation history:")
