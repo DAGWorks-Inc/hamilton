@@ -119,18 +119,6 @@ def test_caching(tmp_path, caplog):
 
     caplog.clear()
 
-    # need a new adapter for caching to take proper effect
-    adapter = CachingAdapter(
-        cache_path,
-        base.DictResult(),
-        readers={"str": read_str},
-        writers={"str": write_str},
-    )
-    dr = Driver(
-        {"initial": "Hello, World!"},
-        nodes,
-        adapter=adapter,
-    )
     assert dr.execute(["both"])["both"] == {
         "lower": "hello, world!",
         "upper": "HELLO, WORLD!",
