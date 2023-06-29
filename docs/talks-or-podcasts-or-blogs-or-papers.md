@@ -8,6 +8,29 @@ description: This page curates talks, podcasts, and blogs about Hamilton
 ## Talks
 Talks on Hamilton at conferences and meetups.
 
+### LLM Avalanche June 2023
+Title:
+> Hamilton: an OS tool to add to your LLM App toolbelt
+* [Slides](https://github.com/skrawcz/talks/files/11899349/Hamilton_.an.OS.tool.to.add.to.your.LLM.App.toolbelt.pdf)
+
+### [Budapest ML Forum June 2023](https://budapestml.hu/2023/en/)
+Title:
+> Feature Engineering with Hamilton: Portability & Lineage
+* [Slides](https://github.com/skrawcz/talks/files/11690901/Stefan_Krawczyk_BudapestTalkJune2023_FeatureEngineeringwith.Hamilton_Portability.Lineage.pdf)
+
+### Manchester PyData Meetup May/June 2023
+Title:
+> British Cycling Data Platform in Python
+* [Slides](https://github.com/skrawcz/talks/files/11899331/PyData.British.Cycling.7.June.2023.pdf)
+
+Co-presented with Peter Robinson, and Murray Tait.
+
+### PyData Seattle 2023
+Title:
+> Lightweight Lineage with Hamilton
+* [Slides](https://github.com/skrawcz/talks/files/11399972/PyData-Seattl-Lightning-Talk-2023-Lighweight-Lineage-with-Hamilton.pdf)
+
+
 ### AI Camp Meetup San Jose January 2023
 Title:
 > Hamilton: Natively bringing software engineering best practices to python data transformations
