@@ -5,15 +5,7 @@ import pytest
 
 from hamilton import base
 from hamilton.driver import Driver
-from hamilton.experimental.h_cache import (
-    CachingAdapter,
-    read_feather,
-    read_json,
-    read_parquet,
-    write_feather,
-    write_json,
-    write_parquet,
-)
+from hamilton.experimental import h_cache
 from tests import nodes
 
 
@@ -33,11 +25,11 @@ def _read_write_df_test(df, filepath, read_fn, write_fn):
 
 
 def test_feather(df, tmp_path):
-    _read_write_df_test(df, tmp_path / "file.feather", read_feather, write_feather)
+    _read_write_df_test(df, tmp_path / "file.feather", h_cache.read_feather, h_cache.write_feather)
 
 
 def test_parquet(df, tmp_path):
-    _read_write_df_test(df, tmp_path / "file.parquet", read_parquet, write_parquet)
+    _read_write_df_test(df, tmp_path / "file.parquet", h_cache.read_parquet, h_cache.write_parquet)
 
 
 def test_json(tmp_path):
@@ -46,13 +38,13 @@ def test_json(tmp_path):
         "b": 2,
     }
     filepath = tmp_path / "file.json"
-    write_json(data, filepath)
-    assert read_json(filepath) == data
+    h_cache.write_json(data, filepath)
+    assert h_cache.read_json(filepath) == data
 
 
 def test_unknown_format(tmp_path):
     cache_path = str(tmp_path)
-    adapter = CachingAdapter(cache_path, base.DictResult())
+    adapter = h_cache.CachingAdapter(cache_path, base.DictResult())
     data = {"a": 1, "b": 2}
     filepath = tmp_path / "file.xyz"
     with pytest.raises(ValueError) as err:
@@ -65,16 +57,16 @@ def test_unknown_format(tmp_path):
 
 def test_init_default_readers_writers(tmp_path):
     cache_path = str(tmp_path / "data")
-    adapter = CachingAdapter(cache_path, base.DictResult())
+    adapter = h_cache.CachingAdapter(cache_path, base.DictResult())
     assert adapter.writers == {
-        "json": write_json,
-        "feather": write_feather,
-        "parquet": write_parquet,
+        "json": h_cache.write_json,
+        "feather": h_cache.write_feather,
+        "parquet": h_cache.write_parquet,
     }
     assert adapter.readers == {
-        "json": read_json,
-        "feather": read_feather,
-        "parquet": read_parquet,
+        "json": h_cache.read_json,
+        "feather": h_cache.read_feather,
+        "parquet": h_cache.read_parquet,
     }
 
 
@@ -91,7 +83,7 @@ def write_str(data: str, filepath: str) -> None:
 def test_caching(tmp_path, caplog):
     caplog.set_level(logging.INFO)
     cache_path = str(tmp_path)
-    adapter = CachingAdapter(
+    adapter = h_cache.CachingAdapter(
         cache_path,
         base.DictResult(),
         readers={"str": read_str},
@@ -128,7 +120,7 @@ def test_caching(tmp_path, caplog):
     caplog.clear()
 
     # now we force-compute one of the dependencies
-    adapter = CachingAdapter(
+    adapter = h_cache.CachingAdapter(
         cache_path,
         base.DictResult(),
         readers={"str": read_str},
