@@ -25,7 +25,7 @@ def clean_dataset(squad_dataset: pd.DataFrame) -> pd.DataFrame:
     )
 )
 def dataset_rows(clean_dataset: pd.DataFrame) -> dict:
-    """Convert dataframe to list of dictionaries"""
+    """Convert dataframe to dict of lists"""
     df_as_dict = clean_dataset.to_dict(orient="list")
     return dict(
         ids=df_as_dict["id"], titles=df_as_dict["title"], text_contents=df_as_dict["context"]

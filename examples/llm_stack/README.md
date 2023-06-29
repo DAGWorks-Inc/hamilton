@@ -1,8 +1,14 @@
-# Evaluate components of your LLM stack
+# Flexibly change components of your LLM stack
 
 This example shows how to pull data from the HuggingFace datasets hub, create embeddings for text passage using Cohere / OpenAI / SentenceTransformer, and store them in a vector database using Pinecone / Weaviate.
 
-In addition, you'll see how Hamilton can help you create replaceable components. With this flexibility, it becomes easy to test and assess service providers to find what fits your needs.
+![](./weaviate_dag.png)
+*DAG for OpenAI embeddings and Weaviate vector database*
+
+In addition, you'll see how Hamilton can help you create replaceable components. This flexibility, makes it easier to assess service providers and refactor code to fit your needs. The above and below DAGs were generated simply by changing a string value and a module import. Try to spot the differences! 
+
+![](./pinecone_dag.png)
+*DAG for SentenceTransformers embeddings and Pinecone vector database*
 
 # Example structure
 - `run.py` contains the code to test the example. You will need to add the necessary embedding API key or vector database configuration that you plan on using.
@@ -10,3 +16,7 @@ In addition, you'll see how Hamilton can help you create replaceable components.
 - `embedding_module.py` contains the code to embed text using either Cohere API, OpenAI API or SentenceTransformer library. The use of `@config.when` allows to have all options in the same Python module. This allows to quickly rerun your Hamilton DAG by simply changing your config. You'll see that functions share similar signature to enable interchangeability.
 - `weaviate_module.py` and `pinecone_module.py` implement the same functionalities for each vector database. Having the same function names allows Hamilton to abstract away the implementation details and reinforce the notion that both modules shouldn't be loaded simultaneously.
 - `docker-compose.yml` allows you to start a local instance of Weaviate ([More information](https://weaviate.io/developers/weaviate/installation/docker-compose)).
+
+# Next step / Exercises
+- Implement the code to read data from the vector database
+- Add the code to send the same generative prompt to multiple providers 

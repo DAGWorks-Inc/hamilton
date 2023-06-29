@@ -8,32 +8,53 @@ from sentence_transformers import SentenceTransformer
 from hamilton.function_modifiers import config, extract_fields
 
 
+@config.when(embedding_service="openai")
 @extract_fields(
     dict(
         embedding_dimension=int,
         embedding_metric=str,
     )
 )
-def embedding_config(embedding_service: str, model_name: str) -> dict:
-    """Return embedding dimension and distance metric based
-    embedding service and model"""
-    if embedding_service == "openai":
-        if model_name == "text-embedding-ada-002":
-            return dict(embedding_dimension=1536, embedding_metric="cosine")
-
-    elif embedding_service == "cohere":
-        if model_name == "embed-english-light-v2.0":
-            return dict(embedding_dimension=1024, embedding_metric="cosine")
-
-    elif embedding_service == "sentence_transformer":
-        if model_name == "multi-qa-MiniLM-L6-cos-v1":
-            return dict(embedding_dimension=384, embedding_metric="cosine")
-
-    else:
-        raise ValueError(
-            f"Invalid `embedding_service` and `model_name` combination.\
-             \nReceived {embedding_service} and {model_name}"
+def embedding_config__openai(embedding_service: str, model_name: str) -> dict:
+    if model_name == "text-embedding-ada-002":
+        return dict(embedding_dimension=1536, embedding_metric="cosine")
+    # If you support more models, you would add that here
+    raise ValueError(
+            f"Invalid `model_name`[{model_name}] for openai was passed."
         )
+
+
+@config.when(embedding_service="cohere")
+@extract_fields(
+    dict(
+        embedding_dimension=int,
+        embedding_metric=str,
+    )
+)
+def embedding_config__cohere(embedding_service: str, model_name: str) -> dict:
+    if model_name == "embed-english-light-v2.0":
+        return dict(embedding_dimension=1024, embedding_metric="cosine")
+    # If you support more models, you would add that here
+    raise ValueError(
+            f"Invalid `model_name`[{model_name}] for Cohere was passed."
+        )
+
+
+@config.when(embedding_service="sentence_transformer")
+@extract_fields(
+    dict(
+        embedding_dimension=int,
+        embedding_metric=str,
+    )
+)
+def embedding_config__sentence_transformer(embedding_service: str, model_name: str) -> dict:
+    if model_name == "multi-qa-MiniLM-L6-cos-v1":
+        return dict(embedding_dimension=384, embedding_metric="cosine")
+    # If you support more models, you would add that here
+    raise ValueError(
+            f"Invalid `model_name`[{model_name}] for SentenceTransformer was passed."
+        )
+
 
 
 @config.when(embedding_service="openai")

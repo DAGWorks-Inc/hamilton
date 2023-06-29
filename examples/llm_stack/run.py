@@ -36,6 +36,8 @@ def main():
         ),
     )
 
+    # uncomment below to produce visualization
+    # dr.display_all_functions("dag", {"format": "png"})
 
 if __name__ == "__main__":
     main()

@@ -4,6 +4,7 @@ numpy
 openai
 pandas
 pinecone-client
-sentence-transformer
+sentence-transformers
 sf-hamilton
+sf-hamilton[visualization]
 weaviate-client
