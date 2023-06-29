@@ -66,16 +66,10 @@ class CachingAdapter(SimplePythonGraphAdapter):
     ):
         """Constructs the adapter.
 
-        Parameters
-        ----------
-        cache_path : str
-            Path to the directory where cached files are stored.
-        force_compute : optional, set
-            Set of nodes that should be forced to compute even if cache exists.
-        writers : optional, dict
-            A dictionary of writers for custom formats.
-        readers : optional, dict
-            A dictionary of readers for custom formats.
+        :param cache_path: Path to the directory where cached files are stored.
+        :param force_compute: Set of nodes that should be forced to compute even if cache exists.
+        :param writers: A dictionary of writers for custom formats.
+        :param readers: A dictionary of readers for custom formats.
         """
 
         super().__init__(*args, **kwargs)
