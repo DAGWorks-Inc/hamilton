@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 import pandas as pd
 from hamilton.base import SimplePythonGraphAdapter
@@ -118,7 +118,9 @@ class CachingAdapter(SimplePythonGraphAdapter):
 
     def execute_node(self, node: Node, kwargs: dict[str, Any]) -> Any:
         cache_format = node.tags.get("cache")
-        implicitly_forced = any(dep.name in self.computed_nodes for dep in node.dependencies)
+        implicitly_forced = any(
+            dep.name in self.computed_nodes for dep in node.dependencies
+        )
         if cache_format is not None:
             filepath = f"{self.cache_path}/{node.name}.{cache_format}"
             explicitly_forced = node.name in self.force_compute
@@ -134,3 +136,8 @@ class CachingAdapter(SimplePythonGraphAdapter):
             # Otherwise, dependants would always be recomputed if they have a non-cached dependency.
             self.computed_nodes.add(node.name)
         return node.callable(**kwargs)
+
+    def build_result(self, **outputs: Dict[str, Any]) -> Any:
+        """Clears the computed nodes information and delegates to the super class."""
+        self.computed_nodes = set()
+        return super().build_result(**outputs)
