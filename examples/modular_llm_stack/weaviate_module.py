@@ -40,6 +40,11 @@ def initialize_vector_db_indices(client_vector_db: weaviate.Client) -> bool:
                 "dataType": ["string"],
                 "description": "service used to create the embedding vector",
             },
+            {
+                "name": "model_name",
+                "dataType": ["string"], 
+                "description": "model used by embedding service to create the vector",
+            }
         ],
     }
 
@@ -55,11 +60,6 @@ def reset_vector_db(client_vector_db: weaviate.Client) -> bool:
     """Delete all schema and the data stored"""
     client_vector_db.schema.delete_all()
     return True
-
-
-def metadata(embedding_service: str, model_name: str) -> dict:
-    """Create metadata dictionary"""
-    return dict(embedding_service=embedding_service, model_name=model_name)
 
 
 def data_objects(

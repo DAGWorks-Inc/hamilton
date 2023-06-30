@@ -38,11 +38,6 @@ def reset_vector_db(client_vector_db: ModuleType) -> bool:
     return True
 
 
-def metadata(embedding_service: str, model_name: str) -> dict:
-    """Create metadata dictionary"""
-    return dict(embedding_service=embedding_service, model_name=model_name)
-
-
 def data_objects(
     ids: list[str], titles: list[str], embeddings: list[np.ndarray], metadata: dict
 ) -> list[tuple]:

@@ -14,7 +14,14 @@ def clean_dataset(squad_dataset: pd.DataFrame) -> pd.DataFrame:
     """Remove duplicates and drop unecessary columns"""
     cleaned_df = squad_dataset.drop_duplicates(subset=["context"], keep="first")
     cleaned_df = cleaned_df[["id", "title", "context"]]
-    return cleaned_df.head(20)
+    return cleaned_df
+
+
+def filtered_dataset(clean_dataset: pd.DataFrame, n_rows_to_keep: int = 20) -> pd.DataFrame:
+    if n_rows_to_keep is None:
+        return clean_dataset
+
+    return clean_dataset.head(n_rows_to_keep)
 
 
 @extract_fields(
@@ -24,9 +31,9 @@ def clean_dataset(squad_dataset: pd.DataFrame) -> pd.DataFrame:
         text_contents=list[str],
     )
 )
-def dataset_rows(clean_dataset: pd.DataFrame) -> dict:
+def dataset_rows(filtered_dataset: pd.DataFrame) -> dict:
     """Convert dataframe to dict of lists"""
-    df_as_dict = clean_dataset.to_dict(orient="list")
+    df_as_dict = filtered_dataset.to_dict(orient="list")
     return dict(
         ids=df_as_dict["id"], titles=df_as_dict["title"], text_contents=df_as_dict["context"]
     )

@@ -4,6 +4,7 @@ import click
 
 import data_module
 import embedding_module
+import lancedb_module
 import pinecone_module  # noqa: F401
 import weaviate_module
 
@@ -13,13 +14,12 @@ from hamilton import base, driver
 @click.command()
 @click.option(
     "--vector_db",
-    type=click.Choice(['weaviate', 'pinecone'], case_sensitive=False),
-    default="weaviate", help="Vector database service"
+    type=click.Choice(['lancedb', 'weaviate', 'pinecone'], case_sensitive=False),
+    default="lancedb", help="Vector database service"
 )
 @click.option(
     "--vector_db_config",
-    prompt="Vector database config as JSON string",
-    default='{"url": "http://localhost:8080/"}',
+    default='{"uri": "data/lancedb"}',
     help="Pass a JSON string for vector database config.\
         Weaviate needs a dictionary {'url': ''}\
         Pinecone needs dictionary {'environment': '', 'api_key': ''}"
@@ -30,8 +30,7 @@ from hamilton import base, driver
     default="sentence_transformer", help="Text embedding service."
 )
 @click.option(
-    "--embedding_service_api_key", 
-    prompt=True,
+    "--embedding_service_api_key",
     default=None,
     help='API Key for embedding service. Needed if using OpenAI or Cohere.'
 )
@@ -57,6 +56,8 @@ def main(
         vector_db_module = weaviate_module
     elif vector_db == "pinecone":
         vector_db_module = pinecone_module
+    elif vector_db == "lancedb":
+        vector_db_module = lancedb_module
 
     if model_name is None:
         if embedding_service == "openai":
@@ -65,7 +66,6 @@ def main(
             model_name = "embed-english-light-v2.0"
         elif embedding_service == "sentence_transformer":
             model_name = "multi-qa-MiniLM-L6-cos-v1"
-
     
     config = dict(
         vector_db_config=json.loads(vector_db_config),

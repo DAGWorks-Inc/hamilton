@@ -56,6 +56,11 @@ def embedding_config__sentence_transformer(embedding_service: str, model_name: s
         )
 
 
+def metadata(embedding_service: str, model_name: str) -> dict:
+    """Create metadata dictionary"""
+    return dict(embedding_service=embedding_service, model_name=model_name)
+
+
 
 @config.when(embedding_service="openai")
 def embedding_provider__openai(api_key: str) -> ModuleType:
