@@ -1,0 +1,12 @@
+cohere
+datasets
+lancedb
+numpy
+openai
+pandas
+pinecone-client
+sentence-transformers
+sf-hamilton
+sf-hamilton[visualization]
+weaviate-client
+click
