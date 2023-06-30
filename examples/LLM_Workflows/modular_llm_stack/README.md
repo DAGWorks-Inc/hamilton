@@ -34,7 +34,7 @@ To change embedding service, you can use the following:
 - Cohere: `--embedding_service=openai --embedding_api_key=API_KEY`
 
 To change vector database you need to pass a JSON config argument:
-- LanceDB: `--vector_db=weaviate --vector_db_config='{"uri": "data/lancedb"}'`
+- LanceDB: `--vector_db=lancedb --vector_db_config='{"uri": "data/lancedb"}'`
 - Weaviate: `--vector_db=weaviate --vector_db_config='{"url": "http://locahost:8080/"}'`
 - Pinecone: `--vector_db=pinecone --vector_db_config='{"environment": "ENVIRONMENT", "api_key": "API_KEY"}'`
 
