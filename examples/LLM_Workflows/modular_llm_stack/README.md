@@ -20,6 +20,7 @@ In addition, you'll see how Hamilton can help you create replaceable components.
 # How-to run the example
 Prerequesite:
 - Create accounts and get the API keys for the service you plan to use.
+- Create your python environment, and do `pip install -r requirements.txt`. 
 - For Weaviate start your local instance using `docker compose up -d`
 1. Run `python run.py --help` to learn about the options. You will options to:
     - Select a vector database from: weaviate, pinecone
