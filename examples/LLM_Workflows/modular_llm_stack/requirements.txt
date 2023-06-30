@@ -1,5 +1,6 @@
 cohere
 datasets
+lancedb
 numpy
 openai
 pandas
