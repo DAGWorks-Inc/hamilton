@@ -19,9 +19,7 @@ def embedding_config__openai(embedding_service: str, model_name: str) -> dict:
     if model_name == "text-embedding-ada-002":
         return dict(embedding_dimension=1536, embedding_metric="cosine")
     # If you support more models, you would add that here
-    raise ValueError(
-            f"Invalid `model_name`[{model_name}] for openai was passed."
-        )
+    raise ValueError(f"Invalid `model_name`[{model_name}] for openai was passed.")
 
 
 @config.when(embedding_service="cohere")
@@ -35,9 +33,7 @@ def embedding_config__cohere(embedding_service: str, model_name: str) -> dict:
     if model_name == "embed-english-light-v2.0":
         return dict(embedding_dimension=1024, embedding_metric="cosine")
     # If you support more models, you would add that here
-    raise ValueError(
-            f"Invalid `model_name`[{model_name}] for Cohere was passed."
-        )
+    raise ValueError(f"Invalid `model_name`[{model_name}] for Cohere was passed.")
 
 
 @config.when(embedding_service="sentence_transformer")
@@ -51,15 +47,12 @@ def embedding_config__sentence_transformer(embedding_service: str, model_name: s
     if model_name == "multi-qa-MiniLM-L6-cos-v1":
         return dict(embedding_dimension=384, embedding_metric="cosine")
     # If you support more models, you would add that here
-    raise ValueError(
-            f"Invalid `model_name`[{model_name}] for SentenceTransformer was passed."
-        )
+    raise ValueError(f"Invalid `model_name`[{model_name}] for SentenceTransformer was passed.")
 
 
 def metadata(embedding_service: str, model_name: str) -> dict:
     """Create metadata dictionary"""
     return dict(embedding_service=embedding_service, model_name=model_name)
-
 
 
 @config.when(embedding_service="openai")

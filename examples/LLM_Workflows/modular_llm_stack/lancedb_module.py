@@ -1,7 +1,7 @@
+import lancedb
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-import lancedb
 
 
 def client_vector_db(vector_db_config: dict) -> lancedb.LanceDBConnection:
@@ -17,21 +17,19 @@ def initialize_vector_db_indices(
     """Initialize the LanceDB table;
     NOTE this pattern currently doesn't work and is due to a bug with lancedb
     """
-    schema = pa.schema([
-        ("squad_id", pa.string()),
-        ("title", pa.string()),
-        ("context", pa.string()),
-        ("embedding_service", pa.string()),
-        ("model_name", pa.string()),
-        pa.field("vector", type=pa.list_(pa.float32(), list_size=embedding_dimension)),
-    ])
-
-    client_vector_db.create_table(
-        name=class_name,
-        schema=schema,
-        mode="create"
+    schema = pa.schema(
+        [
+            ("squad_id", pa.string()),
+            ("title", pa.string()),
+            ("context", pa.string()),
+            ("embedding_service", pa.string()),
+            ("model_name", pa.string()),
+            pa.field("vector", type=pa.list_(pa.float32(), list_size=embedding_dimension)),
+        ]
     )
-    
+
+    client_vector_db.create_table(name=class_name, schema=schema, mode="create")
+
     return True
 
 
@@ -43,11 +41,11 @@ def reset_vector_db(client_vector_db: lancedb.LanceDBConnection) -> bool:
 
 
 def data_objects(
-    ids: list[str], 
+    ids: list[str],
     titles: list[str],
     text_contents: list[str],
     embeddings: list[np.ndarray],
-    metadata: dict
+    metadata: dict,
 ) -> list[dict]:
     """Create valid LanceDB objects"""
     assert len(ids) == len(titles) == len(text_contents) == len(embeddings)
