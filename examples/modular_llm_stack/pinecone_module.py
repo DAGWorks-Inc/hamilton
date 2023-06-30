@@ -20,7 +20,7 @@ def initialize_vector_db_indices(
     index_name: str,
     embedding_dimension: int,
     embedding_metric: str,
-) -> None:
+) -> bool:
     """Initialize Pinecone by creating the index"""
 
     # do not overwrite if class exists
@@ -28,12 +28,14 @@ def initialize_vector_db_indices(
         client_vector_db.create_index(
             index_name, dimension=embedding_dimension, metric=embedding_metric
         )
+    return True
 
 
-def reset_vector_db(client_vector_db: ModuleType) -> None:
+def reset_vector_db(client_vector_db: ModuleType) -> bool:
     """Delete the entire index and the data stored"""
     for idx in client_vector_db.list_indexes():
         client_vector_db.delete_index(idx)
+    return True
 
 
 def metadata(embedding_service: str, model_name: str) -> dict:
@@ -56,11 +58,12 @@ def push_to_vector_db(
     index_name: str,
     data_objects: list[tuple],
     batch_size: int = 100,
-) -> None:
-    """Upsert objects to Pinecone index"""
+) -> int:
+    """Upsert objects to Pinecone index; return the number of objects inserted"""
     pinecone_index = pinecone.Index(index_name)
 
     for i in range(0, len(data_objects), batch_size):
         i_end = min(i + batch_size, len(data_objects))
 
         pinecone_index.upsert(vectors=data_objects[i:i_end])
+    return len(data_objects)

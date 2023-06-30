@@ -8,3 +8,4 @@ sentence-transformers
 sf-hamilton
 sf-hamilton[visualization]
 weaviate-client
+click

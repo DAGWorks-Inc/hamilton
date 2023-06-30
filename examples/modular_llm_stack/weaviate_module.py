@@ -11,7 +11,7 @@ def client_vector_db(vector_db_config: dict) -> weaviate.Client:
         raise ConnectionError("Error creating Weaviate client")
 
 
-def initialize_vector_db_indices(client_vector_db: weaviate.Client) -> None:
+def initialize_vector_db_indices(client_vector_db: weaviate.Client) -> bool:
     """Initialize Weaviate by creating the class schema"""
 
     schema = {
@@ -48,11 +48,13 @@ def initialize_vector_db_indices(client_vector_db: weaviate.Client) -> None:
         return
 
     client_vector_db.schema.create_class(schema)
+    return True
 
 
-def reset_vector_db(client_vector_db: weaviate.Client) -> None:
+def reset_vector_db(client_vector_db: weaviate.Client) -> bool:
     """Delete all schema and the data stored"""
     client_vector_db.schema.delete_all()
+    return True
 
 
 def metadata(embedding_service: str, model_name: str) -> dict:
@@ -77,11 +79,14 @@ def push_to_vector_db(
     data_objects: list[dict],
     embeddings: list[np.ndarray],
     batch_size: int = 100,
-) -> None:
-    """Push batch of data objects with their respective embedding to Weaviate"""
+) -> int:
+    """Push batch of data objects with their respective embedding to Weaviate.
+    Return number of objects.
+    """
     assert len(data_objects) == len(embeddings)
     with client_vector_db.batch(batch_size=batch_size, dynamic=True) as batch:
         for i in range(len(data_objects)):
             batch.add_data_object(
                 data_object=data_objects[i], class_name=class_name, vector=embeddings[i]
             )
+    return len(data_objects)

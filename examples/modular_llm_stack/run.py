@@ -1,3 +1,7 @@
+import json
+
+import click
+
 import data_module
 import embedding_module
 import pinecone_module  # noqa: F401
@@ -6,24 +10,74 @@ import weaviate_module
 from hamilton import base, driver
 
 
-def main():
-    weaviate_config = {"url": "http://localhost:8080/"}
-    # pinecone_config = {
-    #     "environment": "PINECONE_ENVIRONMENT",
-    #     "api_key": "PINECONE_API_KEY",
-    # }
+@click.command()
+@click.option(
+    "--vector_db",
+    type=click.Choice(['weaviate', 'pinecone'], case_sensitive=False),
+    default="weaviate", help="Vector database service"
+)
+@click.option(
+    "--vector_db_config",
+    prompt="Vector database config as JSON string",
+    default='{"url": "http://localhost:8080/"}',
+    help="Pass a JSON string for vector database config.\
+        Weaviate needs a dictionary {'url': ''}\
+        Pinecone needs dictionary {'environment': '', 'api_key': ''}"
+)
+@click.option(
+    "--embedding_service",
+    type=click.Choice(['openai', 'cohere', 'sentence_transformer'], case_sensitive=False),
+    default="sentence_transformer", help="Text embedding service."
+)
+@click.option(
+    "--embedding_service_api_key", 
+    prompt=True,
+    default=None,
+    help='API Key for embedding service. Needed if using OpenAI or Cohere.'
+)
+@click.option(
+    "--model_name", 
+    default=None,
+    help='Text embedding model name.'
+)
+@click.option(
+    '--display_dag',
+    is_flag=True,
+    help="Generate a .png of the Hamilton DAG"
+)
+def main(
+    vector_db: str,
+    vector_db_config: str,
+    embedding_service: str,
+    embedding_service_api_key: str | None,
+    model_name: str,
+    display_dag: bool,
+):
+    if vector_db == "weaviate":
+        vector_db_module = weaviate_module
+    elif vector_db == "pinecone":
+        vector_db_module = pinecone_module
 
+    if model_name is None:
+        if embedding_service == "openai":
+            model_name = "text-embedding-ada-002"
+        elif embedding_service == "cohere":
+            model_name = "embed-english-light-v2.0"
+        elif embedding_service == "sentence_transformer":
+            model_name = "multi-qa-MiniLM-L6-cos-v1"
+
+    
     config = dict(
-        vector_db_config=weaviate_config,
-        embedding_service="(openai,cohere,sentence_transformer)",  # this triggers config.when() in embedding_module
-        api_key="EMBEDDING_SERVICE_API_KEY",  # needed if using OpenAI or Cohere
-        model_name="text-embedding-ada-002",
+        vector_db_config=json.loads(vector_db_config),
+        embedding_service=embedding_service,  # this triggers config.when() in embedding_module
+        api_key=embedding_service_api_key,
+        model_name=model_name,
     )
 
     dr = driver.Driver(
         config,
         data_module,
-        weaviate_module,  # this can be swapped for `pinecone_module`
+        vector_db_module,  # this points to weaviate_module or pinecone_module
         embedding_module,
         adapter=base.SimplePythonGraphAdapter(base.DictResult()),
     )
@@ -36,8 +90,10 @@ def main():
         ),
     )
 
-    # uncomment below to produce visualization
-    # dr.display_all_functions("dag", {"format": "png"})
+    if display_dag:
+        filename = f"{vector_db}_{embedding_service}_dag"
+        dr.display_all_functions(filename, {"format": "png"})
+
 
 if __name__ == "__main__":
     main()
