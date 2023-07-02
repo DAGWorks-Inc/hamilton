@@ -152,6 +152,9 @@ class Node(object):
         """Gives all functions from which this node was created. None if the data
         is not available (it is user-defined, or we have not added it yet). Note that this can be
         multiple in the case of subdags (the subdag function + the other function). In that case,
+        it will be in order of creation (subdag function last).
+
+        Note that this is filled in in function_modifiers.base -- see note in from_fn
 
         :return: A Tuple consisting of functions from which this node was created.
         """
@@ -196,6 +199,9 @@ class Node(object):
     def from_fn(fn: Callable, name: str = None) -> "Node":
         """Generates a node from a function. Optionally overrides the name.
 
+        Note that currently, the `originating_function` is externally passed in -- this
+        happens in resolve_nodes in function_modifiers.base. TBD whether we'll want it to stay there.
+
         :param fn: Function to generate the name from
         :param name: Name to use for the node
         :return: The node we generated
@@ -229,6 +235,7 @@ class Node(object):
             node_source=self.node_source,
             input_types=self.input_types,
             tags=self.tags,
+            originating_functions=self.originating_functions,
         )
         constructor_args.update(**overrides)
         return Node(**constructor_args)
