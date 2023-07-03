@@ -117,8 +117,8 @@ def absenteeism_prediction_dag():
     @task
     def train_and_evaluate_model(features_path: str):
         """Train and evaluate a machine learning model"""
-        import evaluate_model
-        import train_model
+        from absenteeism import evaluate_model
+        from absenteeism import train_model
 
         from hamilton import base, driver
 
