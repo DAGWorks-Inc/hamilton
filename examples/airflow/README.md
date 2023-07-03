@@ -24,7 +24,7 @@ We will use custom Docker containers based on the [official Airflow `docker-comp
 
 ## Motivation
 1. **Simplify Airflow DAG**. Respect the ethos of Airflow [reference](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html#communication):
-   
+
     Make your DAG generate simpler structure. Every task dependency adds additional processing overhead for scheduling and execution.
     The DAG that has simple linear structure A -> B -> C will experience less delays in task scheduling than DAG that has a deeply nested tree structure with exponentially growing number of depending tasks for example. If you can make your DAGs more linear - where at single point in execution there are as few potential candidates to run among the tasks, this will likely improve overall scheduling performance.
 
