@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from functools import singledispatch
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, Optional, Set, Type
 
 import typing_inspect
 
@@ -161,9 +161,9 @@ class CachingAdapter(SimplePythonGraphAdapter):
         self,
         cache_path: str,
         *args,
-        force_compute: Optional[set[str]] = None,
-        writers: Optional[dict[str, Callable[[Any, str], None]]] = None,
-        readers: Optional[dict[str, Callable[[str], Any]]] = None,
+        force_compute: Optional[Set[str]] = None,
+        writers: Optional[Dict[str, Callable[[Any, str], None]]] = None,
+        readers: Optional[Dict[str, Callable[[str], Any]]] = None,
         **kwargs,
     ):
         """Constructs the adapter.
@@ -217,7 +217,7 @@ class CachingAdapter(SimplePythonGraphAdapter):
             return typing_inspect.get_origin(expected_type)()
         return expected_type()  # This ASSUMES that we can just do `str()`, `pd.DataFrame()`, etc.
 
-    def execute_node(self, node: Node, kwargs: dict[str, Any]) -> Any:
+    def execute_node(self, node: Node, kwargs: Dict[str, Any]) -> Any:
         """Executes nodes conditionally according to caching rules.
 
         This node is executed if at least one of these is true:
