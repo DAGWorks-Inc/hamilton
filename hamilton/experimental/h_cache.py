@@ -11,6 +11,19 @@ from hamilton.node import Node
 
 logger = logging.getLogger(__name__)
 
+"""
+Base SERDE functions.
+
+Basic format is:
+@singledispatch
+def write_<format>(data: object, filepath: str, name: str) -> None:
+
+@singledispatch
+def read_<format>(data: object, filepath: str) -> Any:
+
+Functions should register themselves with the appropriate type.
+"""
+
 
 @singledispatch
 def write_feather(data: object, filepath: str, name: str) -> None:
@@ -49,58 +62,57 @@ def read_json(data: object, filepath: str) -> Any:
 
 
 try:
-    import pandas as pd
+    import pandas as pd  # conditional import to avoid pandas dependency
 
     @write_json.register(pd.DataFrame)
     def write_json_pd1(data: pd.DataFrame, filepath: str, name: str) -> None:
-        """Writes a data frame to a feather file."""
+        """Writes a dataframe to a feather file."""
         return data.to_json(filepath)
 
     @write_json.register(pd.Series)
     def write_json_pd2(data: pd.Series, filepath: str, name: str) -> None:
-        """Writes a data frame to a feather file."""
+        """Writes a series to a feather file."""
         _df = data.to_frame(name=name)
         return _df.to_json(filepath)
 
     @read_json.register(pd.Series)
     def read_json_pd1(data: pd.Series, filepath: str) -> pd.Series:
-        """Reads a data frame from a feather file."""
+        """Reads a series from a feather file."""
         _df = pd.read_json(filepath)
         return _df[_df.columns[0]]
 
     @read_json.register(pd.DataFrame)
     def read_json_pd2(data: pd.DataFrame, filepath: str) -> pd.DataFrame:
-        """Reads a data frame from a feather file."""
+        """Reads a dataframe from a feather file."""
         return pd.read_json(filepath)
 
     try:
-        import pyarrow  # noqa: F401
+        import pyarrow  # noqa: F401  # conditional import to avoid pyarrow dependency
 
         @write_feather.register(pd.DataFrame)
         def write_feather_pd1(data: pd.DataFrame, filepath: str, name: str) -> None:
-            """Writes a data frame to a feather file."""
+            """Writes a dataframe to a feather file."""
             data.to_feather(filepath)
 
         @write_feather.register(pd.Series)
         def write_feather_pd2(data: pd.Series, filepath: str, name: str) -> None:
-            """Writes a data frame to a feather file."""
+            """Writes a series to a feather file."""
             data.to_frame(name=name).to_feather(filepath)
 
-        @read_feather.register(pd.Series)
         @read_feather.register(pd.DataFrame)
         def read_feather_pd1(data: pd.DataFrame, filepath: str) -> pd.DataFrame:
-            """Reads a data frame from a feather file."""
+            """Reads a dataframe from a feather file."""
             return pd.read_feather(filepath)
 
         @read_feather.register(pd.Series)
         def read_feather_pd2(data: pd.Series, filepath: str) -> pd.Series:
-            """Reads a data frame from a feather file."""
+            """Reads a series from a feather file."""
             _df = pd.read_feather(filepath)
             return _df[_df.columns[0]]
 
         @write_parquet.register(pd.DataFrame)
         def write_parquet_pd1(data: pd.DataFrame, filepath: str, name: str) -> None:
-            """Writes a data frame to a parquet file."""
+            """Writes a dataframe to a parquet file."""
             data.to_parquet(filepath)
 
         @write_parquet.register(pd.Series)
@@ -110,12 +122,12 @@ try:
 
         @read_parquet.register(pd.DataFrame)
         def read_parquet_pd1(data: pd.DataFrame, filepath: str) -> pd.DataFrame:
-            """Reads a data frame from a parquet file."""
+            """Reads a dataframe from a parquet file."""
             return pd.read_parquet(filepath)
 
         @read_parquet.register(pd.Series)
         def read_parquet_pd2(data: pd.Series, filepath: str) -> pd.Series:
-            """Reads a data frame from a parquet file."""
+            """Reads a series from a parquet file."""
             _df = pd.read_parquet(filepath)
             return _df[_df.columns[0]]
 
@@ -155,6 +167,21 @@ class CachingAdapter(SimplePythonGraphAdapter):
      * node is explicitly forced to be computed with a constructor argument,
      * any of its (potentially transitive) dependencies that are configured to be cached
        was nevertheless computed (either forced or missing cached file).
+
+    One can provide custom readers and writers for any format by passing them to the constructor.
+    These readers and writers will override the default ones. If you don't want to override, but
+    rather extend the default ones, you can do so by registering them with the `register` method
+    on the appropriate function.
+
+    Writer functions need to have the following signature:
+    `def write_<format>(data: Any, filepath: str, name: str) -> None: ...`
+    where `data` is the data to be written, `filepath` is the path to the file to be written to,
+    and `name` is the name of the node that is being written.
+
+    Reader functions need to have the following signature:
+    `def read_<format>(data: Any, filepath: str) -> Any: ...`
+    where `data` is an EMPTY OBJECT of the type you wish to instantiate, and `filepath` is the
+    path to the file to be read from.
     """
 
     def __init__(
