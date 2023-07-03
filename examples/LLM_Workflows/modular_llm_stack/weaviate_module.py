@@ -42,9 +42,9 @@ def initialize_vector_db_indices(client_vector_db: weaviate.Client) -> bool:
             },
             {
                 "name": "model_name",
-                "dataType": ["string"], 
+                "dataType": ["string"],
                 "description": "model used by embedding service to create the vector",
-            }
+            },
         ],
     }
 

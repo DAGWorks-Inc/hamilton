@@ -1,7 +1,6 @@
 import json
 
 import click
-
 import data_module
 import embedding_module
 import lancedb_module
@@ -14,36 +13,30 @@ from hamilton import base, driver
 @click.command()
 @click.option(
     "--vector_db",
-    type=click.Choice(['lancedb', 'weaviate', 'pinecone'], case_sensitive=False),
-    default="lancedb", help="Vector database service"
+    type=click.Choice(["lancedb", "weaviate", "pinecone"], case_sensitive=False),
+    default="lancedb",
+    help="Vector database service",
 )
 @click.option(
     "--vector_db_config",
     default='{"uri": "data/lancedb"}',
     help="Pass a JSON string for vector database config.\
         Weaviate needs a dictionary {'url': ''}\
-        Pinecone needs dictionary {'environment': '', 'api_key': ''}"
+        Pinecone needs dictionary {'environment': '', 'api_key': ''}",
 )
 @click.option(
     "--embedding_service",
-    type=click.Choice(['openai', 'cohere', 'sentence_transformer'], case_sensitive=False),
-    default="sentence_transformer", help="Text embedding service."
+    type=click.Choice(["openai", "cohere", "sentence_transformer"], case_sensitive=False),
+    default="sentence_transformer",
+    help="Text embedding service.",
 )
 @click.option(
     "--embedding_service_api_key",
     default=None,
-    help='API Key for embedding service. Needed if using OpenAI or Cohere.'
+    help="API Key for embedding service. Needed if using OpenAI or Cohere.",
 )
-@click.option(
-    "--model_name", 
-    default=None,
-    help='Text embedding model name.'
-)
-@click.option(
-    '--display_dag',
-    is_flag=True,
-    help="Generate a .png of the Hamilton DAG"
-)
+@click.option("--model_name", default=None, help="Text embedding model name.")
+@click.option("--display_dag", is_flag=True, help="Generate a .png of the Hamilton DAG")
 def main(
     vector_db: str,
     vector_db_config: str,
@@ -66,7 +59,7 @@ def main(
             model_name = "embed-english-light-v2.0"
         elif embedding_service == "sentence_transformer":
             model_name = "multi-qa-MiniLM-L6-cos-v1"
-    
+
     config = dict(
         vector_db_config=json.loads(vector_db_config),
         embedding_service=embedding_service,  # this triggers config.when() in embedding_module
