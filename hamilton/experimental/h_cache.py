@@ -1,42 +1,144 @@
 import json
 import logging
 import os
-from typing import Any, Callable, Dict, Optional
+from functools import singledispatch
+from typing import Any, Callable, Dict, Optional, Type
 
-import pandas as pd
+import typing_inspect
+
 from hamilton.base import SimplePythonGraphAdapter
 from hamilton.node import Node
 
 logger = logging.getLogger(__name__)
 
 
-def write_feather(data: pd.DataFrame, filepath: str) -> None:
-    """Writes a data frame to a feather file."""
-    data.to_feather(filepath)
+@singledispatch
+def write_feather(data: object, filepath: str, name: str) -> None:
+    """Writes data to a feather file."""
+    raise NotImplementedError(f"No feather writer for type {type(data)} registered.")
 
 
-def read_feather(filepath: str) -> pd.DataFrame:
-    """Reads a data frame from a feather file."""
-    return pd.read_feather(filepath)
+@singledispatch
+def read_feather(data: object, filepath: str) -> Any:
+    """Reads from a feather file"""
+    raise NotImplementedError(f"No feather reader for type {type(data)} registered.")
 
 
-def write_parquet(data: pd.DataFrame, filepath: str) -> None:
-    """Writes a data frame to a parquet file."""
-    data.to_parquet(filepath)
+@singledispatch
+def write_parquet(data: object, filepath: str, name: str) -> None:
+    """Writes data to a parquet file."""
+    raise NotImplementedError(f"No parquet writer for type {type(data)} registered.")
 
 
-def read_parquet(filepath: str) -> pd.DataFrame:
-    """Reads a data frame from a parquet file."""
-    return pd.read_parquet(filepath)
+@singledispatch
+def read_parquet(data: object, filepath: str) -> Any:
+    """Reads from a parquet file"""
+    raise NotImplementedError(f"No parquet reader for type {type(data)} registered.")
 
 
-def write_json(data: dict, filepath: str) -> None:
+@singledispatch
+def write_json(data: object, filepath: str, name: str) -> None:
+    """Writes data to a json file."""
+    raise NotImplementedError(f"No json writer for type {type(data)} registered.")
+
+
+@singledispatch
+def read_json(data: object, filepath: str) -> Any:
+    """Reads from a json file"""
+    raise NotImplementedError(f"No json reader for type {type(data)} registered.")
+
+
+try:
+    import pandas as pd
+
+    @write_json.register(pd.DataFrame)
+    def write_json_pd1(data: pd.DataFrame, filepath: str, name: str) -> None:
+        """Writes a data frame to a feather file."""
+        return data.to_json(filepath)
+
+    @write_json.register(pd.Series)
+    def write_json_pd2(data: pd.Series, filepath: str, name: str) -> None:
+        """Writes a data frame to a feather file."""
+        _df = data.to_frame(name=name)
+        return _df.to_json(filepath)
+
+    @read_json.register(pd.Series)
+    def read_json_pd1(data: pd.Series, filepath: str) -> pd.Series:
+        """Reads a data frame from a feather file."""
+        _df = pd.read_json(filepath)
+        return _df[_df.columns[0]]
+
+    @read_json.register(pd.DataFrame)
+    def read_json_pd2(data: pd.DataFrame, filepath: str) -> pd.DataFrame:
+        """Reads a data frame from a feather file."""
+        return pd.read_json(filepath)
+
+    try:
+        import pyarrow  # noqa: F401
+
+        @write_feather.register(pd.DataFrame)
+        def write_feather_pd1(data: pd.DataFrame, filepath: str, name: str) -> None:
+            """Writes a data frame to a feather file."""
+            data.to_feather(filepath)
+
+        @write_feather.register(pd.Series)
+        def write_feather_pd2(data: pd.Series, filepath: str, name: str) -> None:
+            """Writes a data frame to a feather file."""
+            data.to_frame(name=name).to_feather(filepath)
+
+        @read_feather.register(pd.Series)
+        @read_feather.register(pd.DataFrame)
+        def read_feather_pd1(data: pd.DataFrame, filepath: str) -> pd.DataFrame:
+            """Reads a data frame from a feather file."""
+            return pd.read_feather(filepath)
+
+        @read_feather.register(pd.Series)
+        def read_feather_pd2(data: pd.Series, filepath: str) -> pd.Series:
+            """Reads a data frame from a feather file."""
+            _df = pd.read_feather(filepath)
+            return _df[_df.columns[0]]
+
+        @write_parquet.register(pd.DataFrame)
+        def write_parquet_pd1(data: pd.DataFrame, filepath: str, name: str) -> None:
+            """Writes a data frame to a parquet file."""
+            data.to_parquet(filepath)
+
+        @write_parquet.register(pd.Series)
+        def write_parquet_pd2(data: pd.Series, filepath: str, name: str) -> None:
+            """Writes a data frame to a parquet file."""
+            data.to_frame(name=name).to_parquet(filepath)
+
+        @read_parquet.register(pd.DataFrame)
+        def read_parquet_pd1(data: pd.DataFrame, filepath: str) -> pd.DataFrame:
+            """Reads a data frame from a parquet file."""
+            return pd.read_parquet(filepath)
+
+        @read_parquet.register(pd.Series)
+        def read_parquet_pd2(data: pd.Series, filepath: str) -> pd.Series:
+            """Reads a data frame from a parquet file."""
+            _df = pd.read_parquet(filepath)
+            return _df[_df.columns[0]]
+
+    except ImportError:
+        pass
+
+
+except ImportError:
+    pass
+
+
+@write_json.register(dict)
+def write_json_dict(data: dict, filepath: str, name: str) -> None:
     """Writes a dictionary to a JSON file."""
-    with open(filepath, "w", encoding="utf8") as file:
-        json.dump(data, file)
+    if isinstance(data, dict):
+        with open(filepath, "w", encoding="utf8") as file:
+            json.dump(data, file)
+    else:
+        raise ValueError(f"Expected a dict, got {type(data)}")
 
 
-def read_json(filepath: str) -> dict:
+@read_json.register(dict)
+def read_json_dict(data: dict, filepath: str) -> dict:
     """Reads a dictionary from a JSON file."""
     with open(filepath, "r", encoding="utf8") as file:
         return json.load(file)
@@ -102,13 +204,18 @@ class CachingAdapter(SimplePythonGraphAdapter):
         if fmt not in self.writers:
             raise ValueError(f"invalid cache format: {fmt}")
 
-    def _write_cache(self, data: Any, fmt: str, filepath: str) -> None:
+    def _write_cache(self, fmt: str, data: Any, filepath: str, node_name: str) -> None:
         self._check_format(fmt)
-        self.writers[fmt](data, filepath)
+        self.writers[fmt](data, filepath, node_name)
 
-    def _read_cache(self, fmt: str, filepath: str) -> None:
+    def _read_cache(self, fmt: str, expected_type: Any, filepath: str) -> None:
         self._check_format(fmt)
-        return self.readers[fmt](filepath)
+        return self.readers[fmt](expected_type, filepath)
+
+    def _get_empty_expected_type(self, expected_type: Type) -> Any:
+        if typing_inspect.is_generic_type(expected_type):
+            return typing_inspect.get_origin(expected_type)()
+        return expected_type()  # This ASSUMES that we can just do `str()`, `pd.DataFrame()`, etc.
 
     def execute_node(self, node: Node, kwargs: dict[str, Any]) -> Any:
         """Executes nodes conditionally according to caching rules.
@@ -120,18 +227,20 @@ class CachingAdapter(SimplePythonGraphAdapter):
           either due to lack of cache or being explicitly forced.
         """
         cache_format = node.tags.get("cache")
-        implicitly_forced = any(
-            dep.name in self.computed_nodes for dep in node.dependencies
-        )
+        implicitly_forced = any(dep.name in self.computed_nodes for dep in node.dependencies)
         if cache_format is not None:
             filepath = f"{self.cache_path}/{node.name}.{cache_format}"
             explicitly_forced = node.name in self.force_compute
             if explicitly_forced or implicitly_forced or not os.path.exists(filepath):
                 result = node.callable(**kwargs)
-                self._write_cache(result, cache_format, filepath)
+                print(
+                    f"Writing cache for {node.name} to {filepath} with type {type(result)} to {cache_format}"
+                )
+                self._write_cache(cache_format, result, filepath, node.name)
                 self.computed_nodes.add(node.name)
                 return result
-            return self._read_cache(cache_format, filepath)
+            empty_expected_type = self._get_empty_expected_type(node.type)
+            return self._read_cache(cache_format, empty_expected_type, filepath)
 
         if implicitly_forced:
             # For purposes of caching, we only mark it as computed if any cached input was computed.
