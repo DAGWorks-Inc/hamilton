@@ -248,6 +248,77 @@ We'd appreciate citing Hamilton by referencing one of the following:
   year      = {2022}
 }
 ```
+# 🛣🗺 Roadmap / Things you can do with Hamilton
+Hamilton is an ambitious project to provide a unified way to describe any dataflow, independent of where it runs.
+You can find currently support integrations and high-level roadmap below. Please reach out via [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg)
+or email (stefan / elijah at dagworks.io) to contribute or share feedback!
+
+## Object types:
+* [x] Any python object type! E.g. Pandas, Spark dataframes, Dask dataframes, Ray datasets, Polars, dicts, lists, primitives,
+your custom objects, etc.
+
+## Workflows:
+* [x] data processing
+* [x] feature engineering
+* [x] model training
+* [x] LLM application workflows
+* [x] all of them together
+
+## Data Quality
+See the [data quality](https://hamilton.dagworks.io/en/latest/how-tos/run-data-quality-checks.html) docs.
+* [x] Ability to define data quality check on an object.
+* [x] Pandera schema integration.
+* [x] Custom object type validators.
+* [ ] Integration with other data quality libraries (e.g. Great Expectations, Deequ, whylogs, etc.)
+
+## Caching:
+* [ ] Checkpoint caching (e.g. save a function's result to disk, independent of input) - [WIP](https://github.com/DAGWorks-Inc/hamilton/pull/195).
+* [ ] Finergrained caching (e.g. save a function's result to disk, dependent on input).
+
+## Execution:
+* [x] Runs anywhere python runs. E.g. airflow, prefect, dagster, kubeflow, sagemaker, jupyter, fastAPI, snowpark, etc.
+
+## Backend integrations:
+Specific integrations with other systems where we help you write code that runs on those systems.
+### Ray
+* [x] Delegate function execution to Ray.
+* [ ] Function grouping (e.g. fuse multiple functions into a single Ray task)
+
+### Dask
+* [x] Delegate function execution to Dask.
+* [ ] Function grouping (e.g. fuse multiple functions into a single Dask task)
+
+### Spark
+* [x] Pandas on spark integration (via GraphAdapter)
+* [x] PySpark native UDF map function integration (via GraphAdapter)
+* [ ] PySpark native aggregation function integration
+* [ ] PySpark join, filter, groupby, etc. integration
+
+### Snowpark
+* [ ] Packaging functions for Snowpark
+
+### LLVMs & related
+* [ ] Numba integration
+
+### Custom Backends
+* [ ] Generate code to execute on a custom topology, e.g. microservices, etc.
+
+## Integrations with other systems/tools:
+* [ ] Generating Airflow | Prefect | Metaflow | Dagster | Kubeflow Pipelines | Sagemaker Pipelines | etc from Hamilton.
+* [ ] Plugins for common MLOps/DataOps tools: MLFlow, DBT, etc.
+
+## Dataflow/DAG Walking:
+* [x] Depth first search traversal
+* [x] Async function support via AsyncDriver
+* [ ] Python multiprocessing execution
+* [ ] Python threading support
+* [ ] Breadth first search traversal
+* [ ] Sequential walk over a generator
+* [ ] Parallel walk over a generator
+
+## DAG/Dataflow resolution:
+* [x] At Driver instantiation time, using configuration/modules and [`@config.when`](https://hamilton.dagworks.io/en/latest/reference/api-reference/decorators.html#config).
+* [x] With [`@resolve`](https://hamilton.dagworks.io/en/latest/reference/api-reference/decorators.html#resolve) during Driver instantiation time.
 
 
 # Prescribed Development Workflow
