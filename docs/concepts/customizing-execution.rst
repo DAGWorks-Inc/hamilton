@@ -32,7 +32,7 @@ something.
             """This function builds the result given the computed values."""
             pass
 
-So we have a few implementations see :doc:`../../reference/api-reference/result-builders` for the list.
+So we have a few implementations see :doc:`../../reference/result-builders/index` for the list.
 
 To use it, it needs to be paired with a GraphAdapter - onto the next section!
 
@@ -58,8 +58,8 @@ a ``pandas.DataFrame`` when ``.execute()`` is called.
 
 If you want to tell Hamilton to return something else, we suggest starting with the ``base.SimplePythonGraphAdapter``
 and writing a simple class & function that implements the ``base.ResultMixin`` interface and passing that in.  See
-:doc:`../reference/api-reference/graph-adapters` and
-:doc:`../reference/api-reference/result-builders` for options.
+:doc:`../reference/graph-adapters/index` and
+:doc:`../reference/result-builders/index` for options.
 
 Otherwise, let's quickly walk through some options on how to execute a Hamilton DAG.
 
@@ -89,4 +89,4 @@ production environment for long. Thus the API to these GraphAdapters might chang
 
 See the `experimental <https://github.com/dagworks-inc/hamilton/tree/main/hamilton/experimental>`_ package for the current
 implementations. We encourage you to give them a spin and provide us with feedback. See
-:doc:`../reference/api-reference/graph-adapters` for more details.
+:doc:`../reference/graph-adapters/index` for more details.

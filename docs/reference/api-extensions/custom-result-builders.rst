@@ -49,4 +49,4 @@ How to use it
 -------------
 
 You would then pair that with a graph adapter that takes in a ResultMixin object. E.g. ``SimplePythonGraphAdapter``.
-See :doc:`../api-reference/graph-adapters` for which ones take in a custom ResultMixin object.
+See :doc:`../graph-adapters/index` for which ones take in a custom ResultMixin object.

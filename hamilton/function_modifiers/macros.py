@@ -223,7 +223,7 @@ def get_default_tags(fn: Callable) -> Dict[str, str]:
     "to utilize config for resolving decorators. Note this allows you to use any"
     "existing decorators.",
     current_version=(1, 19, 0),
-    migration_guide="https://hamilton.readthedocs.io/reference/api-reference/decorators.html",
+    migration_guide="https://hamilton.dagworks.io/reference/decorators/",
 )
 class dynamic_transform(base.NodeCreator):
     def __init__(

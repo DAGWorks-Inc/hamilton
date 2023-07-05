@@ -2,7 +2,7 @@
 Using within your ETL System
 ============================
 
-How to integrate Hamilton within your existing ETL system.
+Conceptually you can integrate Hamilton within your existing ETL system quite easily:
 
 Compatibility Matrix
 --------------------
