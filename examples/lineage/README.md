@@ -91,21 +91,21 @@ straightforward way to store evolutions of your code and configuration, and ther
 By versioning code, you are therefore versioning lineage information. This means you can go back in time and ask
 questions about the past. For example, you can ask what the lineage information was for a model that was trained at
 a specific point in time. This is as simple as checking out the git SHA of the code that produced the model, and
-asking Hamilton to visualize (e.g. see [`visualize_execution()`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/drivers.html#hamilton.driver.Driver.visualize_execution)),  the DAG and ask questions of it.
+asking Hamilton to visualize (e.g. see [`visualize_execution()`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.visualize_execution)),  the DAG and ask questions of it.
 
 ### Auditing and Compliance
-The [`@tag`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/decorators.html#tag) and (`@tag_outputs`) feature allows
+The [`@tag`](https://hamilton.dagworks.io/en/latest/reference/decorators/tag) and (`@tag_outputs`) feature allows
 you to annotate your functions with metadata. No extra YAML file to manage, just directly together with your Hamilton code.
 This means you can tag functions with information such as "PII", "GDPR", "HIPAA", etc. and then ask Hamilton to return
 nodes with certain tags, e.g. get me all my "sources", or "what is PII, and what consumes it?", etc.
 
-The [Hamilton Driver](https://hamilton.readthedocs.io/en/latest/reference/api-reference/drivers.html#hamilton.driver.Driver)
+The [Hamilton Driver](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver)
 has a lot of functions that allow you to ask questions of your DAGs to make (1) easier. The driver code can be run in
 a CI/CD system, or as part of a reporting/auditing pipeline. For example, you can ask:
 
-* What are all the functions and their tags via [`list_available_variables()`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/drivers.html#hamilton.driver.Driver.list_available_variables)
-* What are the possible places that consume the output of this function via [`what_is_downstream_of()`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/drivers.html#hamilton.driver.Driver.what_is_downstream_of)
-* What are the possible sources that feed into this function via [`what_is_upstream_of()`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/drivers.html#hamilton.driver.Driver.what_is_upstream_of)
+* What are all the functions and their tags via [`list_available_variables()`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.list_available_variables)
+* What are the possible places that consume the output of this function via [`what_is_downstream_of()`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.what_is_downstream_of)
+* What are the possible sources that feed into this function via [`what_is_upstream_of()`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.what_is_upstream_of)
 
 With these three functions you can the find functions with specific tags and then ask questions in relation to them.
 
@@ -117,11 +117,11 @@ Debugging is methodical and procedural with Hamilton. The way functions are writ
 and executed mean that one can easily walk through just the part of the DAG of interest to debug an issue.
 To help with this, Hamilton has various methods to visualize lineage so you can more easily see what you're walking through connects to:
 
-* [`display_all_functions()`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/drivers.html#hamilton.driver.Driver.display_all_functions)
-* [`display_downstream_of()`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/drivers.html#hamilton.driver.Driver.display_downstream_of)
-* [`display_upstream_of()`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/drivers.html#hamilton.driver.Driver.display_upstream_of)
-* [`visualize_execution()`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/drivers.html#hamilton.driver.Driver.visualize_execution)
-* [`visualize_path_between()`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/drivers.html#hamilton.driver.Driver.visualize_path_between)
+* [`display_all_functions()`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.display_all_functions)
+* [`display_downstream_of()`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.display_downstream_of)
+* [`display_upstream_of()`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.display_upstream_of)
+* [`visualize_execution()`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.visualize_execution)
+* [`visualize_path_between()`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.visualize_path_between)
 
 ### Collaboration
 When any organization scales, or has personnel changes, it's important to have a system that helps people get up to
@@ -134,8 +134,8 @@ Driver code enables one to ask questions of the DAGs, and therefore the code, to
 At a high level, the recipe for utilizing Hamilton's lineage capabilities is as follows:
 
 1. Write Hamilton code.
-2. Use [`@tag`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/decorators.html#tag) and
-[`@tag_outputs`](https://hamilton.readthedocs.io/en/latest/reference/api-reference/decorators.html#tag_outputs) to
+2. Use [`@tag`](https://hamilton.dagworks.io/en/latest/reference/decorators/tag) and
+[`@tag_outputs`](https://hamilton.dagworks.io/en/latest/reference/decorators/tag) to
 annotate functions.
 3. Instantiate a Hamilton Driver, it'll then have a representation of how data and compute flow as defined by your
 Hamilton code. The Driver object can then emit/provide information on lineage!

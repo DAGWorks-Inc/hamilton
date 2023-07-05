@@ -1,10 +1,10 @@
 # Comparison to Other Frameworks
 
 There are a lot of MLOps frameworks out there, especially in the pipeline space. This should help you figure out when to
-use Hamilton instead of another framework, in addition to another framework, or when to use another framework altogether.
+use Hamilton with another framework, or in place of a framework, or when to use another framework altogether.
 
 Let's go over some groups of "competitive" or "complimentary" products. For a basic overview,
-see the product matrix on the [homepage](../main.md).
+see the product matrix on the [homepage](main.md).
 
 ## Orchestration Systems
 Examples include:
@@ -34,7 +34,7 @@ is call out to the hamilton library within your task. If your orchestrator suppo
     do_something_with(output)
     ```
 2. _Hamilton DAGs can be broken up to run as components within an orchestration system._
-With the ability to include [overrides](../concepts/driver-capabilities.rst),
+With the ability to include [overrides](concepts/driver-capabilities.rst),
 you can run the DAG on each task, overloading the outputs of the last task + any static inputs/configuration, and pass it into the next task. This is more
 of a manual/power-user feature. Some pseudocode:
 
@@ -69,7 +69,7 @@ store, it provides a source of truth for the code that generated the features, a
 method. *So*, if your desire is just to be able to run the same code in different environments, and have an online/offline
 store of features, you can use hamilton both to save the features offline, and generate features online on the fly.
 
-See the [feature engineering example](../how-tos/use-for-feature-engineering.rst) for more possibilities.
+See the [feature engineering example](how-tos/use-for-feature-engineering.rst) for more possibilities.
 
 Note that in small cases, you probably don't need a true feature store -- recomputing derived features in an ETL
 and online can be very efficient, as long as you have some database to look features up (or have them passed in).
@@ -91,8 +91,8 @@ Examples include:
 And many others. We've kind of grouped a whole suite of platforms into the same bucket here. These
 tend to have a lot of capabilities all related to ML. Hamilton can be run within these platforms,
 generate features for them to read, save models to their registry, and load models from their registry
-for inference. For example, you could imagine the following pseudocode for a Hamilton DAG that stores
-models in a registry.
+for inference. For example, you could imagine the following pseudocode for a Hamilton DAG that computes
+a model, and then delegates to saving the model in a registry.
 
 ```python
 # training.py
@@ -124,6 +124,6 @@ Examples include:
 
 These all provide capabilities to either (a) express and execute computation over datasets in python or (b)
 parallelize it. Often both. Hamilton has a variety of integrations with these systems. The basics is that Hamilton
-can make use of these systems to execute the DAG using the [GraphAdapter](../reference/api-reference/graph-adapters.rst) abstraction.
+can make use of these systems to execute the DAG using the [GraphAdapter](reference/graph-adapters/index.rst) abstraction.
 
-Hamilton also has a variety of plugins that further integrate with these systems. See the [hamilton without pandas](../how-tos/use-without-pandas.rst) example for more details.
+Hamilton also has a variety of plugins that further integrate with these systems. See the [hamilton without pandas](how-tos/use-without-pandas.rst) example for more details.

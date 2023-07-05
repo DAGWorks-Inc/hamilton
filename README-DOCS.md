@@ -11,12 +11,12 @@ pip install -r requirements-docs.txt
 ```
 and then one of the following to build and view the documents:
 ```bash
-sphinx-build -a docs /tmp/mydocs
+sphinx-build -b dirhtml -a docs /tmp/mydocs
 python -m http.server --directory /tmp/mydocs
 ```
 or for auto rebuilding do:
 ```bash
-sphinx-autobuild -W -E -T  --watch hamilton/ -a docs /tmp/mydocs
+sphinx-autobuild -b dirhtml -W -E -T  --watch hamilton/ -a docs /tmp/mydocs
 ```
 Then it'll be running on port 8000.
 
