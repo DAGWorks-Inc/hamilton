@@ -301,7 +301,7 @@ Specific integrations with other systems where we help you write code that runs 
 * [ ] Numba integration
 
 ### Custom Backends
-* [ ] Map execution to a custom topology, e.g. microservices, etc.
+* [ ] Generate code to execute on a custom topology, e.g. microservices, etc.
 
 ## Integrations with other systems/tools:
 * [ ] Generating Airflow | Prefect | Metaflow | Dagster | Kubeflow Pipelines | Sagemaker Pipelines | etc from Hamilton.
