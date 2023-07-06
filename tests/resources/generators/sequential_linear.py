@@ -9,16 +9,19 @@ def number_of_steps() -> int:
 # expand
 def steps(number_of_steps: int) -> Sequential[int]:
     for i in range(number_of_steps):
+        print("yielding step {}".format(i))
         yield i
 
 
 # process
 def step_squared(steps: int) -> int:
+    print("squaring step {}".format(steps))
     return steps**2
 
 
 # join
 def sum_step_squared(step_squared: Collect[int]) -> int:
+    print("summing step squared")
     out = 0
     for step in step_squared:
         out += step
@@ -27,6 +30,7 @@ def sum_step_squared(step_squared: Collect[int]) -> int:
 
 # final
 def final(sum_step_squared: int) -> int:
+    print("finalizing")
     return sum_step_squared
 
 

@@ -31,7 +31,7 @@ def test_sequential_linear_group_nodes():
     assert len(groups) == 3  # One for the precursor, one for the repeat, and one for the collect
     fn_graph = graph.FunctionGraph(groups, [], {})
     results = fn_graph.execute(["final"])
-    print(results)
+    assert results["final"] == sequential_linear._calc()
     import pdb
 
     pdb.set_trace()
