@@ -6,6 +6,7 @@ import pandas as pd
 import summarize_text
 
 from hamilton import base, driver
+from hamilton.execution.executors import MultiThreadingExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -16,21 +17,25 @@ def get_articles(query: str) -> pd.DataFrame:
     :param query: User query in JSON. Responses should be summarized and should include the article URL reference
     :return: List of dictionaries with title, summary, article_url, pdf_url
     """
-    dr = driver.Driver({}, arxiv_articles, adapter=base.SimplePythonGraphAdapter(base.DictResult()))
+    dr = (
+        driver.DriverBuilder()
+        .enable_v2_driver(allow_experimental_mode=True)
+        .with_modules(arxiv_articles)
+        .with_config({"mock_openai": True})
+        .with_remote_executor(MultiThreadingExecutor(max_tasks=10))
+        .with_result_builder(base.PandasDataFrameResult())
+        .build()
+    )
+
     inputs = {
         "embedding_model_name": "text-embedding-ada-002",
-        "max_arxiv_results": 5,
+        "max_arxiv_results": 100,
         "article_query": query,
-        "max_num_concurrent_requests": 5,
         "data_dir": "./data",
         "library_file_path": "./data/arxiv_library.csv",
     }
     dr.display_all_functions("./get_articles", {"format": "png"})
-    result = dr.execute(["arxiv_result_df", "save_arxiv_result_df"], inputs=inputs)
-    logger.info(f"Added {result['save_arxiv_result_df']} to our DB.")
-    _df = result["arxiv_result_df"]
-    # _df = pd.read_csv(inputs["library_file_path"])
-    return _df[["title", "summary", "article_url", "pdf_url"]].to_dict(orient="records")
+    return dr.execute(["arxiv_result_df", "save_arxiv_result_df"], inputs=inputs)
 
 
 def read_article_and_summarize(query: str) -> str:
