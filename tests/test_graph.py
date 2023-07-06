@@ -22,7 +22,7 @@ import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
 import tests.resources.typing_vs_not_typing
 from hamilton import ad_hoc_utils, base, graph, node
-from hamilton.node import NodeSource
+from hamilton.node import NodeType
 
 
 def test_find_functions():
@@ -255,12 +255,12 @@ def create_testing_nodes():
         "b": node.Node(
             "b",
             inspect.signature(tests.resources.dummy_functions.A).parameters["b"].annotation,
-            node_source=NodeSource.EXTERNAL,
+            node_source=NodeType.EXTERNAL,
         ),
         "c": node.Node(
             "c",
             inspect.signature(tests.resources.dummy_functions.A).parameters["c"].annotation,
-            node_source=NodeSource.EXTERNAL,
+            node_source=NodeType.EXTERNAL,
         ),
     }
     nodes["A"].dependencies.append(nodes["b"])
@@ -437,7 +437,7 @@ def test_non_required_nodes():
     fg = graph.FunctionGraph(tests.resources.test_default_args, config={"required": 10})
     results = fg.execute(
         # D is not on the execution path, so it should not break things
-        [n for n in fg.get_nodes() if n.node_source == NodeSource.STANDARD and n.name != "D"],
+        [n for n in fg.get_nodes() if n.node_type == NodeType.STANDARD and n.name != "D"],
         {},
         {},
     )
@@ -446,7 +446,7 @@ def test_non_required_nodes():
         tests.resources.test_default_args, config={"required": 10, "defaults_to_zero": 1}
     )
     results = fg.execute(
-        [n for n in fg.get_nodes() if n.node_source == NodeSource.STANDARD],
+        [n for n in fg.get_nodes() if n.node_type == NodeType.STANDARD],
         {},
         {},
     )
