@@ -62,5 +62,5 @@ if __name__ == "__main__":
     log_setup.setup_logging(log_level=log_setup.LOG_LEVELS["DEBUG"])
     _df = get_articles("ppo reinforcement learning")
     print(_df)
-    _summary = read_article_and_summarize("PPO reinforcement learning sequence generation")
-    print(_summary)
+    # _summary = read_article_and_summarize("PPO reinforcement learning sequence generation")
+    # print(_summary)
