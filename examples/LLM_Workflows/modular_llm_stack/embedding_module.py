@@ -15,7 +15,7 @@ from hamilton.function_modifiers import config, extract_fields
         embedding_metric=str,
     )
 )
-def embedding_config__openai(embedding_service: str, model_name: str) -> dict:
+def embedding_config__openai(model_name: str) -> dict:
     if model_name == "text-embedding-ada-002":
         return dict(embedding_dimension=1536, embedding_metric="cosine")
     # If you support more models, you would add that here
@@ -29,7 +29,7 @@ def embedding_config__openai(embedding_service: str, model_name: str) -> dict:
         embedding_metric=str,
     )
 )
-def embedding_config__cohere(embedding_service: str, model_name: str) -> dict:
+def embedding_config__cohere(model_name: str) -> dict:
     if model_name == "embed-english-light-v2.0":
         return dict(embedding_dimension=1024, embedding_metric="cosine")
     # If you support more models, you would add that here
@@ -43,7 +43,7 @@ def embedding_config__cohere(embedding_service: str, model_name: str) -> dict:
         embedding_metric=str,
     )
 )
-def embedding_config__sentence_transformer(embedding_service: str, model_name: str) -> dict:
+def embedding_config__sentence_transformer(model_name: str) -> dict:
     if model_name == "multi-qa-MiniLM-L6-cos-v1":
         return dict(embedding_dimension=384, embedding_metric="cosine")
     # If you support more models, you would add that here

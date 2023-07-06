@@ -2,13 +2,20 @@
 
 This example shows how to pull data from the HuggingFace datasets hub, create embeddings for text passage using Cohere / OpenAI / SentenceTransformer, and store them in a vector database using LanceDB / Weaviate / Pinecone.
 
-![](./weaviate_dag.png)
+![](./weaviate_openai_dag.png)
+
 *DAG for OpenAI embeddings and Weaviate vector database*
 
 In addition, you'll see how Hamilton can help you create replaceable components. This flexibility, makes it easier to assess service providers and refactor code to fit your needs. The above and below DAGs were generated simply by changing a string value and a module import. Try to spot the differences!
 
-![](./pinecone_dag.png)
+![](./pinecone_sentence_transformer_dag.png)
+
 *DAG for SentenceTransformers embeddings and Pinecone vector database*
+
+![](./lancedb_cohere_dag.png)
+
+*DAG for Cohere embeddings and Lancedb vector database*
+
 
 # Example structure
 - `run.py` contains the code to test the example. It uses `click` to provide a simple command interface.
@@ -42,3 +49,17 @@ To change vector database you need to pass a JSON config argument:
 # Next step / Exercises
 - Implement the code to read data from the vector database
 - Add the code to send the same generative prompt to multiple providers
+
+
+# Notes:
+If you run into `lzma` not being installed and you're using `pyenv`, then if you're on a mac you can try the following:
+
+1. Install XZ
+```bash
+brew install xz
+```
+
+2. Reinstall the python version you're using to pick up the required changes:
+```bash
+CFLAGS="-I$(brew --prefix xz)/include" LDFLAGS="-L$(brew --prefix xz)/lib" pyenv install 3.X.XX
+```
