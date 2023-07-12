@@ -1,5 +1,3 @@
-import base64
-
 import evaluate_model
 import pandas as pd
 
@@ -7,7 +5,6 @@ import pandas as pd
 import prepare_data
 import train_model
 from prefect import flow, task
-from prefect.artifacts import create_markdown_artifact
 
 from hamilton import base, driver
 
