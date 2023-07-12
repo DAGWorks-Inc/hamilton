@@ -2,8 +2,9 @@ from typing import Dict, List
 
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression, PoissonRegressor
 from prefect import task
+from sklearn.linear_model import LogisticRegression, PoissonRegressor
+
 from hamilton.function_modifiers import (
     config,
     extract_fields,
