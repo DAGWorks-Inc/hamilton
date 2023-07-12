@@ -1,6 +1,6 @@
+numpy
+pandas
+prefect
+scikit-learn
 sf-hamilton
 sf-hamilton[visualization]
-prefect
-pandas
-numpy
-scikit-learn

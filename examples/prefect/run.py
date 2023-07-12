@@ -1,14 +1,15 @@
 import base64
 
+import evaluate_model
 import pandas as pd
-from hamilton import driver, base
+
+# import modules containing your dataflow functions
+import prepare_data
+import train_model
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 
-# import modules containing your dataflow functions 
-import prepare_data
-import evaluate_model
-import train_model
+from hamilton import base, driver
 
 
 # use the @task to define Prefect tasks, which adds logging, retries, etc.
@@ -20,7 +21,7 @@ def prepare_data_task(
     label: str,
     results_dir: str,
 ) -> str:
-    """Load external data, preprocess dataset, and store cleaned data"""   
+    """Load external data, preprocess dataset, and store cleaned data"""
     raw_df = pd.read_csv(raw_data_location, sep=";")
 
     dr = driver.Driver(hamilton_config, prepare_data)
@@ -61,11 +62,11 @@ def train_and_evaluate_model_task(
             label=label,
             feature_set=feature_set,
             validation_user_ids=validation_user_ids,
-        )
+        ),
     )
 
 
-# use @flow to define the Prefect flow. 
+# use @flow to define the Prefect flow.
 # the function parameters define the config and inputs needed by all tasks
 # this way, we prevent having constants being hardcoded in the flow or task body
 @flow(
@@ -90,7 +91,7 @@ def absenteeism_prediction_flow(
         "17",
         "24",
         "36",
-    ]
+    ],
 ):
     """Predict absenteeism using Hamilton and Prefect
 
@@ -108,7 +109,7 @@ def absenteeism_prediction_flow(
             development_flag=True,
         ),
         label=label,
-        results_dir="./data"
+        results_dir="./data",
     )
 
     train_and_evaluate_model_task(
