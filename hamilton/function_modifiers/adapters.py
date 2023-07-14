@@ -1,11 +1,11 @@
 import inspect
 import typing
-from typing import Any, Callable, Collection, Dict, List, Tuple, Type
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type
 
 from hamilton import node
 from hamilton.function_modifiers.base import (
     InvalidDecoratorException,
-    NodeCreator,
+    NodeInjector,
     SingleNodeNodeTransformer,
 )
 from hamilton.function_modifiers.dependencies import (
@@ -101,7 +101,7 @@ def resolve_adapter_class(
             return loader_cls
 
 
-class LoadFromDecorator(NodeCreator):
+class LoadFromDecorator(NodeInjector):
     def __init__(
         self,
         loader_classes: typing.Sequence[Type[DataLoader]],
@@ -119,7 +119,28 @@ class LoadFromDecorator(NodeCreator):
         self.kwargs = kwargs
         self.inject = inject_
 
-    def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> List[node.Node]:
+    def _select_param_to_inject(self, params: List[str], fn: Callable) -> str:
+        """Chooses a parameter to inject, given the parameters available. If self.inject is None
+        (meaning we inject the only parameter), then that's the one. If it is not None, then
+        we need to ensure it is one of the available parameters, in which case we choose it."""
+        if self.inject is None:
+            if len(params) == 1:
+                return params[0]
+            raise InvalidDecoratorException(
+                f"If the nodes produced by {fn.__qualname__} require multiple inputs, "
+                f"you must pass `inject_` to the load_from decorator for "
+                f"function: {fn.__qualname__}"
+            )
+        if self.inject not in params:
+            raise InvalidDecoratorException(
+                f"Parameter {self.inject} not required by nodes produced by {fn.__qualname__}"
+            )
+        return self.inject
+
+    def inject_nodes(
+        self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
+    ) -> Optional[Collection[node.Node]]:
+        pass
         """Generates two nodes:
         1. A node that loads the data from the data source, and returns that + metadata
         2. A node that takes the data from the data source, injects it into, and runs, the function.
@@ -128,15 +149,17 @@ class LoadFromDecorator(NodeCreator):
         :param config: The configuration to use.
         :return: The resolved nodes
         """
-        inject_parameter, type_ = self._get_inject_parameter(fn)
+        inject_parameter = self._select_param_to_inject(list(params.keys()), fn)
+        load_type = params[inject_parameter]
         loader_cls = resolve_adapter_class(
-            type_,
+            load_type,
             self.loader_classes,
         )
         if loader_cls is None:
             raise InvalidDecoratorException(
-                f"No loader class found for type: {type_} specified by "
-                f"parameter: {inject_parameter} in function: {fn.__qualname__}"
+                f"If you have multiple parameters required, "
+                f"you must pass `inject_` to the load_from decorator for "
+                f"function: {fn.__qualname__}"
             )
         loader_factory = AdapterFactory(loader_cls, **self.kwargs)
         # dependencies is a map from param name -> source name
@@ -145,7 +168,6 @@ class LoadFromDecorator(NodeCreator):
         # we need to invert the dependencies so that we can pass
         # the right argument to the loader
         dependencies_inverted = {v: k for k, v in dependencies.items()}
-        inject_parameter, load_type = self._get_inject_parameter(fn)
 
         def load_data(
             __loader_factory: AdapterFactory = loader_factory,
@@ -188,35 +210,39 @@ class LoadFromDecorator(NodeCreator):
             callabl=load_data,
             typ=Tuple[Dict[str, Any], load_type],
             input_types=input_types,
-            namespace=("load_data", fn.__name__),
             tags={
                 "hamilton.data_loader": True,
+                "hamilton.data_loader.has_metadata": True,
                 "hamilton.data_loader.source": f"{loader_cls.name()}",
                 "hamilton.data_loader.classname": f"{loader_cls.__qualname__}",
+                "hamilton.data_loader.node": inject_parameter,
+            },
+            namespace=("load_data", fn.__name__),
+        )
+
+        # the filter node is the node that takes the data from the data source, filters out
+        # metadata, and feeds it in as a parameter. Note that this must have the same name as the
+        # inject parameter
+
+        def filter_function(_inject_parameter=inject_parameter, **kwargs):
+            return kwargs[loader_node.name][0]  # filter it out
+
+        filter_node = node.Node(
+            name=f"{inject_parameter}",
+            callabl=filter_function,
+            typ=load_type,
+            input_types={loader_node.name: loader_node.type},
+            tags={
+                "hamilton.data_loader": True,
+                "hamilton.data_loader.has_metadata": False,
+                "hamilton.data_loader.source": f"{loader_cls.name()}",
+                "hamilton.data_loader.classname": f"{loader_cls.__qualname__}",
+                "hamilton.data_loader.node": inject_parameter,
             },
         )
+        return [loader_node, filter_node]
 
-        # the inject node is the node that takes the data from the data source, and injects it into
-        # the function.
-
-        def inject_function(**kwargs):
-            new_kwargs = kwargs.copy()
-            new_kwargs[inject_parameter] = kwargs[loader_node.name][0]
-            del new_kwargs[loader_node.name]
-            return fn(**new_kwargs)
-
-        raw_node = node.Node.from_fn(fn)
-        new_input_types = {
-            (key if key != inject_parameter else loader_node.name): loader_node.type
-            for key, value in raw_node.input_types.items()
-        }
-        data_node = raw_node.copy_with(
-            input_types=new_input_types,
-            callabl=inject_function,
-        )
-        return [loader_node, data_node]
-
-    def _get_inject_parameter(self, fn: Callable) -> Tuple[str, Type[Type]]:
+    def _get_inject_parameter_from_function(self, fn: Callable) -> Tuple[str, Type[Type]]:
         """Gets the name of the parameter to inject the data into.
 
         :param fn: The function to decorate.
@@ -247,13 +273,15 @@ class LoadFromDecorator(NodeCreator):
         return inject, typing.get_type_hints(fn)[inject]
 
     def validate(self, fn: Callable):
-        """Validates the decorator. Currently this just cals the get_inject_parameter and
-        cascades the error which is all we know at validation time.
+        """Note that we actually do something a little clever here. While the decorator operates
+        on the nodes in the subdag, we actually validate it against the function. This ensures that
+        we're not doing a lot of weird dynamic things that inject parameters that aren't in the
+        function.
 
-        :param fn:
-        :return:
+        :param fn: Function that produces the data loader.
         """
-        inject_parameter, type_ = self._get_inject_parameter(fn)
+
+        inject_parameter, type_ = self._get_inject_parameter_from_function(fn)
         cls = resolve_adapter_class(type_, self.loader_classes)
         if cls is None:
             raise InvalidDecoratorException(
@@ -320,6 +348,17 @@ class load_from(metaclass=load_from__meta__):
         @load_from.json(path=source("raw_data_path"), inject_="data")
         def raw_data(data: dict, valid_keys: List[str]) -> dict:
             return [item for item in data if item in valid_keys]
+
+    You can also utilize multiple data loaders with separate `inject_` parameters to
+    load from multiple files.
+    data loaders to a single function:
+
+    .. code-block:: python
+
+        @load_from.json(path=source("raw_data_path"), inject_="data")
+        @load_from.json(path=source("raw_data_path2"), inject_="data2")
+        def raw_data(data: dict, data2: dict) -> dict:
+            return [item for item in data if item in data2]
 
 
     This is a highly pluggable functionality -- here's the basics of how it works:

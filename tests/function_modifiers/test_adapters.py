@@ -15,6 +15,7 @@ from hamilton.function_modifiers.adapters import (
     resolve_adapter_class,
     resolve_kwargs,
 )
+from hamilton.function_modifiers.base import DefaultNodeCreator
 from hamilton.io.data_adapters import DataLoader, DataSaver
 from hamilton.registry import LOADER_REGISTRY
 
@@ -68,14 +69,24 @@ def test_load_from_decorator():
         required_param_2=value("2"),
         required_param_3=value("3"),
     )
-    nodes = decorator.generate_nodes(fn, {})
-    assert len(nodes) == 2
+    nodes_raw = DefaultNodeCreator().generate_nodes(fn, {})
+    nodes = decorator.transform_dag(nodes_raw, {}, fn)
+    assert len(nodes) == 3
     nodes_by_name = {node_.name: node_ for node_ in nodes}
-    assert len(nodes_by_name) == 2
+    assert len(nodes_by_name) == 3
     assert "fn" in nodes_by_name
+    assert nodes_by_name["data"].tags == {
+        "hamilton.data_loader.source": "mock",
+        "hamilton.data_loader": True,
+        "hamilton.data_loader.has_metadata": False,
+        "hamilton.data_loader.node": "data",
+        "hamilton.data_loader.classname": MockDataLoader.__qualname__,
+    }
     assert nodes_by_name["load_data.fn.data"].tags == {
         "hamilton.data_loader.source": "mock",
         "hamilton.data_loader": True,
+        "hamilton.data_loader.has_metadata": True,
+        "hamilton.data_loader.node": "data",
         "hamilton.data_loader.classname": MockDataLoader.__qualname__,
     }
 
@@ -205,7 +216,7 @@ class IntDataLoader2(DataLoader):
         return [int]
 
     def load_data(self, type_: Type) -> Tuple[int, Dict[str, Any]]:
-        return 2, {"loader": "int_data_loader_class_2"}
+        return 2, {"loader": "int_data_loader_2"}
 
     @classmethod
     def name(cls) -> str:
@@ -325,6 +336,40 @@ def test_load_from_decorator_end_to_end():
     assert result["load_data.fn_str_inject.injected_data"] == (
         "foo",
         {"loader": "string_data_loader"},
+    )
+
+
+# End-to-end tests are probably cleanest
+# We've done a bunch of tests of internal structures for other decorators,
+# but that leaves the testing brittle
+# We don't test the driver, we just use the function_graph to tests the nodes
+def test_load_from_decorator_end_to_end_with_multiple():
+    @LoadFromDecorator(
+        [StringDataLoader, IntDataLoader, IntDataLoader2],
+        inject_="injected_data_1",
+    )
+    @LoadFromDecorator(
+        [StringDataLoader, IntDataLoader, IntDataLoader2],
+        inject_="injected_data_2",
+    )
+    def fn_str_inject(injected_data_1: str, injected_data_2: int) -> str:
+        return "".join([injected_data_1] * injected_data_2)
+
+    config = {}
+    adapter = base.SimplePythonGraphAdapter(base.DictResult())
+    fg = graph.FunctionGraph(
+        ad_hoc_utils.create_temporary_module(fn_str_inject), config=config, adapter=adapter
+    )
+    result = fg.execute(inputs={}, nodes=fg.nodes.values())
+    assert result["fn_str_inject"] == "foofoo"
+    assert result["load_data.fn_str_inject.injected_data_1"] == (
+        "foo",
+        {"loader": "string_data_loader"},
+    )
+
+    assert result["load_data.fn_str_inject.injected_data_2"] == (
+        2,
+        {"loader": "int_data_loader_2"},
     )
 
 
@@ -474,7 +519,7 @@ def test_adapters_optional_params():
         config={},
         adapter=base.SimplePythonGraphAdapter(base.DictResult()),
     )
-    assert len(fg) == 2
+    assert len(fg) == 3
     assert "foo" in fg
 
 
@@ -510,5 +555,27 @@ def test_load_from_with_input_from_other_fn():
         config={},
         adapter=base.SimplePythonGraphAdapter(base.DictResult()),
     )
+    assert len(fg) == 4
 
-    assert len(fg) == 3
+
+def test_load_from_with_multiple_inputs():
+    # This tests that we can refer to another node in load_from
+
+    @load_from.json(
+        path=value("input_1.json"),
+        inject_="data1",
+    )
+    @load_from.json(
+        path=value("input_2.json"),
+        inject_="data2",
+    )
+    def fn(data1: dict, data2: dict) -> dict:
+        return {**data1, **data2}
+
+    fg = graph.create_function_graph(
+        ad_hoc_utils.create_temporary_module(fn),
+        config={},
+        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+    )
+    # One filter, one loader for each and the transform function
+    assert len(fg) == 5

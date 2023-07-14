@@ -10,7 +10,7 @@ try:
 except ImportError:
     # python3.10 and above
     EllipsisType = type(...)
-from typing import Any, Callable, Collection, Dict, List, Optional, Union
+from typing import Any, Callable, Collection, Dict, List, Optional, Type, Union
 
 from hamilton import node, registry, settings
 
@@ -228,6 +228,85 @@ class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
         pass
 
 
+class NodeInjector(SubDAGModifier, abc.ABC):
+    """Injects a value as a source node in the DAG. This is a special case of the SubDAGModifier,
+    which gets all the upstream (required) nodes from the subdag and gives the decorator a chance
+    to inject values into them.
+
+    This is used when you want to feed in, say, some parameter to a function. For instance:
+
+        def processed_data(data: pd.DataFrame) -> pd.DataFrame:
+            ...
+
+    on its own would produce the "user-defined" node data, which the user is expected to pass in.
+    The NodeInjector know sthat this is a parameter of the DAG and has the chance to provide a value
+    for "data".
+    """
+
+    @staticmethod
+    def find_injectable_params(nodes: Collection[node.Node]) -> Dict[str, Type[Type]]:
+        """Identifies required nodes of this subDAG (nodes produced by this function)
+        that aren't satisfied by the nodes inside it. These are "injectable",
+        meaning that we can add more nodes that feed into them.
+
+        Note that these would be "user-defined" if nothing satisfied them --
+        in this case we're finding them to give this class a chance to feed them values.
+
+        :param nodes: Subdag to consider
+        :return: All dependencies that are not satisfied by the subdag.
+        """
+        output_deps = {}
+        node_names = {node_.name for node_ in nodes}
+        for node_ in nodes:
+            for param_name, (type_, _) in node_.input_types.items():
+                if param_name not in node_names:
+                    output_deps[param_name] = type_
+        return output_deps
+
+    def transform_dag(
+        self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
+        """Transforms the subDAG by getting the injectable parameters (anything not
+        produced by nodes inside it), then calling the inject_nodes function on it.
+
+        :param nodes:
+        :param config:
+        :param fn:
+        :return:
+        """
+        injectable_params = NodeInjector.find_injectable_params(nodes)
+        out = list(nodes)
+        out.extend(self.inject_nodes(injectable_params, config, fn))
+        return out
+
+    @abc.abstractmethod
+    def inject_nodes(
+        self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
+    ) -> List[node.Node]:
+        """Adds a set of nodes to inject into the DAG. These get injected into the specified param name,
+        meaning that exactly one of the output nodes will have that name.
+
+        :param params: Dictionary of all the type names one wants to inject
+        :param config: Configuration with which the DAG was constructed.
+        :param fn: original function we're decorating. This is useful largely for debugging.
+        :return: A list of nodes to add. Empty if you wish to inject nothing
+        """
+
+        pass
+
+    @classmethod
+    def get_lifecycle_name(cls) -> str:
+        return "inject"
+
+    @classmethod
+    def allows_multiple(cls) -> bool:
+        return True
+
+    @abc.abstractmethod
+    def validate(self, fn: Callable):
+        pass
+
+
 class NodeExpander(SubDAGModifier):
     """Expands a node into multiple nodes. This is a special case of the SubDAGModifier,
     which allows modification of some portion of the DAG. This just modifies a single node."""
@@ -239,7 +318,8 @@ class NodeExpander(SubDAGModifier):
     ) -> Collection[node.Node]:
         if len(nodes) != 1:
             raise ValueError(
-                f"Cannot call NodeExpander: {self.__class__} on more than one node. This must be called first in the DAG. Called with {nodes}"
+                f"Cannot call NodeExpander: {self.__class__} on more than one node. This must be "
+                f"called first in the DAG. Called with {nodes} "
             )
         (node_,) = nodes
         return self.expand_node(node_, config, fn)
@@ -629,6 +709,7 @@ def get_node_decorators(
         NodeCreator.get_lifecycle_name(): [DefaultNodeCreator()],
         NodeExpander.get_lifecycle_name(): [],
         NodeTransformer.get_lifecycle_name(): [],
+        NodeInjector.get_lifecycle_name(): [],
         NodeDecorator.get_lifecycle_name(): [DefaultNodeDecorator()],
     }
     dynamic_decorators = []
@@ -713,6 +794,9 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
                 return []
         (node_creator,) = function_decorators[NodeCreator.get_lifecycle_name()]
         nodes = node_creator.generate_nodes(fn, filter_config(config, node_creator))
+        node_injectors = function_decorators[NodeInjector.get_lifecycle_name()]
+        for node_injector in node_injectors:
+            nodes = node_injector.transform_dag(nodes, filter_config(config, node_injector), fn)
         node_expanders = function_decorators[NodeExpander.get_lifecycle_name()]
         if len(node_expanders) > 0:
             (node_expander,) = node_expanders
