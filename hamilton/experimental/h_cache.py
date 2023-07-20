@@ -168,6 +168,9 @@ class CachingAdapter(SimplePythonGraphAdapter):
      * any of its (potentially transitive) dependencies that are configured to be cached
        was nevertheless computed (either forced or missing cached file).
 
+    Custom Serializers
+    ------------------
+
     One can provide custom readers and writers for any format by passing them to the constructor.
     These readers and writers will override the default ones. If you don't want to override, but
     rather extend the default ones, you can do so by registering them with the `register` method
@@ -182,6 +185,59 @@ class CachingAdapter(SimplePythonGraphAdapter):
     `def read_<format>(data: Any, filepath: str) -> Any: ...`
     where `data` is an EMPTY OBJECT of the type you wish to instantiate, and `filepath` is the
     path to the file to be read from.
+
+    For example, if you want to extend JSON reader/writer to work with your custom type `T`,
+    you can do the following:
+
+    .. code-block:: python
+
+        @write_json.register(T)
+        def write_json_pd1(data: T, filepath: str, name: str) -> None:
+            ...
+
+        @read_json.register(T)
+        def read_json_dict(data: T, filepath: str) -> T:
+            ...
+
+    Usage
+    -----
+
+    This is a simple example of the usage of `CachingAdapter`.
+
+    First, let's define some nodes in `nodes.py`:
+
+    .. code-block:: python
+        import pandas as pd
+
+        def data_a() -> pd.DataFrame:
+            ...
+
+        @tag(cache="parquet")
+        def data_b() -> pd.DataFrame:
+            ...
+
+        def transformed(data_a: pd.DataFrame, data_b: pd.DataFrame) -> pd.DataFrame:
+            ...
+
+    Notice that `data_b` is configured to be cached in a parquet file.
+
+    We then simply initialize the driver with a caching adapter:
+
+    .. code-block:: python
+
+        from hamilton import base
+        from hamilton.driver import Driver
+        from hamilton.experimental import h_cache
+
+        import nodes
+
+        adapter = h_cache.CachingAdapter(cache_path, base.PandasDataFrameResult())
+        dr = Driver(config, nodes, adapter=adapter)
+        result = dr.execute(["transformed"])
+
+        # Because `data_b` has been cached now, only `data_a` and `transformed` nodes
+        # will actually run.
+        result = dr.execute(["transformed"])
     """
 
     def __init__(
