@@ -189,8 +189,8 @@ class CachingAdapter(SimplePythonGraphAdapter):
         cache_path: str,
         *args,
         force_compute: Optional[Set[str]] = None,
-        writers: Optional[Dict[str, Callable[[Any, str], None]]] = None,
-        readers: Optional[Dict[str, Callable[[str], Any]]] = None,
+        writers: Optional[Dict[str, Callable[[Any, str, str], None]]] = None,
+        readers: Optional[Dict[str, Callable[[Any, str], Any]]] = None,
         **kwargs,
     ):
         """Constructs the adapter.
