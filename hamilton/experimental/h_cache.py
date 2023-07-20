@@ -316,13 +316,18 @@ class CachingAdapter(SimplePythonGraphAdapter):
             explicitly_forced = node.name in self.force_compute
             if explicitly_forced or implicitly_forced or not os.path.exists(filepath):
                 result = node.callable(**kwargs)
-                print(
-                    f"Writing cache for {node.name} to {filepath} with type {type(result)} to {cache_format}"
+                logger.debug(
+                    "Writing cache for %s to %s with type %s to %s",
+                    node.name, filepath, type(result), cache_format,
                 )
                 self._write_cache(cache_format, result, filepath, node.name)
                 self.computed_nodes.add(node.name)
                 return result
             empty_expected_type = self._get_empty_expected_type(node.type)
+            logger.debug(
+                "Reading cache for %s from %s with type %s to %s",
+                node.name, filepath, type(empty_expected_type), cache_format,
+            )
             return self._read_cache(cache_format, empty_expected_type, filepath)
 
         if implicitly_forced:
