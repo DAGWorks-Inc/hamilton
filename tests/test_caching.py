@@ -45,7 +45,7 @@ def test_json(tmp_path):
 
 def test_unknown_format(tmp_path):
     cache_path = str(tmp_path)
-    adapter = h_cache.CachingAdapter(cache_path, base.DictResult())
+    adapter = h_cache.CachingGraphAdapter(cache_path, base.DictResult())
     data = {"a": 1, "b": 2}
     filepath = tmp_path / "file.xyz"
     with pytest.raises(ValueError) as err:
@@ -58,7 +58,7 @@ def test_unknown_format(tmp_path):
 
 def test_init_default_readers_writers(tmp_path):
     cache_path = str(tmp_path / "data")
-    adapter = h_cache.CachingAdapter(cache_path, base.DictResult())
+    adapter = h_cache.CachingGraphAdapter(cache_path, base.DictResult())
     assert adapter.writers == {
         "json": h_cache.write_json,
         "feather": h_cache.write_feather,
@@ -84,7 +84,7 @@ def write_str(data: str, filepath: str, name: str) -> None:
 def test_caching(tmp_path, caplog):
     caplog.set_level(logging.INFO)
     cache_path = str(tmp_path)
-    adapter = h_cache.CachingAdapter(
+    adapter = h_cache.CachingGraphAdapter(
         cache_path,
         base.DictResult(),
         readers={"str": read_str},
@@ -119,7 +119,7 @@ def test_caching(tmp_path, caplog):
     caplog.clear()
 
     # now we force-compute one of the dependencies
-    adapter = h_cache.CachingAdapter(
+    adapter = h_cache.CachingGraphAdapter(
         cache_path,
         base.DictResult(),
         readers={"str": read_str},
@@ -142,7 +142,7 @@ def test_caching(tmp_path, caplog):
 def test_dispatch(tmp_path, caplog):
     caplog.set_level(logging.INFO)
     cache_path = str(tmp_path)
-    adapter = h_cache.CachingAdapter(
+    adapter = h_cache.CachingGraphAdapter(
         cache_path,
         base.PandasDataFrameResult(),
     )
@@ -181,7 +181,7 @@ def test_dispatch(tmp_path, caplog):
     caplog.clear()
 
     # now we force-compute one of the dependencies
-    adapter = h_cache.CachingAdapter(
+    adapter = h_cache.CachingGraphAdapter(
         cache_path,
         base.PandasDataFrameResult(),
         force_compute={"my_df"},

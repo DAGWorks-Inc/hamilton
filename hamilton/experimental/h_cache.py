@@ -156,7 +156,7 @@ def read_json_dict(data: dict, filepath: str) -> dict:
         return json.load(file)
 
 
-class CachingAdapter(SimplePythonGraphAdapter):
+class CachingGraphAdapter(SimplePythonGraphAdapter):
     """Caching adapter.
 
     Any node with tag "cache" will be cached (or loaded from cache) in the format defined by the
