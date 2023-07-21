@@ -208,6 +208,7 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
 
     .. code-block:: python
         import pandas as pd
+        from hamilton.function_modifiers import tag
 
         def data_a() -> pd.DataFrame:
             ...
