@@ -68,7 +68,7 @@ def train_and_evaluate_model_task(
 # this way, we prevent having constants being hardcoded in the flow or task body
 @flow(
     name="hamilton-absenteeism-prediction",
-    description="Predict absenteeism using Hamilton and Airflow",
+    description="Predict absenteeism using Hamilton and Prefect",
 )
 def absenteeism_prediction_flow(
     raw_data_location: str = "./data/Absenteeism_at_work.csv",
