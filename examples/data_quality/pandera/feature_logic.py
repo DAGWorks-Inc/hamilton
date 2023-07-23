@@ -95,7 +95,7 @@ def seasons_encoded__base(seasons: pd.Series) -> pd.DataFrame:
     3 - third season
     4 - fourth season
     """
-    return pd.get_dummies(seasons, prefix="seasons")
+    return pd.get_dummies(seasons, prefix="seasons", dtype=np.uint8)
 
 
 @check_output(schema=seasons_encoded_schema)
@@ -110,7 +110,7 @@ def seasons_encoded__dask(seasons: pd.Series) -> pd.DataFrame:
     import dask.dataframe as dd
 
     categorized = seasons.astype(str).to_frame().categorize()
-    df = dd.get_dummies(categorized, prefix="seasons")
+    df = dd.get_dummies(categorized, prefix="seasons", dtype=np.uint8)
     return df
 
 
@@ -165,7 +165,7 @@ def day_of_week_encoded__base(day_of_the_week: pd.Series) -> pd.DataFrame:
     """One hot encodes day of week into five dimensions -- Saturday & Sunday weren't present.
     1 - Sunday, 2 - Monday, 3 - Tuesday, 4 - Wednesday, 5 - Thursday, 6 - Friday, 7 - Saturday.
     """
-    return pd.get_dummies(day_of_the_week, prefix="day_of_the_week")
+    return pd.get_dummies(day_of_the_week, prefix="day_of_the_week", dtype=np.uint8)
 
 
 @check_output(schema=day_of_week_encoded_schema)
@@ -177,7 +177,7 @@ def day_of_week_encoded__dask(day_of_the_week: pd.Series) -> pd.DataFrame:
     import dask.dataframe as dd
 
     categorized = day_of_the_week.astype(str).to_frame().categorize()
-    df = dd.get_dummies(categorized, prefix="day_of_the_week")
+    df = dd.get_dummies(categorized, prefix="day_of_the_week", dtype=np.uint8)
     return df
 
 
