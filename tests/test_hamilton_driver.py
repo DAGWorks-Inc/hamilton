@@ -188,7 +188,7 @@ def test_capture_execute_telemetry_none_values(send_event_json):
     assert len(send_event_json.call_args_list) == 2
 
 
-def test__node_is_required_by_anything():
+def test_node_is_required_by_anything():
     """Tests that default args are correctly interpreted.
 
     Specifically, if it's not in the execution path then things should
@@ -222,7 +222,7 @@ def test_using_callables_to_execute():
         dr.execute([tests.resources.cyclic_functions.B])
 
 
-def test__create_final_vars():
+def test_create_final_vars():
     """Tests that the final vars are created correctly."""
     dr = Driver({"required": 1}, tests.resources.test_default_args)
     actual = dr._create_final_vars(
@@ -237,7 +237,7 @@ def test__create_final_vars():
     assert actual == expected
 
 
-def test__create_final_vars_errors():
+def test_create_final_vars_errors():
     """Tests that we catch functions pointed to in modules that aren't part of the DAG."""
     dr = Driver({"required": 1}, tests.resources.test_default_args)
     with pytest.raises(ValueError):
@@ -246,7 +246,7 @@ def test__create_final_vars_errors():
         )
 
 
-def test__get_nodes_between():
+def test_get_nodes_between():
     """Tests that we get the correct nodes on the path between two nodes inclusive."""
     dr = Driver({}, tests.resources.test_default_args)
     actual_path = dr._get_nodes_between("required", "C")
@@ -254,7 +254,7 @@ def test__get_nodes_between():
     assert actual_path == expected_path
 
 
-def test__get_nodes_between_no_path():
+def test_get_nodes_between_no_path():
     """Tests that we return empty if no path exists."""
     dr = Driver({}, tests.resources.test_default_args)
     actual_path = dr._get_nodes_between("C", "required")
