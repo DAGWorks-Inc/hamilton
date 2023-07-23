@@ -404,6 +404,7 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Avnish Pal (@bovem)
 - Sarah Haskins (@frenchfrywpepper)
 - Thierry Jean (@zilto)
+- Michał Siedlaczek (@elshize)
 
 ## Bug Hunters/Special Mentions
 - Nils Olsson (@nilsso)
