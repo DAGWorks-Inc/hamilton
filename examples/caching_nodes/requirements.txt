@@ -1,0 +1,3 @@
+pandas
+pyarrow
+sf-hamilton >= 1.24.0

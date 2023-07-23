@@ -8,6 +8,7 @@ This section helps determine ways to execute Hamilton.
    :maxdepth: 2
 
    AsyncGraphAdapter
+   CachingGraphAdapter
    DaskGraphAdapter
    HamiltonGraphAdapter
    PySparkUDFGraphAdapter
