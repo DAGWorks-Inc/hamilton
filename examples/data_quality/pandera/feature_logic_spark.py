@@ -87,7 +87,7 @@ def seasons_encoded(seasons: pd.Series) -> pd.DataFrame:
     3 - third season
     4 - fourth season
     """
-    return ps.get_dummies(seasons, prefix="seasons")
+    return ps.get_dummies(seasons, prefix="seasons", dtype=np.uint8)
 
 
 seasons_schema = pa.SeriesSchema(
@@ -140,7 +140,7 @@ def day_of_week_encoded(day_of_the_week: pd.Series) -> pd.DataFrame:
     """One hot encodes day of week into five dimensions -- Saturday & Sunday weren't present.
     1 - Sunday, 2 - Monday, 3 - Tuesday, 4 - Wednesday, 5 - Thursday, 6 - Friday, 7 - Saturday.
     """
-    return ps.get_dummies(day_of_the_week, prefix="day_of_the_week")
+    return ps.get_dummies(day_of_the_week, prefix="day_of_the_week", dtype=np.uint8)
 
 
 day_of_week_schema = pa.SeriesSchema(
