@@ -22,9 +22,7 @@ class NodeGroupPurpose(enum.Enum):
     EXPAND_UNORDERED = "expand_unordered"  # DAG that ends in a parameter for the next subdag to
     GATHER = "gather"  # DAG that begins in the collection of a parallel block
     EXECUTE_BLOCK = "execute_block"  # DAG that is a standard block of nodes
-    EXECUTE_SINGLE = "execute_single"  # DAG that is just a single node --
-
-    # streamlined to execute individually
+    EXECUTE_SINGLE = "execute_single"  # DAG that is just a single node
 
     def is_expander(self):
         return self.value in ["expand_unordered"]
@@ -40,7 +38,6 @@ class NodeGroup:
     Note that this has the following properties:
     1. ID is unique across all node groups
     2. Nodes are unique across all node groups (one node to group)
-    3. Nodes are ordered in a valid topological (execution) order
     """
 
     base_id: str  # Unique ID for node group.
@@ -79,7 +76,7 @@ class NodeGroup:
 
 @dataclasses.dataclass
 class TaskSpec(NodeGroup):
-    """Represents the spec for a task. This has no actual inpt/output data associated with it,
+    """Represents the spec for a task. This has no actual input/output data associated with it,
     but has information needed to know how one might execute.
 
     You can think of this as a "template" for a task, where the inputs are not yet known.

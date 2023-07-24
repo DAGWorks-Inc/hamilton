@@ -6,7 +6,7 @@ eventually and focusing entirely on the new way. If you're just getting started 
 here and then go onto the new driver. If you're looking to distribute/scale up your compute, jump
 ahead to the new driver.
 
-The driver
+The Driver
 ----------------------------------
 The old Hamilton Driver by default has the following behaviors:
 
@@ -88,7 +88,7 @@ You have two options:
 By passing in ``base.DictResult()`` we are telling Hamilton that the result of ``execute()`` should be a dictionary with
 a map of ``output`` to computed result.
 
-The new driver
+Dynamic DAGs/Parallel Execution
 ----------------------------------
 
 The new Hamilton Driver allows for the following capabilities:
@@ -99,7 +99,7 @@ The new Hamilton Driver allows for the following capabilities:
 While this is still new and does not yet have too many out-of-the-box node-grouping strategies and execution mechanisms
 this is extremely powerful, and will be the only driver in hamilton 2.0.
 
-You can run this executor using the `DriverBuilder`, a utility class that allows you to build a driver piece by piece.
+You can run this executor using the `Builder`, a utility class that allows you to build a driver piece by piece.
 Note that you currently have to call `enable_v2_driver(allow_experimental_mode=True)`
 which will toggle it to use the `V2` driver. Then, you can:
 
@@ -121,7 +121,7 @@ Let's look at an example of the driver:
 
     from hamilton import driver
     from hamilton.execution import executors
-    dr = driver.DriverBuilder().
+    dr = driver.Builder().
         with_modules(foo_module).
         with_config({"config_key" : "config_value"}).
         with_local_executor(executors.SynchronousLocalTaskExecutor()).
@@ -153,6 +153,7 @@ Thus, when you write a DAG like this (a simple map-reduce pattern):
 The block containing `counts` and `url_loaded` will get marked as one task, repeated for each URL in url_loaded,
 and run on the remote executor (which in this case is the `ThreadPoolExecutor`).
 
-Also, note that adapters are not supported in this driver, and instead will be replaced by a fix of functionality.
+Also, note that adapters are not supported in this driver, and instead will be replaced by a fix of functionality
+that will form a superset of the current capabilities of the adapter, including execution/graph construction hooks.
 
-The rest of the driver is largely similir to the old driver -- same arguments and same return types.
+The rest of the driver is largely similar to the old driver -- same arguments and same return types.

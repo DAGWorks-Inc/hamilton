@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 import logging
-from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import Executor, Future, ProcessPoolExecutor, ThreadPoolExecutor
 from typing import Any, Callable, Dict, List
 
 from hamilton.execution.graph_functions import execute_subdag
@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass
 class TaskFuture:
+    """Simple representation of a future. TODO -- add cancel().
+    This a clean wrapper over a python future, and we may end up just using that at some point."""
+
     get_state: Callable[[], TaskState]
     get_result: Callable[[], Any]
 
@@ -23,10 +26,13 @@ class TaskExecutor(abc.ABC):
 
     @abc.abstractmethod
     def init(self):
+        """Initializes the task executor, provisioning any necessary resources."""
         pass
 
     @abc.abstractmethod
     def finalize(self):
+        """Tears down the task executor, freeing up any provisioned resources.
+        Will be called in a finally block."""
         pass
 
     @abc.abstractmethod
@@ -34,8 +40,8 @@ class TaskExecutor(abc.ABC):
         """Submits a task to the executor. Returns a task ID that can be used to query the status.
         Effectively a future.
 
-        :param task:
-        :return:
+        :param task: Task implementation (bound with arguments) to submit
+        :return: The future representing the task's computation.
         """
         pass
 
@@ -59,8 +65,8 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
     We should probably have a simple way of doing this for single-node tasks, as they're
     going to be common.
 
-    :param task:
-    :return:
+    :param task: task to execute.
+    :return: a diciontary of the results of all the nodes in that task's nodes to compute.
     """
     return execute_subdag(
         nodes=task.nodes,
@@ -77,8 +83,8 @@ class SynchronousLocalTaskExecutor(TaskExecutor):
     def submit_task(self, task: TaskImplementation) -> TaskFuture:
         """Submitting a task is literally just running it.
 
-        :param task:
-        :return:
+        :param task: Task to submit
+        :return: Future associated with this task
         """
         # No error management for now
         result = base_execute_task(task)
@@ -86,7 +92,6 @@ class SynchronousLocalTaskExecutor(TaskExecutor):
 
     def can_submit_task(self) -> bool:
         """We can always submit a task as the task submission is blocking!
-        Your fault if you call us too much.
 
         :return: True
         """
@@ -106,6 +111,8 @@ class TaskFutureWrappingPythonFuture(TaskFuture):
         self.future = future
 
     def get_state(self):
+        """Gets the state. This is non-blocking."""
+
         if self.future.done():
             try:
                 self.future.result()
@@ -117,6 +124,10 @@ class TaskFutureWrappingPythonFuture(TaskFuture):
             return TaskState.RUNNING
 
     def get_result(self):
+        """Gets the result. This is non-blocking.
+
+        :return: None if there is no result, else the result
+        """
         if not self.future.done():
             return None
         out = self.future.result()
@@ -124,24 +135,29 @@ class TaskFutureWrappingPythonFuture(TaskFuture):
 
 
 class PoolExecutor(TaskExecutor, abc.ABC):
+    """Base class for a pool-based executor (threadpool executor/multiprocessing executor).
+    Handles common logic, stores active future, and manages max tasks.
+    """
+
     def __init__(self, max_tasks: int):
         self.active_futures = []
         self.initialized = False
         self.pool = None
-        self.max_tasks = max_tasks
+        self.max_tasks = max_tasks  # TODO -- allow infinite/no max.
 
     def _prune_active_futures(self):
         self.active_futures = [f for f in self.active_futures if not f.done()]
 
     @abc.abstractmethod
-    def create_pool(self) -> Any:
+    def create_pool(self) -> Executor:
         """Creates a pool to submit tasks to.
 
-        :return:
+        :return: The executor to handle all the tasks in the pool
         """
         pass
 
     def init(self):
+        """Creates/initializes pool"""
         if not self.initialized:
             self.pool = self.create_pool()
             self.initialized = True
@@ -149,6 +165,7 @@ class PoolExecutor(TaskExecutor, abc.ABC):
             raise RuntimeError("Cannot initialize an already initialized executor")
 
     def finalize(self):
+        """Finalizes pool, freeing up resources"""
         if self.initialized:
             self.pool.shutdown()
             self.initialized = False
@@ -158,8 +175,8 @@ class PoolExecutor(TaskExecutor, abc.ABC):
     def submit_task(self, task: TaskImplementation) -> TaskFuture:
         """Submitting a task is literally just running it.
 
-        :param task:
-        :return:
+        :param task: Task to submit
+        :return: The future associated with the task
         """
         # First submit it
         # Then we need to wrap it in a future
@@ -168,11 +185,11 @@ class PoolExecutor(TaskExecutor, abc.ABC):
         return TaskFutureWrappingPythonFuture(future)
 
     def can_submit_task(self) -> bool:
-        """We can always submit a task as the task submission is blocking!
-        Your fault if you call us too much.
+        """Tells if the pool is full or not.
 
-        :return: True
+        :return:
         """
+
         self._prune_active_futures()
         return len(self.active_futures) < self.max_tasks
 
@@ -284,8 +301,14 @@ class GraphRunner:
         self.task_futures = {}
 
     def run_until_complete(self):
-        # TODO -- get this to return a task result
-        """Blocking call to run through until completion"""
+        """Blocking call to run the graph until it is complete. Note that this employs a while loop.
+        With the way we handle futures, we should be able to have this event-driven, allowing us
+        to only query when the state is updated, and use that to trigger a new update.
+
+        For now, the while loop is fine.
+
+        :return: Nothing, places results in the result cache.
+        """
         # Until the graph is done
         self.execution_manager.init()
         try:
