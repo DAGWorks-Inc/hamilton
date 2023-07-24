@@ -50,6 +50,38 @@ OK, but this still doesn't address the problem of reuse. How can we make our cod
 the Hamilton framework, this is not an inherent trade-off.** By using :doc:`decorators <decorators-overview>`
 and :ref:`parameterizing your dataflow <parameterizing-the-dag>`, you can both have your cake and eat it too.
 
+Dynamic DAGs
+----------------------------
+
+Hamilton supports limited dynamism in DAG creation. While we believe that most workflows should be somewhat static
+(and dynamism should be orchestrated eternal to the definition), we support the ability to parallelize over a set of
+previous nodes. You do this by marking a function that returns a list as having an output type `Parallelizable[]`, and
+downstream marking the input type as `Collect`.
+
+For example:
+
+.. code-block:: python
+
+    from hamilton.htypes import Parallelizable, Collect
+
+    def site_to_crawl() -> Parallelizable[str]:
+        return ["hamilton.readthedocs.io", "tryhamilton.dev", "..."]
+
+
+    def loaded_homepage(site_to_crawl: str) -> str:
+        return _load(site_to_crawl)
+
+    def home_page_size(loaded_homepage: str) -> int:
+        return _get_size(load_homepage)
+
+    def total_size(home_page_size: Collect[int]) -> int:
+        return sum(home_page_size)
+
+In this case the `site_to_crawl` function indicates that we should run `loaded_homepage` and `home_page_size`
+with each value that `site_to_crawl` returns. The `Collect` type indicates that we join all of the previous items.
+
+Note you'll need the :ref:`new driver <concepts/customizing-execution/#the-new-driver>` to take advantage of parallelism.
+
 Modules and Helper Functions
 ----------------------------
 

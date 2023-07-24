@@ -1,7 +1,14 @@
 Customizing Execution
 ----------------------------------
 
-The stock Hamilton Driver by default has the following behaviors:
+There are now two ways to customize execution -- we will be phasing out the old way
+eventually and focusing entirely on the new way. If you're just getting started -- read from
+here and then go onto the new driver. If you're looking to distribute/scale up your compute, jump
+ahead to the new driver.
+
+The driver
+----------------------------------
+The old Hamilton Driver by default has the following behaviors:
 
 #. It is single threaded, and runs on the machine you call execute from.
 #. It is limited to the memory available on your machine.
@@ -81,12 +88,71 @@ You have two options:
 By passing in ``base.DictResult()`` we are telling Hamilton that the result of ``execute()`` should be a dictionary with
 a map of ``output`` to computed result.
 
-Scaling Hamilton: Multi-core & Distributed Execution
-****************************************************
+The new driver
+----------------------------------
 
-This functionality is currently in an "experimental" state. We think the code is solid, but it hasn't been used in a
-production environment for long. Thus the API to these GraphAdapters might change.
+The new Hamilton Driver allows for the following capabilities:
 
-See the `experimental <https://github.com/dagworks-inc/hamilton/tree/main/hamilton/experimental>`_ package for the current
-implementations. We encourage you to give them a spin and provide us with feedback. See
-:doc:`../reference/graph-adapters/index` for more details.
+1. Grouping of nodes into "tasks" (discrete execution unit between serialization boundaries)
+2. Executing the tasks in parallel, using any executor of your choice
+
+While this is still new and does not yet have too many out-of-the-box node-grouping strategies and execution mechanisms
+this is extremely powerful, and will be the only driver in hamilton 2.0.
+
+You can run this executor using the `DriverBuilder`, a utility class that allows you to build a driver piece by piece.
+Note that you currently have to call `enable_v2_driver(allow_experimental_mode=True)`
+which will toggle it to use the `V2` driver. Then, you can:
+
+1. Add task executors to specify how to run the tasks
+2. Add node gropuing strategies
+3. Add modules to crawl for functions
+4. Add a results builder to shape the results
+
+You can also access the old driver by not calling `enable_v2_driver`, which will give you the same capabilities
+as described below.
+
+Note that the new driver is required to handle dynamic creation of nodes (E.G. using `Parallelizable[]` and `Collect[]`.
+
+Let's look at an example of the driver:
+
+.. code-block:: python
+
+    from my_code import foo_module, bar_module
+
+    from hamilton import driver
+    from hamilton.execution import executors
+    dr = driver.DriverBuilder().
+        with_modules(foo_module).
+        with_config({"config_key" : "config_value"}).
+        with_local_executor(executors.SynchronousLocalTaskExecutor()).
+        with_remote_executor(executors.MultiProcessingExecutor(max_tasks=5))
+        .build()
+
+    dr.execute(['my_variable'], inputs={...}, overrides={...})
+
+Note that we set a `remote` executor, and a local executor. While you can bypass this and instead set an `execution_manager`
+in the builder call, this goes along with the default grouping strategy, which is to place each node in its own group, except for
+dynamically generated (`Parallelizable[]`) blocks, which are each made into one group, and executed locally.
+
+Thus, when you write a DAG like this (a simple map-reduce pattern):
+
+.. code-block:: python
+
+    def url() -> Parallelizable[str]:
+        return _list_all_urls()
+
+    def url_loaded(url: str) -> str:
+        return _load(urls)
+
+    def counts(url_loaded: str) -> str:
+        return len(url_loaded.split(" "))
+
+    def total_words(counts: Collect[int]) -> int:
+        return sum(counts)
+
+The block containing `counts` and `url_loaded` will get marked as one task, repeated for each URL in url_loaded,
+and run on the remote executor (which in this case is the `ThreadPoolExecutor`).
+
+Also, note that adapters are not supported in this driver, and instead will be replaced by a fix of functionality.
+
+The rest of the driver is largely similir to the old driver -- same arguments and same return types.
