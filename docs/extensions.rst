@@ -8,6 +8,10 @@ creating optimized machine code, controlling return object types.
 Scaling Hamilton: Parallel & Distributed Computation
 ----------------------------------------------------
 
+*Note that the following is still available, but we have a far more sophisticated capability for carrying this out!*
+
+See :doc:`concepts/customizing-execution` for more information.
+
 Hamilton by default runs in a single process and single threaded manner.
 
 Wouldn't it be great if it could execute computation in parallel if it could? Or, if you could scale to data sets that
