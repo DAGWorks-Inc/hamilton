@@ -42,7 +42,7 @@ def multi_threading_executor_factory():
 )
 def test_end_to_end_parallel_execute_group_individually(executor_factory):
     dr = (
-        driver.DriverBuilder()
+        driver.Builder()
         .with_modules(no_parallel)
         .enable_v2_driver(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
@@ -63,7 +63,7 @@ def test_end_to_end_parallel_execute_group_individually(executor_factory):
 )
 def test_executors_group_all_as_one(executor_factory):
     dr = (
-        driver.DriverBuilder()
+        driver.Builder()
         .with_modules(no_parallel)
         .enable_v2_driver(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
@@ -85,7 +85,7 @@ def test_executors_group_all_as_one(executor_factory):
 )
 def test_executors_group_by_level(executor_factory):
     dr = (
-        driver.DriverBuilder()
+        driver.Builder()
         .with_modules(no_parallel)
         .enable_v2_driver(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
@@ -106,7 +106,7 @@ def test_executors_group_by_level(executor_factory):
 )
 def test_end_to_end_parallel_execute_group_by_repeatable_blocks(executor_factory):
     dr = (
-        driver.DriverBuilder()
+        driver.Builder()
         .with_modules(parallel_linear_basic)
         .enable_v2_driver(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
@@ -122,7 +122,7 @@ def test_end_to_end_parallel_execute_group_by_repeatable_blocks(executor_factory
 )
 def test_parallelism_would_take_too_long_with_no_parallelism(executor_factory):
     dr = (
-        driver.DriverBuilder()
+        driver.Builder()
         .with_modules(parallel_delayed)
         .enable_v2_driver(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
@@ -130,7 +130,7 @@ def test_parallelism_would_take_too_long_with_no_parallelism(executor_factory):
         .build()
     )
     t0 = time.time()
-    delay_seconds = 1
+    delay_seconds = 1.0
     number_of_steps = 30
     result = dr.execute(
         ["final"], inputs={"delay_seconds": delay_seconds, "number_of_steps": number_of_steps}
@@ -151,7 +151,7 @@ def test_parallelism_would_take_too_long_with_no_parallelism(executor_factory):
 )
 def test_end_to_end_block_has_external_dependencies(executor_factory):
     dr = (
-        driver.DriverBuilder()
+        driver.Builder()
         .with_modules(parallel_complex)
         .enable_v2_driver(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
@@ -172,7 +172,7 @@ def test_end_to_end_block_has_external_dependencies(executor_factory):
 )
 def test_end_to_end_with_overrides(executor_factory):
     dr = (
-        driver.DriverBuilder()
+        driver.Builder()
         .with_modules(parallel_complex)
         .enable_v2_driver(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())

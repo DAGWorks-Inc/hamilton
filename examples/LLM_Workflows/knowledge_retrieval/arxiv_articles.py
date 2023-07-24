@@ -44,7 +44,7 @@ def arxiv_result_embedding(
     title: str,
     embedding_model_name: str,
 ) -> list[float]:
-    """Generates a pd.Series of embeddings, indexed by title for each arxiv search result.
+    """Generates an embedding, indexed by title for each arxiv search result.
 
     :param title of the arxiv search result:
     :param embedding_model_name: the name of the embedding model to use.
@@ -59,7 +59,7 @@ def arxiv_pdf(arxiv_search_result: arxiv.Result, data_dir: str) -> str:
 
     :param arxiv_search_result: search result object.
     :param data_dir: the directory to save the PDFs to.
-    :return: a pd.Series of the filepaths to the PDFs, indexed by title.
+    :return: The filepath to the pdf after downloading
     """
     if not os.path.exists(data_dir):
         os.path.makedirs(data_dir)
@@ -86,7 +86,7 @@ def arxiv_processed_result(
 
 
 def arxiv_result_df(arxiv_processed_result: Collect[Dict[str, str]]) -> pd.DataFrame:
-    """Joines the arxiv results back to a dataframe.
+    """Joins the arxiv results back to a dataframe.
 
     :param arxiv_processed_result: result of all the joined arxiv result information
     :return:  a dataframe with the arxiv results.

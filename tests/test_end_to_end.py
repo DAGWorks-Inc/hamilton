@@ -16,7 +16,7 @@ from hamilton.execution import executors, grouping
     [
         (lambda: driver.Driver({}, tests.resources.data_quality), "raw_execute"),
         (
-            lambda: driver.DriverBuilder()
+            lambda: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_modules(tests.resources.data_quality)
             .with_remote_executor(executors.MultiThreadingExecutor(max_tasks=3))
@@ -25,7 +25,7 @@ from hamilton.execution import executors, grouping
             "execute",
         ),
         (
-            lambda: driver.DriverBuilder()
+            lambda: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
@@ -60,7 +60,7 @@ def test_data_quality_workflow_passes(
     [
         (lambda: driver.Driver({}, tests.resources.data_quality), "raw_execute"),
         (
-            lambda: driver.DriverBuilder()
+            lambda: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_modules(tests.resources.data_quality)
             .with_remote_executor(executors.MultiThreadingExecutor(max_tasks=3))
@@ -69,7 +69,7 @@ def test_data_quality_workflow_passes(
             "execute",
         ),
         (
-            lambda: driver.DriverBuilder()
+            lambda: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
@@ -107,7 +107,7 @@ def modify_and_import(module_name, package, modification_func):
     [
         (lambda modules: driver.Driver({"region": "US"}, *modules), False, "raw_execute"),
         (
-            lambda modules: driver.DriverBuilder()
+            lambda modules: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_modules(*modules)
             .with_remote_executor(executors.MultiThreadingExecutor(max_tasks=3))
@@ -118,7 +118,7 @@ def modify_and_import(module_name, package, modification_func):
             "execute",
         ),
         (
-            lambda modules: driver.DriverBuilder()
+            lambda modules: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
@@ -130,7 +130,7 @@ def modify_and_import(module_name, package, modification_func):
         ),
         (lambda modules: driver.Driver({"region": "US"}, *modules), True, "raw_execute"),
         (
-            lambda modules: driver.DriverBuilder()
+            lambda modules: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_modules(*modules)
             .with_remote_executor(executors.MultiThreadingExecutor(max_tasks=3))
@@ -141,7 +141,7 @@ def modify_and_import(module_name, package, modification_func):
             "execute",
         ),
         (
-            lambda modules: driver.DriverBuilder()
+            lambda modules: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
@@ -152,7 +152,7 @@ def modify_and_import(module_name, package, modification_func):
             "execute",
         ),
         (
-            lambda modules: driver.DriverBuilder()
+            lambda modules: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
@@ -164,7 +164,7 @@ def modify_and_import(module_name, package, modification_func):
             "execute",
         ),
         (
-            lambda modules: driver.DriverBuilder()
+            lambda modules: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
@@ -176,7 +176,7 @@ def modify_and_import(module_name, package, modification_func):
             "execute",
         ),
         (
-            lambda modules: driver.DriverBuilder()
+            lambda modules: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
@@ -253,7 +253,7 @@ _dynamic_config = {
             "raw_execute",
         ),
         (
-            lambda: driver.DriverBuilder()
+            lambda: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_modules(tests.resources.dynamic_config)
             .with_config(_dynamic_config)
@@ -263,7 +263,7 @@ _dynamic_config = {
             "execute",
         ),
         (
-            lambda: driver.DriverBuilder()
+            lambda: driver.Builder()
             .enable_v2_driver(allow_experimental_mode=True)
             .with_modules(tests.resources.dynamic_config)
             .with_config(_dynamic_config)

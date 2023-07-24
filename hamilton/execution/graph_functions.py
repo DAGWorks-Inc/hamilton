@@ -13,6 +13,9 @@ We will likely want to genericize them so we're dealing with anything, not just 
 def topologically_sort_nodes(nodes: List[node.Node]) -> List[node.Node]:
     """Topologically sorts a list of nodes based on their dependencies.
 
+    TODO -- use python graphlib when we no longer have to support 3.7/3.8.
+
+    https://docs.python.org/3/library/graphlib.html
 
     :param nodes: Nodes to sort
     :return: Nodes in sorted order
@@ -185,6 +188,7 @@ def nodes_between(
     begin_node = None
     nodes = []
     for node_ in output:
+        # TODO -- handle the case that there are multiple nodes that match the search condition
         if search_condition(node_):
             begin_node = node_
         elif node_ == end_node:

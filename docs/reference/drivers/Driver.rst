@@ -1,13 +1,13 @@
-DriverBuilder
+Builder
 --------------
 Use this to instantiate a driver.
 
-.. autoclass:: hamilton.driver.DriverBuilder
+.. autoclass:: hamilton.driver.Builder
    :special-members: __init__
    :members:
 
 Driver
-________
+--------------
 Use this driver in a general python context. E.g. batch, jupyter notebook, etc.
 
 .. autoclass:: hamilton.driver.Driver
@@ -15,7 +15,7 @@ Use this driver in a general python context. E.g. batch, jupyter notebook, etc.
    :members:
 
 DriverV2
----------
+--------------
 This is the newer hamilton driver. Note its not meant to be instantiated directly, rather through the builder
 
 .. autoclass:: hamilton.driver.DriverV2
