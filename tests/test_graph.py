@@ -22,7 +22,8 @@ import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
 import tests.resources.typing_vs_not_typing
 from hamilton import ad_hoc_utils, base, graph, node
-from hamilton.node import NodeSource
+from hamilton.execution import graph_functions
+from hamilton.node import NodeType
 
 
 def test_find_functions():
@@ -255,12 +256,12 @@ def create_testing_nodes():
         "b": node.Node(
             "b",
             inspect.signature(tests.resources.dummy_functions.A).parameters["b"].annotation,
-            node_source=NodeSource.EXTERNAL,
+            node_source=NodeType.EXTERNAL,
         ),
         "c": node.Node(
             "c",
             inspect.signature(tests.resources.dummy_functions.A).parameters["c"].annotation,
-            node_source=NodeSource.EXTERNAL,
+            node_source=NodeType.EXTERNAL,
         ),
     }
     nodes["A"].dependencies.append(nodes["b"])
@@ -280,9 +281,11 @@ def test_execute():
     nodes = create_testing_nodes()
     inputs = {"b": 2, "c": 5}
     expected = {"A": 7, "B": 49, "C": 14, "b": 2, "c": 5}
-    actual = graph.FunctionGraph.execute_static(nodes.values(), inputs, adapter)
+    actual = graph_functions.execute_subdag(nodes=nodes.values(), inputs=inputs, adapter=adapter)
     assert actual == expected
-    actual = graph.FunctionGraph.execute_static(nodes.values(), inputs, adapter, overrides={"A": 8})
+    actual = graph_functions.execute_subdag(
+        nodes=nodes.values(), inputs=inputs, adapter=adapter, overrides={"A": 8}
+    )
     assert actual["A"] == 8
 
 
@@ -437,7 +440,7 @@ def test_non_required_nodes():
     fg = graph.FunctionGraph(tests.resources.test_default_args, config={"required": 10})
     results = fg.execute(
         # D is not on the execution path, so it should not break things
-        [n for n in fg.get_nodes() if n.node_source == NodeSource.STANDARD and n.name != "D"],
+        [n for n in fg.get_nodes() if n.node_role == NodeType.STANDARD and n.name != "D"],
         {},
         {},
     )
@@ -446,7 +449,7 @@ def test_non_required_nodes():
         tests.resources.test_default_args, config={"required": 10, "defaults_to_zero": 1}
     )
     results = fg.execute(
-        [n for n in fg.get_nodes() if n.node_source == NodeSource.STANDARD],
+        [n for n in fg.get_nodes() if n.node_role == NodeType.STANDARD],
         {},
         {},
     )
@@ -618,7 +621,7 @@ def test_end_to_end_with_layered_decorators_resolves_false():
 
 def test_combine_inputs_no_collision():
     """Tests the combine_and_validate_inputs functionality when there are no collisions"""
-    combined = graph.FunctionGraph.combine_config_and_inputs({"a": 1}, {"b": 2})
+    combined = graph_functions.combine_config_and_inputs({"a": 1}, {"b": 2})
     assert combined == {"a": 1, "b": 2}
 
 
@@ -626,14 +629,14 @@ def test_combine_inputs_collision():
     """Tests the combine_and_validate_inputs functionality
     when there are collisions of keys but not values"""
     with pytest.raises(ValueError):
-        graph.FunctionGraph.combine_config_and_inputs({"a": 1}, {"a": 2})
+        graph_functions.combine_config_and_inputs({"a": 1}, {"a": 2})
 
 
 def test_combine_inputs_collision_2():
     """Tests the combine_and_validate_inputs functionality
     when there are collisions of keys and values"""
     with pytest.raises(ValueError):
-        graph.FunctionGraph.combine_config_and_inputs({"a": 1}, {"a": 1})
+        graph_functions.combine_config_and_inputs({"a": 1}, {"a": 1})
 
 
 def test_extract_columns_executes_once():

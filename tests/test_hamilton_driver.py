@@ -8,7 +8,7 @@ import tests.resources.tagging
 import tests.resources.test_default_args
 import tests.resources.very_simple_dag
 from hamilton import base
-from hamilton.driver import Driver, Variable
+from hamilton.driver import Driver, DriverBuilder, DriverV2, Variable
 
 
 def test_driver_validate_input_types():
@@ -127,6 +127,7 @@ def test_capture_constructor_telemetry(send_event_json):
         "result_builder_used",
         "driver_run_id",
         "error",
+        "driver_class",
     }
     actual_properties = actual_event_dict["properties"]
     assert set(actual_properties.keys()) == expected_properites
@@ -259,3 +260,18 @@ def test_get_nodes_between_no_path():
     dr = Driver({}, tests.resources.test_default_args)
     actual_path = dr._get_nodes_between("C", "required")
     assert actual_path == set()
+
+
+def test_v2_driver_builder():
+    result_builder = base.DictResult()
+    dr = (
+        DriverBuilder()
+        .enable_v2_driver(allow_experimental_mode=True)
+        .with_result_builder(result_builder)
+        .with_modules(tests.resources.very_simple_dag)
+        .with_config({"foo": "bar"})
+        .build()
+    )
+    assert isinstance(dr, DriverV2)
+    assert list(dr.graph_modules) == [tests.resources.very_simple_dag]
+    assert dr.result_builder == result_builder
