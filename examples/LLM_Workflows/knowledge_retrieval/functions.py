@@ -18,7 +18,7 @@ def get_articles(query: str) -> pd.DataFrame:
     :return: List of dictionaries with title, summary, article_url, pdf_url
     """
     dr = (
-        driver.DriverBuilder()
+        driver.Builder()
         .enable_v2_driver(allow_experimental_mode=True)
         .with_modules(arxiv_articles)
         .with_config({"mock_openai": True})
@@ -29,7 +29,7 @@ def get_articles(query: str) -> pd.DataFrame:
 
     inputs = {
         "embedding_model_name": "text-embedding-ada-002",
-        "max_arxiv_results": 100,
+        "max_arxiv_results": 5,
         "article_query": query,
         "data_dir": "./data",
         "library_file_path": "./data/arxiv_library.csv",

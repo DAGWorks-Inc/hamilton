@@ -100,7 +100,7 @@ class DriverCommon:
         config: Dict[str, Any],
         *modules: ModuleType,
         adapter: base.HamiltonGraphAdapter = None,
-    ) -> object:
+    ):
         """Constructor: creates a DAG given the configuration & modules to crawl.
 
         :param config: This is a dictionary of initial data & configuration.
@@ -503,26 +503,8 @@ class DriverCommon:
             raise ValueError(f"Upstream node {upstream_node_name} not found in graph.")
         if downstream_node_name not in all_variables:
             raise ValueError(f"Downstream node {downstream_node_name} not found in graph.")
-        nodes_for_path = self._get_nodes_between(upstream_node_name, downstream_node_name)
+        nodes_for_path = self.graph.nodes_between(upstream_node_name, downstream_node_name)
         return [Variable.from_node(n) for n in nodes_for_path]
-
-    def _get_nodes_between(
-        self, upstream_node_name: str, downstream_node_name: str
-    ) -> Set[node.Node]:
-        """Gets the nodes representing the path between two nodes, inclusive of the two nodes.
-
-        Assumes that the nodes exist in the graph.
-
-        :param upstream_node_name: the name of the node that we want to start from.
-        :param downstream_node_name: the name of the node that we want to end at.
-        :return: set of nodes that comprise the path between the two nodes, inclusive of the two nodes.
-        """
-        return self.graph.nodes_between(upstream_node_name, downstream_node_name)
-        # downstream_nodes = self.graph.get_downstream_nodes([upstream_node_name])
-        # # we skip user_nodes because it'll be the upstream node, or it wont matter.
-        # upstream_nodes, _ = self.graph.get_upstream_nodes([downstream_node_name])
-        # nodes_for_path = set(downstream_nodes).intersection(set(upstream_nodes))
-        # return nodes_for_path
 
     @capture_function_usage
     def visualize_path_between(
@@ -570,7 +552,7 @@ class DriverCommon:
                 node_modifiers[n.name] = {graph.VisualizationNodeModifiers.IS_USER_INPUT}
 
         # create nodes that constitute the path
-        nodes_for_path = self._get_nodes_between(upstream_node_name, downstream_node_name)
+        nodes_for_path = self.graph.nodes_between(upstream_node_name, downstream_node_name)
         if len(nodes_for_path) == 0:
             raise ValueError(
                 f"No path found between {upstream_node_name} and {downstream_node_name}."
@@ -755,8 +737,13 @@ class DriverV2(DriverCommon):
         :param inputs: Parameterized inputs to the DAG
         :return: A Dictionary containing the restults of the DAG.
         """
+
         overrides = overrides if overrides is not None else {}
         inputs = inputs if inputs is not None else {}
+        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
+        self.validate_inputs(
+            user_nodes, inputs, nodes
+        )
         (
             transform_nodes_required_for_execution,
             user_defined_nodes_required_for_execution,
@@ -791,7 +778,7 @@ class DriverV2(DriverCommon):
         return self.result_builder.build_result(**raw_result)
 
 
-class DriverBuilder:
+class Builder:
     """Utility class to handle building the driver. This is meant to allow the user
     to specify *just* what they need, and rely on reasonable defaults for the rest.
 
@@ -827,7 +814,7 @@ class DriverBuilder:
         if getattr(self, field) == unset_value:
             raise ValueError(message)
 
-    def enable_v2_driver(self, *, allow_experimental_mode: bool = False) -> "DriverBuilder":
+    def enable_v2_driver(self, *, allow_experimental_mode: bool = False) -> "Builder":
         """Enables the new driver. This enables:
             1. Grouped execution into tasks
             2. Parallel execution
@@ -848,7 +835,7 @@ class DriverBuilder:
         self.v2_driver = True
         return self
 
-    def with_config(self, config: Dict[str, Any]) -> "DriverBuilder":
+    def with_config(self, config: Dict[str, Any]) -> "Builder":
         """Adds the specified configuration to the config.
         This can be called multilple times -- later calls will take precedence.
 
@@ -858,7 +845,7 @@ class DriverBuilder:
         self.config.update(config)
         return self
 
-    def with_modules(self, *modules: ModuleType) -> "DriverBuilder":
+    def with_modules(self, *modules: ModuleType) -> "Builder":
         """Adds the specified modules to the modules list.
         This can be called multiple times -- later calls will take precedence.
 
@@ -868,7 +855,7 @@ class DriverBuilder:
         self.modules.extend(modules)
         return self
 
-    def with_adapter(self, adapter: base.HamiltonGraphAdapter) -> "DriverBuilder":
+    def with_adapter(self, adapter: base.HamiltonGraphAdapter) -> "Builder":
         """Sets the adapter to use.
 
         :param adapter: Adapter to use.
@@ -879,16 +866,14 @@ class DriverBuilder:
         self.adapter = adapter
         return self
 
-    def with_execution_manager(
-        self, execution_manager: executors.ExecutionManager
-    ) -> "DriverBuilder":
+    def with_execution_manager(self, execution_manager: executors.ExecutionManager) -> "Builder":
         """Sets the execution manager to use. Note that this cannot be used if local_executor
         or remote_executor are also set
 
         :param execution_manager:
         :return:
         """
-        self._require_v2("Cannot set execution manager without first enabling remote execution")
+        self._require_v2("Cannot set execution manager without first enabling the V2 Driver")
         self._require_field_unset("execution_manager", "Cannot set execution manager twice")
         self._require_field_unset(
             "remote_executor",
@@ -898,14 +883,14 @@ class DriverBuilder:
         self.execution_manager = execution_manager
         return self
 
-    def with_remote_executor(self, remote_executor: executors.TaskExecutor) -> "DriverBuilder":
+    def with_remote_executor(self, remote_executor: executors.TaskExecutor) -> "Builder":
         """Sets the execution manager to use. Note that this cannot be used if local_executor
         or remote_executor are also set
 
         :param execution_manager:
         :return:
         """
-        self._require_v2("Cannot set execution manager without first enabling remote execution")
+        self._require_v2("Cannot set execution manager without first enabling the V2 Driver")
         self._require_field_unset("remote_executor", "Cannot set remote executor twice")
         self._require_field_unset(
             "execution_manager",
@@ -914,14 +899,14 @@ class DriverBuilder:
         self.remote_executor = remote_executor
         return self
 
-    def with_local_executor(self, local_executor: executors.TaskExecutor) -> "DriverBuilder":
+    def with_local_executor(self, local_executor: executors.TaskExecutor) -> "Builder":
         """Sets the execution manager to use. Note that this cannot be used if local_executor
         or remote_executor are also set
 
         :param execution_manager:
         :return:
         """
-        self._require_v2("Cannot set execution manager without first enabling remote execution")
+        self._require_v2("Cannot set execution manager without first enabling the V2 Driver")
         self._require_field_unset("local_executor", "Cannot set local executor twice")
         self._require_field_unset(
             "execution_manager",
@@ -930,26 +915,24 @@ class DriverBuilder:
         self.local_executor = local_executor
         return self
 
-    def with_grouping_strategy(
-        self, grouping_strategy: grouping.GroupingStrategy
-    ) -> "DriverBuilder":
+    def with_grouping_strategy(self, grouping_strategy: grouping.GroupingStrategy) -> "Builder":
         """Sets a node grouper, which tells the driver how to group nodes into tasks for execution.
 
         :param node_grouper:
         :return:
         """
-        self._require_v2("Cannot set grouping strategy without first enabling remote execution")
+        self._require_v2("Cannot set grouping strategy without first enabling the V2 Driver")
         self._require_field_unset("grouping_strategy", "Cannot set grouping strategy twice")
         self.grouping_strategy = grouping_strategy
         return self
 
-    def with_result_builder(self, result_builder: base.ResultMixin) -> "DriverBuilder":
+    def with_result_builder(self, result_builder: base.ResultMixin) -> "Builder":
         """Sets a result builder, which tells the driver how to build the result.
 
         :param result_builder:
         :return:
         """
-        self._require_v2("Cannot set result builder without first enabling remote execution")
+        self._require_v2("Cannot set result builder without first enabling the V2 Driver")
         self._require_field_unset("result_builder", "Cannot set result builder twice")
         self.result_builder = result_builder
         return self

@@ -8,7 +8,7 @@ import tests.resources.tagging
 import tests.resources.test_default_args
 import tests.resources.very_simple_dag
 from hamilton import base
-from hamilton.driver import Driver, DriverBuilder, DriverV2, Variable
+from hamilton.driver import Builder, Driver, DriverV2, Variable
 
 
 def test_driver_validate_input_types():
@@ -247,25 +247,10 @@ def test_create_final_vars_errors():
         )
 
 
-def test_get_nodes_between():
-    """Tests that we get the correct nodes on the path between two nodes inclusive."""
-    dr = Driver({}, tests.resources.test_default_args)
-    actual_path = dr._get_nodes_between("required", "C")
-    expected_path = {dr.graph.nodes["required"], dr.graph.nodes["A"], dr.graph.nodes["C"]}
-    assert actual_path == expected_path
-
-
-def test_get_nodes_between_no_path():
-    """Tests that we return empty if no path exists."""
-    dr = Driver({}, tests.resources.test_default_args)
-    actual_path = dr._get_nodes_between("C", "required")
-    assert actual_path == set()
-
-
 def test_v2_driver_builder():
     result_builder = base.DictResult()
     dr = (
-        DriverBuilder()
+        Builder()
         .enable_v2_driver(allow_experimental_mode=True)
         .with_result_builder(result_builder)
         .with_modules(tests.resources.very_simple_dag)
