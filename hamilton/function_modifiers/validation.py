@@ -31,7 +31,7 @@ class BaseDataValidationDecorator(base.NodeTransformer):
             typ=node_.type,
             doc_string=node_.documentation,
             callabl=node_.callable,
-            node_source=node_.node_source,
+            node_source=node_.node_role,
             input_types=node_.input_types,
             tags=node_.tags,
         )
@@ -50,7 +50,7 @@ class BaseDataValidationDecorator(base.NodeTransformer):
                 typ=dq_base.ValidationResult,
                 doc_string=validator.description(),
                 callabl=validation_function,
-                node_source=node.NodeSource.STANDARD,
+                node_source=node.NodeType.STANDARD,
                 input_types={raw_node.name: (node_.type, node.DependencyType.REQUIRED)},
                 tags={
                     **node_.tags,
@@ -89,7 +89,7 @@ class BaseDataValidationDecorator(base.NodeTransformer):
             typ=node_.type,
             doc_string=node_.documentation,
             callabl=final_node_callable,
-            node_source=node_.node_source,
+            node_source=node_.node_role,
             input_types={
                 raw_node.name: (node_.type, node.DependencyType.REQUIRED),
                 **{

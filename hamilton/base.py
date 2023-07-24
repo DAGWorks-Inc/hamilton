@@ -360,7 +360,7 @@ class NumpyMatrixResult(ResultMixin):
                 list_of_columns.append(list(val))
             else:
                 raise ValueError(
-                    f"Do not know how to make this column {col} with length {length }have {num_rows} rows"
+                    f"Do not know how to make this column {col} with length {length} have {num_rows} rows"
                 )
         # Create the matrix with columns as rows and then transpose
         return np.asmatrix(list_of_columns).T
