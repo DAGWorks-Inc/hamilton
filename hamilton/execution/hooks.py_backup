@@ -1,0 +1,35 @@
+import abc
+from typing import Any, Dict
+
+from hamilton import node
+from hamilton.execution.grouping import TaskImplementation
+from hamilton.graph import FunctionGraph
+
+
+class TasExecutionHook(abc.ABC):
+    def before(self, task_implementation: TaskImplementation):
+        pass
+
+    def after(self, task_implementation: TaskImplementation, results: Dict[str, Any]):
+        pass
+
+
+class NodeSetupHook(abc.ABC):
+    def on_edge_create(self, node_: node.Node, from_: node.Node, dependency_name: str):
+        pass
+
+
+class NodeExecutionHook(abc.ABC):
+    def before(self, node_: node.Node, kwargs: Dict[str, Any]):
+        pass
+
+    def after(self, node_: node.Node):
+        pass
+
+
+class GraphExecutionHook(abc.ABC):
+    def before(self, fg: FunctionGraph):
+        pass
+
+    def after(self, fg: FunctionGraph):
+        pass
