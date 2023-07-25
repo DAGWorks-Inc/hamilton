@@ -1,0 +1,3 @@
+jupyter
+matplotlib
+sf-hamilton>=1.25.0
