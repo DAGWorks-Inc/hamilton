@@ -2,5 +2,4 @@ numpy
 pandas
 prefect
 scikit-learn
-sf-hamilton
 sf-hamilton[visualization]

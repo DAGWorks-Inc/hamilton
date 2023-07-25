@@ -1,13 +1,13 @@
 # Hamilton + Prefect
 
 In this example, were going to show how to run a simple `data preprocessing -> model training -> model evaluation` workflow using Hamilton within Prefect tasks.
-- [**Prefect**](https://prefect.io) is an open source orchestrator written in Python. Its purpose is to launch and execute your workflows over your infrastructure. It has integrations with many popular tools (Snowflake, dbt, Ray, OpenAI, etc.)
-- [**Hamilton**](https://github.com/dagworks-inc/hamilton) is a micro-framework to describe dataflows in Python. Its strength is expressing the flow of data & computation in a way that is straightforward to create, maintain, and reuse (much like dbt for SQL)
+- [**Prefect**](https://prefect.io) is an open source orchestrator written in Python. Its purpose is to launch and execute your workflows over your infrastructure.  It is a macro-orchestration system.
+- [**Hamilton**](https://github.com/dagworks-inc/hamilton) is a micro-framework to describe dataflows in Python. Its strength is expressing the flow of data & computation in a way that is straightforward to create, maintain, and reuse (much like DBT has done for SQL). It is lightweight and can be run anywhere that python runs.  It is a micro-orchestration system.
 
 ## Why both?
-Prefect includes useful features for production system such as job queues, caching, retries, logging, and more. However, each additional task you create comes with execution overhead and needs to be manually added to the DAG structure. Opting for less granular tasks ultimately reduces visibility and maintainability.
+Prefect is a heavy weight system that includes useful features for production system such as job queues, caching, retries, logging, and more. However, each additional "task" you create comes with execution overhead and needs to be manually added to the DAG structure. Opting for less granular tasks ultimately reduces visibility and maintainability, while opting for more creates more overhead.
 
-In contrast, Hamilton automatically builds its DAG from the function definition, encouraging clean, small and single-purposed functions. By using Hamilton in a Prefect task, you gain this greater insight into lineage, reduced Prefect execution overhead, and you get portable Python code you can run outside Prefect too.
+In contrast, Hamilton automatically builds its DAG from the function definition itself, encouraging clean, small and single-purposed functions. By using Hamilton in a Prefect task, you gain this greater insight into lineage, reduced Prefect execution overhead and a simpler DAG to manage, and you get portable Python code you can run outside Prefect too.
 
 ## What does the code do?
 This example illustrates a typical data science / machine learning workflow where we:
@@ -24,7 +24,7 @@ You'll notice that the Prefect workflow has 2 tasks: `prepare_data_task` and `tr
 For another workflow, a large Hamilton DAG in a single Prefect task, or smaller Prefect tasks and Hamilton modules might have been preferred. This shows how the Hamilton `Driver` brings flexibility to where and how you run your code.
 
 ## Prefect setup
-The easiest way to get this example running is to sign up for Prefect's free tier and follow the [Prefect Cloud Quickstart](https://docs.prefect.io/latest/cloud/cloud-quickstart/) section. The steps are:
+The easiest way to get this example running is to sign up for Prefect's free tier and follow the [Prefect Cloud Quickstart](https://docs.prefect.io/latest/cloud/cloud-quickstart/) section. Don't want to sign up? Don't worry, as Prefect is open source, can instead opt to host and run everything yourself as described [here](https://docs.prefect.io/latest/host/). The steps to get started are:
 1. Signup for Prefect
 2. Create a workspace
 3. In this directory, create a virtual environment with the needed requirements. You can copy the commands below to do so.
