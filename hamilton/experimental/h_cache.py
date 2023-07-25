@@ -202,7 +202,7 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
     Usage
     -----
 
-    This is a simple example of the usage of `CachingAdapter`.
+    This is a simple example of the usage of `CachingGraphAdapter`.
 
     First, let's define some nodes in `nodes.py`:
 
@@ -232,7 +232,7 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
 
         import nodes
 
-        adapter = h_cache.CachingAdapter(cache_path, base.PandasDataFrameResult())
+        adapter = h_cache.CachingGraphAdapter(cache_path, base.PandasDataFrameResult())
         dr = Driver(config, nodes, adapter=adapter)
         result = dr.execute(["transformed"])
 
