@@ -1,0 +1,5 @@
+numpy
+pandas
+prefect
+scikit-learn
+sf-hamilton[visualization]
