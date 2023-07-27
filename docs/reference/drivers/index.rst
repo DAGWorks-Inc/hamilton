@@ -1,6 +1,6 @@
-===================
-Driver Reference
-===================
+======
+Drivers
+======
 
 Currently, we have one `main driver <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/driver.py>`__.
 It's highly parameterizable, allowing you to customize:
