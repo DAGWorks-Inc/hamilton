@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Collection, Dict, List, Optional, Tuple
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 from hamilton import base, node
 
@@ -196,3 +196,23 @@ def nodes_between(
         else:
             nodes.append(node_)
     return begin_node, nodes
+
+
+def node_is_required_by_anything(node_: node.Node, node_set: Set[node.Node]) -> bool:
+    """Checks dependencies on this node and determines if at least one requires it.
+
+    Nodes can be optionally depended upon, i.e. the function parameter has a default value. We want to check that
+    of the nodes the depend on this one, at least one of them requires it, i.e. the parameter is not optional.
+
+    :param node_: node in question
+    :param node_set: checks that we traverse only nodes in the provided set.
+    :return: True if it is required by any downstream node, false otherwise
+    """
+    required = False
+    for downstream_node in node_.depended_on_by:
+        if downstream_node not in node_set:
+            continue
+        _, dep_type = downstream_node.input_types[node_.name]
+        if dep_type == node.DependencyType.REQUIRED:
+            return True
+    return required

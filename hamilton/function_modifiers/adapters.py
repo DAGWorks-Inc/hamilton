@@ -444,9 +444,9 @@ class SaveToDecorator(SingleNodeNodeTransformer):
         self.saver_classes = saver_classes_
         self.kwargs = kwargs
 
-    def transform_node(
+    def create_saver_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
-    ) -> Collection[node.Node]:
+    ) -> node.Node:
         artifact_name = self.artifact_name
         artifact_namespace = ()
 
@@ -519,7 +519,23 @@ class SaveToDecorator(SingleNodeNodeTransformer):
                 "hamilton.data_saver.classname": f"{saver_cls.__qualname__}",
             },
         )
-        return [save_node, node_]
+        return save_node
+
+    def transform_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
+        """Transforms the node to a data saver.
+
+        :param node_: Node to transform
+        :param config: Config to use
+        :param fn: Original function that generated the node
+        :return: The transformed node
+        """
+
+        return [
+            self.create_saver_node(node_, config, fn),
+            node_,
+        ]
 
     def validate(self, fn: Callable):
         pass

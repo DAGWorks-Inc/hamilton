@@ -29,9 +29,9 @@ it is here purely for documentation, and you should never need to instantiate it
 TaskBasedGraphExecutor
 -----------------------
 
-This is a task based graph executor. It can handle parallelism with `Parallelizable`/`Collect[]`,
+This is a task based graph executor. It can handle parallelism with the `Parallelizable`/`Collect` constructs,
 allowing it to spawn dynamic tasks and execute them as a group. Note that this is only
-exposed through the `Builder` when called with `enable_dynamic_execution(allow_experimental_mode: bool) --
+exposed through the `Builder` when called with `enable_dynamic_execution(allow_experimental_mode: bool)` --
 it is here purely for documentation, and you should never need to instantiate it directly.
 
 .. autoclass:: hamilton.driver.TaskBasedGraphExecutor
