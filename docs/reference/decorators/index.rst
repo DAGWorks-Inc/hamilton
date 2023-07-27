@@ -1,6 +1,6 @@
-===================
-Decorator Reference
-===================
+===========
+Decorators
+===========
 
 While the 1:1 mapping of output -> function implementation is powerful, we've implemented a few decorators to promote
 business-logic reuse, as well as to layer on extra capabilities. Source for these decorators can be found in the
