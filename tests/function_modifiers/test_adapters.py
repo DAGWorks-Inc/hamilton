@@ -328,7 +328,7 @@ def test_load_from_decorator_end_to_end():
 
     config = {}
     adapter = base.DefaultAdapter()
-    fg = graph.FunctionGraph(
+    fg = graph.FunctionGraph.from_modules(
         ad_hoc_utils.create_temporary_module(fn_str_inject), config=config, adapter=adapter
     )
     result = fg.execute(inputs={}, nodes=fg.nodes.values())
@@ -357,7 +357,7 @@ def test_load_from_decorator_end_to_end_with_multiple():
 
     config = {}
     adapter = base.DefaultAdapter()
-    fg = graph.FunctionGraph(
+    fg = graph.FunctionGraph.from_modules(
         ad_hoc_utils.create_temporary_module(fn_str_inject), config=config, adapter=adapter
     )
     result = fg.execute(inputs={}, nodes=fg.nodes.values())

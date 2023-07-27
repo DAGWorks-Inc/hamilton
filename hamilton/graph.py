@@ -67,6 +67,26 @@ def add_dependency(
     required_node.depended_on_by.append(func_node)
 
 
+def update_dependencies(
+    nodes: Dict[str, node.Node], adapter: base.HamiltonGraphAdapter, in_place: bool = True
+):
+    """Adds dependecies to a dictionary of nodes. If in_place is False,
+    it will deepcopy the dict + nodes and return that. Otherwise it will
+    mutate + return the passed-in dict + nodes.
+
+    :param in_place: Whether or not to modify in-place, or copy/return
+    :param nodes: Nodes that form the DAG we're updating
+    :param adapter: Adapter to use for type checking
+    :return: The updated nodes
+    """
+    if not in_place:
+        nodes = {k: v for k, v in nodes.items()}
+    for node_name, n in list(nodes.items()):
+        for param_name, (param_type, _) in n.input_types.items():
+            add_dependency(n, node_name, nodes, param_name, param_type, adapter)
+    return nodes
+
+
 def create_function_graph(
     *modules: ModuleType,
     config: Dict[str, Any],
@@ -98,9 +118,7 @@ def create_function_graph(
                 )
             nodes[n.name] = n
     # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
-    for node_name, n in list(nodes.items()):
-        for param_name, (param_type, _) in n.input_types.items():
-            add_dependency(n, node_name, nodes, param_name, param_type, adapter)
+    update_dependencies(nodes, adapter)  # in place
     for key in config.keys():
         if key not in nodes:
             nodes[key] = node.Node(key, Any, node_source=node.NodeType.EXTERNAL)
@@ -142,10 +160,6 @@ def create_graphviz_graph(
             if VisualizationNodeModifiers.IS_USER_INPUT in modifiers:
                 other_args["style"] = "dashed"
                 label = f"Input: {n.name}"
-        is_expand_node = n.node_role == node.NodeType.EXPAND
-        is_collect_node = n.node_role == node.NodeType.COLLECT
-        if is_collect_node or is_expand_node:
-            other_args["peripheries"] = "2"
         digraph.node(n.name, label=label, **other_args)
 
     for n in list(nodes):
@@ -166,15 +180,6 @@ def create_graphviz_graph(
                 and VisualizationNodeModifiers.IS_PATH in to_modifiers
             ):
                 other_args["color"] = PATH_COLOR
-            is_collect_edge = n.node_role == node.NodeType.COLLECT
-            is_expand_edge = d.node_role == node.NodeType.EXPAND
-            if is_collect_edge:
-                other_args["dir"] = "both"
-                other_args["arrowtail"] = "crow"
-            if is_expand_edge:
-                other_args["dir"] = "both"
-                other_args["arrowhead"] = "crow"
-                other_args["arrowtail"] = "none"
             digraph.edge(d.name, n.name, **other_args)
     return digraph
 
@@ -211,15 +216,14 @@ class FunctionGraph(object):
 
     def __init__(
         self,
-        *modules: ModuleType,
+        nodes: Dict[str, Node],
         config: Dict[str, Any],
         adapter: base.HamiltonGraphAdapter = None,
-        nodes: List[Node] = None,
     ):
-        """Initializes a function graph by crawling through modules. Function graph must have a config,
-        as the config could determine the shape of the graph.
+        """Initializes a function graph from specified nodes. See note on `from_modules` if you
+        start getting an error here because you use an internal API.
 
-        :param modules: Modules to crawl for functions
+        :param nodes: Nodes, taken from the output of create_function_graph.
         :param config: this is configuration and/or initial data.
         :param adapter: adapts function building and graph execution for different contexts.
         """
@@ -227,12 +231,42 @@ class FunctionGraph(object):
             adapter = base.SimplePythonDataFrameGraphAdapter()
 
         self._config = config
-        if nodes:
-            if modules:
-                raise ValueError("Cannot specify both modules and nodes")
-
-        self.nodes = create_function_graph(*modules, config=self._config, adapter=adapter)
+        self.nodes = nodes
         self.adapter = adapter
+
+    @staticmethod
+    def from_modules(
+        *modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter = None
+    ):
+        """Initializes a function graph from the specified modules. Note that this was the old
+        way we constructed FunctionGraph -- this is not a public-facing API, so we replaced it
+        with a constructor that takes in nodes directly. If you hacked in something using
+        `FunctionGraph`, then you should be able to replace it with `FunctionGraph.from_modules`
+        and it will work.
+
+        :param modules: Modules to crawl, resolve to nodes
+        :param config: Config to use for node resolution
+        :param adapter: Adapter to use for node resolution, edge creation
+        :return: a function graph.
+        """
+
+        nodes = create_function_graph(*modules, config=config, adapter=adapter)
+        return FunctionGraph(nodes, config, adapter)
+
+    def with_nodes(self, nodes: Dict[str, Node]) -> "FunctionGraph":
+        """Creates a new function graph with the additional specified nodes.
+        Note that if there is a duplication in the node definitions,
+        it will error out.
+
+        :param nodes: Nodes to add to the FunctionGraph
+        :return: a new function graph.
+        """
+        # first check if there are any duplicates
+        duplicates = set(self.nodes.keys()).intersection(set(nodes.keys()))
+        if duplicates:
+            raise ValueError(f"Duplicate node names found: {duplicates}")
+        new_node_dict = update_dependencies({**self.nodes, **nodes}, self.adapter)
+        return FunctionGraph(new_node_dict, self.config, self.adapter)
 
     @property
     def config(self):

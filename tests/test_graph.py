@@ -295,7 +295,7 @@ def test_get_required_functions():
     final_vars = ["A", "B"]
     expected_user_nodes = {nodes["b"], nodes["c"]}
     expected_nodes = {nodes["A"], nodes["B"], nodes["b"], nodes["c"]}  # we skip 'C'
-    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={})
     actual_nodes, actual_ud_nodes = fg.get_upstream_nodes(final_vars)
     assert actual_nodes == expected_nodes
     assert actual_ud_nodes == expected_user_nodes
@@ -307,13 +307,13 @@ def test_get_downstream_nodes():
     var_changes = ["A"]
     expected_nodes = {nodes["B"], nodes["C"], nodes["A"]}
     # expected_nodes = {nodes['A'], nodes['B'], nodes['b'], nodes['c']}  # we skip 'C'
-    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={})
     actual_nodes = fg.get_downstream_nodes(var_changes)
     assert actual_nodes == expected_nodes
 
 
 def test_function_graph_from_multiple_sources():
-    fg = graph.FunctionGraph(
+    fg = graph.FunctionGraph.from_modules(
         tests.resources.dummy_functions, tests.resources.parametrized_nodes, config={}
     )
     assert len(fg.get_nodes()) == 8  # we take the union of all of them, and want to test that
@@ -321,13 +321,15 @@ def test_function_graph_from_multiple_sources():
 
 def test_end_to_end_with_parametrized_nodes():
     """Tests that a simple function graph with parametrized nodes works end-to-end"""
-    fg = graph.FunctionGraph(tests.resources.parametrized_nodes, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.parametrized_nodes, config={})
     results = fg.execute(fg.get_nodes(), {})
     assert results == {"parametrized_1": 1, "parametrized_2": 2, "parametrized_3": 3}
 
 
 def test_end_to_end_with_parametrized_inputs():
-    fg = graph.FunctionGraph(tests.resources.parametrized_inputs, config={"static_value": 3})
+    fg = graph.FunctionGraph.from_modules(
+        tests.resources.parametrized_inputs, config={"static_value": 3}
+    )
     results = fg.execute(fg.get_nodes())
     assert results == {
         "input_1": 1,
@@ -343,7 +345,7 @@ def test_end_to_end_with_parametrized_inputs():
 
 def test_get_required_functions_askfor_config():
     """Tests that a simple function graph with parametrized nodes works end-to-end"""
-    fg = graph.FunctionGraph(tests.resources.parametrized_nodes, config={"a": 1})
+    fg = graph.FunctionGraph.from_modules(tests.resources.parametrized_nodes, config={"a": 1})
     nodes, user_nodes = fg.get_upstream_nodes(["a", "parametrized_1"])
     (n,) = user_nodes
     assert n.name == "a"
@@ -353,7 +355,7 @@ def test_get_required_functions_askfor_config():
 
 def test_end_to_end_with_column_extractor_nodes():
     """Tests that a simple function graph with nodes that extract columns works end-to-end"""
-    fg = graph.FunctionGraph(tests.resources.extract_column_nodes, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.extract_column_nodes, config={})
     nodes = fg.get_nodes()
     results = fg.execute(nodes, {}, {})
     df_expected = tests.resources.extract_column_nodes.generate_df()
@@ -367,7 +369,7 @@ def test_end_to_end_with_column_extractor_nodes():
 
 def test_end_to_end_with_multiple_decorators():
     """Tests that a simple function graph with multiple decorators on a function works end-to-end"""
-    fg = graph.FunctionGraph(
+    fg = graph.FunctionGraph.from_modules(
         tests.resources.multiple_decorators_together,
         config={"param0": 3, "param1": 1, "in_value1": 42, "in_value2": "string_value"},
     )
@@ -418,26 +420,28 @@ def test_end_to_end_with_config_modifier():
     config = {
         "fn_1_version": 1,
     }
-    fg = graph.FunctionGraph(tests.resources.config_modifier, config=config)
+    fg = graph.FunctionGraph.from_modules(tests.resources.config_modifier, config=config)
     results = fg.execute(fg.get_nodes(), {}, {})
     assert results["fn"] == "version_1"
 
     config = {
         "fn_1_version": 2,
     }
-    fg = graph.FunctionGraph(tests.resources.config_modifier, config=config)
+    fg = graph.FunctionGraph.from_modules(tests.resources.config_modifier, config=config)
     results = fg.execute(fg.get_nodes(), {}, {})
     assert results["fn"] == "version_2"
     config = {
         "fn_1_version": 3,
     }
-    fg = graph.FunctionGraph(tests.resources.config_modifier, config=config)
+    fg = graph.FunctionGraph.from_modules(tests.resources.config_modifier, config=config)
     results = fg.execute(fg.get_nodes(), {}, {})
     assert results["fn"] == "version_3"
 
 
 def test_non_required_nodes():
-    fg = graph.FunctionGraph(tests.resources.test_default_args, config={"required": 10})
+    fg = graph.FunctionGraph.from_modules(
+        tests.resources.test_default_args, config={"required": 10}
+    )
     results = fg.execute(
         # D is not on the execution path, so it should not break things
         [n for n in fg.get_nodes() if n.node_role == NodeType.STANDARD and n.name != "D"],
@@ -445,7 +449,7 @@ def test_non_required_nodes():
         {},
     )
     assert results["A"] == 10
-    fg = graph.FunctionGraph(
+    fg = graph.FunctionGraph.from_modules(
         tests.resources.test_default_args, config={"required": 10, "defaults_to_zero": 1}
     )
     results = fg.execute(
@@ -459,14 +463,14 @@ def test_non_required_nodes():
 
 def test_config_can_override():
     config = {"new_param": "new_value"}
-    fg = graph.FunctionGraph(tests.resources.config_modifier, config=config)
+    fg = graph.FunctionGraph.from_modules(tests.resources.config_modifier, config=config)
     out = fg.execute([n for n in fg.get_nodes()])
     assert out["new_param"] == "new_value"
 
 
 def test_function_graph_has_cycles_true():
     """Tests whether we catch a graph with cycles -- and expected behaviors"""
-    fg = graph.FunctionGraph(tests.resources.cyclic_functions, config={"b": 2, "c": 1})
+    fg = graph.FunctionGraph.from_modules(tests.resources.cyclic_functions, config={"b": 2, "c": 1})
     all_nodes = fg.get_nodes()
     nodes = [n for n in all_nodes if not n.user_defined]
     user_nodes = [n for n in all_nodes if n.user_defined]
@@ -486,7 +490,7 @@ def test_function_graph_has_cycles_true():
 
 def test_function_graph_has_cycles_false():
     """Tests whether we catch a graph with cycles"""
-    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
     all_nodes = fg.get_nodes()
     # checks it two ways
     nodes = [n for n in all_nodes if not n.user_defined]
@@ -499,7 +503,7 @@ def test_function_graph_has_cycles_false():
 
 def test_function_graph_display():
     """Tests that display saves a file"""
-    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
     node_modifiers = {"B": {graph.VisualizationNodeModifiers.IS_OUTPUT}}
     all_nodes = set()
     for n in fg.get_nodes():
@@ -534,7 +538,7 @@ def test_function_graph_display():
 
 def test_function_graph_display_without_saving():
     """Tests that display works when None is passed in for path"""
-    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
     all_nodes = set()
     node_modifiers = {"B": {graph.VisualizationNodeModifiers.IS_OUTPUT}}
     for n in fg.get_nodes():
@@ -550,7 +554,7 @@ def test_function_graph_display_without_saving():
 
 def test_create_graphviz_graph():
     """Tests that we create a graphviz graph"""
-    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={})
     nodes, user_nodes = fg.get_upstream_nodes(["A", "B", "C"])
     nodez = nodes.union(user_nodes)
     node_modifiers = {
@@ -591,7 +595,7 @@ def test_create_graphviz_graph():
 
 def test_create_networkx_graph():
     """Tests that we create a networkx graph"""
-    fg = graph.FunctionGraph(tests.resources.dummy_functions, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={})
     nodes, user_nodes = fg.get_upstream_nodes(["A", "B", "C"])
     digraph = graph.create_networkx_graph(nodes, user_nodes, "test-graph")
     expected_nodes = sorted(["c", "B", "C", "b", "A"])
@@ -601,7 +605,7 @@ def test_create_networkx_graph():
 
 
 def test_end_to_end_with_layered_decorators_resolves_true():
-    fg = graph.FunctionGraph(
+    fg = graph.FunctionGraph.from_modules(
         tests.resources.layered_decorators, config={"foo": "bar", "d": 10, "b": 20}
     )
     out = fg.execute([n for n in fg.get_nodes()])
@@ -612,7 +616,7 @@ def test_end_to_end_with_layered_decorators_resolves_true():
 
 def test_end_to_end_with_layered_decorators_resolves_false():
     config = {"foo": "not_bar", "d": 10, "b": 20}
-    fg = graph.FunctionGraph(tests.resources.layered_decorators, config=config)
+    fg = graph.FunctionGraph.from_modules(tests.resources.layered_decorators, config=config)
     out = fg.execute(
         [n for n in fg.get_nodes()],
     )
@@ -642,7 +646,9 @@ def test_combine_inputs_collision_2():
 def test_extract_columns_executes_once():
     """Ensures that extract_columns only computes the function once.
     Note this is a bit heavy-handed of a test but its nice to have."""
-    fg = graph.FunctionGraph(tests.resources.extract_columns_execution_count, config={})
+    fg = graph.FunctionGraph.from_modules(
+        tests.resources.extract_columns_execution_count, config={}
+    )
     unique_id = str(uuid.uuid4())
     fg.execute([n for n in fg.get_nodes()], inputs={"unique_id": unique_id})
     assert (
@@ -651,7 +657,9 @@ def test_extract_columns_executes_once():
 
 
 def test_end_to_end_with_generics():
-    fg = graph.FunctionGraph(tests.resources.functions_with_generics, config={"b": {}, "c": 1})
+    fg = graph.FunctionGraph.from_modules(
+        tests.resources.functions_with_generics, config={"b": {}, "c": 1}
+    )
     results = fg.execute(fg.get_nodes())
     assert results == {
         "A": ({}, 1),
@@ -691,7 +699,7 @@ def test_optional_execute(config, inputs, overrides):
     """Tests execution of optionals with different assortment of overrides, configs, inputs, etc...
     Be careful adding tests with conflicting values between them.
     """
-    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config=config)
+    fg = graph.FunctionGraph.from_modules(tests.resources.optional_dependencies, config=config)
     # we put a user input node first to ensure that order does not matter with computation order.
     results = fg.execute([fg.nodes["b"], fg.nodes["g"]], inputs=inputs, overrides=overrides)
     do_all_args = {key + "_val": val for key, val in {**config, **inputs, **overrides}.items()}
@@ -703,12 +711,12 @@ def test_optional_input_behavior():
     """Tests that if we request optional user inputs that are not provided, we do not break. And if they are
     we do the right thing and return them.
     """
-    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.optional_dependencies, config={})
     # nothing passed, so nothing returned
     result = fg.execute([fg.nodes["b"], fg.nodes["a"]], inputs={}, overrides={})
     assert result == {}
     # something passed, something returned via config
-    fg2 = graph.FunctionGraph(tests.resources.optional_dependencies, config={"a": 10})
+    fg2 = graph.FunctionGraph.from_modules(tests.resources.optional_dependencies, config={"a": 10})
     result = fg2.execute([fg.nodes["b"], fg.nodes["a"]], inputs={}, overrides={})
     assert result == {"a": 10}
     # something passed, something returned via inputs
@@ -722,7 +730,7 @@ def test_optional_input_behavior():
 @pytest.mark.parametrize("node_order", list(permutations("fhi")))
 def test_user_input_breaks_if_required_missing(node_order):
     """Tests that we break because `h` is required but is not passed in."""
-    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.optional_dependencies, config={})
     permutation = [fg.nodes[n] for n in node_order]
     with pytest.raises(NotImplementedError):
         fg.execute(permutation, inputs={}, overrides={})
@@ -731,7 +739,7 @@ def test_user_input_breaks_if_required_missing(node_order):
 @pytest.mark.parametrize("node_order", list(permutations("fhi")))
 def test_user_input_does_not_break_if_required_provided(node_order):
     """Tests that things work no matter the order because `h` is required and is passed in, while `f` is optional."""
-    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={"h": 10})
+    fg = graph.FunctionGraph.from_modules(tests.resources.optional_dependencies, config={"h": 10})
     permutation = [fg.nodes[n] for n in node_order]
     result = fg.execute(permutation, inputs={}, overrides={})
     assert result == {"h": 10, "i": 17}
@@ -742,11 +750,11 @@ def test_optional_donot_drop_none():
 
     This is here to enshrine the current behavior.
     """
-    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={"h": None})
+    fg = graph.FunctionGraph.from_modules(tests.resources.optional_dependencies, config={"h": None})
     # enshrine behavior that None is not removed from being passed to the function.
     results = fg.execute([fg.nodes["h"], fg.nodes["i"]], inputs={}, overrides={})
     assert results == {"h": None, "i": 17}
-    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.optional_dependencies, config={})
     results = fg.execute(
         [fg.nodes["j"], fg.nodes["none_result"], fg.nodes["f"]], inputs={}, overrides={}
     )
@@ -757,21 +765,21 @@ def test_optional_get_required_compile_time():
     """Tests that getting required with optionals at compile time returns everything
     TODO -- change this to be testing a different function (compile time) than runtime.
     """
-    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.optional_dependencies, config={})
     all_upstream, user_required = fg.get_upstream_nodes(["g"])
     assert len(all_upstream) == 7  # 6 total nodes upstream
     assert len(user_required) == 4  # 4 nodes required input
 
 
 def test_optional_get_required_runtime():
-    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.optional_dependencies, config={})
     all_upstream, user_required = fg.get_upstream_nodes(["g"], runtime_inputs={})  # Nothng required
     assert len(all_upstream) == 3  # 6 total nodes upstream
     assert len(user_required) == 0  # 4 nodes required input
 
 
 def test_optional_get_required_runtime_with_provided():
-    fg = graph.FunctionGraph(tests.resources.optional_dependencies, config={})
+    fg = graph.FunctionGraph.from_modules(tests.resources.optional_dependencies, config={})
     all_upstream, user_required = fg.get_upstream_nodes(
         ["g"], runtime_inputs={"b": 109}
     )  # Nothng required
@@ -787,6 +795,8 @@ def test_in_driver_function_definitions():
         return A + b + c
 
     f_module = ad_hoc_utils.create_temporary_module(my_function)
-    fg = graph.FunctionGraph(tests.resources.dummy_functions, f_module, config={"b": 3, "c": 1})
+    fg = graph.FunctionGraph.from_modules(
+        tests.resources.dummy_functions, f_module, config={"b": 3, "c": 1}
+    )
     results = fg.execute([n for n in fg.get_nodes() if n.name in ["my_function", "A"]])
     assert results == {"A": 4, "b": 3, "c": 1, "my_function": 8}

@@ -13,14 +13,14 @@ from tests.resources.dynamic_parallelism import no_parallel, parallel_complex, p
 
 
 def test_group_individually():
-    fn_graph = FunctionGraph(no_parallel, config={})
+    fn_graph = FunctionGraph.from_modules(no_parallel, config={})
     node_grouper = GroupNodesIndividually()
     nodes_grouped = node_grouper.group_nodes(list(fn_graph.nodes.values()))
     assert len(nodes_grouped) == len(fn_graph.nodes)
 
 
 def test_group_all_as_one():
-    fn_graph = FunctionGraph(no_parallel, config={})
+    fn_graph = FunctionGraph.from_modules(no_parallel, config={})
     node_grouper = GroupNodesAllAsOne()
     nodes_grouped = node_grouper.group_nodes(list(fn_graph.nodes.values()))
     assert len(nodes_grouped) == 1
@@ -29,14 +29,14 @@ def test_group_all_as_one():
 def test_group_by_level():
     # No good reason you'd ever really want to group this way, but this helps test the grouping
     # system
-    fn_graph = FunctionGraph(no_parallel, config={})
+    fn_graph = FunctionGraph.from_modules(no_parallel, config={})
     node_grouper = GroupNodesByLevel()
     nodes_grouped = node_grouper.group_nodes(list(fn_graph.nodes.values()))
     assert len(nodes_grouped) == 6  # Two are in the same group
 
 
 def test_group_nodes_by_repeatable_blocks():
-    fn_graph = FunctionGraph(parallel_linear_basic, config={})
+    fn_graph = FunctionGraph.from_modules(parallel_linear_basic, config={})
     node_grouper = GroupByRepeatableBlocks()
     nodes_grouped_by_name = {
         group.base_id: group for group in node_grouper.group_nodes(list(fn_graph.nodes.values()))
@@ -55,7 +55,7 @@ def test_group_nodes_by_repeatable_blocks():
 
 
 def test_group_nodes_by_repeatable_blocks_complex():
-    fn_graph = FunctionGraph(parallel_complex, config={})
+    fn_graph = FunctionGraph.from_modules(parallel_complex, config={})
     node_grouper = GroupByRepeatableBlocks()
     nodes_grouped_by_name = {
         group.base_id: group for group in node_grouper.group_nodes(list(fn_graph.nodes.values()))
@@ -71,7 +71,7 @@ def test_group_nodes_by_repeatable_blocks_complex():
 
 
 def test_create_task_plan():
-    fn_graph = FunctionGraph(parallel_linear_basic, config={})
+    fn_graph = FunctionGraph.from_modules(parallel_linear_basic, config={})
     node_grouper = GroupByRepeatableBlocks()
     nodes_grouped = node_grouper.group_nodes(list(fn_graph.nodes.values()))
     task_plan = grouping.create_task_plan(nodes_grouped, ["final"], {}, [base.DefaultAdapter()])

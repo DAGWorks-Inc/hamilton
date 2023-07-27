@@ -176,7 +176,7 @@ def test_subdag_empty_config():
 
 
 def test_reuse_subdag_end_to_end():
-    fg = graph.FunctionGraph(tests.resources.reuse_subdag, config={"op": "subtract"})
+    fg = graph.FunctionGraph.from_modules(tests.resources.reuse_subdag, config={"op": "subtract"})
     prefixless_nodes = []
     prefixed_nodes = collections.defaultdict(list)
     for name, node in fg.nodes.items():
@@ -321,7 +321,7 @@ def test_nested_subdag():
     # we only need to generate from the outer subdag
     # as it refers to the inner one
     full_module = ad_hoc_utils.create_temporary_module(outer_subdag_1, outer_subdag_2, sum_all)
-    fg = graph.FunctionGraph(full_module, config={})
+    fg = graph.FunctionGraph.from_modules(full_module, config={})
     assert "outer_subdag_1" in fg.nodes
     assert "outer_subdag_2" in fg.nodes
     res = fg.execute(nodes=[fg.nodes["sum_all"]], inputs={"input_1": 2})
@@ -360,7 +360,7 @@ def test_nested_subdag_with_config():
     # we only need to generate from the outer subdag
     # as it refers to the inner one
     full_module = ad_hoc_utils.create_temporary_module(outer_subdag_1, outer_subdag_2, sum_all)
-    fg = graph.FunctionGraph(full_module, config={"broken": False})
+    fg = graph.FunctionGraph.from_modules(full_module, config={"broken": False})
     assert "outer_subdag_1" in fg.nodes
     assert "outer_subdag_2" in fg.nodes
     res = fg.execute(nodes=[fg.nodes["sum_all"]], inputs={"input_1": 2})
@@ -382,7 +382,7 @@ def test_subdag_with_external_nodes_input():
         return foo + bar + baz
 
     full_module = ad_hoc_utils.create_temporary_module(foo_bar_baz)
-    fg = graph.FunctionGraph(full_module, config={})
+    fg = graph.FunctionGraph.from_modules(full_module, config={})
     # since we've provided it above,
     assert "baz" in fg.nodes
     assert fg.nodes["baz"].user_defined
@@ -411,7 +411,7 @@ def test_parameterized_subdag_with_external_inputs_global():
         return foo_bar_baz_input_1 + foo_bar_baz_input_2
 
     full_module = ad_hoc_utils.create_temporary_module(foo_bar_baz, foo_bar_baz_summed)
-    fg = graph.FunctionGraph(full_module, config={})
+    fg = graph.FunctionGraph.from_modules(full_module, config={})
     # since we've provided it above,
     assert "baz" in fg.nodes
     assert fg.nodes["baz"].user_defined
@@ -450,7 +450,7 @@ def test_parameterized_subdag_with_config():
     # we only need to generate from the outer subdag
     # as it refers to the inner one
     full_module = ad_hoc_utils.create_temporary_module(outer_subdag_1, outer_subdag_2, sum_all)
-    fg = graph.FunctionGraph(full_module, config={"broken": False})
+    fg = graph.FunctionGraph.from_modules(full_module, config={"broken": False})
     assert "outer_subdag_1" in fg.nodes
     assert "outer_subdag_2" in fg.nodes
     res = fg.execute(nodes=[fg.nodes["sum_all"]], inputs={"input_1": 2})
@@ -486,7 +486,7 @@ def test_nested_parameterized_subdag_with_config():
     # we only need to generate from the outer subdag
     # as it refers to the inner one
     full_module = ad_hoc_utils.create_temporary_module(outer_subdag_n, sum_all)
-    fg = graph.FunctionGraph(full_module, config={"broken": False})
+    fg = graph.FunctionGraph.from_modules(full_module, config={"broken": False})
     assert "outer_subdag_1" in fg.nodes
     assert "outer_subdag_2" in fg.nodes
     res = fg.execute(nodes=[fg.nodes["sum_all"]], inputs={"input_1": 2})
