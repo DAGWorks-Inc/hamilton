@@ -185,6 +185,7 @@ Hamilton is released under the [BSD 3-Clause Clear License](https://github.com/D
 * [IBM](https://www.ibm.com/)
 * [British Cycling](https://www.britishcycling.org.uk/)
 * [PNNL](https://pnnl.gov/)
+* [ORNL](https://www.ornl.gov/)
 * [Federal Reserve Board](https://www.federalreserve.gov/)
 * [Joby Aviation](https://www.jobyaviation.com/)
 * [Two](https://www.two.inc/)
@@ -192,6 +193,8 @@ Hamilton is released under the [BSD 3-Clause Clear License](https://github.com/D
 * [Railofy](https://www.railofy.com)
 * [Habitat Energy](https://www.habitat.energy/)
 * [KI-Insurance](https://www.ki-insurance.com/)
+* [Ascena Retail](https://www.ascena.com/)
+* [Opendoor](https://www.opendoor.com/)
 
 To add your company, make a pull request to add it here.
 
