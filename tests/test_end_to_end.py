@@ -1,15 +1,17 @@
 import importlib
+import json
 import sys
-from typing import Callable
+from typing import Any, Callable, Dict, List, Type
 
 import pytest
 
 import tests.resources.data_quality
 import tests.resources.dynamic_config
-from hamilton import driver, settings
+from hamilton import base, driver, settings
 from hamilton.base import DefaultAdapter
 from hamilton.data_quality.base import DataValidationError, ValidationResult
 from hamilton.execution import executors, grouping
+from hamilton.io.materialization import to
 
 
 @pytest.mark.parametrize(
@@ -267,3 +269,47 @@ def test_end_to_end_with_dynamic_config(driver_factory):
     assert out["ae"][0] == 2
     assert out["abcd"][0] == 4
     assert out["abcdcd"][0] == 6
+
+
+class JoinBuilder(base.ResultMixin):
+    @staticmethod
+    def build_result(**outputs: Dict[str, Any]) -> Any:
+        out = {}
+        for output in outputs.values():
+            out.update(output)
+        return out
+
+    def output_type(self) -> Type:
+        return dict
+
+    def input_types(self) -> List[Type]:
+        return [dict]
+
+
+def test_materialize_driver_call_end_to_end(tmp_path_factory):
+    dr = driver.Driver({}, tests.resources.test_for_materialization)
+    path_1 = tmp_path_factory.mktemp("home") / "test_materialize_driver_call_end_to_end_1.json"
+    path_2 = tmp_path_factory.mktemp("home") / "test_materialize_driver_call_end_to_end_2.json"
+
+    materialization_result, result = dr.materialize(
+        to.json(id="materializer_1", dependencies=["json_to_save_1"], path=path_1),
+        to.json(
+            id="materializer_2",
+            dependencies=["json_to_save_1", "json_to_save_2"],
+            path=path_2,
+            combine=JoinBuilder(),
+        ),
+        additional_vars=["json_to_save_1", "json_to_save_2"],
+    )
+    assert result == {
+        "json_to_save_1": tests.resources.test_for_materialization.json_to_save_1(),
+        "json_to_save_2": tests.resources.test_for_materialization.json_to_save_2(),
+    }
+    assert "materializer_1" in materialization_result
+    assert "materializer_2" in materialization_result
+    with open(path_1) as f_1, open(path_2) as f_2:
+        assert json.load(f_1) == tests.resources.test_for_materialization.json_to_save_1()
+        assert json.load(f_2) == {
+            **tests.resources.test_for_materialization.json_to_save_2(),
+            **tests.resources.test_for_materialization.json_to_save_1(),
+        }

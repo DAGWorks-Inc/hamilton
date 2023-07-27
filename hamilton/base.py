@@ -6,7 +6,7 @@ import abc
 import collections
 import inspect
 import logging
-from typing import Any, Dict, List, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -24,10 +24,14 @@ logger = logging.getLogger(__name__)
 class ResultMixin(object):
     """Abstract base class housing the static function.
 
-    Why a static function? That's because certain frameworks can only pickle a static function, not an entire
-    object.
+    Why a static function? That's because certain frameworks can only pickle a static function,
+    not an entire object. # TODO -- fix this so this can carry state/act as a standard object.
+
 
     All result builders should inherit from this class and implement the build_result function.
+    Note that applicable_input_type and output_type are optional, but recommended, for backwards
+    compatibility. They let us type-check this. They will default to Any, which means that they'll
+    connect to anything.
     """
 
     @staticmethod
@@ -35,6 +39,20 @@ class ResultMixin(object):
     def build_result(**outputs: Dict[str, Any]) -> Any:
         """This function builds the result given the computed values."""
         pass
+
+    def input_types(self) -> List[Type[Type]]:
+        """Gives the applicable types to this result builder.
+        This is optional for backwards compatibility, but is recommended.
+
+        :return: A list of types that this can apply to.
+        """
+        return [Any]
+
+    def output_type(self) -> Type:
+        """Returns the output type of this result builder
+        :return: the type that this creates
+        """
+        return Any
 
 
 class DictResult(ResultMixin):
@@ -62,6 +80,7 @@ class DictResult(ResultMixin):
     DefaultAdapter
 
     .. code-block:: python
+
         adapter = base.DefaultAdapter()
     """
 
@@ -69,6 +88,12 @@ class DictResult(ResultMixin):
     def build_result(**outputs: Dict[str, Any]) -> Dict:
         """This function builds a simple dict of output -> computed values."""
         return outputs
+
+    def input_types(self) -> Optional[List[Type[Type]]]:
+        return [Any]
+
+    def output_type(self) -> Type:
+        return Dict[str, Any]
 
 
 class PandasDataFrameResult(ResultMixin):
@@ -275,7 +300,16 @@ class PandasDataFrameResult(ResultMixin):
                         f"being added; it may be coming from a dataframe that is being unpacked."
                     )
                 flattened_outputs[name] = output
+
         return pd.DataFrame(flattened_outputs)
+
+    def input_types(self) -> List[Type[Type]]:
+        """Currently this just shoves anything into a dataframe. We should probably
+        tighten this up."""
+        return [Any]
+
+    def output_type(self) -> Type:
+        return pd.DataFrame
 
 
 class StrictIndexTypePandasDataFrameResult(PandasDataFrameResult):
@@ -370,6 +404,13 @@ class NumpyMatrixResult(ResultMixin):
                 )
         # Create the matrix with columns as rows and then transpose
         return np.asmatrix(list_of_columns).T
+
+    def input_types(self) -> List[Type[Type]]:
+        """Currently returns anything as numpy types are relatively new and"""
+        return [Any]  # Typing
+
+    def output_type(self) -> Type:
+        return pd.DataFrame
 
 
 class HamiltonGraphAdapter(ResultMixin):
