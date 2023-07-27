@@ -1,6 +1,6 @@
-======================
-GraphAdapter Reference
-======================
+==============
+GraphAdapters
+==============
 
 This section helps determine ways to execute Hamilton.
 
