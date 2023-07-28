@@ -7,6 +7,9 @@ from ray import workflow
 
 from hamilton import base, node
 from hamilton.base import SimplePythonGraphAdapter
+from hamilton.execution import executors
+from hamilton.execution.executors import TaskFuture
+from hamilton.execution.grouping import TaskImplementation
 
 logger = logging.getLogger(__name__)
 
@@ -199,3 +202,43 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
             remote_combine, workflow_id=self.workflow_id
         )  # this materializes the object locally
         return result
+
+
+class RayTaskExecutor(executors.TaskExecutor):
+    """Task executor using Ray for the new task-based execution mechanism in Hamilton.
+    This is still experimental, so the API might change.
+    """
+
+    def __init__(self, num_cpus: int):
+        """Creates a ray task executor. Note this will likely take in more parameters. This is
+        experimental, so the API will likely change, although we will do our best to make it
+        backwards compatible.
+
+        :param num_cpus: Number of cores to use for initialization, passed drirectly to ray.init
+        """
+        self.num_cpus = num_cpus
+
+    def init(self):
+        ray.init(num_cpus=self.num_cpus)
+
+    def finalize(self):
+        ray.shutdown()
+
+    def submit_task(self, task: TaskImplementation) -> TaskFuture:
+        """Submits a task, wrapping it in a TaskFuture (after getting the corresponding python
+        future).
+
+        :param task: Task to wrap
+        :return: A future
+        """
+
+        return executors.TaskFutureWrappingPythonFuture(
+            ray.remote(executors.base_execute_task).remote(task=task).future()
+        )
+
+    def can_submit_task(self) -> bool:
+        """For now we can always submit a task -- it might just be delayed.
+
+        :return: True
+        """
+        return True
