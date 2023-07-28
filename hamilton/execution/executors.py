@@ -277,62 +277,42 @@ class DefaultExecutionManager(ExecutionManager):
         return self.remote_executor
 
 
-class GraphRunner:
-    """Live component that runs the graph until completion.
-    Its job is continually pushing through and updating the ExecutionState.
-    It is separate from the ExecutionState as it carries no state itself, just queries/updates.
+def run_graph_to_completion(
+    execution_state: ExecutionState,
+    execution_manager: ExecutionManager,
+):
+    """Blocking call to run the graph until it is complete. Note that this employs a while loop.
+    With the way we handle futures, we should be able to have this event-driven, allowing us
+    to only query when the state is updated, and use that to trigger a new update.
 
-    It might be that we want to push the DAG Walker/decision about where to go in here as well,
-    but we'll decide that later.
+    For now, the while loop is fine.
 
+    :return: Nothing, the execution state/result cache can give us the data
     """
-
-    def __init__(self, execution_state: ExecutionState, execution_manager: ExecutionManager):
-        """Initializes a graph runner with the execution state and the result cache
-
-        :param state: Execution state -- this stores the state. We push updates to it and get the
-        next step.
-        :param task_executor: Task executor -- this is what we use to submit tasks.
-        In fact, we may actually consider having tasks update their own state...
-        """
-        self.execution_state = execution_state
-        self.execution_manager = execution_manager
-        # self.result_cache = result_cache
-        self.task_futures = {}
-
-    def run_until_complete(self):
-        """Blocking call to run the graph until it is complete. Note that this employs a while loop.
-        With the way we handle futures, we should be able to have this event-driven, allowing us
-        to only query when the state is updated, and use that to trigger a new update.
-
-        For now, the while loop is fine.
-
-        :return: Nothing, places results in the result cache.
-        """
-        # Until the graph is done
-        self.execution_manager.init()
-        try:
-            while not GraphState.is_terminal(self.execution_state.get_graph_state()):
-                # get the next task from the queue
-                next_task = self.execution_state.release_next_task()
-                if next_task is not None:
-                    task_executor = self.execution_manager.get_executor_for_task(next_task)
-                    if task_executor.can_submit_task():
-                        submitted = task_executor.submit_task(next_task)
-                        self.task_futures[next_task.task_id] = submitted
-                    else:
-                        # Whoops, back on the queue
-                        # We should probably wait a bit here, but for now we're going to keep
-                        # burning through
-                        self.execution_state.reject_task(task_to_reject=next_task)
-                # update all the tasks in flight
-                # copy so we can modify
-                for task_name, task_future in self.task_futures.copy().items():
-                    state = task_future.get_state()
-                    result = task_future.get_result()
-                    self.execution_state.update_task_state(task_name, state, result)
-                    if TaskState.is_terminal(state):
-                        del self.task_futures[task_name]
-            logger.info(f"Graph is done, graph state is {self.execution_state.get_graph_state()}")
-        finally:
-            self.execution_manager.finalize()
+    task_futures = {}
+    execution_manager.init()
+    try:
+        while not GraphState.is_terminal(execution_state.get_graph_state()):
+            # get the next task from the queue
+            next_task = execution_state.release_next_task()
+            if next_task is not None:
+                task_executor = execution_manager.get_executor_for_task(next_task)
+                if task_executor.can_submit_task():
+                    submitted = task_executor.submit_task(next_task)
+                    task_futures[next_task.task_id] = submitted
+                else:
+                    # Whoops, back on the queue
+                    # We should probably wait a bit here, but for now we're going to keep
+                    # burning through
+                    execution_state.reject_task(task_to_reject=next_task)
+            # update all the tasks in flight
+            # copy so we can modify
+            for task_name, task_future in task_futures.copy().items():
+                state = task_future.get_state()
+                result = task_future.get_result()
+                execution_state.update_task_state(task_name, state, result)
+                if TaskState.is_terminal(state):
+                    del task_futures[task_name]
+        logger.info(f"Graph is done, graph state is {execution_state.get_graph_state()}")
+    finally:
+        execution_manager.finalize()
