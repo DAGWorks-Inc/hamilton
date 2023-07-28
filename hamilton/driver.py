@@ -741,9 +741,7 @@ class DriverV2(DriverCommon):
         overrides = overrides if overrides is not None else {}
         inputs = inputs if inputs is not None else {}
         nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
-        self.validate_inputs(
-            user_nodes, inputs, nodes
-        )
+        self.validate_inputs(user_nodes, inputs, nodes)
         (
             transform_nodes_required_for_execution,
             user_defined_nodes_required_for_execution,
@@ -769,10 +767,8 @@ class DriverV2(DriverCommon):
         )
         # Create a task graph and execution state
         execution_state = state.ExecutionState(tasks, results_cache)  # Stateful storage for the DAG
-        # Run the graph (Stateless while loop for executing the DAG)
-        graph_runner = executors.GraphRunner(execution_state, self.execution_manager)
         # Blocking call to run through until completion
-        graph_runner.run_until_complete()
+        executors.run_graph_to_completion(execution_state, self.execution_manager)
         # Read the final variables from the result cache
         raw_result = results_cache.read(final_vars)
         return self.result_builder.build_result(**raw_result)
