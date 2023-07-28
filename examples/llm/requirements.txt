@@ -1,0 +1,5 @@
+feedparser
+pandas
+sf-hamilton
+unstructured
+weaviate-client
