@@ -36,9 +36,7 @@ from hamilton.execution import executors, grouping
     ],
     ids=["basic_driver", "driver_v2_multithreading", "driver_v2_synchronous"],
 )
-def test_data_quality_workflow_passes(
-    driver_factory: Callable[[], driver.DriverCommon], execute_fn: str
-):
+def test_data_quality_workflow_passes(driver_factory: Callable[[], driver.Driver], execute_fn: str):
     dr = driver_factory()
     all_vars = dr.list_available_variables()
     result = getattr(dr, execute_fn)(
