@@ -92,14 +92,140 @@ class Variable:
         )
 
 
-class DriverCommon:
-    """Driver functionality common between the V1 and V2 driver"""
+class GraphExecutor(abc.ABC):
+    """Interface for the graph executor. This runs a function graph,
+    given a function graph, inputs, and overrides."""
+
+    @abc.abstractmethod
+    def execute(
+        self,
+        fg: graph.FunctionGraph,
+        final_vars: List[Union[str, Callable, Variable]],
+        overrides: Dict[str, Any],
+        inputs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Executes a graph in a blocking function.
+
+        :param fg: Graph to execute
+        :param final_vars: Variables we want
+        :param overrides: Overrides --- these short-circuit computation
+        :param inputs: Inputs to the Graph.
+        :return: The output of the final variables, in dictionary form.
+        """
+
+
+class DefaultGraphExecutor(GraphExecutor):
+    def execute(
+        self,
+        fg: graph.FunctionGraph,
+        final_vars: List[str],
+        overrides: Dict[str, Any],
+        inputs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Basic executor for a function graph. Does no task-based execution, just does a DFS
+        and executes the graph in order, in memory."""
+        memoized_computation = dict()  # memoized storage
+        nodes = [fg.nodes[node_name] for node_name in final_vars]
+        fg.execute(nodes, memoized_computation, overrides, inputs)
+        outputs = {
+            final_var: memoized_computation[final_var] for final_var in final_vars
+        }  # only want request variables in df.
+        del memoized_computation  # trying to cleanup some memory
+        return outputs
+
+
+class TaskBasedGraphExecutor(GraphExecutor):
+    def __init__(
+        self,
+        execution_manager: executors.ExecutionManager,
+        grouping_strategy: grouping.GroupingStrategy,
+        adapter: base.HamiltonGraphAdapter,
+    ):
+        """Executor for task-based execution. This enables grouping of nodes into tasks, as
+        well as parallel execution/dynamic spawning of nodes.
+
+        :param execution_manager: Utility to assign task executors to node groups
+        :param grouping_strategy: Utility to group nodes into tasks
+        :param result_builder: Utility to build the final result"""
+
+        self.execution_manager = execution_manager
+        self.grouping_strategy = grouping_strategy
+        self.adapter = adapter
+
+    def execute(
+        self,
+        fg: graph.FunctionGraph,
+        final_vars: List[str],
+        overrides: Dict[str, Any],
+        inputs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Executes a graph, task by task. This blocks until completion.
+
+        This does the following:
+        1. Groups the nodes into tasks
+        2. Creates an execution state and a results cache
+        3. Runs it to completion, populating the results cache
+        4. Returning the results from the results cache
+        """
+        (
+            transform_nodes_required_for_execution,
+            user_defined_nodes_required_for_execution,
+        ) = fg.get_upstream_nodes(final_vars, runtime_inputs=inputs, runtime_overrides=overrides)
+
+        all_nodes_required_for_execution = list(
+            set(transform_nodes_required_for_execution).union(
+                user_defined_nodes_required_for_execution
+            )
+        )
+        grouped_nodes = self.grouping_strategy.group_nodes(
+            all_nodes_required_for_execution
+        )  # pure function transform
+        # Instantiate a result cache so we can use later
+        # Pass in inputs so we can pre-populate the results cache
+        prehydrated_results = {**overrides, **inputs}
+        results_cache = state.DictBasedResultCache(prehydrated_results)
+        # Create tasks from the grouped nodes, filtering/pruning as we go
+        tasks = grouping.create_task_plan(grouped_nodes, final_vars, overrides, [fg.adapter])
+        # Create a task graph and execution state
+        execution_state = state.ExecutionState(tasks, results_cache)  # Stateful storage for the DAG
+        # Blocking call to run through until completion
+        executors.run_graph_to_completion(execution_state, self.execution_manager)
+        # Read the final variables from the result cache
+        raw_result = results_cache.read(final_vars)
+        return self.adapter.build_result(**raw_result)
+
+
+class Driver:
+    """This class orchestrates creating and executing the DAG to create a dataframe.
+
+    .. code-block:: python
+
+        from hamilton import driver
+        from hamilton import base
+
+        # 1. Setup config or invariant input.
+        config = {}
+
+        # 2. we need to tell hamilton where to load function definitions from
+        import my_functions
+        # or programmatically (e.g. you can script module loading)
+        module_name = 'my_functions'
+        my_functions = importlib.import_module(module_name)
+
+        # 3. Determine the return type -- default is a pandas.DataFrame.
+        adapter = base.SimplePythonDataFrameGraphAdapter() # See GraphAdapter docs for more details.
+
+        # These all feed into creating the driver & thus DAG.
+        dr = driver.Driver(config, module, adapter=adapter)
+
+    """
 
     def __init__(
         self,
         config: Dict[str, Any],
         *modules: ModuleType,
         adapter: base.HamiltonGraphAdapter = None,
+        _graph_executor: GraphExecutor = None,
     ):
         """Constructor: creates a DAG given the configuration & modules to crawl.
 
@@ -108,7 +234,13 @@ class DriverCommon:
         :param modules: Python module objects you want to inspect for Hamilton Functions.
         :param adapter: Optional. A way to wire in another way of "executing" a hamilton graph.
                         Defaults to using original Hamilton adapter which is single threaded in memory python.
+        :param _graphExecutor: This is injected by the builder -- if you want to set different graph
+        execution parameters, use the builder rather than instantiating this directly.
         """
+        if _graph_executor is None:
+            _graph_executor = DefaultGraphExecutor()
+        self.graph_executor = _graph_executor
+
         self.driver_run_id = uuid.uuid4()
         if adapter is None:
             adapter = base.SimplePythonDataFrameGraphAdapter()
@@ -157,7 +289,7 @@ class DriverCommon:
                     result_builder,
                     self.driver_run_id,
                     error,
-                    self.__class__.__qualname__,
+                    self.graph_executor.__class__.__name__,
                 )
                 telemetry.send_event_json(payload)
             except Exception as e:
@@ -223,6 +355,79 @@ class DriverCommon:
             error_str = f"{len(errors)} errors encountered:\n  " + "\n  ".join(errors)
             raise ValueError(error_str)
 
+    def execute(
+        self,
+        final_vars: List[Union[str, Callable, Variable]],
+        overrides: Dict[str, Any] = None,
+        display_graph: bool = False,
+        inputs: Dict[str, Any] = None,
+    ) -> Any:
+        """Executes computation.
+
+        :param final_vars: the final list of outputs we want to compute.
+        :param overrides: values that will override "nodes" in the DAG.
+        :param display_graph: DEPRECATED. Whether we want to display the graph being computed.
+        :param inputs: Runtime inputs to the DAG.
+        :return: an object consisting of the variables requested, matching the type returned by the GraphAdapter.
+            See constructor for how the GraphAdapter is initialized. The default one right now returns a pandas
+            dataframe.
+        """
+        if display_graph:
+            logger.warning(
+                "display_graph=True is deprecated. It will be removed in the 2.0.0 release. "
+                "Please use visualize_execution()."
+            )
+        start_time = time.time()
+        run_successful = True
+        error = None
+        _final_vars = self._create_final_vars(final_vars)
+        try:
+            outputs = self.raw_execute(_final_vars, overrides, display_graph, inputs=inputs)
+            result = self.adapter.build_result(**outputs)
+            return result
+        except Exception as e:
+            run_successful = False
+            logger.error(SLACK_ERROR_MESSAGE)
+            error = telemetry.sanitize_error(*sys.exc_info())
+            raise e
+        finally:
+            duration = time.time() - start_time
+            self.capture_execute_telemetry(
+                error, _final_vars, inputs, overrides, run_successful, duration
+            )
+
+    def _create_final_vars(self, final_vars: List[Union[str, Callable, Variable]]) -> List[str]:
+        """Creates the final variables list - converting functions names as required.
+
+        :param final_vars:
+        :return: list of strings in the order that final_vars was provided.
+        """
+        _final_vars = []
+        errors = []
+        module_set = {_module.__name__ for _module in self.graph_modules}
+        for final_var in final_vars:
+            if isinstance(final_var, str):
+                _final_vars.append(final_var)
+            elif isinstance(final_var, Variable):
+                _final_vars.append(final_var.name)
+            elif isinstance(final_var, Callable):
+                if final_var.__module__ in module_set:
+                    _final_vars.append(final_var.__name__)
+                else:
+                    errors.append(
+                        f"Function {final_var.__module__}.{final_var.__name__} is a function not in a "
+                        f"module given to the driver. Valid choices are {module_set}."
+                    )
+            else:
+                errors.append(
+                    f"Final var {final_var} is not a string, a function, or a driver.Variable."
+                )
+        if errors:
+            errors.sort()
+            error_str = f"{len(errors)} errors encountered:\n  " + "\n  ".join(errors)
+            raise ValueError(error_str)
+        return _final_vars
+
     def capture_execute_telemetry(
         self,
         error: Optional[str],
@@ -262,37 +467,42 @@ class DriverCommon:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"Error caught in processing telemetry:\n{e}")
 
-    def _create_final_vars(self, final_vars: List[Union[str, Callable, Variable]]) -> List[str]:
-        """Creates the final variables list - converting functions names as required.
+    def raw_execute(
+        self,
+        final_vars: List[str],
+        overrides: Dict[str, Any] = None,
+        display_graph: bool = False,
+        inputs: Dict[str, Any] = None,
+    ) -> Dict[str, Any]:
+        """Raw execute function that does the meat of execute.
 
-        :param final_vars:
-        :return: list of strings in the order that final_vars was provided.
+        It does not try to stitch anything together. Thus allowing wrapper executes around this to shape the output
+        of the data.
+
+        :param final_vars: Final variables to compute
+        :param overrides: Overrides to run.
+        :param display_graph: DEPRECATED. DO NOT USE. Whether or not to display the graph when running it
+        :param inputs: Runtime inputs to the DAG
+        :return:
         """
-        _final_vars = []
-        errors = []
-        module_set = {_module.__name__ for _module in self.graph_modules}
-        for final_var in final_vars:
-            if isinstance(final_var, str):
-                _final_vars.append(final_var)
-            elif isinstance(final_var, Variable):
-                _final_vars.append(final_var.name)
-            elif isinstance(final_var, Callable):
-                if final_var.__module__ in module_set:
-                    _final_vars.append(final_var.__name__)
-                else:
-                    errors.append(
-                        f"Function {final_var.__module__}.{final_var.__name__} is a function not in a "
-                        f"module given to the driver. Valid choices are {module_set}."
-                    )
-            else:
-                errors.append(
-                    f"Final var {final_var} is not a string, a function, or a driver.Variable."
-                )
-        if errors:
-            errors.sort()
-            error_str = f"{len(errors)} errors encountered:\n  " + "\n  ".join(errors)
-            raise ValueError(error_str)
-        return _final_vars
+        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
+        self.validate_inputs(
+            user_nodes, inputs, nodes
+        )  # TODO -- validate within the function graph itself
+        if display_graph:  # deprecated flow.
+            logger.warning(
+                "display_graph=True is deprecated. It will be removed in the 2.0.0 release. "
+                "Please use visualize_execution()."
+            )
+            self.visualize_execution(final_vars, "test-output/execute.gv", {"view": True})
+            if self.has_cycles(final_vars):  # here for backwards compatible driver behavior.
+                raise ValueError("Error: cycles detected in your graph.")
+        return self.graph_executor.execute(
+            self.graph,
+            final_vars,
+            overrides if overrides is not None else {},
+            inputs if inputs is not None else {},
+        )
 
     @capture_function_usage
     def list_available_variables(self) -> List[Variable]:
@@ -503,8 +713,25 @@ class DriverCommon:
             raise ValueError(f"Upstream node {upstream_node_name} not found in graph.")
         if downstream_node_name not in all_variables:
             raise ValueError(f"Downstream node {downstream_node_name} not found in graph.")
-        nodes_for_path = self.graph.nodes_between(upstream_node_name, downstream_node_name)
+        nodes_for_path = self._get_nodes_between(upstream_node_name, downstream_node_name)
         return [Variable.from_node(n) for n in nodes_for_path]
+
+    def _get_nodes_between(
+        self, upstream_node_name: str, downstream_node_name: str
+    ) -> Set[node.Node]:
+        """Gets the nodes representing the path between two nodes, inclusive of the two nodes.
+
+        Assumes that the nodes exist in the graph.
+
+        :param upstream_node_name: the name of the node that we want to start from.
+        :param downstream_node_name: the name of the node that we want to end at.
+        :return: set of nodes that comprise the path between the two nodes, inclusive of the two nodes.
+        """
+        downstream_nodes = self.graph.get_downstream_nodes([upstream_node_name])
+        # we skip user_nodes because it'll be the upstream node, or it wont matter.
+        upstream_nodes, _ = self.graph.get_upstream_nodes([downstream_node_name])
+        nodes_for_path = set(downstream_nodes).intersection(set(upstream_nodes))
+        return nodes_for_path
 
     @capture_function_usage
     def visualize_path_between(
@@ -552,7 +779,7 @@ class DriverCommon:
                 node_modifiers[n.name] = {graph.VisualizationNodeModifiers.IS_USER_INPUT}
 
         # create nodes that constitute the path
-        nodes_for_path = self.graph.nodes_between(upstream_node_name, downstream_node_name)
+        nodes_for_path = self._get_nodes_between(upstream_node_name, downstream_node_name)
         if len(nodes_for_path) == 0:
             raise ValueError(
                 f"No path found between {upstream_node_name} and {downstream_node_name}."
@@ -573,205 +800,6 @@ class DriverCommon:
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
-
-    @abc.abstractmethod
-    def execute(
-        self,
-        final_vars: List[Union[str, Callable, Variable]],
-        overrides: Dict[str, Any] = None,
-        display_graph: bool = False,
-        inputs: Dict[str, Any] = None,
-    ) -> Any:
-        pass
-
-
-class Driver(DriverCommon):
-    """This class orchestrates creating and executing the DAG to create a dataframe.
-
-    .. code-block:: python
-
-        from hamilton import driver
-        from hamilton import base
-
-        # 1. Setup config or invariant input.
-        config = {}
-
-        # 2. we need to tell hamilton where to load function definitions from
-        import my_functions
-        # or programmatically (e.g. you can script module loading)
-        module_name = 'my_functions'
-        my_functions = importlib.import_module(module_name)
-
-        # 3. Determine the return type -- default is a pandas.DataFrame.
-        adapter = base.SimplePythonDataFrameGraphAdapter() # See GraphAdapter docs for more details.
-
-        # These all feed into creating the driver & thus DAG.
-        dr = driver.Driver(config, module, adapter=adapter)
-
-    """
-
-    def execute(
-        self,
-        final_vars: List[Union[str, Callable, Variable]],
-        overrides: Dict[str, Any] = None,
-        display_graph: bool = False,
-        inputs: Dict[str, Any] = None,
-    ) -> Any:
-        """Executes computation.
-
-        :param final_vars: the final list of outputs we want to compute.
-        :param overrides: values that will override "nodes" in the DAG.
-        :param display_graph: DEPRECATED. Whether we want to display the graph being computed.
-        :param inputs: Runtime inputs to the DAG.
-        :return: an object consisting of the variables requested, matching the type returned by the GraphAdapter.
-            See constructor for how the GraphAdapter is initialized. The default one right now returns a pandas
-            dataframe.
-        """
-        if display_graph:
-            logger.warning(
-                "display_graph=True is deprecated. It will be removed in the 2.0.0 release. "
-                "Please use visualize_execution()."
-            )
-        start_time = time.time()
-        run_successful = True
-        error = None
-        _final_vars = self._create_final_vars(final_vars)
-        try:
-            outputs = self.raw_execute(_final_vars, overrides, display_graph, inputs=inputs)
-            result = self.adapter.build_result(**outputs)
-            return result
-        except Exception as e:
-            run_successful = False
-            logger.error(SLACK_ERROR_MESSAGE)
-            error = telemetry.sanitize_error(*sys.exc_info())
-            raise e
-        finally:
-            duration = time.time() - start_time
-            self.capture_execute_telemetry(
-                error, _final_vars, inputs, overrides, run_successful, duration
-            )
-
-    def raw_execute(
-        self,
-        final_vars: List[str],
-        overrides: Dict[str, Any] = None,
-        display_graph: bool = False,
-        inputs: Dict[str, Any] = None,
-    ) -> Dict[str, Any]:
-        """Raw execute function that does the meat of execute.
-
-        It does not try to stitch anything together. Thus allowing wrapper executes around this to shape the output
-        of the data.
-
-        :param final_vars: Final variables to compute
-        :param overrides: Overrides to run.
-        :param display_graph: DEPRECATED. DO NOT USE. Whether or not to display the graph when running it
-        :param inputs: Runtime inputs to the DAG
-        :return:
-        """
-        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
-        self.validate_inputs(
-            user_nodes, inputs, nodes
-        )  # TODO -- validate within the function graph itself
-        if display_graph:  # deprecated flow.
-            logger.warning(
-                "display_graph=True is deprecated. It will be removed in the 2.0.0 release. "
-                "Please use visualize_execution()."
-            )
-            self.visualize_execution(final_vars, "test-output/execute.gv", {"view": True})
-            if self.has_cycles(final_vars):  # here for backwards compatible driver behavior.
-                raise ValueError("Error: cycles detected in you graph.")
-        memoized_computation = dict()  # memoized storage
-        self.graph.execute(nodes, memoized_computation, overrides, inputs)
-        outputs = {
-            c: memoized_computation[c] for c in final_vars
-        }  # only want request variables in df.
-        del memoized_computation  # trying to cleanup some memory
-        return outputs
-
-
-class DriverV2(DriverCommon):
-    """Represents a V2 driver. This utilizes task-based execution, and will have the capability
-    to handle materialization + chaining of drivers. This is currently separate (but inherits
-    from a common class) to avoid bloat of the prvious driver.
-
-    Note that this should be instantiated through the builder, *not* through the constructor,
-    as that is liable to change.
-    """
-
-    def __init__(
-        self,
-        *,
-        modules: List[ModuleType],
-        config: Dict[str, Any] = None,
-        execution_manager: executors.ExecutionManager = None,
-        grouping_strategy: grouping.GroupingStrategy = None,
-        result_builder: base.ResultMixin = None,
-    ):
-        """Initializes a DriverV2. This takes in execution-specific parameters.
-        Note you don't actually want to call this directly -- instead call the builder.
-
-        :param modules: Modules to crawl for hamilton functions.
-        :param config: Configuration to use.
-        :param execution_manager: Decides which executor to assign to which tasks.
-        :param grouping_strategy: Strategy for grouping nodes into tasks.
-        :param result_builder: Result builder to use.
-        """
-        super(DriverV2, self).__init__(config, *modules)
-        self.execution_manager = execution_manager
-        self.grouping_strategy = grouping_strategy
-        self.result_builder = result_builder if result_builder is not None else base.DictResult()
-
-    def execute(
-        self,
-        final_vars: List[Union[str, Callable, Variable]],
-        overrides: Dict[str, Any] = None,
-        inputs: Dict[str, Any] = None,
-    ) -> Any:
-        """Executes a Hamilton DAG. Note this currently does not utilize a results builder.
-        This will change -- we will be appending the results builder to the DAG if supplied.
-
-        :param final_vars: Variables to request form the DAG.
-        :param overrides: Overrides -- this short-circuits computation of variables and instead
-        returns the specified override.
-        :param inputs: Parameterized inputs to the DAG
-        :return: A Dictionary containing the restults of the DAG.
-        """
-
-        overrides = overrides if overrides is not None else {}
-        inputs = inputs if inputs is not None else {}
-        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
-        self.validate_inputs(user_nodes, inputs, nodes)
-        (
-            transform_nodes_required_for_execution,
-            user_defined_nodes_required_for_execution,
-        ) = self.graph.get_upstream_nodes(
-            final_vars, runtime_inputs=inputs, runtime_overrides=overrides
-        )
-
-        all_nodes_required_for_execution = list(
-            set(transform_nodes_required_for_execution).union(
-                user_defined_nodes_required_for_execution
-            )
-        )
-        grouped_nodes = self.grouping_strategy.group_nodes(
-            all_nodes_required_for_execution
-        )  # pure function transform
-        # Instantiate a result cache so we can use later
-        # Pass in inputs so we can pre-populate the results cache
-        prehydrated_results = {**overrides, **inputs}
-        results_cache = state.DictBasedResultCache(prehydrated_results)
-        # Create tasks from the grouped nodes, filtering/pruning as we go
-        tasks = grouping.create_task_plan(
-            grouped_nodes, final_vars, overrides, [self.graph.adapter]
-        )
-        # Create a task graph and execution state
-        execution_state = state.ExecutionState(tasks, results_cache)  # Stateful storage for the DAG
-        # Blocking call to run through until completion
-        executors.run_graph_to_completion(execution_state, self.execution_manager)
-        # Read the final variables from the result cache
-        raw_result = results_cache.read(final_vars)
-        return self.result_builder.build_result(**raw_result)
 
 
 class Builder:
@@ -857,7 +885,6 @@ class Builder:
         :param adapter: Adapter to use.
         :return: self
         """
-        self._require_field_unset("v2_driver", "Cannot set adapter with v2 driver enabled.")
         self._require_field_unset("adapter", "Cannot set adapter twice.")
         self.adapter = adapter
         return self
@@ -922,24 +949,18 @@ class Builder:
         self.grouping_strategy = grouping_strategy
         return self
 
-    def with_result_builder(self, result_builder: base.ResultMixin) -> "Builder":
-        """Sets a result builder, which tells the driver how to build the result.
-
-        :param result_builder:
-        :return:
-        """
-        self._require_v2("Cannot set result builder without first enabling the V2 Driver")
-        self._require_field_unset("result_builder", "Cannot set result builder twice")
-        self.result_builder = result_builder
-        return self
-
     @capture_function_usage
-    def build(self) -> DriverCommon:
+    def build(self) -> Driver:
         """Builds the driver -- note that this can return a different class, so you'll likely
         want to have a sense of what it returns.
 
         :return: The driver you specified.
         """
+        adapter = (
+            self.adapter
+            if self.adapter is not None
+            else base.SimplePythonGraphAdapter(base.DictResult())
+        )
         if not self.v2_driver:
             return Driver(self.config, *self.modules, adapter=self.adapter)
         execution_manager = self.execution_manager
@@ -952,12 +973,17 @@ class Builder:
                 local_executor=local_executor, remote_executor=remote_executor
             )
         grouping_strategy = self.grouping_strategy or grouping.GroupByRepeatableBlocks()
-        return DriverV2(
-            config=self.config,
-            modules=self.modules,
+        graph_executor = TaskBasedGraphExecutor(
             execution_manager=execution_manager,
             grouping_strategy=grouping_strategy,
-            result_builder=self.result_builder,
+            adapter=adapter,
+        )
+        # TODO -- wire through an adapter
+        return Driver(
+            self.config,
+            *self.modules,
+            adapter=adapter,
+            _graph_executor=graph_executor,
         )
 
 

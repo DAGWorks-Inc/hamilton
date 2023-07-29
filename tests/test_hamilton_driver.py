@@ -8,7 +8,7 @@ import tests.resources.tagging
 import tests.resources.test_default_args
 import tests.resources.very_simple_dag
 from hamilton import base
-from hamilton.driver import Builder, Driver, DriverV2, Variable
+from hamilton.driver import Builder, Driver, TaskBasedGraphExecutor, Variable
 
 
 def test_driver_validate_input_types():
@@ -127,7 +127,7 @@ def test_capture_constructor_telemetry(send_event_json):
         "result_builder_used",
         "driver_run_id",
         "error",
-        "driver_class",
+        "graph_executor_class",
     }
     actual_properties = actual_event_dict["properties"]
     assert set(actual_properties.keys()) == expected_properites
@@ -248,15 +248,13 @@ def test_create_final_vars_errors():
 
 
 def test_v2_driver_builder():
-    result_builder = base.DictResult()
     dr = (
         Builder()
         .enable_v2_driver(allow_experimental_mode=True)
-        .with_result_builder(result_builder)
+        .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
         .with_modules(tests.resources.very_simple_dag)
         .with_config({"foo": "bar"})
         .build()
     )
-    assert isinstance(dr, DriverV2)
+    assert isinstance(dr.graph_executor, TaskBasedGraphExecutor)
     assert list(dr.graph_modules) == [tests.resources.very_simple_dag]
-    assert dr.result_builder == result_builder
