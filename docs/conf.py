@@ -14,8 +14,8 @@ html_theme_options = {
     "source_repository": "https://github.com/dagworks-inc/hamilton",
     "source_branch": "main",
     "source_directory": "docs/",
-    "announcement": '📢 Next place to find Hamilton: <a target="_blank" href="https://www.scipy2023.scipy.org/">'
-    + "SciPy 2023 Austin, TX!</a>📢",
+    "announcement": "📢 Want Hamilton updates sent to your inbox? Subscribe "
+    + '<a target="_blank" href="https://blog.dagworks.io/?utm_source=docs">here.</a>📢',
     "light_css_variables": {
         "color-announcement-background": "#ffba00",
         "color-announcement-text": "#091E42",
