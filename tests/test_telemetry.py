@@ -139,8 +139,8 @@ class CustomResultBuilder(base.ResultMixin):
             "hamilton.base.SimplePythonDataFrameGraphAdapter",
         ),
         (
-            base.SimplePythonGraphAdapter(base.DictResult()),
-            "hamilton.base.SimplePythonGraphAdapter",
+            base.DefaultAdapter(),
+            "hamilton.base.DefaultAdapter",
         ),
         (
             h_async.AsyncGraphAdapter(base.DictResult()),
@@ -159,7 +159,7 @@ def test_get_adapter_name(adapter, expected):
     "adapter, expected",
     [
         (base.SimplePythonDataFrameGraphAdapter(), "hamilton.base.PandasDataFrameResult"),
-        (base.SimplePythonGraphAdapter(base.DictResult()), "hamilton.base.DictResult"),
+        (base.DefaultAdapter(), "hamilton.base.DictResult"),
         (
             base.SimplePythonGraphAdapter(base.NumpyMatrixResult()),
             "hamilton.base.NumpyMatrixResult",

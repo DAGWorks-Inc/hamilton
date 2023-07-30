@@ -14,7 +14,7 @@ https://github.com/numpy/numpy-tutorials/blob/main/content/tutorial-air-quality-
 
 if __name__ == "__main__":
     # let's create a dictionary result -- since we want to get a few things from execution for inspection
-    adapter = base.SimplePythonGraphAdapter(base.DictResult())
+    adapter = base.DefaultAdapter()
     # adapter = base.SimplePythonGraphAdapter(base.NumpyMatrixResult())  # could also get a numpy matrix back.
     dr = driver.Driver(
         {

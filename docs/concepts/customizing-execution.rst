@@ -82,7 +82,7 @@ You have two options:
 
 .. code-block:: python
 
-    adapter = base.SimplePythonGraphAdapter(base.DictResult())
+    adapter = base.DefaultAdapter()
     dr = driver.Driver(..., adapter=adapter)
 
 By passing in ``base.DictResult()`` we are telling Hamilton that the result of ``execute()`` should be a dictionary with

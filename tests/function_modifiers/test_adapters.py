@@ -327,7 +327,7 @@ def test_load_from_decorator_end_to_end():
         return injected_data
 
     config = {}
-    adapter = base.SimplePythonGraphAdapter(base.DictResult())
+    adapter = base.DefaultAdapter()
     fg = graph.FunctionGraph(
         ad_hoc_utils.create_temporary_module(fn_str_inject), config=config, adapter=adapter
     )
@@ -356,7 +356,7 @@ def test_load_from_decorator_end_to_end_with_multiple():
         return "".join([injected_data_1] * injected_data_2)
 
     config = {}
-    adapter = base.SimplePythonGraphAdapter(base.DictResult())
+    adapter = base.DefaultAdapter()
     fg = graph.FunctionGraph(
         ad_hoc_utils.create_temporary_module(fn_str_inject), config=config, adapter=adapter
     )
@@ -398,7 +398,7 @@ def test_load_from_decorator_json_file(source_):
     dr = driver.Driver(
         config,
         ad_hoc_utils.create_temporary_module(raw_json_data, number_employees, sum_age, mean_age),
-        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+        adapter=base.DefaultAdapter(),
     )
     result = dr.execute(
         ["mean_age"], inputs={"test_data": "tests/resources/data/test_load_from_data.json"}
@@ -424,7 +424,7 @@ def test_pandas_extensions_end_to_end(tmp_path_factory):
     dr = driver.Driver(
         config,
         ad_hoc_utils.create_temporary_module(df),
-        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+        adapter=base.DefaultAdapter(),
     )
     # run once to check that loading is correct
     result = dr.execute(
@@ -517,7 +517,7 @@ def test_adapters_optional_params():
     fg = graph.create_function_graph(
         ad_hoc_utils.create_temporary_module(foo),
         config={},
-        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+        adapter=base.DefaultAdapter(),
     )
     assert len(fg) == 3
     assert "foo" in fg
@@ -535,7 +535,7 @@ def test_save_to_with_input_from_other_fn():
     fg = graph.create_function_graph(
         ad_hoc_utils.create_temporary_module(output_path, fn),
         config={},
-        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+        adapter=base.DefaultAdapter(),
     )
 
     assert len(fg) == 3
@@ -553,7 +553,7 @@ def test_load_from_with_input_from_other_fn():
     fg = graph.create_function_graph(
         ad_hoc_utils.create_temporary_module(input_path, fn),
         config={},
-        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+        adapter=base.DefaultAdapter(),
     )
     assert len(fg) == 4
 
@@ -575,7 +575,7 @@ def test_load_from_with_multiple_inputs():
     fg = graph.create_function_graph(
         ad_hoc_utils.create_temporary_module(fn),
         config={},
-        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+        adapter=base.DefaultAdapter(),
     )
     # One filter, one loader for each and the transform function
     assert len(fg) == 5

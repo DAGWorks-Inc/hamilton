@@ -988,11 +988,7 @@ class Builder:
 
         :return: The driver you specified.
         """
-        adapter = (
-            self.adapter
-            if self.adapter is not None
-            else base.SimplePythonGraphAdapter(base.DictResult())
-        )
+        adapter = self.adapter if self.adapter is not None else base.DefaultAdapter()
         if not self.v2_driver:
             return Driver(self.config, *self.modules, adapter=self.adapter)
         execution_manager = self.execution_manager

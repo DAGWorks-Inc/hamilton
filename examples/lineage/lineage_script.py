@@ -14,7 +14,7 @@ from hamilton import base, driver
 # Determine configuration for creating the DAG.
 config = {}  # This example has no configuration.
 # instantiate the driver
-adapter = base.SimplePythonGraphAdapter(base.DictResult())
+adapter = base.DefaultAdapter()
 dr = driver.Driver(config, data_loading, features, sets, model_pipeline, adapter=adapter)
 
 # --- (1) What sequence of operations produced this data/model? ---

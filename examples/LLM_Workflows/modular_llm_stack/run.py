@@ -72,7 +72,7 @@ def main(
         data_module,
         vector_db_module,  # this points to weaviate_module or pinecone_module
         embedding_module,
-        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+        adapter=base.DefaultAdapter(),
     )
 
     # The `final_vars` requested are functions with side-effects

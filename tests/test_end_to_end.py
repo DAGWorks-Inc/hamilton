@@ -38,9 +38,7 @@ from hamilton.execution import executors, grouping
 def test_data_quality_workflow_passes(driver_factory: Callable[[], driver.Driver]):
     dr = driver_factory()
     all_vars = dr.list_available_variables()
-    result = dr.execute(
-        [var.name for var in all_vars], inputs={"data_quality_should_fail": False}
-    )
+    result = dr.execute([var.name for var in all_vars], inputs={"data_quality_should_fail": False})
     dq_nodes = [
         var.name
         for var in all_vars
@@ -79,9 +77,7 @@ def test_data_quality_workflow_fails(driver_factory):
     dr = driver_factory()
     all_vars = dr.list_available_variables()
     with pytest.raises(DataValidationError):
-        dr.execute(
-            [var.name for var in all_vars], inputs={"data_quality_should_fail": True}
-        )
+        dr.execute([var.name for var in all_vars], inputs={"data_quality_should_fail": True})
 
 
 # Adapted from https://stackoverflow.com/questions/41858147/how-to-modify-imported-source-code-on-the-fly
@@ -238,9 +234,8 @@ _dynamic_config = {
     [
         (
             lambda: driver.Driver(
-                _dynamic_config,
-                tests.resources.dynamic_config,
-                adapter=DefaultAdapter())
+                _dynamic_config, tests.resources.dynamic_config, adapter=DefaultAdapter()
+            )
         ),
         (
             lambda: driver.Builder()
