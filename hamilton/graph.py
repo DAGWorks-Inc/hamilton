@@ -142,6 +142,10 @@ def create_graphviz_graph(
             if VisualizationNodeModifiers.IS_USER_INPUT in modifiers:
                 other_args["style"] = "dashed"
                 label = f"Input: {n.name}"
+        is_expand_node = n.node_role == node.NodeType.EXPAND
+        is_collect_node = n.node_role == node.NodeType.COLLECT
+        if is_collect_node or is_expand_node:
+            other_args["peripheries"] = "2"
         digraph.node(n.name, label=label, **other_args)
 
     for n in list(nodes):
@@ -162,6 +166,15 @@ def create_graphviz_graph(
                 and VisualizationNodeModifiers.IS_PATH in to_modifiers
             ):
                 other_args["color"] = PATH_COLOR
+            is_collect_edge = n.node_role == node.NodeType.COLLECT
+            is_expand_edge = d.node_role == node.NodeType.EXPAND
+            if is_collect_edge:
+                other_args["dir"] = "both"
+                other_args["arrowtail"] = "crow"
+            if is_expand_edge:
+                other_args["dir"] = "both"
+                other_args["arrowhead"] = "crow"
+                other_args["arrowtail"] = "none"
             digraph.edge(d.name, n.name, **other_args)
     return digraph
 
