@@ -46,7 +46,7 @@ def read_article_and_summarize(query: str) -> str:
     :param query: Description of the article in plain text based on the user's query.
     :return: Summarized text of the article given the query.
     """
-    dr = driver.Driver({}, summarize_text, adapter=base.SimplePythonGraphAdapter(base.DictResult()))
+    dr = driver.Driver({}, summarize_text, adapter=base.DefaultAdapter())
     inputs = {
         "embedding_model_name": "text-embedding-ada-002",
         "openai_gpt_model": "gpt-3.5-turbo-0613",

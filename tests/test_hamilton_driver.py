@@ -86,7 +86,7 @@ def test_driver_has_cycles_true(driver_factory):
 # This is possible -- but we don't want to officially support it. Here for documentation purposes.
 # def test_driver_cycles_execute_override():
 #     """Tests that we short circuit a cycle by passing in overrides."""
-#     dr = Driver({}, tests.resources.cyclic_functions, adapter=base.SimplePythonGraphAdapter(base.DictResult()))
+#     dr = Driver({}, tests.resources.cyclic_functions, adapter=base.DefaultAdapter())
 #     result = dr.execute(['C'], overrides={'D': 1}, inputs={'b': 2, 'c': 2})
 #     assert result['C'] == 34
 
@@ -101,7 +101,7 @@ def test_driver_has_cycles_true(driver_factory):
         #     .enabble_parallelizable_type(allow_experimental_mode=True)
         #     .with_modules(tests.resources.cyclic_functions)
         #     .with_remote_executor(executors.SynchronousLocalTaskExecutor())
-        #     .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+        #     .with_adapter(base.DefaultAdapter())
         #     .build())
     ],
 )
@@ -317,14 +317,14 @@ def test_capture_execute_telemetry_none_values(send_event_json, driver_factory):
             lambda: Driver(
                 {"required": 1},
                 tests.resources.test_default_args,
-                adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+                adapter=base.DefaultAdapter(),
             )
         ),
         (
             lambda: Builder()
             .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.test_default_args)
-            .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+            .with_adapter(base.DefaultAdapter())
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_config({"required": 1})
             .build()
@@ -359,14 +359,14 @@ def test_node_is_required_by_anything(driver_factory):
             lambda: Driver(
                 {"required": 1},
                 tests.resources.test_default_args,
-                adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+                adapter=base.DefaultAdapter(),
             )
         ),
         (
             lambda: Builder()
             .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.test_default_args)
-            .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+            .with_adapter(base.DefaultAdapter())
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_config({"required": 1})
             .build()
@@ -414,7 +414,7 @@ def test_v2_driver_builder():
     dr = (
         Builder()
         .enable_parallelizable_type(allow_experimental_mode=True)
-        .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+        .with_adapter(base.DefaultAdapter())
         .with_modules(tests.resources.very_simple_dag)
         .build()
     )

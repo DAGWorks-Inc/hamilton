@@ -162,7 +162,7 @@ from hamilton import driver
 import data_loading, features, model_pipeline, sets # import modules
 config = {}  # This example has no configuration.
 # instantiate the driver
-adapter = base.SimplePythonGraphAdapter(base.DictResult())
+adapter = base.DefaultAdapter()
 dr = driver.Driver(config, data_loading, features, sets, model_pipeline, adapter=adapter)
 # ask questions of the driver
 # E.g. How do the feature encoders get computed and what flows into them?

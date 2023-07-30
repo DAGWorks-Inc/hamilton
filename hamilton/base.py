@@ -49,6 +49,7 @@ class DictResult(ResultMixin):
        2. have heterogeneous return types.
        3. Want to manually transform the result into something of your choosing.
 
+
     .. code-block:: python
 
         from hamilton import base, driver
@@ -57,6 +58,11 @@ class DictResult(ResultMixin):
         dr =  driver.Driver(config, *modules, adapter=adapter)
         dict_result = dr.execute([...], inputs=...)
 
+    Note, if you just want the dict result + the SimplePythonGraphAdapter, you can use the
+    DefaultAdapter
+
+    .. code-block:: python
+        adapter = base.DefaultAdapter()
     """
 
     @staticmethod
@@ -78,8 +84,8 @@ class PandasDataFrameResult(ResultMixin):
     .. code-block:: python
 
         from hamilton import base, driver
-        default_builder = base.PandasDataFrameResult()
-        adapter = base.SimplePythonGraphAdapter(default_builder)
+        df_builder = base.PandasDataFrameResult()
+        adapter = base.SimplePythonGraphAdapter(df_builder)
         dr =  driver.Driver(config, *modules, adapter=adapter)
         df = dr.execute([...], inputs=...)
     """
@@ -410,13 +416,13 @@ class HamiltonGraphAdapter(ResultMixin):
 
 
 class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameResult):
-    """This is the default (original Hamilton) graph adapter. It uses plain python and builds a dataframe result.
+    """This is the original Hamilton graph adapter. It uses plain python and builds a dataframe result.
 
-    This executes the Hamilton dataflow locally on a machine in a single threaded, single process fashion. It assumes\
-    a pandas dataframe as a result.
+    This executes the Hamilton dataflow locally on a machine in a single threaded,
+    single process fashion. It assumes a pandas dataframe as a result.
 
-    Use this when you want to execute on a single machine, without parallelization, and you want a pandas dataframe \
-    as output.
+    Use this when you want to execute on a single machine, without parallelization, and you want a
+    pandas dataframe as output.
     """
 
     @staticmethod
@@ -464,15 +470,20 @@ class SimplePythonGraphAdapter(SimplePythonDataFrameGraphAdapter):
     you to specify a ResultBuilder to control the return type of what ``execute()`` returns.
     """
 
-    def __init__(self, result_builder: ResultMixin):
+    def __init__(self, result_builder: ResultMixin = None):
         """Allows you to swap out the build_result very easily.
 
         :param result_builder: A ResultMixin object that will be used to build the result.
         """
+        if result_builder is None:
+            result_builder = DictResult()
         self.result_builder = result_builder
-        if self.result_builder is None:
-            raise ValueError("You must provide a ResultMixin object for `result_builder`.")
 
     def build_result(self, **outputs: Dict[str, Any]) -> Any:
         """Delegates to the result builder function supplied."""
         return self.result_builder.build_result(**outputs)
+
+
+class DefaultAdapter(SimplePythonGraphAdapter):
+    """This is a shortcut for the SimplePythonGraphAdapter. It does the exact same thing,
+    but allows for easier access/naming."""
