@@ -167,6 +167,7 @@ class TaskBasedGraphExecutor(GraphExecutor):
         3. Runs it to completion, populating the results cache
         4. Returning the results from the results cache
         """
+        inputs = graph_functions.combine_config_and_inputs(fg.config, inputs)
         (
             transform_nodes_required_for_execution,
             user_defined_nodes_required_for_execution,
@@ -268,7 +269,7 @@ class Driver:
         Notes:
         (1) we want to do this in a way that does not break.
         (2) we need to account for all possible states, e.g. someone passing in None, or assuming that
-        the entire constructor code ran without issue, e.g. `adpater` was assigned to `self`.
+        the entire constructor code ran without issue, e.g. `adapter` was assigned to `self`.
 
         :param error: the sanitized error string to send.
         :param modules: the list of modules, could be None.
@@ -949,7 +950,6 @@ class Builder:
         self.grouping_strategy = grouping_strategy
         return self
 
-    @capture_function_usage
     def build(self) -> Driver:
         """Builds the driver -- note that this can return a different class, so you'll likely
         want to have a sense of what it returns.
