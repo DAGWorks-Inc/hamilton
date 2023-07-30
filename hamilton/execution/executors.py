@@ -198,15 +198,19 @@ class MultiThreadingExecutor(PoolExecutor):
     """Basic synchronous/local task executor that runs tasks
     in the same process, at submit time."""
 
-    def create_pool(self) -> Any:
+    def create_pool(self) -> ThreadPoolExecutor:
         return ThreadPoolExecutor(max_workers=self.max_tasks)
 
 
 class MultiProcessingExecutor(PoolExecutor):
     """Basic synchronous/local task executor that runs tasks
-    in the same process, at submit time."""
+    in the same process, at submit time. Note that this is
+    not yet augmented to handle the right serialization,
+    so use at your own risk. We will be fixing shortly,
+    but the dask/ray parallelism and the multithreading
+    parallelism executors serialize correctly."""
 
-    def create_pool(self) -> Any:
+    def create_pool(self) -> ProcessPoolExecutor:
         return ProcessPoolExecutor(max_workers=self.max_tasks)
 
 

@@ -4,11 +4,18 @@ import pandas as pd
 import pytest
 
 import tests.resources.cyclic_functions
+import tests.resources.dynamic_parallelism.parallel_linear_basic
 import tests.resources.tagging
 import tests.resources.test_default_args
 import tests.resources.very_simple_dag
 from hamilton import base
-from hamilton.driver import Builder, Driver, TaskBasedGraphExecutor, Variable
+from hamilton.driver import (
+    Builder,
+    Driver,
+    InvalidExecutorException,
+    TaskBasedGraphExecutor,
+    Variable,
+)
 from hamilton.execution import executors
 
 """This file tests driver capabilities.
@@ -25,7 +32,7 @@ TODO -- move any execution tests to tests the graph executor capabilities on the
         (lambda: Driver({"a": 1})),
         (
             lambda: Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_config({"a": 1})
             .build()
@@ -44,7 +51,7 @@ def test_driver_validate_input_types(driver_factory):
         (lambda: Driver({}, tests.resources.very_simple_dag)),
         (
             lambda: Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.very_simple_dag)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .build()
@@ -63,7 +70,7 @@ def test_driver_validate_runtime_input_types(driver_factory):
         (lambda: Driver({}, tests.resources.cyclic_functions)),
         (
             lambda: Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.cyclic_functions)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .build()
@@ -91,7 +98,7 @@ def test_driver_has_cycles_true(driver_factory):
         # TODO -- fix erroring out when we try to run a driver with cycles
         # should display a better error
         # (lambda: Builder()
-        #     .enable_v2_driver(allow_experimental_mode=True)
+        #     .enabble_parallelizable_type(allow_experimental_mode=True)
         #     .with_modules(tests.resources.cyclic_functions)
         #     .with_remote_executor(executors.SynchronousLocalTaskExecutor())
         #     .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
@@ -207,7 +214,7 @@ def test_capture_constructor_telemetry(send_event_json):
         (lambda: Driver({}, tests.resources.very_simple_dag)),
         (
             lambda: Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.very_simple_dag)
             .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -232,7 +239,7 @@ def test_capture_execute_telemetry_disabled(send_event_json, driver_factory):
         (lambda: Driver({}, tests.resources.very_simple_dag)),
         (
             lambda: Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.very_simple_dag)
             .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -259,7 +266,7 @@ def test_capture_execute_telemetry_error(send_event_json, driver_factory):
         (lambda: Driver({}, tests.resources.very_simple_dag)),
         (
             lambda: Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.very_simple_dag)
             .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -285,7 +292,7 @@ def test_capture_execute_telemetry(send_event_json, driver_factory):
         (lambda: Driver({"a": 1}, tests.resources.very_simple_dag)),
         (
             lambda: Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.very_simple_dag)
             .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -315,7 +322,7 @@ def test_capture_execute_telemetry_none_values(send_event_json, driver_factory):
         ),
         (
             lambda: Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.test_default_args)
             .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -357,7 +364,7 @@ def test_node_is_required_by_anything(driver_factory):
         ),
         (
             lambda: Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.test_default_args)
             .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -406,11 +413,35 @@ def test_create_final_vars_errors():
 def test_v2_driver_builder():
     dr = (
         Builder()
-        .enable_v2_driver(allow_experimental_mode=True)
+        .enable_parallelizable_type(allow_experimental_mode=True)
         .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
         .with_modules(tests.resources.very_simple_dag)
-        .with_config({"foo": "bar"})
         .build()
     )
     assert isinstance(dr.graph_executor, TaskBasedGraphExecutor)
     assert list(dr.graph_modules) == [tests.resources.very_simple_dag]
+
+
+def test_executor_validates_happy_default_executor():
+    dr = Driver({}, tests.resources.very_simple_dag)
+    nodes, user_nodes = dr.graph.get_upstream_nodes(["b"])
+    dr.graph_executor.validate(nodes | user_nodes)
+
+
+def test_executor_validates_sad_default_executor():
+    dr = Driver({}, tests.resources.dynamic_parallelism.parallel_linear_basic)
+    nodes, user_nodes = dr.graph.get_upstream_nodes(["final"])
+    with pytest.raises(InvalidExecutorException):
+        dr.graph_executor.validate(nodes | user_nodes)
+
+
+def test_executor_validates_happy_parallel_executor():
+    dr = (
+        Builder()
+        .enable_parallelizable_type(allow_experimental_mode=True)
+        .with_modules(tests.resources.dynamic_parallelism.parallel_linear_basic)
+        .build()
+    )
+
+    nodes, user_nodes = dr.graph.get_upstream_nodes(["final"])
+    dr.graph_executor.validate(nodes | user_nodes)

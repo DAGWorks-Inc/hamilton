@@ -92,6 +92,12 @@ class Variable:
         )
 
 
+class InvalidExecutorException(Exception):
+    """Raised when the executor is invalid for the given graph."""
+
+    pass
+
+
 class GraphExecutor(abc.ABC):
     """Interface for the graph executor. This runs a function graph,
     given a function graph, inputs, and overrides."""
@@ -113,8 +119,33 @@ class GraphExecutor(abc.ABC):
         :return: The output of the final variables, in dictionary form.
         """
 
+    @abc.abstractmethod
+    def validate(self, nodes_to_execute: List[node.Node]):
+        """Validates whether the executor can execute the given graph.
+        Some executors allow API constructs that others do not support
+        (such as Parallelizable[]/Collect[])
+
+        :param fg: Graph to execute
+        :return: Whether or not the executor can execute the graph.
+        """
+        pass
+
 
 class DefaultGraphExecutor(GraphExecutor):
+    def validate(self, nodes_to_execute: List[node.Node]):
+        """The default graph executor cannot handle parallelizable[]/collect[] nodes.
+
+        :param nodes_to_execute:
+        :raises InvalidExecutorException: if the graph contains parallelizable[]/collect[] nodes.
+        """
+        for node_ in nodes_to_execute:
+            if node_.node_role in (node.NodeType.EXPAND, node.NodeType.COLLECT):
+                raise InvalidExecutorException(
+                    f"Default graph executor cannot handle parallelizable[]/collect[] nodes. "
+                    f"Node {node_.name} defined by functions: "
+                    f"{[fn.__qualname__ for fn in node_.originating_functions]}"
+                )
+
     def execute(
         self,
         fg: graph.FunctionGraph,
@@ -135,6 +166,10 @@ class DefaultGraphExecutor(GraphExecutor):
 
 
 class TaskBasedGraphExecutor(GraphExecutor):
+    def validate(self, nodes_to_execute: List[node.Node]):
+        """Currently this can run every valid graph"""
+        pass
+
     def __init__(
         self,
         execution_manager: executors.ExecutionManager,
@@ -416,7 +451,8 @@ class Driver:
                     _final_vars.append(final_var.__name__)
                 else:
                     errors.append(
-                        f"Function {final_var.__module__}.{final_var.__name__} is a function not in a "
+                        f"Function {final_var.__module__}.{final_var.__name__} is a function not "
+                        f"in a "
                         f"module given to the driver. Valid choices are {module_set}."
                     )
             else:
@@ -498,6 +534,8 @@ class Driver:
             self.visualize_execution(final_vars, "test-output/execute.gv", {"view": True})
             if self.has_cycles(final_vars):  # here for backwards compatible driver behavior.
                 raise ValueError("Error: cycles detected in your graph.")
+        all_nodes = nodes | user_nodes
+        self.graph_executor.validate(list(all_nodes))
         return self.graph_executor.execute(
             self.graph,
             final_vars,
@@ -839,16 +877,10 @@ class Builder:
         if getattr(self, field) == unset_value:
             raise ValueError(message)
 
-    def enable_v2_driver(self, *, allow_experimental_mode: bool = False) -> "Builder":
-        """Enables the new driver. This enables:
+    def enable_parallelizable_type(self, *, allow_experimental_mode: bool = False) -> "Builder":
+        """Enables the Parallelizable[] type, which in turn enables:
             1. Grouped execution into tasks
             2. Parallel execution
-
-            and in the future:
-            3. Materialization of results
-            4. Custom execution hooks
-            5. Cachine/more powerful tooling
-
         :return: self
         """
         if not allow_experimental_mode:

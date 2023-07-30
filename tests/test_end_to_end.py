@@ -7,39 +7,38 @@ import pytest
 import tests.resources.data_quality
 import tests.resources.dynamic_config
 from hamilton import driver, settings
+from hamilton.base import DefaultAdapter
 from hamilton.data_quality.base import DataValidationError, ValidationResult
 from hamilton.execution import executors, grouping
 
 
 @pytest.mark.parametrize(
-    "driver_factory,execute_fn",
+    "driver_factory",
     [
-        (lambda: driver.Driver({}, tests.resources.data_quality), "raw_execute"),
+        (lambda: driver.Driver({}, tests.resources.data_quality, adapter=DefaultAdapter())),
         (
             lambda: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.data_quality)
             .with_remote_executor(executors.MultiThreadingExecutor(max_tasks=3))
             .with_local_executor(executors.MultiThreadingExecutor(max_tasks=3))
-            .build(),
-            "execute",
+            .build()
         ),
         (
             lambda: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
             .with_modules(tests.resources.data_quality)
-            .build(),
-            "execute",
+            .build()
         ),
     ],
     ids=["basic_driver", "driver_v2_multithreading", "driver_v2_synchronous"],
 )
-def test_data_quality_workflow_passes(driver_factory: Callable[[], driver.Driver], execute_fn: str):
+def test_data_quality_workflow_passes(driver_factory: Callable[[], driver.Driver]):
     dr = driver_factory()
     all_vars = dr.list_available_variables()
-    result = getattr(dr, execute_fn)(
+    result = dr.execute(
         [var.name for var in all_vars], inputs={"data_quality_should_fail": False}
     )
     dq_nodes = [
@@ -54,35 +53,33 @@ def test_data_quality_workflow_passes(driver_factory: Callable[[], driver.Driver
 
 
 @pytest.mark.parametrize(
-    "driver_factory,execute_fn",
+    "driver_factory",
     [
-        (lambda: driver.Driver({}, tests.resources.data_quality), "raw_execute"),
+        (lambda: driver.Driver({}, tests.resources.data_quality)),
         (
             lambda: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.data_quality)
             .with_remote_executor(executors.MultiThreadingExecutor(max_tasks=3))
             .with_local_executor(executors.MultiThreadingExecutor(max_tasks=3))
-            .build(),
-            "execute",
+            .build()
         ),
         (
             lambda: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
             .with_modules(tests.resources.data_quality)
-            .build(),
-            "execute",
+            .build()
         ),
     ],
     ids=["basic_driver", "driver_v2_multithreading", "driver_v2_synchronous"],
 )
-def test_data_quality_workflow_fails(driver_factory, execute_fn):
+def test_data_quality_workflow_fails(driver_factory):
     dr = driver_factory()
     all_vars = dr.list_available_variables()
     with pytest.raises(DataValidationError):
-        getattr(dr, execute_fn)(
+        dr.execute(
             [var.name for var in all_vars], inputs={"data_quality_should_fail": True}
         )
 
@@ -101,57 +98,53 @@ def modify_and_import(module_name, package, modification_func):
 
 
 @pytest.mark.parametrize(
-    "driver_factory,future_import_annotations,execute_fn",
+    "driver_factory,future_import_annotations",
     [
-        (lambda modules: driver.Driver({"region": "US"}, *modules), False, "raw_execute"),
+        (lambda modules: driver.Driver({"region": "US"}, *modules), False),
         (
             lambda modules: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(*modules)
             .with_remote_executor(executors.MultiThreadingExecutor(max_tasks=3))
             .with_local_executor(executors.MultiThreadingExecutor(max_tasks=3))
             .with_config({"region": "US"})
             .build(),
             False,
-            "execute",
         ),
         (
             lambda modules: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
             .with_config({"region": "US"})
             .with_modules(*modules)
             .build(),
             False,
-            "execute",
         ),
-        (lambda modules: driver.Driver({"region": "US"}, *modules), True, "raw_execute"),
+        (lambda modules: driver.Driver({"region": "US"}, *modules), True),
         (
             lambda modules: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(*modules)
             .with_remote_executor(executors.MultiThreadingExecutor(max_tasks=3))
             .with_local_executor(executors.MultiThreadingExecutor(max_tasks=3))
             .with_config({"region": "US"})
             .build(),
             True,
-            "execute",
         ),
         (
             lambda modules: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
             .with_config({"region": "US"})
             .with_modules(*modules)
             .build(),
             True,
-            "execute",
         ),
         (
             lambda modules: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
             .with_grouping_strategy(grouping.GroupNodesAllAsOne())
@@ -159,11 +152,10 @@ def modify_and_import(module_name, package, modification_func):
             .with_modules(*modules)
             .build(),
             False,
-            "execute",
         ),
         (
             lambda modules: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
             .with_grouping_strategy(grouping.GroupNodesByLevel())
@@ -171,11 +163,10 @@ def modify_and_import(module_name, package, modification_func):
             .with_modules(*modules)
             .build(),
             False,
-            "execute",
         ),
         (
             lambda modules: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
             .with_grouping_strategy(grouping.GroupNodesIndividually())
@@ -183,7 +174,6 @@ def modify_and_import(module_name, package, modification_func):
             .with_modules(*modules)
             .build(),
             False,
-            "execute",
         ),
     ],
     ids=[
@@ -198,7 +188,7 @@ def modify_and_import(module_name, package, modification_func):
         "driver_v2_group_nodes_individually",
     ],
 )
-def test_smoke_screen_module(driver_factory, future_import_annotations, execute_fn):
+def test_smoke_screen_module(driver_factory, future_import_annotations):
     # Monkeypatch the env
     # This tells the smoke screen module whether to use the future import
     modification_func = (
@@ -217,7 +207,7 @@ def test_smoke_screen_module(driver_factory, future_import_annotations, execute_
         "optimistic_net_acquisition_cost",
         "series_with_start_date_end_date",
     ]
-    res = getattr(dr, execute_fn)(
+    res = dr.execute(
         inputs={"date_range": {"start_date": "20200101", "end_date": "20220801"}},
         final_vars=output_columns,
     )
@@ -244,38 +234,38 @@ _dynamic_config = {
 
 
 @pytest.mark.parametrize(
-    "driver_factory,execute_fn",
+    "driver_factory",
     [
         (
-            lambda: driver.Driver(_dynamic_config, tests.resources.dynamic_config),
-            "raw_execute",
+            lambda: driver.Driver(
+                _dynamic_config,
+                tests.resources.dynamic_config,
+                adapter=DefaultAdapter())
         ),
         (
             lambda: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.dynamic_config)
             .with_config(_dynamic_config)
             .with_remote_executor(executors.MultiThreadingExecutor(max_tasks=3))
             .with_local_executor(executors.MultiThreadingExecutor(max_tasks=3))
-            .build(),
-            "execute",
+            .build()
         ),
         (
             lambda: driver.Builder()
-            .enable_v2_driver(allow_experimental_mode=True)
+            .enable_parallelizable_type(allow_experimental_mode=True)
             .with_modules(tests.resources.dynamic_config)
             .with_config(_dynamic_config)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_local_executor(executors.SynchronousLocalTaskExecutor())
-            .build(),
-            "execute",
+            .build()
         ),
     ],
     ids=["basic_driver", "driver_v2_multithreading", "driver_v2_synchronous"],
 )
-def test_end_to_end_with_dynamic_config(driver_factory, execute_fn):
+def test_end_to_end_with_dynamic_config(driver_factory):
     dr = driver_factory()
-    out = getattr(dr, execute_fn)(final_vars=list(_dynamic_config["columns_to_sum_map"].keys()))
+    out = dr.execute(final_vars=list(_dynamic_config["columns_to_sum_map"].keys()))
     assert out["ab"][0] == 2
     assert out["cd"][0] == 2
     assert out["ed"][0] == 2
