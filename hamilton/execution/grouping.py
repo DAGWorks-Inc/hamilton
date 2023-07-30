@@ -121,14 +121,14 @@ class TaskImplementation(TaskSpec):
     """Represents the "execution ready" spec for a task. This contains two essential pieces of information:
 
     1. The inputs/outputs
-    2. The "parent" task that spawned this
+    2. The "spawning" task that spawned this
 
-    Thus the task_id is unique (as it contains the parent + the group ID), but the base_id is not, as
+    Thus the task_id is unique (as it contains the spawning task's ID + the group ID), but the base_id is not, as
     we could have multiple versions of this task running in parallel.
     """
 
     # task whose result spawned these tasks
-    # If this is none, it means the graph itself spawned these tasks, and it has no parents
+    # If this is none, it means the graph itself spawned these tasks
     group_id: Optional[str]
     realized_dependencies: Dict[str, List[str]]  # realized dependencies are the actual dependencies
     # Note that these are lists as we have "gather" operations
@@ -141,9 +141,9 @@ class TaskImplementation(TaskSpec):
         return dataclasses.replace(self, dynamic_inputs={**dynamic_inputs, **self.dynamic_inputs})
 
     @staticmethod
-    def determine_task_id(base_id: str, parent_task: Optional[str], group_id: Optional[str]):
+    def determine_task_id(base_id: str, spawning_task: Optional[str], group_id: Optional[str]):
         return ".".join(
-            filter(lambda i: i is not None, [parent_task, group_id, base_id])
+            filter(lambda i: i is not None, [spawning_task, group_id, base_id])
         )  # This will do for now...
 
     def __post_init__(self):
