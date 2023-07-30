@@ -34,13 +34,12 @@ class ResultCache(abc.ABC):
         self,
         results: Dict[str, Any],
         group_id: Optional[str] = None,
-        parent_id: Optional[str] = None,
+        spawning_task_id: Optional[str] = None,
     ):
         """Writes results to the cache. This is called after a task is run.
 
         :param results:  Results to write
         :param task_type: Task type to write -- this is inclucded in case a task returns generators
-        :return: nothing
         """
         pass
 
@@ -49,15 +48,16 @@ class ResultCache(abc.ABC):
         self,
         keys: List[str],
         group_id: Optional[str] = None,
-        parent_id: Optional[str] = None,
+        spawning_task_id: Optional[str] = None,
         optional: bool = False,
     ) -> Dict[str, Any]:
         """Reads results in bulk from the cache.
 
-        :param parent_id:
-        :param optional:
-        :param group_id:
+        :param spawning_task_id: Task ID of the task that spawned the task
+        whose results you wish to query
+        :param group_id: Group ID of the task whose results you wish to query
         :param keys: Keys to access
+        :param optional: If true, will allow keys not to be present
         :return: Dictionary of key -> result
         """
         pass
@@ -69,17 +69,20 @@ class DictBasedResultCache(ResultCache):
     def __init__(self, cache: Dict[str, Any]):
         self.cache = cache
 
-    def _format_key(self, group_id: Optional[str], parent_id: Optional[str], key: str) -> str:
-        return ":".join([item for item in [parent_id, group_id, key] if item is not None])
+    def _format_key(
+        self, group_id: Optional[str], spawning_task_id: Optional[str], key: str
+    ) -> str:
+        return ":".join([item for item in [spawning_task_id, group_id, key] if item is not None])
 
     def write(
         self,
         results: Dict[str, Any],
         group_id: Optional[str] = None,
-        parent_id: Optional[str] = None,
+        spawning_task_id: Optional[str] = None,
     ):
         results_with_key_assigned = {
-            self._format_key(group_id, parent_id, key): value for key, value in results.items()
+            self._format_key(group_id, spawning_task_id, key): value
+            for key, value in results.items()
         }
         self.cache.update(results_with_key_assigned)
 
@@ -87,14 +90,14 @@ class DictBasedResultCache(ResultCache):
         self,
         keys: List[str],
         group_id: Optional[str] = None,
-        parent_id: Optional[str] = None,
+        spawning_task_id: Optional[str] = None,
         optional: bool = False,
     ) -> Dict[str, Any]:
         """Reads results in bulk from the cache. If its optional, we don't mind if its not there.
 
         :param keys: Keys to read
         :param group_id: ID of the group (namespace) under which this key will be stored
-        :param parent_id: ID of the parent (other part of the namespace) under which this
+        :param spawning_task_id: ID of the spawning task (other part of the namespace) under which this
         key will be stored
         :param optional: If true, we don't mind if the key is not there
         :return:  Dictionary of key -> result
@@ -102,7 +105,7 @@ class DictBasedResultCache(ResultCache):
 
         out = {}
         for key in keys:
-            formatted_key = self._format_key(group_id, parent_id, key)
+            formatted_key = self._format_key(group_id, spawning_task_id, key)
             if formatted_key not in self.cache:
                 if optional:
                     continue
@@ -191,7 +194,7 @@ class ExecutionState:
     def realize_task(
         self,
         task_spec: TaskSpec,
-        parent_task: Optional[str],
+        spawning_task: Optional[str],
         group_id: Optional[str],
         dependencies: Dict[str, List[str]] = None,
         bind: Dict[str, Any] = None,
@@ -212,7 +215,7 @@ class ExecutionState:
             else {task_dep: [task_dep] for task_dep in task_spec.base_dependencies}
         )
         task_implementation = TaskImplementation(
-            spawning_task_base_id=parent_task,
+            spawning_task_base_id=spawning_task,
             base_id=task_spec.base_id,
             nodes=task_spec.nodes,
             purpose=task_spec.purpose,
@@ -220,7 +223,7 @@ class ExecutionState:
             overrides=task_spec.overrides,
             adapters=task_spec.adapters,
             base_dependencies=task_spec.base_dependencies,
-            spawning_task_id=parent_task,
+            spawning_task_id=spawning_task,
             group_id=group_id,
             # TODO -- actually get these correct...
             # This just assigns the realized dependencies to be the base dependencies
@@ -297,7 +300,7 @@ class ExecutionState:
         for collector_task in collector_tasks:
             # collector_node = completed_task.get_collector_node()
             # collect_input = collector_node.collect_dependency
-            # We create it with no parents as we don't want to name it differently
+            # We create it with no spawning tasks as we don't want to name it differently
             # We should really give it a better unique ID? This is a little hacky
             new_task = self.realize_task(collector_task, None, None)
             new_dependencies = {}
@@ -378,7 +381,7 @@ class ExecutionState:
                 )
             else:
                 for candidate_task in self.base_reverse_dependencies[completed_task.base_id]:
-                    # This means its not spawned by a parent, or a node spawning group itself
+                    # This means its not spawned by another task, or a node spawning group itself
                     if (
                         candidate_task.spawning_task_base_id is None
                         or candidate_task.purpose.is_expander()

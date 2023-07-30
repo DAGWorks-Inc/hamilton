@@ -9,23 +9,70 @@ import tests.resources.test_default_args
 import tests.resources.very_simple_dag
 from hamilton import base
 from hamilton.driver import Builder, Driver, TaskBasedGraphExecutor, Variable
+from hamilton.execution import executors
+
+"""This file tests driver capabilities.
+Anything involving execution is tested for multiple executors/driver configuration.
+Anything not involving execution is tested for just the single driver configuration.
+
+TODO -- move any execution tests to tests the graph executor capabilities on their own.
+"""
 
 
-def test_driver_validate_input_types():
-    dr = Driver({"a": 1})
+@pytest.mark.parametrize(
+    "driver_factory",
+    [
+        (lambda: Driver({"a": 1})),
+        (
+            lambda: Builder()
+            .enable_v2_driver(allow_experimental_mode=True)
+            .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+            .with_config({"a": 1})
+            .build()
+        ),
+    ],
+)
+def test_driver_validate_input_types(driver_factory):
+    dr = driver_factory()
     results = dr.raw_execute(["a"])
     assert results == {"a": 1}
 
 
-def test_driver_validate_runtime_input_types():
-    dr = Driver({}, tests.resources.very_simple_dag)
+@pytest.mark.parametrize(
+    "driver_factory",
+    [
+        (lambda: Driver({}, tests.resources.very_simple_dag)),
+        (
+            lambda: Builder()
+            .enable_v2_driver(allow_experimental_mode=True)
+            .with_modules(tests.resources.very_simple_dag)
+            .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+            .build()
+        ),
+    ],
+)
+def test_driver_validate_runtime_input_types(driver_factory):
+    dr = driver_factory()
     results = dr.raw_execute(["b"], inputs={"a": 1})
     assert results == {"b": 1}
 
 
-def test_driver_has_cycles_true():
+@pytest.mark.parametrize(
+    "driver_factory",
+    [
+        (lambda: Driver({}, tests.resources.cyclic_functions)),
+        (
+            lambda: Builder()
+            .enable_v2_driver(allow_experimental_mode=True)
+            .with_modules(tests.resources.cyclic_functions)
+            .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+            .build()
+        ),
+    ],
+)
+def test_driver_has_cycles_true(driver_factory):
     """Tests that we don't break when detecting cycles from the driver."""
-    dr = Driver({}, tests.resources.cyclic_functions)
+    dr = driver_factory()
     assert dr.has_cycles(["C"])
 
 
@@ -37,13 +84,23 @@ def test_driver_has_cycles_true():
 #     assert result['C'] == 34
 
 
-def test_driver_cycles_execute_recursion_error():
+@pytest.mark.parametrize(
+    "driver_factory",
+    [
+        (lambda: Driver({}, tests.resources.cyclic_functions)),
+        # TODO -- fix erroring out when we try to run a driver with cycles
+        # should display a better error
+        # (lambda: Builder()
+        #     .enable_v2_driver(allow_experimental_mode=True)
+        #     .with_modules(tests.resources.cyclic_functions)
+        #     .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+        #     .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+        #     .build())
+    ],
+)
+def test_driver_cycles_execute_recursion_error(driver_factory):
     """Tests that we throw a recursion error when we try to execute over a DAG that isn't a DAG."""
-    dr = Driver(
-        {},
-        tests.resources.cyclic_functions,
-        adapter=base.SimplePythonGraphAdapter(base.DictResult()),
-    )
+    dr = driver_factory()
     with pytest.raises(RecursionError):
         dr.execute(["C"], inputs={"b": 2, "c": 2})
 
@@ -144,9 +201,23 @@ def test_capture_constructor_telemetry(send_event_json):
 
 
 @mock.patch("hamilton.telemetry.send_event_json")
-def test_capture_execute_telemetry_disabled(send_event_json):
+@pytest.mark.parametrize(
+    "driver_factory",
+    [
+        (lambda: Driver({}, tests.resources.very_simple_dag)),
+        (
+            lambda: Builder()
+            .enable_v2_driver(allow_experimental_mode=True)
+            .with_modules(tests.resources.very_simple_dag)
+            .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
+            .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+            .build()
+        ),
+    ],
+)
+def test_capture_execute_telemetry_disabled(send_event_json, driver_factory):
     """Tests that we don't do anything if telemetry is disabled."""
-    dr = Driver({}, tests.resources.very_simple_dag)
+    dr = driver_factory()
     results = dr.execute(["b"], inputs={"a": 1})
     expected = pd.DataFrame([{"b": 1}])
     pd.testing.assert_frame_equal(results, expected)
@@ -155,10 +226,24 @@ def test_capture_execute_telemetry_disabled(send_event_json):
 
 @mock.patch("hamilton.telemetry.send_event_json")
 @mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
-def test_capture_execute_telemetry_error(send_event_json):
+@pytest.mark.parametrize(
+    "driver_factory",
+    [
+        (lambda: Driver({}, tests.resources.very_simple_dag)),
+        (
+            lambda: Builder()
+            .enable_v2_driver(allow_experimental_mode=True)
+            .with_modules(tests.resources.very_simple_dag)
+            .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
+            .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+            .build()
+        ),
+    ],
+)
+def test_capture_execute_telemetry_error(send_event_json, driver_factory):
     """Tests that we don't error if an exception occurs"""
-    send_event_json.side_effect = [None, ValueError("FAKE ERROR")]
-    dr = Driver({}, tests.resources.very_simple_dag)
+    send_event_json.side_effect = [None, ValueError("FAKE ERROR"), None]
+    dr = driver_factory()
     results = dr.execute(["b"], inputs={"a": 1})
     expected = pd.DataFrame([{"b": 1}])
     pd.testing.assert_frame_equal(results, expected)
@@ -168,9 +253,23 @@ def test_capture_execute_telemetry_error(send_event_json):
 
 @mock.patch("hamilton.telemetry.send_event_json")
 @mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
-def test_capture_execute_telemetry(send_event_json):
+@pytest.mark.parametrize(
+    "driver_factory",
+    [
+        (lambda: Driver({}, tests.resources.very_simple_dag)),
+        (
+            lambda: Builder()
+            .enable_v2_driver(allow_experimental_mode=True)
+            .with_modules(tests.resources.very_simple_dag)
+            .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
+            .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+            .build()
+        ),
+    ],
+)
+def test_capture_execute_telemetry(send_event_json, driver_factory):
     """Happy path with values passed."""
-    dr = Driver({}, tests.resources.very_simple_dag)
+    dr = driver_factory()
     results = dr.execute(["b"], inputs={"a": 1}, overrides={"b": 2})
     expected = pd.DataFrame([{"b": 2}])
     pd.testing.assert_frame_equal(results, expected)
@@ -180,16 +279,52 @@ def test_capture_execute_telemetry(send_event_json):
 
 @mock.patch("hamilton.telemetry.send_event_json")
 @mock.patch("hamilton.telemetry.g_telemetry_enabled", True)
-def test_capture_execute_telemetry_none_values(send_event_json):
+@pytest.mark.parametrize(
+    "driver_factory",
+    [
+        (lambda: Driver({"a": 1}, tests.resources.very_simple_dag)),
+        (
+            lambda: Builder()
+            .enable_v2_driver(allow_experimental_mode=True)
+            .with_modules(tests.resources.very_simple_dag)
+            .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
+            .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+            .with_config({"a": 1})
+            .build()
+        ),
+    ],
+)
+def test_capture_execute_telemetry_none_values(send_event_json, driver_factory):
     """Happy path with none values."""
-    dr = Driver({"a": 1}, tests.resources.very_simple_dag)
+    dr = driver_factory()
     results = dr.execute(["b"])
     expected = pd.DataFrame([{"b": 1}])
     pd.testing.assert_frame_equal(results, expected)
     assert len(send_event_json.call_args_list) == 2
 
 
-def test_node_is_required_by_anything():
+@pytest.mark.parametrize(
+    "driver_factory",
+    [
+        (
+            lambda: Driver(
+                {"required": 1},
+                tests.resources.test_default_args,
+                adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+            )
+        ),
+        (
+            lambda: Builder()
+            .enable_v2_driver(allow_experimental_mode=True)
+            .with_modules(tests.resources.test_default_args)
+            .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+            .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+            .with_config({"required": 1})
+            .build()
+        ),
+    ],
+)
+def test_node_is_required_by_anything(driver_factory):
     """Tests that default args are correctly interpreted.
 
     Specifically, if it's not in the execution path then things should
@@ -199,26 +334,47 @@ def test_node_is_required_by_anything():
 
     To understand what's going on see the functions in `test_default_args`.
     """
-    dr = Driver({"required": 1}, tests.resources.test_default_args)
+    dr = driver_factory()
     # D is not in the execution path, but requires defaults_to_zero
     # so this should work.
     results = dr.execute(["C"])
-    pd.testing.assert_series_equal(results["C"], pd.Series([2], name="C"))
+    assert results["C"] == 2
     with pytest.raises(ValueError):
         # D is now in the execution path, but requires defaults_to_zero
         # this should error
         dr.execute(["D"])
 
 
-def test_using_callables_to_execute():
+@pytest.mark.parametrize(
+    "driver_factory",
+    [
+        (
+            lambda: Driver(
+                {"required": 1},
+                tests.resources.test_default_args,
+                adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+            )
+        ),
+        (
+            lambda: Builder()
+            .enable_v2_driver(allow_experimental_mode=True)
+            .with_modules(tests.resources.test_default_args)
+            .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+            .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+            .with_config({"required": 1})
+            .build()
+        ),
+    ],
+)
+def test_using_callables_to_execute(driver_factory):
     """Test that you can pass a function reference and it will work fine."""
-    dr = Driver({"required": 1}, tests.resources.test_default_args)
+    dr = driver_factory()
     results = dr.execute(
         [tests.resources.test_default_args.C, tests.resources.test_default_args.B, "A"]
     )
-    pd.testing.assert_series_equal(results["C"], pd.Series([2], name="C"))
-    pd.testing.assert_series_equal(results["B"], pd.Series([1], name="B"))
-    pd.testing.assert_series_equal(results["A"], pd.Series([1], name="A"))
+    assert results["C"] == 2
+    assert results["B"] == 1
+    assert results["A"] == 1
     with pytest.raises(ValueError):
         dr.execute([tests.resources.cyclic_functions.B])
 
