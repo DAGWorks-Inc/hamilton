@@ -37,7 +37,7 @@ def main(mode: str):
         shutdown = ray.shutdown
     dr = (
         driver.Builder()
-        .enable_v2_driver(allow_experimental_mode=True)
+        .enable_parallelizable_type(allow_experimental_mode=True)
         .with_remote_executor(remote_executor)  # We only need to specify remote exeecutor
         # The local executor just runs it synchronously
         .with_modules(aggregate_data, list_data, process_data)

@@ -44,7 +44,7 @@ def test_end_to_end_parallel_execute_group_individually(executor_factory):
     dr = (
         driver.Builder()
         .with_modules(no_parallel)
-        .enable_v2_driver(allow_experimental_mode=True)
+        .enable_parallelizable_type(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
         .with_grouping_strategy(GroupNodesIndividually())
         .build()
@@ -65,7 +65,7 @@ def test_executors_group_all_as_one(executor_factory):
     dr = (
         driver.Builder()
         .with_modules(no_parallel)
-        .enable_v2_driver(allow_experimental_mode=True)
+        .enable_parallelizable_type(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
         .with_grouping_strategy(GroupNodesAllAsOne())
         .build()
@@ -87,7 +87,7 @@ def test_executors_group_by_level(executor_factory):
     dr = (
         driver.Builder()
         .with_modules(no_parallel)
-        .enable_v2_driver(allow_experimental_mode=True)
+        .enable_parallelizable_type(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
         .with_grouping_strategy(GroupNodesByLevel())
         .build()
@@ -108,7 +108,7 @@ def test_end_to_end_parallel_execute_group_by_repeatable_blocks(executor_factory
     dr = (
         driver.Builder()
         .with_modules(parallel_linear_basic)
-        .enable_v2_driver(allow_experimental_mode=True)
+        .enable_parallelizable_type(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
         .with_grouping_strategy(GroupByRepeatableBlocks())
         .build()
@@ -124,7 +124,7 @@ def test_parallelism_would_take_too_long_with_no_parallelism(executor_factory):
     dr = (
         driver.Builder()
         .with_modules(parallel_delayed)
-        .enable_v2_driver(allow_experimental_mode=True)
+        .enable_parallelizable_type(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
         .with_grouping_strategy(GroupByRepeatableBlocks())
         .build()
@@ -153,7 +153,7 @@ def test_end_to_end_block_has_external_dependencies(executor_factory):
     dr = (
         driver.Builder()
         .with_modules(parallel_complex)
-        .enable_v2_driver(allow_experimental_mode=True)
+        .enable_parallelizable_type(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
         .with_grouping_strategy(GroupByRepeatableBlocks())
         .build()
@@ -174,7 +174,7 @@ def test_end_to_end_with_overrides(executor_factory):
     dr = (
         driver.Builder()
         .with_modules(parallel_complex)
-        .enable_v2_driver(allow_experimental_mode=True)
+        .enable_parallelizable_type(allow_experimental_mode=True)
         .with_remote_executor(executor_factory())
         .with_grouping_strategy(GroupByRepeatableBlocks())
         .build()
