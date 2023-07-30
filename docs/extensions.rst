@@ -153,7 +153,7 @@ See :doc:`reference/result-builders/index` for what is provided with Hamilton, o
     from hamilton import driver
     from hamilton import base
 
-    adapter = base.SimplePythonGraphAdapter(base.DictResult())# or your custom class
+    adapter = base.DefaultAdapter# or your custom class
 
     dr = driver.Driver(dag_config, bl_module, loader_module, adapter=adapter)
 

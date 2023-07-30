@@ -21,7 +21,7 @@ from tests.resources.dynamic_parallelism import (
     parallel_linear_basic,
 )
 
-ADAPTER = base.SimplePythonGraphAdapter(base.DictResult())
+ADAPTER = base.DefaultAdapter()
 
 
 def multi_processing_executor_factory():
