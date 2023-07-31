@@ -1,14 +1,10 @@
 Customizing Execution
 ----------------------------------
 
-There are now two ways to customize execution -- we will be phasing out the old way
-eventually and focusing entirely on the new way. If you're just getting started -- read from
-here and then go onto the new driver. If you're looking to distribute/scale up your compute, jump
-ahead to the new driver.
 
 The Driver
 ----------------------------------
-The old Hamilton Driver by default has the following behaviors:
+The Hamilton Driver by default has the following behaviors:
 
 #. It is single threaded, and runs on the machine you call execute from.
 #. It is limited to the memory available on your machine.
@@ -51,6 +47,8 @@ Graph Adapters `adapt` the Hamilton DAG, and change how it is executed. They all
 work. The link with the Result Builders, is that GraphAdapters need to implement a ``build_result()`` function
 themselves.
 
+Note that this
+
 .. code-block:: python
 
     class HamiltonGraphAdapter(ResultMixin):
@@ -82,25 +80,25 @@ You have two options:
 
 .. code-block:: python
 
-    adapter = base.DefaultAdapter()
+    adapter = base.SimplePythonGraphAdapter(base.DictResult())
     dr = driver.Driver(..., adapter=adapter)
 
 By passing in ``base.DictResult()`` we are telling Hamilton that the result of ``execute()`` should be a dictionary with
 a map of ``output`` to computed result.
 
+Note that the above is the most common method of executing Hamilton DAGs. You can also use `base.DefaultAdapter`
+to get a `SimplePythonGraphAdapter` with a `DictResult`.
+
 Dynamic DAGs/Parallel Execution
 ----------------------------------
 
-The new Hamilton Driver allows for the following capabilities:
+Hamilton now has pluggable execution, which allows for the following:
 
 1. Grouping of nodes into "tasks" (discrete execution unit between serialization boundaries)
 2. Executing the tasks in parallel, using any executor of your choice
 
-While this is still new and does not yet have too many out-of-the-box node-grouping strategies and execution mechanisms
-this is extremely powerful, and will be the only driver in hamilton 2.0.
-
 You can run this executor using the `Builder`, a utility class that allows you to build a driver piece by piece.
-Note that you currently have to call `enable_v2_driver(allow_experimental_mode=True)`
+Note that you currently have to call `enable_parallel_type(allow_experimental_mode=True)`
 which will toggle it to use the `V2` driver. Then, you can:
 
 1. Add task executors to specify how to run the tasks
@@ -108,8 +106,9 @@ which will toggle it to use the `V2` driver. Then, you can:
 3. Add modules to crawl for functions
 4. Add a results builder to shape the results
 
-You can also access the old driver by not calling `enable_v2_driver`, which will give you the same capabilities
-as described below.
+You can also access standard hamilton execution by not calling `enable_parallel_type`, which will give you the same capabilities
+as described here. We highly recommend you use the builder pattern -- while the constructor of the `Driver` will be fully
+backwards compatible according to the rules of semantic versioning, we may change it in the future (for 2.0).
 
 Note that the new driver is required to handle dynamic creation of nodes (E.G. using `Parallelizable[]` and `Collect[]`.
 
@@ -122,10 +121,11 @@ Let's look at an example of the driver:
     from hamilton import driver
     from hamilton.execution import executors
     dr = driver.Builder().
-        with_modules(foo_module).
-        with_config({"config_key" : "config_value"}).
-        with_local_executor(executors.SynchronousLocalTaskExecutor()).
-        with_remote_executor(executors.MultiProcessingExecutor(max_tasks=5))
+        with_modules(foo_module).\
+        enable_parallel_type(allow_experimental_mode=True).\
+        with_config({"config_key" : "config_value"}).\
+        with_local_executor(executors.SynchronousLocalTaskExecutor()).\
+        with_remote_executor(executors.MultiProcessingExecutor(max_tasks=5)).\
         .build()
 
     dr.execute(['my_variable'], inputs={...}, overrides={...})
@@ -152,8 +152,3 @@ Thus, when you write a DAG like this (a simple map-reduce pattern):
 
 The block containing `counts` and `url_loaded` will get marked as one task, repeated for each URL in url_loaded,
 and run on the remote executor (which in this case is the `ThreadPoolExecutor`).
-
-Also, note that adapters are not supported in this driver, and instead will be replaced by a fix of functionality
-that will form a superset of the current capabilities of the adapter, including execution/graph construction hooks.
-
-The rest of the driver is largely similar to the old driver -- same arguments and same return types.

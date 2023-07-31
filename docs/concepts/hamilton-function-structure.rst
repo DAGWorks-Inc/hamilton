@@ -53,8 +53,8 @@ and :ref:`parameterizing your dataflow <parameterizing-the-dag>`, you can both h
 Dynamic DAGs
 ----------------------------
 
-Hamilton supports limited dynamism in DAG creation. While we believe that most workflows should be somewhat static
-(and dynamism should be orchestrated eternal to the definition), we support the ability to parallelize over a set of
+Hamilton supports limited dynamism in DAG execution. While we believe that most workflows should be somewhat static
+(and dynamism should be orchestrated eternal to the definition), we support the ability to expand execution over a set of
 previous nodes. You do this by marking a function that returns a list as having an output type `Parallelizable[]`, and
 downstream marking the input type as `Collect`.
 
@@ -80,7 +80,7 @@ For example:
 In this case the `site_to_crawl` function indicates that we should run `loaded_homepage` and `home_page_size`
 with each value that `site_to_crawl` returns. The `Collect` type indicates that we join all of the previous items.
 
-Note you'll need the :ref:`new driver <concepts/customizing-execution/#the-new-driver>` to take advantage of parallelism.
+Note that, to use this, you'll need to construct the hamilton driver with the `Builder`, and call `enable_parallel_type(allow_experimental_mode=True)`.
 
 Modules and Helper Functions
 ----------------------------
