@@ -1,6 +1,5 @@
-from hamilton import ad_hoc_utils, graph, node
+from hamilton import ad_hoc_utils, base, graph, node
 from hamilton.execution import grouping
-from hamilton.execution.debugging_utils import print_node_groups
 from hamilton.execution.grouping import (
     GroupByRepeatableBlocks,
     GroupNodesAllAsOne,
@@ -75,9 +74,16 @@ def test_create_task_plan():
     fn_graph = FunctionGraph(parallel_linear_basic, config={})
     node_grouper = GroupByRepeatableBlocks()
     nodes_grouped = node_grouper.group_nodes(list(fn_graph.nodes.values()))
-    print_node_groups(nodes_grouped)
-    # task_plan = grouping.create_task_plan(nodes_grouped)
-    # pdb.set_trace()
+    task_plan = grouping.create_task_plan(nodes_grouped, ["final"], {}, [base.DefaultAdapter()])
+    assert len(task_plan) == 5
+    task_plan_by_id = {task.base_id: task for task in task_plan}
+    assert {key: value.base_dependencies for key, value in task_plan_by_id.items()} == {
+        "expand-steps": ["number_of_steps"],
+        "block-steps": ["expand-steps"],
+        "collect-steps": ["block-steps"],
+        "final": ["collect-steps"],
+        "number_of_steps": [],
+    }
 
 
 def test_task_get_input_vars_not_user_defined():

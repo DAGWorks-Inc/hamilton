@@ -313,7 +313,7 @@ Specific integrations with other systems where we help you write code that runs 
 * [x] Parallel walk over a generator
 * [x] Python multiprocessing execution (still in beta)
 * [x] Python threading support
-* [x] grouping of nodes into tasks for efficient parallel computation
+* [x] Grouping of nodes into tasks for efficient parallel computation
 * [x] Breadth first search traversal
 * [ ] Sequential walk over a generator
 
