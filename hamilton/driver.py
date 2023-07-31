@@ -850,7 +850,7 @@ class Builder:
     def __init__(self):
         """Creates a driver with all fields unset/defaulted"""
         # Toggling versions
-        self.v2_driver = False
+        self.v2_executor = False
 
         # common fields
         self.config = {}
@@ -866,7 +866,7 @@ class Builder:
         self.result_builder = None
 
     def _require_v2(self, message: str):
-        if not self.v2_driver:
+        if not self.v2_executor:
             raise ValueError(message)
 
     def _require_field_unset(self, field: str, message: str, unset_value: Any = None):
@@ -889,7 +889,7 @@ class Builder:
                 "Please set allow_experiemental_mode=True to enable it."
             )
         self._require_field_unset("adapter", "Cannot enable remote execution with an adapter set.")
-        self.v2_driver = True
+        self.v2_executor = True
         return self
 
     def with_config(self, config: Dict[str, Any]) -> "Builder":
@@ -989,7 +989,7 @@ class Builder:
         :return: The driver you specified.
         """
         adapter = self.adapter if self.adapter is not None else base.DefaultAdapter()
-        if not self.v2_driver:
+        if not self.v2_executor:
             return Driver(self.config, *self.modules, adapter=self.adapter)
         execution_manager = self.execution_manager
         if execution_manager is None:
