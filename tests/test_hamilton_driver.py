@@ -32,7 +32,7 @@ TODO -- move any execution tests to tests the graph executor capabilities on the
         (lambda: Driver({"a": 1})),
         (
             lambda: Builder()
-            .enable_parallelizable_type(allow_experimental_mode=True)
+            .enable_dynamic_execution(allow_experimental_mode=True)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .with_config({"a": 1})
             .build()
@@ -51,7 +51,7 @@ def test_driver_validate_input_types(driver_factory):
         (lambda: Driver({}, tests.resources.very_simple_dag)),
         (
             lambda: Builder()
-            .enable_parallelizable_type(allow_experimental_mode=True)
+            .enable_dynamic_execution(allow_experimental_mode=True)
             .with_modules(tests.resources.very_simple_dag)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .build()
@@ -70,7 +70,7 @@ def test_driver_validate_runtime_input_types(driver_factory):
         (lambda: Driver({}, tests.resources.cyclic_functions)),
         (
             lambda: Builder()
-            .enable_parallelizable_type(allow_experimental_mode=True)
+            .enable_dynamic_execution(allow_experimental_mode=True)
             .with_modules(tests.resources.cyclic_functions)
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
             .build()
@@ -214,7 +214,7 @@ def test_capture_constructor_telemetry(send_event_json):
         (lambda: Driver({}, tests.resources.very_simple_dag)),
         (
             lambda: Builder()
-            .enable_parallelizable_type(allow_experimental_mode=True)
+            .enable_dynamic_execution(allow_experimental_mode=True)
             .with_modules(tests.resources.very_simple_dag)
             .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -239,7 +239,7 @@ def test_capture_execute_telemetry_disabled(send_event_json, driver_factory):
         (lambda: Driver({}, tests.resources.very_simple_dag)),
         (
             lambda: Builder()
-            .enable_parallelizable_type(allow_experimental_mode=True)
+            .enable_dynamic_execution(allow_experimental_mode=True)
             .with_modules(tests.resources.very_simple_dag)
             .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -266,7 +266,7 @@ def test_capture_execute_telemetry_error(send_event_json, driver_factory):
         (lambda: Driver({}, tests.resources.very_simple_dag)),
         (
             lambda: Builder()
-            .enable_parallelizable_type(allow_experimental_mode=True)
+            .enable_dynamic_execution(allow_experimental_mode=True)
             .with_modules(tests.resources.very_simple_dag)
             .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -292,7 +292,7 @@ def test_capture_execute_telemetry(send_event_json, driver_factory):
         (lambda: Driver({"a": 1}, tests.resources.very_simple_dag)),
         (
             lambda: Builder()
-            .enable_parallelizable_type(allow_experimental_mode=True)
+            .enable_dynamic_execution(allow_experimental_mode=True)
             .with_modules(tests.resources.very_simple_dag)
             .with_adapter(base.SimplePythonGraphAdapter(base.PandasDataFrameResult()))
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -322,7 +322,7 @@ def test_capture_execute_telemetry_none_values(send_event_json, driver_factory):
         ),
         (
             lambda: Builder()
-            .enable_parallelizable_type(allow_experimental_mode=True)
+            .enable_dynamic_execution(allow_experimental_mode=True)
             .with_modules(tests.resources.test_default_args)
             .with_adapter(base.DefaultAdapter())
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -364,7 +364,7 @@ def test_node_is_required_by_anything(driver_factory):
         ),
         (
             lambda: Builder()
-            .enable_parallelizable_type(allow_experimental_mode=True)
+            .enable_dynamic_execution(allow_experimental_mode=True)
             .with_modules(tests.resources.test_default_args)
             .with_adapter(base.DefaultAdapter())
             .with_remote_executor(executors.SynchronousLocalTaskExecutor())
@@ -413,7 +413,7 @@ def test_create_final_vars_errors():
 def test_v2_driver_builder():
     dr = (
         Builder()
-        .enable_parallelizable_type(allow_experimental_mode=True)
+        .enable_dynamic_execution(allow_experimental_mode=True)
         .with_adapter(base.DefaultAdapter())
         .with_modules(tests.resources.very_simple_dag)
         .build()
@@ -438,7 +438,7 @@ def test_executor_validates_sad_default_executor():
 def test_executor_validates_happy_parallel_executor():
     dr = (
         Builder()
-        .enable_parallelizable_type(allow_experimental_mode=True)
+        .enable_dynamic_execution(allow_experimental_mode=True)
         .with_modules(tests.resources.dynamic_parallelism.parallel_linear_basic)
         .build()
     )

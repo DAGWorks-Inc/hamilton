@@ -80,7 +80,7 @@ For example:
 In this case the `site_to_crawl` function indicates that we should run `loaded_homepage` and `home_page_size`
 with each value that `site_to_crawl` returns. The `Collect` type indicates that we join all of the previous items.
 
-Note that, to use this, you'll need to construct the hamilton driver with the `Builder`, and call `enable_parallel_type(allow_experimental_mode=True)`.
+Note that, to use this, you'll need to construct the hamilton driver with the `Builder`, and call `(allow_experimental_mode=True)`.
 
 Modules and Helper Functions
 ----------------------------
