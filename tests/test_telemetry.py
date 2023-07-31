@@ -95,6 +95,13 @@ def test__check_config_and_environ_for_telemetry_flag_env_overrides():
     assert actual is True
 
 
+@pytest.mark.skipif(
+    os.environ.get("CI") != "true",
+    reason="This test is currently flaky when run locally -- "
+    "it has to be run exactly as it is in CI. "
+    "As it is not a high-touch portion of the codebase, "
+    "we default it not to run locally.",
+)
 def test_sanitize_error_general():
     """Tests sanitizing code in the general case.
 
