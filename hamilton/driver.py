@@ -1006,7 +1006,6 @@ class Builder:
             grouping_strategy=grouping_strategy,
             adapter=adapter,
         )
-        # TODO -- wire through an adapter
         return Driver(
             self.config,
             *self.modules,

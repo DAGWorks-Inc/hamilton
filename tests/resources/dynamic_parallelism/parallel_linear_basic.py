@@ -13,24 +13,20 @@ def steps(number_of_steps: int) -> Parallelizable[int]:
 
 # process
 def step_squared(steps: int) -> int:
-    print("squaring step {}".format(steps))
     return steps**2
 
 
 # process
 def step_cubed(steps: int) -> int:
-    print("cubing step {}".format(steps))
     return steps**3
 
 
 def step_squared_plus_step_cubed(step_squared: int, step_cubed: int) -> int:
-    print("adding step squared and step cubed")
     return step_squared + step_cubed
 
 
 # join
 def sum_step_squared_plus_step_cubed(step_squared_plus_step_cubed: Collect[int]) -> int:
-    print("summing step squared")
     out = 0
     for step in step_squared_plus_step_cubed:
         out += step
@@ -39,7 +35,6 @@ def sum_step_squared_plus_step_cubed(step_squared_plus_step_cubed: Collect[int])
 
 # final
 def final(sum_step_squared_plus_step_cubed: int) -> int:
-    print("finalizing")
     return sum_step_squared_plus_step_cubed
 
 

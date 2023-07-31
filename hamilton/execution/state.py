@@ -27,7 +27,7 @@ GraphState = TaskState
 
 
 class ResultCache(abc.ABC):
-    """Cahe of intermediate results. Will likely want to add pruning to this..."""
+    """Cache of intermediate results. Will likely want to add pruning to this..."""
 
     @abc.abstractmethod
     def write(
@@ -120,9 +120,6 @@ class ExecutionState:
     1. Be the source of truth of the execution state
     2. Tell us what task to run next
     3. Prep the task for execution (give it the results it needs)
-
-    Note that (3) could theoretically be done by the task itself, but we're keeping it here for now,
-    for simplicity.
     """
 
     def __init__(self, tasks: List[TaskSpec], result_cache: ResultCache):

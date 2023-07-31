@@ -47,8 +47,6 @@ Graph Adapters `adapt` the Hamilton DAG, and change how it is executed. They all
 work. The link with the Result Builders, is that GraphAdapters need to implement a ``build_result()`` function
 themselves.
 
-Note that this
-
 .. code-block:: python
 
     class HamiltonGraphAdapter(ResultMixin):
@@ -99,18 +97,18 @@ Hamilton now has pluggable execution, which allows for the following:
 
 You can run this executor using the `Builder`, a utility class that allows you to build a driver piece by piece.
 Note that you currently have to call `enable_dynamic_execution(allow_experimental_mode=True)`
-which will toggle it to use the `V2` driver. Then, you can:
+which will toggle it to use the `V2` executor. Then, you can:
 
 1. Add task executors to specify how to run the tasks
 2. Add node gropuing strategies
 3. Add modules to crawl for functions
 4. Add a results builder to shape the results
 
-You can also access standard hamilton execution by not calling `enable_dynamic_execution`, which will give you the same capabilities
-as described here. We highly recommend you use the builder pattern -- while the constructor of the `Driver` will be fully
+Either constructing the driver, or using the builder and `not` calling `enable_dynamic_execution` will give you the standard executor.
+We highly recommend you use the builder pattern -- while the constructor of the `Driver` will be fully
 backwards compatible according to the rules of semantic versioning, we may change it in the future (for 2.0).
 
-Note that the new driver is required to handle dynamic creation of nodes (E.G. using `Parallelizable[]` and `Collect[]`.
+Note that the new executor is required to handle dynamic creation of nodes (E.G. using `Parallelizable[]` and `Collect[]`.
 
 Let's look at an example of the driver:
 
