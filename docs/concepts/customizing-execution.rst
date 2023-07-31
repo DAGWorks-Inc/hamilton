@@ -139,7 +139,8 @@ Thus, when you write a DAG like this (a simple map-reduce pattern):
 .. code-block:: python
 
     def url() -> Parallelizable[str]:
-        return _list_all_urls()
+        for url_ in  _list_all_urls():
+            yield url_
 
     def url_loaded(url: str) -> str:
         return _load(urls)

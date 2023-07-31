@@ -55,8 +55,9 @@ Dynamic DAGs
 
 Hamilton supports limited dynamism in DAG execution. While we believe that most workflows should be somewhat static
 (and dynamism should be orchestrated eternal to the definition), we support the ability to expand execution over a set of
-previous nodes. You do this by marking a function that returns a list as having an output type `Parallelizable[]`, and
-downstream marking the input type as `Collect`.
+previous nodes. You do this by marking a function that yields a generator of type `Foo` as having an output type `Parallelizable[Foo]`, and
+downstream marking the input type as `Collect[input]`. Note that, currently, multiple functions can declare, as an input, the output of a `Parallelizable`
+function, whereas only one node can currently feed into `Collect`.
 
 For example:
 
@@ -65,7 +66,8 @@ For example:
     from hamilton.htypes import Parallelizable, Collect
 
     def site_to_crawl() -> Parallelizable[str]:
-        return ["hamilton.readthedocs.io", "tryhamilton.dev", "..."]
+        for item in ["hamilton.readthedocs.io", "tryhamilton.dev", "..."]:
+            yield item
 
 
     def loaded_homepage(site_to_crawl: str) -> str:

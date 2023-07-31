@@ -244,7 +244,7 @@ V = TypeVar("V")
 #     pass
 
 
-class Parallelizable(typing.List[U], ABC):
+class Parallelizable(typing.Generator[U, None, None], ABC):
     pass
 
 

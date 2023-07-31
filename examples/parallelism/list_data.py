@@ -35,4 +35,5 @@ def city_data(files: List[str]) -> Parallelizable[CityData]:
             cities[city].weekend_file = file_name
         else:
             cities[city].weekday_file = file_name
-    return list(cities.values())  # we don't cared about order
+    for city in cities.values():
+        yield city

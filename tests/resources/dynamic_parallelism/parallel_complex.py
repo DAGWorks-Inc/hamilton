@@ -14,7 +14,7 @@ def second_param_external_to_block() -> int:
 
 
 def steps(number_of_steps: int) -> Parallelizable[int]:
-    return list(range(number_of_steps))
+    yield from range(number_of_steps)
 
 
 def step_modified(steps: int, second_param_external_to_block: int) -> int:

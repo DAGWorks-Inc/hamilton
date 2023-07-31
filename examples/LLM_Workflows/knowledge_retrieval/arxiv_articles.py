@@ -26,7 +26,8 @@ def arxiv_search_result(
         max_results=max_arxiv_results,
         sort_by=sort_by,
     )
-    return list(_search.results())
+    for item in _search.results():
+        yield item
 
 
 @extract_fields({"title": str, "summary": str, "article_url": str, "pdf_url": str})

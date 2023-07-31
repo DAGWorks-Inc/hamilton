@@ -23,7 +23,7 @@ def get_articles(query: str) -> pd.DataFrame:
         .with_modules(arxiv_articles)
         .with_config({"mock_openai": True})
         .with_remote_executor(MultiThreadingExecutor(max_tasks=10))
-        .with_result_builder(base.PandasDataFrameResult())
+        .with_adapter(base.SimplePythonDataFrameGraphAdapter())
         .build()
     )
 
