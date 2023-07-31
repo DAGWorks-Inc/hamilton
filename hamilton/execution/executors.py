@@ -1,9 +1,11 @@
 import abc
 import dataclasses
+import functools
 import logging
 from concurrent.futures import Executor, Future, ProcessPoolExecutor, ThreadPoolExecutor
 from typing import Any, Callable, Dict, List
 
+from hamilton import node
 from hamilton.execution.graph_functions import execute_subdag
 from hamilton.execution.grouping import NodeGroupPurpose, TaskImplementation
 from hamilton.execution.state import ExecutionState, GraphState, TaskState
@@ -58,6 +60,23 @@ class TaskExecutor(abc.ABC):
         pass
 
 
+def new_callable(*args, _callable=None, **kwargs):
+    return list(_callable(*args, **kwargs))
+
+
+def _modify_callable(node_source: node.NodeType, callabl: Callable):
+    """This is a bit of a shortcut -- we modify the callable here as
+    we want to allow `Parallelizable[]` nodes to return a generaot
+
+    :param node_source:
+    :param callabl:
+    :return:
+    """
+    if node_source == node.NodeType.EXPAND:
+        return functools.partial(new_callable, _callable=callabl)
+    return callabl
+
+
 def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
     """This is a utility function to execute a base task. In an ideal world this would be recursive,
     but for now we just call out to good old DFS.
@@ -68,6 +87,16 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
     :param task: task to execute.
     :return: a diciontary of the results of all the nodes in that task's nodes to compute.
     """
+    # We do this as an edge case to force the callable to return a list if it is an expand,
+    # and would normally return a generator. That said, we will likely remove this in the future --
+    # its an implementation detail, and a true queuing system between nodes/controller would mean
+    # we wouldn't need to do this, and instead could just use the generator aspect.
+    # Furthermore, in most cases the user wouldn't be calling an expand on a "remote" node,
+    # but it is a supported use-case.
+    for node_ in task.nodes:
+        if not getattr(node_, "callable_modified", False):
+            node_._callable = _modify_callable(node_.node_role, node_.callable)
+        setattr(node_, "callable_modified", True)
     return execute_subdag(
         nodes=task.nodes,
         inputs=task.dynamic_inputs,

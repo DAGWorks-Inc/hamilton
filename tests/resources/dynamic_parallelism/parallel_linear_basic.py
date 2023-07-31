@@ -8,7 +8,7 @@ def number_of_steps() -> int:
 
 # expand
 def steps(number_of_steps: int) -> Parallelizable[int]:
-    return list(range(number_of_steps))
+    yield from range(number_of_steps)
 
 
 # process

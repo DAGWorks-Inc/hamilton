@@ -3,7 +3,7 @@ from hamilton.htypes import Collect, Parallelizable
 
 # expand
 def steps(number_of_steps: int) -> Parallelizable[int]:
-    return list(range(number_of_steps))
+    yield from range(number_of_steps)
 
 
 # process
