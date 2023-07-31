@@ -98,7 +98,7 @@ Hamilton now has pluggable execution, which allows for the following:
 2. Executing the tasks in parallel, using any executor of your choice
 
 You can run this executor using the `Builder`, a utility class that allows you to build a driver piece by piece.
-Note that you currently have to call `enable_parallel_type(allow_experimental_mode=True)`
+Note that you currently have to call `enable_dynamic_execution(allow_experimental_mode=True)`
 which will toggle it to use the `V2` driver. Then, you can:
 
 1. Add task executors to specify how to run the tasks
@@ -106,7 +106,7 @@ which will toggle it to use the `V2` driver. Then, you can:
 3. Add modules to crawl for functions
 4. Add a results builder to shape the results
 
-You can also access standard hamilton execution by not calling `enable_parallel_type`, which will give you the same capabilities
+You can also access standard hamilton execution by not calling `enable_dynamic_execution`, which will give you the same capabilities
 as described here. We highly recommend you use the builder pattern -- while the constructor of the `Driver` will be fully
 backwards compatible according to the rules of semantic versioning, we may change it in the future (for 2.0).
 
@@ -122,7 +122,7 @@ Let's look at an example of the driver:
     from hamilton.execution import executors
     dr = driver.Builder().
         with_modules(foo_module).\
-        enable_parallel_type(allow_experimental_mode=True).\
+        enable_dynamic_execution(allow_experimental_mode=True).\
         with_config({"config_key" : "config_value"}).\
         with_local_executor(executors.SynchronousLocalTaskExecutor()).\
         with_remote_executor(executors.MultiProcessingExecutor(max_tasks=5)).\

@@ -19,7 +19,7 @@ def get_articles(query: str) -> pd.DataFrame:
     """
     dr = (
         driver.Builder()
-        .enable_parallelizable_type(allow_experimental_mode=True)
+        .enable_dynamic_execution(allow_experimental_mode=True)
         .with_modules(arxiv_articles)
         .with_config({"mock_openai": True})
         .with_remote_executor(MultiThreadingExecutor(max_tasks=10))

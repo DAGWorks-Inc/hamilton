@@ -877,7 +877,7 @@ class Builder:
         if getattr(self, field) == unset_value:
             raise ValueError(message)
 
-    def enable_parallelizable_type(self, *, allow_experimental_mode: bool = False) -> "Builder":
+    def enable_dynamic_execution(self, *, allow_experimental_mode: bool = False) -> "Builder":
         """Enables the Parallelizable[] type, which in turn enables:
             1. Grouped execution into tasks
             2. Parallel execution
