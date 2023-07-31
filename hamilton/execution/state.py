@@ -407,7 +407,12 @@ class ExecutionState:
                                 should_launch = False
                     if should_launch:
                         tasks_to_enqueue.append(task)
-            logger.info(f"Enqueuing {len(tasks_to_enqueue)} tasks")
+            task_names = [task.task_id for task in tasks_to_enqueue]
+            if len(task_names) > 0:
+                logger.info(
+                    f"Enqueuing {len(task_names)} task{'s' if len(task_names) > 1 else ''}: "
+                    f"{', '.join(task_names[:2] +(['...'] if len(task_names) > 2 else []))}"
+                )
             for task_to_enqueue in tasks_to_enqueue:
                 self.task_queue.append(task_to_enqueue)
                 self.task_states[task_to_enqueue.task_id] = TaskState.QUEUED
