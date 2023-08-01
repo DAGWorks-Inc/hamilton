@@ -1,0 +1,4 @@
+feast
+jupyter
+pandas
+sf-hamilton[visualization]
