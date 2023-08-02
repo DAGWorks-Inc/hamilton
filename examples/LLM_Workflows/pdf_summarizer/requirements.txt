@@ -1,0 +1,9 @@
+fastapi
+openai
+pandas
+pydantic
+PyPDF2
+requests
+sf-hamilton[visualization]
+streamlit
+uvicorn
