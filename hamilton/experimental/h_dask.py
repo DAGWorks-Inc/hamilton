@@ -70,6 +70,8 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
         dask_client: DaskClient,
         result_builder: base.ResultMixin = None,
         visualize_kwargs: dict = None,
+        use_delayed: bool = True,
+        compute_at_end: bool = True,
     ):
         """Constructor
 
@@ -83,10 +85,18 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
             **None**, means no visualization.\
             **Dict**, means visualize -- see https://docs.dask.org/en/latest/api.html?highlight=visualize#dask.visualize\
             for what to pass in.
+        :param use_delayed: Default is True for backwards compatibility. Whether to use dask.delayed to wrap every
+            function. Note: it is probably not necessary to mix this with using dask objects, e.g. dataframes/series.
+            They are by nature lazily computed and operate over the dask data types, so you don't need to wrap them
+            with delayed. Use delayed if you want to farm out computation.
+        :param compute_at_end: Default is True for backwards compatibility. Whether to compute() at the end.
+            That is, should `.compute()` be called in the result builder to quick off computation.
         """
         self.client = dask_client
         self.result_builder = result_builder if result_builder else base.PandasDataFrameResult()
         self.visualize_kwargs = visualize_kwargs
+        self.use_delayed = use_delayed
+        self.compute_at_end = compute_at_end
 
     @staticmethod
     def check_input_type(node_type: typing.Type, input_value: typing.Any) -> bool:
@@ -114,6 +124,8 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
         :param kwargs: the arguments that should be passed to it.
         :return: returns a dask delayed object.
         """
+        if not self.use_delayed:
+            return node.callable(**kwargs)
         # we want to ensure the name in dask corresponds to the node name, and not the wrapped
         # function name that hamilton might have wrapped it with.
         hash = tokenize(kwargs)  # this is what the dask docs recommend.
@@ -127,16 +139,135 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
         """Builds the result and brings it back to this running process.
 
         :param outputs: the dictionary of key -> Union[delayed object reference | value]
-        :return: The type of object returned by self.result_builder.
+        :return: The type of object returned by self.result_builder. Note the following behaviors:
+          - if you use_delayed=True, then the result will be a delayed object.
+          - if you use_delayed=True & computed_at_end=True, then the result will be the return type
+          of self.result_builder.
+          - if you use_delayed=False & computed_at_end=True, this will only work if the self.result_builder
+          returns a dask type, as we will try to compute it.
+          - if you use_delayed=False & computed_at_end=False, this will return the result of self.result_builder.
         """
         if logger.isEnabledFor(logging.DEBUG):
             for k, v in outputs.items():
-                logger.info(f"Got column {k}, with type [{type(v)}].")
-        delayed_combine = delayed(self.result_builder.build_result)(**outputs)
+                logger.debug(f"Got column {k}, with type [{type(v)}].")
+        if self.use_delayed:
+            delayed_result = delayed(self.result_builder.build_result)(**outputs)
+        else:
+            delayed_result = self.result_builder.build_result(**outputs)
         if self.visualize_kwargs is not None:
-            delayed_combine.visualize(**self.visualize_kwargs)
-        (df,) = compute(delayed_combine)
-        return df
+            delayed_result.visualize(**self.visualize_kwargs)
+        if self.compute_at_end:
+            (result,) = compute(delayed_result)
+            return result
+        else:
+            return delayed_result
+
+
+# TODO: delete this class before merging.
+class DaskGraphAdapterV2(DaskGraphAdapter):
+    """This is a version of the DaskGraphAdapter that DOES NOT USE the Dask Delayed API.
+
+    Use this if you're only using Dask objects, and don't want the "delayed" functionality.
+    """
+
+    def __init__(
+        self,
+        dask_client: DaskClient,
+        result_builder: base.ResultMixin = None,
+        visualize_kwargs: dict = None,
+    ):
+        """Simpler more generic constructor for dealing with dask -- you get back non-computed objects by default.
+
+        You have the ability to pass in a ResultMixin object to the constructor to control the return type that gets\
+        produced by running on Dask.
+
+        :param dask_client: the dask client -- we don't do anything with it, but thought that it would be useful\
+            to wire through here.
+        :param result_builder: The function that will build the result. Optional, defaults to pandas dataframe.
+        :param visualize_kwargs: Arguments to visualize the graph using dask's internals.\
+            **None**, means no visualization.\
+            **Dict**, means visualize -- see https://docs.dask.org/en/latest/api.html?highlight=visualize#dask.visualize\
+            for what to pass in.
+        """
+        super().__init__(dask_client, result_builder, visualize_kwargs, False, False)
+
+    def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
+        return node.callable(**kwargs)
+
+    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
+        """Returns a dask object that is not computed."""
+        dask_obj = self.result_builder.build_result(**outputs)
+        if self.visualize_kwargs is not None:
+            dask_obj.visualize(**self.visualize_kwargs)
+        return dask_obj
+
+
+class DaskDataFrameResult(base.ResultMixin):
+    @staticmethod
+    def build_result(**outputs: typing.Dict[str, typing.Any]) -> typing.Any:
+        """Builds a dask dataframe from the outputs.
+
+        This has some assumptions:
+         1. the order specified in the output will mirror the order of "joins" here.
+         2. it tries to massage types into dask types where it can
+         3. otherwise it duplicates any "scalars/objects" using the first valid input with an index as the
+            template. It assumes a single partition.
+        """
+        if logger.isEnabledFor(logging.DEBUG):
+            for k, v in outputs.items():
+                logger.debug(f"Got column {k}, with type [{type(v)}].")
+
+        length = 0
+        index = None
+        massaged_outputs = {}
+        for k, v in outputs.items():
+            if isinstance(v, (dask.dataframe.Series, dask.dataframe.DataFrame)):
+                if length == 0:
+                    length = len(v)
+                    index = v.index
+                massaged_outputs[k] = v
+            elif isinstance(v, (pd.Series, pd.DataFrame)):
+                converted = dask.dataframe.from_pandas(v)
+                massaged_outputs[k] = converted
+                if length == 0:
+                    length = len(converted)
+                    index = converted.index
+            elif isinstance(v, (np.ndarray,)):
+                massaged_outputs[k] = dask.array.from_array(v)  # untested line of code
+            elif isinstance(v, (list, tuple)):
+                massaged_outputs[k] = dask.array.from_array(v)  # untested line of code
+            elif isinstance(v, (dask.dataframe.core.Scalar,)):
+                scalar = v.compute()
+                if length == 0:
+                    massaged_outputs[k] = dask.dataframe.from_pandas(
+                        pd.DataFrame([scalar], index=[0]), npartitions=1
+                    )
+                else:
+                    massaged_outputs[k] = dask.dataframe.from_pandas(
+                        pd.DataFrame([scalar] * length, index=index), npartitions=1
+                    )
+            elif isinstance(v, (int, float, str, bool, object)):
+                scalar = v
+                if length == 0:
+                    massaged_outputs[k] = dask.dataframe.from_pandas(
+                        pd.DataFrame([scalar], index=[0]), npartitions=1
+                    )
+                else:
+                    massaged_outputs[k] = dask.dataframe.from_pandas(
+                        pd.DataFrame([scalar] * length, index=index), npartitions=1
+                    )
+            else:
+                raise ValueError(
+                    f"Unknown type {type(v)} for output {k}. "
+                    f"Do not know how to handle making a dataframe from this."
+                )
+        # assumption is that everything here is a dask series or dataframe
+        # we assume that we do column concatenation and that it's an outer join (TBD: make this configurable)
+        _df = dask.dataframe.multi.concat(
+            [o for o in massaged_outputs.values()], axis=1, join="outer"
+        )
+        _df.columns = list(outputs.keys())
+        return _df
 
 
 # TODO: add ResultMixins for dask types
