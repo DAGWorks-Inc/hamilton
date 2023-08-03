@@ -1,4 +1,5 @@
 import inspect
+import sys
 import typing
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
@@ -241,7 +242,9 @@ class Node(object):
         """
         if name is None:
             name = fn.__name__
-        return_type = typing.get_type_hints(fn).get("return")
+        # TODO -- remove this when we no longer support 3.8 -- 10/14/2024
+        type_hint_kwargs = {} if sys.version_info < (3, 9) else {"include_extras": True}
+        return_type = typing.get_type_hints(fn, **type_hint_kwargs).get("return")
         if return_type is None:
             raise ValueError(f"Missing type hint for return value in function {fn.__qualname__}.")
         node_source = NodeType.STANDARD
@@ -255,7 +258,6 @@ class Node(object):
                 if typing_inspect.get_origin(hint) == Collect:
                     node_source = NodeType.COLLECT
                     break
-
         module = inspect.getmodule(fn).__name__
         return Node(
             name,
@@ -302,3 +304,19 @@ class Node(object):
         :return: A copy of the node.
         """
         return self.copy_with(include_refs)
+
+    def reassign_input_names(self, input_names: Dict[str, Any]) -> "Node":
+        """Reassigns the input names of a node. Useful for applying
+        a node to a separate input if needed.
+
+        :param input_names: Input name map to reassign
+        :return: A node with the input names reassigned
+        """
+
+        def new_callable(**kwargs) -> Any:
+            reverse_input_names = {v: k for k, v in input_names.items()}
+            return self.callable(**{reverse_input_names.get(k, k): v for k, v in kwargs.items()})
+
+        new_input_types = {input_names.get(k, k): v for k, v in self.input_types.items()}
+        out = self.copy_with(callabl=new_callable, input_types=new_input_types)
+        return out

@@ -12,6 +12,12 @@ We will likely want to genericize them so we're dealing with anything, not just 
 
 def topologically_sort_nodes(nodes: List[node.Node]) -> List[node.Node]:
     """Topologically sorts a list of nodes based on their dependencies.
+    Note that we bypass utilizing the preset dependencies/depended_on_by attributes of the node,
+    as we may want to use this before these nodes get put in a function graph.
+
+    Thus we compute our own dependency map...
+    Note that this assumes that the nodes are continuous -- if there is a hidden dependency that
+    connects them, this has no way of knowing about it.
 
     TODO -- use python graphlib when we no longer have to support 3.7/3.8.
 
@@ -20,24 +26,36 @@ def topologically_sort_nodes(nodes: List[node.Node]) -> List[node.Node]:
     :param nodes: Nodes to sort
     :return: Nodes in sorted order
     """
+    node_name_map = {node_.name: node_ for node_ in nodes}
+    depended_on_by_map = {}
+    dependency_map = {}
+    for node_ in nodes:
+        dependency_map[node_.name] = []
+        for dep in node_.input_types:
+            # if the dependency is not here, we don't want to count it
+            # that means it depends on something outside the set of nodes we're sorting
+            if dep not in node_name_map:
+                continue
+            dependency_map[node_.name].append(dep)
+            if dep not in depended_on_by_map:
+                depended_on_by_map[dep] = []
+            depended_on_by_map[dep].append(node_)
 
-    in_degrees = {node_.name: len(node_.dependencies) for node_ in nodes}
+    in_degrees = {node_.name: len(dependency_map.get(node_.name, [])) for node_ in nodes}
     # TODO -- determine what happens if nodes have dependencies that aren't present
-    sources = [node_ for node_ in nodes if len(node_.dependencies) == 0]
+    sources = [node_ for node_ in nodes if in_degrees[node_.name] == 0]
     queue = []
     for source in sources:
         queue.append(source)
-
     sorted_nodes = []
     while len(queue) > 0:
         node_ = queue.pop(0)
         sorted_nodes.append(node_)
-        for next_node in node_.depended_on_by:
+        for next_node in depended_on_by_map.get(node_.name, []):
             if next_node.name in in_degrees:
                 in_degrees[next_node.name] -= 1
                 if in_degrees[next_node.name] == 0:
                     queue.append(next_node)
-
     return sorted_nodes
 
 
