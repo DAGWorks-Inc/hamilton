@@ -2,7 +2,8 @@ import functools
 import inspect
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union
+from types import CodeType, FunctionType, ModuleType
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,10 @@ from pyspark.sql.functions import column, lit, pandas_udf, udf
 
 from hamilton import base, htypes, node
 from hamilton.node import DependencyType
+from hamilton.execution import graph_functions
+from hamilton.function_modifiers import base as fm_base
+from hamilton.function_modifiers import subdag
+from hamilton.function_modifiers.recursive import assign_namespace
 
 logger = logging.getLogger(__name__)
 
@@ -206,46 +211,42 @@ else:
     _list = (list[int], list[float], list[bool], list[str], list[bytes])
 
 
-def get_spark_type(
-    actual_kwargs: dict, df: DataFrame, hamilton_udf: Callable, return_type: Any
-) -> types.DataType:
+
+def get_spark_type(return_type: Any) -> types.DataType:
     if return_type in (int, float, bool, str, bytes):
         return python_to_spark_type(return_type)
+    elif return_type in (list[int], list[float], list[bool], list[str], list[bytes]):
+        return types.ArrayType(python_to_spark_type(return_type.__args__[0]))
     elif return_type in _list:
         return types.ArrayType(python_to_spark_type(return_type.__args__[0]))
     elif hasattr(return_type, "__module__") and getattr(return_type, "__module__") == "numpy":
         return numpy_to_spark_type(return_type)
     else:
-        logger.debug(f"{inspect.signature(hamilton_udf)}, {actual_kwargs}, {df.columns}")
         raise ValueError(
             f"Currently unsupported return type {return_type}. "
             f"Please create an issue or PR to add support for this type."
         )
 
 
-def _get_pandas_annotations(hamilton_udf: Callable) -> Dict[str, bool]:
+def _get_pandas_annotations(node_: node.Node, bound_parameters: Dict[str, Any]) -> Dict[str, bool]:
     """Given a function, return a dictionary of the parameters that are annotated as pandas series.
 
     :param hamilton_udf: the function to check.
     :return: dictionary of parameter names to boolean indicating if they are pandas series.
     """
-    new_signature = inspect.signature(hamilton_udf)
-    new_sig_parameters = dict(new_signature.parameters)
-    pandas_annotation = {
-        name: param.annotation == pd.Series
-        for name, param in new_sig_parameters.items()
-        if param.default == inspect.Parameter.empty  # bound parameters will have a default value.
+    return {
+        name: type_ == pd.Series
+        for name, (type_, _) in node_.input_types.items()
+        if name not in bound_parameters
     }
-    return pandas_annotation
 
 
-def _bind_parameters_to_callable(
+def _determine_parameters_to_bind(
     actual_kwargs: dict,
     df_columns: Set[str],
-    hamilton_udf: Callable,
     node_input_types: Dict[str, Tuple],
     node_name: str,
-) -> Tuple[Callable, Dict[str, Any]]:
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Function that we use to bind inputs to the function, or determine we should pull them from the dataframe.
 
     It does two things:
@@ -259,16 +260,15 @@ def _bind_parameters_to_callable(
     :param hamilton_udf: the callable to bind to.
     :param node_input_types: the input types of the function.
     :param node_name: name of the node/function.
-    :return: a tuple of the callable and the dictionary of parameters to use for the callable.
+    :return: a tuple of the params that come from the dataframe and the parameters to bind.
     """
     params_from_df = {}
+    bind_parameters = {}
     for input_name in node_input_types.keys():
         if input_name in df_columns:
             params_from_df[input_name] = column(input_name)
         elif input_name in actual_kwargs and not isinstance(actual_kwargs[input_name], DataFrame):
-            hamilton_udf = functools.partial(
-                hamilton_udf, **{input_name: actual_kwargs[input_name]}
-            )
+            bind_parameters[input_name] = actual_kwargs[input_name]
         elif node_input_types[input_name][1] == DependencyType.OPTIONAL:
             pass
         else:
@@ -276,7 +276,7 @@ def _bind_parameters_to_callable(
                 f"Cannot satisfy {node_name} with input types {node_input_types} against a dataframe with "
                 f"columns {df_columns} and input kwargs {actual_kwargs}."
             )
-    return hamilton_udf, params_from_df
+    return params_from_df, bind_parameters
 
 
 def _inspect_kwargs(kwargs: Dict[str, Any]) -> Tuple[DataFrame, Dict[str, Any]]:
@@ -296,9 +296,77 @@ def _inspect_kwargs(kwargs: Dict[str, Any]) -> Tuple[DataFrame, Dict[str, Any]]:
     return df, actual_kwargs
 
 
-def _lambda_udf(
-    df: DataFrame, node_: node.Node, hamilton_udf: Callable, actual_kwargs: Dict[str, Any]
-) -> DataFrame:
+def _format_pandas_udf(func_name: str, ordered_params: List[str]) -> str:
+    formatting_params = {
+        "name": func_name,
+        "return_type": "pd.Series",
+        "params": ", ".join([f"{param}: pd.Series" for param in ordered_params]),
+        "param_call": ", ".join([f"{param}={param}" for param in ordered_params]),
+    }
+    func_string = """
+def {name}({params}) -> {return_type}:
+    return partial_fn({param_call})
+""".format(
+        **formatting_params
+    )
+    return func_string
+
+
+def _format_udf(func_name: str, ordered_params: List[str]) -> str:
+    formatting_params = {
+        "name": func_name,
+        "params": ", ".join(ordered_params),
+        "param_call": ", ".join([f"{param}={param}" for param in ordered_params]),
+    }
+    func_string = """
+def {name}({params}):
+    return partial_fn({param_call})
+""".format(
+        **formatting_params
+    )
+    return func_string
+
+
+def _fabricate_spark_function(
+    node_: node.Node,
+    params_to_bind: Dict[str, Any],
+    params_from_df: Dict[str, Any],
+    pandas_udf: bool,
+) -> FunctionType:
+    """Fabricates a spark compatible UDF. We have to do this as we don't actually have a funtion
+    with annotations to use, as its lambdas passed around by decorators. We may consider pushing
+    this upstreams so that everything can generate its own function, but for now this is the
+    easiest way to do it.
+
+    The rules are different for pandas series and regular UDFs.
+    Pandas series have to:
+    - be Decorated with pandas_udf
+    - Have a return type of a pandas series
+    - Have a pandas series as the only input types
+    Regular UDFs have to:
+    - Have no annotations at all
+
+    See https://spark.apache.org/docs/3.1.3/api/python/reference/api/pyspark.sql.functions.udf.html
+    and https://spark.apache.org/docs/3.1.3/api/python/reference/api/pyspark.sql.functions.pandas_udf.html
+
+    :param node_: Node to place in a spark function
+    :param params_to_bind: Parameters to bind to the function -- these won't go into the UDF
+    :param params_from_df: Parameters to retrieve from the dataframe
+    :return: A function that can be used in a spark UDF
+    """
+    partial_fn = functools.partial(node_.callable, **params_to_bind)
+    ordered_params = sorted(params_from_df)
+    func_name = node_.name.replace(".", "_")
+    if pandas_udf:
+        func_string = _format_pandas_udf(func_name, ordered_params)
+    else:
+        func_string = _format_udf(func_name, ordered_params)
+    module_code = compile(func_string, "<string>", "exec")
+    func_code = [c for c in module_code.co_consts if isinstance(c, CodeType)][0]
+    return FunctionType(func_code, {**globals(), **{"partial_fn": partial_fn}}, func_name)
+
+
+def _lambda_udf(df: DataFrame, node_: node.Node, actual_kwargs: Dict[str, Any]) -> DataFrame:
     """Function to create a lambda UDF for a function.
 
     This functions does the following:
@@ -314,15 +382,16 @@ def _lambda_udf(
     :param actual_kwargs: the actual arguments to the function.
     :return: the dataframe with one more column representing the result of the UDF.
     """
-    hamilton_udf, params_from_df = _bind_parameters_to_callable(
-        actual_kwargs, set(df.columns), hamilton_udf, node_.input_types, node_.name
+    params_from_df, params_to_bind = _determine_parameters_to_bind(
+        actual_kwargs, set(df.columns), node_.input_types, node_.name
     )
-    pandas_annotation = _get_pandas_annotations(hamilton_udf)
+    pandas_annotation = _get_pandas_annotations(node_, params_to_bind)
     if any(pandas_annotation.values()) and not all(pandas_annotation.values()):
         raise ValueError(
             f"Currently unsupported function for {node_.name} with function signature:\n{node_.input_types}."
         )
     elif all(pandas_annotation.values()):
+        hamilton_udf = _fabricate_spark_function(node_, params_to_bind, params_from_df, True)
         # pull from annotation here instead of tag.
         base_type, type_args = htypes.get_type_information(node_.type)
         logger.debug("PandasUDF: %s, %s, %s", node_.name, base_type, type_args)
@@ -335,16 +404,17 @@ def _lambda_udf(
         if isinstance(type_arg, str):
             spark_return_type = type_arg  # spark will handle converting it.
         else:
-            spark_return_type = get_spark_type(actual_kwargs, df, hamilton_udf, type_arg)
-        # remove because pyspark does not like extra function annotations
-        hamilton_udf.__annotations__["return"] = base_type
+            spark_return_type = get_spark_type(type_arg)
         spark_udf = pandas_udf(hamilton_udf, spark_return_type)
     else:
+        hamilton_udf = _fabricate_spark_function(node_, params_to_bind, params_from_df, False)
         logger.debug("RegularUDF: %s, %s", node_.name, node_.type)
-        spark_return_type = get_spark_type(actual_kwargs, df, hamilton_udf, node_.type)
+        spark_return_type = get_spark_type(node_.type)
         spark_udf = udf(hamilton_udf, spark_return_type)
     return df.withColumn(
-        node_.name, spark_udf(*[_value for _name, _value in params_from_df.items()])
+        # Sorting is a quick hack
+        node_.name,
+        spark_udf(*[_value for _name, _value in sorted(params_from_df.items())]),
     )
 
 
@@ -412,7 +482,7 @@ class PySparkUDFGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         logger.debug("%s, %s", self.call_count, self.df_object)
         logger.debug("%s, Before, %s", node.name, self.df_object.columns)
         schema_length = len(df.schema)
-        df = _lambda_udf(self.df_object, node, node.callable, actual_kwargs)
+        df = _lambda_udf(self.df_object, node, actual_kwargs)
         assert node.name in df.columns, f"Error {node.name} not in {df.columns}"
         delta = len(df.schema) - schema_length
         if delta == 0:
@@ -447,3 +517,284 @@ class PySparkUDFGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         self.df_object = None
         self.original_schema = []
         return result
+
+
+def sparkify_node(
+    node_: node.Node,
+    linear_df_dependency_name: str,
+    base_df_dependency_name: str,
+    dependent_columns_in_group: Set[str],
+    dependent_columns_from_dataframe: Set[str],
+) -> node.Node:
+    """ """
+    """Turns a node into a spark node. This does the following:
+    1. Makes it take the prior dataframe output as a dependency, in
+       conjunction to its current dependencies. This is so we can represent
+       the "logical" plan (the UDF-dependencies) as well as
+       the "physical plan" (linear, df operations)
+    2. Adjusts the function to apply the specified UDF on the
+       dataframe, ignoring all inputs in column_dependencies
+       (which are only there to demonstrate lineage/make the DAG representative)
+    3. Returns the resulting pyspark dataframe for downstream functions to use
+
+
+    :param node_: Node we're sparkifying
+    :param linear_df_dependency_name: Name of the linearly passed along dataframe dependency
+    :param base_df_dependency_name: Name of the base (parent) dataframe dependency.
+        this is only used if dependent_columns_from_dataframe is not empty
+    :param dependent_columns_in_group: Columns on which this depends in the with_columns
+    :param dependent_columns_from_dataframe:  Columns on which this depends in the
+        base (parent) dataframe that the with_columns is operating on
+    :return:
+
+    """
+
+    def new_callable(
+        __linear_df_dependency_name: str = linear_df_dependency_name,
+        __base_df_dependency_name: str = base_df_dependency_name,
+        __dependent_columns_in_group: Set[str] = dependent_columns_in_group,
+        __dependent_columns_from_dataframe: Set[str] = dependent_columns_from_dataframe,
+        __node: node.Node = node_,
+        **kwargs,
+    ) -> ps.DataFrame:
+        """This is the new function that the node will call.
+        Note that this applies the hamilton UDF with *just* the input dataframe dependency,
+        ignoring the rest."""
+        # gather the dataframe from the kwargs
+        df = kwargs[__linear_df_dependency_name]
+        kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in __dependent_columns_from_dataframe
+            and k not in __dependent_columns_in_group
+            and k != __linear_df_dependency_name
+            and k != __base_df_dependency_name
+        }
+        return _lambda_udf(df, node_, kwargs)
+
+    # Just extract the dependeency type
+    # TODO -- add something as a "logical" or "placeholder" dependency
+    new_input_types = {
+        # copy over the old ones
+        **{
+            dep: value
+            for dep, value in node_.input_types.items()
+            if dep not in dependent_columns_from_dataframe
+        },
+        # add the new one (from the previous)
+        linear_df_dependency_name: (DataFrame, node.DependencyType.REQUIRED),
+        # Then add all the others
+        # Note this might clobber the linear_df_dependency_name, but they'll be the same type
+        # If we have "logical" dependencies we'll want to be careful about the type
+        **{
+            dep: (DataFrame, node.DependencyType.REQUIRED)
+            for dep, _ in node_.input_types.items()
+            if dep in dependent_columns_in_group
+        },
+    }
+    if len(dependent_columns_from_dataframe) > 0:
+        new_input_types[base_df_dependency_name] = (
+            DataFrame,
+            node.DependencyType.REQUIRED,
+        )
+    return node_.copy_with(callabl=new_callable, input_types=new_input_types, typ=DataFrame)
+
+
+def derive_dataframe_parameter(fn: Callable, requested_parameter: str = None) -> str:
+    """Utility function to grab a pyspark dataframe parameter from a function.
+    Note if one is supplied it'll look for that. If none is, it will look to ensure
+    that there is only one dataframe parameter in the function.
+
+    :param fn: Function to grab the dataframe parameter from
+    :param requested_parameter: If supplied, the name of the parameter to grab
+    :return: The name of the dataframe parameter
+    :raises ValueError: If no datframe parameter is supplied:
+    - if no dataframe parameter is found, or if more than one is found
+    if a requested parameter is supplied:
+    - if the requested parameter is not found
+    """
+    sig = inspect.signature(fn)
+    dataframe_parameters = {
+        param.name: param
+        for param in sig.parameters.values()
+        if issubclass(param.annotation, DataFrame)
+    }
+    if requested_parameter is not None:
+        if requested_parameter not in dataframe_parameters:
+            raise ValueError(
+                f"Requested parameter {requested_parameter} not found in "
+                f"function: {fn.__qualname__}"
+            )
+        return requested_parameter
+    if len(dataframe_parameters) == 0:
+        raise ValueError(
+            f"No dataframe parameters found in function: {fn.__qualname__}. "
+            f"@with_columns must inject a dataframe parameter into the function."
+        )
+    elif len(dataframe_parameters) > 1:
+        raise ValueError(
+            f"More than one dataframe parameter found in function: {fn.__qualname__}. Please "
+            f"specify the desired one with the 'dataframe' parameter in @with_columns"
+        )
+    return list(dataframe_parameters)[0]
+
+
+def prune_nodes(nodes: List[node.Node], select: Optional[List[str]] = None) -> List[node.Node]:
+    """Prunes the nodes to only include those upstream from the select columns.
+    Conducts a depth-first search using the nodes `input_types` field.
+
+    If select is None, we just assume all nodes should be included.
+
+    :param nodes: Full set of nodes
+    :param select: Columns to select
+    :return:  Pruned set of nodes
+    """
+    if select is None:
+        return nodes
+
+    node_name_map = {node_.name: node_ for node_ in nodes}
+    seen_nodes = set(select)
+    stack = list({node_name_map[col] for col in select if col in node_name_map})
+    output = []
+    while len(stack) > 0:
+        node_ = stack.pop()
+        output.append(node_)
+        for dep in node_.input_types:
+            if dep not in seen_nodes and dep in node_name_map:
+                dep_node = node_name_map[dep]
+                stack.append(dep_node)
+            seen_nodes.add(dep)
+    return output
+
+
+class with_columns(fm_base.NodeCreator):
+    def __init__(
+        self,
+        *load_from: Union[Callable, ModuleType],
+        initial_schema: List[str],
+        select: List[str] = None,
+        dataframe: str = None,
+        namespace: str = None,
+    ):
+        """Initializes a with_columns decorator for spark. This allows you to efficiently run
+         groups of map operations on a dataframe, represented as pandas/primitives UDFs. This
+         effectively "linearizes" compute -- meaning that a DAG of map operations can be run
+         as a set of .withColumn operations on a single dataframe -- ensuring that you don't have
+         to do a complex `extract` then `join` process on spark, which can be inefficient.
+
+         Here's an example of calling it -- if you've seen `@subdag`, you should be familiar with
+         the concepts:
+
+         .. code-block:: python
+         # my_module.py
+         def a(a_from_df: pd.Series) -> pd.Series:
+             return _process(a)
+
+         def b(b_from_df: pd.Series) -> pd.Series:
+             return _process(b)
+
+         def a_plus_b(a_from_df: pd.Series, b_from_df: pd.Series) -> pd.Series:
+             return a + b
+
+
+         # the with_columns call
+         @with_columns(
+             load_from=[my_module], # Load from any module
+             initial_schema=["a_from_df", "b_from_df"], # The initial schema of the dataframe
+             select=["a", "b", "a_plus_b"], # The columns to select from the dataframe
+         )
+         def final_df(df: ps.DataFrame) -> ps.DataFrame:
+             # process, or just return unprocessed
+             ...
+
+         You can think of the above as a series of withColumn calls on the dataframe, where the
+         operations are applied in topological order. This is significantly more efficient than
+         extracting out the columns, applying the maps, then operating, but *also* allows you to
+         express the operations individually, making it easy to unit-test and reuse.
+
+         Note that the operation is "append", meaning that the columns that are selected are appended
+         onto the dataframe. We will likely add an option to have this be either "select" or "append"
+         mode.
+
+
+        :param load_from: The functions that will be used to generate the group of map operations.
+        :param select: Columns to select from the transformation. If this is left blank it will
+            keep all columns in
+        :param initial_schema: The initial schema of the dataframe. This is used to determine which
+            upstream inputs should be taken from the dataframe, and which shouldn't. Note that, if this is
+            left empty, we will assume that all upstream items come from the dataframe
+        :param namespace: The namespace of the nodes, so they don't clash with the global namespace
+            and so this can be reused. If its left out, there will be no namespace (in which case you'll want
+            to be careful about repeating it/reusing the nodes in other parts of the DAG.)
+        :param dataframe: The name of the dataframe that we're modifying. If not provided,
+        this will assume that there is only one pyspark.DataFrame parameter to the decorated function,
+        and use that if there is more than one, we will error.
+        """
+        self.subdag_functions = subdag.collect_functions(load_from)
+        self.select = select
+        self.initial_schema = initial_schema
+        self.namespace = namespace
+        self.upstream_dependency = dataframe
+
+    def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> List[node.Node]:
+        """Generates nodes in the with_columns groups. This does the following:
+
+        1. Collects all the nodes from the subdag functions
+        2. Prunes them to only include the ones that are upstream from the select columns
+        3. Sorts them topologically
+        4. Creates a new node for each one, injecting the dataframe parameter into the first one
+        5. Creates a new node for the final one, injecting the last node into that one
+        6. Returns the list of nodes
+
+        :param fn: Function to generate from
+        :param config: Config to use for generating/collecting nodes
+        :return: List of nodes that this function produces
+        """
+        namespace = fn.__name__ if self.namespace is None else self.namespace
+
+        initial_nodes = subdag.collect_nodes(config, self.subdag_functions)
+        pruned_nodes = prune_nodes(initial_nodes, self.select)
+        if len(pruned_nodes) == 0:
+            raise ValueError(
+                f"No nodes found upstream from select columns: {self.select} for function: "
+                f"{fn.__qualname__}"
+            )
+        sorted_initial_nodes = graph_functions.topologically_sort_nodes(pruned_nodes)
+        output_nodes = []
+        inject_parameter = derive_dataframe_parameter(fn, self.upstream_dependency)
+        current_dataframe_node = inject_parameter
+        # Columns that it is dependent on could be from the group of transforms created
+        columns_produced_within_mapgroup = {node_.name for node_ in pruned_nodes}
+        columns_passed_in_from_dataframe = set(self.initial_schema)
+        # Or from the dataframe passed in...
+        # potential_dependent_columns.update(self.initial_schema)
+        for node_ in sorted_initial_nodes:
+            # dependent columns are broken into two sets:
+            # 1. Those that come from the group of transforms
+            dependent_columns_in_mapgroup = {
+                column for column in node_.input_types if column in columns_produced_within_mapgroup
+            }
+            # 2. Those that come from the dataframe
+            dependent_columns_in_dataframe = {
+                column for column in node_.input_types if column in columns_passed_in_from_dataframe
+            }
+
+            sparkified = sparkify_node(
+                node_,
+                current_dataframe_node,
+                inject_parameter,
+                dependent_columns_in_mapgroup,
+                dependent_columns_in_dataframe,
+            )
+            output_nodes.append(sparkified)
+            current_dataframe_node = sparkified.name
+        # We get the final node, which is the function we're using
+        # and reassign inputs to be the dataframe
+        output_nodes = subdag.add_namespace(output_nodes, namespace)
+        final_node = node.Node.from_fn(fn).reassign_input_names(
+            {inject_parameter: assign_namespace(current_dataframe_node, namespace)}
+        )
+        return output_nodes + [final_node]
+
+    def validate(self, fn: Callable):
+        derive_dataframe_parameter(fn, self.upstream_dependency)

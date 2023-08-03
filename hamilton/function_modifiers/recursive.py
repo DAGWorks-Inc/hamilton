@@ -248,12 +248,11 @@ class subdag(base.NodeCreator):
             )
         return out
 
-    def _collect_nodes(self, original_config: Dict[str, Any]):
-        combined_config = dict(original_config, **self.config)
+    @staticmethod
+    def collect_nodes(config: Dict[str, Any], subdag_functions: List[Callable]) -> List[node.Node]:
         nodes = []
-        for fn in self.subdag_functions:
-            for node_ in base.resolve_nodes(fn, combined_config):
-                # nodes.append(node_)
+        for fn in subdag_functions:
+            for node_ in base.resolve_nodes(fn, config):
                 nodes.append(node_.copy_with(tags={**node_.tags, **NON_FINAL_TAGS}))
         return nodes
 
@@ -302,25 +301,32 @@ class subdag(base.NodeCreator):
             )
         return out
 
-    def _add_namespace(self, nodes: List[node.Node], namespace: str) -> List[node.Node]:
+    @staticmethod
+    def add_namespace(
+        nodes: List[node.Node],
+        namespace: str,
+        inputs: Dict[str, Any] = None,
+        config: Dict[str, Any] = None,
+    ) -> List[node.Node]:
         """Utility function to add a namespace to nodes.
 
         :param nodes:
         :return:
         """
-        # already_namespaced_nodes = []
+        inputs = inputs if inputs is not None else {}
+        config = config if config is not None else {}
         new_nodes = []
         new_name_map = {}
         # First pass we validate + collect names so we can alter dependencies
         for node_ in nodes:
             new_name = assign_namespace(node_.name, namespace)
             new_name_map[node_.name] = new_name
-        for dep, value in self.inputs.items():
+        for dep, value in inputs.items():
             # We create nodes for both namespace assignment and source assignment
             # Why? Cause we need unique parameter names, and with source() some can share params
             new_name_map[dep] = assign_namespace(dep, namespace)
 
-        for dep, value in self.config.items():
+        for dep, value in config.items():
             new_name_map[dep] = assign_namespace(dep, namespace)
 
         # Reassign sources
@@ -398,12 +404,13 @@ class subdag(base.NodeCreator):
 
     def generate_nodes(self, fn: Callable, configuration: Dict[str, Any]) -> Collection[node.Node]:
         # Resolve all nodes from passed in functions
-        nodes = self._collect_nodes(original_config=configuration)
+        resolved_config = dict(configuration, **self.config)
+        nodes = self.collect_nodes(config=resolved_config, subdag_functions=self.subdag_functions)
         # Derive the namespace under which all these nodes will live
         namespace = self._derive_namespace(fn)
         final_node_name = self._derive_name(fn)
         # Rename them all to have the right namespace
-        nodes = self._add_namespace(nodes, namespace)
+        nodes = self.add_namespace(nodes, namespace, self.inputs, self.config)
         # Create any static input nodes we need to translate
         nodes += self._create_additional_static_nodes(nodes, namespace)
         # Add the final node that does the translation
