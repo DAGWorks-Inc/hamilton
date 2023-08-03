@@ -15,9 +15,14 @@ def pdf_to_base64(uploaded_file: UploadedFile) -> str:
 
 def post_pdf(uploaded_file: UploadedFile) -> requests.Response:
     """POST request to `http://fastapi_server` which exists in the Docker stack"""
-    server_url = "http://fastapi_server:8080/summarize"
+    # server_url = "http://fastapi_server:8080/summarize"
+    server_url = "http://fastapi_server:8080/summarize_sync"
     files = {"pdf_file": uploaded_file}
-    response = requests.post(server_url, files=files)
+    response = requests.post(
+        server_url,
+        files=files,
+        json={"openai_gpt_model": "gpt-3.5-turbo-0613", "user_query": "Can you ELI5 the paper?"},
+    )
     return response
 
 
