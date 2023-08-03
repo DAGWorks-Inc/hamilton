@@ -1,9 +1,10 @@
 fastapi
 openai
-pandas
 pydantic
 PyPDF2
-requests
+python-multipart
 sf-hamilton[visualization]
-streamlit
+tenacity
+tiktoken
+tqdm
 uvicorn
