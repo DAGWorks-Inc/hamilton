@@ -10,14 +10,27 @@ from streamlit.runtime.uploaded_file_manager import UploadedFile
 def pdf_to_base64(uploaded_file: UploadedFile) -> str:
     """Display the PDF as an embedded b64 string in a markdown component"""
     base64_pdf = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
-    return f'<embed src="data:application/pdf;base64,{base64_pdf}" width=600 height=800 type="application/pdf">'
+    return f'<embed src="data:application/pdf;base64,{base64_pdf}" width=100% height=800 type="application/pdf">'
 
 
-def post_pdf(uploaded_file: UploadedFile) -> requests.Response:
+def post_pdf(
+    uploaded_file: UploadedFile,
+    openai_gpt_model: str,
+    content_type: str,
+    user_query: str,
+) -> requests.Response:
     """POST request to `http://fastapi_server` which exists in the Docker stack"""
-    server_url = "http://fastapi_server:8080/summarize"
+    server_url = "http://fastapi_server:8080/summarize_sync"
     files = {"pdf_file": uploaded_file}
-    response = requests.post(server_url, files=files)
+    response = requests.post(
+        server_url,
+        files=files,
+        json=dict(
+            openai_gpt_model=openai_gpt_model,
+            content_type=content_type,
+            user_query=user_query,
+        ),
+    )
     return response
 
 
@@ -32,13 +45,18 @@ def set_summary_state(summary: str) -> None:
     st.session_state["summary"] = summary
 
 
-def summarize_callback(uploaded_file: UploadedFile) -> None:
+def summarize_callback(
+    uploaded_file: UploadedFile,
+    openai_gpt_model: str,
+    content_type: str,
+    user_query: str,
+) -> None:
     """`Summarize` button callback; handle input validation and logic"""
     # is None when button is pressed without any file selected
     if uploaded_file is None:
         return
 
-    response = post_pdf(uploaded_file)
+    response = post_pdf(uploaded_file, openai_gpt_model, content_type, user_query)
     if response.status_code != requests.codes.ok:
         # this will display the status code in the `Summary` UI
         set_summary_state(f"Requests error. Receive status code: {response.status_code}")
@@ -60,33 +78,43 @@ def app() -> None:
     )
     st.title("PDF-Summarizer 📝")
 
-    col1, col2 = st.columns(2)
-
-    with col1:
+    with st.sidebar:
         uploaded_file = st.file_uploader("Upload PDF", type=["pdf"], label_visibility="hidden")
-        st.button(
+        form = st.form(key="user_input")
+        model = form.selectbox(
+            "OpenAI Model", 
+            options=(
+                "gpt-3.5-turbo", "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-16k-0613",
+                "gpt-4", "gpt-4-0613", "gpt-4-32k", "gpt-4-32k-0613",
+            ),
+            help="[Learn more about models](https://platform.openai.com/docs/models)"
+        )
+        content_type = form.text_input("Content type", value="Scientifc article")
+        prompt = form.text_input("Prompt", value="Can you ELI5 the paper?")
+
+        form.form_submit_button(
             "Summarize",
             on_click=summarize_callback,
-            args=(uploaded_file,),
-            type="primary",
-            use_container_width=True,
+            args=(uploaded_file, model, content_type, prompt)
         )
 
-        # could be a successful requests or status code
-        if summary := st.session_state.get("summary", None):
-            with st.expander("Summary", expanded=False):
-                st.write(summary)
-
-        # is True only after a successful request
+            # is True only after a successful request
         if output_name := st.session_state.get("ouput_filename", None):
+            summary = st.session_state.get("summary", None)
             st.download_button(
                 "Download Summary", data=summary, file_name=output_name, use_container_width=True
             )
 
-    with col2:
-        if uploaded_file:
-            pdf_display = pdf_to_base64(uploaded_file)
-            st.markdown(pdf_display, unsafe_allow_html=True)
+    #with col1:
+    # could be a successful requests or status code
+    if summary := st.session_state.get("summary", None):
+        with st.expander("Summary", expanded=True):
+            st.write(summary)
+
+
+    if uploaded_file:
+        pdf_display = pdf_to_base64(uploaded_file)
+        st.markdown(pdf_display, unsafe_allow_html=True)
 
 
 if __name__ == "__main__":

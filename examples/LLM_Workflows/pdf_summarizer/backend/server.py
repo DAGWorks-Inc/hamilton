@@ -4,7 +4,7 @@ import fastapi
 import pydantic
 import summarization
 
-from hamilton import base
+from hamilton import base, driver
 from hamilton.experimental import h_async
 
 # instantiate FastAPI app
@@ -13,15 +13,21 @@ app = fastapi.FastAPI()
 
 # define constants for Hamilton driver
 driver_config = dict(
-    openai_gpt_model="gpt-3.5-turbo-0613",
     file_type="pdf",
 )
 
 # instantiate the Hamilton driver; it will power all API endpoints
-dr = h_async.AsyncDriver(
+# async driver for use with async functions
+async_dr = h_async.AsyncDriver(
     driver_config,
     summarization,  # python module containing function logic
-    result_builder=base.SimplePythonGraphAdapter(base.DictResult()),
+    result_builder=base.DictResult(),
+)
+# sync driver for use with regular functions
+sync_dr = driver.Driver(
+    driver_config,
+    summarization,  # python module containing function logic
+    adapter=base.SimplePythonGraphAdapter(base.DictResult()),
 )
 
 
@@ -32,13 +38,41 @@ class SummarizeResponse(pydantic.BaseModel):
 
 
 @app.post("/summarize")
-async def summarize_pdf(pdf_file: fastapi.UploadFile) -> SummarizeResponse:
+async def summarize_pdf(
+    pdf_file: fastapi.UploadFile,
+    openai_gpt_model: str = "gpt-3.5-turbo-0613",
+    content_type: str = "Scientific article",
+    user_query: str = "Can you ELI5 the paper?",
+) -> SummarizeResponse:
     """Request `summarized_text` from Hamilton driver with `pdf_file` and `user_query`"""
-    results = await dr.execute(
+    results = await async_dr.execute(
         ["summarized_text"],
         inputs=dict(
             pdf_source=pdf_file.file,
-            user_query="Can you ELI5 the paper?",
+            openai_gpt_model=openai_gpt_model,
+            content_type=content_type,
+            user_query=user_query,
+        ),
+    )
+
+    return SummarizeResponse(summary=results["summarized_text"])
+
+
+@app.post("/summarize_sync")
+def summarize_pdf_sync(
+    pdf_file: fastapi.UploadFile,
+    openai_gpt_model: str = "gpt-3.5-turbo-0613",
+    content_type: str = "Scientific article",
+    user_query: str = "Can you ELI5 the paper?",
+) -> SummarizeResponse:
+    """Request `summarized_text` from Hamilton driver with `pdf_file` and `user_query`"""
+    results = sync_dr.execute(
+        ["summarized_text"],
+        inputs=dict(
+            pdf_source=pdf_file.file,
+            openai_gpt_model=openai_gpt_model,
+            content_type=content_type,
+            user_query=user_query,
         ),
     )
 
