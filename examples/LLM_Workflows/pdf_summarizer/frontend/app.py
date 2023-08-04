@@ -82,12 +82,18 @@ def app() -> None:
         uploaded_file = st.file_uploader("Upload PDF", type=["pdf"], label_visibility="hidden")
         form = st.form(key="user_input")
         model = form.selectbox(
-            "OpenAI Model", 
+            "OpenAI Model",
             options=(
-                "gpt-3.5-turbo", "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-16k-0613",
-                "gpt-4", "gpt-4-0613", "gpt-4-32k", "gpt-4-32k-0613",
+                "gpt-3.5-turbo",
+                "gpt-3.5-turbo-0613",
+                "gpt-3.5-turbo-16k",
+                "gpt-3.5-turbo-16k-0613",
+                "gpt-4",
+                "gpt-4-0613",
+                "gpt-4-32k",
+                "gpt-4-32k-0613",
             ),
-            help="[Learn more about models](https://platform.openai.com/docs/models)"
+            help="[Learn more about models](https://platform.openai.com/docs/models)",
         )
         content_type = form.text_input("Content type", value="Scientifc article")
         prompt = form.text_input("Prompt", value="Can you ELI5 the paper?")
@@ -95,22 +101,21 @@ def app() -> None:
         form.form_submit_button(
             "Summarize",
             on_click=summarize_callback,
-            args=(uploaded_file, model, content_type, prompt)
+            args=(uploaded_file, model, content_type, prompt),
         )
 
-            # is True only after a successful request
+        # is True only after a successful request
         if output_name := st.session_state.get("ouput_filename", None):
             summary = st.session_state.get("summary", None)
             st.download_button(
                 "Download Summary", data=summary, file_name=output_name, use_container_width=True
             )
 
-    #with col1:
+    # with col1:
     # could be a successful requests or status code
     if summary := st.session_state.get("summary", None):
         with st.expander("Summary", expanded=True):
             st.write(summary)
-
 
     if uploaded_file:
         pdf_display = pdf_to_base64(uploaded_file)
