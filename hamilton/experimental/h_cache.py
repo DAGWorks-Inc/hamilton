@@ -207,6 +207,7 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
     First, let's define some nodes in `nodes.py`:
 
     .. code-block:: python
+
         import pandas as pd
         from hamilton.function_modifiers import tag
 
@@ -305,10 +306,12 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
         """Executes nodes conditionally according to caching rules.
 
         This node is executed if at least one of these is true:
+
         * no cache is present,
         * it is explicitly forced by passing it to the adapter in ``force_compute``,
         * at least one of its upstream nodes that had a @cache annotation was computed,
           either due to lack of cache or being explicitly forced.
+
         """
         cache_format = node.tags.get("cache")
         implicitly_forced = any(dep.name in self.computed_nodes for dep in node.dependencies)
