@@ -61,8 +61,8 @@ def test_smoke_screen_module(init):
         final_vars=output_columns,
     )
     epsilon = 0.00001
-    assert abs(df.mean()["raw_acquisition_cost"] - 0.393808) < epsilon
-    assert abs(df.mean()["pessimistic_net_acquisition_cost"] - 0.420769) < epsilon
-    assert abs(df.mean()["neutral_net_acquisition_cost"] - 0.405582) < epsilon
-    assert abs(df.mean()["optimistic_net_acquisition_cost"] - 0.399363) < epsilon
+    assert abs(df["raw_acquisition_cost"].mean() - 0.393808) < epsilon
+    assert abs(df["pessimistic_net_acquisition_cost"].mean() - 0.420769) < epsilon
+    assert abs(df["neutral_net_acquisition_cost"].mean() - 0.405582) < epsilon
+    assert abs(df["optimistic_net_acquisition_cost"].mean() - 0.399363) < epsilon
     assert df["series_with_start_date_end_date"].iloc[0] == "date_20200101_date_20220801"

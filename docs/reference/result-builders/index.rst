@@ -10,3 +10,4 @@ This section helps determine what comes out of the box for determining how to co
    Numpy
    Pandas
    Polars
+   Dask
