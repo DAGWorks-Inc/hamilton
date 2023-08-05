@@ -281,3 +281,23 @@ def test_DDFR_build_result_varied_index_lengths(client):
     actual_pdf = actual.compute().convert_dtypes(dtype_backend="pyarrow")
     expected_pdf = expected.convert_dtypes(dtype_backend="pyarrow")
     pd.testing.assert_frame_equal(actual_pdf, expected_pdf)
+
+
+def test_DDFR_build_result_dd_scalar(client):
+    """Tests that dask scalars work as expected."""
+    outputs = {
+        "a": dd.from_pandas(pd.Series([4, 5, 6]), npartitions=1),
+        "b": dd.from_pandas(pd.Series([10, 6, 3]), npartitions=1),
+    }
+    outputs["c"] = outputs["a"].sum()
+    actual = h_dask.DaskDataFrameResult.build_result(**outputs)
+    expected = pd.DataFrame(
+        {
+            "a": [4, 5, 6],
+            "b": [10, 6, 3],
+            "c": [15, 15, 15],
+        }
+    )
+    actual_pdf = actual.compute().convert_dtypes(dtype_backend="pyarrow")
+    expected_pdf = expected.convert_dtypes(dtype_backend="pyarrow")
+    pd.testing.assert_frame_equal(actual_pdf, expected_pdf)

@@ -236,6 +236,7 @@ class DaskDataFrameResult(base.ResultMixin):
                     massaged_outputs[k] = dask.dataframe.from_pandas(
                         pd.DataFrame([scalar] * length, index=index), npartitions=1
                     )
+                columns_expected.append(k)
             elif isinstance(v, (int, float, str, bool, object)):
                 scalar = v
                 if length == 0:
