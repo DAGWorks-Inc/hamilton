@@ -40,9 +40,9 @@ class SummarizeResponse(pydantic.BaseModel):
 @app.post("/summarize")
 async def summarize_pdf(
     pdf_file: fastapi.UploadFile,
-    openai_gpt_model: str = "gpt-3.5-turbo-0613",
-    content_type: str = "Scientific article",
-    user_query: str = "Can you ELI5 the paper?",
+    openai_gpt_model: str = fastapi.Form(...),  # = "gpt-3.5-turbo-0613",
+    content_type: str = fastapi.Form(...),  # = "Scientific article",
+    user_query: str = fastapi.Form(...),  # = "Can you ELI5 the paper?",
 ) -> SummarizeResponse:
     """Request `summarized_text` from Hamilton driver with `pdf_file` and `user_query`"""
     results = await async_dr.execute(
@@ -61,9 +61,9 @@ async def summarize_pdf(
 @app.post("/summarize_sync")
 def summarize_pdf_sync(
     pdf_file: fastapi.UploadFile,
-    openai_gpt_model: str = "gpt-3.5-turbo-0613",
-    content_type: str = "Scientific article",
-    user_query: str = "Can you ELI5 the paper?",
+    openai_gpt_model: str = fastapi.Form(...),  # = "gpt-3.5-turbo-0613",
+    content_type: str = fastapi.Form(...),  # = "Scientific article",
+    user_query: str = fastapi.Form(...),  # = "Can you ELI5 the paper?",
 ) -> SummarizeResponse:
     """Request `summarized_text` from Hamilton driver with `pdf_file` and `user_query`"""
     results = sync_dr.execute(
@@ -81,7 +81,7 @@ def summarize_pdf_sync(
 
 # add to SwaggerUI the execution DAG png
 # see http://localhost:8080/docs#/default/summarize_pdf_summarize_post
-base64_viz = base64.b64encode(open("summarize_route.png", "rb").read()).decode("utf-8")
+base64_viz = base64.b64encode(open("summarization_module.png", "rb").read()).decode("utf-8")
 app.routes[
     -1
 ].description = f"""<h1>Execution DAG</h1><img alt="" src="data:image/png;base64,{base64_viz}"/>"""
