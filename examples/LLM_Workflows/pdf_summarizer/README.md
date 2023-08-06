@@ -22,5 +22,5 @@ Here are a few ideas:
 3. Create a `.env` (next to `README.md` and `docker-compose.yaml`) and add your OpenAI API key in  such that `OPENAI_API_KEY=YOUR_API_KEY`
 4. Build docker images `docker compose build`
 5. Create docker containers `docker compose up -d`
-6. Go to [http://localhost:8080/docs] to see if the FastAPI server is running
-7. Go to [http://localhost:8081/] to view the Streamlit app
+6. Go to [http://localhost:8080/docs](http://localhost:8080/docs) to see if the FastAPI server is running
+7. Go to [http://localhost:8081/](http://localhost:8081/) to view the Streamlit app

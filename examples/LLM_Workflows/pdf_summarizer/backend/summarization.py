@@ -124,16 +124,24 @@ def summarized_chunks(
     return _summarized_text
 
 
+def prompt_and_text_content(
+    summarize_text_from_summaries_prompt: str, user_query: str, summarized_chunks: str
+) -> str:
+    """Creates the prompt for summarizing the text from the summarized chunks of the pdf.
+    :param summarize_text_from_summaries_prompt: the template to use to summarize the chunks.
+    :param user_query: the original user query.
+    :param summarized_chunks: a long string of chunked summaries of a file.
+    :return: the prompt to use to summarize the chunks.
+    """
+    return summarize_text_from_summaries_prompt.format(query=user_query, results=summarized_chunks)
+
+
 def summarized_text(
-    user_query: str,
-    summarized_chunks: str,
-    summarize_text_from_summaries_prompt: str,
+    prompt_and_text_content: str,
     openai_gpt_model: str,
 ) -> str:
     """Summarizes the text from the summarized chunks of the pdf.
-    :param user_query: the original user query.
-    :param summarized_chunks: a long string of chunked summaries of a file.
-    :param summarize_text_from_summaries_prompt: the template to use to summarize the chunks.
+    :param prompt_and_text_content: the prompt and content to send over.
     :param openai_gpt_model: which openai gpt model to use.
     :return: the string response from the openai API.
     """
@@ -142,9 +150,7 @@ def summarized_text(
         messages=[
             {
                 "role": "user",
-                "content": summarize_text_from_summaries_prompt.format(
-                    query=user_query, results=summarized_chunks
-                ),
+                "content": prompt_and_text_content,
             }
         ],
         temperature=0,
