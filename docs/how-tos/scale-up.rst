@@ -10,4 +10,4 @@ on larger, distributed datasets (pandas on spark, pyspark map UDFs).
 1. Integrating hamilton with `pandas on spark <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/spark/pandas_on_spark>`_.
 2. Integrating hamilton with `ray <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/ray>`_.
 3. Integrating hamilton with `dask <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/dask>`_.
-4. Integrating hamilton using `pyspark map UDFs <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/spark/pyspark_udfs>`__.
+4. Integrating hamilton with `pyspark <https://github.com/DagWorks-Inc/hamilton/tree/main/examples/spark/pyspark>`_.
