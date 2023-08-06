@@ -54,7 +54,7 @@ Dynamic DAGs
 ----------------------------
 
 Hamilton supports limited dynamism in DAG execution. While we believe that most workflows should be somewhat static
-(and dynamism should be orchestrated eternal to the definition), we support the ability to expand execution over a set of
+(and dynamism should be orchestrated external to the definition), we support the ability to expand execution over a set of
 previous nodes. You do this by marking a function that yields a generator of type `Foo` as having an output type `Parallelizable[Foo]`, and
 downstream marking the input type as `Collect[input]`. Note that, currently, multiple functions can declare, as an input, the output of a `Parallelizable`
 function, whereas only one node can currently feed into `Collect`.
@@ -83,6 +83,8 @@ In this case the `site_to_crawl` function indicates that we should run `loaded_h
 with each value that `site_to_crawl` returns. The `Collect` type indicates that we join all of the previous items.
 
 Note that, to use this, you'll need to construct the hamilton driver with the `Builder`, and call `(allow_experimental_mode=True)`.
+
+See :doc:`customizing execution </concepts/customizing-execution>` for more details.
 
 Modules and Helper Functions
 ----------------------------
