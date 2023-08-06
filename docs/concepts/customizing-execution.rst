@@ -129,7 +129,8 @@ Let's look at an example of the driver:
     dr.execute(['my_variable'], inputs={...}, overrides={...})
 
 Note that we set a `remote` executor, and a local executor. While you can bypass this and instead set an `execution_manager`
-in the builder call, this goes along with the default grouping strategy, which is to place each node in its own group, except for
+in the builder call (see :doc:`../reference/drivers/Driver` for documentation on the `Builder`),this goes along with the default grouping strategy,
+which is to place each node in its own group, except for
 dynamically generated (`Parallelizable[]`) blocks, which are each made into one group, and executed locally.
 
 Thus, when you write a DAG like this (a simple map-reduce pattern):
@@ -151,3 +152,9 @@ Thus, when you write a DAG like this (a simple map-reduce pattern):
 
 The block containing `counts` and `url_loaded` will get marked as one task, repeated for each URL in url_loaded,
 and run on the remote executor (which in this case is the `ThreadPoolExecutor`).
+
+Note that we currently have the following caveats:
+
+1. No nested `Parallelizable[]`/`Collect[]` blocks -- we only allow one level of parallelization
+2. Serialization for `Multiprocessing` is suboptimal -- we currently use the default `pickle` serializer, which breaks with certain cases. Ray, Dask, etc... all work well, and we plan to add support for joblib + cloudpickle serialization.
+3. `Collect[]` input types are limited to one per function -- this is another caveat that we intend to get rid of, but for now you'll want to concat/put into one function before collecting.
