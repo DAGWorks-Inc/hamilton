@@ -1,0 +1,25 @@
+// Dependency Graph
+digraph {
+	final_result [label=final_result shape=rectangle]
+	spend_mean [label=spend_mean]
+	"with_mapped_data.spend_zero_mean" [label="with_mapped_data.spend_zero_mean"]
+	spend_statistics [label=spend_statistics]
+	"with_mapped_data.spend_per_signup" [label="with_mapped_data.spend_per_signup"]
+	with_mapped_data [label=with_mapped_data]
+	spark_session [label=spark_session]
+	spend_std_dev [label=spend_std_dev]
+	"with_mapped_data.spend_zero_mean_unit_variance" [label="with_mapped_data.spend_zero_mean_unit_variance"]
+	base_df [label=base_df]
+	with_mapped_data -> final_result
+	spend_statistics -> spend_mean
+	spend_mean -> "with_mapped_data.spend_zero_mean"
+	"with_mapped_data.spend_per_signup" -> "with_mapped_data.spend_zero_mean"
+	base_df -> "with_mapped_data.spend_zero_mean"
+	base_df -> spend_statistics
+	base_df -> "with_mapped_data.spend_per_signup"
+	"with_mapped_data.spend_zero_mean_unit_variance" -> with_mapped_data
+	spend_statistics -> spend_std_dev
+	"with_mapped_data.spend_zero_mean" -> "with_mapped_data.spend_zero_mean_unit_variance"
+	spend_std_dev -> "with_mapped_data.spend_zero_mean_unit_variance"
+	spark_session -> base_df
+}
