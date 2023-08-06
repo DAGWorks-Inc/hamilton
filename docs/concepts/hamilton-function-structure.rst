@@ -50,6 +50,42 @@ OK, but this still doesn't address the problem of reuse. How can we make our cod
 the Hamilton framework, this is not an inherent trade-off.** By using :doc:`decorators <decorators-overview>`
 and :ref:`parameterizing your dataflow <parameterizing-the-dag>`, you can both have your cake and eat it too.
 
+Dynamic DAGs
+----------------------------
+
+Hamilton supports limited dynamism in DAG execution. While we believe that most workflows should be somewhat static
+(and dynamism should be orchestrated external to the definition), we support the ability to expand execution over a set of
+previous nodes. You do this by marking a function that yields a generator of type `Foo` as having an output type `Parallelizable[Foo]`, and
+downstream marking the input type as `Collect[input]`. Note that, currently, multiple functions can declare, as an input, the output of a `Parallelizable`
+function, whereas only one node can currently feed into `Collect`.
+
+For example:
+
+.. code-block:: python
+
+    from hamilton.htypes import Parallelizable, Collect
+
+    def site_to_crawl() -> Parallelizable[str]:
+        for item in ["hamilton.readthedocs.io", "tryhamilton.dev", "..."]:
+            yield item
+
+
+    def loaded_homepage(site_to_crawl: str) -> str:
+        return _load(site_to_crawl)
+
+    def home_page_size(loaded_homepage: str) -> int:
+        return _get_size(load_homepage)
+
+    def total_size(home_page_size: Collect[int]) -> int:
+        return sum(home_page_size)
+
+In this case the `site_to_crawl` function indicates that we should run `loaded_homepage` and `home_page_size`
+with each value that `site_to_crawl` returns. The `Collect` type indicates that we join all of the previous items.
+
+Note that, to use this, you'll need to construct the hamilton driver with the `Builder`, and call `(allow_experimental_mode=True)`.
+
+See :doc:`customizing execution </concepts/customizing-execution>` for more details.
+
 Modules and Helper Functions
 ----------------------------
 

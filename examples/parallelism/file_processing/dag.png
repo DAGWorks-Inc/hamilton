@@ -1,0 +1,55 @@
+// Dependency Graph
+digraph {
+	person_capacity [label=person_capacity]
+	realSum [label=realSum]
+	mean_price_per_capacity [label=mean_price_per_capacity]
+	max_price [label=max_price]
+	"load_data.weekday_data.wkd_data" [label="load_data.weekday_data.wkd_data"]
+	guest_satisfaction_overall [label=guest_satisfaction_overall]
+	cleanliness_rating [label=cleanliness_rating]
+	weekend_data [label=weekend_data]
+	city_data [label=city_data peripheries=2]
+	mean_cleanliness [label=mean_cleanliness]
+	weekday_data [label=weekday_data]
+	mean_price [label=mean_price]
+	mean_guest_satisfaction [label=mean_guest_satisfaction]
+	all_data [label=all_data]
+	data_dir [label="Input: data_dir" style=dashed]
+	"load_data.weekend_data.wknd_data" [label="load_data.weekend_data.wknd_data"]
+	weekday_file [label=weekday_file]
+	files [label=files]
+	weekend_file [label=weekend_file]
+	wkd_data [label=wkd_data]
+	statistics_by_city [label=statistics_by_city peripheries=2 shape=rectangle]
+	wknd_data [label=wknd_data]
+	statistics [label=statistics]
+	all_data -> person_capacity
+	all_data -> realSum
+	realSum -> mean_price_per_capacity
+	person_capacity -> mean_price_per_capacity
+	realSum -> max_price
+	weekday_file -> "load_data.weekday_data.wkd_data"
+	all_data -> guest_satisfaction_overall
+	all_data -> cleanliness_rating
+	wknd_data -> weekend_data
+	files -> city_data
+	cleanliness_rating -> mean_cleanliness
+	wkd_data -> weekday_data
+	realSum -> mean_price
+	guest_satisfaction_overall -> mean_guest_satisfaction
+	weekday_data -> all_data
+	weekend_data -> all_data
+	weekend_file -> "load_data.weekend_data.wknd_data"
+	city_data -> weekday_file [arrowhead=crow arrowtail=none dir=both]
+	data_dir -> files
+	city_data -> weekend_file [arrowhead=crow arrowtail=none dir=both]
+	"load_data.weekday_data.wkd_data" -> wkd_data
+	statistics -> statistics_by_city [arrowtail=crow dir=both]
+	"load_data.weekend_data.wknd_data" -> wknd_data
+	mean_guest_satisfaction -> statistics
+	mean_price -> statistics
+	mean_price_per_capacity -> statistics
+	mean_cleanliness -> statistics
+	max_price -> statistics
+	city_data -> statistics [arrowhead=crow arrowtail=none dir=both]
+}

@@ -313,11 +313,12 @@ Specific integrations with other systems where we help you write code that runs 
 ## Dataflow/DAG Walking:
 * [x] Depth first search traversal
 * [x] Async function support via AsyncDriver
-* [ ] Python multiprocessing execution
-* [ ] Python threading support
-* [ ] Breadth first search traversal
+* [x] Parallel walk over a generator
+* [x] Python multiprocessing execution (still in beta)
+* [x] Python threading support
+* [x] Grouping of nodes into tasks for efficient parallel computation
+* [x] Breadth first search traversal
 * [ ] Sequential walk over a generator
-* [ ] Parallel walk over a generator
 
 ## DAG/Dataflow resolution:
 * [x] At Driver instantiation time, using configuration/modules and [`@config.when`](https://hamilton.dagworks.io/en/latest/reference/api-reference/decorators.html#config).
@@ -423,3 +424,4 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Peter Robinson (@Peter4137)
 - Seth Stokes (@sT0v
 - Louis Maddox (@lmmx)
+- Stephen Bias (@s-ducks)

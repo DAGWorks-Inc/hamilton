@@ -15,7 +15,7 @@ def model(dbt, session):
     """
     raw_passengers_df = dbt.ref("raw_passengers")
     # Instantiate a simple graph adapter to get the base result
-    adapter = base.SimplePythonGraphAdapter(base.DictResult())
+    adapter = base.DefaultAdapter()
     # DAG for training/inferring on titanic data
     titanic_dag = driver.Driver(
         {

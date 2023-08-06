@@ -1,3 +1,4 @@
+import abc
 import functools
 import logging
 import sys
@@ -12,6 +13,9 @@ from types import ModuleType
 from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import pandas as pd
+
+from hamilton.execution import executors, graph_functions, grouping, state
+from hamilton.io import materialization
 
 SLACK_ERROR_MESSAGE = (
     "-------------------------------------------------------------------\n"
@@ -89,7 +93,146 @@ class Variable:
         )
 
 
-class Driver(object):
+class InvalidExecutorException(Exception):
+    """Raised when the executor is invalid for the given graph."""
+
+    pass
+
+
+class GraphExecutor(abc.ABC):
+    """Interface for the graph executor. This runs a function graph,
+    given a function graph, inputs, and overrides."""
+
+    @abc.abstractmethod
+    def execute(
+        self,
+        fg: graph.FunctionGraph,
+        final_vars: List[Union[str, Callable, Variable]],
+        overrides: Dict[str, Any],
+        inputs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Executes a graph in a blocking function.
+
+        :param fg: Graph to execute
+        :param final_vars: Variables we want
+        :param overrides: Overrides --- these short-circuit computation
+        :param inputs: Inputs to the Graph.
+        :return: The output of the final variables, in dictionary form.
+        """
+
+    @abc.abstractmethod
+    def validate(self, nodes_to_execute: List[node.Node]):
+        """Validates whether the executor can execute the given graph.
+        Some executors allow API constructs that others do not support
+        (such as Parallelizable[]/Collect[])
+
+        :param fg: Graph to execute
+        :return: Whether or not the executor can execute the graph.
+        """
+        pass
+
+
+class DefaultGraphExecutor(GraphExecutor):
+    def validate(self, nodes_to_execute: List[node.Node]):
+        """The default graph executor cannot handle parallelizable[]/collect[] nodes.
+
+        :param nodes_to_execute:
+        :raises InvalidExecutorException: if the graph contains parallelizable[]/collect[] nodes.
+        """
+        for node_ in nodes_to_execute:
+            if node_.node_role in (node.NodeType.EXPAND, node.NodeType.COLLECT):
+                raise InvalidExecutorException(
+                    f"Default graph executor cannot handle parallelizable[]/collect[] nodes. "
+                    f"Node {node_.name} defined by functions: "
+                    f"{[fn.__qualname__ for fn in node_.originating_functions]}"
+                )
+
+    def execute(
+        self,
+        fg: graph.FunctionGraph,
+        final_vars: List[str],
+        overrides: Dict[str, Any],
+        inputs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Basic executor for a function graph. Does no task-based execution, just does a DFS
+        and executes the graph in order, in memory."""
+        memoized_computation = dict()  # memoized storage
+        nodes = [fg.nodes[node_name] for node_name in final_vars]
+        fg.execute(nodes, memoized_computation, overrides, inputs)
+        outputs = {
+            final_var: memoized_computation[final_var] for final_var in final_vars
+        }  # only want request variables in df.
+        del memoized_computation  # trying to cleanup some memory
+        return outputs
+
+
+class TaskBasedGraphExecutor(GraphExecutor):
+    def validate(self, nodes_to_execute: List[node.Node]):
+        """Currently this can run every valid graph"""
+        pass
+
+    def __init__(
+        self,
+        execution_manager: executors.ExecutionManager,
+        grouping_strategy: grouping.GroupingStrategy,
+        adapter: base.HamiltonGraphAdapter,
+    ):
+        """Executor for task-based execution. This enables grouping of nodes into tasks, as
+        well as parallel execution/dynamic spawning of nodes.
+
+        :param execution_manager: Utility to assign task executors to node groups
+        :param grouping_strategy: Utility to group nodes into tasks
+        :param result_builder: Utility to build the final result"""
+
+        self.execution_manager = execution_manager
+        self.grouping_strategy = grouping_strategy
+        self.adapter = adapter
+
+    def execute(
+        self,
+        fg: graph.FunctionGraph,
+        final_vars: List[str],
+        overrides: Dict[str, Any],
+        inputs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Executes a graph, task by task. This blocks until completion.
+
+        This does the following:
+        1. Groups the nodes into tasks
+        2. Creates an execution state and a results cache
+        3. Runs it to completion, populating the results cache
+        4. Returning the results from the results cache
+        """
+        inputs = graph_functions.combine_config_and_inputs(fg.config, inputs)
+        (
+            transform_nodes_required_for_execution,
+            user_defined_nodes_required_for_execution,
+        ) = fg.get_upstream_nodes(final_vars, runtime_inputs=inputs, runtime_overrides=overrides)
+
+        all_nodes_required_for_execution = list(
+            set(transform_nodes_required_for_execution).union(
+                user_defined_nodes_required_for_execution
+            )
+        )
+        grouped_nodes = self.grouping_strategy.group_nodes(
+            all_nodes_required_for_execution
+        )  # pure function transform
+        # Instantiate a result cache so we can use later
+        # Pass in inputs so we can pre-populate the results cache
+        prehydrated_results = {**overrides, **inputs}
+        results_cache = state.DictBasedResultCache(prehydrated_results)
+        # Create tasks from the grouped nodes, filtering/pruning as we go
+        tasks = grouping.create_task_plan(grouped_nodes, final_vars, overrides, [fg.adapter])
+        # Create a task graph and execution state
+        execution_state = state.ExecutionState(tasks, results_cache)  # Stateful storage for the DAG
+        # Blocking call to run through until completion
+        executors.run_graph_to_completion(execution_state, self.execution_manager)
+        # Read the final variables from the result cache
+        raw_result = results_cache.read(final_vars)
+        return self.adapter.build_result(**raw_result)
+
+
+class Driver:
     """This class orchestrates creating and executing the DAG to create a dataframe.
 
     .. code-block:: python
@@ -111,7 +254,6 @@ class Driver(object):
 
         # These all feed into creating the driver & thus DAG.
         dr = driver.Driver(config, module, adapter=adapter)
-
     """
 
     def __init__(
@@ -119,22 +261,29 @@ class Driver(object):
         config: Dict[str, Any],
         *modules: ModuleType,
         adapter: base.HamiltonGraphAdapter = None,
+        _graph_executor: GraphExecutor = None,
     ):
         """Constructor: creates a DAG given the configuration & modules to crawl.
 
         :param config: This is a dictionary of initial data & configuration.
-                       The contents are used to help create the DAG.
+            The contents are used to help create the DAG.
         :param modules: Python module objects you want to inspect for Hamilton Functions.
         :param adapter: Optional. A way to wire in another way of "executing" a hamilton graph.
-                        Defaults to using original Hamilton adapter which is single threaded in memory python.
+            Defaults to using original Hamilton adapter which is single threaded in memory python.
+        :param graph_executor: This is injected by the builder -- if you want to set different graph
+            execution parameters, use the builder rather than instantiating this directly.
         """
+        if _graph_executor is None:
+            _graph_executor = DefaultGraphExecutor()
+        self.graph_executor = _graph_executor
+
         self.driver_run_id = uuid.uuid4()
         if adapter is None:
             adapter = base.SimplePythonDataFrameGraphAdapter()
         error = None
         self.graph_modules = modules
         try:
-            self.graph = graph.FunctionGraph(*modules, config=config, adapter=adapter)
+            self.graph = graph.FunctionGraph.from_modules(*modules, config=config, adapter=adapter)
             self.adapter = adapter
         except Exception as e:
             error = telemetry.sanitize_error(*sys.exc_info())
@@ -150,12 +299,10 @@ class Driver(object):
         config: Dict[str, Any],
         adapter: base.HamiltonGraphAdapter,
     ):
-        """Captures constructor telemetry.
-
-        Notes:
+        """Captures constructor telemetry. Notes:
         (1) we want to do this in a way that does not break.
         (2) we need to account for all possible states, e.g. someone passing in None, or assuming that
-        the entire constructor code ran without issue, e.g. `adpater` was assigned to `self`.
+        the entire constructor code ran without issue, e.g. `adapter` was assigned to `self`.
 
         :param error: the sanitized error string to send.
         :param modules: the list of modules, could be None.
@@ -176,6 +323,7 @@ class Driver(object):
                     result_builder,
                     self.driver_run_id,
                     error,
+                    self.graph_executor.__class__.__name__,
                 )
                 telemetry.send_event_json(payload)
             except Exception as e:
@@ -183,27 +331,10 @@ class Driver(object):
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"Error caught in processing telemetry: {e}")
 
-    def _node_is_required_by_anything(self, node_: node.Node, node_set: Set[node.Node]) -> bool:
-        """Checks dependencies on this node and determines if at least one requires it.
-
-        Nodes can be optionally depended upon, i.e. the function parameter has a default value. We want to check that
-        of the nodes the depend on this one, at least one of them requires it, i.e. the parameter is not optional.
-
-        :param node_: node in question
-        :param node_set: checks that we traverse only nodes in the provided set.
-        :return: True if it is required by any downstream node, false otherwise
-        """
-        required = False
-        for downstream_node in node_.depended_on_by:
-            if downstream_node not in node_set:
-                continue
-            _, dep_type = downstream_node.input_types[node_.name]
-            if dep_type == node.DependencyType.REQUIRED:
-                return True
-        return required
-
+    @staticmethod
     def validate_inputs(
-        self,
+        fn_graph: graph.FunctionGraph,
+        adapter: base.HamiltonGraphAdapter,
         user_nodes: Collection[node.Node],
         inputs: typing.Optional[Dict[str, Any]] = None,
         nodes_set: Collection[node.Node] = None,
@@ -219,17 +350,17 @@ class Driver(object):
         if inputs is None:
             inputs = {}
         if nodes_set is None:
-            nodes_set = set(self.graph.nodes.values())
-        (all_inputs,) = (graph.FunctionGraph.combine_config_and_inputs(self.graph.config, inputs),)
+            nodes_set = set(fn_graph.nodes.values())
+        (all_inputs,) = (graph_functions.combine_config_and_inputs(fn_graph.config, inputs),)
         errors = []
         for user_node in user_nodes:
             if user_node.name not in all_inputs:
-                if self._node_is_required_by_anything(user_node, nodes_set):
+                if graph_functions.node_is_required_by_anything(user_node, nodes_set):
                     errors.append(
                         f"Error: Required input {user_node.name} not provided "
                         f"for nodes: {[node.name for node in user_node.depended_on_by]}."
                     )
-            elif all_inputs[user_node.name] is not None and not self.adapter.check_input_type(
+            elif all_inputs[user_node.name] is not None and not adapter.check_input_type(
                 user_node.type, all_inputs[user_node.name]
             ):
                 errors.append(
@@ -301,7 +432,8 @@ class Driver(object):
                     _final_vars.append(final_var.__name__)
                 else:
                     errors.append(
-                        f"Function {final_var.__module__}.{final_var.__name__} is a function not in a "
+                        f"Function {final_var.__module__}.{final_var.__name__} is a function not "
+                        f"in a "
                         f"module given to the driver. Valid choices are {module_set}."
                     )
             else:
@@ -372,8 +504,8 @@ class Driver(object):
         :return:
         """
         nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
-        self.validate_inputs(
-            user_nodes, inputs, nodes
+        Driver.validate_inputs(
+            self.graph, self.adapter, user_nodes, inputs, nodes
         )  # TODO -- validate within the function graph itself
         if display_graph:  # deprecated flow.
             logger.warning(
@@ -382,14 +514,15 @@ class Driver(object):
             )
             self.visualize_execution(final_vars, "test-output/execute.gv", {"view": True})
             if self.has_cycles(final_vars):  # here for backwards compatible driver behavior.
-                raise ValueError("Error: cycles detected in you graph.")
-        memoized_computation = dict()  # memoized storage
-        self.graph.execute(nodes, memoized_computation, overrides, inputs)
-        outputs = {
-            c: memoized_computation[c] for c in final_vars
-        }  # only want request variables in df.
-        del memoized_computation  # trying to cleanup some memory
-        return outputs
+                raise ValueError("Error: cycles detected in your graph.")
+        all_nodes = nodes | user_nodes
+        self.graph_executor.validate(list(all_nodes))
+        return self.graph_executor.execute(
+            self.graph,
+            final_vars,
+            overrides if overrides is not None else {},
+            inputs if inputs is not None else {},
+        )
 
     @capture_function_usage
     def list_available_variables(self) -> List[Variable]:
@@ -429,6 +562,44 @@ class Driver(object):
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
 
+    @staticmethod
+    def _visualize_execution_helper(
+        fn_graph: graph.FunctionGraph,
+        adapter: base.HamiltonGraphAdapter,
+        final_vars: List[str],
+        output_file_path: str,
+        render_kwargs: dict,
+        inputs: Dict[str, Any] = None,
+        graphviz_kwargs: dict = None,
+    ):
+        """Helper function to visualize execution, using a passed-in function graph.
+
+        :param final_vars:
+        :param output_file_path:
+        :param render_kwargs:
+        :param inputs:
+        :param graphviz_kwargs:
+        :return:
+        """
+        # _final_vars = self._create_final_vars(final_vars)
+        nodes, user_nodes = fn_graph.get_upstream_nodes(final_vars, inputs)
+        Driver.validate_inputs(fn_graph, adapter, user_nodes, inputs, nodes)
+        node_modifiers = {fv: {graph.VisualizationNodeModifiers.IS_OUTPUT} for fv in final_vars}
+        for user_node in user_nodes:
+            if user_node.name not in node_modifiers:
+                node_modifiers[user_node.name] = set()
+            node_modifiers[user_node.name].add(graph.VisualizationNodeModifiers.IS_USER_INPUT)
+        try:
+            return fn_graph.display(
+                nodes.union(user_nodes),
+                output_file_path,
+                render_kwargs=render_kwargs,
+                graphviz_kwargs=graphviz_kwargs,
+                node_modifiers=node_modifiers,
+            )
+        except ImportError as e:
+            logger.warning(f"Unable to import {e}", exc_info=True)
+
     @capture_function_usage
     def visualize_execution(
         self,
@@ -462,23 +633,15 @@ class Driver(object):
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
         _final_vars = self._create_final_vars(final_vars)
-        nodes, user_nodes = self.graph.get_upstream_nodes(_final_vars, inputs)
-        self.validate_inputs(user_nodes, inputs, nodes)
-        node_modifiers = {fv: {graph.VisualizationNodeModifiers.IS_OUTPUT} for fv in _final_vars}
-        for user_node in user_nodes:
-            if user_node.name not in node_modifiers:
-                node_modifiers[user_node.name] = set()
-            node_modifiers[user_node.name].add(graph.VisualizationNodeModifiers.IS_USER_INPUT)
-        try:
-            return self.graph.display(
-                nodes.union(user_nodes),
-                output_file_path,
-                render_kwargs=render_kwargs,
-                graphviz_kwargs=graphviz_kwargs,
-                node_modifiers=node_modifiers,
-            )
-        except ImportError as e:
-            logger.warning(f"Unable to import {e}", exc_info=True)
+        return self._visualize_execution_helper(
+            self.graph,
+            self.adapter,
+            _final_vars,
+            output_file_path,
+            render_kwargs,
+            inputs,
+            graphviz_kwargs,
+        )
 
     @capture_function_usage
     def has_cycles(self, final_vars: List[Union[str, Callable, Variable]]) -> bool:
@@ -687,6 +850,349 @@ class Driver(object):
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
+
+    def materialize(
+        self,
+        *materializers: materialization.MaterializerFactory,
+        additional_vars: List[Union[str, Callable, Variable]],
+        overrides: Dict[str, Any] = None,
+        inputs: Dict[str, Any] = None,
+    ) -> Tuple[Any, Dict[str, Any]]:
+        """Executes and materializes with ad-hoc materializers.This does the following:
+        1. Creates a new graph, appending the desired materialization nodes
+        2. Runs the graph with the materialization nodes outputted, as well as any additional
+        nodes requested (which can be empty)
+        3. Returns a Tuple[Materialization metadata, additional_vars result]
+
+        For instance, say you want to Materialize the output of a node to CSV:
+
+        .. code-block:: python
+
+             from hamilton import driver, base
+             from hamilton.io.materialize import to
+             dr = driver.Driver(my_module, {})
+             # foo, bar are pd.Series
+             metadata, result = dr.Materialize(
+                 to.csv(
+                     path="./output.csv"
+                     id="foo_bar_csv",
+                     dependencies=["foo", "bar"],
+                     combine=base.PandasDataFrameResult()
+                 ),
+                 additional_vars=["foo", "bar"]
+             )
+
+        The code above will Materialize the dataframe with "foo" and "bar" as columns, saving it as
+        a CSV file at "./output.csv". The metadata will contain any additional relevant information,
+        and result will be a dictionary with the keys "foo" and "bar" containing the original data.
+
+        Note that we pass in a `ResultBuilder` as the `combine` argument, as we may be materializing
+        several nodes.
+
+        additional_vars is used for debugging -- E.G. if you want to both realize side-effects and
+        return an output for inspection. If left out, it will return an empty dictionary.
+
+        You can bypass the `combine` keyword if only one output is required. In this circumstance "combining/joining" isn't required, e.g. you do that yourself in a function and/or the output of the function
+        can be directly used. In the case below the output can be turned in to a CSV.
+
+        .. code-block:: python
+
+             from hamilton import driver, base
+             from hamilton.io.materialize import to
+             dr = driver.Driver(my_module, {})
+             # foo, bar are pd.Series
+             metadata, _ = dr.Materialize(
+                 to.csv(
+                     path="./output.csv"
+                     id="foo_bar_csv",
+                     dependencies=["foo_bar_already_joined],
+                 ),
+             )
+
+        This will just save it to a csv.
+
+        Note that materializers can be any valid DataSaver -- these have an isomorphic relationship
+        with the `@save_to` decorator, which means that any key utilizable in `save_to` can be used
+        in a materializer. The constructor arguments for a materializer are the same as the
+        arguments for `@save_to`, with an additional trick -- instead of requiring
+        everything to be a `source` or `value`, you can pass in a literal, and it will be interpreted
+        as a value.
+
+        That said, if you want to parameterize your materializer based on input or some node in the
+        DAG, you can easily do that as well:
+
+        .. code-block:: python
+
+             from hamilton import driver, base
+             from hamilton.function_modifiers import source
+             from hamilton.io.materialize import to
+             dr = driver.Driver(my_module, {})
+             # foo, bar are pd.Series
+             metadata, result = dr.Materialize(
+                 to.csv(
+                     path=source("save_path"),
+                     id="foo_bar_csv",
+                     dependencies=["foo", "bar"],
+                     combine=base.PandasDataFrameResult()
+                 ),
+                 additional_vars=["foo", "bar"],
+                 inputs={"save_path" : "./output.csv"}
+             )
+
+        While this is a contrived example, you could imagine something more powerful. Say, for
+        instance, say you have created and registered a custom `model_registry` materializer that
+        applies to an argument of your model class, and requires `training_data` to infer the
+        signature. You could call it like this:
+
+        .. code-block:: python
+
+            from hamilton import driver, base
+            from hamilton.function_modifiers import source
+            from hamilton.io.materialize import to
+            dr = driver.Driver(my_module, {})
+            metadata, _ = dr.Materialize(
+                to.model_registry(
+                    training_data=source("training_data"),
+                    id="foo_model_registry",
+                    dependencies=["foo_model"]
+                ),
+            )
+
+        In this case, we bypass a result builder (as there's only one model), the single
+        node we depend on gets saved, and we pass in the training data as an input so the
+        materializer can infer the signature
+
+        This is customizable through two APIs:
+            1. Custom data savers ( :doc:`/concepts/decorators-overview`
+            2. Custom result builders
+
+        If you find yourself writing these, please consider contributing back! We would love
+        to round out the set of available materialization tools.
+
+        If you find yourself writing these, please consider contributing back! We would love
+        to round out the set of available materialization tools.
+
+        :param materializers: Materializer factories, created with Materialize.<output_type>
+        :param additional_vars: Additional variables to return from the graph
+        :param overrides: Overrides to pass to execution
+        :param inputs: Inputs to pass to execution
+        :return: Tuple[Materialization metadata, additional_vars result]
+        """
+        function_graph = materialization.modify_graph(self.graph, materializers)
+        final_vars = self._create_final_vars(additional_vars)
+        materializer_vars = [materializer.id for materializer in materializers]
+        raw_results = self.graph_executor.execute(
+            function_graph,
+            final_vars=final_vars + materializer_vars,
+            overrides=overrides,
+            inputs=inputs,
+        )
+        materialization_output = {key: raw_results[key] for key in materializer_vars}
+        raw_results_output = {key: raw_results[key] for key in final_vars}
+
+        return materialization_output, raw_results_output
+
+    def visualize_materialization(
+        self,
+        *materializers: materialization.MaterializerFactory,
+        additional_vars: List[Union[str, Callable, Variable]],
+        output_file_path: str,
+        render_kwargs: dict,
+        inputs: Dict[str, Any] = None,
+        graphviz_kwargs: dict = None,
+    ) -> Optional["graphviz.Digraph"]:  # noqa F821
+        """Visualizes materialization. This helps give you a sense of how materialization
+        will impact the DAG.
+
+        :param materializers: Materializers to use, see the materialize() function
+        :param additional_vars: Additional variables to compute (in addition to materializers)
+        :param output_file_path: Path to output file
+        :param render_kwargs: Arguments to pass to render
+        :param inputs: Inputs to pass to execution
+        :param graphviz_kwargs: Arguments to pass to graphviz
+        :return: The graphviz graph, if you want to do something with it
+        """
+        function_graph = materialization.modify_graph(self.graph, materializers)
+        _final_vars = self._create_final_vars(additional_vars) + [
+            materializer.id for materializer in materializers
+        ]
+        Driver._visualize_execution_helper(
+            function_graph,
+            self.adapter,
+            _final_vars,
+            output_file_path,
+            render_kwargs,
+            inputs,
+            graphviz_kwargs,
+        )
+
+
+class Builder:
+    def __init__(self):
+        """Constructs a driver builder. No parameters as you call methods to set fields."""
+        # Toggling versions
+        self.v2_executor = False
+
+        # common fields
+        self.config = {}
+        self.modules = []
+        # V1 fields
+        self.adapter = None
+
+        # V2 fields
+        self.execution_manager = None
+        self.local_executor = None
+        self.remote_executor = None
+        self.grouping_strategy = None
+        self.result_builder = None
+
+    def _require_v2(self, message: str):
+        if not self.v2_executor:
+            raise ValueError(message)
+
+    def _require_field_unset(self, field: str, message: str, unset_value: Any = None):
+        if getattr(self, field) != unset_value:
+            raise ValueError(message)
+
+    def _require_field_set(self, field: str, message: str, unset_value: Any = None):
+        if getattr(self, field) == unset_value:
+            raise ValueError(message)
+
+    def enable_dynamic_execution(self, *, allow_experimental_mode: bool = False) -> "Builder":
+        """Enables the Parallelizable[] type, which in turn enables:
+        1. Grouped execution into tasks
+        2. Parallel execution
+        :return: self
+        """
+        if not allow_experimental_mode:
+            raise ValueError(
+                "Remote execution is currently experimental. "
+                "Please set allow_experiemental_mode=True to enable it."
+            )
+        self._require_field_unset("adapter", "Cannot enable remote execution with an adapter set.")
+        self.v2_executor = True
+        return self
+
+    def with_config(self, config: Dict[str, Any]) -> "Builder":
+        """Adds the specified configuration to the config.
+        This can be called multilple times -- later calls will take precedence.
+
+        :param config: Config to use.
+        :return: self
+        """
+        self.config.update(config)
+        return self
+
+    def with_modules(self, *modules: ModuleType) -> "Builder":
+        """Adds the specified modules to the modules list.
+        This can be called multiple times -- later calls will take precedence.
+
+        :param modules: Modules to use.
+        :return: self
+        """
+        self.modules.extend(modules)
+        return self
+
+    def with_adapter(self, adapter: base.HamiltonGraphAdapter) -> "Builder":
+        """Sets the adapter to use.
+
+        :param adapter: Adapter to use.
+        :return: self
+        """
+        self._require_field_unset("adapter", "Cannot set adapter twice.")
+        self.adapter = adapter
+        return self
+
+    def with_execution_manager(self, execution_manager: executors.ExecutionManager) -> "Builder":
+        """Sets the execution manager to use. Note that this cannot be used if local_executor
+        or remote_executor are also set
+
+        :param execution_manager:
+        :return: self
+        """
+        self._require_v2("Cannot set execution manager without first enabling the V2 Driver")
+        self._require_field_unset("execution_manager", "Cannot set execution manager twice")
+        self._require_field_unset(
+            "remote_executor",
+            "Cannot set execution manager with remote " "executor set -- these are disjoint",
+        )
+
+        self.execution_manager = execution_manager
+        return self
+
+    def with_remote_executor(self, remote_executor: executors.TaskExecutor) -> "Builder":
+        """Sets the execution manager to use. Note that this cannot be used if local_executor
+        or remote_executor are also set
+
+        :param remote_executor: Remote executor to use
+        :return: self
+        """
+        self._require_v2("Cannot set execution manager without first enabling the V2 Driver")
+        self._require_field_unset("remote_executor", "Cannot set remote executor twice")
+        self._require_field_unset(
+            "execution_manager",
+            "Cannot set remote executor with execution " "manager set -- these are disjoint",
+        )
+        self.remote_executor = remote_executor
+        return self
+
+    def with_local_executor(self, local_executor: executors.TaskExecutor) -> "Builder":
+        """Sets the execution manager to use. Note that this cannot be used if local_executor
+        or remote_executor are also set
+
+        :param local_executor: Local executor to use
+        :return: self
+        """
+        self._require_v2("Cannot set execution manager without first enabling the V2 Driver")
+        self._require_field_unset("local_executor", "Cannot set local executor twice")
+        self._require_field_unset(
+            "execution_manager",
+            "Cannot set local executor with execution " "manager set -- these are disjoint",
+        )
+        self.local_executor = local_executor
+        return self
+
+    def with_grouping_strategy(self, grouping_strategy: grouping.GroupingStrategy) -> "Builder":
+        """Sets a node grouper, which tells the driver how to group nodes into tasks for execution.
+
+        :param node_grouper: Node grouper to use.
+        :return: self
+        """
+        self._require_v2("Cannot set grouping strategy without first enabling the V2 Driver")
+        self._require_field_unset("grouping_strategy", "Cannot set grouping strategy twice")
+        self.grouping_strategy = grouping_strategy
+        return self
+
+    def build(self) -> Driver:
+        """Builds the driver -- note that this can return a different class, so you'll likely
+        want to have a sense of what it returns.
+
+        :return: The driver you specified.
+        """
+        adapter = self.adapter if self.adapter is not None else base.DefaultAdapter()
+        if not self.v2_executor:
+            return Driver(self.config, *self.modules, adapter=self.adapter)
+        execution_manager = self.execution_manager
+        if execution_manager is None:
+            local_executor = self.local_executor or executors.SynchronousLocalTaskExecutor()
+            remote_executor = self.remote_executor or executors.MultiProcessingExecutor(
+                max_tasks=10
+            )
+            execution_manager = executors.DefaultExecutionManager(
+                local_executor=local_executor, remote_executor=remote_executor
+            )
+        grouping_strategy = self.grouping_strategy or grouping.GroupByRepeatableBlocks()
+        graph_executor = TaskBasedGraphExecutor(
+            execution_manager=execution_manager,
+            grouping_strategy=grouping_strategy,
+            adapter=adapter,
+        )
+        return Driver(
+            self.config,
+            *self.modules,
+            adapter=adapter,
+            _graph_executor=graph_executor,
+        )
 
 
 if __name__ == "__main__":

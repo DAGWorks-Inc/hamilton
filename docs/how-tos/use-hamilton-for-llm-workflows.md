@@ -14,7 +14,12 @@ The benefit of using Hamilton within an LLM Powered app is that:
    you can quickly and easily modify/update your dataflow and have confidence around the impact of that change.
 4. you can use functionality like runtime data quality checks/extend Hamilton's capabilities with your own needs to inject/augment
    your dataflow with additional functionality, e.g. caching, logging, etc.
+5. you can request the intermediate outputs of a dataflow by requesting it as output without any surgery required to
+any of your code to do so. This is useful for debugging.
 
 The following examples show how to use Hamilton for LLM workflows:
 
 * [How to use "OpenAI functions" with a Knowledge Base](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/LLM_Workflows/knowledge_retrieval/)
+* [Modular LLM Stack](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/LLM_Workflows/modular_llm_stack) with [blog post](https://blog.dagworks.io/p/building-a-maintainable-and-modular)
+* [PDF Summarizer](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/LLM_Workflows/pdf_summarizer) which shows
+a RAG workflow that runs inside FastAPI with a Streamlit frontend.

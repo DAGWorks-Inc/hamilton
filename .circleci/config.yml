@@ -10,6 +10,7 @@ jobs:
       - image: cimg/python:<< parameters.python-version >>
     environment:
       TASK: << parameters.task >>
+      CI: true
     steps:
       - checkout
       - run:
@@ -46,12 +47,12 @@ workflows:
           python-version: '3.9'
           task: pre-commit
       - test:
-          name: dask-py37
-          python-version: '3.7'
+          name: dask-py39
+          python-version: '3.9'
           task: dask
       - test:
-          name: ray-py37
-          python-version: '3.7'
+          name: ray-py39
+          python-version: '3.9'
           task: ray
       - test:
           name: spark-py38

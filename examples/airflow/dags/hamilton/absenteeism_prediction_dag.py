@@ -129,7 +129,7 @@ def absenteeism_prediction_dag():
             hamilton_config,
             train_model,
             evaluate_model,  # pass two function module to the Hamilton driver
-            adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+            adapter=base.DefaultAdapter(),
         )
 
         results = dr.execute(

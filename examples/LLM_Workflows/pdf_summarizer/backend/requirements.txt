@@ -1,0 +1,10 @@
+fastapi
+openai
+pydantic
+PyPDF2
+python-multipart
+sf-hamilton[visualization]
+tenacity
+tiktoken
+tqdm
+uvicorn

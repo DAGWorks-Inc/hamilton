@@ -17,7 +17,7 @@ from hamilton import base, driver
 def create_titanic_DAG_driver():
     """Creates a Driver object for the Titanic DAG."""
     config = {}  # Empty for this example.
-    adapter = base.SimplePythonGraphAdapter(base.DictResult())
+    adapter = base.DefaultAdapter()
     dr = driver.Driver(config, data_loading, features, sets, model_pipeline, adapter=adapter)
     return dr
 
