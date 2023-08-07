@@ -3,12 +3,12 @@ import inspect
 import logging
 import sys
 from types import CodeType, FunctionType, ModuleType
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
 import pyspark.pandas as ps
-from pyspark.sql import DataFrame, dataframe, types
+from pyspark.sql import Column, DataFrame, dataframe, types
 from pyspark.sql.functions import column, lit, pandas_udf, udf
 
 from hamilton import base, htypes, node
@@ -600,7 +600,32 @@ def sparkify_node(
     return node_.copy_with(callabl=new_callable, input_types=new_input_types, typ=DataFrame)
 
 
-def derive_dataframe_parameter(fn: Callable, requested_parameter: str = None) -> str:
+def derive_dataframe_parameter(
+    param_types: Dict[str, Type], requested_parameter: str, location_name: Callable
+) -> str:
+    dataframe_parameters = {
+        param for param, val in param_types.items() if issubclass(val, DataFrame)
+    }
+    if requested_parameter is not None:
+        if requested_parameter not in dataframe_parameters:
+            raise ValueError(
+                f"Requested parameter {requested_parameter} not found in " f"{location_name}"
+            )
+        return requested_parameter
+    if len(dataframe_parameters) == 0:
+        raise ValueError(
+            f"No dataframe parameters found in: {location_name}. "
+            f"@with_columns must inject a dataframe parameter into the function."
+        )
+    elif len(dataframe_parameters) > 1:
+        raise ValueError(
+            f"More than one dataframe parameter found in function: {location_name}. Please "
+            f"specify the desired one with the 'dataframe' parameter in @with_columns"
+        )
+    return list(dataframe_parameters)[0]
+
+
+def derive_dataframe_parameter_from_fn(fn: Callable, requested_parameter: str = None) -> str:
     """Utility function to grab a pyspark dataframe parameter from a function.
     Note if one is supplied it'll look for that. If none is, it will look to ensure
     that there is only one dataframe parameter in the function.
@@ -614,29 +639,22 @@ def derive_dataframe_parameter(fn: Callable, requested_parameter: str = None) ->
     - if the requested parameter is not found
     """
     sig = inspect.signature(fn)
-    dataframe_parameters = {
-        param.name: param
-        for param in sig.parameters.values()
-        if issubclass(param.annotation, DataFrame)
-    }
-    if requested_parameter is not None:
-        if requested_parameter not in dataframe_parameters:
-            raise ValueError(
-                f"Requested parameter {requested_parameter} not found in "
-                f"function: {fn.__qualname__}"
-            )
-        return requested_parameter
-    if len(dataframe_parameters) == 0:
-        raise ValueError(
-            f"No dataframe parameters found in function: {fn.__qualname__}. "
-            f"@with_columns must inject a dataframe parameter into the function."
-        )
-    elif len(dataframe_parameters) > 1:
-        raise ValueError(
-            f"More than one dataframe parameter found in function: {fn.__qualname__}. Please "
-            f"specify the desired one with the 'dataframe' parameter in @with_columns"
-        )
-    return list(dataframe_parameters)[0]
+    parameters_with_types = {param.name: param.annotation for param in sig.parameters.values()}
+    return derive_dataframe_parameter(parameters_with_types, requested_parameter, fn.__qualname__)
+
+
+def derive_dataframe_parameter_from_node(node_: node.Node, requested_parameter: str = None) -> str:
+    """Derives the only/requested dataframe parameter from a node.
+
+    :param node_:
+    :param requested_parameter:
+    :return:
+    """
+    types_ = {key: value[0] for key, value in node_.input_types.items()}
+    originating_function_name = (
+        node_.originating_functions[-1] if node_.originating_functions is not None else node_.name
+    )
+    return derive_dataframe_parameter(types_, requested_parameter, originating_function_name)
 
 
 def prune_nodes(nodes: List[node.Node], select: Optional[List[str]] = None) -> List[node.Node]:
@@ -665,6 +683,141 @@ def prune_nodes(nodes: List[node.Node], select: Optional[List[str]] = None) -> L
                 stack.append(dep_node)
             seen_nodes.add(dep)
     return output
+
+
+class transforms(fm_base.NodeTransformer):
+    """Decorator for spark that allows for the specification of columns to transform.
+    These are columns within a specific node in a decorator, enabling the user to make use of pyspark
+    transformations inside a with_columns group. Note that this will have no impact if it is not
+    decorating a node inside `with_columns`.
+
+    Note that this currently does not work with other decorators, but it definitely could.
+    """
+
+    TRANSFORM_TARGET_TAG = "hamilton.spark.target"
+    TRANSFORM_COLUMNS_TAG = "hamilton.spark.columns"
+
+    def __init__(self, *columns: str, target_parameter=None):
+        super(transforms, self).__init__(target=None)
+        self._columns = columns
+        self._target = target_parameter
+
+    def transform_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
+        """Generates nodes for the `@transforms` decorator.
+
+        This does two things, but does not fully prepare the node:
+        1. It adds the columns as dependencies to the node
+        2. Adds tags with relevant metadata for later use
+
+        Note that, at this point, we don't actually know which columns will come from the
+        base dataframe, and which will come from the upstream nodes. This is handled in the
+        `with_columns` decorator, so for now, we need to give it enough information to topologically
+        sort/assign dependencies.
+
+        :param node_: Node to transform
+        :param config: Configuration to use (unused here)
+        :return:
+        """
+        param = derive_dataframe_parameter_from_node(node_, self._target)
+
+        # This allows for injection of any extra parameters
+        def new_fn(**kwargs):
+            return node_.callable(
+                **{key: value for key, value in kwargs.items() if key in node_.input_types}
+            )
+
+        # Add the upstream columns as additional dependencies
+        additional_input_types = {
+            param: (DataFrame, node.DependencyType.REQUIRED) for param in self._columns
+        }
+        node_out = node_.copy_with(
+            input_types={**node_.input_types, **additional_input_types},
+            callabl=new_fn,
+            tags={
+                transforms.TRANSFORM_TARGET_TAG: param,
+                transforms.TRANSFORM_COLUMNS_TAG: self._columns,
+            },
+        )
+        # if it returns a column, we just turn it into a withColumn expression
+        if issubclass(node_.type, Column):
+
+            def transform_output(output: Column, kwargs: Dict[str, Any]) -> DataFrame:
+                return kwargs[param].withColumn(node_.name, output)
+
+            node_out = node_out.transform_output(transform_output, DataFrame)
+        return [node_out]
+
+    def validate(self, fn: Callable):
+        """Validates on the function, even though it operates on nodes. We can always loosen
+        this, but for now it should help the code stay readable.
+
+        :param fn: Function this is decorating
+        :return:
+        """
+
+        derive_dataframe_parameter_from_fn(fn, self._target)
+
+    @staticmethod
+    def _extract_dataframe_params(node_: node.Node) -> List[str]:
+        """Extracts the dataframe parameters from a node.
+
+        :param node_: Node to extract from
+        :return: List of dataframe parameters
+        """
+        return [key for key, value in node_.input_types.items() if issubclass(value[0], DataFrame)]
+
+    @staticmethod
+    def is_default_pyspark_udf(node_: node.Node) -> bool:
+        """Tells if a node is, by default, a pyspark UDF. This means:
+        1. It has a single dataframe parameter
+        2. That parameter name determines an upstream column name
+
+        :param node_: Node to check
+        :return: True if it functions as a default pyspark UDF, false otherwise
+        """
+        df_columns = transforms._extract_dataframe_params(node_)
+        return len(df_columns) == 1 and len(node_.input_types) == 1
+
+    @staticmethod
+    def is_decorated_pyspark_udf(node_: node.Node):
+        """Tells if this is a decorated pyspark UDF. This means it has been
+        decorated by the `@transforms` decorator.
+
+        :return: True if it can be run as part of a group, false otherwise
+        """
+        if "hamilton.spark.columns" in node_.tags and "hamilton.spark.target" in node_.tags:
+            return True
+        return False
+
+    @staticmethod
+    def sparkify_node(
+        node_: node.Node,
+        linear_df_dependency_name: str,
+        base_df_dependency_name: str,
+        dependent_columns_from_dataframe: Set[str],
+    ) -> node.Node:
+        """Transforms a pyspark node into a node that can be run as part of a `with_columns` group.
+
+        :param node_: Node to transform
+        :param linear_df_dependency_name: Dependency on continaully modified dataframe (this will enable us
+        :param base_df_dependency_name:
+        :param dependent_columns_in_group:
+        :param dependent_columns_from_dataframe:
+        :return: The final node with correct dependencies
+        """
+        transformation_target = node_.tags.get(transforms.TRANSFORM_TARGET_TAG)
+
+        # This should come from the dataframe
+        # We have to reassign this to the linear dataframe dependency so we're transforming the
+        # right one Then we have to replace all the columns that are in the dataframe with the
+        # base dataframe dependency name
+        node_ = node_.reassign_input_names({transformation_target: linear_df_dependency_name})
+        node_ = node_.reassign_input_names(
+            {col: base_df_dependency_name for col in dependent_columns_from_dataframe}
+        )
+        return node_
 
 
 class with_columns(fm_base.NodeCreator):
@@ -736,6 +889,25 @@ class with_columns(fm_base.NodeCreator):
         self.namespace = namespace
         self.upstream_dependency = dataframe
 
+    @staticmethod
+    def _prep_nodes(initial_nodes: List[node.Node]) -> List[node.Node]:
+        """Prepares nodes by decorating "default" UDFs with transform.
+        This allows us to use the sparkify_node function in transforms
+        for both the default ones and the decorated ones.
+
+        :param initial_nodes:
+        :return:
+        """
+        out = []
+        for node_ in initial_nodes:
+            if transforms.is_default_pyspark_udf(node_):
+                col = derive_dataframe_parameter_from_node(node_)
+                # todo -- wire through config/function correctly
+                # the col is the only dataframe paameter so it is the target node
+                (node_,) = transforms(col).transform_node(node_, {}, node_.callable)
+            out.append(node_)
+        return out
+
     def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> List[node.Node]:
         """Generates nodes in the with_columns groups. This does the following:
 
@@ -753,7 +925,8 @@ class with_columns(fm_base.NodeCreator):
         namespace = fn.__name__ if self.namespace is None else self.namespace
 
         initial_nodes = subdag.collect_nodes(config, self.subdag_functions)
-        pruned_nodes = prune_nodes(initial_nodes, self.select)
+        transformed_nodes = with_columns._prep_nodes(initial_nodes)
+        pruned_nodes = prune_nodes(transformed_nodes, self.select)
         if len(pruned_nodes) == 0:
             raise ValueError(
                 f"No nodes found upstream from select columns: {self.select} for function: "
@@ -761,7 +934,7 @@ class with_columns(fm_base.NodeCreator):
             )
         sorted_initial_nodes = graph_functions.topologically_sort_nodes(pruned_nodes)
         output_nodes = []
-        inject_parameter = derive_dataframe_parameter(fn, self.upstream_dependency)
+        inject_parameter = derive_dataframe_parameter_from_fn(fn, self.upstream_dependency)
         current_dataframe_node = inject_parameter
         # Columns that it is dependent on could be from the group of transforms created
         columns_produced_within_mapgroup = {node_.name for node_ in pruned_nodes}
@@ -778,14 +951,23 @@ class with_columns(fm_base.NodeCreator):
             dependent_columns_in_dataframe = {
                 column for column in node_.input_types if column in columns_passed_in_from_dataframe
             }
-
-            sparkified = sparkify_node(
-                node_,
-                current_dataframe_node,
-                inject_parameter,
-                dependent_columns_in_mapgroup,
-                dependent_columns_in_dataframe,
-            )
+            # In the case that we are using pyspark UDFs
+            if transforms.is_decorated_pyspark_udf(node_):
+                sparkified = transforms.sparkify_node(
+                    node_,
+                    current_dataframe_node,
+                    inject_parameter,
+                    dependent_columns_in_dataframe,
+                )
+            # otherwise we're using pandas/primitive UDFs
+            else:
+                sparkified = sparkify_node(
+                    node_,
+                    current_dataframe_node,
+                    inject_parameter,
+                    dependent_columns_in_mapgroup,
+                    dependent_columns_in_dataframe,
+                )
             output_nodes.append(sparkified)
             current_dataframe_node = sparkified.name
         # We get the final node, which is the function we're using
@@ -797,4 +979,4 @@ class with_columns(fm_base.NodeCreator):
         return output_nodes + [final_node]
 
     def validate(self, fn: Callable):
-        derive_dataframe_parameter(fn, self.upstream_dependency)
+        derive_dataframe_parameter_from_fn(fn, self.upstream_dependency)

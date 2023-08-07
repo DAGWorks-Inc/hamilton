@@ -1,20 +1,14 @@
-<<<<<<< HEAD
 import sys
 
 import numpy as np
-=======
 import logging
 
->>>>>>> 7d0b719 (Implements spark integration, see #248)
 import pandas as pd
 import pyspark.pandas as ps
 import pytest
 from pyspark import Row
-<<<<<<< HEAD
 from pyspark.sql import SparkSession, types
-=======
 from pyspark.sql import Column, DataFrame, SparkSession
->>>>>>> 7d0b719 (Implements spark integration, see #248)
 from pyspark.sql.functions import column
 
 from hamilton import base, driver, htypes, node
@@ -27,6 +21,7 @@ from .resources.spark import (
     pyspark_udfs,
     spark_dag_external_dependencies,
     spark_dag_multiple_with_columns,
+    spark_dag_pyspark_udfs,
 )
 
 setup_logging(logging.DEBUG)
@@ -235,7 +230,6 @@ def test_smoke_screen_udf_graph_adapter(spark_session):
     ]
 
 
-<<<<<<< HEAD
 # Test cases for python_to_spark_type function
 @pytest.mark.parametrize(
     "python_type,expected_spark_type",
@@ -269,11 +263,9 @@ def test_python_to_spark_type_invalid(invalid_python_type):
         (bytes, types.BinaryType()),
     ],
 )
-def test_get_spark_type_basic_types(
-    dummy_kwargs, dummy_df, dummy_udf, return_type, expected_spark_type
-):
+def test_get_spark_type_basic_types(return_type, expected_spark_type):
     assert (
-        h_spark.get_spark_type(dummy_kwargs, dummy_df, dummy_udf, return_type)
+        h_spark.get_spark_type(return_type)
         == expected_spark_type
     )
 
@@ -291,11 +283,11 @@ def test_get_spark_type_basic_types(
     ],
 )
 def test_get_spark_type_list_types(
-    dummy_kwargs, dummy_df, dummy_udf, return_type, expected_spark_type
+    return_type, expected_spark_type
 ):
     return_type = list[return_type]  # type: ignore
     assert (
-        h_spark.get_spark_type(dummy_kwargs, dummy_df, dummy_udf, return_type)
+        h_spark.get_spark_type(return_type)
         == expected_spark_type
     )
 
@@ -310,10 +302,10 @@ def test_get_spark_type_list_types(
     ],
 )
 def test_get_spark_type_numpy_types(
-    dummy_kwargs, dummy_df, dummy_udf, return_type, expected_spark_type
+    return_type, expected_spark_type
 ):
     assert (
-        h_spark.get_spark_type(dummy_kwargs, dummy_df, dummy_udf, return_type)
+        h_spark.get_spark_type(return_type)
         == expected_spark_type
     )
 
@@ -322,11 +314,11 @@ def test_get_spark_type_numpy_types(
 @pytest.mark.parametrize(
     "unsupported_return_type", [dict, set, tuple]  # Add other unsupported types as needed
 )
-def test_get_spark_type_unsupported(dummy_kwargs, dummy_df, dummy_udf, unsupported_return_type):
+def test_get_spark_type_unsupported(unsupported_return_type):
     with pytest.raises(
         ValueError, match=f"Currently unsupported return type {unsupported_return_type}."
     ):
-        h_spark.get_spark_type(dummy_kwargs, dummy_df, dummy_udf, unsupported_return_type)
+        h_spark.get_spark_type(unsupported_return_type)
 
 
 # Dummy values for the tests
@@ -336,8 +328,8 @@ def dummy_kwargs():
 
 
 @pytest.fixture
-def dummy_df():
-    return spark.createDataFrame(pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}))
+def dummy_df(spark_session):
+    return spark_session.createDataFrame(pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}))
 
 
 @pytest.fixture
@@ -346,7 +338,7 @@ def dummy_udf():
         return x
 
     return dummyfunc
-=======
+
 def test_base_spark_executor_end_to_end(spark_session):
     # TODO -- make this simpler to call, and not require all these constructs
     dr = (
@@ -361,12 +353,13 @@ def test_base_spark_executor_end_to_end(spark_session):
     df = dr.execute(["processed_df_as_pandas"], inputs={"spark_session": spark_session})[
         "processed_df_as_pandas"
     ]
-    pd.testing.assert_series_equal(
-        df["a_times_key"],
-        pd.Series([2, 10, 24, 44, 70]),
-        check_dtype=False,
-        check_names=False,
-    )
+    expected_data = {
+        "a_times_key": [2, 10, 24, 44, 70],
+        "b_times_key": [5, 16, 33, 56, 85],
+        "a_plus_b_plus_c": [10.5, 20.0, 29.5, 39.0, 48.5],
+    }
+    expected_df = pd.DataFrame(expected_data)
+    pd.testing.assert_frame_equal(df, expected_df, check_names=False, check_dtype=False)
 
 
 def test_base_spark_executor_end_to_end_external_dependencies(spark_session):
@@ -377,9 +370,6 @@ def test_base_spark_executor_end_to_end_external_dependencies(spark_session):
         .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
         .build()
     )
-    # dr.visualize_execution(
-    #     ["processed_df_as_pandas"], "./out", {}, inputs={"spark_session": spark_session}
-    # )
     df = dr.execute(["processed_df_as_pandas"], inputs={"spark_session": spark_session})[
         "processed_df_as_pandas"
     ]
@@ -437,7 +427,9 @@ def _two_pyspark_dataframe_parameters(foo: DataFrame, bar: int, baz: DataFrame) 
     ],
 )
 def test_derive_dataframe_parameter_succeeds(fn, requested_parameter, expected):
-    assert h_spark.derive_dataframe_parameter(fn, requested_parameter) == expected
+    assert h_spark.derive_dataframe_parameter_from_fn(fn, requested_parameter) == expected
+    n = node.Node.from_fn(fn)
+    assert h_spark.derive_dataframe_parameter_from_node(n, requested_parameter) == expected
 
 
 @pytest.mark.parametrize(
@@ -452,7 +444,9 @@ def test_derive_dataframe_parameter_succeeds(fn, requested_parameter, expected):
 )
 def test_derive_dataframe_parameter_fails(fn, requested_parameter):
     with pytest.raises(ValueError):
-        h_spark.derive_dataframe_parameter(fn, requested_parameter)
+        h_spark.derive_dataframe_parameter_from_fn(fn, requested_parameter)
+        n = node.Node.from_fn(fn)
+        h_spark.derive_dataframe_parameter_from_node(n, requested_parameter)
 
 
 def test_prune_nodes_no_select():
@@ -580,4 +574,26 @@ def test_sparkify_node():
         "df_base",
         "df_upstream",
     }
->>>>>>> 7d0b719 (Implements spark integration, see #248)
+
+
+def test_pyspark_udfs_end_to_end(spark_session):
+    # TODO -- make this simpler to call, and not require all these constructs
+    dr = (
+        driver.Builder()
+        .with_modules(spark_dag_pyspark_udfs)
+        .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+        .build()
+    )
+    dr.visualize_execution(
+        ["processed_df_as_pandas"], "./out", {}, inputs={"spark_session": spark_session}
+    )
+    df = dr.execute(["processed_df_as_pandas"], inputs={"spark_session": spark_session})[
+        "processed_df_as_pandas"
+    ]
+    expected_data = {
+        "a_times_key": [2, 10, 24, 44, 70],
+        "b_times_key": [5, 16, 33, 56, 85],
+        "a_plus_b_plus_c": [10.5, 20.0, 29.5, 39.0, 48.5],
+    }
+    expected_df = pd.DataFrame(expected_data)
+    pd.testing.assert_frame_equal(df, expected_df, check_names=False, check_dtype=False)
