@@ -320,3 +320,20 @@ class Node(object):
         new_input_types = {input_names.get(k, k): v for k, v in self.input_types.items()}
         out = self.copy_with(callabl=new_callable, input_types=new_input_types)
         return out
+
+    def transform_output(
+        self, __transform: Callable[[Dict[str, Any], Any], Any], __output_type: Type[Any]
+    ) -> "Node":
+        """Applies a transformation on the output of the node, returning a new node.
+        Also modifies the type.
+
+        :param __transform: Transformation to apply. This is a function with two arguments:
+        (a) the kwargs passed to the node, and (b) the output of the node.
+        :param __output_type: Return type of the transformation
+        :return: A new node, with the right type/transformation
+        """
+
+        def new_callable(**kwargs) -> Any:
+            return __transform(self.callable(**kwargs), kwargs)
+
+        return self.copy_with(callabl=new_callable, typ=__output_type)
