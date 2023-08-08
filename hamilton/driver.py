@@ -854,7 +854,7 @@ class Driver:
     def materialize(
         self,
         *materializers: materialization.MaterializerFactory,
-        additional_vars: List[Union[str, Callable, Variable]],
+        additional_vars: List[Union[str, Callable, Variable]] = None,
         overrides: Dict[str, Any] = None,
         inputs: Dict[str, Any] = None,
     ) -> Tuple[Any, Dict[str, Any]]:
@@ -869,7 +869,7 @@ class Driver:
         .. code-block:: python
 
              from hamilton import driver, base
-             from hamilton.io.materialize import to
+             from hamilton.io.materialization import to
              dr = driver.Driver(my_module, {})
              # foo, bar are pd.Series
              metadata, result = dr.Materialize(
@@ -898,7 +898,7 @@ class Driver:
         .. code-block:: python
 
              from hamilton import driver, base
-             from hamilton.io.materialize import to
+             from hamilton.io.materialization import to
              dr = driver.Driver(my_module, {})
              # foo, bar are pd.Series
              metadata, _ = dr.Materialize(
@@ -925,7 +925,7 @@ class Driver:
 
              from hamilton import driver, base
              from hamilton.function_modifiers import source
-             from hamilton.io.materialize import to
+             from hamilton.io.materialization import to
              dr = driver.Driver(my_module, {})
              # foo, bar are pd.Series
              metadata, result = dr.Materialize(
@@ -948,7 +948,7 @@ class Driver:
 
             from hamilton import driver, base
             from hamilton.function_modifiers import source
-            from hamilton.io.materialize import to
+            from hamilton.io.materialization import to
             dr = driver.Driver(my_module, {})
             metadata, _ = dr.Materialize(
                 to.model_registry(
@@ -978,6 +978,8 @@ class Driver:
         :param inputs: Inputs to pass to execution
         :return: Tuple[Materialization metadata, additional_vars result]
         """
+        if additional_vars is None:
+            additional_vars = []
         function_graph = materialization.modify_graph(self.graph, materializers)
         final_vars = self._create_final_vars(additional_vars)
         materializer_vars = [materializer.id for materializer in materializers]
