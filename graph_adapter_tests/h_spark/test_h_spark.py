@@ -370,12 +370,26 @@ def test_base_spark_executor_end_to_end_external_dependencies(spark_session):
         .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
         .build()
     )
-    df = dr.execute(["processed_df_as_pandas"], inputs={"spark_session": spark_session})[
-        "processed_df_as_pandas"
-    ]
-    expected_data = {"a": [2, 3, 4, 5], "b": [4, 6, 8, 10]}
-    expected_df = pd.DataFrame(expected_data)
-    pd.testing.assert_frame_equal(df, expected_df, check_names=False, check_dtype=False)
+    dfs = dr.execute(
+        ["processed_df_as_pandas", "processed_df_as_pandas_with_external_inputs"],
+        inputs={"spark_session": spark_session},
+    )
+
+    expected_df = pd.DataFrame({"a": [2, 3, 4, 5], "b": [4, 6, 8, 10]})
+    processed_df_as_pandas = pd.DataFrame(dfs["processed_df_as_pandas"])
+    pd.testing.assert_frame_equal(
+        processed_df_as_pandas, expected_df, check_names=False, check_dtype=False
+    )
+
+    processed_df_as_pandas_with_external_inputs = pd.DataFrame(
+        dfs["processed_df_as_pandas_with_external_inputs"]
+    )
+    pd.testing.assert_frame_equal(
+        processed_df_as_pandas,
+        processed_df_as_pandas_with_external_inputs,
+        check_names=False,
+        check_dtype=False,
+    )
 
 
 def test_base_spark_executor_end_to_end_multiple_with_columns(spark_session):
@@ -584,9 +598,9 @@ def test_pyspark_udfs_end_to_end(spark_session):
         .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
         .build()
     )
-    dr.visualize_execution(
-        ["processed_df_as_pandas"], "./out", {}, inputs={"spark_session": spark_session}
-    )
+    # dr.visualize_execution(
+    #     ["processed_df_as_pandas"], "./out", {}, inputs={"spark_session": spark_session}
+    # )
     df = dr.execute(["processed_df_as_pandas"], inputs={"spark_session": spark_session})[
         "processed_df_as_pandas"
     ]
@@ -597,3 +611,25 @@ def test_pyspark_udfs_end_to_end(spark_session):
     }
     expected_df = pd.DataFrame(expected_data)
     pd.testing.assert_frame_equal(df, expected_df, check_names=False, check_dtype=False)
+
+
+# is default
+def pyspark_fn_1(foo: DataFrame) -> DataFrame:
+    pass
+
+
+# is default
+def pyspark_fn_2(foo: DataFrame, bar: int) -> DataFrame:
+    pass
+
+
+def not_pyspark_fn(foo: DataFrame, bar: DataFrame) -> DataFrame:
+    pass
+
+
+@pytest.mark.parametrize(
+    "fn,expected", [(pyspark_fn_1, True), (pyspark_fn_2, True), (not_pyspark_fn, False)]
+)
+def test_is_default_pyspark_node(fn, expected):
+    node_ = node.Node.from_fn(fn)
+    assert h_spark.transforms.is_default_pyspark_udf(node_) == expected
