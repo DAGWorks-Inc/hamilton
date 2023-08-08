@@ -18,15 +18,15 @@ def _module() -> List[Callable]:
     def a(a_raw: ps.DataFrame, to_add: int) -> ps.DataFrame:
         return a_raw.withColumn("a", a_raw.a_raw + to_add)
 
-    def b(b_raw: IntSeries) -> IntSeries:
-        return b_raw + 3
+    def b(b_raw: ps.DataFrame, b_add: int = 3) -> ps.Column:
+        return b_raw["b_raw"] + b_add
 
     def c(c_raw: IntSeries) -> FloatSeries:
         return c_raw * 3.5
 
     @h_spark.transforms("a", "key")
-    def a_times_key(a_key: ps.DataFrame) -> ps.Column:
-        return a_key.a * a_key.key
+    def a_times_key(a_key: ps.DataFrame, identity_multiplier: int = 1) -> ps.Column:
+        return a_key.a * a_key.key * identity_multiplier
 
     def b_times_key(b: IntSeries, key: IntSeries) -> IntSeries:
         return b * key
@@ -52,9 +52,16 @@ def df_1(spark_session: ps.SparkSession) -> ps.DataFrame:
 
 
 @h_spark.with_columns(
+    *_module(), select=["a_times_key", "b_times_key", "a_plus_b_plus_c"], external_inputs=["to_add"]
+)
+def processed_df_as_pandas(df_1: ps.DataFrame) -> pd.DataFrame:
+    return df_1.select("a_times_key", "b_times_key", "a_plus_b_plus_c").toPandas()
+
+
+@h_spark.with_columns(
     *_module(),
     select=["a_times_key", "b_times_key", "a_plus_b_plus_c"],
     initial_schema=["a_raw", "b_raw", "c_raw", "key"],
 )
-def processed_df_as_pandas(df_1: ps.DataFrame) -> pd.DataFrame:
+def processed_df_as_pandas_with_initial_schema(df_1: ps.DataFrame) -> pd.DataFrame:
     return df_1.select("a_times_key", "b_times_key", "a_plus_b_plus_c").toPandas()
