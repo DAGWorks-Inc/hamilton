@@ -57,6 +57,8 @@ custom_type = typing.TypeVar("FOOBAR")
         (typing.Dict, collections.Counter, True),
         # These are not subclasses of each other, see issue 42
         (typing.FrozenSet[int], typing.Set[int], False),
+        (htypes.column[pd.Series, int], pd.Series, True),
+        (htypes.column[pd.Series, int], int, False),
     ],
 )
 def test_custom_subclass_check(param_type, requested_type, expected):

@@ -10,9 +10,13 @@ IntSeries = _[pd.Series, int]
 FloatSeries = _[pd.Series, float]
 
 
+def to_add() -> int:
+    return 1
+
+
 def _module() -> List[Callable]:
-    def a(a_raw: ps.DataFrame) -> ps.DataFrame:
-        return a_raw.withColumn("a", a_raw.a_raw + 1)
+    def a(a_raw: ps.DataFrame, to_add: int) -> ps.DataFrame:
+        return a_raw.withColumn("a", a_raw.a_raw + to_add)
 
     def b(b_raw: IntSeries) -> IntSeries:
         return b_raw + 3

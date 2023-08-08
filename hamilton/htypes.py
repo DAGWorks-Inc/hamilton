@@ -45,6 +45,7 @@ def custom_subclass_check(requested_type: Type, param_type: Type):
     """
     # handles case when someone is using primitives and generics
     requested_origin_type = requested_type
+    param_type, _ = get_type_information(param_type)
     param_origin_type = param_type
     has_generic = False
     if _safe_subclass(requested_type, param_type):

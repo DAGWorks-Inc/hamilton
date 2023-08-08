@@ -17,6 +17,7 @@ from hamilton.execution import graph_functions
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers import subdag
 from hamilton.function_modifiers.recursive import assign_namespace
+from hamilton.htypes import custom_subclass_check
 
 logger = logging.getLogger(__name__)
 
@@ -604,7 +605,7 @@ def derive_dataframe_parameter(
     param_types: Dict[str, Type], requested_parameter: str, location_name: Callable
 ) -> str:
     dataframe_parameters = {
-        param for param, val in param_types.items() if issubclass(val, DataFrame)
+        param for param, val in param_types.items() if custom_subclass_check(val, DataFrame)
     }
     if requested_parameter is not None:
         if requested_parameter not in dataframe_parameters:
@@ -741,7 +742,7 @@ class transforms(fm_base.NodeTransformer):
             },
         )
         # if it returns a column, we just turn it into a withColumn expression
-        if issubclass(node_.type, Column):
+        if custom_subclass_check(node_.type, Column):
 
             def transform_output(output: Column, kwargs: Dict[str, Any]) -> DataFrame:
                 return kwargs[param].withColumn(node_.name, output)
@@ -766,7 +767,11 @@ class transforms(fm_base.NodeTransformer):
         :param node_: Node to extract from
         :return: List of dataframe parameters
         """
-        return [key for key, value in node_.input_types.items() if issubclass(value[0], DataFrame)]
+        return [
+            key
+            for key, value in node_.input_types.items()
+            if custom_subclass_check(value[0], DataFrame)
+        ]
 
     @staticmethod
     def is_default_pyspark_udf(node_: node.Node) -> bool:
@@ -778,7 +783,7 @@ class transforms(fm_base.NodeTransformer):
         :return: True if it functions as a default pyspark UDF, false otherwise
         """
         df_columns = transforms._extract_dataframe_params(node_)
-        return len(df_columns) == 1 and len(node_.input_types) == 1
+        return len(df_columns) == 1
 
     @staticmethod
     def is_decorated_pyspark_udf(node_: node.Node):
@@ -824,7 +829,8 @@ class with_columns(fm_base.NodeCreator):
     def __init__(
         self,
         *load_from: Union[Callable, ModuleType],
-        initial_schema: List[str],
+        initial_schema: List[str] = None,
+        external_inputs: List[str] = None,
         select: List[str] = None,
         dataframe: str = None,
         namespace: str = None,
@@ -875,7 +881,12 @@ class with_columns(fm_base.NodeCreator):
             keep all columns in
         :param initial_schema: The initial schema of the dataframe. This is used to determine which
             upstream inputs should be taken from the dataframe, and which shouldn't. Note that, if this is
-            left empty, we will assume that all upstream items come from the dataframe
+            left empty (and external_inputs is as well), we will assume that all dependencies come
+            from the dataframe. This cannot be used in conjunction with external_inputs.
+        :param external_inputs: All dependencies referred to within the DAG that are not part of the
+            DAG itself or the upstream dataframe. Note that, if this is left empty (and initial_schema is as well),
+            we will assume that all dependencies come from the dataframe. This cannot be used in conjunction
+            with initial_schema.
         :param namespace: The namespace of the nodes, so they don't clash with the global namespace
             and so this can be reused. If its left out, there will be no namespace (in which case you'll want
             to be careful about repeating it/reusing the nodes in other parts of the DAG.)
@@ -886,6 +897,16 @@ class with_columns(fm_base.NodeCreator):
         self.subdag_functions = subdag.collect_functions(load_from)
         self.select = select
         self.initial_schema = initial_schema
+        self.external_inputs = external_inputs
+        if self.initial_schema is not None and self.external_inputs is not None:
+            raise ValueError(
+                "You cannot specify both initial_schema and external_inputs. You are allowed to "
+                "\n1. specify neither (which means we will assume every uknown dependency in this subdag "
+                "comes from the upstream dataframe)"
+                "\n2. specify external_inputs (meaning that we will assume"
+                "everything not specified comes from the dataframe), \n3. specify initial_schema (meaning that"
+                "we will assume everything not specified comes from external inputs)."
+            )
         self.namespace = namespace
         self.upstream_dependency = dataframe
 
@@ -907,6 +928,33 @@ class with_columns(fm_base.NodeCreator):
                 (node_,) = transforms(col).transform_node(node_, {}, node_.callable)
             out.append(node_)
         return out
+
+    def derive_initial_schema(self, nodes: List[node.Node]) -> List[str]:
+        """Derives the dependency sources, which fill out `initial_schema` and `external_inputs`,
+        as only one of them is allowed to be specified. Note that:
+
+        1. If none are specified, everything missing is assumed to come from the dataframe
+        2. If `initial_schema` is specified, everything missing not in that
+        is assumed to come from the external inputs
+        3. If `external_inputs` is specified, everything missing not in that is
+        assumed to come from the dataframe
+
+        :param nodes: Nodes resolved in the DAG
+        :return:  The sources from the dataframe
+        """
+        node_names = {node_.name for node_ in nodes}
+        all_dependencies = set()
+        for node_ in nodes:
+            all_dependencies.update(node_.input_types)
+        external_dependencies = all_dependencies - node_names
+        if self.initial_schema is not None:
+            initial_schema = self.initial_schema
+        elif self.external_inputs is not None:
+            external_inputs = self.external_inputs
+            initial_schema = list(external_dependencies - set(external_inputs))
+        else:
+            initial_schema = list(external_dependencies)
+        return initial_schema
 
     def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> List[node.Node]:
         """Generates nodes in the with_columns groups. This does the following:
@@ -938,9 +986,8 @@ class with_columns(fm_base.NodeCreator):
         current_dataframe_node = inject_parameter
         # Columns that it is dependent on could be from the group of transforms created
         columns_produced_within_mapgroup = {node_.name for node_ in pruned_nodes}
-        columns_passed_in_from_dataframe = set(self.initial_schema)
+        columns_passed_in_from_dataframe = set(self.derive_initial_schema(sorted_initial_nodes))
         # Or from the dataframe passed in...
-        # potential_dependent_columns.update(self.initial_schema)
         for node_ in sorted_initial_nodes:
             # dependent columns are broken into two sets:
             # 1. Those that come from the group of transforms

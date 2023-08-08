@@ -1,4 +1,11 @@
+
 # Scaling Hamilton on Spark
+## Pyspark
+
+If you're using pyspark, Hamilton allows for natural manipulation of pyspark dataframes,
+with some special constructs for managing DAGs of UDFs.
+
+See the example in `pyspark` to learn more.
 
 ## Pandas
 If you're using Pandas, Hamilton scales by using Koalas on Spark.
