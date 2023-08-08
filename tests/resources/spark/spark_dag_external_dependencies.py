@@ -7,15 +7,11 @@ from hamilton.htypes import column as _
 IntSeries = _[pd.Series, int]
 
 
-def to_add() -> int:
-    return 1
-
-
 def to_multiply() -> int:
     return 2
 
 
-def a(initial_column: IntSeries, to_add: int) -> IntSeries:
+def a(initial_column: IntSeries, to_add: int = 1) -> IntSeries:
     return initial_column + to_add
 
 

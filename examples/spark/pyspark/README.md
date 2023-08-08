@@ -144,6 +144,11 @@ This is the ultimate power-user case, where you can manipulate the dataframe in 
 Note that this and the column-flavor is an _out_, meaning that its a way to jump back to the pyspark world and not have to break up
 your map functions for a windowed aggregation.
 
+Note that you can easily shoot yourself in the foot here, so be careful! This should only be used if
+you strongly feel the need to inject a map-like (index-preserving, but not row-wise) operation into the DAG,
+and the df -> column flavor is not sufficient (and if you find yourself using this a lot, please reach
+out, we'd love to hear your use-case).
+
 This has the exact same rules as the column flavor, except that the return type is a dataframe.
 
 ```python

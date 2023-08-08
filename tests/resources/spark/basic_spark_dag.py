@@ -2,6 +2,7 @@ import pandas as pd
 import pyspark.sql as ps
 
 from hamilton.experimental import h_spark
+from hamilton.function_modifiers import config
 from hamilton.htypes import column as _
 
 IntSeries = _[pd.Series, int]
@@ -55,5 +56,23 @@ def df_1(spark_session: ps.SparkSession) -> ps.DataFrame:
     select=["a_times_key", "b_times_key", "a_plus_b_plus_c"],
     initial_schema=["a_raw", "b_raw", "c_raw", "key"],
 )
-def processed_df_as_pandas(df_1: ps.DataFrame) -> pd.DataFrame:
+@config.when_not(mode="select")
+def processed_df_as_pandas__append(df_1: ps.DataFrame) -> pd.DataFrame:
     return df_1.select("a_times_key", "b_times_key", "a_plus_b_plus_c").toPandas()
+
+
+@h_spark.with_columns(
+    a,
+    b,
+    c,
+    a_times_key,
+    b_times_key,
+    a_plus_b_plus_c,
+    select=["a_times_key", "a_plus_b_plus_c"],
+    initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+    mode="select",
+)
+@config.when(mode="select")
+def processed_df_as_pandas__select(df_1: ps.DataFrame) -> pd.DataFrame:
+    # This should have two columns
+    return df_1.toPandas()

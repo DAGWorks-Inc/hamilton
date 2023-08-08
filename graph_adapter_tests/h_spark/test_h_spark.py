@@ -127,30 +127,38 @@ def test__inspect_kwargs(input_and_expected_fn, spark_session):
     assert h_spark._inspect_kwargs(input_) == expected
 
 
-def test__get_pandas_annotations():
+def test__get_pandas_annotations_no_pandas():
     """Unit test for _get_pandas_annotations()."""
 
     def no_pandas(a: int, b: float) -> float:
         return a * b
 
-    def with_pandas(a: pd.Series) -> pd.Series:
-        return a * 2
-
-    def with_pandas_and_other_default(a: pd.Series, b: int) -> pd.Series:
-        return a * b
-
-    #
-    def with_pandas_and_other_default_with_one_more(a: pd.Series, c: int, b: int = 2) -> pd.Series:
-        return a * b * c
-
     assert h_spark._get_pandas_annotations(node.Node.from_fn(no_pandas), {}) == {
         "a": False,
         "b": False,
     }
+
+
+def test__get_pandas_annotations_with_pandas():
+    def with_pandas(a: pd.Series) -> pd.Series:
+        return a * 2
+
     assert h_spark._get_pandas_annotations(node.Node.from_fn(with_pandas), {}) == {"a": True}
+
+
+def test__get_pandas_annotations_with_pandas_and_other_default():
+    def with_pandas_and_other_default(a: pd.Series, b: int) -> pd.Series:
+        return a * b
+
     assert h_spark._get_pandas_annotations(
         node.Node.from_fn(with_pandas_and_other_default), {"b": 2}
     ) == {"a": True}
+
+
+def test__get_pandas_annotations_with_pandas_and_other_default_and_one_more():
+    def with_pandas_and_other_default_with_one_more(a: pd.Series, c: int, b: int = 2) -> pd.Series:
+        return a * b * c
+
     assert h_spark._get_pandas_annotations(
         node.Node.from_fn(with_pandas_and_other_default_with_one_more), {"b": 2}
     ) == {
@@ -163,12 +171,49 @@ def test__bind_parameters_to_callable():
     """Unit test for _bind_parameters_to_callable()."""
     actual_kwargs = {"a": 1, "b": 2}
     df_columns = {"b"}
-    node_input_types = {"a": (int,), "b": (int,)}
+    node_input_types = {
+        "a": (int, node.DependencyType.REQUIRED),
+        "b": (int, node.DependencyType.REQUIRED),
+    }
     df_params, params_to_bind = h_spark._determine_parameters_to_bind(
         actual_kwargs, df_columns, node_input_types, "test"
     )
     assert isinstance(df_params["b"], Column)
     assert params_to_bind == {"a": 1}
+    assert str(df_params["b"]) == str(column("b"))  # hacky, but compare string representation.
+
+
+def test__bind_parameters_to_callable_with_defaults_provided():
+    """Unit test for _bind_parameters_to_callable()."""
+    actual_kwargs = {"a": 1, "b": 2, "c": 2}
+    df_columns = {"b"}
+    node_input_types = {
+        "a": (int, node.DependencyType.REQUIRED),
+        "b": (int, node.DependencyType.REQUIRED),
+        "c": (int, node.DependencyType.OPTIONAL),
+    }
+    df_params, params_to_bind = h_spark._determine_parameters_to_bind(
+        actual_kwargs, df_columns, node_input_types, "test"
+    )
+    assert isinstance(df_params["b"], Column)
+    assert params_to_bind == {"a": 1, "c": 2}
+    assert str(df_params["b"]) == str(column("b"))  # hacky, but compare string representation.
+
+
+def test__bind_parameters_to_callable_with_defaults_not_provided():
+    """Unit test for _bind_parameters_to_callable()."""
+    actual_kwargs = {"a": 1, "b": 2, "c": 2}
+    df_columns = {"b"}
+    node_input_types = {
+        "a": (int, node.DependencyType.REQUIRED),
+        "b": (int, node.DependencyType.REQUIRED),
+        "c": (int, node.DependencyType.OPTIONAL),
+    }
+    df_params, params_to_bind = h_spark._determine_parameters_to_bind(
+        actual_kwargs, df_columns, node_input_types, "test"
+    )
+    assert isinstance(df_params["b"], Column)
+    assert params_to_bind == {"a": 1, "c": 2}
     assert str(df_params["b"]) == str(column("b"))  # hacky, but compare string representation.
 
 
@@ -362,6 +407,29 @@ def test_base_spark_executor_end_to_end(spark_session):
     pd.testing.assert_frame_equal(df, expected_df, check_names=False, check_dtype=False)
 
 
+def test_base_spark_executor_end_to_end_with_mode_select(spark_session):
+    # TODO -- make this simpler to call, and not require all these constructs
+    dr = (
+        driver.Builder()
+        .with_modules(basic_spark_dag)
+        .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+        .with_config({"mode": "select"})
+        .build()
+    )
+    # dr.visualize_execution(
+    #     ["processed_df_as_pandas"], "./out", {}, inputs={"spark_session": spark_session}
+    # )
+    df = dr.execute(["processed_df_as_pandas"], inputs={"spark_session": spark_session})[
+        "processed_df_as_pandas"
+    ]
+    expected_data = {
+        "a_times_key": [2, 10, 24, 44, 70],
+        "a_plus_b_plus_c": [10.5, 20.0, 29.5, 39.0, 48.5],
+    }
+    expected_df = pd.DataFrame(expected_data)
+    pd.testing.assert_frame_equal(df, expected_df, check_names=False, check_dtype=False)
+
+
 def test_base_spark_executor_end_to_end_external_dependencies(spark_session):
     # TODO -- make this simpler to call, and not require all these constructs
     dr = (
@@ -419,6 +487,10 @@ def test_base_spark_executor_end_to_end_multiple_with_columns(spark_session):
     pd.testing.assert_frame_equal(df, expected_df, check_names=False, check_dtype=False)
 
 
+def _only_pyspark_dataframe_parameter(foo: DataFrame) -> DataFrame:
+    ...
+
+
 def _no_pyspark_dataframe_parameter(foo: int) -> int:
     ...
 
@@ -434,6 +506,7 @@ def _two_pyspark_dataframe_parameters(foo: DataFrame, bar: int, baz: DataFrame) 
 @pytest.mark.parametrize(
     "fn,requested_parameter,expected",
     [
+        (_only_pyspark_dataframe_parameter, "foo", "foo"),
         (_one_pyspark_dataframe_parameter, "foo", "foo"),
         (_one_pyspark_dataframe_parameter, None, "foo"),
         (_two_pyspark_dataframe_parameters, "foo", "foo"),
@@ -533,6 +606,24 @@ def test_with_columns_generate_nodes_select():
     assert set(nodes_by_names.keys()) == {"df_as_pandas.c", "df_as_pandas"}
 
 
+def test_with_columns_generate_nodes_select_mode_select():
+    dec = h_spark.with_columns(
+        basic_spark_dag.a,
+        basic_spark_dag.b,
+        basic_spark_dag.c,
+        initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+        select=["c"],
+        mode="select",
+    )
+
+    def df_as_pandas(df: DataFrame) -> pd.DataFrame:
+        return df.toPandas()
+
+    nodes = dec.generate_nodes(df_as_pandas, {})
+    nodes_by_names = {n.name: n for n in nodes}
+    assert set(nodes_by_names.keys()) == {"df_as_pandas.c", "df_as_pandas", "df_as_pandas._select"}
+
+
 def test_with_columns_generate_nodes_specify_namespace():
     dec = h_spark.with_columns(
         basic_spark_dag.a,
@@ -599,10 +690,18 @@ def test_pyspark_udfs_end_to_end(spark_session):
         .build()
     )
     # dr.visualize_execution(
-    #     ["processed_df_as_pandas"], "./out", {}, inputs={"spark_session": spark_session}
+    #     ["processed_df_as_pandas", "processed_df_as_pandas_with_initial_schema"],
+    #     "./out",
+    #     {},
+    #     inputs={"spark_session": spark_session},
     # )
-    df = dr.execute(["processed_df_as_pandas"], inputs={"spark_session": spark_session})[
-        "processed_df_as_pandas"
+    results = dr.execute(
+        ["processed_df_as_pandas", "processed_df_as_pandas_with_initial_schema"],
+        inputs={"spark_session": spark_session},
+    )
+    processed_df_as_pandas = results["processed_df_as_pandas"]
+    processed_df_as_pandas_with_initial_schema = results[
+        "processed_df_as_pandas_with_initial_schema"
     ]
     expected_data = {
         "a_times_key": [2, 10, 24, 44, 70],
@@ -610,7 +709,15 @@ def test_pyspark_udfs_end_to_end(spark_session):
         "a_plus_b_plus_c": [10.5, 20.0, 29.5, 39.0, 48.5],
     }
     expected_df = pd.DataFrame(expected_data)
-    pd.testing.assert_frame_equal(df, expected_df, check_names=False, check_dtype=False)
+    pd.testing.assert_frame_equal(
+        processed_df_as_pandas, expected_df, check_names=False, check_dtype=False
+    )
+    pd.testing.assert_frame_equal(
+        processed_df_as_pandas_with_initial_schema,
+        expected_df,
+        check_names=False,
+        check_dtype=False,
+    )
 
 
 # is default
@@ -633,3 +740,44 @@ def not_pyspark_fn(foo: DataFrame, bar: DataFrame) -> DataFrame:
 def test_is_default_pyspark_node(fn, expected):
     node_ = node.Node.from_fn(fn)
     assert h_spark.transforms.is_default_pyspark_udf(node_) == expected
+
+
+def fn_test_initial_schema_1(a: int, b: int) -> int:
+    return a + b
+
+
+def fn_test_initial_schema_2(fn_test_initial_schema_1: int, c: int = 1) -> int:
+    return fn_test_initial_schema_1 + c
+
+
+@pytest.mark.parametrize(
+    "initial_schema,external_inputs,expected",
+    [
+        (None, None, {"a", "b"}),
+        (["a", "b"], None, {"a", "b"}),
+        (None, ["c", "a"], {"b"}),
+    ],
+)
+def test_derive_initial_schema(initial_schema, external_inputs, expected):
+    nodes = [
+        node.Node.from_fn(fn_test_initial_schema_1),
+        node.Node.from_fn(fn_test_initial_schema_2),
+    ]
+
+    assert (
+        h_spark.with_columns.derive_initial_schema(nodes, initial_schema, external_inputs)
+        == expected
+    )
+
+
+def test_create_selector_node(spark_session):
+    selector_node = h_spark.with_columns.create_selector_node("foo", ["a", "b"], "select")
+    assert selector_node.name == "select"
+    pandas_df = pd.DataFrame(
+        {"a": [10, 10, 20, 40, 40, 50], "b": [1, 10, 50, 100, 200, 400], "c": [1, 2, 3, 4, 5, 6]}
+    )
+    df = spark_session.createDataFrame(pandas_df)
+    transformed = selector_node(foo=df).toPandas()
+    pd.testing.assert_frame_equal(
+        transformed, pandas_df[["a", "b"]], check_names=False, check_dtype=False
+    )
