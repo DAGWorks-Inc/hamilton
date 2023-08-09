@@ -1,21 +1,19 @@
-import concurrent
 import os.path
-from typing import List, Tuple
+from typing import Dict
 
 import arxiv
 import openai
 import pandas as pd
-from tenacity import retry, stop_after_attempt, wait_random_exponential
-from tqdm import tqdm
 
-from hamilton.function_modifiers import extract_columns
+from hamilton.function_modifiers import extract_fields
+from hamilton.htypes import Collect, Parallelizable
 
 
-def arxiv_search_results(
+def arxiv_search_result(
     article_query: str,
     max_arxiv_results: int,
     sort_by: arxiv.SortCriterion.Relevance = arxiv.SortCriterion.Relevance,
-) -> List[arxiv.Result]:
+) -> Parallelizable[arxiv.Result]:
     """Goes to arxiv and returns a list articles that match the provided query.
 
     :param article_query: the query to search for.
@@ -28,143 +26,74 @@ def arxiv_search_results(
         max_results=max_arxiv_results,
         sort_by=sort_by,
     )
-    return list(_search.results())
+    for item in _search.results():
+        yield item
 
 
-@extract_columns(*["title", "summary", "article_url", "pdf_url"])
-def arxiv_result(arxiv_search_results: List[arxiv.Result]) -> pd.DataFrame:
-    """Processes arxiv search results into a list of dictionaries for easier processing.
-
-    :param arxiv_search_results: list of arxiv.Result objects.
-    :return: Dataframe of title, summary, article_url, pdf_url.
-    """
-    result_list = []
-    for result in arxiv_search_results:
-        _links = [x.href for x in result.links]
-        result_list.append(
-            {
-                "title": result.title,
-                "summary": result.summary,
-                "article_url": _links[0],
-                "pdf_url": _links[1],
-            }
-        )
-
-    _df = pd.DataFrame(result_list)
-    _df.index = _df["title"]
-    return _df
+@extract_fields({"title": str, "summary": str, "article_url": str, "pdf_url": str})
+def result(arxiv_search_result: arxiv.Result) -> Dict[str, str]:
+    return {
+        "title": arxiv_search_result.title,
+        "summary": arxiv_search_result.summary,
+        "article_url": arxiv_search_result.links[0],
+        "pdf_url": arxiv_search_result.links[1],
+    }
+    pass
 
 
-@retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
-def _get_embedding(text: str, model_name: str) -> Tuple[str, List[float]]:
-    """Helper function to get embeddings from OpenAI API.
-
-    :param text: the text to embed.
-    :param model_name: the name of the embedding model to use.
-    :return: tuple of text and its embedding.
-    """
-    response = openai.Embedding.create(input=text, model=model_name)
-    return text, response["data"][0]["embedding"]
-
-
-def arxiv_result_embeddings(
-    title: pd.Series,
+def arxiv_result_embedding(
+    title: str,
     embedding_model_name: str,
-    max_num_concurrent_requests: int,
-) -> pd.Series:
-    """Generates a pd.Series of embeddings, indexed by title for each arxiv search result.
+) -> list[float]:
+    """Generates an embedding, indexed by title for each arxiv search result.
 
-    :param arxiv_search_results:
-    :param embedding_model_name:
-    :param max_num_concurrent_requests:
-    :return: Series of embeddings, indexed by title.
+    :param title of the arxiv search result:
+    :param embedding_model_name: the name of the embedding model to use.
+    :return: the embedding as a vector of floats
     """
-    embedding_list = []
-    index_list = []
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_num_concurrent_requests) as executor:
-        futures = [
-            executor.submit(
-                _get_embedding,
-                text=_title,
-                model_name=embedding_model_name,
-            )
-            for _, _title in title.items()
-        ]
-        for future in tqdm(
-            concurrent.futures.as_completed(futures),
-            total=len(futures),
-            desc="Generating embeddings",
-        ):
-            title, embedding = future.result()
-            embedding_list.append(embedding)
-            index_list.append(title)
-
-    return pd.Series(embedding_list, index=index_list)
+    response = openai.Embedding.create(input=title, model=embedding_model_name)
+    return response["data"][0]["embedding"]
 
 
-def arxiv_pdfs(
-    arxiv_search_results: List[arxiv.Result], data_dir: str, max_num_concurrent_requests: int
-) -> pd.Series:
+def arxiv_pdf(arxiv_search_result: arxiv.Result, data_dir: str) -> str:
     """Processes the arxiv search results and downloads the PDFs.
 
-    :param arxiv_search_results: list of arxiv.Result objects.
+    :param arxiv_search_result: search result object.
     :param data_dir: the directory to save the PDFs to.
-    :param max_num_concurrent_requests: the maximum number of concurrent requests.
-    :return: a pd.Series of the filepaths to the PDFs, indexed by title.
+    :return: The filepath to the pdf after downloading
     """
-    path_list = []
-    index_list = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_num_concurrent_requests) as executor:
-        futures = {
-            executor.submit(
-                result.download_pdf,
-                dirpath=data_dir,
-            ): result.title
-            for result in arxiv_search_results
-        }
-        for future in tqdm(
-            concurrent.futures.as_completed(futures.keys()),
-            total=len(futures),
-            desc="Saving PDFs",
-        ):
-            filepath = future.result()
-            path_list.append(filepath)
-            index_list.append(futures[future])
-
-    return pd.Series(path_list, index=index_list)
+    if not os.path.exists(data_dir):
+        os.path.makedirs(data_dir)
+    return arxiv_search_result.download_pdf(dirpath=data_dir)
 
 
-def arxiv_result_df(
-    title: pd.Series,
-    summary: pd.Series,
-    article_url: pd.Series,
-    pdf_url: pd.Series,
-    arxiv_pdfs: pd.Series,
-    arxiv_result_embeddings: pd.Series,
-) -> pd.DataFrame:
-    """Creates dataframe representing the arxiv search results.
+def arxiv_processed_result(
+    title: str,
+    summary: str,
+    article_url: str,
+    pdf_url: str,
+    arxiv_pdf: str,
+    arxiv_result_embedding: list[float],
+) -> Dict[str, str]:
+    """creates dict with parameters as keys/values"""
+    return {
+        "title": title,
+        "summary": summary,
+        "article_url": article_url,
+        "pdf_url": pdf_url,
+        "arxiv_pdfs": arxiv_pdf,
+        "arxiv_result_embeddings": arxiv_result_embedding,
+    }
 
-    :param title:
-    :param summary:
-    :param article_url:
-    :param pdf_url:
-    :param arxiv_pdfs: the location of the PDFs
-    :param arxiv_result_embeddings:  the embeddings of the titles
-    :return: a dataframe indexed by title with columns for pdf_path and embeddings
+
+def arxiv_result_df(arxiv_processed_result: Collect[Dict[str, str]]) -> pd.DataFrame:
+    """Joins the arxiv results back to a dataframe.
+
+    :param arxiv_processed_result: result of all the joined arxiv result information
+    :return:  a dataframe with the arxiv results.
     """
-    _df = pd.DataFrame(
-        {
-            "title": title,
-            "pdf_path": arxiv_pdfs,
-            "embeddings": arxiv_result_embeddings,
-            "summary": summary,
-            "article_url": article_url,
-            "pdf_url": pdf_url,
-        }
-    )
-    _df.index = _df["title"]
-    return _df
+    all_results = list(arxiv_processed_result)
+    return pd.DataFrame.from_records(all_results).set_index("title", drop=False)
 
 
 def save_arxiv_result_df(arxiv_result_df: pd.DataFrame, library_file_path: str) -> dict:

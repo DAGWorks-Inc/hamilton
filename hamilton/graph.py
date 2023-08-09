@@ -11,9 +11,12 @@ from types import ModuleType
 from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Type
 
 from hamilton import base, node
+from hamilton.execution import graph_functions
+from hamilton.execution.graph_functions import combine_config_and_inputs, execute_subdag
 from hamilton.function_modifiers import base as fm_base
 from hamilton.graph_utils import find_functions
 from hamilton.htypes import types_match
+from hamilton.node import Node
 
 logger = logging.getLogger(__name__)
 
@@ -57,11 +60,31 @@ def add_dependency(
             )
     else:
         # this is a user defined var
-        required_node = node.Node(param_name, param_type, node_source=node.NodeSource.EXTERNAL)
+        required_node = node.Node(param_name, param_type, node_source=node.NodeType.EXTERNAL)
         nodes[param_name] = required_node
     # add edges
     func_node.dependencies.append(required_node)
     required_node.depended_on_by.append(func_node)
+
+
+def update_dependencies(
+    nodes: Dict[str, node.Node], adapter: base.HamiltonGraphAdapter, in_place: bool = True
+):
+    """Adds dependecies to a dictionary of nodes. If in_place is False,
+    it will deepcopy the dict + nodes and return that. Otherwise it will
+    mutate + return the passed-in dict + nodes.
+
+    :param in_place: Whether or not to modify in-place, or copy/return
+    :param nodes: Nodes that form the DAG we're updating
+    :param adapter: Adapter to use for type checking
+    :return: The updated nodes
+    """
+    if not in_place:
+        nodes = {k: v for k, v in nodes.items()}
+    for node_name, n in list(nodes.items()):
+        for param_name, (param_type, _) in n.input_types.items():
+            add_dependency(n, node_name, nodes, param_name, param_type, adapter)
+    return nodes
 
 
 def create_function_graph(
@@ -95,12 +118,10 @@ def create_function_graph(
                 )
             nodes[n.name] = n
     # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
-    for node_name, n in list(nodes.items()):
-        for param_name, (param_type, _) in n.input_types.items():
-            add_dependency(n, node_name, nodes, param_name, param_type, adapter)
+    update_dependencies(nodes, adapter)  # in place
     for key in config.keys():
         if key not in nodes:
-            nodes[key] = node.Node(key, Any, node_source=node.NodeSource.EXTERNAL)
+            nodes[key] = node.Node(key, Any, node_source=node.NodeType.EXTERNAL)
     return nodes
 
 
@@ -195,14 +216,14 @@ class FunctionGraph(object):
 
     def __init__(
         self,
-        *modules: ModuleType,
+        nodes: Dict[str, Node],
         config: Dict[str, Any],
         adapter: base.HamiltonGraphAdapter = None,
     ):
-        """Initializes a function graph by crawling through modules. Function graph must have a config,
-        as the config could determine the shape of the graph.
+        """Initializes a function graph from specified nodes. See note on `from_modules` if you
+        start getting an error here because you use an internal API.
 
-        :param modules: Modules to crawl for functions
+        :param nodes: Nodes, taken from the output of create_function_graph.
         :param config: this is configuration and/or initial data.
         :param adapter: adapts function building and graph execution for different contexts.
         """
@@ -210,8 +231,42 @@ class FunctionGraph(object):
             adapter = base.SimplePythonDataFrameGraphAdapter()
 
         self._config = config
-        self.nodes = create_function_graph(*modules, config=self._config, adapter=adapter)
+        self.nodes = nodes
         self.adapter = adapter
+
+    @staticmethod
+    def from_modules(
+        *modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter = None
+    ):
+        """Initializes a function graph from the specified modules. Note that this was the old
+        way we constructed FunctionGraph -- this is not a public-facing API, so we replaced it
+        with a constructor that takes in nodes directly. If you hacked in something using
+        `FunctionGraph`, then you should be able to replace it with `FunctionGraph.from_modules`
+        and it will work.
+
+        :param modules: Modules to crawl, resolve to nodes
+        :param config: Config to use for node resolution
+        :param adapter: Adapter to use for node resolution, edge creation
+        :return: a function graph.
+        """
+
+        nodes = create_function_graph(*modules, config=config, adapter=adapter)
+        return FunctionGraph(nodes, config, adapter)
+
+    def with_nodes(self, nodes: Dict[str, Node]) -> "FunctionGraph":
+        """Creates a new function graph with the additional specified nodes.
+        Note that if there is a duplication in the node definitions,
+        it will error out.
+
+        :param nodes: Nodes to add to the FunctionGraph
+        :return: a new function graph.
+        """
+        # first check if there are any duplicates
+        duplicates = set(self.nodes.keys()).intersection(set(nodes.keys()))
+        if duplicates:
+            raise ValueError(f"Duplicate node names found: {duplicates}")
+        new_node_dict = update_dependencies({**self.nodes, **nodes}, self.adapter)
+        return FunctionGraph(new_node_dict, self.config, self.adapter)
 
     @property
     def config(self):
@@ -356,17 +411,22 @@ class FunctionGraph(object):
         return nodes
 
     def get_upstream_nodes(
-        self, final_vars: List[str], runtime_inputs: Dict[str, Any] = None
+        self,
+        final_vars: List[str],
+        runtime_inputs: Dict[str, Any] = None,
+        runtime_overrides: Dict[str, Any] = None,
     ) -> Tuple[Set[node.Node], Set[node.Node]]:
-        """Given our function graph, and a list of desired output variables, returns the subgraph required to compute them.
+        """Given our function graph, and a list of desired output variables, returns the subgraph
+        required to compute them.
 
         :param final_vars: the list of node names we want.
-        :param runtime_inputs: runtime inputs to the DAG -- if not provided we will assume we're running at compile-time.
-        Everything would then be required (even though it might be marked as optional), as we want to crawl the whole DAG.
-        If we're at runtime, we want to just use the nodes that are provided, and not count the optional ones that are not.
-        :return: a tuple of sets:
-            - set of all nodes.
-            - subset of nodes that human input is required for.
+        :param runtime_inputs: runtime inputs to the DAG -- if not provided we will assume we're running at compile-time. Everything
+        would then be required (even though it might be marked as optional), as we want to crawl
+        the whole DAG. If we're at runtime, we want to just use the nodes that are provided,
+        and not count the optional ones that are not.
+        :param runtime_overrides: runtime overrides to the DAG -- if not provided we will assume
+        we're running at compile-time.
+        :return: a tuple of sets: - set of all nodes. - subset of nodes that human input is required for.
         """
 
         def next_nodes_function(n: node.Node) -> List[node.Node]:
@@ -374,7 +434,8 @@ class FunctionGraph(object):
                 return n.dependencies
             deps = []
             for dep in n.dependencies:
-                # If inputs is None, we want to assume its required, as it is a compile-time dependency
+                # If inputs is None, we want to assume its required, as it is a compile-time
+                # dependency
                 if (
                     dep.user_defined
                     and dep.name not in runtime_inputs
@@ -383,10 +444,31 @@ class FunctionGraph(object):
                     _, dependency_type = n.input_types[dep.name]
                     if dependency_type == node.DependencyType.OPTIONAL:
                         continue
+                if runtime_overrides is not None and dep.name in runtime_overrides:
+                    continue
                 deps.append(dep)
             return deps
 
         return self.directional_dfs_traverse(next_nodes_function, starting_nodes=final_vars)
+
+    def nodes_between(self, start: str, end: str) -> Set[node.Node]:
+        """Given our function graph, and a list of desired output variables, returns the subgraph
+        required to compute them. Note that this returns an empty set if no path exists.
+
+
+        :param start: the start of the subDAG we're looking for (inputs to it)
+        :param end: the end of the subDAG we're looking for
+        :return: The set of all nodes between start and end inclusive
+        """
+
+        end_node = self.nodes[end]
+        start_node, between = graph_functions.nodes_between(
+            self.nodes[end], lambda node_: node_.name == start
+        )
+        path_exists = start_node is not None
+        if not path_exists:
+            return set()
+        return set(([start_node] if start_node is not None else []) + between + [end_node])
 
     def directional_dfs_traverse(
         self, next_nodes_fn: Callable[[node.Node], Collection[node.Node]], starting_nodes: List[str]
@@ -421,92 +503,6 @@ class FunctionGraph(object):
             raise ValueError(f"Unknown nodes [{missing_vars_str}] requested. Check for typos?")
         return nodes, user_nodes
 
-    @staticmethod
-    def execute_static(
-        nodes: Collection[node.Node],
-        inputs: Dict[str, Any],
-        adapter: base.HamiltonGraphAdapter,
-        computed: Dict[str, Any] = None,
-        overrides: Dict[str, Any] = None,
-    ):
-        """Executes computation on the given graph, inputs, and memoized computation.
-
-        Effectively this is a "private" function and should be viewed as such.
-
-        To override a value, utilize `overrides`.
-        To pass in a value to ensure we don't compute data twice, use `computed`.
-        Don't use `computed` to override a value, you will not get the results you expect.
-
-        :param nodes: the graph to traverse for execution.
-        :param inputs: the inputs provided. These will only be called if a node is "user-defined"
-        :param adapter: object that adapts execution based on context it knows about.
-        :param computed: memoized storage to speed up computation. Usually an empty dict.
-        :param overrides: any inputs we want to user to override actual computation
-        :return: the passed in dict for memoized storage.
-        """
-
-        if overrides is None:
-            overrides = {}
-        if computed is None:
-            computed = {}
-
-        def dfs_traverse(
-            node_: node.Node, dependency_type: node.DependencyType = node.DependencyType.REQUIRED
-        ):
-            if node_.name in computed:
-                return
-            if node_.name in overrides:
-                computed[node_.name] = overrides[node_.name]
-                return
-            for n in node_.dependencies:
-                if n.name not in computed:
-                    _, node_dependency_type = node_.input_types[n.name]
-                    dfs_traverse(n, node_dependency_type)
-
-            logger.debug(f"Computing {node_.name}.")
-            if node_.user_defined:
-                if node_.name not in inputs:
-                    if dependency_type != node.DependencyType.OPTIONAL:
-                        raise NotImplementedError(
-                            f"{node_.name} was expected to be passed in but was not."
-                        )
-                    return
-                value = inputs[node_.name]
-            else:
-                kwargs = {}  # construct signature
-                for dependency in node_.dependencies:
-                    if dependency.name in computed:
-                        kwargs[dependency.name] = computed[dependency.name]
-                try:
-                    value = adapter.execute_node(node_, kwargs)
-                except Exception:
-                    logger.exception(f"Node {node_.name} encountered an error")
-                    raise
-            computed[node_.name] = value
-
-        for final_var_node in nodes:
-            dep_type = node.DependencyType.REQUIRED
-            if final_var_node.user_defined:
-                # from the top level, we don't know if this UserInput is required. So mark as optional.
-                dep_type = node.DependencyType.OPTIONAL
-            dfs_traverse(final_var_node, dep_type)
-        return computed
-
-    @staticmethod
-    def combine_config_and_inputs(config: Dict[str, Any], inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Validates and combines config and inputs, ensuring that they're mutually disjoint.
-        :param config: Config to construct, run the DAG with.
-        :param inputs: Inputs to run the DAG on at runtime
-        :return: The combined set of inputs to the DAG.
-        :raises ValueError: if they are not disjoint
-        """
-        duplicated_inputs = [key for key in inputs if key in config]
-        if len(duplicated_inputs) > 0:
-            raise ValueError(
-                f"The following inputs are present in both config and inputs. They must be mutually disjoint. {duplicated_inputs}"
-            )
-        return {**config, **inputs}
-
     def execute(
         self,
         nodes: Collection[node.Node] = None,
@@ -526,9 +522,10 @@ class FunctionGraph(object):
             nodes = self.get_nodes()
         if inputs is None:
             inputs = {}
-        return FunctionGraph.execute_static(
+        inputs = combine_config_and_inputs(self.config, inputs)
+        return execute_subdag(
             nodes=nodes,
-            inputs=FunctionGraph.combine_config_and_inputs(self.config, inputs),
+            inputs=inputs,
             adapter=self.adapter,
             computed=computed,
             overrides=overrides,

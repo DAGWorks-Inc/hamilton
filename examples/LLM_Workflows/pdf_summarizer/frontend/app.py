@@ -25,7 +25,7 @@ def post_pdf(
     response = requests.post(
         server_url,
         files=files,
-        json=dict(
+        data=dict(
             openai_gpt_model=openai_gpt_model,
             content_type=content_type,
             user_query=user_query,

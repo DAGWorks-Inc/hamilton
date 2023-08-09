@@ -114,6 +114,35 @@ There are two ways to use ``execute()``:
 We recommend using option (1) where possible. Option (2) only makes sense if you want to reuse the dataflow created for
 different data sets, or to chunk over large data or iterate over objects, e.g. images or text.
 
+Materializing DAG Nodes
+#######################
+
+The driver comes with the ability to materialize DAG nodes -- this adds side-effects into the DAG to save the data it produces to various places.
+These are fully customizable, and utilize the same set of constructs as :doc:`/reference/decorators/save_to/`.
+
+It can be used to save data to a file, external data store, or a database -- its a flexible construct that comes with a few built-in options,
+but is highly pluggable.
+
+In the following case, we are joining `foo` and `bar` into a dataframe, then saving it to a CSV file:
+
+.. code-block:: python
+
+     from hamilton import driver, base
+     from hamilton.io.materialize import to
+     dr = driver.Driver(my_module, {})
+     # foo, bar are pd.Series
+     metadata, result = dr.Materialize(
+         to.csv(
+             path="./output.csv"
+             id="foo_bar_csv",
+             dependencies=["foo", "bar"],
+             combine=base.PandasDataFrameResult()
+         ),
+         additional_vars=["foo", "bar"]
+     )
+
+For more information, see `materialize` in the :doc:`driver </reference/drivers/Driver>`.
+
 Visualizing Execution
 #####################
 
@@ -139,6 +168,7 @@ Visualize the entire DAG constructed
 
 You need to provide a path to save the created dot file and image, and then provide some optional arguments for
 rendering.
+
 
 Should I define my own Driver?
 ------------------------------

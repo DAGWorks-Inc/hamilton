@@ -6,7 +6,7 @@ import abc
 import collections
 import inspect
 import logging
-from typing import Any, Dict, List, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -24,10 +24,14 @@ logger = logging.getLogger(__name__)
 class ResultMixin(object):
     """Abstract base class housing the static function.
 
-    Why a static function? That's because certain frameworks can only pickle a static function, not an entire
-    object.
+    Why a static function? That's because certain frameworks can only pickle a static function,
+    not an entire object. # TODO -- fix this so this can carry state/act as a standard object.
+
 
     All result builders should inherit from this class and implement the build_result function.
+    Note that applicable_input_type and output_type are optional, but recommended, for backwards
+    compatibility. They let us type-check this. They will default to Any, which means that they'll
+    connect to anything.
     """
 
     @staticmethod
@@ -35,6 +39,20 @@ class ResultMixin(object):
     def build_result(**outputs: Dict[str, Any]) -> Any:
         """This function builds the result given the computed values."""
         pass
+
+    def input_types(self) -> List[Type[Type]]:
+        """Gives the applicable types to this result builder.
+        This is optional for backwards compatibility, but is recommended.
+
+        :return: A list of types that this can apply to.
+        """
+        return [Any]
+
+    def output_type(self) -> Type:
+        """Returns the output type of this result builder
+        :return: the type that this creates
+        """
+        return Any
 
 
 class DictResult(ResultMixin):
@@ -49,6 +67,7 @@ class DictResult(ResultMixin):
        2. have heterogeneous return types.
        3. Want to manually transform the result into something of your choosing.
 
+
     .. code-block:: python
 
         from hamilton import base, driver
@@ -57,12 +76,24 @@ class DictResult(ResultMixin):
         dr =  driver.Driver(config, *modules, adapter=adapter)
         dict_result = dr.execute([...], inputs=...)
 
+    Note, if you just want the dict result + the SimplePythonGraphAdapter, you can use the
+    DefaultAdapter
+
+    .. code-block:: python
+
+        adapter = base.DefaultAdapter()
     """
 
     @staticmethod
     def build_result(**outputs: Dict[str, Any]) -> Dict:
         """This function builds a simple dict of output -> computed values."""
         return outputs
+
+    def input_types(self) -> Optional[List[Type[Type]]]:
+        return [Any]
+
+    def output_type(self) -> Type:
+        return Dict[str, Any]
 
 
 class PandasDataFrameResult(ResultMixin):
@@ -78,8 +109,8 @@ class PandasDataFrameResult(ResultMixin):
     .. code-block:: python
 
         from hamilton import base, driver
-        default_builder = base.PandasDataFrameResult()
-        adapter = base.SimplePythonGraphAdapter(default_builder)
+        df_builder = base.PandasDataFrameResult()
+        adapter = base.SimplePythonGraphAdapter(df_builder)
         dr =  driver.Driver(config, *modules, adapter=adapter)
         df = dr.execute([...], inputs=...)
     """
@@ -269,7 +300,16 @@ class PandasDataFrameResult(ResultMixin):
                         f"being added; it may be coming from a dataframe that is being unpacked."
                     )
                 flattened_outputs[name] = output
+
         return pd.DataFrame(flattened_outputs)
+
+    def input_types(self) -> List[Type[Type]]:
+        """Currently this just shoves anything into a dataframe. We should probably
+        tighten this up."""
+        return [Any]
+
+    def output_type(self) -> Type:
+        return pd.DataFrame
 
 
 class StrictIndexTypePandasDataFrameResult(PandasDataFrameResult):
@@ -360,10 +400,17 @@ class NumpyMatrixResult(ResultMixin):
                 list_of_columns.append(list(val))
             else:
                 raise ValueError(
-                    f"Do not know how to make this column {col} with length {length }have {num_rows} rows"
+                    f"Do not know how to make this column {col} with length {length} have {num_rows} rows"
                 )
         # Create the matrix with columns as rows and then transpose
         return np.asmatrix(list_of_columns).T
+
+    def input_types(self) -> List[Type[Type]]:
+        """Currently returns anything as numpy types are relatively new and"""
+        return [Any]  # Typing
+
+    def output_type(self) -> Type:
+        return pd.DataFrame
 
 
 class HamiltonGraphAdapter(ResultMixin):
@@ -410,13 +457,13 @@ class HamiltonGraphAdapter(ResultMixin):
 
 
 class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameResult):
-    """This is the default (original Hamilton) graph adapter. It uses plain python and builds a dataframe result.
+    """This is the original Hamilton graph adapter. It uses plain python and builds a dataframe result.
 
-    This executes the Hamilton dataflow locally on a machine in a single threaded, single process fashion. It assumes\
-    a pandas dataframe as a result.
+    This executes the Hamilton dataflow locally on a machine in a single threaded,
+    single process fashion. It assumes a pandas dataframe as a result.
 
-    Use this when you want to execute on a single machine, without parallelization, and you want a pandas dataframe \
-    as output.
+    Use this when you want to execute on a single machine, without parallelization, and you want a
+    pandas dataframe as output.
     """
 
     @staticmethod
@@ -464,15 +511,20 @@ class SimplePythonGraphAdapter(SimplePythonDataFrameGraphAdapter):
     you to specify a ResultBuilder to control the return type of what ``execute()`` returns.
     """
 
-    def __init__(self, result_builder: ResultMixin):
+    def __init__(self, result_builder: ResultMixin = None):
         """Allows you to swap out the build_result very easily.
 
         :param result_builder: A ResultMixin object that will be used to build the result.
         """
+        if result_builder is None:
+            result_builder = DictResult()
         self.result_builder = result_builder
-        if self.result_builder is None:
-            raise ValueError("You must provide a ResultMixin object for `result_builder`.")
 
     def build_result(self, **outputs: Dict[str, Any]) -> Any:
         """Delegates to the result builder function supplied."""
         return self.result_builder.build_result(**outputs)
+
+
+class DefaultAdapter(SimplePythonGraphAdapter):
+    """This is a shortcut for the SimplePythonGraphAdapter. It does the exact same thing,
+    but allows for easier access/naming."""

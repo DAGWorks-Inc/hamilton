@@ -158,6 +158,7 @@ def create_start_event_json(
     result_builder_used: str,
     driver_run_id: uuid.UUID,
     error: Optional[str],
+    graph_executor_class: str,
 ):
     """Creates the start event JSON.
 
@@ -171,6 +172,7 @@ def create_start_event_json(
     :param result_builder_used: the name of the result builder used
     :param driver_run_id: the ID of the run
     :param error: an error string if any
+    :param driver_class: the name of the driver class used to call this
     :return: dictionary to send.
     """
     event = {
@@ -188,6 +190,7 @@ def create_start_event_json(
         "result_builder_used": result_builder_used,  # what was the result builder used?
         "driver_run_id": str(driver_run_id),  # was this a new driver object? or?
         "error": error,  # if there was an error, what was the trace? (limited to Hamilton code)
+        "graph_executor_class": graph_executor_class,  # what driver class was used to call this
     }
     event["properties"].update(payload)
     return event

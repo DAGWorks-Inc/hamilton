@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # get module with functions to load data
     data_module = get_data_loader(_data_set)
     # set the desired result container we want
-    adapter = base.SimplePythonGraphAdapter(base.DictResult())
+    adapter = base.DefaultAdapter()
     """
     What's cool about this, is that by simply changing the `dag_config` and the `data_module` we can
     reuse the logic in the `my_train_evaluate_logic` module very easily for different contexts and purposes if

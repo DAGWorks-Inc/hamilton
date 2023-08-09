@@ -1,13 +1,15 @@
 import inspect
 import sys
 import typing
-from typing import Any, Tuple, Type
+from abc import ABC
+from typing import TYPE_CHECKING, Any, Generator, Tuple, Type, TypeVar
 
 import typing_inspect
 
-from hamilton import base
 from hamilton.registry import COLUMN_TYPE, DF_TYPE_AND_COLUMN_TYPES
 
+if TYPE_CHECKING:
+    from hamilton.base import HamiltonGraphAdapter
 BASE_ARGS_FOR_GENERICS = (typing.T,)
 
 
@@ -36,6 +38,14 @@ def custom_subclass_check(requested_type: Type, param_type: Type):
     if typing_inspect.is_generic_type(param_type) or typing_inspect.is_tuple_type(param_type):
         param_origin_type = typing_inspect.get_origin(param_type)
         has_generic = True
+    # TODO -- consider moving into a graph adapter or elsewhere -- this is perhaps a little too
+    #  low-level
+    if has_generic and requested_origin_type in (Parallelizable,):
+        (requested_type_arg,) = typing_inspect.get_args(requested_type)
+        return custom_subclass_check(requested_type_arg, param_type)
+    if has_generic and param_origin_type == Collect:
+        (param_type_arg,) = typing_inspect.get_args(param_type)
+        return custom_subclass_check(requested_type, param_type_arg)
     if requested_origin_type == param_origin_type:
         if has_generic:  # check the args match or they do not have them defined.
             requested_args = typing_inspect.get_args(requested_type)
@@ -68,7 +78,7 @@ def custom_subclass_check(requested_type: Type, param_type: Type):
 
 
 def types_match(
-    adapter: base.HamiltonGraphAdapter, param_type: Type[Type], required_node_type: Any
+    adapter: "HamiltonGraphAdapter", param_type: Type[Type], required_node_type: Any
 ) -> bool:
     """Checks that we have "types" that "match".
 
@@ -131,7 +141,6 @@ else:
     from typing import Annotated, Type
 
     column = Annotated
-
 
 if _version_tuple < (3, 9, 0):
     import typing_extensions
@@ -223,6 +232,24 @@ def get_type_information(some_type: Any) -> Tuple[Type[Type], list]:
         original, *annotations = _get_args(some_type)
         return original, annotations
     return some_type, []
+
+
+# Type variables for annotations below
+T = TypeVar("T")
+U = TypeVar("U")
+V = TypeVar("V")
+
+# TODO -- support sequential operation
+# class Sequential(Generator[T, None, None], ABC):
+#     pass
+
+
+class Parallelizable(typing.Generator[U, None, None], ABC):
+    pass
+
+
+class Collect(Generator[V, None, None], ABC):
+    pass
 
 
 if __name__ == "__main__":

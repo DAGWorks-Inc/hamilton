@@ -105,8 +105,8 @@ import training
 import hamilton
 from hamilton import base
 
-dr = hamilton.driver.Driver(config={}, training)
-model = dr.execute(adapter=base.SimplePythonGraphAdapter(base.DictResult()))
+dr = hamilton.driver.Driver(config={}, training, adapter=base.DefaultAdapter())
+model = dr.execute(["model"], ...)
 save_model_to_registry(model, ...) # With any extra metadata
 ```
 

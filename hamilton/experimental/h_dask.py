@@ -12,6 +12,7 @@ from dask.distributed import Client as DaskClient
 
 from hamilton import base, node
 from hamilton.base import SimplePythonGraphAdapter
+from hamilton.execution import executors
 
 logger = logging.getLogger(__name__)
 
@@ -264,3 +265,46 @@ class DaskDataFrameResult(base.ResultMixin):
 
 
 # TODO: add ResultMixins for dask types
+
+
+class DaskExecutor(executors.TaskExecutor):
+    """A DaskExecutor for task-based execution on dask in the new Hamilton execution API."""
+
+    def __init__(self, *, client: DaskClient):
+        """Initializes the DaskExecutor. Note this currently takes in the client -- we will likely
+        add the ability to make it take in parameters to instantiate/tear down a client on its own.
+        This just allows full flexibility for now.
+
+        """
+        self.client = client
+
+    def init(self):
+        """No-op -- client already passed in by the user."""
+        pass
+
+    def finalize(self):
+        """No-op -- client already passed in by the user, who is responsible for shutting it
+        down."""
+        pass
+
+    def submit_task(self, task: executors.TaskImplementation) -> executors.TaskFuture:
+        """Submits a task using the dask futures API. Note that we are not using dask delayed --
+        as the idea is that tasks are potentially dynamic, meaning that we have to resolve some
+        before we create others. That makes the delayed API a little messier -- we would have to
+        call .compute() at certain steps. We *may* consider doing this, but for now, we are just
+        utilizing the futures API, and grouping it into tasks.
+
+        :param task: Task to execute (contains all arguments necessary)
+        :return: The future for the task
+        """
+
+        return executors.TaskFutureWrappingPythonFuture(
+            self.client.submit(executors.base_execute_task, task)
+        )
+
+    def can_submit_task(self) -> bool:
+        """For now we always can -- it will block on the dask side.
+
+        :return: True
+        """
+        return True

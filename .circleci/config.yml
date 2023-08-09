@@ -10,6 +10,7 @@ jobs:
       - image: cimg/python:<< parameters.python-version >>
     environment:
       TASK: << parameters.task >>
+      CI: true
     steps:
       - checkout
       - run:
