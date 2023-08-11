@@ -30,6 +30,20 @@ sync_dr = driver.Driver(
     adapter=base.SimplePythonGraphAdapter(base.DictResult()),
 )
 
+# Uncomment this to get started with DAGWorks - see docs.dagworks.io for more info.
+# import os
+# from dagworks import driver as dw_driver
+# sync_dr = dw_driver.Driver(
+#     driver_config,
+#     summarization,  # python module containing function logic
+#     adapter=base.SimplePythonGraphAdapter(base.DictResult()),
+#     project_id=YOUR_PROJECT_ID,
+#     api_key=os.environ["DAGWORKS_API_KEY"],
+#     username="YOUR_EMAIL",
+#     dag_name="pdf_summarizer",
+#     tags={"env": "local", "origin": "fastAPI"}
+# )
+
 
 class SummarizeResponse(pydantic.BaseModel):
     """Response to the /summarize endpoint"""
@@ -82,9 +96,9 @@ def summarize_pdf_sync(
 # add to SwaggerUI the execution DAG png
 # see http://localhost:8080/docs#/default/summarize_pdf_summarize_post
 base64_viz = base64.b64encode(open("summarization_module.png", "rb").read()).decode("utf-8")
-app.routes[
-    -1
-].description = f"""<h1>Execution DAG</h1><img alt="" src="data:image/png;base64,{base64_viz}"/>"""
+extra_docs = f"""<h1>Execution DAG</h1><img alt="" src="data:image/png;base64,{base64_viz}"/>"""
+app.routes[-1].description += extra_docs
+app.routes[-2].description += extra_docs
 
 
 if __name__ == "__main__":
