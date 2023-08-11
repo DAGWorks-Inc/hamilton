@@ -8,3 +8,4 @@ tenacity
 tiktoken
 tqdm
 uvicorn
+# dagworks-sdk>=0.0.14 # uncomment to use DAGWorks driver.

@@ -28,3 +28,10 @@ Here are a few ideas:
 9. To stop the containers do `docker compose down`.
 10. To look at the logs, your docker application should allow you to view them,
 or you can do `docker compose logs -f` to tail the logs (ctrl+c to stop tailing the logs).
+
+## Connecting to DAGWorks
+1. Create a DAGWorks account at www.dagworks.io - follow the instructions to set up a project.
+2. Add your DAGWorks API Key to the `.env` file. E.g. `DAGWORKS_API_KEY=YOUR_API_KEY`
+3. Uncomment dagworks-sdk in `requirements.txt`.
+4. Uncomment the lines in server.py to replace `sync_dr` with the DAGWorks Driver.
+5. Rebuild the docker images `docker compose up -d --build`.
