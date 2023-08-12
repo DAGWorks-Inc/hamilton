@@ -1,30 +1,25 @@
 import sys
 
 import numpy as np
-import logging
-
 import pandas as pd
 import pyspark.pandas as ps
 import pytest
 from pyspark import Row
-from pyspark.sql import SparkSession, types
 from pyspark.sql import Column, DataFrame, SparkSession
+from pyspark.sql import types
 from pyspark.sql.functions import column
 
 from hamilton import base, driver, htypes, node
 from hamilton.experimental import h_spark
-from hamilton.log_setup import setup_logging
-
 from .resources import example_module, smoke_screen_module
 from .resources.spark import (
     basic_spark_dag,
     pyspark_udfs,
     spark_dag_external_dependencies,
+    spark_dag_mixed_pyspark_pandas_udfs,
     spark_dag_multiple_with_columns,
     spark_dag_pyspark_udfs,
 )
-
-setup_logging(logging.DEBUG)
 
 
 @pytest.fixture(scope="module")
@@ -439,7 +434,7 @@ def test_base_spark_executor_end_to_end_external_dependencies(spark_session):
         .build()
     )
     dfs = dr.execute(
-        ["processed_df_as_pandas", "processed_df_as_pandas_with_external_inputs"],
+        ["processed_df_as_pandas"],
         inputs={"spark_session": spark_session},
     )
 
@@ -447,16 +442,6 @@ def test_base_spark_executor_end_to_end_external_dependencies(spark_session):
     processed_df_as_pandas = pd.DataFrame(dfs["processed_df_as_pandas"])
     pd.testing.assert_frame_equal(
         processed_df_as_pandas, expected_df, check_names=False, check_dtype=False
-    )
-
-    processed_df_as_pandas_with_external_inputs = pd.DataFrame(
-        dfs["processed_df_as_pandas_with_external_inputs"]
-    )
-    pd.testing.assert_frame_equal(
-        processed_df_as_pandas,
-        processed_df_as_pandas_with_external_inputs,
-        check_names=False,
-        check_dtype=False,
     )
 
 
@@ -663,10 +648,11 @@ def test_sparkify_node():
         return a_from_upstream + b_from_upstream + c_from_df + d_fixed
 
     node_ = node.Node.from_fn(foo)
-    sparkified = h_spark.sparkify_node(
+    sparkified = h_spark.sparkify_node_with_udf(
         node_,
         "df_upstream",
         "df_base",
+        None,
         {"a_from_upstream", "b_from_upstream"},
         {"c_from_df"},
     )
@@ -681,27 +667,27 @@ def test_sparkify_node():
     }
 
 
-def test_pyspark_udfs_end_to_end(spark_session):
+def test_pyspark_mixed_pandas_udfs_end_to_end():
     # TODO -- make this simpler to call, and not require all these constructs
     dr = (
         driver.Builder()
-        .with_modules(spark_dag_pyspark_udfs)
+        .with_modules(spark_dag_mixed_pyspark_pandas_udfs)
         .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
         .build()
     )
     # dr.visualize_execution(
-    #     ["processed_df_as_pandas", "processed_df_as_pandas_with_initial_schema"],
+    #     ["processed_df_as_pandas_dataframe_with_injected_dataframe"],
     #     "./out",
     #     {},
     #     inputs={"spark_session": spark_session},
     # )
     results = dr.execute(
-        ["processed_df_as_pandas", "processed_df_as_pandas_with_initial_schema"],
+        ["processed_df_as_pandas_dataframe_with_injected_dataframe", "processed_df_as_pandas"],
         inputs={"spark_session": spark_session},
     )
     processed_df_as_pandas = results["processed_df_as_pandas"]
-    processed_df_as_pandas_with_initial_schema = results[
-        "processed_df_as_pandas_with_initial_schema"
+    processed_df_as_pandas_dataframe_with_injected_dataframe = results[
+        "processed_df_as_pandas_dataframe_with_injected_dataframe"
     ]
     expected_data = {
         "a_times_key": [2, 10, 24, 44, 70],
@@ -713,7 +699,44 @@ def test_pyspark_udfs_end_to_end(spark_session):
         processed_df_as_pandas, expected_df, check_names=False, check_dtype=False
     )
     pd.testing.assert_frame_equal(
-        processed_df_as_pandas_with_initial_schema,
+        processed_df_as_pandas_dataframe_with_injected_dataframe,
+        expected_df,
+        check_names=False,
+        check_dtype=False,
+    )
+
+
+def test_just_pyspark_udfs_end_to_end():
+    # TODO -- make this simpler to call, and not require all these constructs
+    dr = (
+        driver.Builder()
+        .with_modules(spark_dag_pyspark_udfs)
+        .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+        .build()
+    )
+    # dr.visualize_execution(
+    #     ["processed_df_as_pandas_with_injected_dataframe", "processed_df_as_pandas"],
+    #     "./out",
+    #     {},
+    # )
+    results = dr.execute(
+        ["processed_df_as_pandas_with_injected_dataframe", "processed_df_as_pandas"]
+    )
+    processed_df_as_pandas_with_injected_dataframe = results[
+        "processed_df_as_pandas_with_injected_dataframe"
+    ]
+    processed_df_as_pandas = results["processed_df_as_pandas"]
+    expected_data = {
+        "a_times_key": [2, 10, 24, 44, 70],
+        "b_times_key": [5, 16, 33, 56, 85],
+        "a_plus_b_plus_c": [10.5, 20.0, 29.5, 39.0, 48.5],
+    }
+    expected_df = pd.DataFrame(expected_data)
+    pd.testing.assert_frame_equal(
+        processed_df_as_pandas, expected_df, check_names=False, check_dtype=False
+    )
+    pd.testing.assert_frame_equal(
+        processed_df_as_pandas_with_injected_dataframe,
         expected_df,
         check_names=False,
         check_dtype=False,
@@ -739,7 +762,7 @@ def not_pyspark_fn(foo: DataFrame, bar: DataFrame) -> DataFrame:
 )
 def test_is_default_pyspark_node(fn, expected):
     node_ = node.Node.from_fn(fn)
-    assert h_spark.transforms.is_default_pyspark_udf(node_) == expected
+    assert h_spark.require_columns.is_default_pyspark_udf(node_) == expected
 
 
 def fn_test_initial_schema_1(a: int, b: int) -> int:
@@ -748,26 +771,6 @@ def fn_test_initial_schema_1(a: int, b: int) -> int:
 
 def fn_test_initial_schema_2(fn_test_initial_schema_1: int, c: int = 1) -> int:
     return fn_test_initial_schema_1 + c
-
-
-@pytest.mark.parametrize(
-    "initial_schema,external_inputs,expected",
-    [
-        (None, None, {"a", "b"}),
-        (["a", "b"], None, {"a", "b"}),
-        (None, ["c", "a"], {"b"}),
-    ],
-)
-def test_derive_initial_schema(initial_schema, external_inputs, expected):
-    nodes = [
-        node.Node.from_fn(fn_test_initial_schema_1),
-        node.Node.from_fn(fn_test_initial_schema_2),
-    ]
-
-    assert (
-        h_spark.with_columns.derive_initial_schema(nodes, initial_schema, external_inputs)
-        == expected
-    )
 
 
 def test_create_selector_node(spark_session):

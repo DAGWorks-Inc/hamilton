@@ -38,12 +38,3 @@ def df_input(spark_session: ps.SparkSession) -> ps.DataFrame:
 )
 def processed_df_as_pandas(df_input: ps.DataFrame) -> pd.DataFrame:
     return df_input.select("a", "b").toPandas()
-
-
-@h_spark.with_columns(
-    a,
-    b,
-    external_inputs=["to_add", "to_multiply"],
-)
-def processed_df_as_pandas_with_external_inputs(df_input: ps.DataFrame) -> pd.DataFrame:
-    return df_input.select("a", "b").toPandas()
