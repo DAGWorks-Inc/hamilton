@@ -1,11 +1,10 @@
+from __future__ import annotations
+
 import json
 
 import click
 import data_module
 import embedding_module
-import lancedb_module
-import pinecone_module  # noqa: F401
-import weaviate_module
 
 from hamilton import base, driver
 
@@ -13,7 +12,7 @@ from hamilton import base, driver
 @click.command()
 @click.option(
     "--vector_db",
-    type=click.Choice(["lancedb", "weaviate", "pinecone"], case_sensitive=False),
+    type=click.Choice(["lancedb", "weaviate", "pinecone", "marqo"], case_sensitive=False),
     default="lancedb",
     help="Vector database service",
 )
@@ -26,7 +25,7 @@ from hamilton import base, driver
 )
 @click.option(
     "--embedding_service",
-    type=click.Choice(["openai", "cohere", "sentence_transformer"], case_sensitive=False),
+    type=click.Choice(["openai", "cohere", "sentence_transformer", "marqo"], case_sensitive=False),
     default="sentence_transformer",
     help="Text embedding service.",
 )
@@ -37,6 +36,9 @@ from hamilton import base, driver
 )
 @click.option("--model_name", default=None, help="Text embedding model name.")
 @click.option("--display_dag", is_flag=True, help="Generate a .png of the Hamilton DAG")
+@click.option(
+    "--other_input_kwargs", default=None, help="Pass in other input kwargs as a JSON string."
+)
 def main(
     vector_db: str,
     vector_db_config: str,
@@ -44,13 +46,26 @@ def main(
     embedding_service_api_key: str | None,
     model_name: str,
     display_dag: bool,
+    other_input_kwargs: str,
 ):
     if vector_db == "weaviate":
+        import weaviate_module
+
         vector_db_module = weaviate_module
     elif vector_db == "pinecone":
+        import pinecone_module
+
         vector_db_module = pinecone_module
     elif vector_db == "lancedb":
+        import lancedb_module
+
         vector_db_module = lancedb_module
+    elif vector_db == "marqo":
+        import marqo_module
+
+        vector_db_module = marqo_module
+    else:
+        raise ValueError(f"Unknown vector_db {vector_db}")
 
     if model_name is None:
         if embedding_service == "openai":
@@ -67,10 +82,15 @@ def main(
         model_name=model_name,
     )
 
+    if other_input_kwargs is None:
+        other_input_kwargs = "{}"
+    input_dict = json.loads(other_input_kwargs)
+    input_dict.update(dict(class_name="SQuADEntry"))
+
     dr = driver.Driver(
         config,
         data_module,
-        vector_db_module,  # this points to weaviate_module or pinecone_module
+        vector_db_module,  # this points to one of the VectorDB modules
         embedding_module,
         adapter=base.DefaultAdapter(),
     )
@@ -78,9 +98,7 @@ def main(
     # The `final_vars` requested are functions with side-effects
     dr.execute(
         final_vars=["initialize_vector_db_indices", "push_to_vector_db"],
-        inputs=dict(
-            class_name="SQuADEntry",
-        ),
+        inputs=input_dict,
     )
 
     if display_dag:
