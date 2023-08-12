@@ -997,9 +997,9 @@ class Driver:
     def visualize_materialization(
         self,
         *materializers: materialization.MaterializerFactory,
-        additional_vars: List[Union[str, Callable, Variable]],
         output_file_path: str,
         render_kwargs: dict,
+        additional_vars: List[Union[str, Callable, Variable]] = None,
         inputs: Dict[str, Any] = None,
         graphviz_kwargs: dict = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
@@ -1014,11 +1014,13 @@ class Driver:
         :param graphviz_kwargs: Arguments to pass to graphviz
         :return: The graphviz graph, if you want to do something with it
         """
+        if additional_vars is None:
+            additional_vars = []
         function_graph = materialization.modify_graph(self.graph, materializers)
         _final_vars = self._create_final_vars(additional_vars) + [
             materializer.id for materializer in materializers
         ]
-        Driver._visualize_execution_helper(
+        return Driver._visualize_execution_helper(
             function_graph,
             self.adapter,
             _final_vars,
