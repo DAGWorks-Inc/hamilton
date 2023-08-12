@@ -68,19 +68,23 @@ def add_dependency(
 
 
 def update_dependencies(
-    nodes: Dict[str, node.Node], adapter: base.HamiltonGraphAdapter, in_place: bool = True
+    nodes: Dict[str, node.Node], adapter: base.HamiltonGraphAdapter, reset_dependencies: bool = True
 ):
-    """Adds dependecies to a dictionary of nodes. If in_place is False,
+    """Adds dependencies to a dictionary of nodes. If in_place is False,
     it will deepcopy the dict + nodes and return that. Otherwise it will
     mutate + return the passed-in dict + nodes.
 
     :param in_place: Whether or not to modify in-place, or copy/return
     :param nodes: Nodes that form the DAG we're updating
     :param adapter: Adapter to use for type checking
+    :param reset_dependencies: Whether or not to reset the dependencies. If they are not set this is
+    unnecessary, and we can save yet another pass. Note that `reset` will perform an in-place
+    operation.
     :return: The updated nodes
     """
-    if not in_place:
-        nodes = {k: v for k, v in nodes.items()}
+    # copy without the dependencies to avoid duplicates
+    if reset_dependencies:
+        nodes = {k: v.copy(include_refs=False) for k, v in nodes.items()}
     for node_name, n in list(nodes.items()):
         for param_name, (param_type, _) in n.input_types.items():
             add_dependency(n, node_name, nodes, param_name, param_type, adapter)
@@ -118,7 +122,8 @@ def create_function_graph(
                 )
             nodes[n.name] = n
     # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
-    update_dependencies(nodes, adapter)  # in place
+    nodes = update_dependencies(nodes, adapter, reset_dependencies=False)  # no dependencies
+    # present yet
     for key in config.keys():
         if key not in nodes:
             nodes[key] = node.Node(key, Any, node_source=node.NodeType.EXTERNAL)
