@@ -1,7 +1,7 @@
 # Hamilton and Spark
 
-Hamilton now has first-class pyspark integration. While we will likely be improving it as we go along,
-this version is the first we're considering "stable" and moving out of "experimental"
+Hamilton now has first-class pyspark integration! While we will likely be improving it as we go along,
+this version is the first we're considering "stable" and we are planning an imminent move out of "experimental".
 
 # Design
 
@@ -31,7 +31,8 @@ def raw_data_3() -> ps.DataFrame:
 ```
 
 For the next case, we define transformations that are columnar/map-oriented in nature.
-These are UDFs (either pandas or python) that get applied to the dataframe in a specific order:
+These are UDFs (either pandas or python), or functions of pyspark constructs, that get applied
+to the upstream dataframe in a specific order:
 
 ```python
 import pandas as pd
@@ -39,15 +40,12 @@ import pandas as pd
 #map_transforms.py
 
 def column_3(column_1_from_dataframe: pd.Series) -> pd.Series:
-    """Transforms column 1 (from the dataframe) into column 3"""
     return _some_transform(column_1_from_dataframe)
 
 def column_4(column_2_from_dataframe: pd.Series) -> pd.Series:
-    """Transforms column 2 (from the dataframe) into column 4"""
     return _some_other_transform(column_2_from_dataframe)
 
 def column_5(column_3: pd.Series, column_4: pd.Series) -> pd.Series:
-    """is a combination of column_1_from_dataframe and column_2_from_dataframe"""
     return _yet_another_transform(column_3, column_4)
 ```
 
@@ -60,8 +58,8 @@ import map_transforms # file defined above
 
 @with_columns(
     map_transforms, # Load all the functions we defined above
-    select=["column_1_from_dataframe", "column_2_from_dataframe"], # calculate these
-    dataframe="all_initial_data"  # use this dataframe as the source (and inject the result into the final_result function
+    initial_schema=["column_1_from_dataframe", "column_2_from_dataframe", "column_3_from_dataframe"], # use these from the initial datafrmae
+    dataframe="all_initial_data"  # use this dataframe as the source (and inject as a parameter with the same name)
 )
 def final_result(all_initial_data: ps.DataFrame, raw_data_3: ps.DataFrame) -> ps.DataFrame:
     """Gives the final result. This decorator will apply the transformations in the order.
@@ -69,23 +67,74 @@ def final_result(all_initial_data: ps.DataFrame, raw_data_3: ps.DataFrame) -> ps
     return _join(all_initial_data, raw_data_3)
 ```
 
-Thus you can represent a clean, modular, unit-testable string of transformations while also allowing for
-complex sets of feature UDFs. Note that the following kinds of UDFs are all supported:
+`with_columns` serves to _linearize_ the operation, enabling you to define a DAG, and have them all operate on a single dataframe.
 
-All of these can rely on data passed from a node or parametr external to the group of functions.
+You can thus represent a clean, modular, unit-testable string of transformations while also allowing for
+complex sets of feature UDFs.
 
-This takes in the following parameters (see the docstring for more info)
+All of these can rely on data passed from a node or parameter external to the group of functions.
+
+You have two options when specifying the initial dataframe/how to read it. You can:
+
+1. Specify the columns in the initial dataframe, then refer to them in your functions (as in the example above)
+2. Specify the initial dataframe as a parameter to the function, and then create the columns drawing from that. See the following:
+
+```python
+import pandas as pd, pyspark.sql as ps
+
+#map_transforms.py
+
+def colums_1_from_dataframe(input_dataframe: ps.DataFrame) -> ps.Column:
+    return input_dataframe.column_1_from_dataframe
+
+def column_2_from_dataframe(input_dataframe: ps.DataFrame) -> ps.Column:
+    return input_dataframe.column_2_from_dataframe
+
+def column_3(column_1_from_dataframe: pd.Series) -> pd.Series:
+    return _some_transform(column_1_from_dataframe)
+
+def column_4(column_2_from_dataframe: pd.Series) -> pd.Series:
+    return _some_other_transform(column_2_from_dataframe)
+
+def column_5(column_3: pd.Series, column_4: pd.Series) -> pd.Series:
+    return _yet_another_transform(column_3, column_4)
+```
+
+```python
+from hamilton.experimental.h_spark import with_columns
+import pyspark.sql as ps
+import map_transforms # file defined above
+
+@with_columns(
+    map_transforms, # Load all the functions we defined above
+    dataframe_subdag_param="input_dataframe", #the upstream dataframe, referred to by downstream nodes, will have this parametter name
+    dataframe="all_initial_data"  # use this dataframe as the source (and inject as a parameter with the same name)
+)
+def final_result(all_initial_data: ps.DataFrame, raw_data_3: ps.DataFrame) -> ps.DataFrame:
+    """Gives the final result. This decorator will apply the transformations in the order.
+    Then, the final_result function is called, with the result of the transformations passed in."""
+    return _join(all_initial_data, raw_data_3)
+```
+
+This requires functions that take in pyspark dataframes and return pyspark dataframes or columns, for those reading directly from the dataframe.
+If you want to stay in pandas entirely for the `with_columns` group, you should approach (1).
+
+
+`with_columns` takes in the following parameters (see the docstring for more info)
 1. `load_from` -- a list of functions/modules to find the functions to load the DAG from, similar to `@subdag`
 2. `initial_schema` -- not compatible with `external_inputs`. Dependencies specified from the initial dataframe,
-injected in.
-3. `external_inputs` -- not compatible with `initial_schema`. Dependencies specified from outside the UDF group,
-somewhere else in the DAG.
+injected in. Not that you must use one of this
+3. `dataframe_subdag_param` -- the name of the parameter to inject the initial dataframe into the subdag.
+If this is provided, this must be the only pyspark dataframe dependency in the subdag that is not also another
+node (column) in the subdag.
 4. `select` -- a list of columns to select from the UDF group. If not specified all will be selected.
 5. `dataframe` -- the initial dataframe. If not specified, will default to the only dataframe param
 in the decorated function (and error if there are multiple).
-6. `namespace` -- the namespace of the nodes generated by this -- will deafult to the function name that is decorated.
+6. `namespace` -- the namespace of the nodes generated by this -- will default to the function name that is decorated.
 
-#### Pandas -> Pandas
+There are four flavors of transforms supported.
+
+#### Pandas -> Pandas UDFs
 These are functions of series:
 
 ```python
@@ -98,11 +147,11 @@ def foo(bar: pd.Series, baz: pd.Series) -> htypes.column[pd.Series, int]:
 The rules are the same as vanilla hamilton -- the parameter name determines the upstream dependencies,
 and the function name determines the output column name.
 
-Note that, due to the type-specification of pyspark, these have to return a "typed" (`Annotated[]`) series.
+Note that, due to the type-specification of pyspark, these have to return a "typed" (`Annotated[]`) series, specified by `htypes.column`.
 
 These are adapted to form pyspark-friendly [pandas UDFs](https://spark.apache.org/docs/3.1.2/api/python/reference/api/pyspark.sql.functions.pandas_udf.html)
 
-#### Python primitives -> python primitives
+#### Python primitives -> python primitives UDFs
 
 These are functions of python primitives:
 
@@ -124,14 +173,15 @@ def foo(bar: ps.DataFrame) -> ps.Column:
 
 Note that these have two forms:
 1. The dataframe specifies the name of the upstream column -- then you just access the column and return a manipulation
-2. The dataframe contains more than one column
+2. The dataframe contains more than one column, in which case you need the `@require(...)` decorator, to specify which column you want to use.
 
 ```python
 import h_spark
 
-@h_spark.transforms("bar", "baz")
+
+@h_spark.require_columns("bar", "baz")
 def foo(bar_baz: ps.DataFrame) -> ps.Column:
-    return df["bar"] + 1
+   return df["bar"] + 1
 ```
 
 In this case we are only allowed a single dataframe dependency, and the paraemter name does not matter.
@@ -154,9 +204,10 @@ This has the exact same rules as the column flavor, except that the return type 
 ```python
 import h_spark
 
-@h_spark.transforms("bar", "baz")
+
+@h_spark.require_columns("bar", "baz")
 def foo(df: ps.DataFrame) -> ps.DataFrame:
-    return df.withColumn("bar", df["bar"] + 1)
+   return df.withColumn("bar", df["bar"] + 1)
 ```
 
 Note that this is the column-flavor in which you (not the framework) are responsible for calling `withColumn`.
@@ -218,3 +269,11 @@ Note there are other scaling libraries that Hamilton supports -- it all depends 
 - [dask](../../dask/README.md)
 - [ray](../../ray/README.md)
 - [modin](https://github.com/modin-project/modin) (no example for modin yet but it is just the pandas API with a different import)
+
+## Why are there so many lines in the visualizations for a with_columns group?
+
+Good question! This is because we are adding two sets of edges:
+1. The single dataframe being passed through and updated (immutably, which is why it fits so nicely with Hamilton)
+2. The original edges, dependent on columns
+
+We are planning, shortly, to display these edges differently, and ideally allow a visualization mode for these specifically (to show the DAG with (1), (2), or both).

@@ -307,7 +307,9 @@ class Node(object):
 
     def reassign_input_names(self, input_names: Dict[str, Any]) -> "Node":
         """Reassigns the input names of a node. Useful for applying
-        a node to a separate input if needed.
+        a node to a separate input if needed. Note that things can get a
+        little strange if you have multiple inputs with the same name, so
+        be careful about how you use this.
 
         :param input_names: Input name map to reassign
         :return: A node with the input names reassigned

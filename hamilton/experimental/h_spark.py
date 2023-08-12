@@ -12,7 +12,6 @@ from pyspark.sql import Column, DataFrame, dataframe, types
 from pyspark.sql.functions import column, lit, pandas_udf, udf
 
 from hamilton import base, htypes, node
-from hamilton.node import DependencyType
 from hamilton.execution import graph_functions
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers import subdag
@@ -411,11 +410,11 @@ def _lambda_udf(df: DataFrame, node_: node.Node, actual_kwargs: Dict[str, Any]) 
         logger.debug("RegularUDF: %s, %s", node_.name, node_.type)
         spark_return_type = get_spark_type(node_.type)
         spark_udf = udf(hamilton_udf, spark_return_type)
-    return df.withColumn(
-        # Sorting is a quick hack
+    out = df.withColumn(
         node_.name,
         spark_udf(*[_value for _name, _value in sorted(params_from_df.items())]),
     )
+    return out
 
 
 class PySparkUDFGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
@@ -519,10 +518,11 @@ class PySparkUDFGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         return result
 
 
-def sparkify_node(
+def sparkify_node_with_udf(
     node_: node.Node,
     linear_df_dependency_name: str,
     base_df_dependency_name: str,
+    base_df_dependency_param: Optional[str],
     dependent_columns_in_group: Set[str],
     dependent_columns_from_dataframe: Set[str],
 ) -> node.Node:
@@ -542,6 +542,9 @@ def sparkify_node(
     :param linear_df_dependency_name: Name of the linearly passed along dataframe dependency
     :param base_df_dependency_name: Name of the base (parent) dataframe dependency.
         this is only used if dependent_columns_from_dataframe is not empty
+    :param base_df_dendency_param: Name of the base (parent) dataframe dependency parameter, as known
+        by the node. This is only used if `dataframe_subdag_param` is provided, which means that
+        dependent_columns_from_dataframe is empty.
     :param dependent_columns_in_group: Columns on which this depends in the with_columns
     :param dependent_columns_from_dataframe:  Columns on which this depends in the
         base (parent) dataframe that the with_columns is operating on
@@ -554,6 +557,7 @@ def sparkify_node(
         __base_df_dependency_name: str = base_df_dependency_name,
         __dependent_columns_in_group: Set[str] = dependent_columns_in_group,
         __dependent_columns_from_dataframe: Set[str] = dependent_columns_from_dataframe,
+        __base_df_dependency_param: str = base_df_dependency_param,
         __node: node.Node = node_,
         **kwargs,
     ) -> ps.DataFrame:
@@ -592,6 +596,13 @@ def sparkify_node(
             if dep in dependent_columns_in_group
         },
     }
+
+    if base_df_dependency_param is not None and base_df_dependency_name in node_.input_types:
+        # In this case we want to add a dependency for visualization/lineage
+        new_input_types[base_df_dependency_name] = (
+            DataFrame,
+            node.DependencyType.REQUIRED,
+        )
     if len(dependent_columns_from_dataframe) > 0:
         new_input_types[base_df_dependency_name] = (
             DataFrame,
@@ -623,6 +634,7 @@ def derive_dataframe_parameter(
             f"More than one dataframe parameter found in function: {location_name}. Please "
             f"specify the desired one with the 'dataframe' parameter in @with_columns"
         )
+    assert len(dataframe_parameters) == 1
     return list(dataframe_parameters)[0]
 
 
@@ -686,7 +698,7 @@ def prune_nodes(nodes: List[node.Node], select: Optional[List[str]] = None) -> L
     return output
 
 
-class transforms(fm_base.NodeTransformer):
+class require_columns(fm_base.NodeTransformer):
     """Decorator for spark that allows for the specification of columns to transform.
     These are columns within a specific node in a decorator, enabling the user to make use of pyspark
     transformations inside a with_columns group. Note that this will have no impact if it is not
@@ -699,14 +711,14 @@ class transforms(fm_base.NodeTransformer):
     TRANSFORM_COLUMNS_TAG = "hamilton.spark.columns"
 
     def __init__(self, *columns: str, target_parameter=None):
-        super(transforms, self).__init__(target=None)
+        super(require_columns, self).__init__(target=None)
         self._columns = columns
         self._target = target_parameter
 
     def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
-        """Generates nodes for the `@transforms` decorator.
+        """Generates nodes for the `@require_columns` decorator.
 
         This does two things, but does not fully prepare the node:
         1. It adds the columns as dependencies to the node
@@ -722,23 +734,26 @@ class transforms(fm_base.NodeTransformer):
         :return:
         """
         param = derive_dataframe_parameter_from_node(node_, self._target)
+        with open("./debug.txt", "a") as f:
+            f.write(f"{node_.name}={param}\n")
 
         # This allows for injection of any extra parameters
-        def new_fn(**kwargs):
+        def new_callable(__input_types=node_.input_types, **kwargs):
             return node_.callable(
-                **{key: value for key, value in kwargs.items() if key in node_.input_types}
+                **{key: value for key, value in kwargs.items() if key in __input_types}
             )
 
-        # Add the upstream columns as additional dependencies
         additional_input_types = {
-            param: (DataFrame, node.DependencyType.REQUIRED) for param in self._columns
+            param: (DataFrame, node.DependencyType.REQUIRED)
+            for param in self._columns
+            if param not in node_.input_types
         }
         node_out = node_.copy_with(
             input_types={**node_.input_types, **additional_input_types},
-            callabl=new_fn,
+            callabl=new_callable,
             tags={
-                transforms.TRANSFORM_TARGET_TAG: param,
-                transforms.TRANSFORM_COLUMNS_TAG: self._columns,
+                require_columns.TRANSFORM_TARGET_TAG: param,
+                require_columns.TRANSFORM_COLUMNS_TAG: self._columns,
             },
         )
         # if it returns a column, we just turn it into a withColumn expression
@@ -782,7 +797,7 @@ class transforms(fm_base.NodeTransformer):
         :param node_: Node to check
         :return: True if it functions as a default pyspark UDF, false otherwise
         """
-        df_columns = transforms._extract_dataframe_params(node_)
+        df_columns = require_columns._extract_dataframe_params(node_)
         return len(df_columns) == 1
 
     @staticmethod
@@ -801,9 +816,12 @@ class transforms(fm_base.NodeTransformer):
         node_: node.Node,
         linear_df_dependency_name: str,
         base_df_dependency_name: str,
+        base_df_param_name: Optional[str],
+        dependent_columns_from_upstream: Set[str],
         dependent_columns_from_dataframe: Set[str],
     ) -> node.Node:
         """Transforms a pyspark node into a node that can be run as part of a `with_columns` group.
+        This is only for non-UDF nodes that have already been transformed by `@transforms`.
 
         :param node_: Node to transform
         :param linear_df_dependency_name: Dependency on continaully modified dataframe (this will enable us
@@ -812,19 +830,76 @@ class transforms(fm_base.NodeTransformer):
         :param dependent_columns_from_dataframe:
         :return: The final node with correct dependencies
         """
-        transformation_target = node_.tags.get(transforms.TRANSFORM_TARGET_TAG)
+        transformation_target = node_.tags.get(require_columns.TRANSFORM_TARGET_TAG)
 
-        # This should come from the dataframe
-        # We have to reassign this to the linear dataframe dependency so we're transforming the
-        # right one Then we have to replace all the columns that are in the dataframe with the
-        # base dataframe dependency name
-        node_ = node_.reassign_input_names(
-            {
-                **{col: base_df_dependency_name for col in dependent_columns_from_dataframe},
-                **{transformation_target: linear_df_dependency_name},
-            }
-        )
+        # Note that the following does not use the reassign_columns function as we have
+        # special knowledge of the function -- E.G. that it doesn't need all the parameters
+        # we choose to pass it. Thus we can just make sure that we pass it the right one,
+        # and not worry about value-clashes in reassigning names (as there are all sorts of
+        # edge cases around the parameter name to be transformed).
+
+        # We have only a few dependencies we truly need
+        # These are the linear_df_dependency_name (the dataframe that is being modified)
+        # as well as any non-dataframe arguments (E.G. the ones that aren't about to be added
+        # Note that the node comes with logical dependencies already, so we filter them out
+        def new_callable(__callable=node_.callable, **kwargs) -> Any:
+            new_kwargs = kwargs.copy()
+            new_kwargs[transformation_target] = kwargs[linear_df_dependency_name]
+            return __callable(**new_kwargs)
+
+        # We start off with everything except the transformation target, as we're
+        # going to use the linear dependency for that (see the callable above)
+        new_input_types = {
+            key: value
+            for key, value in node_.input_types.items()
+            if key != transformation_target and key not in dependent_columns_from_dataframe
+        }
+        # Thus we put that linear dependency in
+        new_input_types[linear_df_dependency_name] = (DataFrame, node.DependencyType.REQUIRED)
+        # Then we go through all "logical" dependencies -- columns we want to add to make lineage
+        # look nice
+        for item in dependent_columns_from_upstream:
+            new_input_types[item] = (DataFrame, node.DependencyType.REQUIRED)
+
+        # Then we see if we're trying to transform the base dataframe
+        # This means we're not referring to it as a column, and only happens with the
+        # `dataframe_subdag_param` argument (which means the base_df_param_name is not None)
+        if transformation_target == base_df_param_name:
+            new_input_types[base_df_dependency_name] = (
+                DataFrame,
+                node.DependencyType.REQUIRED,
+            )
+        # Finally we create the new node and return it
+        node_ = node_.copy_with(callabl=new_callable, input_types=new_input_types)
         return node_
+
+
+def _identify_upstream_dataframe_nodes(nodes: List[node.Node]) -> List[str]:
+    """Gives the upstream dataframe name. This is the only ps.DataFrame parameter not
+    produced from within the subdag.
+
+    :param nodes: Nodes in the subdag
+    :return: The name of the upstream dataframe
+    """
+    node_names = {node_.name for node_ in nodes}
+    df_deps = set()
+
+    for node_ in nodes:
+        # In this case its a df node that is a linear dependency, so we don't count it
+        # Instead we count the columns it wants, as we have not yet created them TODO --
+        # consider moving this validation afterwards so we don't have to do this check
+        df_dependencies = node_.tags.get(
+            require_columns.TRANSFORM_COLUMNS_TAG,
+            [
+                dep
+                for dep, (type_, _) in node_.input_types.items()
+                if custom_subclass_check(type_, DataFrame)
+            ],
+        )
+        for dependency in df_dependencies:
+            if dependency not in node_names:
+                df_deps.add(dependency)
+    return list(df_deps)
 
 
 class with_columns(fm_base.NodeCreator):
@@ -832,9 +907,9 @@ class with_columns(fm_base.NodeCreator):
         self,
         *load_from: Union[Callable, ModuleType],
         initial_schema: List[str] = None,
-        external_inputs: List[str] = None,
         select: List[str] = None,
-        dataframe: str = None,
+        dataframe: Optional[str] = None,
+        dataframe_subdag_param: str = None,
         namespace: str = None,
         mode: str = "append",
     ):
@@ -906,16 +981,23 @@ class with_columns(fm_base.NodeCreator):
         self.subdag_functions = subdag.collect_functions(load_from)
         self.select = select
         self.initial_schema = initial_schema
-        self.external_inputs = external_inputs
-        if self.initial_schema is not None and self.external_inputs is not None:
+        if (dataframe_subdag_param is not None and initial_schema is not None) or (
+            dataframe_subdag_param is None and initial_schema is None
+        ):
             raise ValueError(
-                "You cannot specify both initial_schema and external_inputs. You are allowed to "
-                "\n1. specify neither (which means we will assume every uknown dependency in this subdag "
-                "comes from the upstream dataframe)"
-                "\n2. specify external_inputs (meaning that we will assume"
-                "everything not specified comes from the dataframe), \n3. specify initial_schema (meaning that"
-                "we will assume everything not specified comes from external inputs)."
+                "You must specify only one of initial_schema and "
+                "dataframe_subdag_param. "
+                "This is because specifying dataframe_subdag_param injects into "
+                "the set of columns, allowing you to perform your own extraction"
+                " from the dataframe. We then execute all columns in the sbudag"
+                " in order, passing in that initial dataframe. If you want"
+                " to reference columns in your code, you'll have to specify "
+                "the set of initial columns, and allow the subdag decorator "
+                "to inject the dataframe through. The initial columns tell "
+                "us which parameters to take from that dataframe, so we can"
+                "feed the right data into the right columns."
             )
+        self.dataframe_subdag_param = dataframe_subdag_param
         self.namespace = namespace
         self.upstream_dependency = dataframe
         self.mode = mode
@@ -931,49 +1013,13 @@ class with_columns(fm_base.NodeCreator):
         """
         out = []
         for node_ in initial_nodes:
-            if transforms.is_default_pyspark_udf(node_):
+            if require_columns.is_default_pyspark_udf(node_):
                 col = derive_dataframe_parameter_from_node(node_)
                 # todo -- wire through config/function correctly
                 # the col is the only dataframe paameter so it is the target node
-                (node_,) = transforms(col).transform_node(node_, {}, node_.callable)
+                (node_,) = require_columns(col).transform_node(node_, {}, node_.callable)
             out.append(node_)
         return out
-
-    @staticmethod
-    def derive_initial_schema(
-        nodes: List[node.Node],
-        initial_schema: Optional[List[str]],
-        external_inputs: Optional[List[str]],
-    ) -> Set[str]:
-        """Derives the dependency sources, which fill out `initial_schema` and `external_inputs`,
-        as only one of them is allowed to be specified. Note that:
-
-        1. If none are specified, everything missing is assumed to come from the dataframe
-        2. If `initial_schema` is specified, everything missing not in that
-        is assumed to come from the external inputs
-        3. If `external_inputs` is specified, everything missing not in that is
-        assumed to come from the dataframe
-
-        :param nodes: Nodes resolved in the DAG
-        :param initial_schema: The initial schema of the dataframe, a list of columns
-        :param external_inputs: The external inputs to the DAG, a list of columns
-        :return:  The sources from the dataframe
-        """
-        node_names = {node_.name for node_ in nodes}
-        all_dependencies = set()
-        for node_ in nodes:
-            for dependency_name, (_, dep_type) in node_.input_types.items():
-                # Note that we do not support optional columns in the dataframe
-                # This makes the API simpler/clearer -- all optional
-                # columns should be handled upstream
-                if dep_type == node.DependencyType.REQUIRED:
-                    all_dependencies.add(dependency_name)
-        external_dependencies = all_dependencies - node_names
-        if external_inputs is not None:
-            initial_schema = list(external_dependencies - set(external_inputs))
-        elif initial_schema is None:
-            initial_schema = list(external_dependencies)
-        return set(initial_schema)
 
     @staticmethod
     def create_selector_node(
@@ -999,6 +1045,40 @@ class with_columns(fm_base.NodeCreator):
             input_types={upstream_name: DataFrame},
         )
 
+    def _validate_dataframe_subdag_parameter(self, nodes: List[node.Node], fn_name: str):
+        all_upstream_dataframe_nodes = _identify_upstream_dataframe_nodes(nodes)
+        initial_schema = set(self.initial_schema) if self.initial_schema is not None else set()
+        candidates_for_upstream_dataframe = set(all_upstream_dataframe_nodes) - set(initial_schema)
+        if (
+            len(candidates_for_upstream_dataframe) > 1
+            or self.dataframe_subdag_param is None
+            and len(candidates_for_upstream_dataframe) > 0
+        ):
+            raise ValueError(
+                f"We found multiple upstream dataframe parameters for function: {fn_name} decorated with "
+                f"@with_columns. You specified dataframe_subdag_param={self.dataframe_subdag_param} as the upstream "
+                f"dataframe parameter, which means that your subdag must have exactly {0 if self.dataframe_subdag_param is None else 1} "
+                f"upstream dataframe parameters. Instead, we found the following upstream dataframe parameters: {candidates_for_upstream_dataframe}"
+            )
+        if self.dataframe_subdag_param is not None:
+            if len(candidates_for_upstream_dataframe) == 0:
+                raise ValueError(
+                    f"You specified your set of UDFs to use upstream dataframe parameter: {self.dataframe_subdag_param} "
+                    f"for function: {fn_name} decorated with `with_columns`, but we could not find "
+                    "that parameter as a dependency of any of the nodes. Note that that dependency "
+                    "must be a pyspark dataframe. If you wish, instead, to supply an initial set of "
+                    "columns for the upstream dataframe and refer to those columns directly within "
+                    "your UDFs, please use initial_schema instead of dataframe_subdag_param."
+                )
+            (upstream_dependency,) = list(candidates_for_upstream_dataframe)
+            if upstream_dependency != self.dataframe_subdag_param:
+                raise ValueError(
+                    f"You specified your set of UDFs to use upstream dataframe parameter: {self.dataframe_subdag_param} "
+                    f"for function: {fn_name} decorated with `with_columns`, but we found that parameter "
+                    f"as a dependency of a node, but it was not the same as the parameter you specified. "
+                    f"Instead, we found: {upstream_dependency}."
+                )
+
     def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> List[node.Node]:
         """Generates nodes in the with_columns groups. This does the following:
 
@@ -1014,9 +1094,9 @@ class with_columns(fm_base.NodeCreator):
         :return: List of nodes that this function produces
         """
         namespace = fn.__name__ if self.namespace is None else self.namespace
-
         initial_nodes = subdag.collect_nodes(config, self.subdag_functions)
         transformed_nodes = with_columns._prep_nodes(initial_nodes)
+        self._validate_dataframe_subdag_parameter(transformed_nodes, fn.__qualname__)
         pruned_nodes = prune_nodes(transformed_nodes, self.select)
         if len(pruned_nodes) == 0:
             raise ValueError(
@@ -1029,8 +1109,8 @@ class with_columns(fm_base.NodeCreator):
         current_dataframe_node = inject_parameter
         # Columns that it is dependent on could be from the group of transforms created
         columns_produced_within_mapgroup = {node_.name for node_ in pruned_nodes}
-        columns_passed_in_from_dataframe = self.derive_initial_schema(
-            sorted_initial_nodes, self.initial_schema, self.external_inputs
+        columns_passed_in_from_dataframe = (
+            set(self.initial_schema) if self.initial_schema is not None else []
         )
         # Or from the dataframe passed in...
         for node_ in sorted_initial_nodes:
@@ -1044,19 +1124,22 @@ class with_columns(fm_base.NodeCreator):
                 column for column in node_.input_types if column in columns_passed_in_from_dataframe
             }
             # In the case that we are using pyspark UDFs
-            if transforms.is_decorated_pyspark_udf(node_):
-                sparkified = transforms.sparkify_node(
+            if require_columns.is_decorated_pyspark_udf(node_):
+                sparkified = require_columns.sparkify_node(
                     node_,
                     current_dataframe_node,
                     inject_parameter,
+                    self.dataframe_subdag_param,
+                    dependent_columns_in_mapgroup,
                     dependent_columns_in_dataframe,
                 )
             # otherwise we're using pandas/primitive UDFs
             else:
-                sparkified = sparkify_node(
+                sparkified = sparkify_node_with_udf(
                     node_,
                     current_dataframe_node,
                     inject_parameter,
+                    self.dataframe_subdag_param,
                     dependent_columns_in_mapgroup,
                     dependent_columns_in_dataframe,
                 )
