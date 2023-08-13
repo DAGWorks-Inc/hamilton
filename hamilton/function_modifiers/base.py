@@ -10,7 +10,7 @@ try:
 except ImportError:
     # python3.10 and above
     EllipsisType = type(...)
-from typing import Any, Callable, Collection, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
 
 from hamilton import node, registry, settings
 
@@ -228,6 +228,26 @@ class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
         pass
 
 
+# TODO -- delete this/replace with the version that will be added by
+# https://github.com/DAGWorks-Inc/hamilton/pull/249/ as part of the Node class
+def _reassign_input_names(node_: node.Node, input_names: Dict[str, Any]) -> node.Node:
+    """Reassigns the input names of a node. Useful for applying
+    a node to a separate input if needed. Note that things can get a
+    little strange if you have multiple inputs with the same name, so
+    be careful about how you use this.
+    :param input_names: Input name map to reassign
+    :return: A node with the input names reassigned
+    """
+
+    def new_callable(**kwargs) -> Any:
+        reverse_input_names = {v: k for k, v in input_names.items()}
+        return node_.callable(**{reverse_input_names.get(k, k): v for k, v in kwargs.items()})
+
+    new_input_types = {input_names.get(k, k): v for k, v in node_.input_types.items()}
+    out = node_.copy_with(callabl=new_callable, input_types=new_input_types)
+    return out
+
+
 class NodeInjector(SubDAGModifier, abc.ABC):
     """Injects a value as a source node in the DAG. This is a special case of the SubDAGModifier,
     which gets all the upstream (required) nodes from the subdag and gives the decorator a chance
@@ -275,21 +295,37 @@ class NodeInjector(SubDAGModifier, abc.ABC):
         :return:
         """
         injectable_params = NodeInjector.find_injectable_params(nodes)
-        out = list(nodes)
-        out.extend(self.inject_nodes(injectable_params, config, fn))
+        nodes_to_inject, rename_map = self.inject_nodes(injectable_params, config, fn)
+        out = []
+        for node_ in nodes:
+            # if there's an intersection then we want to rename the input
+            if set(node_.input_types.keys()) & set(rename_map.keys()):
+                out.append(_reassign_input_names(node_, rename_map))
+            else:
+                out.append(node_)
+        out.extend(nodes_to_inject)
+        if len(set([node_.name for node_ in out])) != len(out):
+            import pdb
+
+            pdb.set_trace()
+        print([node_.name for node_ in out])
         return out
 
     @abc.abstractmethod
     def inject_nodes(
         self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
-    ) -> List[node.Node]:
+    ) -> Tuple[List[node.Node], Dict[str, str]]:
         """Adds a set of nodes to inject into the DAG. These get injected into the specified param name,
-        meaning that exactly one of the output nodes will have that name.
+        meaning that exactly one of the output nodes will have that name. Note that this also allows
+        input renaming, meaning that the injector can rename the input to something else (to avoid
+        name-clashes).
 
         :param params: Dictionary of all the type names one wants to inject
         :param config: Configuration with which the DAG was constructed.
         :param fn: original function we're decorating. This is useful largely for debugging.
-        :return: A list of nodes to add. Empty if you wish to inject nothing
+        :return: A list of nodes to add. Empty if you wish to inject nothing, as well as a dictionary,
+        allowing the injector to rename the inputs (e.g. if you want the name to be
+        namespaced to avoid clashes)
         """
 
         pass
