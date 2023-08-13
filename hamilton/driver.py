@@ -1179,9 +1179,7 @@ class Builder:
         execution_manager = self.execution_manager
         if execution_manager is None:
             local_executor = self.local_executor or executors.SynchronousLocalTaskExecutor()
-            remote_executor = self.remote_executor or executors.MultiProcessingExecutor(
-                max_tasks=10
-            )
+            remote_executor = self.remote_executor or executors.MultiThreadingExecutor(max_tasks=10)
             execution_manager = executors.DefaultExecutionManager(
                 local_executor=local_executor, remote_executor=remote_executor
             )
