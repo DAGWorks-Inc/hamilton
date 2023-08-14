@@ -10,6 +10,7 @@ from pyspark.sql import DataFrame, dataframe, types
 from pyspark.sql.functions import column, lit, pandas_udf, udf
 
 from hamilton import base, htypes, node
+from hamilton.node import DependencyType
 
 logger = logging.getLogger(__name__)
 
@@ -203,6 +204,8 @@ def get_spark_type(
 ) -> types.DataType:
     if return_type in (int, float, bool, str, bytes):
         return python_to_spark_type(return_type)
+    elif return_type in (list[int], list[float], list[bool], list[str], list[bytes]):
+        return types.ArrayType(python_to_spark_type(return_type.__args__[0]))
     elif hasattr(return_type, "__module__") and getattr(return_type, "__module__") == "numpy":
         return numpy_to_spark_type(return_type)
     else:
@@ -259,6 +262,8 @@ def _bind_parameters_to_callable(
             hamilton_udf = functools.partial(
                 hamilton_udf, **{input_name: actual_kwargs[input_name]}
             )
+        elif node_input_types[input_name][1] == DependencyType.OPTIONAL:
+            pass
         else:
             raise ValueError(
                 f"Cannot satisfy {node_name} with input types {node_input_types} against a dataframe with "
