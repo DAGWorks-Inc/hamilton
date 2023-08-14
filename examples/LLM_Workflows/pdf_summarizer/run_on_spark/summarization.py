@@ -10,6 +10,13 @@ from tqdm import tqdm
 
 from hamilton.function_modifiers import config
 
+"""
+This module is a carbon copy of the module in the backend. In real life you'd
+set up some package or structure that would allow you to share code between the
+two. However this is just an example, and rather than set up a whole package, or play
+with sys.path, we thought this would be simpler.
+"""
+
 
 def summarize_chunk_of_text_prompt(content_type: str = "an academic paper") -> str:
     """Base prompt for summarizing chunks of text."""
@@ -89,6 +96,7 @@ def _summarize_chunk(content: str, template_prompt: str, openai_gpt_model: str) 
     :param openai_gpt_model: the openai gpt model to use.
     :return: the response from the openai API.
     """
+    # NEED export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
     prompt = template_prompt + content
     response = openai.ChatCompletion.create(
         model=openai_gpt_model, messages=[{"role": "user", "content": prompt}], temperature=0

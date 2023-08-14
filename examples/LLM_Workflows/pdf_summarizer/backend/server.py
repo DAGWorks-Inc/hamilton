@@ -12,9 +12,7 @@ app = fastapi.FastAPI()
 
 
 # define constants for Hamilton driver
-driver_config = dict(
-    file_type="pdf",
-)
+driver_config = dict(file_type="pdf")
 
 # instantiate the Hamilton driver; it will power all API endpoints
 # async driver for use with async functions

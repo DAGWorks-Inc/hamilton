@@ -35,3 +35,7 @@ or you can do `docker compose logs -f` to tail the logs (ctrl+c to stop tailing 
 3. Uncomment dagworks-sdk in `requirements.txt`.
 4. Uncomment the lines in server.py to replace `sync_dr` with the DAGWorks Driver.
 5. Rebuild the docker images `docker compose up -d --build`.
+
+# Running on Spark!
+Yes, that's right, you can also run the exact same code on spark! It's just a oneline
+code change. See the [run_on_spark README](run_on_spark/README.md) for more details.
