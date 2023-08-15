@@ -56,7 +56,10 @@ def add_dependency(
         if not types_match(adapter, param_type, required_node.type):
             raise ValueError(
                 f"Error: {func_name} is expecting {param_name}:{param_type}, but found "
-                f"{param_name}:{required_node.type}. All names & types must match."
+                f"{param_name}:{required_node.type}. \nHamilton does not consider these types to be "
+                f"equivalent. If you believe they are equivalent, please reach out to the developers."
+                f"Note that, if you have types that are equivalent for your purposes, you can create a "
+                f"graph adapter that checks the types against each other in a more lenient manner."
             )
     else:
         # this is a user defined var

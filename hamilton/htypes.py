@@ -13,6 +13,27 @@ if TYPE_CHECKING:
 BASE_ARGS_FOR_GENERICS = (typing.T,)
 
 
+def _safe_subclass(candidate_type: Type, base_type: Type) -> bool:
+    """Safely checks subclass, returning False if python's subclass does not work.
+    This is *not* a true subclass check, and will not tell you whether hamilton
+    considers the types to be equivalent. Rather, it is used to short-circuit further
+    computation safely and avoid errors.
+
+    Note that we may end up with types that *should* be considered equivalent, but
+    are not. In that case we will deal with them -- its a better user experience and easier
+    to report than an error.
+
+    :param base_type: Base type to check against
+    :param candidate_type: Candidate type to check as a potential subclass
+    :return: Whether python considers them subclasses and will not break if subclass is called.
+    """
+    if len(_get_args(candidate_type)) > 0 or len(_get_args(base_type)) > 0:
+        return False
+    if inspect.isclass(candidate_type) and inspect.isclass(base_type):
+        return issubclass(candidate_type, base_type)
+    return False
+
+
 def custom_subclass_check(requested_type: Type, param_type: Type):
     """This is a custom check around generics & classes. It probably misses a few edge cases.
 
@@ -26,8 +47,10 @@ def custom_subclass_check(requested_type: Type, param_type: Type):
     requested_origin_type = requested_type
     param_origin_type = param_type
     has_generic = False
+    if _safe_subclass(requested_type, param_type):
+        return True
     if typing_inspect.is_union_type(param_type):
-        for arg in typing_inspect.get_args(param_type):
+        for arg in _get_args(param_type):
             if custom_subclass_check(requested_type, arg):
                 return True
     if typing_inspect.is_generic_type(requested_type) or typing_inspect.is_tuple_type(
@@ -41,15 +64,17 @@ def custom_subclass_check(requested_type: Type, param_type: Type):
     # TODO -- consider moving into a graph adapter or elsewhere -- this is perhaps a little too
     #  low-level
     if has_generic and requested_origin_type in (Parallelizable,):
-        (requested_type_arg,) = typing_inspect.get_args(requested_type)
+        (requested_type_arg,) = _get_args(requested_type)
         return custom_subclass_check(requested_type_arg, param_type)
     if has_generic and param_origin_type == Collect:
-        (param_type_arg,) = typing_inspect.get_args(param_type)
+        (param_type_arg,) = _get_args(param_type)
         return custom_subclass_check(requested_type, param_type_arg)
-    if requested_origin_type == param_origin_type:
+    if requested_origin_type == param_origin_type or _safe_subclass(
+        requested_origin_type, param_origin_type
+    ):
         if has_generic:  # check the args match or they do not have them defined.
-            requested_args = typing_inspect.get_args(requested_type)
-            param_args = typing_inspect.get_args(param_type)
+            requested_args = _get_args(requested_type)
+            param_args = _get_args(param_type)
             if (
                 requested_args
                 and param_args
@@ -57,22 +82,6 @@ def custom_subclass_check(requested_type: Type, param_type: Type):
                 and param_args != BASE_ARGS_FOR_GENERICS
             ):
                 return requested_args == param_args
-        return True
-
-    if (
-        typing_inspect.is_generic_type(requested_type)
-        and typing_inspect.is_generic_type(param_type)
-    ) or (inspect.isclass(requested_type) and typing_inspect.is_generic_type(param_type)):
-        # we're comparing two generics that aren't equal -- check if Mapping vs Dict
-        # or we're comparing a class to a generic -- check if Mapping vs dict
-        # the precedence is that requested will go into the param_type, so the param_type should be more permissive.
-        return issubclass(requested_type, param_type)
-    # classes - precedence is that requested will go into the param_type, so the param_type should be more permissive.
-    if (
-        inspect.isclass(requested_type)
-        and inspect.isclass(param_type)
-        and issubclass(requested_type, param_type)
-    ):
         return True
     return False
 
@@ -238,6 +247,7 @@ def get_type_information(some_type: Any) -> Tuple[Type[Type], list]:
 T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
+
 
 # TODO -- support sequential operation
 # class Sequential(Generator[T, None, None], ABC):

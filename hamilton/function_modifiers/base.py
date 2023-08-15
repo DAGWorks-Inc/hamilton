@@ -60,7 +60,7 @@ def track_decorator_usage(call_fn: Callable) -> Callable:
         if self.__module__.startswith("hamilton.function_modifiers"):
             # only capture counts for hamilton decorators
             DECORATOR_COUNTER[self.__class__.__name__] = (
-                    DECORATOR_COUNTER[self.__class__.__name__] + 1
+                DECORATOR_COUNTER[self.__class__.__name__] + 1
             )
         else:
             DECORATOR_COUNTER["custom_decorator"] = DECORATOR_COUNTER["custom_decorator"] + 1
@@ -217,7 +217,7 @@ class NodeCreator(NodeTransformLifecycle, abc.ABC):
 class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
     @abc.abstractmethod
     def transform_dag(
-            self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
+        self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """Modifies a DAG consisting of a set of nodes. Note that this is to support the following two base classes.
 
@@ -284,7 +284,7 @@ class NodeInjector(SubDAGModifier, abc.ABC):
         return output_deps
 
     def transform_dag(
-            self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
+        self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """Transforms the subDAG by getting the injectable parameters (anything not
         produced by nodes inside it), then calling the inject_nodes function on it.
@@ -313,7 +313,7 @@ class NodeInjector(SubDAGModifier, abc.ABC):
 
     @abc.abstractmethod
     def inject_nodes(
-            self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
+        self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
     ) -> Tuple[List[node.Node], Dict[str, str]]:
         """Adds a set of nodes to inject into the DAG. These get injected into the specified param name,
         meaning that exactly one of the output nodes will have that name. Note that this also allows
@@ -350,7 +350,7 @@ class NodeExpander(SubDAGModifier):
     EXPAND_NODES = "expand_nodes"
 
     def transform_dag(
-            self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
+        self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         if len(nodes) != 1:
             raise ValueError(
@@ -362,7 +362,7 @@ class NodeExpander(SubDAGModifier):
 
     @abc.abstractmethod
     def expand_node(
-            self, node_: node.Node, config: Dict[str, Any], fn: Callable
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """Given a single node, expands into multiple nodes. Note that this node list includes:
         1. Each "output" node (think sink in a DAG)
@@ -448,7 +448,7 @@ class NodeTransformer(SubDAGModifier):
 
     @staticmethod
     def _extract_final_nodes(
-            nodes: Collection[node.Node],
+        nodes: Collection[node.Node],
     ) -> Collection[node.Node]:
         """Separates out final nodes (sinks) from the nodes.
 
@@ -463,7 +463,7 @@ class NodeTransformer(SubDAGModifier):
             node_
             for node_ in nodes
             if node_.name not in non_final_nodes
-               and not node_.tags.get(NodeTransformer.NON_FINAL_TAG)
+            and not node_.tags.get(NodeTransformer.NON_FINAL_TAG)
         ]
 
     @staticmethod
@@ -498,7 +498,7 @@ class NodeTransformer(SubDAGModifier):
 
     @staticmethod
     def compliment(
-            all_nodes: Collection[node.Node], nodes_to_transform: Collection[node.Node]
+        all_nodes: Collection[node.Node], nodes_to_transform: Collection[node.Node]
     ) -> Collection[node.Node]:
         """Given a set of nodes, and a set of nodes to transform, returns the set of nodes that
         are not in the set of nodes to transform.
@@ -511,7 +511,7 @@ class NodeTransformer(SubDAGModifier):
         return [node_ for node_ in all_nodes if node_ not in nodes_to_transform]
 
     def transform_targets(
-            self, targets: Collection[node.Node], config: Dict[str, Any], fn: Callable
+        self, targets: Collection[node.Node], config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """Transforms a set of target nodes. Note that this is just a loop,
         but abstracting t away gives subclasses control over how this is done,
@@ -530,7 +530,7 @@ class NodeTransformer(SubDAGModifier):
         return out
 
     def transform_dag(
-            self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
+        self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """Finds the sources and sinks and runs the transformer on each sink.
         Then returns the result of the entire set of sinks. Note that each sink has to have a unique name.
@@ -548,7 +548,7 @@ class NodeTransformer(SubDAGModifier):
 
     @abc.abstractmethod
     def transform_node(
-            self, node_: node.Node, config: Dict[str, Any], fn: Callable
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         pass
 
@@ -581,7 +581,7 @@ class SingleNodeNodeTransformer(NodeTransformer, ABC):
         super().__init__(target=None)
 
     def transform_targets(
-            self, targets: Collection[node.Node], config: Dict[str, Any], fn: Callable
+        self, targets: Collection[node.Node], config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """Transforms the target set of nodes. Exists to validate the target set.
 
@@ -610,7 +610,7 @@ class NodeDecorator(NodeTransformer, abc.ABC):
         super().__init__(target=target)
 
     def transform_node(
-            self, node_: node.Node, config: Dict[str, Any], fn: Callable
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         """Transforms the node. Delegates to decorate_node
 
@@ -667,10 +667,10 @@ class DefaultNodeDecorator(NodeDecorator):
 
 
 def resolve_config(
-        name_for_error: str,
-        config: Dict[str, Any],
-        config_required: Optional[List[str]],
-        config_optional_with_defaults: Dict[str, Any],
+    name_for_error: str,
+    config: Dict[str, Any],
+    config_required: Optional[List[str]],
+    config_optional_with_defaults: Dict[str, Any],
 ) -> Dict[str, Any]:
     """Resolves the configuration that a decorator utilizes
 
@@ -692,9 +692,9 @@ def resolve_config(
         settings.ENABLE_POWER_USER_MODE
     ] = config_optional_with_global_defaults_applied.get(settings.ENABLE_POWER_USER_MODE, False)
     missing_keys = (
-            set(config_required)
-            - set(config.keys())
-            - set(config_optional_with_global_defaults_applied.keys())
+        set(config_required)
+        - set(config.keys())
+        - set(config_optional_with_global_defaults_applied.keys())
     )
     if len(missing_keys) > 0:
         raise MissingConfigParametersException(
@@ -732,7 +732,7 @@ def filter_config(config: Dict[str, Any], decorator: NodeTransformLifecycle) -> 
 
 
 def get_node_decorators(
-        fn: Callable, config: Dict[str, Any]
+    fn: Callable, config: Dict[str, Any]
 ) -> Dict[str, List[NodeTransformLifecycle]]:
     """Gets the decorators for a function. Contract is this will have one entry
     for every step of the decorator lifecycle that can always be run (currently everything except NodeExpander)
@@ -785,8 +785,8 @@ def _add_original_function_to_nodes(fn: Callable, nodes: List[node.Node]) -> Lis
     for node_ in nodes:
         current_originating_functions = node_.originating_functions
         new_originating_functions = (
-                                        current_originating_functions if current_originating_functions is not None else ()
-                                    ) + (fn,)
+            current_originating_functions if current_originating_functions is not None else ()
+        ) + (fn,)
         out.append(node_.copy_with(originating_functions=new_originating_functions))
     return out
 
