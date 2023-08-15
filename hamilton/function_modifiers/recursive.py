@@ -263,7 +263,8 @@ class subdag(base.NodeCreator):
         node_types = extract_all_known_types(nodes)
         out = []
         for key, value in self.inputs.items():
-            # TODO -- fix type derivation. Currently we don't use the specified type as we don't really know what it should be...
+            # TODO -- fix type derivation. Currently we don't use the specified type as we don't
+            #  really know what it should be...
             new_node_name = assign_namespace(key, namespace)
             if value.get_dependency_type() == dependencies.ParametrizedDependencySource.LITERAL:
                 out.append(
