@@ -30,6 +30,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "myst_parser",
     "sphinx_sitemap",
+    "docs.data_adapters_extension",
 ]
 
 # for the sitemap extension ---
