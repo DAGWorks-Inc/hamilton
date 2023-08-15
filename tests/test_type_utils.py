@@ -1,3 +1,4 @@
+import collections
 import typing
 
 import pandas as pd
@@ -18,7 +19,7 @@ custom_type = typing.TypeVar("FOOBAR")
 
 
 @pytest.mark.parametrize(
-    "param_type,required_type,expected",
+    "param_type,requested_type,expected",
     [
         (custom_type, custom_type, True),
         (custom_type, typing.TypeVar("FOO"), False),
@@ -51,11 +52,16 @@ custom_type = typing.TypeVar("FOOBAR")
         (typing.Union[custom_type, X], Y, True),
         (typing.Union[float, str], int, False),
         (typing.Union[int, float], X, False),
+        (collections.Counter, collections.Counter, True),
+        (dict, collections.Counter, True),
+        (typing.Dict, collections.Counter, True),
+        # These are not subclasses of each other, see issue 42
+        (typing.FrozenSet[int], typing.Set[int], False),
     ],
 )
-def test_custom_subclass_check(param_type, required_type, expected):
+def test_custom_subclass_check(param_type, requested_type, expected):
     """Tests the custom_subclass_check"""
-    actual = htypes.custom_subclass_check(required_type, param_type)
+    actual = htypes.custom_subclass_check(requested_type, param_type)
     assert actual == expected
 
 
@@ -121,3 +127,18 @@ def test_validate_types_sad(type_):
     """Tests that validate_types works when the type is valid"""
     with pytest.raises(htypes.InvalidTypeException):
         htypes.validate_type_annotation(type_)
+
+
+@pytest.mark.parametrize(
+    "candidate,type_,expected",
+    [
+        (int, int, True),
+        (int, float, False),
+        # Not safe so we return false
+        (typing.List[int], typing.List, False),
+        (typing.FrozenSet[int], typing.Set[int], False),
+        (typing.Dict, dict, False),
+    ],
+)
+def test__safe_subclass(candidate, type_, expected):
+    assert htypes._safe_subclass(candidate, type_) == expected
