@@ -75,17 +75,17 @@ def test_load_from_decorator():
     nodes_by_name = {node_.name: node_ for node_ in nodes}
     assert len(nodes_by_name) == 3
     assert "fn" in nodes_by_name
-    assert nodes_by_name["data"].tags == {
-        "hamilton.data_loader.source": "mock",
-        "hamilton.data_loader": True,
-        "hamilton.data_loader.has_metadata": False,
-        "hamilton.data_loader.node": "data",
-        "hamilton.data_loader.classname": MockDataLoader.__qualname__,
-    }
-    assert nodes_by_name["load_data.fn.data"].tags == {
+    assert nodes_by_name["fn.load_data.data"].tags == {
         "hamilton.data_loader.source": "mock",
         "hamilton.data_loader": True,
         "hamilton.data_loader.has_metadata": True,
+        "hamilton.data_loader.node": "data",
+        "hamilton.data_loader.classname": MockDataLoader.__qualname__,
+    }
+    assert nodes_by_name["fn.select_data.data"].tags == {
+        "hamilton.data_loader.source": "mock",
+        "hamilton.data_loader": True,
+        "hamilton.data_loader.has_metadata": False,
         "hamilton.data_loader.node": "data",
         "hamilton.data_loader.classname": MockDataLoader.__qualname__,
     }
@@ -333,7 +333,7 @@ def test_load_from_decorator_end_to_end():
     )
     result = fg.execute(inputs={}, nodes=fg.nodes.values())
     assert result["fn_str_inject"] == "foo"
-    assert result["load_data.fn_str_inject.injected_data"] == (
+    assert result["fn_str_inject.load_data.injected_data"] == (
         "foo",
         {"loader": "string_data_loader"},
     )
@@ -362,12 +362,12 @@ def test_load_from_decorator_end_to_end_with_multiple():
     )
     result = fg.execute(inputs={}, nodes=fg.nodes.values())
     assert result["fn_str_inject"] == "foofoo"
-    assert result["load_data.fn_str_inject.injected_data_1"] == (
+    assert result["fn_str_inject.load_data.injected_data_1"] == (
         "foo",
         {"loader": "string_data_loader"},
     )
 
-    assert result["load_data.fn_str_inject.injected_data_2"] == (
+    assert result["fn_str_inject.load_data.injected_data_2"] == (
         2,
         {"loader": "int_data_loader_2"},
     )

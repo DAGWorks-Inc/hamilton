@@ -29,7 +29,7 @@ class SingleDependency(ParametrizedDependency, abc.ABC):
 
 
 @dataclasses.dataclass
-class LiteralDependency(ParametrizedDependency):
+class LiteralDependency(SingleDependency):
     value: Any
 
     def get_dependency_type(self) -> ParametrizedDependencySource:
@@ -37,7 +37,7 @@ class LiteralDependency(ParametrizedDependency):
 
 
 @dataclasses.dataclass
-class UpstreamDependency(ParametrizedDependency):
+class UpstreamDependency(SingleDependency):
     source: str
 
     def get_dependency_type(self) -> ParametrizedDependencySource:

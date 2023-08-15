@@ -220,15 +220,6 @@ def test_add_dependency_user_nodes():
     assert func_node.depended_on_by == []
 
 
-def test_create_function_graph_simple():
-    """Tests that we create a simple function graph."""
-    expected = create_testing_nodes()
-    actual = graph.create_function_graph(
-        tests.resources.dummy_functions, config={}, adapter=base.SimplePythonDataFrameGraphAdapter()
-    )
-    assert actual == expected
-
-
 def create_testing_nodes():
     """Helper function for creating the nodes represented in dummy_functions.py."""
     nodes = {
@@ -273,6 +264,15 @@ def create_testing_nodes():
     nodes["B"].dependencies.append(nodes["A"])
     nodes["C"].dependencies.append(nodes["A"])
     return nodes
+
+
+def test_create_function_graph_simple():
+    """Tests that we create a simple function graph."""
+    expected = create_testing_nodes()
+    actual = graph.create_function_graph(
+        tests.resources.dummy_functions, config={}, adapter=base.SimplePythonDataFrameGraphAdapter()
+    )
+    assert actual == expected
 
 
 def test_execute():
@@ -800,3 +800,11 @@ def test_in_driver_function_definitions():
     )
     results = fg.execute([n for n in fg.get_nodes() if n.name in ["my_function", "A"]])
     assert results == {"A": 4, "b": 3, "c": 1, "my_function": 8}
+
+
+def test_update_dependencies():
+    nodes = create_testing_nodes()
+    new_nodes = graph.update_dependencies(nodes, base.DefaultAdapter())
+    for node_name, node_ in new_nodes.items():
+        assert node_.dependencies == nodes[node_name].dependencies
+        assert node_.depended_on_by == nodes[node_name].depended_on_by

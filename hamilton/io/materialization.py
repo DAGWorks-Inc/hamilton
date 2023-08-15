@@ -7,7 +7,7 @@ from hamilton.function_modifiers.adapters import SaveToDecorator
 from hamilton.function_modifiers.dependencies import SingleDependency, value
 from hamilton.graph import FunctionGraph
 from hamilton.io.data_adapters import DataSaver
-from hamilton.registry import LOADER_REGISTRY
+from hamilton.registry import SAVER_REGISTRY
 
 
 class materialization_meta__(type):
@@ -19,20 +19,22 @@ class materialization_meta__(type):
     """
 
     def __getattr__(cls, item: str):
-        if item in LOADER_REGISTRY:
-            potential_loaders = LOADER_REGISTRY[item]
+        if item in SAVER_REGISTRY:
+            potential_loaders = SAVER_REGISTRY[item]
             savers = [loader for loader in potential_loaders if issubclass(loader, DataSaver)]
             if len(savers) > 0:
-                return Materialize.partial(LOADER_REGISTRY[item])
+                return Materialize.partial(SAVER_REGISTRY[item])
         try:
             return super().__getattribute__(item)
         except AttributeError as e:
             raise AttributeError(
-                f"No loader named: {item} available for {cls.__name__}. "
-                f"Available loaders are: {LOADER_REGISTRY.keys()}. "
-                f"If you've gotten to this point, you either (1) spelled the "
-                f"loader name wrong, (2) are trying to use a loader that does"
-                f"not exist (yet)"
+                "No data materializer named: {item}. "
+                "Available materializers are: {SAVER_REGISTRY.keys()}. "
+                "If you've gotten to this point, you either (1) spelled the "
+                "loader name wrong, (2) are trying to use a loader that does"
+                "not exist (yet). For a list of available materializers, see  "
+                "https://hamilton.readthedocs.io/reference/io/available-data-adapters/#data"
+                "-loaders "
             ) from e
 
 
@@ -76,6 +78,7 @@ class MaterializerFactory:
         """
         processed_kwargs = {}
         for kwarg, kwarg_val in data_saver_kwargs.items():
+
             if not isinstance(kwarg_val, SingleDependency):
                 processed_kwargs[kwarg] = value(kwarg_val)
             else:

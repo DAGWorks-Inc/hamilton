@@ -1,6 +1,6 @@
 import inspect
 import typing
-from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Collection, Dict, List, Tuple, Type
 
 from hamilton import node
 from hamilton.function_modifiers.base import (
@@ -139,7 +139,7 @@ class LoadFromDecorator(NodeInjector):
 
     def inject_nodes(
         self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
-    ) -> Optional[Collection[node.Node]]:
+    ) -> Tuple[Collection[node.Node], Dict[str, str]]:
         pass
         """Generates two nodes:
         1. A node that loads the data from the data source, and returns that + metadata
@@ -217,7 +217,7 @@ class LoadFromDecorator(NodeInjector):
                 "hamilton.data_loader.classname": f"{loader_cls.__qualname__}",
                 "hamilton.data_loader.node": inject_parameter,
             },
-            namespace=("load_data", fn.__name__),
+            namespace=(fn.__name__, "load_data"),
         )
 
         # the filter node is the node that takes the data from the data source, filters out
@@ -239,8 +239,9 @@ class LoadFromDecorator(NodeInjector):
                 "hamilton.data_loader.classname": f"{loader_cls.__qualname__}",
                 "hamilton.data_loader.node": inject_parameter,
             },
+            namespace=(fn.__name__, "select_data"),
         )
-        return [loader_node, filter_node]
+        return [loader_node, filter_node], {inject_parameter: filter_node.name}
 
     def _get_inject_parameter_from_function(self, fn: Callable) -> Tuple[str, Type[Type]]:
         """Gets the name of the parameter to inject the data into.
@@ -311,7 +312,9 @@ class load_from__meta__(type):
                 f"Available loaders are: {LOADER_REGISTRY.keys()}. "
                 f"If you've gotten to this point, you either (1) spelled the "
                 f"loader name wrong, (2) are trying to use a loader that does"
-                f"not exist (yet)"
+                f"not exist (yet). For a list of available loaders, see: "
+                f"https://hamilton.readthedocs.io/reference/io/available-data-adapters/#data"
+                f"-loaders "
             ) from e
 
 
@@ -424,11 +427,13 @@ class save_to__meta__(type):
             return super().__getattribute__(item)
         except AttributeError as e:
             raise AttributeError(
-                f"No saver named: {item} available for {cls.__name__}. "
-                f"Available data savers are: {list(SAVER_REGISTRY.keys())}. "
-                f"If you've gotten to this point, you either (1) spelled the "
-                f"loader name wrong, (2) are trying to use a saver that does"
-                f"not exist (yet)."
+                "No saver named: {item} available for {cls.__name__}. "
+                "Available data savers are: {list(SAVER_REGISTRY.keys())}. "
+                "If you've gotten to this point, you either (1) spelled the "
+                "loader name wrong, (2) are trying to use a saver that does"
+                "not exist (yet). For a list of available savers, see "
+                "https://hamilton.readthedocs.io/reference/io/available-data-adapters/#data"
+                "-loaders "
             ) from e
 
 

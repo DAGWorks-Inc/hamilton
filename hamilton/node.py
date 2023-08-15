@@ -108,7 +108,7 @@ class Node(object):
                         DependencyType.from_parameter(value),
                     )
         elif self.user_defined:
-            if input_types is not None:
+            if len(self._input_types) > 0:
                 raise ValueError(
                     f"Input types cannot be provided for user-defined node {self.name}"
                 )
@@ -266,11 +266,12 @@ class Node(object):
             node_source=node_source,
         )
 
-    def copy_with(self, **overrides) -> "Node":
+    def copy_with(self, include_refs: bool = True, **overrides) -> "Node":
         """Copies a node with the specified overrides for the constructor arguments.
         Utility function for creating a node -- useful for modifying it.
 
         :param kwargs: kwargs to use in place of the node. Passed to the constructor.
+        :param include_refs: Whether or not to include dependencies and depended_on_by
         :return: A node copied from self with the specified keyword arguments replaced.
         """
         constructor_args = dict(
@@ -284,4 +285,20 @@ class Node(object):
             originating_functions=self.originating_functions,
         )
         constructor_args.update(**overrides)
-        return Node(**constructor_args)
+        out = Node(**constructor_args)
+        if include_refs:
+            out._dependencies = self._dependencies
+            out._depended_on_by = self._depended_on_by
+        return out
+
+    def copy(self, include_refs: bool = True) -> "Node":
+        """Copies a node, not modifying anything (except for the references
+        /dependencies if specified).
+
+        :param include_refs: Whether or not to include dependencies and depended_on_by
+        :return: A copy of the node.
+        """
+        """Gives a copy of the node, so we can modify it without modifying the original.
+        :return: A copy of the node.
+        """
+        return self.copy_with(include_refs)
