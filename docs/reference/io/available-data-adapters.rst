@@ -8,7 +8,7 @@ but some are different. You will want to reference this when calling out to any 
 
 1. Using :doc:`/reference/decorators/save_to/`.
 2. Using :doc:`/reference/decorators/load_from/`.
-3. Using :doc:`materialize </reference/drivers/Driver/>`
+3. Using :doc:`materializers </reference/drivers/Driver/>`
 
 To read these tables, you want to first look at the key to determine which format you want --
 these should be human-readable and familiar to you. Then you'll want to look at the `types` field
