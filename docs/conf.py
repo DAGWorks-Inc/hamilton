@@ -14,8 +14,8 @@ html_theme_options = {
     "source_repository": "https://github.com/dagworks-inc/hamilton",
     "source_branch": "main",
     "source_directory": "docs/",
-    "announcement": "📢 Want Hamilton updates sent to your inbox? Subscribe "
-    + '<a target="_blank" href="https://blog.dagworks.io/?utm_source=docs">here.</a>📢',
+    "announcement": "📢 Find Hamilton next at "
+    + '<a target="_blank" href="https://www.linkedin.com/events/dbt-hamilton-enablingyoutomainc7091883466107080705/comments/">MDSFest\'23</a>📢',
     "light_css_variables": {
         "color-announcement-background": "#ffba00",
         "color-announcement-text": "#091E42",
