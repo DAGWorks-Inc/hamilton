@@ -23,6 +23,9 @@ locations through a driver call. We demonstrate:
 
 See [run.py](run.py) for the full example.
 
+In this example we only pass literal values to the materializers. That said, you can use both `source` (to specify the source from an upstream node),
+and `value` (which is the default) to specify literals.
+
 
 ## `driver.materialize`
 

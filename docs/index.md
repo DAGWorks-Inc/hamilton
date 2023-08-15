@@ -41,6 +41,7 @@ contributing
 
 reference/decorators/index
 reference/drivers/index
+reference/io/index
 reference/graph-adapters/index
 reference/result-builders/index
 reference/miscellaneous/index

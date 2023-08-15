@@ -312,7 +312,9 @@ class load_from__meta__(type):
                 f"Available loaders are: {LOADER_REGISTRY.keys()}. "
                 f"If you've gotten to this point, you either (1) spelled the "
                 f"loader name wrong, (2) are trying to use a loader that does"
-                f"not exist (yet)"
+                f"not exist (yet). For a list of available loaders, see: "
+                f"https://hamilton.readthedocs.io/reference/io/available-data-adapters/#data"
+                f"-loaders "
             ) from e
 
 
@@ -425,11 +427,13 @@ class save_to__meta__(type):
             return super().__getattribute__(item)
         except AttributeError as e:
             raise AttributeError(
-                f"No saver named: {item} available for {cls.__name__}. "
-                f"Available data savers are: {list(SAVER_REGISTRY.keys())}. "
-                f"If you've gotten to this point, you either (1) spelled the "
-                f"loader name wrong, (2) are trying to use a saver that does"
-                f"not exist (yet)."
+                "No saver named: {item} available for {cls.__name__}. "
+                "Available data savers are: {list(SAVER_REGISTRY.keys())}. "
+                "If you've gotten to this point, you either (1) spelled the "
+                "loader name wrong, (2) are trying to use a saver that does"
+                "not exist (yet). For a list of available savers, see "
+                "https://hamilton.readthedocs.io/reference/io/available-data-adapters/#data"
+                "-loaders "
             ) from e
 
 

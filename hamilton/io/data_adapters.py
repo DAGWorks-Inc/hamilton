@@ -153,12 +153,12 @@ class DataSaver(AdapterCommon, abc.ABC):
     @abc.abstractmethod
     def save_data(self, data: Any) -> Dict[str, Any]:
         """Saves the data to the data source.
-        Note this uses the constructor parameters to determine
-        how to save the data.
+            Note this uses the constructor parameters to determine
+            how to save the data.
 
         :return: Any relevant metadata. This is up the the data saver, but will likely
-        include the URI, etc... This is going to be similar to the metadata returned
-        by the data loader in the loading tuple.
+            include the URI, etc... This is going to be similar to the metadata returned
+            by the data loader in the loading tuple.
         """
         pass
 
