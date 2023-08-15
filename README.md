@@ -274,6 +274,9 @@ See the [data quality](https://hamilton.dagworks.io/en/latest/how-tos/run-data-q
 * [x] Custom object type validators.
 * [ ] Integration with other data quality libraries (e.g. Great Expectations, Deequ, whylogs, etc.)
 
+## Online Monitoring
+* [ ] Open telemetry/tracing plugin.
+
 ## Caching:
 * [ ] Checkpoint caching (e.g. save a function's result to disk, independent of input) - [WIP](https://github.com/DAGWorks-Inc/hamilton/pull/195).
 * [ ] Finergrained caching (e.g. save a function's result to disk, dependent on input).
