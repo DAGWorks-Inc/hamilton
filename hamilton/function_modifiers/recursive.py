@@ -216,7 +216,9 @@ class subdag(base.NodeCreator):
             this will default to the function name.
         :param external_inputs: Parameters in the function that are not produced by the functions
             passed to the subdag. This is useful if you want to perform some logic with other inputs
-            in the subdag's processing function.
+            in the subdag's processing function. Note that this is currently required to
+            differentiate and clarify the inputs to the subdag.
+
         """
         self.subdag_functions = subdag.collect_functions(load_from)
         self.inputs = inputs if inputs is not None else {}
@@ -277,6 +279,8 @@ class subdag(base.NodeCreator):
                     )
                 )
             elif value.get_dependency_type() == dependencies.ParametrizedDependencySource.UPSTREAM:
+                if new_node_name not in node_types:
+                    continue
                 out.append(
                     create_identity_node(
                         from_=value.source,
