@@ -2,6 +2,7 @@ dbt-core
 dbt-duckdb
 dbt-fal
 dbt-python
+duckdb==0.6.1  # required to read saved database.duckdb file
 pandera
 scikit-learn
 sf-hamilton

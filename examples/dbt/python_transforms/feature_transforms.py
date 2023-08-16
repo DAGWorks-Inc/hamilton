@@ -4,7 +4,6 @@ This is a module that contains our feature transforms.
 import pickle
 from typing import Set
 
-import numpy as np
 import pandas as pd
 
 # from sklearn.preprocessing import OneHotEncoder
@@ -34,7 +33,7 @@ def rare_titles() -> Set[str]:
     }
 
 
-@check_output(data_type=np.int)
+@check_output(data_type=float)
 def family_size(parch: pd.Series, sibsp: pd.Series) -> pd.Series:
     return parch + sibsp
 
@@ -66,6 +65,7 @@ def fit_categorical_encoder__create_new(
     is_alone: pd.Series,
 ) -> preprocessing.OneHotEncoder:
     cat_df = pd.concat([embarked, sex, pclass, title, is_alone], axis=1)
+    cat_df.columns = cat_df.columns.astype(str)
     one_hot_encoder.fit(cat_df)
     return one_hot_encoder
 
@@ -99,6 +99,7 @@ def categorical_df(
     :return:
     """
     cat_df = pd.concat([embarked, sex, pclass, title, is_alone], axis=1)
+    cat_df.columns = cat_df.columns.astype(str)
     cat_df = fit_categorical_encoder.transform(cat_df)
     df = pd.DataFrame(cat_df)
     df.index = embarked.index
@@ -118,6 +119,7 @@ def fit_knn_imputer__create_new(
     family_size: pd.Series,
 ) -> impute.KNNImputer:
     num_df = pd.concat([age, fare, family_size], axis=1)
+    num_df.columns = num_df.columns.astype(str)
     knn_imputer.fit(num_df)
     return knn_imputer
 
@@ -143,6 +145,7 @@ def knn_imputed_df(
     :return:
     """
     num_df = pd.concat([age, fare, family_size], axis=1)
+    num_df.columns = num_df.columns.astype(str)
     imputed_df = fit_knn_imputer.transform(num_df)
     df = pd.DataFrame(imputed_df)
     df.index = age.index

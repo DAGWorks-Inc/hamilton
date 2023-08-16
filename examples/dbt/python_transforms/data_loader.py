@@ -3,7 +3,6 @@ This module contains our data loading functions.
 """
 from typing import List
 
-import numpy as np
 import pandas as pd
 import pandera as pa
 from sklearn import datasets
@@ -26,17 +25,17 @@ def _sanitize_columns(df_columns: List[str]) -> List[str]:
 # schema to validate against
 passengers_df_schema = pa.DataFrameSchema(
     {
-        "pclass": pa.Column(np.float, nullable=False),
+        "pclass": pa.Column(float, nullable=False),
         "sex": pa.Column(pa.Category, nullable=False),
-        "age": pa.Column(np.float, nullable=True),
-        "parch": pa.Column(np.float, nullable=False),
-        "sibsp": pa.Column(np.float, nullable=False),
-        "fare": pa.Column(np.float, nullable=True),
+        "age": pa.Column(float, nullable=True),
+        "parch": pa.Column(float, nullable=False),
+        "sibsp": pa.Column(float, nullable=False),
+        "fare": pa.Column(float, nullable=True),
         "embarked": pa.Column(pa.Category, nullable=True),
         "name": pa.Column(str, nullable=False),
         "ticket": pa.Column(str, nullable=False),
         "boat": pa.Column(str, nullable=True),
-        "body": pa.Column(np.float, nullable=True),
+        "body": pa.Column(float, nullable=True),
         "home_dest": pa.Column(str, nullable=True),
         "cabin": pa.Column(str, nullable=True),
         "survived": pa.Column(pa.Category, nullable=False),
