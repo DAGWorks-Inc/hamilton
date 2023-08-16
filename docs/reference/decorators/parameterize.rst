@@ -5,8 +5,8 @@ parameterize
 Expands a single function into n, each of which correspond to a function in which the parameter value is replaced either
 by:
 
-#. A specified value
-#. The value from a specified upstream node.
+#. A specified value ``value()``
+#. The value from a specified upstream node ``source()``.
 
 Note if you're confused by the other `@paramterize_*` decorators, don't worry, they all delegate to this base decorator.
 
@@ -25,7 +25,7 @@ Note if you're confused by the other `@paramterize_*` decorators, don't worry, t
         """{one_off_date} shifted by shift_by to create {output_name}"""
         return n_off_date.shift(shift_by)
 
-By choosing ``literal`` or ``upstream``, you can determine the source of your dependency. Note that you can also pass
+By choosing ``value()`` or ``source()``, you can determine the source of your dependency. Note that you can also pass
 documentation. If you don't, it will use the parameterized docstring.
 
 .. code-block:: python
