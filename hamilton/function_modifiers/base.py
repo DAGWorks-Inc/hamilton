@@ -304,11 +304,6 @@ class NodeInjector(SubDAGModifier, abc.ABC):
             else:
                 out.append(node_)
         out.extend(nodes_to_inject)
-        if len(set([node_.name for node_ in out])) != len(out):
-            import pdb
-
-            pdb.set_trace()
-        print([node_.name for node_ in out])
         return out
 
     @abc.abstractmethod
