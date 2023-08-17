@@ -4,6 +4,7 @@ import pytest
 
 from hamilton import base, driver
 from hamilton.execution.executors import (
+    DefaultExecutionManager,
     MultiProcessingExecutor,
     MultiThreadingExecutor,
     SynchronousLocalTaskExecutor,
@@ -13,6 +14,8 @@ from hamilton.execution.grouping import (
     GroupNodesAllAsOne,
     GroupNodesByLevel,
     GroupNodesIndividually,
+    NodeGroupPurpose,
+    TaskImplementation,
 )
 from tests.resources.dynamic_parallelism import (
     no_parallel,
@@ -188,3 +191,37 @@ def test_end_to_end_with_overrides(executor_factory):
         },
     )
     assert result["final"] == 5
+
+
+def create_dummy_task(task_purpose: NodeGroupPurpose):
+    return TaskImplementation(
+        base_id="foo",
+        spawning_task_base_id="foo",
+        nodes=[],
+        purpose=task_purpose,
+        outputs_to_compute=[],
+        overrides={},
+        adapters=[],
+        base_dependencies=[],
+        group_id=None,
+        realized_dependencies={},
+        spawning_task_id=None,
+        dynamic_inputs={},
+    )
+
+
+@pytest.mark.parametrize(
+    "purpose, check",
+    [
+        (NodeGroupPurpose.EXECUTE_BLOCK, lambda x: isinstance(x, MultiProcessingExecutor)),
+        (NodeGroupPurpose.EXECUTE_SINGLE, lambda x: isinstance(x, SynchronousLocalTaskExecutor)),
+        (NodeGroupPurpose.EXPAND_UNORDERED, lambda x: isinstance(x, SynchronousLocalTaskExecutor)),
+        (NodeGroupPurpose.GATHER, lambda x: isinstance(x, SynchronousLocalTaskExecutor)),
+    ],
+)
+def test_get_execotor_for_tasks_default_execution_manager(purpose, check):
+    execution_manager = DefaultExecutionManager(
+        local_executor=SynchronousLocalTaskExecutor(),
+        remote_executor=MultiProcessingExecutor(max_tasks=10),
+    )
+    assert check(execution_manager.get_executor_for_task(create_dummy_task(purpose)))

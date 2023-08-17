@@ -305,9 +305,9 @@ class DefaultExecutionManager(ExecutionManager):
         :return: A local task if this is a "single-node" task, a remote task otherwise
         """
 
-        if task.purpose == NodeGroupPurpose.EXECUTE_SINGLE:
-            return self.local_executor
-        return self.remote_executor
+        if task.purpose == NodeGroupPurpose.EXECUTE_BLOCK:
+            return self.remote_executor
+        return self.local_executor
 
 
 def run_graph_to_completion(
@@ -331,7 +331,14 @@ def run_graph_to_completion(
             if next_task is not None:
                 task_executor = execution_manager.get_executor_for_task(next_task)
                 if task_executor.can_submit_task():
-                    submitted = task_executor.submit_task(next_task)
+                    try:
+                        submitted = task_executor.submit_task(next_task)
+                    except Exception as e:
+                        logger.exception(
+                            f"Exception submitting task {next_task.task_id}, with nodes: "
+                            f"{[item.name for item in next_task.nodes]}"
+                        )
+                        raise e
                     task_futures[next_task.task_id] = submitted
                 else:
                     # Whoops, back on the queue
