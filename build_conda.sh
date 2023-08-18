@@ -36,4 +36,4 @@ do
     echo $file
     anaconda upload -u Hamilton-OpenSource $file
 done
-echo "Built & uploaded conda package done!"
+echo "Built & uploaded conda package done! Do 'conda build purge && conda clean -a' to clean up."
