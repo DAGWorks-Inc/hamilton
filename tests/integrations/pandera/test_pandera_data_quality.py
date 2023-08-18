@@ -93,3 +93,36 @@ def test_basic_pandera_decorator_series_passes():
     validator = pandera_validators.PanderaSeriesSchemaValidator(schema=schema, importance="warn")
     validation_result = validator.validate(series)
     assert validation_result.passes
+
+
+def test_no_inplace_df():
+    schema = pa.DataFrameSchema(
+        {
+            "column1": pa.Column(int),
+        },
+        index=pa.Index(int, coerce=True),
+        strict=True,
+    )
+
+    df = pd.DataFrame({"column1": [5, 1, 3]}, index=["1", "2", "3"])
+    validator = pandera_validators.PanderaDataFrameValidator(schema=schema, importance="fail")
+    validation_result = validator.validate(df)
+    print(validation_result.message)
+    assert validation_result.passes
+    pd.testing.assert_frame_equal(df, pd.DataFrame({"column1": [5, 1, 3]}, index=["1", "2", "3"]))
+
+
+# TODO -- fix this test
+# def test_no_inplace_series():
+#     schema = pa.SeriesSchema(
+#         str,
+#         coerce=True,
+#     )
+#
+#     series_ = pd.Series([1.0, 2.0, 3.0], dtype=float)
+#     validator = pandera_validators.PanderaSeriesSchemaValidator(schema=schema,
+#                                                                 importance="fail")
+#     validation_result = validator.validate(series_)
+#     print(validation_result.message)
+#     assert validation_result.passes
+#     pd.testing.assert_series_equal(series_, pd.Series([1.0, 2.0, 3.0], dtype=float))
