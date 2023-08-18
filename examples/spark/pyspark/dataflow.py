@@ -86,7 +86,7 @@ def spend_statistics(base_df: ps.DataFrame) -> Dict[str, float]:
     Note that this is a blocking (collect) operation,
     but it doesn't have to be if you use an aggregation. In that case
     you'd just add the column to the dataframe and refer to it downstream,
-    by expanding `initial_schema` in `with_mapped_data`.
+    by expanding `columns_to_pass` in `with_mapped_data`.
 
     :param base_df: Base dataframe with spend and signups columns.
     :return: A dictionary with the mean and standard deviation of the spend column.
@@ -103,7 +103,7 @@ def spend_statistics(base_df: ps.DataFrame) -> Dict[str, float]:
 
 @h_spark.with_columns(
     map_transforms,
-    initial_schema=["spend", "signups"],
+    columns_to_pass=["spend", "signups"],
 )
 def with_mapped_data(base_df: ps.DataFrame) -> ps.DataFrame:
     """Applies all the transforms in map_transforms

@@ -83,7 +83,7 @@ def df_1(spark_session: ps.SparkSession) -> ps.DataFrame:
     b_times_key,
     a_plus_b_plus_c,
     select=["a_times_key", "b_times_key", "a_plus_b_plus_c"],
-    initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+    columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
 )
 def processed_df_1(df_1: ps.DataFrame) -> ps.DataFrame:
     return df_1.select("key", "a_times_key", "b_times_key", "a_plus_b_plus_c")
@@ -104,8 +104,7 @@ def df_2(spark_session: ps.SparkSession) -> ps.DataFrame:
 @h_spark.with_columns(
     *_df_2_modules(),
     select=["multiply_d_e_f_key", "d", "e", "f"],
-    initial_schema=["d_raw", "e_raw", "f_raw", "key"],
-    dataframe="df_2",
+    columns_to_pass=["d_raw", "e_raw", "f_raw", "key"],
 )
 def processed_df_2_joined_df_1(df_2: ps.DataFrame, processed_df_1: ps.DataFrame) -> ps.DataFrame:
     return df_2.join(processed_df_1, processed_df_1["key"] == df_2["key"], "inner").drop(df_2.key)

@@ -77,7 +77,7 @@ def df_1(spark_session: ps.SparkSession) -> ps.DataFrame:
 @h_spark.with_columns(
     *_module(False),
     select=["a_times_key", "b_times_key", "a_plus_b_plus_c"],
-    initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+    columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
 )
 def processed_df_as_pandas(df_1: ps.DataFrame) -> pd.DataFrame:
     return df_1.select("a_times_key", "b_times_key", "a_plus_b_plus_c").toPandas()
@@ -86,7 +86,7 @@ def processed_df_as_pandas(df_1: ps.DataFrame) -> pd.DataFrame:
 @h_spark.with_columns(
     *_module(True),
     select=["a_times_key", "b_times_key", "a_plus_b_plus_c"],
-    dataframe_subdag_param="external_dataframe",
+    pass_dataframe_as="external_dataframe",
 )
 def processed_df_as_pandas_with_injected_dataframe(df_1: ps.DataFrame) -> pd.DataFrame:
     return df_1.select("a_times_key", "b_times_key", "a_plus_b_plus_c").toPandas()

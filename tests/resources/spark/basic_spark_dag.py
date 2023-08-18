@@ -54,7 +54,7 @@ def df_1(spark_session: ps.SparkSession) -> ps.DataFrame:
     b_times_key,
     a_plus_b_plus_c,
     select=["a_times_key", "b_times_key", "a_plus_b_plus_c"],
-    initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+    columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
 )
 @config.when_not(mode="select")
 def processed_df_as_pandas__append(df_1: ps.DataFrame) -> pd.DataFrame:
@@ -69,7 +69,7 @@ def processed_df_as_pandas__append(df_1: ps.DataFrame) -> pd.DataFrame:
     b_times_key,
     a_plus_b_plus_c,
     select=["a_times_key", "a_plus_b_plus_c"],
-    initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+    columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
     mode="select",
 )
 @config.when(mode="select")

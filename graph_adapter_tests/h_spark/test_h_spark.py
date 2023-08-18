@@ -543,7 +543,7 @@ def test_generate_nodes_invalid_select():
         basic_spark_dag.b,
         basic_spark_dag.c,
         select=["d"],  # not a node
-        initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+        columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
     )
     with pytest.raises(ValueError):
 
@@ -558,7 +558,7 @@ def test_with_columns_generate_nodes_no_select():
         basic_spark_dag.a,
         basic_spark_dag.b,
         basic_spark_dag.c,
-        initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+        columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
     )
 
     def df_as_pandas(df: DataFrame) -> pd.DataFrame:
@@ -579,7 +579,7 @@ def test_with_columns_generate_nodes_select():
         basic_spark_dag.a,
         basic_spark_dag.b,
         basic_spark_dag.c,
-        initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+        columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
         select=["c"],
     )
 
@@ -596,7 +596,7 @@ def test_with_columns_generate_nodes_select_mode_select():
         basic_spark_dag.a,
         basic_spark_dag.b,
         basic_spark_dag.c,
-        initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+        columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
         select=["c"],
         mode="select",
     )
@@ -614,7 +614,7 @@ def test_with_columns_generate_nodes_specify_namespace():
         basic_spark_dag.a,
         basic_spark_dag.b,
         basic_spark_dag.c,
-        initial_schema=["a_raw", "b_raw", "c_raw", "key"],
+        columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
         namespace="foo",
     )
 
