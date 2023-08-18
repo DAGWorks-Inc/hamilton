@@ -543,7 +543,7 @@ def sparkify_node_with_udf(
     :param base_df_dependency_name: Name of the base (parent) dataframe dependency.
         this is only used if dependent_columns_from_dataframe is not empty
     :param base_df_dendency_param: Name of the base (parent) dataframe dependency parameter, as known
-        by the node. This is only used if `dataframe_subdag_param` is provided, which means that
+        by the node. This is only used if `pass_dataframe_as` is provided, which means that
         dependent_columns_from_dataframe is empty.
     :param dependent_columns_in_group: Columns on which this depends in the with_columns
     :param dependent_columns_from_dataframe:  Columns on which this depends in the
@@ -656,6 +656,32 @@ def derive_dataframe_parameter_from_fn(fn: Callable, requested_parameter: str = 
     return derive_dataframe_parameter(parameters_with_types, requested_parameter, fn.__qualname__)
 
 
+def _derive_first_dataframe_parameter_from_fn(fn: Callable) -> str:
+    """Utility function to derive the first parameter from a function and assert
+    that it is annotated with a pyspark dataframe.
+
+    :param fn:
+    :return:
+    """
+    sig = inspect.signature(fn)
+    params = list(sig.parameters.items())
+    if len(params) == 0:
+        raise ValueError(
+            f"Function {fn.__qualname__} has no parameters, but was "
+            f"decorated with with_columns. with_columns requires the first "
+            f"parameter to be a dataframe so we know how to wire dependencies."
+        )
+    first_param_name, first_param_value = params[0]
+    if not custom_subclass_check(first_param_value.annotation, DataFrame):
+        raise ValueError(
+            f"Function {fn.__qualname__} has a first parameter {first_param_name} "
+            f"that is not a pyspark dataframe. Instead got: {first_param_value.annotation}."
+            f"with_columns requires the first "
+            f"parameter to be a dataframe so we know how to wire dependencies."
+        )
+    return first_param_name
+
+
 def derive_dataframe_parameter_from_node(node_: node.Node, requested_parameter: str = None) -> str:
     """Derives the only/requested dataframe parameter from a node.
 
@@ -710,10 +736,9 @@ class require_columns(fm_base.NodeTransformer):
     TRANSFORM_TARGET_TAG = "hamilton.spark.target"
     TRANSFORM_COLUMNS_TAG = "hamilton.spark.columns"
 
-    def __init__(self, *columns: str, target_parameter=None):
+    def __init__(self, *columns: str):
         super(require_columns, self).__init__(target=None)
         self._columns = columns
-        self._target = target_parameter
 
     def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
@@ -733,7 +758,7 @@ class require_columns(fm_base.NodeTransformer):
         :param config: Configuration to use (unused here)
         :return:
         """
-        param = derive_dataframe_parameter_from_node(node_, self._target)
+        param = derive_dataframe_parameter_from_node(node_)
         with open("./debug.txt", "a") as f:
             f.write(f"{node_.name}={param}\n")
 
@@ -773,7 +798,7 @@ class require_columns(fm_base.NodeTransformer):
         :return:
         """
 
-        derive_dataframe_parameter_from_fn(fn, self._target)
+        _derive_first_dataframe_parameter_from_fn(fn)
 
     @staticmethod
     def _extract_dataframe_params(node_: node.Node) -> List[str]:
@@ -863,7 +888,7 @@ class require_columns(fm_base.NodeTransformer):
 
         # Then we see if we're trying to transform the base dataframe
         # This means we're not referring to it as a column, and only happens with the
-        # `dataframe_subdag_param` argument (which means the base_df_param_name is not None)
+        # `pass_dataframe_as` argument (which means the base_df_param_name is not None)
         if transformation_target == base_df_param_name:
             new_input_types[base_df_dependency_name] = (
                 DataFrame,
@@ -906,10 +931,9 @@ class with_columns(fm_base.NodeCreator):
     def __init__(
         self,
         *load_from: Union[Callable, ModuleType],
-        initial_schema: List[str] = None,
+        columns_to_pass: List[str] = None,
+        pass_dataframe_as: str = None,
         select: List[str] = None,
-        dataframe: Optional[str] = None,
-        dataframe_subdag_param: str = None,
         namespace: str = None,
         mode: str = "append",
     ):
@@ -937,40 +961,49 @@ class with_columns(fm_base.NodeCreator):
          # the with_columns call
          @with_columns(
              load_from=[my_module], # Load from any module
-             initial_schema=["a_from_df", "b_from_df"], # The initial schema of the dataframe
+             columns_to_pass=["a_from_df", "b_from_df"], # The columns to pass from the dataframe to
+             # the subdag
              select=["a", "b", "a_plus_b"], # The columns to select from the dataframe
          )
-         def final_df(df: ps.DataFrame) -> ps.DataFrame:
+         def final_df(initial_df: ps.DataFrame) -> ps.DataFrame:
              # process, or just return unprocessed
              ...
 
          You can think of the above as a series of withColumn calls on the dataframe, where the
          operations are applied in topological order. This is significantly more efficient than
-         extracting out the columns, applying the maps, then operating, but *also* allows you to
+         extracting out the columns, applying the maps, then joining, but *also* allows you to
          express the operations individually, making it easy to unit-test and reuse.
 
          Note that the operation is "append", meaning that the columns that are selected are appended
          onto the dataframe. We will likely add an option to have this be either "select" or "append"
          mode.
 
+         If the function takes multiple dataframes, the dataframe input to process will always be
+         the first one. This will be passed to the subdag, transformed, and passed back to the functions.
+         This follows the hamilton rule of reference by parameter name. To demonstarte this, in the code
+         above, the dataframe that is passed to the subdag is `initial_df`. That is transformed
+         by the subdag, and then returned as the final dataframe.
+
+         You can read it as:
+
+         "final_df is a function that transforms the upstream dataframe initial_df, running the transformations
+         from my_module. It starts with the columns a_from_df and b_from_df, and then adds the columns
+         a, b, and a_plus_b to the dataframe. It then returns the dataframe, and does some processing on it."
+
 
         :param load_from: The functions that will be used to generate the group of map operations.
         :param select: Columns to select from the transformation. If this is left blank it will
             keep all columns in the subdag.
-        :param initial_schema: The initial schema of the dataframe. This is used to determine which
+        :param columns_to_pass: The initial schema of the dataframe. This is used to determine which
             upstream inputs should be taken from the dataframe, and which shouldn't. Note that, if this is
             left empty (and external_inputs is as well), we will assume that all dependencies come
-            from the dataframe. This cannot be used in conjunction with external_inputs.
-        :param external_inputs: All dependencies referred to within the DAG that are not part of the
-            DAG itself or the upstream dataframe. Note that, if this is left empty (and initial_schema is as well),
-            we will assume that all dependencies come from the dataframe. This cannot be used in conjunction
-            with initial_schema.
+            from the dataframe. This cannot be used in conjunction with pass_dataframe_as.
+        :param pass_dataframe_as: The name of the dataframe that we're modifying, as known to the subdag.
+            If you pass this in, you are responsible for extracting columns out. If not provided, you have
+            to pass columns_to_pass in, and we will extract the columns out for you.
         :param namespace: The namespace of the nodes, so they don't clash with the global namespace
             and so this can be reused. If its left out, there will be no namespace (in which case you'll want
             to be careful about repeating it/reusing the nodes in other parts of the DAG.)
-        :param dataframe: The name of the dataframe that we're modifying. If not provided,
-            this will assume that there is only one pyspark.DataFrame parameter to the decorated function,
-            and use that if there is more than one, we will error.
         :param mode: The mode of the operation. This can be either "append" or "select".
             If it is "append", it will keep all columns in the dataframe. If it is "select",
             it will only keep the columns in the dataframe from the `select` parameter. Note that,
@@ -980,24 +1013,24 @@ class with_columns(fm_base.NodeCreator):
         """
         self.subdag_functions = subdag.collect_functions(load_from)
         self.select = select
-        self.initial_schema = initial_schema
-        if (dataframe_subdag_param is not None and initial_schema is not None) or (
-            dataframe_subdag_param is None and initial_schema is None
+        self.initial_schema = columns_to_pass
+        if (pass_dataframe_as is not None and columns_to_pass is not None) or (
+            pass_dataframe_as is None and columns_to_pass is None
         ):
             raise ValueError(
-                "You must specify only one of initial_schema and "
-                "dataframe_subdag_param. "
-                "This is because specifying dataframe_subdag_param injects into "
+                "You must specify only one of columns_to_pass and "
+                "pass_dataframe_as. "
+                "This is because specifying pass_dataframe_as injects into "
                 "the set of columns, allowing you to perform your own extraction"
-                " from the dataframe. We then execute all columns in the sbudag"
-                " in order, passing in that initial dataframe. If you want"
-                " to reference columns in your code, you'll have to specify "
+                "from the dataframe. We then execute all columns in the sbudag"
+                "in order, passing in that initial dataframe. If you want"
+                "to reference columns in your code, you'll have to specify "
                 "the set of initial columns, and allow the subdag decorator "
                 "to inject the dataframe through. The initial columns tell "
                 "us which parameters to take from that dataframe, so we can"
                 "feed the right data into the right columns."
             )
-        self.dataframe_subdag_param = dataframe_subdag_param
+        self.dataframe_subdag_param = pass_dataframe_as
         self.namespace = namespace
         self.upstream_dependency = dataframe
         self.mode = mode
@@ -1008,8 +1041,8 @@ class with_columns(fm_base.NodeCreator):
         This allows us to use the sparkify_node function in transforms
         for both the default ones and the decorated ones.
 
-        :param initial_nodes:
-        :return:
+        :param initial_nodes: Initial nodes to prepare
+        :return: Prepared nodes
         """
         out = []
         for node_ in initial_nodes:
@@ -1056,7 +1089,7 @@ class with_columns(fm_base.NodeCreator):
         ):
             raise ValueError(
                 f"We found multiple upstream dataframe parameters for function: {fn_name} decorated with "
-                f"@with_columns. You specified dataframe_subdag_param={self.dataframe_subdag_param} as the upstream "
+                f"@with_columns. You specified pass_dataframe_as={self.dataframe_subdag_param} as the upstream "
                 f"dataframe parameter, which means that your subdag must have exactly {0 if self.dataframe_subdag_param is None else 1} "
                 f"upstream dataframe parameters. Instead, we found the following upstream dataframe parameters: {candidates_for_upstream_dataframe}"
             )
@@ -1068,7 +1101,7 @@ class with_columns(fm_base.NodeCreator):
                     "that parameter as a dependency of any of the nodes. Note that that dependency "
                     "must be a pyspark dataframe. If you wish, instead, to supply an initial set of "
                     "columns for the upstream dataframe and refer to those columns directly within "
-                    "your UDFs, please use initial_schema instead of dataframe_subdag_param."
+                    "your UDFs, please use columns_to_pass instead of pass_dataframe_as."
                 )
             (upstream_dependency,) = list(candidates_for_upstream_dataframe)
             if upstream_dependency != self.dataframe_subdag_param:
@@ -1105,7 +1138,7 @@ class with_columns(fm_base.NodeCreator):
             )
         sorted_initial_nodes = graph_functions.topologically_sort_nodes(pruned_nodes)
         output_nodes = []
-        inject_parameter = derive_dataframe_parameter_from_fn(fn, self.upstream_dependency)
+        inject_parameter = _derive_first_dataframe_parameter_from_fn(fn)
         current_dataframe_node = inject_parameter
         # Columns that it is dependent on could be from the group of transforms created
         columns_produced_within_mapgroup = {node_.name for node_ in pruned_nodes}
@@ -1163,4 +1196,4 @@ class with_columns(fm_base.NodeCreator):
         return output_nodes + [final_node]
 
     def validate(self, fn: Callable):
-        derive_dataframe_parameter_from_fn(fn, self.upstream_dependency)
+        _derive_first_dataframe_parameter_from_fn(fn)

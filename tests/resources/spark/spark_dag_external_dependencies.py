@@ -34,7 +34,7 @@ def df_input(spark_session: ps.SparkSession) -> ps.DataFrame:
 @h_spark.with_columns(
     a,
     b,
-    initial_schema=["initial_column"],
+    columns_to_pass=["initial_column"],
 )
 def processed_df_as_pandas(df_input: ps.DataFrame) -> pd.DataFrame:
     return df_input.select("a", "b").toPandas()
