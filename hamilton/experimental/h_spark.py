@@ -1,7 +1,8 @@
 import functools
 import inspect
 import logging
-from typing import Any, Callable, Dict, Set, Tuple, Type, Union
+import sys
+from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -178,7 +179,7 @@ def numpy_to_spark_type(numpy_type: Type) -> types.DataType:
         raise ValueError("Unsupported NumPy type: " + str(numpy_type))
 
 
-def python_to_spark_type(python_type: Union[int, float, bool, str, bytes]) -> types.DataType:
+def python_to_spark_type(python_type: Type[Union[int, float, bool, str, bytes]]) -> types.DataType:
     """Function to convert a Python type to a Spark type.
 
     :param python_type: the Python type to convert.
@@ -199,12 +200,18 @@ def python_to_spark_type(python_type: Union[int, float, bool, str, bytes]) -> ty
         raise ValueError("Unsupported Python type: " + str(python_type))
 
 
+if sys.version_info < (3, 9):
+    _list = (List[int], List[float], List[bool], List[str], List[bytes])
+else:
+    _list = (list[int], list[float], list[bool], list[str], list[bytes])
+
+
 def get_spark_type(
     actual_kwargs: dict, df: DataFrame, hamilton_udf: Callable, return_type: Any
 ) -> types.DataType:
     if return_type in (int, float, bool, str, bytes):
         return python_to_spark_type(return_type)
-    elif return_type in (list[int], list[float], list[bool], list[str], list[bytes]):
+    elif return_type in _list:
         return types.ArrayType(python_to_spark_type(return_type.__args__[0]))
     elif hasattr(return_type, "__module__") and getattr(return_type, "__module__") == "numpy":
         return numpy_to_spark_type(return_type)

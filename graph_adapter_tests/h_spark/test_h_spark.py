@@ -1,8 +1,11 @@
+import sys
+
+import numpy as np
 import pandas as pd
 import pyspark.pandas as ps
 import pytest
 from pyspark import Row
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, types
 from pyspark.sql.functions import column
 
 from hamilton import base, driver, htypes, node
@@ -235,3 +238,115 @@ def test_smoke_screen_udf_graph_adatper(spark_session):
         Row(a=2, b=5, base_func=7, base_func2=11, base_func3=9),
         Row(a=3, b=6, base_func=9, base_func2=13, base_func3=9),
     ]
+
+
+# Test cases for python_to_spark_type function
+@pytest.mark.parametrize(
+    "python_type,expected_spark_type",
+    [
+        (int, types.IntegerType()),
+        (float, types.FloatType()),
+        (bool, types.BooleanType()),
+        (str, types.StringType()),
+        (bytes, types.BinaryType()),
+    ],
+)
+def test_python_to_spark_type_valid(python_type, expected_spark_type):
+    assert h_spark.python_to_spark_type(python_type) == expected_spark_type
+
+
+@pytest.mark.parametrize("invalid_python_type", [list, dict, tuple, set])
+def test_python_to_spark_type_invalid(invalid_python_type):
+    with pytest.raises(ValueError, match=f"Unsupported Python type: {invalid_python_type}"):
+        h_spark.python_to_spark_type(invalid_python_type)
+
+
+# Test cases for get_spark_type function
+# 1. Basic Python types
+@pytest.mark.parametrize(
+    "return_type,expected_spark_type",
+    [
+        (int, types.IntegerType()),
+        (float, types.FloatType()),
+        (bool, types.BooleanType()),
+        (str, types.StringType()),
+        (bytes, types.BinaryType()),
+    ],
+)
+def test_get_spark_type_basic_types(
+    dummy_kwargs, dummy_df, dummy_udf, return_type, expected_spark_type
+):
+    assert (
+        h_spark.get_spark_type(dummy_kwargs, dummy_df, dummy_udf, return_type)
+        == expected_spark_type
+    )
+
+
+# 2. Lists of basic Python types
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python 3.9 or higher")
+@pytest.mark.parametrize(
+    "return_type,expected_spark_type",
+    [
+        (int, types.ArrayType(types.IntegerType())),
+        (float, types.ArrayType(types.FloatType())),
+        (bool, types.ArrayType(types.BooleanType())),
+        (str, types.ArrayType(types.StringType())),
+        (bytes, types.ArrayType(types.BinaryType())),
+    ],
+)
+def test_get_spark_type_list_types(
+    dummy_kwargs, dummy_df, dummy_udf, return_type, expected_spark_type
+):
+    return_type = list[return_type]  # type: ignore
+    assert (
+        h_spark.get_spark_type(dummy_kwargs, dummy_df, dummy_udf, return_type)
+        == expected_spark_type
+    )
+
+
+# 3. Numpy types (assuming you have a numpy_to_spark_type function that handles these)
+@pytest.mark.parametrize(
+    "return_type,expected_spark_type",
+    [
+        (np.int64, types.IntegerType()),
+        (np.float64, types.FloatType()),
+        (np.bool_, types.BooleanType()),
+    ],
+)
+def test_get_spark_type_numpy_types(
+    dummy_kwargs, dummy_df, dummy_udf, return_type, expected_spark_type
+):
+    assert (
+        h_spark.get_spark_type(dummy_kwargs, dummy_df, dummy_udf, return_type)
+        == expected_spark_type
+    )
+
+
+# 4. Unsupported types
+@pytest.mark.parametrize(
+    "unsupported_return_type", [dict, set, tuple]  # Add other unsupported types as needed
+)
+def test_get_spark_type_unsupported(dummy_kwargs, dummy_df, dummy_udf, unsupported_return_type):
+    with pytest.raises(
+        ValueError, match=f"Currently unsupported return type {unsupported_return_type}."
+    ):
+        h_spark.get_spark_type(dummy_kwargs, dummy_df, dummy_udf, unsupported_return_type)
+
+
+# Dummy values for the tests
+@pytest.fixture
+def dummy_kwargs():
+    return {}
+
+
+@pytest.fixture
+def dummy_df():
+    return spark.createDataFrame(pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}))
+
+
+@pytest.fixture
+def dummy_udf():
+    def dummyfunc(x: int) -> int:
+        return x
+
+    return dummyfunc
