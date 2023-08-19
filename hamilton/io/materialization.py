@@ -119,6 +119,9 @@ class MaterializerFactory:
                 doc_string=f"Builds the result for {self.id} materializer",
                 callabl=join_function,
                 input_types={dep.name: dep.type for dep in node_dependencies},
+                originating_functions=None
+                if self.result_builder is None
+                else [self.result_builder.build_result],
             )
             out.append(join_node)
             save_dep = join_node
