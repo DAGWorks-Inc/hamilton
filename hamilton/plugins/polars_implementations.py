@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict, Type, Union
 
 import polars as pl
 
@@ -48,3 +48,6 @@ class PolarsDataFrameResult(base.ResultMixin):
         # TODO: check for length of outputs and determine what should
         # happen for mixed outputs that include scalars for example.
         return pl.DataFrame(outputs)
+
+    def output_type(self) -> Type:
+        return pl.DataFrame
