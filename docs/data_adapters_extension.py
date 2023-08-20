@@ -21,7 +21,11 @@ GIT_ID = os.environ.get("READTHEDOCS_GIT_IDENTIFIER", "main")
 
 # All the modules that register data adapters
 # When you register a new one, add it here
-MODULES_TO_IMPORT = ["hamilton.io.default_data_loaders", "hamilton.plugins.pandas_extensions"]
+MODULES_TO_IMPORT = [
+    "hamilton.io.default_data_loaders",
+    "hamilton.plugins.pandas_extensions",
+    "hamilton.plugins.polars_extensions",
+]
 
 for module in MODULES_TO_IMPORT:
     __import__(module)

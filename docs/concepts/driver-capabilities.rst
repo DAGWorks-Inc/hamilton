@@ -131,9 +131,9 @@ In the following case, we are joining `foo` and `bar` into a dataframe, then sav
      from hamilton.io.materialize import to
      dr = driver.Driver(my_module, {})
      # foo, bar are pd.Series
-     metadata, result = dr.Materialize(
+     metadata, result = dr.materialize(
          to.csv(
-             path="./output.csv"
+             path="./output.csv",
              id="foo_bar_csv",
              dependencies=["foo", "bar"],
              combine=base.PandasDataFrameResult()
