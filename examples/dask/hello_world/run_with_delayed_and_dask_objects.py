@@ -3,7 +3,7 @@ import logging
 import sys
 
 from hamilton import driver
-from hamilton.experimental import h_dask
+from hamilton.plugins import h_dask
 
 logger = logging.getLogger(__name__)
 

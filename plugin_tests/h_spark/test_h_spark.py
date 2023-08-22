@@ -9,7 +9,7 @@ from pyspark.sql import Column, DataFrame, SparkSession, types
 from pyspark.sql.functions import column
 
 from hamilton import base, driver, htypes, node
-from hamilton.experimental import h_spark
+from hamilton.plugins import h_spark
 
 from .resources import example_module, smoke_screen_module
 from .resources.spark import (

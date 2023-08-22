@@ -3,8 +3,8 @@ from typing import Callable, List
 import pandas as pd
 import pyspark.sql as ps
 
-from hamilton.experimental import h_spark
 from hamilton.function_modifiers import parameterize, value
+from hamilton.plugins import h_spark
 
 
 def to_add() -> int:

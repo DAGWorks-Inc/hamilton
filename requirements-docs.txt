@@ -4,6 +4,7 @@ commonmark==0.9.1 # read the docs pins
 dask[distributed]
 furo
 gitpython # Required for parsing git info for generation of data-adapter docs
+grpcio-status
 mock==1.0.1 # read the docs pins
 myst-parser==0.18.1  # latest version of myst at this time
 pillow

@@ -22,7 +22,7 @@ import pyspark.pandas as ps
 from pyspark.sql import SparkSession
 
 from hamilton import base, driver, log_setup
-from hamilton.experimental import h_spark
+from hamilton.plugins import h_spark
 
 if __name__ == "__main__":
     log_setup.setup_logging(log_level=log_setup.LOG_LEVELS["INFO"])

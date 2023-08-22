@@ -5,7 +5,7 @@ import pyspark.sql as ps
 from pyspark.sql import functions as F
 
 from hamilton import htypes
-from hamilton.experimental import h_spark
+from hamilton.plugins import h_spark
 
 
 # See https://github.com/dragansah/tpch-dbgen/blob/master/tpch-queries/1.sql

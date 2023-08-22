@@ -1,6 +1,6 @@
 import click
 
-exec("from hamilton.experimental import h_spark")
+exec("from hamilton.plugins import h_spark")
 import csv_data_loaders
 import pyspark
 import query_1

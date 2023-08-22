@@ -1,33 +1,31 @@
 import pandas as pd
 import pytest
 import ray
-from ray import workflow
 
-from graph_adapter_tests.h_ray.resources import example_module, smoke_screen_module
 from hamilton import base, driver
-from hamilton.experimental import h_ray
+from hamilton.plugins import h_ray
+
+from .resources import example_module, smoke_screen_module
+
+"""
+For reference https://docs.ray.io/en/latest/auto_examples/testing-tips.html
+"""
 
 
 @pytest.fixture(scope="module")
 def init():
-    # Do not need to call ray.init() when using a workflow now it seems?
+    ray.init()
     yield "initialized"
     ray.shutdown()
 
 
-# This does not work locally -- will ask Ray slack for support.
-def test_ray_workflow_graph_adapter(init):
-    workflow.init()
+def test_ray_graph_adapter(init):
     initial_columns = {
         "signups": pd.Series([1, 10, 50, 100, 200, 400]),
         "spend": pd.Series([10, 10, 20, 40, 40, 50]),
     }
     dr = driver.Driver(
-        initial_columns,
-        example_module,
-        adapter=h_ray.RayWorkflowGraphAdapter(
-            base.PandasDataFrameResult(), "test-test_ray_workflow_graph_adapter"
-        ),
+        initial_columns, example_module, adapter=h_ray.RayGraphAdapter(base.PandasDataFrameResult())
     )
     output_columns = [
         "spend",
@@ -47,14 +45,9 @@ def test_ray_workflow_graph_adapter(init):
 
 
 def test_smoke_screen_module(init):
-    workflow.init()
     config = {"region": "US"}
     dr = driver.Driver(
-        config,
-        smoke_screen_module,
-        adapter=h_ray.RayWorkflowGraphAdapter(
-            base.PandasDataFrameResult(), "test-test_smoke_screen_module"
-        ),
+        config, smoke_screen_module, adapter=h_ray.RayGraphAdapter(base.PandasDataFrameResult())
     )
     output_columns = [
         "raw_acquisition_cost",

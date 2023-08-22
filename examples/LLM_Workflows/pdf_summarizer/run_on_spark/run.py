@@ -5,7 +5,7 @@ import summarization
 from pyspark.sql import SparkSession
 
 from hamilton import driver, log_setup
-from hamilton.experimental import h_spark
+from hamilton.plugins import h_spark
 
 
 def my_spark_job(spark: SparkSession, openai_gpt_model: str, content_type: str, user_query: str):

@@ -9,7 +9,7 @@ from dask import distributed
 
 from hamilton import driver, log_setup
 from hamilton.execution import executors
-from hamilton.experimental import h_dask, h_ray
+from hamilton.plugins import h_dask, h_ray
 
 log_setup.setup_logging(logging.INFO)
 

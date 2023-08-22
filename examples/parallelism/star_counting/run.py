@@ -20,7 +20,7 @@ def _get_executor(mode: str):
     elif mode == "dask":
         from dask import distributed
 
-        from hamilton.experimental import h_dask
+        from hamilton.plugins import h_dask
 
         cluster = distributed.LocalCluster()
         client = distributed.Client(cluster)
@@ -29,7 +29,7 @@ def _get_executor(mode: str):
     else:
         import ray
 
-        from hamilton.experimental import h_ray
+        from hamilton.plugins import h_ray
 
         remote_executor = h_ray.RayTaskExecutor(num_cpus=4)
         shutdown = ray.shutdown

@@ -8,7 +8,7 @@ from dask.delayed import delayed
 from distributed import Client
 
 from hamilton import driver
-from hamilton.experimental import h_dask
+from hamilton.plugins import h_dask
 
 from .resources import example_module, smoke_screen_module
 

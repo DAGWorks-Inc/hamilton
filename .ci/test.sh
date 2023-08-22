@@ -15,13 +15,13 @@ source "${HOME}/venvs/hamilton-venv/bin/activate"
 
 if [[ ${TASK} == "async" ]]; then
     pip install .
-    pytest graph_adapter_tests/h_async
+    pytest plugin_tests/h_async
     exit 0
 fi
 
 if [[ ${TASK} == "dask" ]]; then
     pip install -e '.[dask]'
-    pytest graph_adapter_tests/h_dask
+    pytest plugin_tests/h_dask
     exit 0
 fi
 
@@ -33,14 +33,14 @@ fi
 
 if [[ ${TASK} == "ray" ]]; then
     pip install -e '.[ray]'
-    pytest graph_adapter_tests/h_ray
+    pytest plugin_tests/h_ray
     exit 0
 fi
 
 if [[ ${TASK} == "pyspark" ]]; then
     pip install -e '.[pyspark]'
     pip install 'numpy<1.24.0' # downgrade until spark fixes their bug
-    pytest graph_adapter_tests/h_spark
+    pytest plugin_tests/h_spark
     exit 0
 fi
 
