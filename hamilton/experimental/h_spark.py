@@ -220,8 +220,6 @@ def get_spark_type(return_type: Any) -> types.DataType:
         return python_to_spark_type(return_type)
     elif return_type in _list:
         return types.ArrayType(python_to_spark_type(return_type.__args__[0]))
-    elif return_type in _list:
-        return types.ArrayType(python_to_spark_type(return_type.__args__[0]))
     elif hasattr(return_type, "__module__") and getattr(return_type, "__module__") == "numpy":
         return numpy_to_spark_type(return_type)
     else:
