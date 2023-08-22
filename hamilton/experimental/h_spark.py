@@ -215,11 +215,10 @@ else:
     _list = (list[int], list[float], list[bool], list[str], list[bytes])
 
 
-
 def get_spark_type(return_type: Any) -> types.DataType:
     if return_type in (int, float, bool, str, bytes):
         return python_to_spark_type(return_type)
-    elif return_type in (list[int], list[float], list[bool], list[str], list[bytes]):
+    elif return_type in _list:
         return types.ArrayType(python_to_spark_type(return_type.__args__[0]))
     elif return_type in _list:
         return types.ArrayType(python_to_spark_type(return_type.__args__[0]))
