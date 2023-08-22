@@ -25,6 +25,7 @@ MODULES_TO_IMPORT = [
     "hamilton.io.default_data_loaders",
     "hamilton.plugins.pandas_extensions",
     "hamilton.plugins.polars_extensions",
+    "hamilton.plugins.spark_extensions",
 ]
 
 for module in MODULES_TO_IMPORT:

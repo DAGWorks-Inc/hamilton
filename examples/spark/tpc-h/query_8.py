@@ -4,7 +4,7 @@ import pyspark.sql.functions as F
 
 # See # See https://github.com/dragansah/tpch-dbgen/blob/master/tpch-queries/8.sql
 from hamilton import htypes
-from hamilton.experimental import h_spark
+from hamilton.plugins import h_spark
 
 
 def start_date() -> str:

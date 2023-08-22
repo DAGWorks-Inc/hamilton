@@ -5,8 +5,8 @@ import pandas as pd
 import pyspark.sql as ps
 from pyspark.sql.functions import col, mean, stddev
 
-from hamilton.experimental import h_spark
 from hamilton.function_modifiers import extract_fields
+from hamilton.plugins import h_spark
 
 
 def spark_session() -> ps.SparkSession:

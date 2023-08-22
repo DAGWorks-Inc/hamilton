@@ -7,6 +7,6 @@ you find any. We'd love feedback if you are using these to know how to improve t
 
 
 
-..  autoclass:: hamilton.experimental.h_spark.PySparkUDFGraphAdapter
+..  autoclass:: hamilton.plugins.h_spark.PySparkUDFGraphAdapter
    :special-members: __init__
    :members:

@@ -33,7 +33,7 @@ All that's needed is to:
 .. code-block:: python
 
     from hamilton import driver
-    from hamilton.experimental import h_dask  # import the correct module
+    from hamilton.plugins import h_dask  # import the correct module
 
     from dask.distributed import Client  # import the distributed system of choice
     client = Client(...)  # instantiate the specific client
@@ -50,17 +50,8 @@ All that's needed is to:
 See :doc:`reference/graph-adapters/index` and :doc:`reference/api-extensions/custom-graph-adapters`
 for options.
 
-A note on the definition of `Experimental`
-==========================================
-
-TL;DR: the code is stable, but it needs more bake time & feedback!
-
-The following implementations are considered experimental because they require more production bake time. Anything in
-Hamilton in the ``experimental`` package, should be considered changeable, i.e. their APIs might change, but we'll
-endeavor to ensure backwards compatible changes when they can be accommodated.
-
-Ray - Experimental!
-===================
+Ray
+===
 
 `Ray <https://ray.io>`_ is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
 
@@ -82,8 +73,8 @@ If you have a Ray cluster setup, then you can farm out Hamilton computation to i
 compute, and the potential to scale to large data set sizes, however, you'll be limited to the size of a single machine
 in terms of the amount of data it can process.
 
-Dask - Experimental!
-====================
+Dask
+====
 
 `Ray <https://ray.io>`_ is a system to scale python workloads. Hamilton makes it very easy for you to use Ray.
 
@@ -103,8 +94,8 @@ Distributed Computation:
 If you have a Dask cluster setup, then you can farm out Hamilton computation to it. This enables lots of parallel
 compute, and the ability to scale to petabyte scale data set sizes.
 
-Koalas on Spark, a.k.a. Pandas API on Spark - Experimental!
-===========================================================
+Koalas on Spark, a.k.a. Pandas API on Spark
+===========================================
 
 `Spark <https://spark.apache.org/>`_ is a scalable data processing framework. `Koalas <https://koalas.readthedocs.io/en/latest>`_
 was the project code name to implement the \

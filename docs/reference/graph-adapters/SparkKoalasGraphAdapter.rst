@@ -7,7 +7,7 @@ and you should feel comfortable giving the code for a spin - let us know how it 
 you find any. We'd love feedback if you are using these to know how to improve them or graduate them.
 
 
-..  autoclass:: hamilton.experimental.h_spark.SparkKoalasGraphAdapter
+..  autoclass:: hamilton.plugins.h_spark.SparkKoalasGraphAdapter
    :special-members: __init__
    :members:
    :inherited-members:

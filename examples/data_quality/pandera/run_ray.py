@@ -23,7 +23,7 @@ import feature_logic
 import ray
 
 from hamilton import base, driver
-from hamilton.experimental import h_ray
+from hamilton.plugins import h_ray
 
 if __name__ == "__main__":
 

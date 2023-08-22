@@ -5,7 +5,7 @@ from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql import functions as F
 
 from hamilton import driver, log_setup
-from hamilton.experimental import h_spark
+from hamilton.plugins import h_spark
 
 
 def create_hamilton_driver(config: dict, modules: list) -> driver.Driver:

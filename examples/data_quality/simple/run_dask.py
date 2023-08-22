@@ -26,7 +26,7 @@ import feature_logic
 from dask.distributed import Client, LocalCluster
 
 from hamilton import base, driver
-from hamilton.experimental import h_dask
+from hamilton.plugins import h_dask
 
 if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)

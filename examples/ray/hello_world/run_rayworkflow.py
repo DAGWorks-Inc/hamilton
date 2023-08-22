@@ -2,7 +2,7 @@ import ray
 from ray import workflow
 
 from hamilton import base, driver, log_setup
-from hamilton.experimental import h_ray
+from hamilton.plugins import h_ray
 
 if __name__ == "__main__":
     log_setup.setup_logging()

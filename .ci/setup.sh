@@ -23,7 +23,7 @@ fi
 
 if [[ ${TASK} == "async" ]]; then
     pip install \
-        -r graph_adapter_tests/h_async/requirements-test.txt
+        -r plugin_tests/h_async/requirements-test.txt
 fi
 
 if [[ ${TASK} == "pyspark" ]]; then

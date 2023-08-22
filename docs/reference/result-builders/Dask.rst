@@ -3,5 +3,5 @@ Dask
 =======================
 
 
-.. autoclass:: hamilton.experimental.h_dask.DaskDataFrameResult
+.. autoclass:: hamilton.plugins.h_dask.DaskDataFrameResult
    :members: build_result
