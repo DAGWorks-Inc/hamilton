@@ -133,5 +133,5 @@ FAQ
 
 Q. Can I use Hamilton for feature engineering with Feast?
 __________________________________________________________
-Yes, you can use Hamilton with Feast. Typically people use Hamilton on the offline side to compute features that then
+Yes, you can use Hamilton with Feast. See our [Feast example](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/feast) and accompanying [blog post](https://blog.dagworks.io/p/featurization-integrating-hamilton). Typically people use Hamilton on the offline side to compute features that then
 get pushed to Feast. For the online side it varies as to how to integrate the two.
