@@ -118,15 +118,18 @@ Let's look at an example of the driver:
 
     from hamilton import driver
     from hamilton.execution import executors
-    dr = driver.Builder().
-        with_modules(foo_module).\
-        enable_dynamic_execution(allow_experimental_mode=True).\
-        with_config({"config_key" : "config_value"}).\
-        with_local_executor(executors.SynchronousLocalTaskExecutor()).\
-        with_remote_executor(executors.MultiProcessingExecutor(max_tasks=5)).\
-        .build()
 
-    dr.execute(['my_variable'], inputs={...}, overrides={...})
+    dr = (
+        driver.Builder()
+        .with_modules(foo_module)
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .with_config({"config_key": "config_value"})
+        .with_local_executor(executors.SynchronousLocalTaskExecutor())
+        .with_remote_executor(executors.MultiProcessingExecutor(max_tasks=5))
+        .build()
+    )
+
+    dr.execute(["my_variable"], inputs={...}, overrides={...})
 
 Note that we set a `remote` executor, and a local executor. While you can bypass this and instead set an `execution_manager`
 in the builder call (see :doc:`../reference/drivers/Driver` for documentation on the `Builder`),this goes along with the default grouping strategy,
