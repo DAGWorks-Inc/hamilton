@@ -26,19 +26,19 @@ def _sanitize_columns(df_columns: List[str]) -> List[str]:
 passengers_df_schema = pa.DataFrameSchema(
     {
         "pclass": pa.Column(float, nullable=False),
-        "sex": pa.Column(pa.Category, nullable=False),
+        "sex": pa.Column(str, nullable=False),
         "age": pa.Column(float, nullable=True),
         "parch": pa.Column(float, nullable=False),
         "sibsp": pa.Column(float, nullable=False),
         "fare": pa.Column(float, nullable=True),
-        "embarked": pa.Column(pa.Category, nullable=True),
+        "embarked": pa.Column(str, nullable=True),
         "name": pa.Column(str, nullable=False),
         "ticket": pa.Column(str, nullable=False),
         "boat": pa.Column(str, nullable=True),
         "body": pa.Column(float, nullable=True),
         "home_dest": pa.Column(str, nullable=True),
         "cabin": pa.Column(str, nullable=True),
-        "survived": pa.Column(pa.Category, nullable=False),
+        "survived": pa.Column(int, nullable=False),
     },
     strict=True,
     index=pa.Index(int, name="pid"),
@@ -46,9 +46,8 @@ passengers_df_schema = pa.DataFrameSchema(
 
 
 @config.when(loader="sqllite")
-@check_output(schema=passengers_df_schema)
 def raw_passengers_df__sqllite(connection: engine.Connection) -> pd.DataFrame:
-    """Pulls from the SQLlite DB.
+    """Pulls from the SQLlite DB. Becomes a node only if `sqllite` is specified.
 
     :param connection: the sqllite connection object to use.
     :return: dataframe of data.
@@ -79,37 +78,35 @@ def raw_passengers_df__sqllite(connection: engine.Connection) -> pd.DataFrame:
             """
     df = pd.read_sql(query, con=connection)
     df.pid = df.pid.astype(int)
-    df.set_index("pid", inplace=True)  # required
-    df.columns = _sanitize_columns(df.columns)
     return df
 
 
 @config.when(loader="openml")
-@check_output(schema=passengers_df_schema)
 def raw_passengers_df__openml() -> pd.DataFrame:
-    """Pulls data from the web.
+    """Pulls data from the web. Only becomes a node in the DAG if `openml` is specified.
 
     :return: dataframe of data.
     """
     base, targets = datasets.fetch_openml("titanic", version=1, as_frame=True, return_X_y=True)
     df = pd.concat([base, targets], axis=1)
-    df.index.name = "pid"
-    df.columns = _sanitize_columns(df.columns)
     return df
 
 
 @extract_columns("pclass", "sex", "age", "parch", "sibsp", "fare", "embarked", "name", "survived")
+@check_output(schema=passengers_df_schema, target_="passengers_df")
 def passengers_df(raw_passengers_df: pd.DataFrame) -> pd.DataFrame:
-    """Due to the raw_passengers_df* functions checking_output, we need this function to enable @extract_columns.
+    """Function to take in a raw dataframe, check the output, and then extract columns.
 
-    :param raw_passengers_df:
+    :param raw_passengers_df: the raw dataset we want to bring in.
     :return:
     """
+    raw_passengers_df = raw_passengers_df.set_index("pid")  # create new DF.
+    raw_passengers_df.columns = _sanitize_columns(raw_passengers_df.columns)
     return raw_passengers_df
 
 
 def target(survived: pd.Series) -> pd.Series:
-    """Just hardcoding this mapping that we want survived to be our target.
+    """Just hard coding this mapping that we want survived to be our target.
 
     :param survived:
     :return:
