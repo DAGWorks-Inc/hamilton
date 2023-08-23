@@ -1,15 +1,15 @@
 # Hamilton and Pyspark
 
-**TL;DR** Hamilton now supports full pyspark integration. This enables you to write a DAG of transformations as
-python UDFs, pandas UDFs, or pyspark transformations and apply them to a central dataframe, using the
-[Hamilton](https://github.com/dagworks-inc/hamilton) paradigm. Functions written this way improve maintaibility, modularity,
-readability, and clarity of data lineage in spark ETLs.
+**TL;DR** Hamilton now has a full pyspark integration. This enables you to build modular pyspark applications
+by declaring each transformation as a hamilton function. The new `with_columns` decorator enables you to specify a
+series of individual column operations to a dataframe, written as pandas UDFs, python UDFs, or function of pyspark dataframes.
+Together with vanilla Hamilton, this new integration can help you break complex pyspark code into a series of self-contained, unit-testable functions.
 
 <p align="center">
 <img width="600" height="600" src="grouped_transformations.png">
 </p>
 
-*A spark pipeline representing multiple joins (in blue), a set of map operations (in green) and a set of  join/filters (in yellow). This uses Hamilton’s visualization features (with a little extra annotation). See [TPC-H query 8](../tpc-h/query_8.py) for motivation.*
+*A spark application written with Hamilton that represents multiple joins (in blue), a set of map operations (in green) and a set of  join/filters (in yellow). This uses Hamilton’s visualization features (with a little extra annotation). See [TPC-H query 8](../tpc-h/query_8.py) for motivation.*
 
 ## Apache Spark
 [Apache Spark](https://spark.apache.org/) (and its python API, [pyspark](https://spark.apache.org/docs/latest/api/python/index.html)) is an open-source library for building out highly scalable data transformations.
@@ -22,7 +22,7 @@ off and is now the de facto way to perform computations on large (multi gb -> mu
 
 ## Limitations of Spark for Complex Pipelines
 
-Just like any ETLs, spark pipelines can be difficult to maintain and manage,
+Just like any data transformation scripts, spark applications can be difficult to maintain and manage,
 and often devolve into spaghetti code over time.
 Specifically, we've observed the following problems with pyspark pipelines:
 
@@ -46,7 +46,7 @@ You can try hamilton out in your browser at [tryhamilton.dev](https://tryhamilto
 
 # Integration
 
-Breaking your pipeline into Hamilton functions with pyspark dataframes as inputs and outputs gets you most of
+Breaking your spark application into Hamilton functions with pyspark dataframes as inputs and outputs gets you most of
 the way towards more modular/documented code.
 That said, it falls flat in a critical area – column-level lineage/transformation
 simplicity. For complex series of map operations, spark represents all transformations
@@ -60,7 +60,7 @@ Thus, the two options one previously had for integrating with pyspark both have 
 1. Extracting into columns then joining is prohibitively expensive and taxing on the spark optimizer (which we have not found was smart enough to detect this pattern)
 2. Running pure DataFrame transformations does not afford the expressiveness that Hamilton provides.
 
-The idea is to break your code into components. These components make one of two shapes:
+The idea is to break your transformations into sections that form one of two shapes.
 
 1. Run linearly (e.g. cardinality non-preserving operations: aggregations, filters, joins, etc..)
 2. Form a DAG of column-level operations (for cardinality-preserving operations)
@@ -68,41 +68,29 @@ The idea is to break your code into components. These components make one of two
 For the first case, we just use the pyspark dataframe API. You define functions that, when put
 through Hamilton, act as a pipe. For example:
 
-Hamilton `1.27.0` introduces a new API to give the user the best of both worlds. You can now express column-level
-operations in a DAG on the same dataframe, as part of a multi-step process.
-
-With the new `@with_columns` decorator, your break your pipeline into two classes of steps:
-
 ### Joins/Aggregations/Filters
 
-We simply write functions that take in dataframes and return dataframes.
+Case 1: load, join, and filter data (aggregations not shown):
 ```python
 import pyspark.sql as ps
 
-def raw_data_1() -> ps.DataFrame:
-    """Loads up data from an external source"""
+@load_from.csv(path="data_1.csv" inject_="raw_data_1", spark=source("spark"))
+@load_from.parquet(path="data_2.parquet", inject_="raw_data_2")
+def all_initial_data_unfiltered(raw_data_1: ps.DataFrame, raw_data_2: ps.DataFrame) -> ps.DataFrame:
+    """Combines the two loaded dataframes"""
+    return _custom_join(raw_data_1, raw_data_2)
 
-def raw_data_2() -> ps.DataFrame:
-    """Loads up data from an external source"""
-
-def all_initial_data(raw_data_1: ps.DataFrame, raw_data_2: ps.DataFrame) -> ps.DataFrame:
-    """Combines the two dataframes"""
-    return _join(raw_data_1, raw_data_2)
-
-def raw_data_3() -> ps.DataFrame:
-    """Loads up data from an external source"""
+def all_initial_data(all_inital_data_unfiltered: ps.DataFrame) -> ps.DataFrame:
+    """Filters the combined dataframe"""
+    return _custom_filter("some_column > 0")
 ```
 
 ### Columnar Operations
 
-For the next case, we define transformations that are columnar/map-oriented in nature.
-These are UDFs (either pandas or python), or functions of pyspark constructs, that get applied
-to the upstream dataframe in a specific order:
+Case 2: define columnar operations in a DAG:
 
 ```python
 import pandas as pd
-
-#map_transforms.py
 
 def column_3(column_1_from_dataframe: pd.Series) -> pd.Series:
     return _some_transform(column_1_from_dataframe)
@@ -117,32 +105,34 @@ def column_5(column_3: pd.Series, column_4: pd.Series) -> pd.Series:
 Finally, we combine them together with a call to `with_column`:
 
 ```python
-from hamilton.experimental.h_spark import with_columns
+from hamilton.plugins.h_spark import with_columns
+
 import pyspark.sql as ps
 import map_transforms # file defined above
 
 @with_columns(
-    map_transforms, # Load all the functions we defined above
-    columns_to_pass=[
-       "column_1_from_dataframe",
-       "column_2_from_dataframe",
-       "column_3_from_dataframe"], # use these from the initial datafrmae
+    map_transforms,
+    columns_to_pass=["column_1_from_dataframe", "column_2_from_dataframe"]
 )
-def final_result(all_initial_data: ps.DataFrame, raw_data_3: ps.DataFrame) -> ps.DataFrame:
-    """Gives the final result. This decorator will apply the transformations in the order.
+def final_result(all_initial_data: ps.DataFrame) -> ps.DataFrame:
+    """Gives the final result. This decorator will apply the transformations in the order specified in the DAG.
     Then, the final_result function is called, with the result of the transformations passed in."""
-    return _join(all_initial_data, raw_data_3)
+    return _process(all_initial_data)
 ```
+
 Contained within the `load_from` functions/modules is a set of transformations that specify a DAG.
 These transformations can take multiple forms – they can use vanilla pyspark operations, pandas UDFs,
 or standard python UDFs. See documentation for specific examples.
 
 The easiest way to think about this is that the `with_columns` decorator “linearizes” the DAG.
-It turns a DAG of hamilton functions into a linear chain, repeatedly appending those columns to the initial dataframe.
-![](illustration.png | width=500px)
-*The natural DAG of steps in three separate configurations -- hamilton/pandas, pure pyspark, and pyspark + hamilton*
+It turns a DAG of hamilton functions into a topologically sorted chain, repeatedly appending those columns to the initial dataframe.
+<p align="center">
+<img width="600" height="600" src="illustration.png">
+</p>
+_The DAG of hamilton functions derived from the above code. Note the nodes that are prefixed with the final_result namespace_
 
-`with_columns` takes in the following parameters (see the docstring for more info)
+`@with_columns` takes in the following parameters (see the docstring for more info)
+
 1. `load_from` -- a list of functions/modules to find the functions to load the DAG from, similar to `@subdag`
 2. `columns_to_pass` -- not compatible with `pass_dataframe_as`. Dependencies specified from the initial dataframe,
 injected in. Not that you must use one of this or `pass_dataframe_as`
@@ -189,10 +179,10 @@ import map_transforms # file defined above
     map_transforms, # Load all the functions we defined above
     pass_dataframe_as="input_dataframe", #the upstream dataframe, referred to by downstream nodes, will have this parametter name
 )
-def final_result(all_initial_data: ps.DataFrame, raw_data_3: ps.DataFrame) -> ps.DataFrame:
+def final_result(all_initial_data: ps.DataFrame) -> ps.DataFrame:
     """Gives the final result. This decorator will apply the transformations in the order.
     Then, the final_result function is called, with the result of the transformations passed in."""
-    return _join(all_initial_data, raw_data_3)
+    return _process(all_initial_data)
 ```
 
 Approach (2) requires functions that take in pyspark dataframes and return pyspark dataframes or columns for the functions reading directly from the dataframe.
@@ -200,7 +190,7 @@ If you want to stay in pandas entirely for the `with_columns` group, you should 
 
 ### Flavors of UDFs
 
-There are four flavors of transforms supported that compose the group of DAG transformations:
+There are four types of transforms supported that can compose the group of DAG transformations:
 
 #### Pandas -> Pandas UDFs
 These are functions of series:
@@ -212,7 +202,7 @@ def foo(bar: pd.Series, baz: pd.Series) -> htypes.column[pd.Series, int]:
     return bar + 1
 ```
 
-The rules are the same as vanilla hamilton -- the parameter name determines the upstream dependencies,
+The rules are the same as vanilla hamilton -- the parameter name determines the upstream dependencies
 and the function name determines the output column name.
 
 Note that, due to the type-specification requirements of pyspark, these have to return a "typed" (`Annotated[]`) series, specified by `htypes.column`. These are adapted
@@ -284,9 +274,9 @@ so you can compare. You can run `run.py`:
 and check out the interactive example in the `notebook.ipynb` file.
 
 We have also implemented three of the [TPC-H](https://www.tpc.org/tpch/) query functions to demonstrate a more real-world set of queries:
-1. [query_1][../tpc-h/query_1.py]
-2. [query_8][../tpc-h/query_8.py]
-3. [query_12][../tpc-h/query_12.py]
+1. [query_1](../tpc-h/query_1.py)
+2. [query_8](../tpc-h/query_8.py)
+3. [query_12](../tpc-h/query_12.py)
 
 See the [README](../tpc-h/README.md) for more details on how to run these.
 
