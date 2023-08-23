@@ -137,6 +137,8 @@ Thus, when you write a DAG like this (a simple map-reduce pattern):
 
 .. code-block:: python
 
+    from hamilton.htypes import Parallelizable
+
     def url() -> Parallelizable[str]:
         for url_ in  _list_all_urls():
             yield url_
