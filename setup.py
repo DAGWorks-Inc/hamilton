@@ -74,7 +74,12 @@ setup(
         "dask-diagnostics": ["dask[diagnostics]"],
         "dask-distributed": ["dask[distributed]"],
         "ray": ["ray>=2.0.0", "pyarrow"],
-        "pyspark": ["pyspark[pandas_on_spark]", "pandas<2.0"],  # I'm sure they'll add support soon,
+        "pyspark": [
+            # we have to run these dependencies cause Spark does not check to ensure the right target was called
+            "pyspark[pandas_on_spark,connect,sql]",
+            # This is problematic, see https://stackoverflow.com/questions/76072664/convert-pyspark-dataframe-to-pandas-dataframe-fails-on-timestamp-column
+            "pandas<2.0",
+        ],  # I'm sure they'll add support soon,
         # but for now its not compatible
         "pandera": ["pandera"],
     },

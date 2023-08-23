@@ -25,5 +25,5 @@ Note this is not a public-facing API -- this is for managing internal plugins. I
 
 ## Adding a new plugin
 
-Follow the rules above. Also add an install target with the same name in `setup.py`. Once you add this, you'll also want to update [registry.py](../registry.py) to include the new plugin, and update 
+Follow the rules above. Also add an install target with the same name in `setup.py`. Once you add this, you'll also want to update [registry.py](../registry.py) to include the new plugin, and update
 the [docs](../../docs/data_adapters_extension.py) to document it.
