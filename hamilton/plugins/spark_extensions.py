@@ -69,4 +69,6 @@ def register_data_loaders():
         registry.register_adapter(loader)
 
 
+COLUMN_FRIENDLY_DF_TYPE = False
+
 register_data_loaders()
