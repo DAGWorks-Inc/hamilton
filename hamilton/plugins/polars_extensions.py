@@ -9,7 +9,16 @@ except ImportError:
     raise NotImplementedError("Polars is not installed.")
 
 from polars import PolarsDataType
-from polars.type_aliases import CsvEncoding, CsvQuoteStyle
+
+# for polars 0.18.0 we need to check what to do.
+if hasattr(pl.type_aliases, "CsvEncoding"):
+    from polars.type_aliases import CsvEncoding
+else:
+    CsvEncoding = Type
+if hasattr(pl.type_aliases, "CsvQuoteStyle"):
+    from polars.type_aliases import CsvQuoteStyle
+else:
+    CsvQuoteStyle = Type
 
 from hamilton import registry
 from hamilton.io import utils
