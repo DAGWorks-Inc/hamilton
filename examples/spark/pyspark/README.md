@@ -20,11 +20,11 @@ a dataframe-centric API to interact with this in python, enabling them to specif
 and scale up to the resources they have available. Since its introduction in 2014, spark has taken
 off and is now the de facto way to perform computations on large (multi gb -> multi tb) datasets.
 
-## Limitations of Spark for Complex Pipelines
+## Limitations of Spark for Complex Dataflows
 
 Just like any data transformation scripts, spark applications can be difficult to maintain and manage,
 and often devolve into spaghetti code over time.
-Specifically, we've observed the following problems with pyspark pipelines:
+Specifically, we've observed the following problems with pyspark code:
 
 1. _They rarely get broken up into modular and reusable components._
 2. _They commonly contain "implicit" dependencies._ Even when you do break them into functions, it is difficult to specify which columns the transformed dataframes depend on, and how that changes throughout your workflow.
