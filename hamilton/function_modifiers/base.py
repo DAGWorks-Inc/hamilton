@@ -24,9 +24,10 @@ if not registry.INITIALIZED:
     for plugin_module in plugins_modules:
         try:
             registry.load_extension(plugin_module)
-        except NotImplementedError:
-            logger.debug(f"Did not load {plugin_module} extension.")
-            pass
+        except NotImplementedError as e:
+            logger.debug(f"Did not load {plugin_module} extension because {str(e)}.")
+        except ModuleNotFoundError as e:
+            logger.debug(f"Did not load {plugin_module} extension because {e.msg}.")
     registry.INITIALIZED = True
 
 
