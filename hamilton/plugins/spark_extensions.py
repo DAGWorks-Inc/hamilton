@@ -6,6 +6,7 @@ try:
     import pyspark.sql as ps
 except ImportError:
     raise NotImplementedError("Pyspark is not installed.")
+
 from pandas import DataFrame
 from pyspark.sql.connect.session import SparkSession
 
