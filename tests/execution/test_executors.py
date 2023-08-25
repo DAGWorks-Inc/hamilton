@@ -3,6 +3,7 @@ import time
 import pytest
 
 from hamilton import base, driver
+from hamilton.ad_hoc_utils import create_temporary_module
 from hamilton.execution.executors import (
     DefaultExecutionManager,
     MultiProcessingExecutor,
@@ -17,6 +18,7 @@ from hamilton.execution.grouping import (
     NodeGroupPurpose,
     TaskImplementation,
 )
+from hamilton.htypes import Collect, Parallelizable
 from tests.resources.dynamic_parallelism import (
     no_parallel,
     parallel_complex,
@@ -225,3 +227,27 @@ def test_get_execotor_for_tasks_default_execution_manager(purpose, check):
         remote_executor=MultiProcessingExecutor(max_tasks=10),
     )
     assert check(execution_manager.get_executor_for_task(create_dummy_task(purpose)))
+
+
+def test_end_to_end_parallelizable_with_input_in_collect():
+    def par() -> Parallelizable[int]:
+        for i in range(10):
+            yield i
+
+    def identity(par: int) -> int:
+        return par
+
+    def foo() -> int:
+        return 1
+
+    def collect(identity: Collect[int], foo: int) -> int:
+        return sum(identity) + foo
+
+    tmp_module = create_temporary_module(par, identity, collect, foo)
+    dr = (
+        driver.Builder()
+        .with_modules(tmp_module)
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .with_remote_executor(SynchronousLocalTaskExecutor())
+    ).build()
+    assert dr.execute(["collect"])["collect"] == 46

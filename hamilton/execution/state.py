@@ -444,15 +444,8 @@ class ExecutionState:
 
     def bind_task(self, task: TaskImplementation):
         required_input_vars, optional_input_vars = task.get_input_vars()
-        if not task.purpose.is_gatherer():
-            # No need to mess around with the inputs/organize them into any shape
-            dynamic_inputs = self.result_cache.read(required_input_vars)
-            dynamic_inputs = {
-                **dynamic_inputs,
-                **self.result_cache.read(optional_input_vars, optional=True),
-            }
-        else:
-
+        dynamic_inputs = {}
+        if task.purpose.is_gatherer():
             # We need to intelligently bind the arguments from its dependencies
             collector_node = task.get_collector_node()
             collector_arg = collector_node.collect_dependency
@@ -472,11 +465,13 @@ class ExecutionState:
                             )[collector_arg]
                         )
                     del task.realized_dependencies[dependency_base]
-                else:
-                    dynamic_inputs[collector_arg].append(
-                        self.result_cache.read([collector_arg])[collector_arg]
-                    )
-            # TODO -- figure out which ones to put into that...
+        # Then we go through the rest -- these just fill in the other args
+        input_vars_to_read = [item for item in required_input_vars if item not in dynamic_inputs]
+        dynamic_inputs = {**dynamic_inputs, **self.result_cache.read(input_vars_to_read)}
+        dynamic_inputs = {
+            **dynamic_inputs,
+            **self.result_cache.read(optional_input_vars, optional=True),
+        }
         return task.bind(dynamic_inputs)
 
     def release_next_task(self) -> Optional[TaskImplementation]:
