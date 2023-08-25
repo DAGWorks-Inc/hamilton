@@ -3,7 +3,6 @@ import time
 import pytest
 
 from hamilton import base, driver
-from hamilton.ad_hoc_utils import create_temporary_module
 from hamilton.execution.executors import (
     DefaultExecutionManager,
     MultiProcessingExecutor,
@@ -18,8 +17,8 @@ from hamilton.execution.grouping import (
     NodeGroupPurpose,
     TaskImplementation,
 )
-from hamilton.htypes import Collect, Parallelizable
 from tests.resources.dynamic_parallelism import (
+    inputs_in_collect,
     no_parallel,
     parallel_complex,
     parallel_delayed,
@@ -230,24 +229,30 @@ def test_get_execotor_for_tasks_default_execution_manager(purpose, check):
 
 
 def test_end_to_end_parallelizable_with_input_in_collect():
-    def par() -> Parallelizable[int]:
-        for i in range(10):
-            yield i
-
-    def identity(par: int) -> int:
-        return par
-
-    def foo() -> int:
-        return 1
-
-    def collect(identity: Collect[int], foo: int) -> int:
-        return sum(identity) + foo
-
-    tmp_module = create_temporary_module(par, identity, collect, foo)
     dr = (
         driver.Builder()
-        .with_modules(tmp_module)
+        .with_modules(inputs_in_collect)
         .enable_dynamic_execution(allow_experimental_mode=True)
         .with_remote_executor(SynchronousLocalTaskExecutor())
     ).build()
     assert dr.execute(["collect"])["collect"] == 46
+
+
+def test_end_to_end_parallelizable_with_overrides_on_expand_node():
+    dr = (
+        driver.Builder()
+        .with_modules(inputs_in_collect)
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .with_remote_executor(SynchronousLocalTaskExecutor())
+    ).build()
+    assert dr.execute(["collect"], overrides={"par": [1, 2, 3]})["collect"] == 7
+
+
+def test_end_to_end_parallelizable_with_overrides_on_collect_node():
+    dr = (
+        driver.Builder()
+        .with_modules(inputs_in_collect)
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .with_remote_executor(SynchronousLocalTaskExecutor())
+    ).build()
+    assert dr.execute(["collect_plus_one"], overrides={"collect": 100})["collect_plus_one"] == 101

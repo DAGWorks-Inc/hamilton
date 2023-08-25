@@ -99,6 +99,8 @@ class TaskSpec(NodeGroup):
         required_variables = set()
         optional_variables = set()
         for node_ in self.nodes:
+            if node_.name in self.overrides:
+                continue
             if node_.user_defined:
                 # if the node is user-defined then that
                 # means we need it for the execution
@@ -337,6 +339,10 @@ def create_task_plan(
         outputs = []
         nodes_in_group = set([node_.name for node_ in node_group.nodes])
         for node_ in node_group.nodes:
+            # If this is overridden we can skip it
+            # Note there may be a strange bug with grouping/overrides (E.G. downstream of overrides)
+            if node_.name in overrides:
+                continue
             node_to_task_map[node_.name] = node_group
             is_output = False
             if node_.name in outputs_set:
@@ -372,6 +378,8 @@ def create_task_plan(
         task_dependencies = set()
         nodes_in_group = set([node_.name for node_ in task_spec.nodes])
         for node_ in task_spec.nodes:
+            if node_.name in overrides:
+                continue
             for dependency in node_.dependencies:
                 if dependency.name not in overrides and dependency.name not in nodes_in_group:
                     task_containing_dependency = node_to_task_map.get(dependency.name)
