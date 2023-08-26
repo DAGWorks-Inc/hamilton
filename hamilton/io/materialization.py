@@ -28,8 +28,8 @@ class materialization_meta__(type):
             return super().__getattribute__(item)
         except AttributeError as e:
             raise AttributeError(
-                "No data materializer named: {item}. "
-                "Available materializers are: {SAVER_REGISTRY.keys()}. "
+                f"No data materializer named: {item}. "
+                f"Available materializers are: {SAVER_REGISTRY.keys()}. "
                 "If you've gotten to this point, you either (1) spelled the "
                 "loader name wrong, (2) are trying to use a loader that does"
                 "not exist (yet). For a list of available materializers, see  "
