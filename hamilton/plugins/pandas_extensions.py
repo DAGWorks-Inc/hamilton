@@ -1,6 +1,8 @@
 import abc
 import dataclasses
-from typing import Any, Collection, Dict, Tuple, Type
+from io import BufferedReader, BytesIO
+from pathlib import Path
+from typing import Any, Collection, Dict, Optional, Tuple, Type, Union
 
 from hamilton.io import utils
 from hamilton.io.data_adapters import DataLoader, DataSaver
@@ -145,6 +147,76 @@ class ParquetDataLoader(DataFrameDataLoader):
     def name(cls) -> str:
         return "parquet"
 
+@dataclasses.dataclass
+class PandasPickleReader(DataLoader):
+    """Class for loading/reading pickle files with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_pickle.html#pandas.read_pickle"""
+
+    filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs:
+    compression: Union[str, Dict[str, Any], None] = 'infer'
+    storage_options: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        # Returns type for which data loader is available
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        # Puts kwargs in a dict
+        kwargs = {}
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the pickle
+        df = pd.read_pickle(self.filepath_or_buffer, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(
+            self.filepath_or_buffer)
+
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "pickle"
+
+@dataclasses.dataclass
+class PandasPickleWriter(DataSaver):
+    """Class that handles saving pickle files with pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_pickle.html#pandas.DataFrame.to_pickle
+    """
+
+    path: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs:
+    compression: Union[str, Dict[str, Any], None] = 'infer'
+    protocol: int = 5
+    storage_options: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self) -> Dict[str, Any]:
+        # Puts kwargs in a dict
+        kwargs = {}
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.protocol is not None:
+            kwargs["protocol"] = self.protocol
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_pickle(self.path, **self._get_saving_kwargs())
+        return utils.get_file_metadata()
+
+    @classmethod
+    def name(cls) -> str:
+        return "pickle"
 
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
