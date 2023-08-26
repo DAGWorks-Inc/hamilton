@@ -227,7 +227,13 @@ class PandasPickleWriter(DataSaver):
 
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
-    for loader in [CSVDataAdapter, FeatherDataLoader, ParquetDataLoader]:
+    for loader in [
+        CSVDataAdapter,
+        FeatherDataLoader,
+        ParquetDataLoader,
+        PandasPickleReader,
+        PandasPickleWriter,
+    ]:
         registry.register_adapter(loader)
 
 
