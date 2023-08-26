@@ -147,6 +147,7 @@ class ParquetDataLoader(DataFrameDataLoader):
     def name(cls) -> str:
         return "parquet"
 
+
 @dataclasses.dataclass
 class PandasPickleReader(DataLoader):
     """Class for loading/reading pickle files with Pandas.
@@ -154,7 +155,7 @@ class PandasPickleReader(DataLoader):
 
     filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader]
     # kwargs:
-    compression: Union[str, Dict[str, Any], None] = 'infer'
+    compression: Union[str, Dict[str, Any], None] = "infer"
     storage_options: Optional[Dict[str, Any]] = None
 
     @classmethod
@@ -174,14 +175,14 @@ class PandasPickleReader(DataLoader):
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         # Loads the data and returns the df and metadata of the pickle
         df = pd.read_pickle(self.filepath_or_buffer, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(
-            self.filepath_or_buffer)
+        metadata = utils.get_file_metadata(self.filepath_or_buffer)
 
         return df, metadata
 
     @classmethod
     def name(cls) -> str:
         return "pickle"
+
 
 @dataclasses.dataclass
 class PandasPickleWriter(DataSaver):
@@ -191,7 +192,7 @@ class PandasPickleWriter(DataSaver):
 
     path: Union[str, Path, BytesIO, BufferedReader]
     # kwargs:
-    compression: Union[str, Dict[str, Any], None] = 'infer'
+    compression: Union[str, Dict[str, Any], None] = "infer"
     protocol: int = 5
     storage_options: Optional[Dict[str, Any]] = None
 
@@ -217,6 +218,7 @@ class PandasPickleWriter(DataSaver):
     @classmethod
     def name(cls) -> str:
         return "pickle"
+
 
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
