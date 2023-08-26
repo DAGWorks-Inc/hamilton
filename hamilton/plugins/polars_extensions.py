@@ -10,12 +10,17 @@ except ImportError:
 
 from polars import PolarsDataType
 
+# for polars <0.16.0 we need to determine whether type_aliases exist.
+has_alias = False
+if hasattr(pl, "type_aliases"):
+    has_alias = True
+
 # for polars 0.18.0 we need to check what to do.
-if hasattr(pl.type_aliases, "CsvEncoding"):
+if has_alias and hasattr(pl.type_aliases, "CsvEncoding"):
     from polars.type_aliases import CsvEncoding
 else:
     CsvEncoding = Type
-if hasattr(pl.type_aliases, "CsvQuoteStyle"):
+if has_alias and hasattr(pl.type_aliases, "CsvQuoteStyle"):
     from polars.type_aliases import CsvQuoteStyle
 else:
     CsvQuoteStyle = Type
