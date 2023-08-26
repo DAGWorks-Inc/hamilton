@@ -151,7 +151,10 @@ class ParquetDataLoader(DataFrameDataLoader):
 @dataclasses.dataclass
 class PandasPickleReader(DataLoader):
     """Class for loading/reading pickle files with Pandas.
-    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_pickle.html#pandas.read_pickle"""
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_pickle.html#pandas.read_pickle
+    """
+
+    # TODO: write tests
 
     filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader]
     # kwargs:
@@ -189,6 +192,8 @@ class PandasPickleWriter(DataSaver):
     """Class that handles saving pickle files with pandas.
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_pickle.html#pandas.DataFrame.to_pickle
     """
+
+    # TODO: write tests
 
     path: Union[str, Path, BytesIO, BufferedReader]
     # kwargs:
