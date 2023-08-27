@@ -15,7 +15,7 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/",
     "announcement": "📢 Find Hamilton next at "
-    + '<a target="_blank" href="https://www.linkedin.com/events/dbt-hamilton-enablingyoutomainc7091883466107080705/comments/">MDSFest\'23</a>📢',
+    + '<a target="_blank" href="https://www.featurestoresummit.com/">Feature Store Summit\'23</a>📢',
     "light_css_variables": {
         "color-announcement-background": "#ffba00",
         "color-announcement-text": "#091E42",
