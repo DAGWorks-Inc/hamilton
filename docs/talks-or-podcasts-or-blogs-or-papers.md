@@ -8,6 +8,11 @@ description: This page curates talks, podcasts, and blogs about Hamilton
 ## Talks
 Talks on Hamilton at conferences and meetups.
 
+### [MDSFest'23](https://www.mdsfest.com/) - August 2023
+Title:
+> dbt + Hamilton: Enabling you to maintain complex Python within dbt models
+* [Slides](https://github.com/skrawcz/talks/files/12431755/dbt.%2B.Hamilton_.Enabling.you.to.maintain.complex.python.within.dbt.models.pdf)
+
 ### LLM Avalanche June 2023
 Title:
 > Hamilton: an OS tool to add to your LLM App toolbelt
