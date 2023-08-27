@@ -218,7 +218,7 @@ class PandasPickleWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_pickle(self.path, **self._get_saving_kwargs())
-        return utils.get_file_metadata()
+        return utils.get_file_metadata(self.path)
 
     @classmethod
     def name(cls) -> str:
