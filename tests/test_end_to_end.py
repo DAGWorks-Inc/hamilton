@@ -7,6 +7,7 @@ import pytest
 
 import tests.resources.data_quality
 import tests.resources.dynamic_config
+import tests.resources.overrides
 from hamilton import base, driver, settings
 from hamilton.base import DefaultAdapter
 from hamilton.data_quality.base import DataValidationError, ValidationResult
@@ -313,3 +314,23 @@ def test_materialize_driver_call_end_to_end(tmp_path_factory):
             **tests.resources.test_for_materialization.json_to_save_2(),
             **tests.resources.test_for_materialization.json_to_save_1(),
         }
+
+
+def test_driver_validate_with_overrides():
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.overrides)
+        .with_adapter(base.DefaultAdapter())
+        .build()
+    )
+    assert dr.execute(["c"], overrides={"b": 1})["c"] == 2
+
+
+def test_driver_validate_with_overrides_2():
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.overrides)
+        .with_adapter(base.DefaultAdapter())
+        .build()
+    )
+    assert dr.execute(["d"], overrides={"b": 1})["d"] == 3
