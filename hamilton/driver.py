@@ -571,6 +571,7 @@ class Driver:
         render_kwargs: dict,
         inputs: Dict[str, Any] = None,
         graphviz_kwargs: dict = None,
+        overrides: Dict[str, Any] = None,
     ):
         """Helper function to visualize execution, using a passed-in function graph.
 
@@ -581,21 +582,30 @@ class Driver:
         :param graphviz_kwargs:
         :return:
         """
-        # _final_vars = self._create_final_vars(final_vars)
-        nodes, user_nodes = fn_graph.get_upstream_nodes(final_vars, inputs)
+        nodes, user_nodes = fn_graph.get_upstream_nodes(final_vars, inputs, overrides)
         Driver.validate_inputs(fn_graph, adapter, user_nodes, inputs, nodes)
         node_modifiers = {fv: {graph.VisualizationNodeModifiers.IS_OUTPUT} for fv in final_vars}
         for user_node in user_nodes:
             if user_node.name not in node_modifiers:
                 node_modifiers[user_node.name] = set()
             node_modifiers[user_node.name].add(graph.VisualizationNodeModifiers.IS_USER_INPUT)
+        all_nodes = nodes | user_nodes
+        if overrides is not None:
+            for node_ in all_nodes:
+                if node_.name in overrides:
+                    # We don't want to display it if we're overriding it
+                    # This is necessary as getting upstream nodes includes overrides
+                    if node_.name not in node_modifiers:
+                        node_modifiers[node_.name] = set()
+                    node_modifiers[node_.name].add(graph.VisualizationNodeModifiers.IS_OVERRIDE)
         try:
             return fn_graph.display(
-                nodes.union(user_nodes),
+                all_nodes,
                 output_file_path,
                 render_kwargs=render_kwargs,
                 graphviz_kwargs=graphviz_kwargs,
                 node_modifiers=node_modifiers,
+                strictly_display_only_passed_in_nodes=True,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -608,6 +618,7 @@ class Driver:
         render_kwargs: dict,
         inputs: Dict[str, Any] = None,
         graphviz_kwargs: dict = None,
+        overrides: Dict[str, Any] = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes Execution.
 
@@ -629,6 +640,7 @@ class Driver:
         :param graphviz_kwargs: Optional. Kwargs to be passed to the graphviz graph object to configure it.
             E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
             See https://graphviz.org/doc/info/attrs.html for options.
+        :param overrides: Optional. Overrides to the DAG.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -641,6 +653,7 @@ class Driver:
             render_kwargs,
             inputs,
             graphviz_kwargs,
+            overrides,
         )
 
     @capture_function_usage
@@ -1002,6 +1015,7 @@ class Driver:
         additional_vars: List[Union[str, Callable, Variable]] = None,
         inputs: Dict[str, Any] = None,
         graphviz_kwargs: dict = None,
+        overrides: Dict[str, Any] = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes materialization. This helps give you a sense of how materialization
         will impact the DAG.
@@ -1012,6 +1026,7 @@ class Driver:
         :param render_kwargs: Arguments to pass to render
         :param inputs: Inputs to pass to execution
         :param graphviz_kwargs: Arguments to pass to graphviz
+        :param overrides: Overrides to pass to execution
         :return: The graphviz graph, if you want to do something with it
         """
         if additional_vars is None:
@@ -1028,6 +1043,7 @@ class Driver:
             render_kwargs,
             inputs,
             graphviz_kwargs,
+            overrides,
         )
 
 

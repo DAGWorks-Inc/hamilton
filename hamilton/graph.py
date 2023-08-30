@@ -29,6 +29,7 @@ class VisualizationNodeModifiers(Enum):
     IS_OUTPUT = 1
     IS_PATH = 2
     IS_USER_INPUT = 3
+    IS_OVERRIDE = 4
 
 
 def add_dependency(
@@ -169,6 +170,10 @@ def create_graphviz_graph(
             if VisualizationNodeModifiers.IS_USER_INPUT in modifiers:
                 other_args["style"] = "dashed"
                 label = f"Input: {n.name}"
+
+            if VisualizationNodeModifiers.IS_OVERRIDE in modifiers:
+                other_args["style"] = "dashed"
+                label = f"Override: {n.name}"
         is_expand_node = n.node_role == node.NodeType.EXPAND
         is_collect_node = n.node_role == node.NodeType.COLLECT
 
