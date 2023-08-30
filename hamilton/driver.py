@@ -503,7 +503,7 @@ class Driver:
         :param inputs: Runtime inputs to the DAG
         :return:
         """
-        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
+        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs, overrides)
         Driver.validate_inputs(
             self.graph, self.adapter, user_nodes, inputs, nodes
         )  # TODO -- validate within the function graph itself

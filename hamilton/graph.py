@@ -455,9 +455,11 @@ class FunctionGraph(object):
         """
 
         def next_nodes_function(n: node.Node) -> List[node.Node]:
+            deps = []
+            if runtime_overrides is not None and n.name in runtime_overrides:
+                return deps
             if runtime_inputs is None:
                 return n.dependencies
-            deps = []
             for dep in n.dependencies:
                 # If inputs is None, we want to assume its required, as it is a compile-time
                 # dependency
@@ -469,8 +471,6 @@ class FunctionGraph(object):
                     _, dependency_type = n.input_types[dep.name]
                     if dependency_type == node.DependencyType.OPTIONAL:
                         continue
-                if runtime_overrides is not None and dep.name in runtime_overrides:
-                    continue
                 deps.append(dep)
             return deps
 

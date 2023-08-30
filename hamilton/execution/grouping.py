@@ -202,6 +202,8 @@ class GroupByRepeatableBlocks(GroupingStrategy):
         collectors = [node_ for node_ in nodes if node_.node_role == NodeType.COLLECT]
         groups = []
         visited = set()
+        # We have to do this as we may have overrides to handle
+        node_names = {node_.name for node_ in nodes}
         for collector in collectors:
             expander, nodes_in_block = self.nodes_after_last_expand_block(collector)
             # TODO -- add error message for conflicting groups...
@@ -209,22 +211,27 @@ class GroupByRepeatableBlocks(GroupingStrategy):
             #     raise ValueError(f"Multiple collect nodes cannot trace "
             #                      f"back to the same expander. ")
             expander_name = f"expand-{expander.name}"
-            groups.append(
-                NodeGroup(
-                    base_id=f"expand-{expander.name}",
-                    spawning_task_base_id=None,
-                    nodes=[expander],
-                    purpose=NodeGroupPurpose.EXPAND_UNORDERED,
+            if expander.name in node_names:
+                groups.append(
+                    NodeGroup(
+                        base_id=f"expand-{expander.name}",
+                        spawning_task_base_id=None,
+                        nodes=[expander],
+                        purpose=NodeGroupPurpose.EXPAND_UNORDERED,
+                    )
                 )
-            )
-            groups.append(
-                NodeGroup(
-                    base_id=f"block-{expander.name}",
-                    spawning_task_base_id=expander_name,
-                    nodes=nodes_in_block,
-                    purpose=NodeGroupPurpose.EXECUTE_BLOCK,
+                # In thie case of a strange override, we may end up with this
+                # breaking, as a node in the block could be missing
+                # This is an undefined case, but we'll likely end up with an error
+                groups.append(
+                    NodeGroup(
+                        base_id=f"block-{expander.name}",
+                        spawning_task_base_id=expander_name,
+                        nodes=nodes_in_block,
+                        purpose=NodeGroupPurpose.EXECUTE_BLOCK,
+                    )
                 )
-            )
+                visited.update(nodes_in_block + [expander])
             groups.append(
                 NodeGroup(
                     base_id=f"collect-{expander.name}",
@@ -233,7 +240,7 @@ class GroupByRepeatableBlocks(GroupingStrategy):
                     purpose=NodeGroupPurpose.GATHER,
                 )
             )
-            visited.update(nodes_in_block + [expander, collector])
+            visited.update([collector])
 
         remaining_nodes = [node_ for node_ in nodes if node_ not in visited]
         for node_ in remaining_nodes:
@@ -386,6 +393,10 @@ def create_task_plan(
                     # If its optional, we don't need to add it as a dependency
                     if task_containing_dependency is None and not node_.requires(dependency.name):
                         continue
+                    if task_containing_dependency is None:
+                        import pdb
+
+                        pdb.set_trace()
                     task_dependencies.add(task_containing_dependency.base_id)
         task_spec.base_dependencies = list(task_dependencies)
     return out
