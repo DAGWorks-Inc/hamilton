@@ -1,3 +1,4 @@
+import enum
 import inspect
 import typing
 from typing import Any, Callable, Collection, Dict, List, Tuple, Type
@@ -16,6 +17,14 @@ from hamilton.function_modifiers.dependencies import (
 from hamilton.io.data_adapters import AdapterCommon, DataLoader, DataSaver
 from hamilton.node import DependencyType
 from hamilton.registry import LOADER_REGISTRY, SAVER_REGISTRY
+
+
+class InjectedKwargs(enum.Enum):
+    """These are special kwargs for data adapters that are declared and automatically injected by Hamilton.
+    These can"""
+
+    node_name = "__node_name"
+    node_tags = "__node_tags"
 
 
 class AdapterFactory:
@@ -59,6 +68,29 @@ class AdapterFactory:
             raise InvalidDecoratorException(
                 f"Extra parameters for loader: {self.adapter_cls} {extra_params}"
             )
+
+    def resolve_injected_kwargs(self, node_: node.Node) -> Dict[str, Any]:
+        """Resolves additional keyword arguments from the on which this operates
+        (passed into or extracted from). We may change how this works in the future, should
+        data loaders need metadata, but for now we'll be putting this in one function and
+        it'll be called by the data saver.
+
+        :param node_:
+        :return:
+        """
+        possible_args = {
+            InjectedKwargs.node_name.value: node_.name,
+            InjectedKwargs.node_tags.value: node_.tags,
+        }
+        out = {}
+        declared_arguments = {
+            **self.adapter_cls.get_optional_arguments(),
+            **self.adapter_cls.get_required_arguments(),
+        }
+        for item in declared_arguments:
+            if item in declared_arguments:
+                out[item] = possible_args[item]
+        return out
 
     def create_loader(self, **resolved_kwargs: Any) -> DataLoader:
         if not self.adapter_cls.can_load():
@@ -473,6 +505,8 @@ class SaveToDecorator(SingleNodeNodeTransformer):
 
         adapter_factory = AdapterFactory(saver_cls, **self.kwargs)
         dependencies, resolved_kwargs = resolve_kwargs(self.kwargs)
+        injected_kwargs = adapter_factory.resolve_injected_kwargs(node_)
+        resolved_kwargs.update(injected_kwargs)
         dependencies_inverted = {v: k for k, v in dependencies.items()}
 
         def save_data(
