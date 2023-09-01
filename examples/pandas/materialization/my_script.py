@@ -5,6 +5,7 @@ import sys
 import pandas as pd
 
 from hamilton import driver
+from hamilton.plugins.pandas_extensions import PandasPickleReader, PandasPickleWriter
 
 logging.basicConfig(stream=sys.stdout)
 initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
@@ -37,3 +38,12 @@ print("============ DAG pre-pickle ============")
 print(df.to_string())
 
 # now we pickle the dataframe
+save_path = "df.pkl"
+writer = PandasPickleWriter(path=save_path)
+writer.save_data(df)
+
+reader = PandasPickleReader(filepath_or_buffer=save_path)
+read_df, metadata = reader.load_data(type(df))
+
+print("============ DAG post-pickle ============")
+print(read_df.to_string())
