@@ -6,10 +6,14 @@ from hamilton.function_modifiers import extract_columns
 def darkshore_flag(zone: pd.Series) -> pd.Series:
     return pd.Series((zone == "Darkshore").astype(int), index=zone.index)
 
+
 def durotar_flag(zone: pd.Series) -> pd.Series:
     return pd.Series((zone == "Durotar").astype(int), index=zone.index)
 
-def with_flags(avatarId: pd.Series, darkshore_flag: pd.Series, durotar_flag: pd.Series) -> pd.DataFrame:
+
+def with_flags(
+    avatarId: pd.Series, darkshore_flag: pd.Series, durotar_flag: pd.Series
+) -> pd.DataFrame:
     _df = pd.concat([avatarId, darkshore_flag, durotar_flag], axis=1)
     _df.columns = ["avatarId", "darkshore_flag", "durotar_flag"]
     return _df
@@ -24,9 +28,9 @@ def zone_counts(with_flags: pd.DataFrame, aggregation_level: str) -> pd.DataFram
     )
 
 
-def darkshore_likelihood(darkshore_count: pd.Series, total_count:pd.Series) -> pd.Series:
-      return darkshore_count /  total_count
-      
-def durotar_likelihood(durotar_count: pd.Series, total_count: pd.Series) -> pd.Series:
-      return durotar_count / total_count
+def darkshore_likelihood(darkshore_count: pd.Series, total_count: pd.Series) -> pd.Series:
+    return darkshore_count / total_count
 
+
+def durotar_likelihood(durotar_count: pd.Series, total_count: pd.Series) -> pd.Series:
+    return durotar_count / total_count
