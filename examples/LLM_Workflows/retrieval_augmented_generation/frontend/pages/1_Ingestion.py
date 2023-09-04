@@ -1,19 +1,26 @@
 import arxiv
-import streamlit as st
-
 import client
+import streamlit as st
 
 
 def arxiv_search_container() -> None:
     """Container to query Arxiv using the Python `arxiv` library"""
     form = st.form(key="arxiv_search_form")
-    query = form.text_area("arXiv Search Query", value="mlops practices", help="[See docs](https://lukasschwab.me/arxiv.py/index.html#Search)")
+    query = form.text_area(
+        "arXiv Search Query",
+        value="mlops practices",
+        help="[See docs](https://lukasschwab.me/arxiv.py/index.html#Search)",
+    )
 
     with st.expander("arXiv Search Parameters"):
         max_results = st.number_input("Max results", value=5)
         sort_by = st.selectbox(
-            "Sort by", 
-            [arxiv.SortCriterion.Relevance, arxiv.SortCriterion.LastUpdatedDate, arxiv.SortCriterion.SubmittedDate],
+            "Sort by",
+            [
+                arxiv.SortCriterion.Relevance,
+                arxiv.SortCriterion.LastUpdatedDate,
+                arxiv.SortCriterion.SubmittedDate,
+            ],
             format_func=lambda option: option.value[0].upper() + option.value[1:],
         )
         sort_order = st.selectbox(
@@ -35,11 +42,7 @@ def article_selection_container(arxiv_form: dict) -> None:
     """Container to select arxiv search results and send /store_arxiv POST request"""
     results = list(arxiv.Search(**arxiv_form).results())
     form = st.form(key="article_selection_form")
-    selection = form.multiselect(
-        "Select articles to store",
-        results,
-        format_func=lambda r: r.title
-    )
+    selection = form.multiselect("Select articles to store", results, format_func=lambda r: r.title)
     if form.form_submit_button("Store"):
         arxiv_ids = [entry.get_short_id() for entry in selection]
         with st.status("Storing arXiv articles"):
@@ -73,11 +76,11 @@ def app() -> None:
     st.title("📥 Ingestion")
 
     left, right = st.columns(2)
-    
+
     with left:
         st.subheader("Download from arXiv")
         arxiv_search_container()
-        if (arxiv_form := st.session_state.get("arxiv_search")):
+        if arxiv_form := st.session_state.get("arxiv_search"):
             article_selection_container(arxiv_form)
 
     with right:
@@ -86,7 +89,7 @@ def app() -> None:
 
     st.header("Documents stored in Weaviate")
     stored_documents_container()
-    
+
 
 if __name__ == "__main__":
     # run as a script to test streamlit app locally

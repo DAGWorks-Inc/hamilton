@@ -22,7 +22,7 @@ def full_schema() -> dict:
                     {
                         "name": "pdf_blob",
                         "dataType": ["blob"],
-                        "description": "PDF file stored as base64 encoded blob"
+                        "description": "PDF file stored as base64 encoded blob",
                     },
                     {
                         "name": "file_name",
@@ -32,8 +32,8 @@ def full_schema() -> dict:
                     {
                         "name": "containsChunk",
                         "dataType": ["Chunk"],
-                        "description": "chunk of text from the PDF document"
-                    }
+                        "description": "chunk of text from the PDF document",
+                    },
                 ],
             },
             {
@@ -50,20 +50,20 @@ def full_schema() -> dict:
                     {
                         "name": "chunk_index",
                         "dataType": ["int"],
-                        "description": "the index of the chunk in the source document; starts at 0"
+                        "description": "the index of the chunk in the source document; starts at 0",
                     },
                     {
                         "name": "content",
                         "dataType": ["text"],
-                        "description":  "text content of this chunk"
+                        "description": "text content of this chunk",
                     },
                     {
                         "name": "summary",
                         "dataType": ["text"],
-                        "description": "LLM-generated summary of the text content of this chunk"
-                    }
-                ]
-            }
+                        "description": "LLM-generated summary of the text content of this chunk",
+                    },
+                ],
+            },
         ]
     }
 
@@ -84,22 +84,14 @@ def reset_weaviate_storage(weaviate_client: weaviate.Client) -> bool:
 
 if __name__ == "__main__":
     # run as a script to test Weaviate + Hamilton locally
-    from hamilton import driver
-
     import vector_db
+
+    from hamilton import driver
 
     inputs = dict(
         vector_db_url="http://localhost:8083",
     )
 
+    dr = driver.Builder().with_modules(vector_db).build()
 
-    dr = (
-        driver.Builder()
-        .with_modules(vector_db)
-        .build()
-    )
-
-    results = dr.execute(
-        final_vars=["initialize_weaviate_instance"],
-        inputs=inputs
-    )
+    results = dr.execute(final_vars=["initialize_weaviate_instance"], inputs=inputs)

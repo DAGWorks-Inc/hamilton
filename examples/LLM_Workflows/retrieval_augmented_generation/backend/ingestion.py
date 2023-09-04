@@ -4,14 +4,14 @@ from pathlib import Path
 from typing import Generator
 
 import arxiv
-import starlette
 import openai
 import PyPDF2
+import starlette
 import tiktoken
 import weaviate
 from weaviate.util import generate_uuid5
 
-from hamilton.htypes import Parallelizable, Collect
+from hamilton.htypes import Collect, Parallelizable
 
 
 def arxiv_to_download(arxiv_ids: list[str], data_dir: str | Path) -> Parallelizable[arxiv.Result]:
@@ -27,13 +27,13 @@ def created_data_dir(data_dir: str | Path) -> str:
     data_dir = Path(data_dir)
     if data_dir.exists():
         data_dir.mkdir(parents=True)
-    
+
     return str(data_dir)
 
 
 def download_arxiv_pdf(arxiv_to_download: arxiv.Result, created_data_dir: str) -> str:
     """Download the PDF for the arxiv resutl and return PDF path"""
-    return arxiv_to_download.download_pdf()#dirpath=created_data_dir)
+    return arxiv_to_download.download_pdf()  # dirpath=created_data_dir)
 
 
 def arxiv_pdf_path(download_arxiv_pdf: str) -> str:
@@ -46,7 +46,9 @@ def arxiv_pdf_path_collection(arxiv_pdf_path: Collect[str]) -> list[str]:
     return arxiv_pdf_path
 
 
-def local_pdfs(arxiv_pdf_path_collection: list[str]) -> list[str | starlette.datastructures.UploadFile]:
+def local_pdfs(
+    arxiv_pdf_path_collection: list[str],
+) -> list[str | starlette.datastructures.UploadFile]:
     """List of local PDF files, either string paths or in-memory files (on the FastAPI server)
     NOTE. This function is overriden by the driver to use arbitrary local PDFs and
     don't need to query arxiv. It is necessary because Parallelizable and Collect nodes
@@ -55,7 +57,9 @@ def local_pdfs(arxiv_pdf_path_collection: list[str]) -> list[str | starlette.dat
     return arxiv_pdf_path_collection
 
 
-def pdf_file(local_pdfs: list[str | starlette.datastructures.UploadFile]) -> Parallelizable[str | starlette.datastructures.UploadFile]:
+def pdf_file(
+    local_pdfs: list[str | starlette.datastructures.UploadFile],
+) -> Parallelizable[str | starlette.datastructures.UploadFile]:
     """Iterate over local PDF files, either string paths or in-memory files (on the FastAPI server)"""
     for pdf_file in local_pdfs:
         yield pdf_file
@@ -101,7 +105,9 @@ def tokenizer(tokenizer_encoding: str = "cl100k_base") -> tiktoken.core.Encoding
     return tiktoken.get_encoding(tokenizer_encoding)
 
 
-def _create_chunks(text: str, tokenizer: tiktoken.core.Encoding, max_length: int) -> Generator[str, None, None]:
+def _create_chunks(
+    text: str, tokenizer: tiktoken.core.Encoding, max_length: int
+) -> Generator[str, None, None]:
     """Return successive chunks of size `max_length` tokens from provided text.
     Split a text into smaller chunks of size n, preferably ending at the end of a sentence
     """
@@ -124,9 +130,7 @@ def _create_chunks(text: str, tokenizer: tiktoken.core.Encoding, max_length: int
 
 
 def chunked_text(
-    raw_text: str,
-    tokenizer: tiktoken.core.Encoding,
-    max_token_length: int = 500
+    raw_text: str, tokenizer: tiktoken.core.Encoding, max_token_length: int = 500
 ) -> list[str]:
     """Tokenize text; create chunks of size `max_token_length`;
     for each chunk, convert tokens back to text string
@@ -156,7 +160,7 @@ def pdf_embedded(
     """Gather information about each arxiv into a single object"""
     return dict(
         pdf_blob=base64.b64encode(pdf_content.getvalue()).decode("utf-8"),
-        file_name=file_name, 
+        file_name=file_name,
         chunked_text=chunked_text,
         chunked_embeddings=chunked_embeddings,
     )
@@ -172,7 +176,7 @@ def store_documents(
     pdf_collection: list[dict],
     batch_size: int = 50,
 ) -> None:
-    """Store arxiv objects in Weaviate in batches. 
+    """Store arxiv objects in Weaviate in batches.
     The vector and references between Document and Chunk are specified manually
     """
     weaviate_client.batch.configure(batch_size=batch_size, dynamic=True)
@@ -200,7 +204,7 @@ def store_documents(
                     class_name="Chunk",
                     data_object=chunk_object,
                     uuid=chunk_uuid,
-                    vector=chunk_embedding
+                    vector=chunk_embedding,
                 )
 
                 batch.add_reference(
@@ -222,10 +226,10 @@ def store_documents(
 
 if __name__ == "__main__":
     # run as a script to test Hamilton's execution
-    from hamilton import driver
-
     import ingestion
     import vector_db
+
+    from hamilton import driver
 
     inputs = dict(
         vector_db_url="http://localhost:8083",

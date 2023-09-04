@@ -1,11 +1,11 @@
 import base64
-from dataclasses import dataclass
 from contextlib import asynccontextmanager
-from typing import Annotated
+from dataclasses import dataclass
 
 import fastapi
-from fastapi.responses import JSONResponse
 import pydantic
+from fastapi.responses import JSONResponse
+
 from hamilton import driver
 
 
@@ -25,9 +25,7 @@ async def lifespan(app: fastapi.FastAPI) -> None:
     import retrieval
     import vector_db
 
-    driver_config = dict(
-    )
-
+    driver_config = dict()
 
     dr = (
         driver.Builder()
@@ -38,16 +36,11 @@ async def lifespan(app: fastapi.FastAPI) -> None:
     )
 
     global global_context
-    global_context = GlobalContext(
-        vector_db_url="http://weaviate_storage:8083",
-        hamilton_driver=dr
-    )
-    
+    global_context = GlobalContext(vector_db_url="http://weaviate_storage:8083", hamilton_driver=dr)
 
     # make sure to instantiate the Weaviate class schemas
     global_context.hamilton_driver.execute(
-        ["initialize_weaviate_instance"],
-        inputs=dict(vector_db_url=global_context.vector_db_url)
+        ["initialize_weaviate_instance"], inputs=dict(vector_db_url=global_context.vector_db_url)
     )
 
     yield
@@ -99,7 +92,7 @@ async def store_pdfs(pdf_files: list[fastapi.UploadFile]) -> JSONResponse:
         ),
         overrides=dict(
             local_pdfs=pdf_files,
-        )
+        ),
     )
 
     print([pdf.file for pdf in pdf_files])
@@ -111,11 +104,11 @@ async def store_pdfs(pdf_files: list[fastapi.UploadFile]) -> JSONResponse:
 async def rag_summary(
     rag_query: str = fastapi.Form(...),
     hybrid_search_alpha: float = fastapi.Form(...),
-    retrieve_top_k: int = fastapi.Form(...)
+    retrieve_top_k: int = fastapi.Form(...),
 ) -> SummaryResponse:
     """Retrieve most relevant chunks stored in Weaviate using hybrid search\n
     Generate text summaries using ChatGPT for each chunk\n
-    Concatenate all chunk summaries into a single query, and reduce into a 
+    Concatenate all chunk summaries into a single query, and reduce into a
     final summary
     """
     results = global_context.hamilton_driver.execute(
@@ -152,7 +145,9 @@ def _add_figures_to_api_routes(app: fastapi.FastAPI) -> None:
             continue
 
         base64_str = base64.b64encode(open(f"docs/{route.name}.png", "rb").read()).decode("utf-8")
-        base64_wrapped = f"""<h1>Execution DAG</h1><img alt="" src="data:image/png;base64,{base64_str}"/>"""
+        base64_wrapped = (
+            f"""<h1>Execution DAG</h1><img alt="" src="data:image/png;base64,{base64_str}"/>"""
+        )
         route.description += base64_wrapped
 
 

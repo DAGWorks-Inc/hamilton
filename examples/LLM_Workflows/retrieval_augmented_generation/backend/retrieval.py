@@ -1,19 +1,15 @@
 import openai
-from hamilton.function_modifiers import extract_fields
-from hamilton.htypes import Parallelizable, Collect
-from tenacity import retry, stop_after_attempt, wait_random_exponential
 import weaviate
-
 from ingestion import _get_embeddings__openai
+from tenacity import retry, stop_after_attempt, wait_random_exponential
+
+from hamilton.function_modifiers import extract_fields
+from hamilton.htypes import Collect, Parallelizable
 
 
 def all_documents_file_name(weaviate_client: weaviate.Client) -> list[str]:
     """Get the `file_name` of all `Document` objects stored in Weaviate"""
-    response = (
-        weaviate_client.query
-        .get("Document", ["file_name"])
-        .do()
-    )
+    response = weaviate_client.query.get("Document", ["file_name"]).do()
     return [d["file_name"] for d in response["data"]["Get"]["Document"]]
 
 
@@ -47,8 +43,15 @@ def document_chunk_hybrid_search_result(
     reference for hybrid search: https://weaviate.io/developers/academy/zero_to_mvp/queries_2/hybrid
     """
     response = (
-        weaviate_client.query
-        .get("Chunk", ["chunk_index", "content", "summary", "fromDocument {... on Document {_additional{id}}}"])
+        weaviate_client.query.get(
+            "Chunk",
+            [
+                "chunk_index",
+                "content",
+                "summary",
+                "fromDocument {... on Document {_additional{id}}}",
+            ],
+        )
         .with_hybrid(
             query=rag_query,
             properties=["content"],
@@ -62,27 +65,33 @@ def document_chunk_hybrid_search_result(
 
     results = []
     for idx, chunk in enumerate(response["data"]["Get"]["Chunk"]):
-        results.append(dict(
-            document_id=chunk["fromDocument"][0]["_additional"]["id"],
-            chunk_id=chunk["_additional"]["id"],
-            chunk_index=chunk["chunk_index"],
-            content=chunk["content"],
-            summary=chunk["summary"],
-            score=chunk["_additional"]["score"],
-            rank=idx,
-        ))
+        results.append(
+            dict(
+                document_id=chunk["fromDocument"][0]["_additional"]["id"],
+                chunk_id=chunk["_additional"]["id"],
+                chunk_index=chunk["chunk_index"],
+                content=chunk["content"],
+                summary=chunk["summary"],
+                score=chunk["_additional"]["score"],
+                rank=idx,
+            )
+        )
 
     return results
 
 
-@extract_fields(dict(
-    chunks_without_summary=list[dict],
-    chunks_with_summary=list[dict],
-))
+@extract_fields(
+    dict(
+        chunks_without_summary=list[dict],
+        chunks_with_summary=list[dict],
+    )
+)
 def check_if_summary_exists(document_chunk_hybrid_search_result: list[dict]) -> dict:
     """Conditional flag to separate chunks that have a store summary from those that didn't"""
     return dict(
-        chunks_without_summary=[d for d in document_chunk_hybrid_search_result if not d.get("summary")],
+        chunks_without_summary=[
+            d for d in document_chunk_hybrid_search_result if not d.get("summary")
+        ],
         chunks_with_summary=[d for d in document_chunk_hybrid_search_result if d.get("summary")],
     )
 
@@ -97,16 +106,14 @@ def chunk_without_summary(chunks_without_summary: list[dict]) -> Parallelizable[
 def _summarize_text__openai(prompt: str, summarize_model_name: str) -> str:
     """Use OpenAI chat API to ask a model to summarize content contained in a prompt"""
     response = openai.ChatCompletion.create(
-        model=summarize_model_name,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0
+        model=summarize_model_name, messages=[{"role": "user", "content": prompt}], temperature=0
     )
     return response["choices"][0]["message"]["content"]
 
 
 def prompt_to_summarize_chunk() -> str:
     """Base prompt for summarize a chunk of text"""
-    return f"Write a brief bulleted summary of this content.\n\nContent:{{content}}"
+    return f"Write a brief bulleted summary of this content.\n\nContent:{{content}}"  # noqa: F541
 
 
 def chunk_with_new_summary(
@@ -115,7 +122,7 @@ def chunk_with_new_summary(
     summarize_model_name: str,
 ) -> dict:
     """Fill a base prompt with a chunk's content and summarize it;
-    Store the summary in the chunk object 
+    Store the summary in the chunk object
     """
     filled_prompt = prompt_to_summarize_chunk.format(content=chunk_without_summary["content"])
     new_chunk = dict(**chunk_without_summary)
@@ -132,7 +139,7 @@ def store_chunk_summary(
     updated_chunk_object = dict(
         chunk_index=chunk_with_new_summary["chunk_index"],
         content=chunk_with_new_summary["content"],
-        summary=chunk_with_new_summary["summary"]
+        summary=chunk_with_new_summary["summary"],
     )
     weaviate_client.data.update(
         data_object=updated_chunk_object,
@@ -148,7 +155,7 @@ def prompt_to_reduce_summaries() -> str:
     First answer the question in two sentences. Then, highlight the core argument, conclusions and evidence.
     User query: {{query}}
     The summary should be structured in bulleted lists following the headings Answer, Core Argument, Evidence, and Conclusions.
-    Key points:\n{{chunks_summary}}\nSummary:\n"""
+    Key points:\n{{chunks_summary}}\nSummary:\n"""  # noqa: F541
 
 
 def chunk_with_new_summary_collection(chunk_with_new_summary: Collect[dict]) -> list[dict]:
@@ -176,16 +183,18 @@ def rag_summary(
     and use OpenAI to reduce the content into a single summary;
     """
     concatenated_summaries = " ".join(chunk["summary"] for chunk in all_chunks)
-    filled_prompt = prompt_to_reduce_summaries.format(query=rag_query, chunks_summary=concatenated_summaries)
+    filled_prompt = prompt_to_reduce_summaries.format(
+        query=rag_query, chunks_summary=concatenated_summaries
+    )
     return _summarize_text__openai(filled_prompt, summarize_model_name)
 
 
 if __name__ == "__main__":
     # run as a script to test Hamilton's execution
-    from hamilton import driver
-
-    import vector_db
     import retrieval
+    import vector_db
+
+    from hamilton import driver
 
     inputs = dict(
         vector_db_url="http://localhost:8083",

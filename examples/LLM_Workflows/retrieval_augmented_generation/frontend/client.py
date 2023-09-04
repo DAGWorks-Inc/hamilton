@@ -1,7 +1,6 @@
 import requests
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-
 # the SERVER_URL matches the name of the service in the docker compose network bridge
 SERVER_URL = "http://fastapi_server:8082"
 
@@ -37,7 +36,9 @@ def get_rag_summary(
     server_url: str = SERVER_URL,
 ):
     """Send GET request to FastAPI /rag_summary endpoint"""
-    payload = dict(rag_query=rag_query, hybrid_search_alpha=hybrid_search_alpha, retrieve_top_k=retrieve_top_k)
+    payload = dict(
+        rag_query=rag_query, hybrid_search_alpha=hybrid_search_alpha, retrieve_top_k=retrieve_top_k
+    )
     response = requests.get(f"{SERVER_URL}/rag_summary", data=payload)
     return response
 
@@ -46,5 +47,3 @@ def get_all_documents_file_name():
     """Send GET request to FastAPI /documents endpoint"""
     response = requests.get(f"{SERVER_URL}/documents")
     return response
-
-

@@ -10,7 +10,7 @@ Here's a retrieval augmented generation (RAG) application that allows users to i
 3. Create a `.env` (next to `README.md` and `docker-compose.yaml`) and add your OpenAI API key in  such that `OPENAI_API_KEY=YOUR_API_KEY`
 4. Build docker images `docker compose build`
 5. Create docker containers `docker compose up -d`
-6. Go to [http://localhost:8081/](http://localhost:8081/) to view the Streamlit app. If it's running, it means the FastAPI server started and was able to connect to Weaviate. You can manually verify FastAPI at [http://localhost:8082/docs](http://localhost:8082/docs) and Weaviate at [http://localhost:8080/docs](http://localhost:8083/v1) 
+6. Go to [http://localhost:8081/](http://localhost:8081/) to view the Streamlit app. If it's running, it means the FastAPI server started and was able to connect to Weaviate. You can manually verify FastAPI at [http://localhost:8082/docs](http://localhost:8082/docs) and Weaviate at [http://localhost:8080/docs](http://localhost:8083/v1)
 7. If you make changes, you need to rebuild the docker images, so do `docker compose up -d --build`.
 8. To stop the containers do `docker compose down`.
 9. To look at the logs, your docker application should allow you to view them,
