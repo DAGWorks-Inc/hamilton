@@ -37,3 +37,4 @@ do
     anaconda upload -u Hamilton-OpenSource $file
 done
 echo "Built & uploaded conda package done!"
+echo "To purge the build files, run: conda build purge; and then delete *.tar.bz2 files under $CONDA_HOME/conda-bld/"
