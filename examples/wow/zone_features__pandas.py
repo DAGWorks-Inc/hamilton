@@ -24,8 +24,9 @@ def zone_counts(with_flags: pd.DataFrame, aggregation_level: str) -> pd.DataFram
     )
 
 
-@extract_columns("darkshore_likelihood", "durotar_likelihood")
-def zone_likelihoods(zone_counts: pd.DataFrame) -> pd.DataFrame:
-    return zone_counts.assign(
-        darkshore_likelihood=lambda x: x["darkshore_count"] / x["total_count"]
-    ).assign(durotar_likelihood=lambda x: x["durotar_count"] / x["total_count"])
+def darkshore_likelihood(darkshore_count: pd.Series, total_count:pd.Series) -> pd.Series:
+      return darkshore_count /  total_count
+      
+def durotar_likelihood(durotar_count: pd.Series, total_count: pd.Series) -> pd.Series:
+      return durotar_count / total_count
+
