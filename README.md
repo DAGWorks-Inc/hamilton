@@ -429,3 +429,4 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Louis Maddox (@lmmx)
 - Stephen Bias (@s-ducks)
 - Anup Joseph (@AnupJoseph)
+- Jan Hurst (@janhurst)
