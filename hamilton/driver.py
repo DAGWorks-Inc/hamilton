@@ -542,12 +542,12 @@ class Driver:
 
     @capture_function_usage
     def display_all_functions(
-        self, output_file_path: str, render_kwargs: dict = None, graphviz_kwargs: dict = None
+        self, output_file_path: str = None, render_kwargs: dict = None, graphviz_kwargs: dict = None
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays the graph of all functions loaded!
 
         :param output_file_path: the full URI of path + file name to save the dot file to.
-            E.g. 'some/path/graph-all.dot'
+            E.g. 'some/path/graph-all.dot'. Optional. No need to pass it in if you're in a Jupyter Notebook.
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
             See https://graphviz.readthedocs.io/en/stable/api.html#graphviz.Graph.render for other options.
@@ -601,7 +601,7 @@ class Driver:
         try:
             return fn_graph.display(
                 all_nodes,
-                output_file_path,
+                output_file_path=output_file_path,
                 render_kwargs=render_kwargs,
                 graphviz_kwargs=graphviz_kwargs,
                 node_modifiers=node_modifiers,
@@ -614,8 +614,8 @@ class Driver:
     def visualize_execution(
         self,
         final_vars: List[Union[str, Callable, Variable]],
-        output_file_path: str,
-        render_kwargs: dict,
+        output_file_path: str = None,
+        render_kwargs: dict = None,
         inputs: Dict[str, Any] = None,
         graphviz_kwargs: dict = None,
         overrides: Dict[str, Any] = None,
@@ -632,7 +632,7 @@ class Driver:
 
         :param final_vars: the outputs we want to compute. They will become rectangles in the graph.
         :param output_file_path: the full URI of path + file name to save the dot file to.
-            E.g. 'some/path/graph.dot'
+            E.g. 'some/path/graph.dot'. Optional. No need to pass it in if you're in a Jupyter Notebook.
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
             See https://graphviz.readthedocs.io/en/stable/api.html#graphviz.Graph.render for other options.
@@ -681,7 +681,11 @@ class Driver:
 
     @capture_function_usage
     def display_downstream_of(
-        self, *node_names: str, output_file_path: str, render_kwargs: dict, graphviz_kwargs: dict
+        self,
+        *node_names: str,
+        output_file_path: str = None,
+        render_kwargs: dict = None,
+        graphviz_kwargs: dict = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG starting from the passed in function name(s).
 
@@ -690,7 +694,7 @@ class Driver:
 
         :param node_names: names of function(s) that are starting points for traversing the graph.
         :param output_file_path: the full URI of path + file name to save the dot file to.
-            E.g. 'some/path/graph.dot'. Pass in None to skip saving any file.
+            E.g. 'some/path/graph.dot'. Optional. No need to pass it in if you're in a Jupyter Notebook.
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
             If you do not want to view the file, pass in `{'view':False}`.
         :param graphviz_kwargs: Kwargs to be passed to the graphviz graph object to configure it.
@@ -712,7 +716,11 @@ class Driver:
 
     @capture_function_usage
     def display_upstream_of(
-        self, *node_names: str, output_file_path: str, render_kwargs: dict, graphviz_kwargs: dict
+        self,
+        *node_names: str,
+        output_file_path: str = None,
+        render_kwargs: dict = None,
+        graphviz_kwargs: dict = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG going backwards from the passed in function name(s).
 
@@ -721,11 +729,11 @@ class Driver:
 
         :param node_names: names of function(s) that are starting points for traversing the graph.
         :param output_file_path: the full URI of path + file name to save the dot file to.
-            E.g. 'some/path/graph.dot'. Pass in None to skip saving any file.
+            E.g. 'some/path/graph.dot'. Optional. No need to pass it in if you're in a Jupyter Notebook.
         :param render_kwargs: a dictionary of values we'll pass to graphviz render function. Defaults to viewing.
-            If you do not want to view the file, pass in `{'view':False}`.
+            If you do not want to view the file, pass in `{'view':False}`. Optional.
         :param graphviz_kwargs: Kwargs to be passed to the graphviz graph object to configure it.
-            E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
+            E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image. Optional.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -1010,8 +1018,8 @@ class Driver:
     def visualize_materialization(
         self,
         *materializers: materialization.MaterializerFactory,
-        output_file_path: str,
-        render_kwargs: dict,
+        output_file_path: str = None,
+        render_kwargs: dict = None,
         additional_vars: List[Union[str, Callable, Variable]] = None,
         inputs: Dict[str, Any] = None,
         graphviz_kwargs: dict = None,
@@ -1022,11 +1030,11 @@ class Driver:
 
         :param materializers: Materializers to use, see the materialize() function
         :param additional_vars: Additional variables to compute (in addition to materializers)
-        :param output_file_path: Path to output file
-        :param render_kwargs: Arguments to pass to render
-        :param inputs: Inputs to pass to execution
-        :param graphviz_kwargs: Arguments to pass to graphviz
-        :param overrides: Overrides to pass to execution
+        :param output_file_path: Path to output file. Optional. Skip if in a Jupyter Notebook.
+        :param render_kwargs: Arguments to pass to render. Optional.
+        :param inputs: Inputs to pass to execution. Optional.
+        :param graphviz_kwargs: Arguments to pass to graphviz. Optional.
+        :param overrides: Overrides to pass to execution. Optional.
         :return: The graphviz graph, if you want to do something with it
         """
         if additional_vars is None:

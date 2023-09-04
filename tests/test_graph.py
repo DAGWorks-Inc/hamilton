@@ -534,6 +534,8 @@ def test_function_graph_display():
         with open(str(path), "r") as dot_file:
             actual = sorted(dot_file.readlines())
             assert actual == expected
+        dot_file = fg.display(all_nodes, output_file_path=None, node_modifiers=node_modifiers)
+        assert dot_file is not None
 
 
 def test_function_graph_display_without_saving():
@@ -545,7 +547,7 @@ def test_function_graph_display_without_saving():
         if n.user_defined:
             node_modifiers[n.name] = {graph.VisualizationNodeModifiers.IS_USER_INPUT}
         all_nodes.add(n)
-    digraph = fg.display(all_nodes, None, node_modifiers=node_modifiers)
+    digraph = fg.display(all_nodes, output_file_path=None, node_modifiers=node_modifiers)
     assert digraph is not None
     import graphviz
 
