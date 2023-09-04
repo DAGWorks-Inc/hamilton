@@ -16,6 +16,7 @@ def world_of_warcraft(spark_session: ps.SparkSession) -> ps.DataFrame:
 
 def _flag_functions():
     """Hidden from the DAG by using this wrapper function"""
+
     def durotar_flag(zone: pd.Series) -> htypes.column[pd.Series, int]:
         return (zone == " Durotar").astype(int)
 
