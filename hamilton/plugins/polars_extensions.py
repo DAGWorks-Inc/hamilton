@@ -69,7 +69,7 @@ class PolarsCSVReader(DataLoader):
     quote_char: str = '"'
     skip_rows: int = 0
     dtypes: Union[Mapping[str, PolarsDataType], Sequence[PolarsDataType]] = None
-    null_values: Union[str, Sequence[str], dict[str, str]] = None
+    null_values: Union[str, Sequence[str], Dict[str, str]] = None
     missing_utf8_is_empty_string: bool = False
     ignore_errors: bool = False
     try_parse_dates: bool = False
