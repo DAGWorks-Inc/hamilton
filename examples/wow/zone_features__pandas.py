@@ -3,12 +3,16 @@ import pandas as pd
 from hamilton.function_modifiers import extract_columns
 
 
-def with_flags(avatarId: pd.Series, zone: pd.Series) -> pd.DataFrame:
-    return (
-        pd.concat([avatarId, zone], axis=1)
-        .assign(darkshore_flag=lambda x: (x["zone"] == " Darkshore").astype(int))
-        .assign(durotar_flag=lambda x: (x["zone"] == " Durotar").astype(int))
-    )
+def darkshore_flag(zone: pd.Series) -> pd.Series:
+    return pd.Series((zone == "Darkshore").astype(int), index=zone.index)
+
+def durotar_flag(zone: pd.Series) -> pd.Series:
+    return pd.Series((zone == "Durotar").astype(int), index=zone.index)
+
+def with_flags(avatarId: pd.Series, darkshore_flag: pd.Series, durotar_flag: pd.Series) -> pd.DataFrame:
+    _df = pd.concat([avatarId, darkshore_flag, durotar_flag], axis=1)
+    _df.columns = ["avatarId", "darkshore_flag", "durotar_flag"]
+    return _df
 
 
 @extract_columns("total_count", "darkshore_count", "durotar_count")
