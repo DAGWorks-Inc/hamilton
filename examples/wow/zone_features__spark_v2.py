@@ -1,6 +1,11 @@
 import pyspark.sql as ps
 from pyspark.sql import functions as sf
-from zone_features import darkshore_flag, darkshore_likelihood, durotar_flag, durotar_likelihood
+from zone_features__common import (
+    darkshore_flag,
+    darkshore_likelihood,
+    durotar_flag,
+    durotar_likelihood,
+)
 
 from hamilton.plugins.h_spark import with_columns
 
