@@ -11,8 +11,9 @@ from hamilton.io.materialization import to
 from hamilton.plugins.pandas_extensions import PandasPickleReader, PandasPickleWriter
 
 # so that I can pass the pre commit
-pread = PandasPickleReader()
-pwrite = PandasPickleWriter()
+filepath = "dummy.file"
+pread = PandasPickleReader(filepath)
+pwrite = PandasPickleWriter(filepath)
 
 logging.basicConfig(stream=sys.stdout)
 initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
@@ -41,7 +42,7 @@ output_columns = [
     "spend_zero_mean_unit_variance",  # could just pass "spend_zero_mean_unit_variance" here
 ]
 # let's create the dataframe!
-df = dr.execute(output_columns)
+# df = dr.execute(output_columns)
 
 materializers = [
     # materialize the dataframe to a pickle file
