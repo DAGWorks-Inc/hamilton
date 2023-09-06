@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Generator
 
 import arxiv
+import fastapi
 import openai
 import PyPDF2
-import starlette
 import tiktoken
 import weaviate
 from weaviate.util import generate_uuid5
@@ -48,7 +48,7 @@ def arxiv_pdf_path_collection(arxiv_pdf_path: Collect[str]) -> list[str]:
 
 def local_pdfs(
     arxiv_pdf_path_collection: list[str],
-) -> list[str | starlette.datastructures.UploadFile]:
+) -> list[str | fastapi.UploadFile]:
     """List of local PDF files, either string paths or in-memory files (on the FastAPI server)
     NOTE. This function is overriden by the driver to use arbitrary local PDFs and
     don't need to query arxiv. It is necessary because Parallelizable and Collect nodes
@@ -58,32 +58,32 @@ def local_pdfs(
 
 
 def pdf_file(
-    local_pdfs: list[str | starlette.datastructures.UploadFile],
-) -> Parallelizable[str | starlette.datastructures.UploadFile]:
+    local_pdfs: list[str | fastapi.UploadFile],
+) -> Parallelizable[str | fastapi.UploadFile]:
     """Iterate over local PDF files, either string paths or in-memory files (on the FastAPI server)"""
     for pdf_file in local_pdfs:
         yield pdf_file
 
 
-def pdf_content(pdf_file: str | starlette.datastructures.UploadFile) -> io.BytesIO:
+def pdf_content(pdf_file: str | fastapi.UploadFile) -> io.BytesIO:
     """Read the content of the PDF file as a bytes buffer that will be passed to a PDF reader;
     The implementation differs if the file is passed as path or in-memory
     """
     if isinstance(pdf_file, str):
         return io.BytesIO(Path(pdf_file).read_bytes())
-    elif isinstance(pdf_file, starlette.datastructures.UploadFile):
+    elif isinstance(pdf_file, fastapi.UploadFile):
         return io.BytesIO(pdf_file.file.read())
     else:
         raise TypeError
 
 
-def file_name(pdf_file: str | starlette.datastructures.UploadFile) -> str:
+def file_name(pdf_file: str | fastapi.UploadFile) -> str:
     """Read the content of the PDF file as a bytes buffer that will be passed to a PDF reader;
     The implementation differs if the file is passed as path or in-memory
     """
     if isinstance(pdf_file, str):
         file_path = Path(pdf_file)
-    elif isinstance(pdf_file, starlette.datastructures.UploadFile):
+    elif isinstance(pdf_file, fastapi.UploadFile):
         file_path = Path(pdf_file.filename)
     else:
         raise TypeError
