@@ -2,6 +2,22 @@ import arxiv
 import client
 import streamlit as st
 
+def add_logo():
+    st.markdown(
+        """
+        <style>
+            [data-testid="stSidebarNav"] {
+                background-image: url(https://mintlify.s3-us-west-1.amazonaws.com/dagworksinc/logo/dark.png);
+                background-repeat: no-repeat;
+                background-size: 70%;
+                background-position: 20px 20px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 
 def arxiv_search_container() -> None:
     """Container to query Arxiv using the Python `arxiv` library"""
@@ -73,6 +89,8 @@ def app() -> None:
         layout="centered",
         menu_items={"Get help": None, "Report a bug": None},
     )
+    add_logo()
+
     st.title("📥 Ingestion")
 
     left, right = st.columns(2)

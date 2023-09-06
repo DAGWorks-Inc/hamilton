@@ -1,9 +1,26 @@
 import client
 import streamlit as st
 
+
 # def show_pdf(base64_pdf: str) -> str:
 #     """Show a base64 encoded PDF in the browser using an HTML tag"""
 #     return f'<embed src="data:application/pdf;base64,{base64_pdf}" width=100% height=800 type="application/pdf">'
+
+
+def add_logo():
+    st.markdown(
+        """
+        <style>
+            [data-testid="stSidebarNav"] {
+                background-image: url(https://mintlify.s3-us-west-1.amazonaws.com/dagworksinc/logo/dark.png);
+                background-repeat: no-repeat;
+                background-size: 70%;
+                background-position: 20px 20px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def retrieval_form_container() -> None:
@@ -62,6 +79,8 @@ def app() -> None:
         layout="centered",
         menu_items={"Get help": None, "Report a bug": None},
     )
+    add_logo()
+
     st.title("📤 Retrieval")
 
     retrieval_form_container()

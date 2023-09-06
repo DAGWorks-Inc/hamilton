@@ -1,6 +1,21 @@
 import client
 import streamlit as st
 
+def add_logo():
+    st.markdown(
+        """
+        <style>
+            [data-testid="stSidebarNav"] {
+                background-image: url(https://mintlify.s3-us-west-1.amazonaws.com/dagworksinc/logo/dark.png);
+                background-repeat: no-repeat;
+                background-size: 70%;
+                background-position: 20px 20px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 def app() -> None:
     """Streamlit entrypoint for PDF Summarize frontend"""
@@ -11,6 +26,8 @@ def app() -> None:
         layout="centered",
         menu_items={"Get help": None, "Report a bug": None},
     )
+    add_logo()
+
     st.title("📚 Retrieval Augmented Generation")
 
     if client.get_fastapi_status() is False:
@@ -24,7 +41,7 @@ def app() -> None:
 
     The ingestion and retrieval steps are implemented as dataflows with Hamilton and are exposed via FastAPI endpoints. The frontend is built with Streamlit and exposes the different functionalities via a simple web UI. Everything is packaged as containers with docker compose.
 
-    Fidn the code on [Hamilton's GitHub](https://github.com/DAGWorks-Inc/hamilton) page.
+    Find the code on [Hamilton's GitHub](https://github.com/DAGWorks-Inc/hamilton) page.
     """
     )
 
