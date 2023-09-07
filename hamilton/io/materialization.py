@@ -107,8 +107,8 @@ class MaterializerFactory:
         if self.result_builder is None:
             if len(node_dependencies) != 1:
                 raise ValueError(
-                    "Must specify result builder if the materializer has more than one dependency "
-                    "it is materializing. Otherwise we have no way to join them before storage! "
+                    "Must specify result builder via combine= key word argument if the materializer has more than "
+                    "one dependency it is materializing. Otherwise we have no way to join them and know what to pass! "
                     f"See materializer {self.id}."
                 )
             save_dep = node_dependencies[0]
