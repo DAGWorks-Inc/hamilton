@@ -6,15 +6,6 @@ import pandas as pd
 from hamilton import base, driver
 from hamilton.io.materialization import to
 
-# linter doesn't like it because its unused
-# needs to be imported to register materializer
-from hamilton.plugins.pandas_extensions import PandasPickleReader, PandasPickleWriter
-
-# so that I can pass the pre commit
-filepath = "dummy.file"
-pread = PandasPickleReader(filepath)
-pwrite = PandasPickleWriter(filepath)
-
 logging.basicConfig(stream=sys.stdout)
 initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
     # Note: these values don't have to be all series, they could be a scalar.
@@ -30,9 +21,8 @@ initial_columns = {  # load from actuals or wherever -- this is our initial data
 import my_functions
 
 df_builder = base.PandasDataFrameResult()
-adapter = base.SimplePythonGraphAdapter(df_builder)
 
-dr = driver.Driver(initial_columns, my_functions)  # can pass in multiple modules
+dr = driver.Driver({}, my_functions)  # can pass in multiple modules
 # we need to specify what we want in the final dataframe. These can be string names, or function references.
 output_columns = [
     "spend",
@@ -41,24 +31,31 @@ output_columns = [
     "spend_per_signup",  # could just pass "spend_per_signup" here
     "spend_zero_mean_unit_variance",  # could just pass "spend_zero_mean_unit_variance" here
 ]
-# let's create the dataframe!
-# df = dr.execute(output_columns)
 
 materializers = [
     # materialize the dataframe to a pickle file
     to.pickle(
         dependencies=output_columns,
         id="df_to_pickle",
-        path="./data/df.pkl",
-        combiner=adapter,  # add from hamilton import base
+        path="./df.pkl",
+        combine=df_builder,
     ),
 ]
+# Visualize what is happening
 dr.visualize_materialization(
     *materializers,
     additional_vars=output_columns,
     output_file_path="./dag",
     render_kwargs={},
+    inputs=initial_columns,
 )
-materialization_results, _ = dr.materialize(
+# Materialize a result, i.e. execute the DAG!
+materialization_results, additional_outputs = dr.materialize(
     *materializers,
+    additional_vars=[
+        "df_to_pickle_build_result"
+    ],  # because combine is used, we can get that result here.
+    inputs=initial_columns,
 )
+print(materialization_results)
+print(additional_outputs["df_to_pickle_build_result"])
