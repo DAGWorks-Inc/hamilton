@@ -133,7 +133,6 @@ def chunk_with_new_summary(
 def store_chunk_summary(
     weaviate_client: weaviate.Client,
     chunk_with_new_summary: dict,
-    chunk_summary: str,
 ) -> dict:
     """Store in Weaviate the recently computed summary for chunks that previously didn't have one."""
     updated_chunk_object = dict(
