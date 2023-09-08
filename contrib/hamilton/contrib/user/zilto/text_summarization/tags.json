@@ -1,0 +1,8 @@
+{
+  "schema": "1.0",
+  "use_case_tags": ["summarization", "LLM"],
+  "secondary_tags": {
+    "language": "English",
+    "llm-model": "openai:gpt4"
+  }
+}

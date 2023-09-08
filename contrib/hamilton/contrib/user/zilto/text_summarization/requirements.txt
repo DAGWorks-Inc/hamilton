@@ -1,0 +1,5 @@
+openai
+PyPDF2
+tenacity
+tiktoken
+tqdm

@@ -42,6 +42,8 @@ API_KEY = "phc_mZg8bkn3yvMxqvZKRlMlxjekFU5DFDdcdAsijJ2EH5e"
 START_EVENT = "os_hamilton_run_start"
 END_EVENT = "os_hamilton_run_end"
 DRIVER_FUNCTION = "os_hamilton_driver_function_call"
+DATAFLOW_FUNCTION = "os_hamilton_dataflow_function_call"
+DATAFLOW_DOWNLOAD = "os_hamilton_dataflow_download_call"
 TIMEOUT = 2
 MAX_COUNT_SESSION = 1000
 
@@ -254,6 +256,83 @@ def create_driver_function_invocation_event(function_name: str) -> dict:
     }
     event["properties"].update(payload)
     return event
+
+
+def create_dataflow_function_invocation_event_json(canonical_function_name: str) -> dict:
+    """Function that creates JSON to track dataflow module function calls.
+
+    :param canonical_function_name: the name of the function in the dataflow module.
+    :return: the dictionary representing the event.
+    """
+    event = {
+        "api_key": API_KEY,
+        "event": DATAFLOW_FUNCTION,
+        "properties": {},
+    }
+    event["properties"].update(BASE_PROPERTIES)
+    payload = {
+        "function_name": canonical_function_name,  # what was the name of the driver function?
+    }
+    event["properties"].update(payload)
+    return event
+
+
+def create_dataflow_download_event_json(
+    category: str, user: str, dataflow_name: str, version: str
+) -> dict:
+    """Function that creates JSON to track dataflow download calls.
+
+    :param category: the category of the dataflow. OFFICIAL or USER.
+    :param user: the user's github handle, if applicable.
+    :param dataflow_name: the name of the dataflow.
+    :param version: the git commit version of the dataflow, OR the sf-hamilton-contrib package version.
+    :return: dictionary representing the event.
+    """
+    event = {
+        "api_key": API_KEY,
+        "event": DATAFLOW_DOWNLOAD,
+        "properties": {},
+    }
+    event["properties"].update(BASE_PROPERTIES)
+    _category = "OFFICIAL" if category == "OFFICIAL" else "USER"
+
+    payload = {
+        "category": _category,
+        "dataflow_name": dataflow_name,
+        "commit_version": version,
+    }
+    if _category == "USER":
+        payload["github_user"] = user
+    event["properties"].update(payload)
+    return event
+
+
+def create_and_send_contrib_use(module_name: str, version: str):
+    """Function to send contrib module use -- this is used from the contrib package.
+
+    :param module_name: the name of the module
+    :param version: the package version.
+    """
+    if module_name == "__main__" or module_name == "__init__":
+        return
+    try:
+        parts = module_name.split(".")
+        if "official" in parts:
+            category = "OFFICIAL"
+        else:
+            category = "USER"
+            user = parts[-2]
+        dataflow = parts[-1]
+        version = "sf-contrib-" + ".".join(map(str, version))
+        event_json = create_dataflow_download_event_json(category, user, dataflow, version)
+    except Exception as e:
+        # capture any exception!
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Encountered error while constructing create_and_send_contrib_use json:\n{e}"
+            )
+    else:
+        send_event_json(event_json)
 
 
 def _send_event_json(event_json: dict):
