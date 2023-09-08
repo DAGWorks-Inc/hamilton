@@ -2,6 +2,7 @@ import arxiv
 import client
 import streamlit as st
 
+
 def add_logo():
     st.markdown(
         """
@@ -18,13 +19,12 @@ def add_logo():
     )
 
 
-
 def arxiv_search_container() -> None:
     """Container to query Arxiv using the Python `arxiv` library"""
     form = st.form(key="arxiv_search_form")
     query = form.text_area(
         "arXiv Search Query",
-        value="mlops practices",
+        value="LLM in production",
         help="[See docs](https://lukasschwab.me/arxiv.py/index.html#Search)",
     )
 

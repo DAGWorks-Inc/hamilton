@@ -1,7 +1,6 @@
 import client
 import streamlit as st
 
-
 # def show_pdf(base64_pdf: str) -> str:
 #     """Show a base64 encoded PDF in the browser using an HTML tag"""
 #     return f'<embed src="data:application/pdf;base64,{base64_pdf}" width=100% height=800 type="application/pdf">'
