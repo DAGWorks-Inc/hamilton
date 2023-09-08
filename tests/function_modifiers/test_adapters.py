@@ -27,13 +27,14 @@ def test_default_adapters_are_available():
 def test_default_adapters_are_registered_once():
     assert "json" in LOADER_REGISTRY
     count_unique = {
-        key: Counter([value.__class__.__qualname__ for value in values])
+        # we want str() of the class to get the fully qualified class name.
+        key: Counter([str(value) for value in values])
         for key, values in LOADER_REGISTRY.items()
     }
     for key, value_ in count_unique.items():
         for impl, count in value_.items():
             assert count == 1, (
-                f"Adapter registered multiple times for {impl}. This should not"
+                f"Adapter for {key} registered multiple times for {impl}. This should not"
                 f" happen, as items should just be registered once."
             )
 
