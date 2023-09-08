@@ -1,5 +1,6 @@
 import abc
 import dataclasses
+import sys
 from io import BufferedReader, BytesIO
 from pathlib import Path
 from typing import Any, Collection, Dict, Optional, Tuple, Type, Union
@@ -185,6 +186,13 @@ class PandasPickleReader(DataLoader):
         return "pickle"
 
 
+# for python 3.7 compatibility
+if sys.version_info < (3, 8):
+    pickle_protocol_default = 4
+else:
+    pickle_protocol_default = 5
+
+
 @dataclasses.dataclass
 class PandasPickleWriter(DataSaver):
     """Class that handles saving pickle files with pandas.
@@ -194,7 +202,7 @@ class PandasPickleWriter(DataSaver):
     path: Union[str, Path, BytesIO, BufferedReader]
     # kwargs:
     compression: Union[str, Dict[str, Any], None] = "infer"
-    protocol: int = 5
+    protocol: int = pickle_protocol_default
     storage_options: Optional[Dict[str, Any]] = None
 
     @classmethod
