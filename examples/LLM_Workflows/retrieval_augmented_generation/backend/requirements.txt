@@ -1,0 +1,12 @@
+arxiv
+fastapi
+openai
+pandas
+pydantic
+PyPDF2
+python-multipart
+sf-hamilton[visualization] == 1.27.3
+tenacity
+tiktoken
+uvicorn
+weaviate-client

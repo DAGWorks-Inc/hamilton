@@ -1,0 +1,41 @@
+version: "3.4"
+services:
+  api:
+    container_name: fastapi_server
+    build: backend/.
+    command: "uvicorn server:app --host 0.0.0.0 --port 8082"
+    ports:
+      - "8082:8082"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    networks:
+      - rag
+
+  app:
+    container_name: streamlit_app
+    build: frontend/.
+    command: "streamlit run --server.port 8080 --server.enableCORS false Information.py"
+    ports:
+      - "8080:8080"
+    networks:
+      - rag
+
+  weaviate:
+    image: semitechnologies/weaviate:1.19.8
+    container_name: weaviate_storage
+    command: --host 0.0.0.0 --port '8083' --scheme http
+    ports:
+    - 8083:8083
+    restart: on-failure:0
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      ENABLE_MODULES: ''
+      CLUSTER_HOSTNAME: 'node1'
+    networks:
+     - rag
+
+networks:
+  rag:
