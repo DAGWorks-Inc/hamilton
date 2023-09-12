@@ -1,6 +1,12 @@
+import pathlib
+
 import pandas as pd
 
-from hamilton.plugins.pandas_extensions import PandasPickleReader, PandasPickleWriter
+from hamilton.plugins.pandas_extensions import (
+    PandasJsonDataSaver,
+    PandasPickleReader,
+    PandasPickleWriter,
+)
 
 
 def test_pandas_pickle(tmp_path):
@@ -23,3 +29,15 @@ def test_pandas_pickle(tmp_path):
 
     # correct number of files returned
     assert len(list(tmp_path.iterdir())) == 1, "Unexpected number of files in tmp_path directory."
+
+
+def test_pandas_json_data_saver(tmp_path: pathlib.Path) -> None:
+    data = {"foo": ["bar"]}
+    df = pd.DataFrame(data)
+    path = tmp_path / "test.json"
+    saver = PandasJsonDataSaver(filepath_or_buffer=path, indent=4)
+    kwargs = saver._get_saving_kwargs()
+    metadata = saver.save_data(df)
+    assert PandasJsonDataSaver.applicable_types() == [pd.DataFrame]
+    assert kwargs["indent"] == 4
+    assert metadata["path"] == path
