@@ -239,7 +239,7 @@ class PandasPickleWriter(DataSaver):
 
 
 @dataclasses.dataclass
-class PandasJsonSaver(DataSaver):
+class PandasJsonDataSaver(DataSaver):
     """Data saver for Pandas DataFrame to JSON file/buffer method.
 
     Disclaimer: We're exposing all the *current* params from the Pandas DataFrame.to_json method.
@@ -311,6 +311,7 @@ def register_data_loaders():
         ParquetDataLoader,
         PandasPickleReader,
         PandasPickleWriter,
+        PandasJsonDataSaver,
     ]:
         registry.register_adapter(loader)
 
