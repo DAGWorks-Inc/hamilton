@@ -241,7 +241,7 @@ class PandasPickleWriter(DataSaver):
 
 
 @dataclasses.dataclass
-class PandasJsonLoader(DataLoader):
+class PandasJsonDataLoader(DataLoader):
     """Data loader for JSON files using Pandas.
 
     Disclaimer: We're exposing all the *current* params from the Pandas read_json method.
@@ -330,7 +330,7 @@ def register_data_loaders():
         ParquetDataLoader,
         PandasPickleReader,
         PandasPickleWriter,
-        PandasJsonLoader,
+        PandasJsonDataLoader,
     ]:
         registry.register_adapter(loader)
 
