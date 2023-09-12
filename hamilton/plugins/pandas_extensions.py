@@ -330,6 +330,7 @@ def register_data_loaders():
         ParquetDataLoader,
         PandasPickleReader,
         PandasPickleWriter,
+        PandasJsonLoader,
     ]:
         registry.register_adapter(loader)
 
