@@ -31,7 +31,7 @@ def test_pandas_pickle(tmp_path: pathlib.Path) -> None:
     assert len(list(tmp_path.iterdir())) == 1, "Unexpected number of files in tmp_path directory."
 
 
-def test_pandas_json_loader(tmp_path: pathlib.Path) -> None:
+def test_pandas_json_data_loader(tmp_path: pathlib.Path) -> None:
     file_path = "tests/resources/data/test_load_from_data.json"
     loader = PandasJsonDataLoader(filepath_or_buffer=file_path, encoding="utf-8")
     kwargs = loader._get_loading_kwargs()
