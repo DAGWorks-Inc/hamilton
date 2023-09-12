@@ -3,7 +3,7 @@ import dataclasses
 import sys
 from io import BufferedReader, BytesIO
 from pathlib import Path
-from typing import Any, Collection, Dict, Optional, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, Literal, Optional, Tuple, Type, Union
 
 from hamilton.io import utils
 from hamilton.io.data_adapters import DataLoader, DataSaver
@@ -12,6 +12,15 @@ try:
     import pandas as pd
 except ImportError:
     raise NotImplementedError("Pandas is not installed.")
+
+from pandas._typing import (
+    CompressionOptions,
+    FilePath,
+    JSONSerializable,
+    StorageOptions,
+    TimeUnit,
+    WriteBuffer,
+)
 
 from hamilton import registry
 
@@ -231,23 +240,67 @@ class PandasPickleWriter(DataSaver):
 
 @dataclasses.dataclass
 class PandasJsonSaver(DataSaver):
-    """Data saver for Pandas DataFrames to JSON file. Note that this currently does not support the wide array of
-    data saving params (e.g., orient, date_unit). We will be adding this in over time, but for now
-    you can subclass this or open up an issue if this doesn't have what you want."""
+    """Data saver for Pandas DataFrame to JSON file/buffer method.
 
-    path: str
+    Disclaimer: We're exposing all the *current* params from the Pandas DataFrame.to_json method.
+    Some of these params may get deprecated or new params may be introduced. In the event that
+    the params/kwargs below become outdated, please raise an issue or submit a pull request.
+    """
+
+    filepath_or_buffer: Optional[Union[FilePath, WriteBuffer[bytes], WriteBuffer[str]]] = None
+
+    compression: CompressionOptions = "infer"
+    date_format: Optional[str] = None
+    date_unit: TimeUnit = "ms"
+    default_handler: Optional[Callable[[Any], JSONSerializable]] = None
+    double_precision: int = 10
+    force_ascii: bool = True
+    index: Optional[bool] = None
+    indent: Optional[int] = None
+    lines: bool = False
+    mode: Literal["a", "w"] = "w"
+    orient: Optional[Literal["split", "records", "index", "table", "columns", "values"]] = None
+    storage_options: Optional[StorageOptions] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
         return [DATAFRAME_TYPE]
 
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.compression != "infer":
+            kwargs["compression"] = self.compression
+        if self.date_format is not None:
+            kwargs["date_format"] = self.date_format
+        if self.date_unit != "ms":
+            kwargs["date_unit"] = self.date_unit
+        if self.default_handler is not None:
+            kwargs["default_handler"] = self.default_handler
+        if self.double_precision != 10:
+            kwargs["double_precision"] = self.double_precision
+        if self.force_ascii is not True:
+            kwargs["force_ascii"] = self.force_ascii
+        if self.index is not None:
+            kwargs["index"] = self.index
+        if self.indent is not None:
+            kwargs["indent"] = self.indent
+        if self.lines is not False:
+            kwargs["lines"] = self.lines
+        if self.mode != "w":
+            kwargs["mode"] = self.mode
+        if self.orient is not None:
+            kwargs["orient"] = self.orient
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        return kwargs
+
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.to_json(self.path)
-        return utils.get_file_metadata(self.path)
+        data.to_json(self.filepath_or_buffer, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.filepath_or_buffer)
 
     @classmethod
     def name(cls) -> str:
-        return "pandas_json"
+        return "json"
 
 
 def register_data_loaders():
