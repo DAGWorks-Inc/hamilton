@@ -229,6 +229,28 @@ class PandasPickleWriter(DataSaver):
         return "pickle"
 
 
+@dataclasses.dataclass
+class PandasJsonReader(DataLoader):
+    """Data loader for JSON files using Pandas. Note that this currently does not support the wide array of
+    data loading functionality (e.g., precise_float, encoding). We will be adding this in over time, but for now
+    you can subclass this or open up an issue if this doesn't have what you want."""
+
+    path: str
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pd.read_json(self.path)
+        metadata = utils.get_file_metadata(self.path)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "json"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
