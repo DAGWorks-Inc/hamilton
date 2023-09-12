@@ -232,7 +232,7 @@ class PandasPickleWriter(DataSaver):
 @dataclasses.dataclass
 class PandasJsonLoader(DataLoader):
     """Data loader for JSON files using Pandas. Note that this currently does not support the wide array of
-    data loading functionality (e.g., precise_float, encoding). We will be adding this in over time, but for now
+    data loading params (e.g., precise_float, encoding). We will be adding this in over time, but for now
     you can subclass this or open up an issue if this doesn't have what you want."""
 
     path: str
