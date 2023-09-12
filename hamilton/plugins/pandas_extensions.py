@@ -231,7 +231,7 @@ class PandasPickleWriter(DataSaver):
 
 @dataclasses.dataclass
 class PandasJsonSaver(DataSaver):
-    """Data saver for JSON files using Pandas. Note that this currently does not support the wide array of
+    """Data saver for Pandas DataFrames to JSON file. Note that this currently does not support the wide array of
     data saving params (e.g., orient, date_unit). We will be adding this in over time, but for now
     you can subclass this or open up an issue if this doesn't have what you want."""
 
