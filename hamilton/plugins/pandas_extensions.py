@@ -229,6 +229,27 @@ class PandasPickleWriter(DataSaver):
         return "pickle"
 
 
+@dataclasses.dataclass
+class PandasJsonSaver(DataSaver):
+    """Data saver for JSON files using Pandas. Note that this currently does not support the wide array of
+    data saving params (e.g., orient, date_unit). We will be adding this in over time, but for now
+    you can subclass this or open up an issue if this doesn't have what you want."""
+
+    path: str
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_json(self.path)
+        return utils.get_file_metadata(self.path)
+
+    @classmethod
+    def name(cls) -> str:
+        return "pandas_json"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
