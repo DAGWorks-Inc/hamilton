@@ -3,7 +3,7 @@ import dataclasses
 import sys
 from io import BufferedReader, BytesIO
 from pathlib import Path
-from typing import Any, Collection, Dict, Optional, Tuple, Type, Union
+from typing import Any, Collection, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from hamilton.io import utils
 from hamilton.io.data_adapters import DataLoader, DataSaver
@@ -12,6 +12,17 @@ try:
     import pandas as pd
 except ImportError:
     raise NotImplementedError("Pandas is not installed.")
+
+from pandas._libs import lib
+from pandas._typing import (
+    CompressionOptions,
+    DtypeArg,
+    DtypeBackend,
+    FilePath,
+    JSONEngine,
+    ReadBuffer,
+    StorageOptions,
+)
 
 from hamilton import registry
 
@@ -231,24 +242,86 @@ class PandasPickleWriter(DataSaver):
 
 @dataclasses.dataclass
 class PandasJsonLoader(DataLoader):
-    """Data loader for JSON files using Pandas. Note that this currently does not support the wide array of
-    data loading params (e.g., precise_float, encoding). We will be adding this in over time, but for now
-    you can subclass this or open up an issue if this doesn't have what you want."""
+    """Data loader for JSON files using Pandas.
 
-    path: str
+    Disclaimer: We're exposing all the *current* params from the Pandas read_json method [1].
+    There's a chance some of these params may get deprecated or new params may be introduced.
+    In the event that the params/kwargs below become outdated, please raise an issue or submit
+    a pull request.
+
+    [1]: https://github.com/pandas-dev/pandas/blob/v2.1.0/pandas/io/json/_json.py#L500-L804
+    """
+
+    filepath_or_buffer: Union[FilePath, ReadBuffer[str], ReadBuffer[bytes]]
+
+    chunksize: Optional[int] = None
+    compression: CompressionOptions = "infer"
+    convert_axes: Optional[bool] = None
+    convert_dates: Union[bool, List[str]] = True
+    date_unit: Optional[str] = None
+    dtype: Optional[DtypeArg] = None
+    dtype_backend: Union[DtypeBackend, lib.NoDefault] = lib.no_default
+    encoding: Optional[str] = None
+    encoding_errors: Union[str, None] = "strict"
+    engine: JSONEngine = "ujson"
+    keep_default_dates: bool = True
+    lines: bool = False
+    nrows: Optional[int] = None
+    orient: Optional[str] = None
+    precise_float: bool = False
+    storage_options: Optional[StorageOptions] = None
+    typ: Literal["frame", "series"] = "frame"
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
         return [DATAFRAME_TYPE]
 
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.compression != "infer":
+            kwargs["compression"] = self.compression
+        if self.convert_axes is not None:
+            kwargs["convert_axes"] = self.convert_axes
+        if self.convert_dates is not True:
+            kwargs["convert_dates"] = self.convert_dates
+        if self.date_unit is not None:
+            kwargs["date_unit"] = self.date_unit
+        if self.dtype is not None:
+            kwargs["dtype"] = self.dtype
+        if self.dtype_backend != lib.no_default:
+            kwargs["dtype_backend"] = self.dtype_backend
+        if self.encoding is not None:
+            kwargs["encoding"] = self.encoding
+        if self.encoding_errors != "strict":
+            kwargs["encoding_errors"] = self.encoding_errors
+        if self.engine is not None:
+            kwargs["engine"] = self.engine
+        if self.keep_default_dates is not True:
+            kwargs["keep_default_dates"] = self.keep_default_dates
+        if self.lines is not False:
+            kwargs["lines"] = self.lines
+        if self.nrows is not None:
+            kwargs["nrows"] = self.nrows
+        if self.orient is not None:
+            kwargs["orient"] = self.orient
+        if self.precise_float is not False:
+            kwargs["precise_float"] = self.precise_float
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.typ != "frame":
+            kwargs["typ"] = self.typ
+        return kwargs
+
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pd.read_json(self.path)
-        metadata = utils.get_file_metadata(self.path)
+        df = pd.read_json(self.filepath_or_buffer, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.filepath_or_buffer)
         return df, metadata
 
     @classmethod
     def name(cls) -> str:
-        return "pandas_json"
+        return "json"
 
 
 def register_data_loaders():
