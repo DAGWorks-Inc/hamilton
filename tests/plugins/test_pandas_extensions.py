@@ -1,9 +1,15 @@
+import pathlib
+
 import pandas as pd
 
-from hamilton.plugins.pandas_extensions import PandasPickleReader, PandasPickleWriter
+from hamilton.plugins.pandas_extensions import (
+    PandasJsonDataLoader,
+    PandasPickleReader,
+    PandasPickleWriter,
+)
 
 
-def test_pandas_pickle(tmp_path):
+def test_pandas_pickle(tmp_path: pathlib.Path) -> None:
     data = {
         "name": ["ladybird", "butterfly", "honeybee"],
         "num_caught": [4, 5, 6],
@@ -23,3 +29,14 @@ def test_pandas_pickle(tmp_path):
 
     # correct number of files returned
     assert len(list(tmp_path.iterdir())) == 1, "Unexpected number of files in tmp_path directory."
+
+
+def test_pandas_json_loader(tmp_path: pathlib.Path) -> None:
+    file_path = "tests/resources/data/test_load_from_data.json"
+    loader = PandasJsonDataLoader(filepath_or_buffer=file_path, encoding="utf-8")
+    kwargs = loader._get_loading_kwargs()
+    df, metadata = loader.load_data(pd.DataFrame)
+    assert PandasJsonDataLoader.applicable_types() == [pd.DataFrame]
+    assert kwargs["encoding"] == "utf-8"
+    assert df.shape == (3, 1)
+    assert metadata["path"] == file_path
