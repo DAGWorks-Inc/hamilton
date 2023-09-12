@@ -34,10 +34,12 @@ def test_pandas_pickle(tmp_path):
 def test_pandas_json_data_saver(tmp_path: pathlib.Path) -> None:
     data = {"foo": ["bar"]}
     df = pd.DataFrame(data)
-    path = tmp_path / "test.json"
-    saver = PandasJsonDataSaver(filepath_or_buffer=path, indent=4)
+    filepath = tmp_path / "test.json"
+    saver = PandasJsonDataSaver(filepath_or_buffer=filepath, indent=4)
     kwargs = saver._get_saving_kwargs()
+    assert not filepath.exists()
     metadata = saver.save_data(df)
     assert PandasJsonDataSaver.applicable_types() == [pd.DataFrame]
     assert kwargs["indent"] == 4
-    assert metadata["path"] == path
+    assert metadata["path"] == filepath
+    assert filepath.exists()
