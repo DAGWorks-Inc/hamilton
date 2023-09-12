@@ -244,12 +244,10 @@ class PandasPickleWriter(DataSaver):
 class PandasJsonLoader(DataLoader):
     """Data loader for JSON files using Pandas.
 
-    Disclaimer: We're exposing all the *current* params from the Pandas read_json method [1].
+    Disclaimer: We're exposing all the *current* params from the Pandas read_json method.
     There's a chance some of these params may get deprecated or new params may be introduced.
     In the event that the params/kwargs below become outdated, please raise an issue or submit
     a pull request.
-
-    [1]: https://github.com/pandas-dev/pandas/blob/v2.1.0/pandas/io/json/_json.py#L500-L804
     """
 
     filepath_or_buffer: Union[FilePath, ReadBuffer[str], ReadBuffer[bytes]]
