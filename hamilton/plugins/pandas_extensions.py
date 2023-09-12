@@ -248,7 +248,7 @@ class PandasJsonLoader(DataLoader):
 
     @classmethod
     def name(cls) -> str:
-        return "json"
+        return "pandas_json"
 
 
 def register_data_loaders():
