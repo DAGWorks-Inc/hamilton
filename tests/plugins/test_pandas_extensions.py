@@ -3,8 +3,8 @@ import pathlib
 import pandas as pd
 
 from hamilton.plugins.pandas_extensions import (
-    PandasJsonDataLoader,
-    PandasJsonDataSaver,
+    PandasJsonReader,
+    PandasJsonWriter,
     PandasPickleReader,
     PandasPickleWriter,
 )
@@ -32,25 +32,24 @@ def test_pandas_pickle(tmp_path: pathlib.Path) -> None:
     assert len(list(tmp_path.iterdir())) == 1, "Unexpected number of files in tmp_path directory."
 
 
-def test_pandas_json_data_loader(tmp_path: pathlib.Path) -> None:
+def test_pandas_json_reader(tmp_path: pathlib.Path) -> None:
     file_path = "tests/resources/data/test_load_from_data.json"
-    loader = PandasJsonDataLoader(filepath_or_buffer=file_path, encoding="utf-8")
-    kwargs = loader._get_loading_kwargs()
-    df, metadata = loader.load_data(pd.DataFrame)
-    assert PandasJsonDataLoader.applicable_types() == [pd.DataFrame]
+    reader = PandasJsonReader(filepath_or_buffer=file_path, encoding="utf-8")
+    kwargs = reader._get_loading_kwargs()
+    df, metadata = reader.load_data(pd.DataFrame)
+    assert PandasJsonReader.applicable_types() == [pd.DataFrame]
     assert kwargs["encoding"] == "utf-8"
     assert df.shape == (3, 1)
     assert metadata["path"] == file_path
 
 
-def test_pandas_json_data_saver(tmp_path: pathlib.Path) -> None:
+def test_pandas_json_writer(tmp_path: pathlib.Path) -> None:
     df = pd.DataFrame({"foo": ["bar"]})
     file_path = tmp_path / "test.json"
-    saver = PandasJsonDataSaver(filepath_or_buffer=file_path, indent=4)
-    kwargs = saver._get_saving_kwargs()
-    assert not file_path.exists()
-    metadata = saver.save_data(df)
-    assert file_path.exists()
-    assert PandasJsonDataSaver.applicable_types() == [pd.DataFrame]
+    writer = PandasJsonWriter(filepath_or_buffer=file_path, indent=4)
+    kwargs = writer._get_saving_kwargs()
+    metadata = writer.save_data(df)
+    assert PandasJsonWriter.applicable_types() == [pd.DataFrame]
     assert kwargs["indent"] == 4
+    assert file_path.exists()
     assert metadata["path"] == file_path

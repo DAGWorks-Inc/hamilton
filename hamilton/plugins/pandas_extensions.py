@@ -244,17 +244,19 @@ class PandasPickleWriter(DataSaver):
 
 
 @dataclasses.dataclass
-class PandasJsonDataLoader(DataLoader):
-    """Data loader for JSON files using Pandas.
+class PandasJsonReader(DataLoader):
+    """Class specifically to handle loading JSON files/buffers with Pandas.
 
     Disclaimer: We're exposing all the *current* params from the Pandas read_json method.
     There's a chance some of these params may get deprecated or new params may be introduced.
     In the event that the params/kwargs below become outdated, please raise an issue or submit
     a pull request.
+
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.read_json.html
     """
 
     filepath_or_buffer: Union[FilePath, ReadBuffer[str], ReadBuffer[bytes]]
-
+    # kwargs
     chunksize: Optional[int] = None
     compression: CompressionOptions = "infer"
     convert_axes: Optional[bool] = None
@@ -281,37 +283,37 @@ class PandasJsonDataLoader(DataLoader):
         kwargs = {}
         if self.chunksize is not None:
             kwargs["chunksize"] = self.chunksize
-        if self.compression != "infer":
+        if self.compression is not None:
             kwargs["compression"] = self.compression
         if self.convert_axes is not None:
             kwargs["convert_axes"] = self.convert_axes
-        if self.convert_dates is not True:
+        if self.convert_dates is not None:
             kwargs["convert_dates"] = self.convert_dates
         if self.date_unit is not None:
             kwargs["date_unit"] = self.date_unit
         if self.dtype is not None:
             kwargs["dtype"] = self.dtype
-        if self.dtype_backend != lib.no_default:
+        if self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
         if self.encoding is not None:
             kwargs["encoding"] = self.encoding
-        if self.encoding_errors != "strict":
+        if self.encoding_errors is not None:
             kwargs["encoding_errors"] = self.encoding_errors
         if self.engine is not None:
             kwargs["engine"] = self.engine
-        if self.keep_default_dates is not True:
+        if self.keep_default_dates is not None:
             kwargs["keep_default_dates"] = self.keep_default_dates
-        if self.lines is not False:
+        if self.lines is not None:
             kwargs["lines"] = self.lines
         if self.nrows is not None:
             kwargs["nrows"] = self.nrows
         if self.orient is not None:
             kwargs["orient"] = self.orient
-        if self.precise_float is not False:
+        if self.precise_float is not None:
             kwargs["precise_float"] = self.precise_float
         if self.storage_options is not None:
             kwargs["storage_options"] = self.storage_options
-        if self.typ != "frame":
+        if self.typ is not None:
             kwargs["typ"] = self.typ
         return kwargs
 
@@ -326,16 +328,18 @@ class PandasJsonDataLoader(DataLoader):
 
 
 @dataclasses.dataclass
-class PandasJsonDataSaver(DataSaver):
-    """Data saver for Pandas DataFrame to JSON file/buffer method.
+class PandasJsonWriter(DataSaver):
+    """Class specifically to handle saving JSON files/buffers with Pandas.
 
     Disclaimer: We're exposing all the *current* params from the Pandas DataFrame.to_json method.
     Some of these params may get deprecated or new params may be introduced. In the event that
     the params/kwargs below become outdated, please raise an issue or submit a pull request.
+
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_json.html
     """
 
     filepath_or_buffer: Optional[Union[FilePath, WriteBuffer[bytes], WriteBuffer[str]]] = None
-
+    # kwargs
     compression: CompressionOptions = "infer"
     date_format: Optional[str] = None
     date_unit: TimeUnit = "ms"
@@ -355,17 +359,17 @@ class PandasJsonDataSaver(DataSaver):
 
     def _get_saving_kwargs(self):
         kwargs = {}
-        if self.compression != "infer":
+        if self.compression is not None:
             kwargs["compression"] = self.compression
         if self.date_format is not None:
             kwargs["date_format"] = self.date_format
-        if self.date_unit != "ms":
+        if self.date_unit is not None:
             kwargs["date_unit"] = self.date_unit
         if self.default_handler is not None:
             kwargs["default_handler"] = self.default_handler
-        if self.double_precision != 10:
+        if self.double_precision is not None:
             kwargs["double_precision"] = self.double_precision
-        if self.force_ascii is not True:
+        if self.force_ascii is not None:
             kwargs["force_ascii"] = self.force_ascii
         if self.index is not None:
             kwargs["index"] = self.index
@@ -373,7 +377,7 @@ class PandasJsonDataSaver(DataSaver):
             kwargs["indent"] = self.indent
         if self.lines is not False:
             kwargs["lines"] = self.lines
-        if self.mode != "w":
+        if self.mode is not None:
             kwargs["mode"] = self.mode
         if self.orient is not None:
             kwargs["orient"] = self.orient
@@ -398,8 +402,8 @@ def register_data_loaders():
         ParquetDataLoader,
         PandasPickleReader,
         PandasPickleWriter,
-        PandasJsonDataLoader,
-        PandasJsonDataSaver,
+        PandasJsonReader,
+        PandasJsonWriter,
     ]:
         registry.register_adapter(loader)
 
