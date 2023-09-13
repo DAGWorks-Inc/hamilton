@@ -1,36 +1,26 @@
 import abc
 import dataclasses
 import sys
+from collections.abc import Hashable
 from io import BufferedReader, BytesIO
 from pathlib import Path
-from typing import Any, Callable, Collection, Dict, List, Literal, Optional, Tuple, Type, Union
-
-from hamilton.io import utils
-from hamilton.io.data_adapters import DataLoader, DataSaver
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
 
 try:
     import pandas as pd
 except ImportError:
     raise NotImplementedError("Pandas is not installed.")
 
-from pandas._libs import lib
-from pandas._typing import (
-    CompressionOptions,
-    DtypeArg,
-    DtypeBackend,
-    FilePath,
-    JSONEngine,
-    JSONSerializable,
-    ReadBuffer,
-    StorageOptions,
-    TimeUnit,
-    WriteBuffer,
-)
+from pandas._typing import Dtype
 
 from hamilton import registry
+from hamilton.io import utils
+from hamilton.io.data_adapters import DataLoader, DataSaver
 
 DATAFRAME_TYPE = pd.DataFrame
 COLUMN_TYPE = pd.Series
+
+JSONSerializable = Optional[Union[str, float, bool, List, Dict]]
 
 
 @registry.get_column.register(pd.DataFrame)
@@ -248,32 +238,31 @@ class PandasJsonReader(DataLoader):
     """Class specifically to handle loading JSON files/buffers with Pandas.
 
     Disclaimer: We're exposing all the *current* params from the Pandas read_json method.
-    There's a chance some of these params may get deprecated or new params may be introduced.
-    In the event that the params/kwargs below become outdated, please raise an issue or submit
-    a pull request.
+    Some of these params may get deprecated or new params may be introduced. In the event that
+    the params/kwargs below become outdated, please raise an issue or submit a pull request.
 
     Should map to https://pandas.pydata.org/docs/reference/api/pandas.read_json.html
     """
 
-    filepath_or_buffer: Union[FilePath, ReadBuffer[str], ReadBuffer[bytes]]
+    filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader]
     # kwargs
     chunksize: Optional[int] = None
-    compression: CompressionOptions = "infer"
+    compression: Optional[Union[str, Dict[str, Any]]] = "infer"
     convert_axes: Optional[bool] = None
     convert_dates: Union[bool, List[str]] = True
     date_unit: Optional[str] = None
-    dtype: Optional[DtypeArg] = None
-    dtype_backend: Union[DtypeBackend, lib.NoDefault] = lib.no_default
+    dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
+    dtype_backend: Optional[str] = None
     encoding: Optional[str] = None
-    encoding_errors: Union[str, None] = "strict"
-    engine: JSONEngine = "ujson"
+    encoding_errors: Optional[str] = "strict"
+    engine: str = "ujson"
     keep_default_dates: bool = True
     lines: bool = False
     nrows: Optional[int] = None
     orient: Optional[str] = None
     precise_float: bool = False
-    storage_options: Optional[StorageOptions] = None
-    typ: Literal["frame", "series"] = "frame"
+    storage_options: Optional[Dict[str, Any]] = None
+    typ: str = "frame"
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -299,7 +288,7 @@ class PandasJsonReader(DataLoader):
             kwargs["encoding"] = self.encoding
         if self.encoding_errors is not None:
             kwargs["encoding_errors"] = self.encoding_errors
-        if self.engine is not None:
+        if sys.version_info >= (3, 8) and self.engine is not None:
             kwargs["engine"] = self.engine
         if self.keep_default_dates is not None:
             kwargs["keep_default_dates"] = self.keep_default_dates
@@ -338,20 +327,20 @@ class PandasJsonWriter(DataSaver):
     Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_json.html
     """
 
-    filepath_or_buffer: Optional[Union[FilePath, WriteBuffer[bytes], WriteBuffer[str]]] = None
+    filepath_or_buffer: Optional[Union[str, Path, BytesIO, BufferedReader]]
     # kwargs
-    compression: CompressionOptions = "infer"
-    date_format: Optional[str] = None
-    date_unit: TimeUnit = "ms"
+    compression: str = "infer"
+    date_format: str = "epoch"
+    date_unit: str = "ms"
     default_handler: Optional[Callable[[Any], JSONSerializable]] = None
     double_precision: int = 10
     force_ascii: bool = True
     index: Optional[bool] = None
-    indent: Optional[int] = None
+    indent: int = 0
     lines: bool = False
-    mode: Literal["a", "w"] = "w"
-    orient: Optional[Literal["split", "records", "index", "table", "columns", "values"]] = None
-    storage_options: Optional[StorageOptions] = None
+    mode: str = "w"
+    orient: Optional[str] = None
+    storage_options: Optional[Dict[str, Any]] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -377,7 +366,7 @@ class PandasJsonWriter(DataSaver):
             kwargs["indent"] = self.indent
         if self.lines is not False:
             kwargs["lines"] = self.lines
-        if self.mode is not None:
+        if sys.version_info >= (3, 8) and self.mode is not None:
             kwargs["mode"] = self.mode
         if self.orient is not None:
             kwargs["orient"] = self.orient
