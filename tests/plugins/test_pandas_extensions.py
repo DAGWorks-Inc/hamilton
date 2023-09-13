@@ -4,6 +4,7 @@ import pandas as pd
 
 from hamilton.plugins.pandas_extensions import (
     PandasJsonDataLoader,
+    PandasJsonDataSaver,
     PandasPickleReader,
     PandasPickleWriter,
 )
@@ -40,3 +41,16 @@ def test_pandas_json_data_loader(tmp_path: pathlib.Path) -> None:
     assert kwargs["encoding"] == "utf-8"
     assert df.shape == (3, 1)
     assert metadata["path"] == file_path
+
+
+def test_pandas_json_data_saver(tmp_path: pathlib.Path) -> None:
+    df = pd.DataFrame({"foo": ["bar"]})
+    filepath = tmp_path / "test.json"
+    saver = PandasJsonDataSaver(filepath_or_buffer=filepath, indent=4)
+    kwargs = saver._get_saving_kwargs()
+    assert not filepath.exists()
+    metadata = saver.save_data(df)
+    assert filepath.exists()
+    assert PandasJsonDataSaver.applicable_types() == [pd.DataFrame]
+    assert kwargs["indent"] == 4
+    assert metadata["path"] == filepath
