@@ -45,12 +45,12 @@ def test_pandas_json_data_loader(tmp_path: pathlib.Path) -> None:
 
 def test_pandas_json_data_saver(tmp_path: pathlib.Path) -> None:
     df = pd.DataFrame({"foo": ["bar"]})
-    filepath = tmp_path / "test.json"
-    saver = PandasJsonDataSaver(filepath_or_buffer=filepath, indent=4)
+    file_path = tmp_path / "test.json"
+    saver = PandasJsonDataSaver(filepath_or_buffer=file_path, indent=4)
     kwargs = saver._get_saving_kwargs()
-    assert not filepath.exists()
+    assert not file_path.exists()
     metadata = saver.save_data(df)
-    assert filepath.exists()
+    assert file_path.exists()
     assert PandasJsonDataSaver.applicable_types() == [pd.DataFrame]
     assert kwargs["indent"] == 4
-    assert metadata["path"] == filepath
+    assert metadata["path"] == file_path
