@@ -327,7 +327,7 @@ class PandasJsonWriter(DataSaver):
     Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_json.html
     """
 
-    filepath_or_buffer: Optional[Union[str, Path, BytesIO, BufferedReader]]
+    filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader]
     # kwargs
     compression: str = "infer"
     date_format: str = "epoch"

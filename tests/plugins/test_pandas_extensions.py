@@ -44,11 +44,10 @@ def test_pandas_json_reader(tmp_path: pathlib.Path) -> None:
 
 
 def test_pandas_json_writer(tmp_path: pathlib.Path) -> None:
-    df = pd.DataFrame({"foo": ["bar"]})
     file_path = tmp_path / "test.json"
     writer = PandasJsonWriter(filepath_or_buffer=file_path, indent=4)
     kwargs = writer._get_saving_kwargs()
-    metadata = writer.save_data(df)
+    metadata = writer.save_data(pd.DataFrame({"foo": ["bar"]}))
     assert PandasJsonWriter.applicable_types() == [pd.DataFrame]
     assert kwargs["indent"] == 4
     assert file_path.exists()
