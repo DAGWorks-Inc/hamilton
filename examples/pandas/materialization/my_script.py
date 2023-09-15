@@ -27,9 +27,9 @@ dr = driver.Driver({}, my_functions)  # can pass in multiple modules
 output_columns = [
     "spend",
     "signups",
-    "avg_3wk_spend",  # could just pass "avg_3wk_spend" here
-    "spend_per_signup",  # could just pass "spend_per_signup" here
-    "spend_zero_mean_unit_variance",  # could just pass "spend_zero_mean_unit_variance" here
+    "avg_3wk_spend",
+    "spend_per_signup",
+    "spend_zero_mean_unit_variance",
 ]
 
 materializers = [
@@ -38,6 +38,12 @@ materializers = [
         dependencies=output_columns,
         id="df_to_pickle",
         path="./df.pkl",
+        combine=df_builder,
+    ),
+    to.json(
+        dependencies=output_columns,
+        id="df_to_json",
+        filepath_or_buffer="./df.json",
         combine=df_builder,
     ),
 ]
@@ -53,9 +59,11 @@ dr.visualize_materialization(
 materialization_results, additional_outputs = dr.materialize(
     *materializers,
     additional_vars=[
-        "df_to_pickle_build_result"
+        "df_to_pickle_build_result",
+        "df_to_json_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
 print(materialization_results)
 print(additional_outputs["df_to_pickle_build_result"])
+print(additional_outputs["df_to_json_build_result"])
