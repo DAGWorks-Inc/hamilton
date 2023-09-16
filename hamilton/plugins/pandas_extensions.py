@@ -466,7 +466,7 @@ class PandasXmlWriter(DataSaver):
     """
     path_or_buffer: Union[str, Path, BytesIO, BufferedReader]
     #kwargs 
-    index: bool = True,
+    index: bool = True
     root_name: str = "data"
     row_name: str = "row"
     na_rep: Optional[str] = None
