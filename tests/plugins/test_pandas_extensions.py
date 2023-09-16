@@ -1,8 +1,10 @@
 import pathlib
 import sqlite3
+from typing import Union
 
 import pandas as pd
-from sqlalchemy import create_engine
+import pytest
+from sqlalchemy import Connection, Engine, create_engine
 
 from hamilton.plugins.pandas_extensions import (
     PandasJsonReader,
@@ -11,6 +13,9 @@ from hamilton.plugins.pandas_extensions import (
     PandasPickleWriter,
     PandasSqlReader,
 )
+
+DB_PATH = "tests/resources/data/test.db"
+SQLITE_DB_PATH = f"sqlite:///{DB_PATH}"
 
 
 def test_pandas_pickle(tmp_path: pathlib.Path) -> None:
@@ -55,18 +60,24 @@ def test_pandas_json_writer(tmp_path: pathlib.Path) -> None:
     assert file_path.exists()
 
 
-def test_pandas_sql_reader() -> None:
-    query = "SELECT foo FROM bar"
-    db_path = "tests/resources/data/test.db"
-    conn = sqlite3.connect(db_path)
-    engine = create_engine(f"sqlite:///{db_path}")
-    reader1 = PandasSqlReader(query_or_table=query, db_connection=conn, coerce_float=False)
-    reader2 = PandasSqlReader(query_or_table=query, db_connection=engine)
-    kwargs = reader1._get_loading_kwargs()
-    df1, metadata = reader1.load_data(pd.DataFrame)
-    df2, metadata = reader2.load_data(pd.DataFrame)
+@pytest.mark.parametrize(
+    "conn",
+    [
+        SQLITE_DB_PATH,
+        sqlite3.connect(DB_PATH),
+        create_engine(SQLITE_DB_PATH),
+    ],
+)
+def test_pandas_sql_reader(conn: Union[str, Connection, Engine, sqlite3.Connection]) -> None:
+    reader = PandasSqlReader(
+        query_or_table="SELECT foo FROM bar", db_connection=conn, coerce_float=False
+    )
+    kwargs = reader._get_loading_kwargs()
+    df, metadata = reader.load_data(pd.DataFrame)
+
     assert PandasSqlReader.applicable_types() == [pd.DataFrame]
     assert kwargs["coerce_float"] is False
-    assert df1.shape == (1, 1)
-    assert df2.shape == (1, 1)
-    conn.close()
+    assert df.shape == (1, 1)
+
+    if hasattr(conn, "close"):
+        conn.close()
