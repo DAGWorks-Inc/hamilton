@@ -398,7 +398,7 @@ class PandasXmlReader(DataLoader):
     converters: Optional[Dict[Union[int,str], Any]] = None
     parse_dates: Union[bool, List[Union[int, str,List[List],Dict[str,List[int]]]]] = False
     encoding: Optional[str] = "utf-8"
-    parser: str = "lmxl"
+    parser: str = "lxml"
     stylesheet: Union[str, Path, BytesIO, BufferedReader] = None
     iterparse: Optional[Dict[str,List[str]]] = None
     compression: Union[str, Dict[str, Any], None] = "infer"
@@ -476,7 +476,7 @@ class PandasXmlWriter(DataSaver):
     encoding: str = "utf-8"
     xml_declaration: bool = True
     pretty_print: bool = True
-    parser: str = "lmxl"
+    parser: str = "lxml"
     stylesheet: Optional[Union[str, Path, BytesIO, BufferedReader]] = None
     compression: Union[str, Dict[str, Any], None] = "infer"
     storage_options: Optional[Dict[str, Any]] = None
