@@ -448,8 +448,8 @@ class PandasXmlReader(DataLoader):
     
     def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         # Loads the data and returns the df and metadata of the xml
-        df = pd.read_xml(self.filepath_or_buffer, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.filepath_or_buffer)
+        df = pd.read_xml(self.path_or_buffer, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.path_or_buffer)
 
         return df, metadata
     
@@ -518,8 +518,8 @@ class PandasXmlWriter(DataSaver):
             kwargs["storage_options"] = self.storage_options
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.to_xml(self.filepath_or_buffer, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.filepath_or_buffer)
+        data.to_xml(self.path_or_buffer, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.path_or_buffer)
     
     @classmethod
     def name(cls) -> str:
