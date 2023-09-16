@@ -11,6 +11,8 @@ try:
 except ImportError:
     raise NotImplementedError("Pandas is not installed.")
 
+from sqlite3 import Connection
+
 from pandas._typing import Dtype
 
 from hamilton import registry
@@ -381,6 +383,64 @@ class PandasJsonWriter(DataSaver):
     @classmethod
     def name(cls) -> str:
         return "json"
+
+
+@dataclasses.dataclass
+class PandasSqlReader(DataLoader):
+    """Class specifically to handle loading SQL data using Pandas.
+
+    Disclaimer: We're exposing all the *current* params from the Pandas read_sql method.
+    Some of these params may get deprecated or new params may be introduced. In the event that
+    the params/kwargs below become outdated, please raise an issue or submit a pull request.
+
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.read_sql.html
+    """
+
+    query_or_table: str
+    db_connection: Union[str, Connection]
+    # kwarg
+    chunksize: Optional[int] = None
+    coerce_float: bool = True
+    columns: Optional[List[str]] = None
+    dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
+    dtype_backend: Optional[str] = None
+    index_col: Optional[Union[str, List[str]]] = None
+    params: Optional[Union[List, Tuple, Dict]] = None
+    parse_dates: Optional[Union[List, Dict]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        # Puts specified kwargs in a dict
+        kwargs = {}
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.coerce_float is not None:
+            kwargs["coerce_float"] = self.coerce_float
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.dtype is not None:
+            kwargs["dtype"] = self.dtype
+        if self.dtype_backend is not None:
+            kwargs["dtype_backend"] = self.dtype_backend
+        if self.index_col is not None:
+            kwargs["index_col"] = self.index_col
+        if self.params is not None:
+            kwargs["params"] = self.params
+        if self.parse_dates is not None:
+            kwargs["parse_dates"] = self.parse_dates
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pd.read_sql(self.query_or_table, self.db_connection, **self._get_loading_kwargs())
+        metadata = utils.get_sql_metadata()
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "sql"
 
 
 def register_data_loaders():
