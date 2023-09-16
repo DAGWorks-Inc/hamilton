@@ -445,6 +445,7 @@ class PandasXmlReader(DataLoader):
             kwargs["storage_options"] = self.storage_options
         if self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
+        return kwargs
     
     def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         # Loads the data and returns the df and metadata of the xml
@@ -516,6 +517,7 @@ class PandasXmlWriter(DataSaver):
             kwargs["compression"] = self.compression
         if self.storage_options is not None:
             kwargs["storage_options"] = self.storage_options
+        return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_xml(self.path_or_buffer, **self._get_saving_kwargs())
