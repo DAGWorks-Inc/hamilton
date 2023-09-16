@@ -455,7 +455,7 @@ class PandasXmlReader(DataLoader):
     
     @classmethod 
     def name(cls) -> str: 
-        return "json"
+        return "xml"
     
 @dataclasses.dataclass
 class PandasXmlWriter(DataSaver):
