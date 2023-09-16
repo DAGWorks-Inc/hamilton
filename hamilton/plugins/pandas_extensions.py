@@ -438,7 +438,7 @@ class PandasSqlReader(DataLoader):
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pd.read_sql(self.query_or_table, self.db_connection, **self._get_loading_kwargs())
-        metadata = utils.get_sql_metadata()
+        metadata = utils.get_sql_metadata(self.query_or_table, df)
         return df, metadata
 
     @classmethod
@@ -497,8 +497,8 @@ class PandasSqlWriter(DataSaver):
         return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.to_sql(self.table_name, self.db_connection, **self._get_saving_kwargs())
-        return utils.get_sql_metadata()
+        results = data.to_sql(self.table_name, self.db_connection, **self._get_saving_kwargs())
+        return utils.get_sql_metadata(self.table_name, results)
 
     @classmethod
     def name(cls) -> str:
