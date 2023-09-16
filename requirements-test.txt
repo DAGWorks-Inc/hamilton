@@ -3,3 +3,4 @@ networkx
 pyarrow
 pytest
 pytest-cov
+sqlalchemy
