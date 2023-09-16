@@ -1,4 +1,5 @@
 import pathlib
+
 import pandas as pd
 
 from hamilton.plugins.pandas_extensions import (
@@ -7,7 +8,7 @@ from hamilton.plugins.pandas_extensions import (
     PandasPickleReader,
     PandasPickleWriter,
     PandasXmlReader,
-    PandasXmlWriter
+    PandasXmlWriter,
 )
 
 
@@ -57,7 +58,7 @@ def test_pandas_json_writer(tmp_path: pathlib.Path) -> None:
 
 def test_pandas_xml_reader(tmp_path: pathlib.Path) -> None:
     path_to_test = "tests/resources/data/test_load_from_data.xml"
-    reader = PandasXmlReader(path_or_buffer = path_to_test)
+    reader = PandasXmlReader(path_or_buffer=path_to_test)
     df, metadata = reader.load_data(pd.DataFrame)
 
     assert PandasXmlReader.applicable_types() == [pd.DataFrame]
@@ -66,7 +67,7 @@ def test_pandas_xml_reader(tmp_path: pathlib.Path) -> None:
 
 def test_pandas_xml_writer(tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "test.xml"
-    writer = PandasXmlWriter(path_or_buffer = file_path)
+    writer = PandasXmlWriter(path_or_buffer=file_path)
     metadata = writer.save_data(pd.DataFrame({"foo": ["bar"]}))
 
     assert PandasXmlWriter.applicable_types() == [pd.DataFrame]
