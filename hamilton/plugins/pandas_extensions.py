@@ -1,17 +1,20 @@
 import abc
 import dataclasses
 import sys
-from collections.abc import Hashable, Sequence
+from collections.abc import Hashable
 from io import BufferedReader, BytesIO
 from pathlib import Path
-from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
 
 try:
     import pandas as pd
 except ImportError:
     raise NotImplementedError("Pandas is not installed.")
 
-from sqlite3 import Connection
+try:
+    from sqlite3 import Connection
+except ImportError:
+    Connection = object
 
 from pandas._typing import Dtype
 
@@ -23,6 +26,7 @@ DATAFRAME_TYPE = pd.DataFrame
 COLUMN_TYPE = pd.Series
 
 JSONSerializable = Optional[Union[str, float, bool, List, Dict]]
+IndexLabel = Optional[Union[Hashable, Iterator[Hashable]]]
 
 
 @registry.get_column.register(pd.DataFrame)
@@ -397,7 +401,7 @@ class PandasSqlReader(DataLoader):
     """
 
     query_or_table: str
-    db_connection: Union[str, Connection]  # also allows SQLAlchemy connectable (engine/connection)
+    db_connection: Union[str, Connection]  # can pass in SQLAlchemy engine/connection
     # kwarg
     chunksize: Optional[int] = None
     coerce_float: bool = True
@@ -453,23 +457,18 @@ class PandasSqlWriter(DataSaver):
     Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
     """
 
-    table: str
-    db_connection: Union[str, Connection]  # also allows SQLAlchemy connectable (engine/connection)
+    table_name: str
+    db_connection: Union[str, Connection]  # can pass in SQLAlchemy engine/connection
     # kwargs
     chunksize: Optional[int] = None
     dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
     engine: str = "auto"
-    engine_kwargs: dict = None
     if_exists: str = "fail"
     index: bool = True
-    index_label: Optional[Union[Hashable, Sequence[Hashable]]] = None
+    index_label: Optional[IndexLabel] = None
     method: Optional[Union[str, Callable]] = None
     schema: Optional[str] = None
-
-    def __post_init__(self):
-        # might be safer than passing in mutable obj to init
-        if self.engine_kwargs is None:
-            self.engine_kwargs = {}
+    engine_kwargs: dict = None  # like **kwargs, hence exception to alpha sort
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -483,8 +482,6 @@ class PandasSqlWriter(DataSaver):
             kwargs["dtype"] = self.dtype
         if self.engine is not None:
             kwargs["engine"] = self.engine
-        if self.engine_kwargs is not None:
-            kwargs.update(self.engine_kwargs)
         if self.if_exists is not None:
             kwargs["if_exists"] = self.if_exists
         if self.index is not None:
@@ -495,10 +492,12 @@ class PandasSqlWriter(DataSaver):
             kwargs["method"] = self.method
         if self.schema is not None:
             kwargs["schema"] = self.schema
+        if self.engine_kwargs is not None:  # like **kwargs, hence exception to alpha sort
+            kwargs.update(self.engine_kwargs)
         return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.to_sql(self.table, self.db_connection, **self._get_saving_kwargs())
+        data.to_sql(self.table_name, self.db_connection, **self._get_saving_kwargs())
         return utils.get_sql_metadata()
 
     @classmethod
