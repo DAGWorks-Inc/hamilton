@@ -1,7 +1,6 @@
 import abc
 import dataclasses
 import sys
-import lxml
 from collections.abc import Hashable
 from io import BufferedReader, BytesIO
 from pathlib import Path
