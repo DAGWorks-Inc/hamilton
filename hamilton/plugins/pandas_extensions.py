@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 import sys
-from collections.abc import Hashable
+from collections.abc import Hashable, Sequence
 from io import BufferedReader, BytesIO
 from pathlib import Path
 from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
@@ -397,7 +397,7 @@ class PandasSqlReader(DataLoader):
     """
 
     query_or_table: str
-    db_connection: Union[str, Connection]
+    db_connection: Union[str, Connection]  # also allows SQLAlchemy connectable (engine/connection)
     # kwarg
     chunksize: Optional[int] = None
     coerce_float: bool = True
@@ -413,7 +413,6 @@ class PandasSqlReader(DataLoader):
         return [DATAFRAME_TYPE]
 
     def _get_loading_kwargs(self) -> Dict[str, Any]:
-        # Puts specified kwargs in a dict
         kwargs = {}
         if self.chunksize is not None:
             kwargs["chunksize"] = self.chunksize
@@ -437,6 +436,70 @@ class PandasSqlReader(DataLoader):
         df = pd.read_sql(self.query_or_table, self.db_connection, **self._get_loading_kwargs())
         metadata = utils.get_sql_metadata()
         return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "sql"
+
+
+@dataclasses.dataclass
+class PandasSqlWriter(DataSaver):
+    """Class specifically to handle saving DataFrames to SQL databases using Pandas.
+
+    Disclaimer: We're exposing all the *current* params from the Pandas DataFrame.to_sql method.
+    Some of these params may get deprecated or new params may be introduced. In the event that
+    the params/kwargs below become outdated, please raise an issue or submit a pull request.
+
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
+    """
+
+    table: str
+    db_connection: Union[str, Connection]  # also allows SQLAlchemy connectable (engine/connection)
+    # kwargs
+    chunksize: Optional[int] = None
+    dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
+    engine: str = "auto"
+    engine_kwargs: dict = None
+    if_exists: str = "fail"
+    index: bool = True
+    index_label: Optional[Union[Hashable, Sequence[Hashable]]] = None
+    method: Optional[Union[str, Callable]] = None
+    schema: Optional[str] = None
+
+    def __post_init__(self):
+        # might be safer than passing in mutable obj to init
+        if self.engine_kwargs is None:
+            self.engine_kwargs = {}
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.dtype is not None:
+            kwargs["dtype"] = self.dtype
+        if self.engine is not None:
+            kwargs["engine"] = self.engine
+        if self.engine_kwargs is not None:
+            kwargs.update(self.engine_kwargs)
+        if self.if_exists is not None:
+            kwargs["if_exists"] = self.if_exists
+        if self.index is not None:
+            kwargs["index"] = self.index
+        if self.index_label is not None:
+            kwargs["index_label"] = self.index_label
+        if self.method is not None:
+            kwargs["method"] = self.method
+        if self.schema is not None:
+            kwargs["schema"] = self.schema
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_sql(self.table, self.db_connection, **self._get_saving_kwargs())
+        return utils.get_sql_metadata()
 
     @classmethod
     def name(cls) -> str:
