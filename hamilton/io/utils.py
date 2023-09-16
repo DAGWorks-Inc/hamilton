@@ -17,3 +17,7 @@ def get_file_metadata(path: str) -> Dict[str, Any]:
         "last_modified": os.path.getmtime(path),
         "timestamp": datetime.now().utcnow().timestamp(),
     }
+
+
+def get_sql_metadata() -> Dict[str, Any]:
+    pass
