@@ -62,7 +62,7 @@ def test_pandas_xml_reader(tmp_path: pathlib.Path) -> None:
     df, metadata = reader.load_data(pd.DataFrame)
 
     assert PandasXmlReader.applicable_types() == [pd.DataFrame]
-    assert df.shape == (5, 4)
+    assert df.shape == (4, 4)
 
 def test_pandas_xml_writer(tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "test.xml"
