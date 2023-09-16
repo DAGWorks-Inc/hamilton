@@ -1,6 +1,6 @@
 from importlib import metadata
 import pathlib
-
+import lmxl 
 import pandas as pd
 
 from hamilton.plugins.pandas_extensions import (
@@ -44,7 +44,6 @@ def test_pandas_json_reader(tmp_path: pathlib.Path) -> None:
     assert kwargs["encoding"] == "utf-8"
     assert df.shape == (3, 1)
     assert metadata["path"] == file_path
-
 
 def test_pandas_json_writer(tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "test.json"
