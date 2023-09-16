@@ -466,6 +466,7 @@ class PandasXmlReader(DataLoader):
 class PandasXmlWriter(DataSaver):
     """Class specifically to handle saving JSON files/buffers with Pandas.
     Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_xml.html
+    Requires `lxml`. See https://pandas.pydata.org/docs/getting_started/install.html#xml.
     """
 
     path_or_buffer: Union[str, Path, BytesIO, BufferedReader]
