@@ -382,6 +382,148 @@ class PandasJsonWriter(DataSaver):
     def name(cls) -> str:
         return "json"
 
+@dataclasses.dataclass
+class PandasXmlReader(DataLoader):
+    """Class for loading/reading pickle files with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_xml.html
+    """
+    path_or_buffer: Union[str, Path, BytesIO, BufferedReader]
+    #kwargs
+    xpath: Optional[str] = "./*"
+    namespace: Optional[Dict[str, str]] = None
+    elems_only: Optional[bool] = False
+    attrs_only: Optional[bool] = False 
+    names: Optional[List[str]] = None 
+    dtype: Optional[Dict[str, Any]] = None
+    converters: Optional[Dict[Union[int,str], Any]] = None
+    parse_dates: Union[bool, List[Union[int, str,List[List],Dict[str,List[int]]]]] = False
+    encoding: Optional[str] = "utf-8"
+    parser: str = "lmxl"
+    stylesheet: Union[str, Path, BytesIO, BufferedReader] = None
+    iterparse: Optional[Dict[str,List[str]]] = None
+    compression: Union[str, Dict[str, Any], None] = "infer"
+    storage_options: Optional[Dict[str, Any]] = None
+    dtype_backend: str = "numpy_nullable"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+    
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.xpath is not None:
+            kwargs["xpath"] = self.xpath
+        if self.namespace is not None:
+            kwargs["namespace"] = self.namespace
+        if self.elems_only is not None:
+            kwargs["elems_only"] = self.elems_only
+        if self.attrs_only is not None:
+            kwargs["attrs_only"] = self.attrs_only
+        if self.names is not None:
+            kwargs["names"] = self.names
+        if self.dtype is not None:
+            kwargs["dtype"] = self.dtype
+        if self.converters is not None:
+            kwargs["converters"] = self.converters
+        if self.parse_dates is not None:
+            kwargs["parse_dates"] = self.parse_dates
+        if self.encoding is not None:
+            kwargs["encoding"] = self.encoding
+        if self.parser is not None:
+            kwargs["parser"] = self.parser
+        if self.encoding is not None:
+            kwargs["encoding"] = self.encoding
+        if self.parser is not None:
+            kwargs["parser"] = self.parser
+        if self.stylesheet is not None:
+            kwargs["stylesheet"] = self.stylesheet
+        if self.iterparse is not None:
+            kwargs["iterparse"] = self.iterparse
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.dtype_backend is not None:
+            kwargs["dtype_backend"] = self.dtype_backend
+    
+    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the xml
+        df = pd.read_xml(self.filepath_or_buffer, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.filepath_or_buffer)
+
+        return df, metadata
+    
+    @classmethod 
+    def name(cls) -> str: 
+        return "json"
+    
+@dataclasses.dataclass
+class PandasXmlWriter(DataSaver):
+    """Class specifically to handle saving JSON files/buffers with Pandas.
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_xml.html
+    """
+    path_or_buffer: Union[str, Path, BytesIO, BufferedReader]
+    #kwargs 
+    index: bool = True,
+    root_name: str = "data"
+    row_name: str = "row"
+    na_rep: Optional[str] = None
+    attr_cols: Optional[List[str]] = None
+    elems_cols: Optional[List[str]] = None
+    namespaces: Optional[Dict[str, str]] = None
+    prefix: Optional[str] = None
+    encoding: str = "utf-8"
+    xml_declaration: bool = True
+    pretty_print: bool = True
+    parser: str = "lmxl"
+    stylesheet: Optional[Union[str, Path, BytesIO, BufferedReader]] = None
+    compression: Union[str, Dict[str, Any], None] = "infer"
+    storage_options: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+    
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.index is not None:
+            kwargs["index"] = self.index 
+        if self.root_name is not None:
+            kwargs["root_name"] = self.root_name
+        if self.row_name is not None:
+            kwargs["row_name"] = self.row_name
+        if self.na_rep is not None:
+            kwargs["na_rep"] = self.na_rep
+        if self.attr_cols is not None:
+            kwargs["attr_cols"] = self.attr_cols
+        if self.elems_cols is not None:
+            kwargs["elems_cols"] = self.elems_cols
+        if self.namespaces is not None:
+            kwargs["namespaces"] = self.namespaces
+        if self.prefix is not None:
+            kwargs["prefix"] = self.prefix
+        if self.encoding is not None:
+            kwargs["encoding"] = self.encoding
+        if self.xml_declaration is not None:
+            kwargs["xml_declaration"] = self.xml_declaration
+        if self.pretty_print is not None:
+            kwargs["pretty_print"] = self.pretty_print 
+        if self.parser is not None:
+            kwargs["parser"] = self.parser
+        if self.stylesheet is not None:
+            kwargs["stylesheet"] = self.stylesheet
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_xml(self.filepath_or_buffer, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.filepath_or_buffer)
+    
+    @classmethod
+    def name(cls) -> str:
+        return "xml"
 
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
@@ -393,6 +535,8 @@ def register_data_loaders():
         PandasPickleWriter,
         PandasJsonReader,
         PandasJsonWriter,
+        PandasXmlReader,
+        PandasXmlWriter
     ]:
         registry.register_adapter(loader)
 

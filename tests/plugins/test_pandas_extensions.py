@@ -1,3 +1,4 @@
+from importlib import metadata
 import pathlib
 
 import pandas as pd
@@ -7,6 +8,8 @@ from hamilton.plugins.pandas_extensions import (
     PandasJsonWriter,
     PandasPickleReader,
     PandasPickleWriter,
+    PandasXmlReader,
+    PandasXmlWriter
 )
 
 
@@ -50,5 +53,24 @@ def test_pandas_json_writer(tmp_path: pathlib.Path) -> None:
     metadata = writer.save_data(pd.DataFrame({"foo": ["bar"]}))
     assert PandasJsonWriter.applicable_types() == [pd.DataFrame]
     assert kwargs["indent"] == 4
+    assert file_path.exists()
+    assert metadata["path"] == file_path
+
+def test_pandas_xml_reader(tmp_path: pathlib.Path) -> None:
+    path_to_test = "tests/resources/data/test_load_from_data.xml"
+    reader = PandasXmlReader(path_or_buffer = path_to_test)
+    kwargs = reader._get_loading_kwargs()
+    df, metadata = reader.load_data(pd.DataFrame)
+
+    assert PandasXmlReader.applicable_types() == [pd.DataFrame]
+    assert df.shape == (5, 4)
+
+def test_pandas_xml_writer(tmp_path: pathlib.Path) -> None:
+    file_path = tmp_path / "test.xml"
+    writer = PandasXmlWriter(path_or_buffer = file_path)
+    kwargs = writer._get_saving_kwargs()
+    metadata = writer.save_data(pd.DataFrame({"foo": ["bar"]}))
+
+    assert PandasXmlWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
     assert metadata["path"] == file_path
