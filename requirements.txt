@@ -1,4 +1,5 @@
 numpy
 pandas
+lxml
 typing_extensions > 4.0.0
 typing_inspect
