@@ -387,6 +387,7 @@ class PandasJsonWriter(DataSaver):
 class PandasXmlReader(DataLoader):
     """Class for loading/reading pickle files with Pandas.
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_xml.html
+    Requires `lxml`. See https://pandas.pydata.org/docs/getting_started/install.html#xml.
     """
 
     path_or_buffer: Union[str, Path, BytesIO, BufferedReader]
