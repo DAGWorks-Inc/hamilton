@@ -13,7 +13,8 @@ except ImportError:
 
 from sqlite3 import Connection
 
-from pandas._typing import Dtype
+from pandas._typing import NpDtype
+from pandas.core.dtypes.dtypes import ExtensionDtype
 
 from hamilton import registry
 from hamilton.io import utils
@@ -24,6 +25,7 @@ COLUMN_TYPE = pd.Series
 
 JSONSerializable = Optional[Union[str, float, bool, List, Dict]]
 IndexLabel = Optional[Union[Hashable, Iterator[Hashable]]]
+Dtype = Union[ExtensionDtype, NpDtype]
 
 
 @registry.get_column.register(pd.DataFrame)
@@ -508,6 +510,8 @@ def register_data_loaders():
         PandasPickleWriter,
         PandasJsonReader,
         PandasJsonWriter,
+        PandasSqlReader,
+        PandasSqlWriter,
     ]:
         registry.register_adapter(loader)
 
