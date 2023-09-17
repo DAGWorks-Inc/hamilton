@@ -11,10 +11,7 @@ try:
 except ImportError:
     raise NotImplementedError("Pandas is not installed.")
 
-try:
-    from sqlite3 import Connection
-except ImportError:
-    Connection = object
+from sqlite3 import Connection
 
 from pandas._typing import Dtype
 
@@ -398,6 +395,7 @@ class PandasSqlReader(DataLoader):
     the params/kwargs below become outdated, please raise an issue or submit a pull request.
 
     Should map to https://pandas.pydata.org/docs/reference/api/pandas.read_sql.html
+    Requires optional Pandas dependencies. See https://pandas.pydata.org/docs/getting_started/install.html#sql-databases.
     """
 
     query_or_table: str
@@ -455,6 +453,7 @@ class PandasSqlWriter(DataSaver):
     the params/kwargs below become outdated, please raise an issue or submit a pull request.
 
     Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
+    Requires optional Pandas dependencies. See https://pandas.pydata.org/docs/getting_started/install.html#sql-databases.
     """
 
     table_name: str
@@ -462,13 +461,11 @@ class PandasSqlWriter(DataSaver):
     # kwargs
     chunksize: Optional[int] = None
     dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
-    engine: str = "auto"
     if_exists: str = "fail"
     index: bool = True
     index_label: Optional[IndexLabel] = None
     method: Optional[Union[str, Callable]] = None
     schema: Optional[str] = None
-    engine_kwargs: dict = None  # like **kwargs, hence exception to alpha sort
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -480,8 +477,6 @@ class PandasSqlWriter(DataSaver):
             kwargs["chunksize"] = self.chunksize
         if self.dtype is not None:
             kwargs["dtype"] = self.dtype
-        if self.engine is not None:
-            kwargs["engine"] = self.engine
         if self.if_exists is not None:
             kwargs["if_exists"] = self.if_exists
         if self.index is not None:
@@ -492,8 +487,6 @@ class PandasSqlWriter(DataSaver):
             kwargs["method"] = self.method
         if self.schema is not None:
             kwargs["schema"] = self.schema
-        if self.engine_kwargs is not None:  # like **kwargs, hence exception to alpha sort
-            kwargs.update(self.engine_kwargs)
         return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:

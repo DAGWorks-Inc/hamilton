@@ -1,10 +1,11 @@
 import pathlib
 import sqlite3
+import sys
 from typing import Union
 
 import pandas as pd
 import pytest
-from sqlalchemy import Connection, Engine, create_engine
+from sqlalchemy import create_engine
 
 from hamilton.plugins.pandas_extensions import (
     PandasJsonReader,
@@ -12,10 +13,13 @@ from hamilton.plugins.pandas_extensions import (
     PandasPickleReader,
     PandasPickleWriter,
     PandasSqlReader,
+    PandasSqlWriter,
 )
 
-DB_PATH = "tests/resources/data/test.db"
-SQLITE_DB_PATH = f"sqlite:///{DB_PATH}"
+DB_RELATIVE_PATH = "tests/resources/data/test.db"
+DB_MEMORY_PATH = "sqlite://"
+DB_DISK_PATH = f"{DB_MEMORY_PATH}/"
+DB_ABSOLUTE_PATH = f"{DB_DISK_PATH}{DB_RELATIVE_PATH}"
 
 
 def test_pandas_pickle(tmp_path: pathlib.Path) -> None:
@@ -45,6 +49,7 @@ def test_pandas_json_reader() -> None:
     reader = PandasJsonReader(filepath_or_buffer=file_path, encoding="utf-8")
     kwargs = reader._get_loading_kwargs()
     df, metadata = reader.load_data(pd.DataFrame)
+
     assert PandasJsonReader.applicable_types() == [pd.DataFrame]
     assert kwargs["encoding"] == "utf-8"
     assert df.shape == (3, 1)
@@ -55,6 +60,7 @@ def test_pandas_json_writer(tmp_path: pathlib.Path) -> None:
     writer = PandasJsonWriter(filepath_or_buffer=file_path, indent=4)
     kwargs = writer._get_saving_kwargs()
     writer.save_data(pd.DataFrame({"foo": ["bar"]}))
+
     assert PandasJsonWriter.applicable_types() == [pd.DataFrame]
     assert kwargs["indent"] == 4
     assert file_path.exists()
@@ -63,21 +69,43 @@ def test_pandas_json_writer(tmp_path: pathlib.Path) -> None:
 @pytest.mark.parametrize(
     "conn",
     [
-        SQLITE_DB_PATH,
-        sqlite3.connect(DB_PATH),
-        create_engine(SQLITE_DB_PATH),
+        DB_ABSOLUTE_PATH,
+        sqlite3.connect(DB_RELATIVE_PATH),
+        create_engine(DB_ABSOLUTE_PATH),
     ],
 )
-def test_pandas_sql_reader(conn: Union[str, Connection, Engine, sqlite3.Connection]) -> None:
-    reader = PandasSqlReader(
-        query_or_table="SELECT foo FROM bar", db_connection=conn, coerce_float=False
-    )
+def test_pandas_sql_reader(conn: Union[str, sqlite3.Connection]) -> None:
+    reader = PandasSqlReader(query_or_table="SELECT foo FROM bar", db_connection=conn)
     kwargs = reader._get_loading_kwargs()
     df, metadata = reader.load_data(pd.DataFrame)
 
     assert PandasSqlReader.applicable_types() == [pd.DataFrame]
-    assert kwargs["coerce_float"] is False
+    assert kwargs["coerce_float"] is True
+    assert metadata["rows"] == 1
     assert df.shape == (1, 1)
+
+    if hasattr(conn, "close"):
+        conn.close()
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="Test requires Python 3.8 or higher")
+@pytest.mark.parametrize(
+    "conn",
+    [
+        DB_MEMORY_PATH,
+        sqlite3.connect(":memory:"),
+        create_engine(DB_MEMORY_PATH),
+    ],
+)
+def test_pandas_sql_writer(conn: Union[str, sqlite3.Connection]) -> None:
+    df = pd.DataFrame({"foo": ["bar"]})
+    writer = PandasSqlWriter(table_name="test", db_connection=conn)
+    kwargs = writer._get_saving_kwargs()
+    metadata = writer.save_data(df)
+
+    assert PandasSqlWriter.applicable_types() == [pd.DataFrame]
+    assert kwargs["if_exists"] == "fail"
+    assert metadata["rows"] == 1
 
     if hasattr(conn, "close"):
         conn.close()
