@@ -1,4 +1,5 @@
 import logging
+import sqlite3
 import sys
 
 import pandas as pd
@@ -32,6 +33,9 @@ output_columns = [
     "spend_zero_mean_unit_variance",
 ]
 
+# set up db connection for sql materializer below
+conn = sqlite3.connect("df.db")
+
 materializers = [
     # materialize the dataframe to a pickle file
     to.pickle(
@@ -44,6 +48,13 @@ materializers = [
         dependencies=output_columns,
         id="df_to_json",
         filepath_or_buffer="./df.json",
+        combine=df_builder,
+    ),
+    to.sql(
+        dependencies=output_columns,
+        id="df_to_sql",
+        table_name="test",
+        db_connection=conn,
         combine=df_builder,
     ),
 ]
@@ -61,9 +72,13 @@ materialization_results, additional_outputs = dr.materialize(
     additional_vars=[
         "df_to_pickle_build_result",
         "df_to_json_build_result",
+        "df_to_sql_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
 print(materialization_results)
 print(additional_outputs["df_to_pickle_build_result"])
 print(additional_outputs["df_to_json_build_result"])
+print(additional_outputs["df_to_sql_build_result"])
+
+conn.close()

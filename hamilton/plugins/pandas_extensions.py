@@ -4,14 +4,17 @@ import sys
 from collections.abc import Hashable
 from io import BufferedReader, BytesIO
 from pathlib import Path
-from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
 
 try:
     import pandas as pd
 except ImportError:
     raise NotImplementedError("Pandas is not installed.")
 
-from pandas._typing import Dtype
+from sqlite3 import Connection
+
+from pandas._typing import NpDtype
+from pandas.core.dtypes.dtypes import ExtensionDtype
 
 from hamilton import registry
 from hamilton.io import utils
@@ -21,6 +24,8 @@ DATAFRAME_TYPE = pd.DataFrame
 COLUMN_TYPE = pd.Series
 
 JSONSerializable = Optional[Union[str, float, bool, List, Dict]]
+IndexLabel = Optional[Union[Hashable, Iterator[Hashable]]]
+Dtype = Union[ExtensionDtype, NpDtype]
 
 
 @registry.get_column.register(pd.DataFrame)
@@ -383,6 +388,118 @@ class PandasJsonWriter(DataSaver):
         return "json"
 
 
+@dataclasses.dataclass
+class PandasSqlReader(DataLoader):
+    """Class specifically to handle loading SQL data using Pandas.
+
+    Disclaimer: We're exposing all the *current* params from the Pandas read_sql method.
+    Some of these params may get deprecated or new params may be introduced. In the event that
+    the params/kwargs below become outdated, please raise an issue or submit a pull request.
+
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.read_sql.html
+    Requires optional Pandas dependencies. See https://pandas.pydata.org/docs/getting_started/install.html#sql-databases.
+    """
+
+    query_or_table: str
+    db_connection: Union[str, Connection]  # can pass in SQLAlchemy engine/connection
+    # kwarg
+    chunksize: Optional[int] = None
+    coerce_float: bool = True
+    columns: Optional[List[str]] = None
+    dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
+    dtype_backend: Optional[str] = None
+    index_col: Optional[Union[str, List[str]]] = None
+    params: Optional[Union[List, Tuple, Dict]] = None
+    parse_dates: Optional[Union[List, Dict]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.coerce_float is not None:
+            kwargs["coerce_float"] = self.coerce_float
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.dtype is not None:
+            kwargs["dtype"] = self.dtype
+        if self.dtype_backend is not None:
+            kwargs["dtype_backend"] = self.dtype_backend
+        if self.index_col is not None:
+            kwargs["index_col"] = self.index_col
+        if self.params is not None:
+            kwargs["params"] = self.params
+        if self.parse_dates is not None:
+            kwargs["parse_dates"] = self.parse_dates
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pd.read_sql(self.query_or_table, self.db_connection, **self._get_loading_kwargs())
+        metadata = utils.get_sql_metadata(self.query_or_table, df)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "sql"
+
+
+@dataclasses.dataclass
+class PandasSqlWriter(DataSaver):
+    """Class specifically to handle saving DataFrames to SQL databases using Pandas.
+
+    Disclaimer: We're exposing all the *current* params from the Pandas DataFrame.to_sql method.
+    Some of these params may get deprecated or new params may be introduced. In the event that
+    the params/kwargs below become outdated, please raise an issue or submit a pull request.
+
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
+    Requires optional Pandas dependencies. See https://pandas.pydata.org/docs/getting_started/install.html#sql-databases.
+    """
+
+    table_name: str
+    db_connection: Union[str, Connection]  # can pass in SQLAlchemy engine/connection
+    # kwargs
+    chunksize: Optional[int] = None
+    dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
+    if_exists: str = "fail"
+    index: bool = True
+    index_label: Optional[IndexLabel] = None
+    method: Optional[Union[str, Callable]] = None
+    schema: Optional[str] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.dtype is not None:
+            kwargs["dtype"] = self.dtype
+        if self.if_exists is not None:
+            kwargs["if_exists"] = self.if_exists
+        if self.index is not None:
+            kwargs["index"] = self.index
+        if self.index_label is not None:
+            kwargs["index_label"] = self.index_label
+        if self.method is not None:
+            kwargs["method"] = self.method
+        if self.schema is not None:
+            kwargs["schema"] = self.schema
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        results = data.to_sql(self.table_name, self.db_connection, **self._get_saving_kwargs())
+        return utils.get_sql_metadata(self.table_name, results)
+
+    @classmethod
+    def name(cls) -> str:
+        return "sql"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -393,6 +510,8 @@ def register_data_loaders():
         PandasPickleWriter,
         PandasJsonReader,
         PandasJsonWriter,
+        PandasSqlReader,
+        PandasSqlWriter,
     ]:
         registry.register_adapter(loader)
 
