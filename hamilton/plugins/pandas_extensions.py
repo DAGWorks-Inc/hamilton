@@ -386,9 +386,13 @@ class PandasJsonWriter(DataSaver):
 @dataclasses.dataclass
 class PandasXmlReader(DataLoader):
     """Class for loading/reading xml files with Pandas.
-    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_xml.html
+        Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_xml.html
+    <<<<<<< HEAD
 
-    Requires `lxml`. See https://pandas.pydata.org/docs/getting_started/install.html#xml
+        Requires `lxml`. See https://pandas.pydata.org/docs/getting_started/install.html#xml
+    =======
+        Requires `lxml`. See https://pandas.pydata.org/docs/getting_started/install.html#xml.
+    >>>>>>> c59421c8cf53af8ea5e8c092ce96621de8643ffc
     """
 
     path_or_buffer: Union[str, Path, BytesIO, BufferedReader]
@@ -466,9 +470,12 @@ class PandasXmlReader(DataLoader):
 @dataclasses.dataclass
 class PandasXmlWriter(DataSaver):
     """Class specifically to handle saving xml files/buffers with Pandas.
-    Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_xml.html
+        Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_xml.html
+    <<<<<<< HEAD
 
-    Requires `lxml`. See https://pandas.pydata.org/docs/getting_started/install.html#xml.
+    =======
+    >>>>>>> c59421c8cf53af8ea5e8c092ce96621de8643ffc
+        Requires `lxml`. See https://pandas.pydata.org/docs/getting_started/install.html#xml.
     """
 
     path_or_buffer: Union[str, Path, BytesIO, BufferedReader]
