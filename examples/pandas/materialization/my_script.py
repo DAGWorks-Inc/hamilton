@@ -46,6 +46,12 @@ materializers = [
         filepath_or_buffer="./df.json",
         combine=df_builder,
     ),
+    to.xml(
+        dependencies=output_columns,
+        id="df_to_xml",
+        filepath_or_buffer="./df.xml",
+        combine=df_builder,
+    ),
 ]
 # Visualize what is happening
 dr.visualize_materialization(
@@ -61,9 +67,11 @@ materialization_results, additional_outputs = dr.materialize(
     additional_vars=[
         "df_to_pickle_build_result",
         "df_to_json_build_result",
+        "df_to_xml_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
 print(materialization_results)
 print(additional_outputs["df_to_pickle_build_result"])
 print(additional_outputs["df_to_json_build_result"])
+print(additional_outputs["df_to_xml_build_result"])
