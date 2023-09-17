@@ -98,14 +98,41 @@ def test_pandas_sql_reader(conn: Union[str, sqlite3.Connection]) -> None:
     ],
 )
 def test_pandas_sql_writer(conn: Union[str, sqlite3.Connection]) -> None:
-    df = pd.DataFrame({"foo": ["bar"]})
     writer = PandasSqlWriter(table_name="test", db_connection=conn)
     kwargs = writer._get_saving_kwargs()
-    metadata = writer.save_data(df)
+    metadata = writer.save_data(pd.DataFrame({"foo": ["bar"]}))
 
     assert PandasSqlWriter.applicable_types() == [pd.DataFrame]
     assert kwargs["if_exists"] == "fail"
     assert metadata["rows"] == 1
+
+    if hasattr(conn, "close"):
+        conn.close()
+
+
+@pytest.mark.skipif(sys.version_info >= (3, 8), reason="Test requires Python 3.7.x")
+@pytest.mark.parametrize(
+    "conn",
+    [
+        sqlite3.connect(":memory:"),
+        create_engine(DB_MEMORY_PATH),
+    ],
+)
+def test_pandas_sql_writer_py37(conn: Union[str, sqlite3.Connection]) -> None:
+    """Workaround for py37, pandas v1.3.5 since pandas DataFrame.to_sql
+    doesn't return the number of rows inserted. Also, we skip testing the str URI
+    since the pandas read_sql and to_sql will treat these as two separate dbs.
+    """
+    df = pd.DataFrame({"foo": ["bar"]})
+    writer = PandasSqlWriter(table_name="test", db_connection=conn)
+    reader = PandasSqlReader(query_or_table="SELECT foo FROM test", db_connection=conn)
+    kwargs = writer._get_saving_kwargs()
+    writer.save_data(df)
+    df2, metadata = reader.load_data(pd.DataFrame)
+
+    assert PandasSqlWriter.applicable_types() == [pd.DataFrame]
+    assert kwargs["if_exists"] == "fail"
+    assert df.equals(df2)
 
     if hasattr(conn, "close"):
         conn.close()
