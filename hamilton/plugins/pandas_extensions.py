@@ -651,7 +651,7 @@ class PandasXmlWriter(DataSaver):
     @classmethod
     def name(cls) -> str:
         return "xml"
-    
+
 
 def register_data_loaders():
     """Function to register the data loaders for this extension."""

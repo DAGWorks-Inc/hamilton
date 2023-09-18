@@ -15,7 +15,7 @@ from hamilton.plugins.pandas_extensions import (
     PandasSqlReader,
     PandasSqlWriter,
     PandasXmlReader,
-    PandasXmlWriter
+    PandasXmlWriter,
 )
 
 DB_RELATIVE_PATH = "tests/resources/data/test.db"
