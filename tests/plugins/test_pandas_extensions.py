@@ -14,6 +14,8 @@ from hamilton.plugins.pandas_extensions import (
     PandasPickleWriter,
     PandasSqlReader,
     PandasSqlWriter,
+    PandasXmlReader,
+    PandasXmlWriter
 )
 
 DB_RELATIVE_PATH = "tests/resources/data/test.db"
@@ -136,3 +138,22 @@ def test_pandas_sql_writer_py37(conn: Union[str, sqlite3.Connection]) -> None:
 
     if hasattr(conn, "close"):
         conn.close()
+
+
+def test_pandas_xml_reader(tmp_path: pathlib.Path) -> None:
+    path_to_test = "tests/resources/data/test_load_from_data.xml"
+    reader = PandasXmlReader(path_or_buffer=path_to_test)
+    df, metadata = reader.load_data(pd.DataFrame)
+
+    assert PandasXmlReader.applicable_types() == [pd.DataFrame]
+    assert df.shape == (4, 4)
+
+
+def test_pandas_xml_writer(tmp_path: pathlib.Path) -> None:
+    file_path = tmp_path / "test.xml"
+    writer = PandasXmlWriter(path_or_buffer=file_path)
+    metadata = writer.save_data(pd.DataFrame({"foo": ["bar"]}))
+
+    assert PandasXmlWriter.applicable_types() == [pd.DataFrame]
+    assert file_path.exists()
+    assert metadata["path"] == file_path
