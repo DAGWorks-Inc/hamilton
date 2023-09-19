@@ -148,7 +148,7 @@ class PolarsCSVReader(DataLoader):
             kwargs["sample_size"] = self.sample_size
         if self.eol_char is not None:
             kwargs["eol_char"] = self.eol_char
-        if self.raise_if_empty is not None:
+        if sys.version_info >= (3, 8) and self.raise_if_empty is not None:
             kwargs["raise_if_empty"] = self.raise_if_empty
         return kwargs
 
