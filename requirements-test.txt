@@ -1,5 +1,6 @@
 graphviz
 networkx
+polars
 pyarrow
 pytest
 pytest-cov
