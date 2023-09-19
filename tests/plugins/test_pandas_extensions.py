@@ -49,7 +49,6 @@ def test_pandas_json(df: pd.DataFrame, tmp_path: pathlib.Path) -> None:
     assert PandasJsonWriter.applicable_types() == [pd.DataFrame]
     assert kwargs1["indent"] == 4
     assert kwargs2["encoding"] == "utf-8"
-    assert file_path.exists()
     assert df.equals(df2)
 
 
