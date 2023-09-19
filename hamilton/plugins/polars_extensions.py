@@ -1,4 +1,5 @@
 import dataclasses
+import sys
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from typing import Any, BinaryIO, Collection, Dict, Mapping, Sequence, TextIO, Tuple, Type, Union
@@ -193,7 +194,7 @@ class PolarsCSVWriter(DataSaver):
             kwargs["has_header"] = self.has_header
         if self.separator is not None:
             kwargs["separator"] = self.separator
-        if self.line_terminator is not None:
+        if sys.version_info >= (3, 8) and self.line_terminator is not None:
             kwargs["line_terminator"] = self.line_terminator
         if self.quote is not None:
             kwargs["quote"] = self.quote
