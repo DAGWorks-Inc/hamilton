@@ -16,11 +16,6 @@ from hamilton.plugins.pandas_extensions import (
     PandasSqlWriter,
 )
 
-DB_RELATIVE_PATH = "tests/resources/data/test.db"
-DB_MEMORY_PATH = "sqlite://"
-DB_DISK_PATH = f"{DB_MEMORY_PATH}/"
-DB_ABSOLUTE_PATH = f"{DB_DISK_PATH}{DB_RELATIVE_PATH}"
-
 
 def test_pandas_pickle(tmp_path: pathlib.Path) -> None:
     data = {
@@ -65,70 +60,29 @@ def test_pandas_json(tmp_path: pathlib.Path) -> None:
 @pytest.mark.parametrize(
     "conn",
     [
-        DB_ABSOLUTE_PATH,
-        sqlite3.connect(DB_RELATIVE_PATH),
-        create_engine(DB_ABSOLUTE_PATH),
+        sqlite3.connect(":memory:"),
+        create_engine("sqlite://"),
     ],
 )
-def test_pandas_sql_reader(conn: Union[str, sqlite3.Connection]) -> None:
-    reader = PandasSqlReader(query_or_table="SELECT foo FROM bar", db_connection=conn)
-    kwargs = reader._get_loading_kwargs()
-    df, metadata = reader.load_data(pd.DataFrame)
+def test_pandas_sql(conn: Union[str, sqlite3.Connection]) -> None:
+    df1 = pd.DataFrame({"foo": ["bar"]})
+    reader = PandasSqlReader(query_or_table="SELECT foo FROM test", db_connection=conn)
+    writer = PandasSqlWriter(table_name="test", db_connection=conn)
+    metadata1 = writer.save_data(df1)
+    kwargs1 = writer._get_saving_kwargs()
+    kwargs2 = reader._get_loading_kwargs()
+    df2, metadata2 = reader.load_data(pd.DataFrame)
 
     assert PandasSqlReader.applicable_types() == [pd.DataFrame]
-    assert kwargs["coerce_float"] is True
-    assert metadata["rows"] == 1
-    assert df.shape == (1, 1)
-
-    if hasattr(conn, "close"):
-        conn.close()
-
-
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="Test requires Python 3.8 or higher")
-@pytest.mark.parametrize(
-    "conn",
-    [
-        DB_MEMORY_PATH,
-        sqlite3.connect(":memory:"),
-        create_engine(DB_MEMORY_PATH),
-    ],
-)
-def test_pandas_sql_writer(conn: Union[str, sqlite3.Connection]) -> None:
-    writer = PandasSqlWriter(table_name="test", db_connection=conn)
-    kwargs = writer._get_saving_kwargs()
-    metadata = writer.save_data(pd.DataFrame({"foo": ["bar"]}))
-
     assert PandasSqlWriter.applicable_types() == [pd.DataFrame]
-    assert kwargs["if_exists"] == "fail"
-    assert metadata["rows"] == 1
+    assert kwargs1["if_exists"] == "fail"
+    assert kwargs2["coerce_float"] is True
+    assert df1.equals(df2)
 
-    if hasattr(conn, "close"):
-        conn.close()
-
-
-@pytest.mark.skipif(sys.version_info >= (3, 8), reason="Test requires Python 3.7.x")
-@pytest.mark.parametrize(
-    "conn",
-    [
-        sqlite3.connect(":memory:"),
-        create_engine(DB_MEMORY_PATH),
-    ],
-)
-def test_pandas_sql_writer_py37(conn: Union[str, sqlite3.Connection]) -> None:
-    """Workaround for py37, pandas v1.3.5 since pandas DataFrame.to_sql
-    doesn't return the number of rows inserted. Also, we skip testing the str URI
-    since the pandas read_sql and to_sql will treat these as two separate dbs.
-    """
-    df = pd.DataFrame({"foo": ["bar"]})
-    writer = PandasSqlWriter(table_name="test", db_connection=conn)
-    reader = PandasSqlReader(query_or_table="SELECT foo FROM test", db_connection=conn)
-    kwargs = writer._get_saving_kwargs()
-    writer.save_data(df)
-    df2, metadata = reader.load_data(pd.DataFrame)
-
-    assert PandasSqlWriter.applicable_types() == [pd.DataFrame]
-    assert kwargs["if_exists"] == "fail"
-    assert df.equals(df2)
+    if sys.version_info >= (3, 8):
+        # py37 pandas 1.3.5 doesn't return rows inserted
+        assert metadata1["rows"] == 1
+        assert metadata2["rows"] == 1
 
     if hasattr(conn, "close"):
         conn.close()
