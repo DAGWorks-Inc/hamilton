@@ -44,26 +44,22 @@ def test_pandas_pickle(tmp_path: pathlib.Path) -> None:
     assert len(list(tmp_path.iterdir())) == 1, "Unexpected number of files in tmp_path directory."
 
 
-def test_pandas_json_reader() -> None:
-    file_path = "tests/resources/data/test_load_from_data.json"
-    reader = PandasJsonReader(filepath_or_buffer=file_path, encoding="utf-8")
-    kwargs = reader._get_loading_kwargs()
-    df, metadata = reader.load_data(pd.DataFrame)
-
-    assert PandasJsonReader.applicable_types() == [pd.DataFrame]
-    assert kwargs["encoding"] == "utf-8"
-    assert df.shape == (3, 1)
-
-
-def test_pandas_json_writer(tmp_path: pathlib.Path) -> None:
+def test_pandas_json(tmp_path: pathlib.Path) -> None:
+    df1 = pd.DataFrame({"foo": ["bar"]})
     file_path = tmp_path / "test.json"
     writer = PandasJsonWriter(filepath_or_buffer=file_path, indent=4)
-    kwargs = writer._get_saving_kwargs()
-    writer.save_data(pd.DataFrame({"foo": ["bar"]}))
+    reader = PandasJsonReader(filepath_or_buffer=file_path, encoding="utf-8")
+    writer.save_data(df1)
+    kwargs1 = writer._get_saving_kwargs()
+    kwargs2 = reader._get_loading_kwargs()
+    df2, metadata = reader.load_data(pd.DataFrame)
 
+    assert PandasJsonReader.applicable_types() == [pd.DataFrame]
     assert PandasJsonWriter.applicable_types() == [pd.DataFrame]
-    assert kwargs["indent"] == 4
+    assert kwargs1["indent"] == 4
+    assert kwargs2["encoding"] == "utf-8"
     assert file_path.exists()
+    assert df1.equals(df2)
 
 
 @pytest.mark.parametrize(
