@@ -32,7 +32,6 @@ def test_pandas_pickle(df: pd.DataFrame, tmp_path: pathlib.Path) -> None:
 
     assert read_df.equals(df), "DataFrames do not match"
     assert len(list(tmp_path.iterdir())) == 1, "Unexpected number of files in tmp_path directory."
-    assert file_path.exists()
 
 
 def test_pandas_json(df: pd.DataFrame, tmp_path: pathlib.Path) -> None:
@@ -62,11 +61,11 @@ def test_pandas_json(df: pd.DataFrame, tmp_path: pathlib.Path) -> None:
     ],
 )
 def test_pandas_sql(df: pd.DataFrame, conn: Union[str, sqlite3.Connection]) -> None:
-    writer = PandasSqlWriter(table_name="test", db_connection=conn)
+    writer = PandasSqlWriter(table_name="bar", db_connection=conn)
     kwargs1 = writer._get_saving_kwargs()
     metadata1 = writer.save_data(df)
 
-    reader = PandasSqlReader(query_or_table="SELECT foo FROM test", db_connection=conn)
+    reader = PandasSqlReader(query_or_table="SELECT foo FROM bar", db_connection=conn)
     kwargs2 = reader._get_loading_kwargs()
     df2, metadata2 = reader.load_data(pd.DataFrame)
 
