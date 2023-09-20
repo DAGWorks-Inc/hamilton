@@ -414,6 +414,7 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Michał Siedlaczek (@elshize)
 - Benjamin Hack (@benhhack)
 - Bryan Galindo (@bryangalindo)
+- Jordan Smith (@JoJo10Smith)
 
 ## Bug Hunters/Special Mentions
 - Nils Olsson (@nilsso)
