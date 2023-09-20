@@ -7,6 +7,11 @@ import pandas as pd
 from hamilton import base, driver
 from hamilton.io.materialization import to
 
+# Add the hamilton module to your path - optinal
+# project_dir = "### ADD PATH HERE ###"
+# sys.path.append(project_dir)
+
+
 logging.basicConfig(stream=sys.stdout)
 initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
     # Note: these values don't have to be all series, they could be a scalar.
@@ -57,6 +62,12 @@ materializers = [
         db_connection=conn,
         combine=df_builder,
     ),
+    to.xml(
+        dependencies=output_columns,
+        id="df_to_xml",
+        path_or_buffer="./df.xml",
+        combine=df_builder,
+    ),
 ]
 # Visualize what is happening
 dr.visualize_materialization(
@@ -73,6 +84,7 @@ materialization_results, additional_outputs = dr.materialize(
         "df_to_pickle_build_result",
         "df_to_json_build_result",
         "df_to_sql_build_result",
+        "df_to_xml_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
@@ -80,5 +92,6 @@ print(materialization_results)
 print(additional_outputs["df_to_pickle_build_result"])
 print(additional_outputs["df_to_json_build_result"])
 print(additional_outputs["df_to_sql_build_result"])
+print(additional_outputs["df_to_xml_build_result"])
 
 conn.close()
