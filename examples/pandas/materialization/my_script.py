@@ -4,13 +4,12 @@ import sys
 
 import pandas as pd
 
-from hamilton import base, driver
-from hamilton.io.materialization import to
-
 # Add the hamilton module to your path - optinal
-# project_dir = '### ADD PATH HERE ###'
+# project_dir = "### ADD PATH HERE ###"
 # sys.path.append(project_dir)
 
+from hamilton import base, driver
+from hamilton.io.materialization import to
 
 logging.basicConfig(stream=sys.stdout)
 initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
