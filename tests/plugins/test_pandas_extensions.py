@@ -117,7 +117,7 @@ def test_pandas_html_reader(tmp_path: pathlib.Path) -> None:
 
 def test_pandas_html_writer(tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "test.xml"
-    writer = PandasHtmlWriter(path_or_buffer=file_path)
+    writer = PandasHtmlWriter(io=file_path)
     metadata = writer.save_data(pd.DataFrame(data={"col1": [1, 2], "col2": [4, 3]}))
 
     assert PandasHtmlWriter.applicable_types() == [pd.DataFrame]
