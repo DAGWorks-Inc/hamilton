@@ -16,6 +16,8 @@ from hamilton.plugins.pandas_extensions import (
     PandasSqlWriter,
     PandasXmlReader,
     PandasXmlWriter,
+    PandasHtmlReader,
+    PandasHtmlWriter,
 )
 
 
@@ -100,5 +102,24 @@ def test_pandas_xml_writer(tmp_path: pathlib.Path) -> None:
     metadata = writer.save_data(pd.DataFrame({"foo": ["bar"]}))
 
     assert PandasXmlWriter.applicable_types() == [pd.DataFrame]
+    assert file_path.exists()
+    assert metadata["path"] == file_path
+
+
+def test_pandas_html_reader(tmp_path: pathlib.Path) -> None:
+    path_to_test = "tests/resources/data/test_load_from_data.html"
+    reader = PandasHtmlReader(io=path_to_test)
+    df, metadata = reader.load_data(pd.DataFrame)
+
+    assert PandasXmlReader.applicable_types() == [pd.DataFrame]
+    assert df.shape == (3, 3)
+
+
+def test_pandas_html_writer(tmp_path: pathlib.Path) -> None:
+    file_path = tmp_path / "test.xml"
+    writer = PandasHtmlWriter(path_or_buffer=file_path)
+    metadata = writer.save_data(pd.DataFrame(data={"col1": [1, 2], "col2": [4, 3]}))
+
+    assert PandasHtmlWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
     assert metadata["path"] == file_path

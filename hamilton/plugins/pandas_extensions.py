@@ -1,10 +1,22 @@
 import abc
 import dataclasses
 import sys
-from collections.abc import Hashable
-from io import BufferedReader, BytesIO
+from collections.abc import Hashable, Iterable, Sequence
+from io import BufferedReader, BytesIO, StringIO
 from pathlib import Path
-from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Collection,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 try:
     import pandas as pd
@@ -653,6 +665,180 @@ class PandasXmlWriter(DataSaver):
         return "xml"
 
 
+@dataclasses.dataclass
+class PandasHtmlReader(DataLoader):
+    """Class for loading/reading xml files with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_html.html
+    """
+
+    io: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs
+    match: Optional[str] = ".+"
+    flavor: Optional[Union[str, Sequence[str], None]] = None
+    header: Optional[Union[int, Sequence[int], None]] = None
+    index_col: Optional[Union[int, Sequence[int], None]] = None
+    skiprows: Optional[Union[int, Sequence[int], slice, None]] = None
+    attrs: Optional[Union[Dict[str, str], None]] = None
+    parse_dates: Optional[bool] = None
+    thousands: Optional[Union[str, None]] = ","
+    encoding: Optional[Union[str, None]] = None
+    decimal: str = "."
+    converters: Optional[Union[Dict[Any, Any], None]] = None
+    na_values: Union[Iterable[object], None] = None
+    keep_default_na: bool = True
+    displayed_only: bool = True
+    extract_links: Literal[None, "header", "footer", "body", "all"] = None
+    dtype_backend: Literal["pyarrow", "numpy_nullable"] = "numpy_nullable"
+    storage_options: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.match is not None:
+            kwargs["match"] = self.match
+        if self.flavor is not None:
+            kwargs["flavor"] = self.flavor
+        if self.header is not None:
+            kwargs["header"] = self.header
+        if self.index_col is not None:
+            kwargs["index_col"] = self.index_col
+        if self.skiprows is not None:
+            kwargs["skiprows"] = self.skiprows
+        if self.attrs is not None:
+            kwargs["attrs"] = self.attrs
+        if sys.version_info >= (3, 8) and self.parse_dates is not None:
+            kwargs["parse_dates"] = self.parse_dates
+        if self.thousands is not None:
+            kwargs["thousands"] = self.thousands
+        if self.encoding is not None:
+            kwargs["encoding"] = self.encoding
+        if self.decimal is not None:
+            kwargs["decimal"] = self.decimal
+        if self.converters is not None:
+            kwargs["converters"] = self.converters
+        if self.na_values is not None:
+            kwargs["na_values"] = self.na_values
+        if self.keep_default_na is not None:
+            kwargs["keep_default_na"] = self.keep_default_na
+        if self.displayed_only is not None:
+            kwargs["displayed_only"] = self.displayed_only
+        if self.extract_links is not None:
+            kwargs["extract_links"] = self.extract_links
+        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
+            kwargs["dtype_backend"] = self.dtype_backend
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+
+        return kwargs
+
+    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the xml
+        df = pd.read_html(self.io, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.io)
+
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "html"
+
+
+@dataclasses.dataclass
+class PandasHtmlWriter(DataSaver):
+    """Class specifically to handle saving xml files/buffers with Pandas.
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_html.html#pandas.DataFrame.to_html
+    """
+
+    buf: Union[str, Path, StringIO, None] = None
+    # kwargs
+    columns: Optional[List[str]] = None
+    col_space: Optional[Union[str, int, List, Dict]] = None
+    header: Optional[bool] = True
+    index: Optional[bool] = True
+    na_rep: Optional[str] = "NaN"
+    formatters: Optional[Union[List, Tuple, Dict]] = None
+    float_format: Optional[str] = None
+    sparsify: Optional[bool] = True
+    index_names: Optional[bool] = True
+    justify: str = None
+    max_rows: Optional[int] = None
+    max_cols: Optional[int] = None
+    show_dimensions: bool = False
+    decimal: str = "."
+    bold_rows: bool = True
+    classes: Union[str, List[str], Tuple, None] = None
+    escape: Optional[bool] = True
+    notebook: Literal[True, False] = False
+    border: int = None
+    table_id: Optional[str] = None
+    render_links: bool = False
+    encoding: Optional[str] = "utf-8"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.col_space is not None:
+            kwargs["col_space"] = self.col_space
+        if self.header is not None:
+            kwargs["header"] = self.header
+        if self.index is not None:
+            kwargs["index"] = self.index
+        if self.na_rep is not None:
+            kwargs["na_rep"] = self.na_rep
+        if self.formatters is not None:
+            kwargs["formatters"] = self.formatters
+        if self.float_format is not None:
+            kwargs["float_format"] = self.float_format
+        if self.sparsify is not None:
+            kwargs["sparsify"] = self.sparsify
+        if self.index_names is not None:
+            kwargs["index_names"] = self.index_names
+        if self.justify is not None:
+            kwargs["justify"] = self.justify
+        if self.max_rows is not None:
+            kwargs["max_rows"] = self.max_rows
+        if self.max_cols is not None:
+            kwargs["max_cols"] = self.max_cols
+        if self.show_dimensions is not None:
+            kwargs["show_dimensions"] = self.show_dimensions
+        if self.decimal is not None:
+            kwargs["decimal"] = self.decimal
+        if self.bold_rows is not None:
+            kwargs["bold_rows"] = self.bold_rows
+        if self.classes is not None:
+            kwargs["classes"] = self.classes
+        if self.escape is not None:
+            kwargs["escape"] = self.escape
+        if self.notebook is not None:
+            kwargs["notebook"] = self.notebook
+        if self.border is not None:
+            kwargs["border"] = self.border
+        if self.table_id is not None:
+            kwargs["table_id"] = self.table_id
+        if self.render_links is not None:
+            kwargs["render_links"] = self.render_links
+        if self.encoding is not None:
+            kwargs["encoding"] = self.encoding
+
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_html(self.buf, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.buf)
+
+    @classmethod
+    def name(cls) -> str:
+        return "html"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -667,6 +853,8 @@ def register_data_loaders():
         PandasSqlWriter,
         PandasXmlReader,
         PandasXmlWriter,
+        PandasHtmlReader,
+        PandasHtmlWriter,
     ]:
         registry.register_adapter(loader)
 
