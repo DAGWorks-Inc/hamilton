@@ -112,7 +112,7 @@ def test_pandas_html_reader(tmp_path: pathlib.Path) -> None:
     df, metadata = reader.load_data(pd.DataFrame)
 
     assert PandasHtmlReader.applicable_types() == [pd.DataFrame]
-    assert df.shape == (3, 3)
+    assert df[0].shape == (3, 4)
 
 
 def test_pandas_html_writer(tmp_path: pathlib.Path) -> None:
