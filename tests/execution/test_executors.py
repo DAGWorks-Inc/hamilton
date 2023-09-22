@@ -1,7 +1,10 @@
+import os
 import time
 
+import numpy as np
 import pytest
 
+import hamilton.ad_hoc_utils
 from hamilton import base, driver
 from hamilton.execution.executors import (
     DefaultExecutionManager,
@@ -17,6 +20,7 @@ from hamilton.execution.grouping import (
     NodeGroupPurpose,
     TaskImplementation,
 )
+from hamilton.htypes import Collect, Parallelizable
 from tests.resources.dynamic_parallelism import (
     inputs_in_collect,
     no_parallel,
@@ -256,3 +260,50 @@ def test_end_to_end_parallelizable_with_overrides_on_collect_node():
         .with_remote_executor(SynchronousLocalTaskExecutor())
     ).build()
     assert dr.execute(["collect_plus_one"], overrides={"collect": 100})["collect_plus_one"] == 101
+
+
+@pytest.mark.parametrize("executor_factory", [SynchronousLocalTaskExecutor])
+@pytest.mark.skipif(
+    os.environ.get("CI") != "true",
+    reason="This test tests memory usage and takes quite a while to run."
+    "We don't run it locally as its a low-touch part of the codebase"
+    "TODO -- actually measure the memory allocated/remaining",
+)
+def test_sequential_would_use_too_much_memory_no_garbage_collector(executor_factory):
+    NUM_REPS = 1000
+
+    def foo() -> Parallelizable[int]:
+        for i in range(NUM_REPS):
+            yield i
+
+    def large_allocation(foo: int) -> np.array:
+        size = int(1_073_741_824 / 10)  # 1 GB in bytes
+        return np.ones(size)
+
+    def compressed(large_allocation: np.array) -> int:
+        import gc
+
+        gc.collect()
+        return 1
+
+    # This is a hack due to python's garbage collector
+    def gc(compressed: int) -> int:
+        return compressed
+
+    def concatenated(gc: Collect[int]) -> int:
+        return sum(gc)
+
+    mod = hamilton.ad_hoc_utils.create_temporary_module(
+        foo, large_allocation, compressed, gc, concatenated
+    )
+
+    dr = (
+        driver.Builder()
+        .with_modules(mod)
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .with_remote_executor(executor_factory())
+        .with_grouping_strategy(GroupByRepeatableBlocks())
+        .build()
+    )
+    result = dr.execute(["concatenated"])
+    assert result["concatenated"] == NUM_REPS

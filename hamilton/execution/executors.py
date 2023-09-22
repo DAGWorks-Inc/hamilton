@@ -79,7 +79,10 @@ def _modify_callable(node_source: node.NodeType, callabl: Callable):
 
 def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
     """This is a utility function to execute a base task. In an ideal world this would be recursive,
-    but for now we just call out to good old DFS.
+    (as in we can use the same task execution/management system as we would otherwise)
+    but for now we just call out to good old DFS. Note that this only returns the result that
+    a task is required to output, and does not return anything else. It also returns
+    any overrides.
 
     We should probably have a simple way of doing this for single-node tasks, as they're
     going to be common.
@@ -97,12 +100,21 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
         if not getattr(node_, "callable_modified", False):
             node_._callable = _modify_callable(node_.node_role, node_.callable)
         setattr(node_, "callable_modified", True)
-    return execute_subdag(
+    out = execute_subdag(
         nodes=task.nodes,
         inputs=task.dynamic_inputs,
         adapter=task.adapters[0],  # TODO -- wire through multiple graph adapters
         overrides={**task.dynamic_inputs, **task.overrides},
     )
+    # This selection is for GC
+    # We also need to get the override values
+    # This way if its overridden we can ensure it gets passed to the right one
+    final_retval = {
+        key: value
+        for key, value in out.items()
+        if key in task.outputs_to_compute or key in task.overrides
+    }
+    return final_retval
 
 
 class SynchronousLocalTaskExecutor(TaskExecutor):
