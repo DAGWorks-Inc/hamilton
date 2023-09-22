@@ -18,14 +18,14 @@ except ImportError:
     from typing_extensions import Literal
 
 try:
-    import pandas as pd
-except ImportError:
-    raise NotImplementedError("Pandas is not installed.")
-
-try:
     import google.auth
 except ImportError:
     raise NotImplementedError("Google.auth is not installed.")
+
+try:
+    import pandas as pd
+except ImportError:
+    raise NotImplementedError("Pandas is not installed.")
 
 from pandas._typing import NpDtype
 from pandas.core.dtypes.dtypes import ExtensionDtype
@@ -903,6 +903,66 @@ class PandasGbqReader(DataLoader):
         df = pd.read_gbq(self.query, **self._get_loading_kwargs())
         metadata = {}  # TODO: Figure out what metadata to get
         return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "gbq"
+
+
+@dataclasses.dataclass
+class PandasGbqWriter(DataSaver):
+    """Class specifically to handle saving a Pandas DataFrame to a Google BigQuery table.
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_gbq.html.
+
+    This class requires the pandas-gbq package. See https://pandas-gbq.readthedocs.io.
+
+    See the 'How to authenticate with Google BigQuery' guide for authentication instructions below.
+    https://pandas-gbq.readthedocs.io/en/latest/howto/authentication.html.
+    """
+
+    destination_table: str
+
+    # kwargs
+    auth_local_webserver: bool = True
+    chunksize: Optional[int] = None
+    credentials = None
+    if_exists: str = "fail"
+    location: Optional[str] = None
+    progress_bar: bool = True
+    project_id: Optional[str] = None
+    reauth: bool = False
+    table_schema: Optional[List[Dict[str, str]]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.project_id is not None:
+            kwargs["project_id"] = self.project_id
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.reauth is not None:
+            kwargs["reauth"] = self.reauth
+        if self.if_exists is not None:
+            kwargs["if_exists"] = self.if_exists
+        if self.auth_local_webserver is not None:
+            kwargs["auth_local_webserver"] = self.auth_local_webserver
+        if self.table_schema is not None:
+            kwargs["table_schema"] = self.table_schema
+        if self.location is not None:
+            kwargs["location"] = self.location
+        if self.progress_bar is not None:
+            kwargs["progress_bar"] = self.progress_bar
+        if self.credentials is not None:
+            kwargs["credentials"] = self.credentials
+
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_gbq(self.destination_table, **self._get_saving_kwargs())
+        return {}  # TODO: Figure out what metadata to get
 
     @classmethod
     def name(cls) -> str:
