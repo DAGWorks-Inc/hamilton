@@ -1,27 +1,25 @@
 import abc
 import dataclasses
 import sys
-from collections.abc import Hashable, Iterable, Sequence
+from collections.abc import Hashable, Iterable
 from io import BufferedReader, BytesIO, StringIO
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Collection,
-    Dict,
-    Iterator,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
 
 try:
     import pandas as pd
 except ImportError:
     raise NotImplementedError("Pandas is not installed.")
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
+
+try:
+    from collections.abc import Sequence
+except ImportError:
+    from collections import Sequence
 
 from sqlite3 import Connection
 
