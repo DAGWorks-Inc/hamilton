@@ -4,12 +4,13 @@ import sys
 from collections.abc import Hashable
 from io import BufferedReader, BytesIO, StringIO
 from pathlib import Path
+from sqlite3 import Connection
 from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
 
 try:
-    import pandas as pd
+    from collections.abc import Iterable, Sequence
 except ImportError:
-    raise NotImplementedError("Pandas is not installed.")
+    from collections import Iterable, Sequence
 
 try:
     from typing import Literal
@@ -17,11 +18,14 @@ except ImportError:
     from typing_extensions import Literal
 
 try:
-    from collections.abc import Iterable, Sequence
+    import pandas as pd
 except ImportError:
-    from collections import Sequence, Iterable
+    raise NotImplementedError("Pandas is not installed.")
 
-from sqlite3 import Connection
+try:
+    import google.auth
+except ImportError:
+    raise NotImplementedError("Google.auth is not installed.")
 
 from pandas._typing import NpDtype
 from pandas.core.dtypes.dtypes import ExtensionDtype
@@ -835,6 +839,74 @@ class PandasHtmlWriter(DataSaver):
     @classmethod
     def name(cls) -> str:
         return "html"
+
+
+@dataclasses.dataclass
+class PandasGbqReader(DataLoader):
+    """Class for loading data from Google BigQuery with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_gbq.html#pandas.read_gbq
+
+    This class requires the pandas-gbq package. See https://pandas-gbq.readthedocs.io.
+
+    See the 'How to authenticate with Google BigQuery' guide for authentication instructions below.
+    https://pandas-gbq.readthedocs.io/en/latest/howto/authentication.html.
+    """
+
+    query: str
+    # kwargs
+    auth_local_webserver: bool = True
+    col_order: Optional[List[str]] = None
+    configuration: Optional[Dict[str, Any]] = None
+    credentials: Optional[google.auth.credentials.Credentials] = None
+    dialect: Optional[str] = None
+    index_col: Optional[str] = None
+    location: Optional[str] = None
+    max_results: Optional[int] = None
+    progress_bar_type: Optional[str] = None
+    project_id: Optional[str] = None
+    reauth: bool = False
+    use_bqstorage_api: Optional[bool] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.auth_local_webserver is not None:
+            kwargs["auth_local_webserver"] = self.auth_local_webserver
+        if self.col_order is not None:
+            kwargs["col_order"] = self.col_order
+        if self.configuration is not None:
+            kwargs["configuration"] = self.configuration
+        if self.credentials is not None:
+            kwargs["credentials"] = self.credentials
+        if self.dialect is not None:
+            kwargs["dialect"] = self.dialect
+        if self.index_col is not None:
+            kwargs["index_col"] = self.index_col
+        if self.location is not None:
+            kwargs["location"] = self.location
+        if self.max_results is not None:
+            kwargs["max_results"] = self.max_results
+        if self.progress_bar_type is not None:
+            kwargs["progress_bar_type"] = self.progress_bar_type
+        if self.project_id is not None:
+            kwargs["project_id"] = self.project_id
+        if self.reauth is not None:
+            kwargs["reauth"] = self.reauth
+        if self.use_bqstorage_api is not None:
+            kwargs["use_bqstorage_api"] = self.use_bqstorage_api
+        return kwargs
+
+    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pd.read_gbq(self.query, **self._get_loading_kwargs())
+        metadata = {}  # TODO: Figure out what metadata to get
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "gbq"
 
 
 def register_data_loaders():
