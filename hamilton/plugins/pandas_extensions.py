@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 import sys
-from collections.abc import Hashable, Iterable
+from collections.abc import Hashable
 from io import BufferedReader, BytesIO, StringIO
 from pathlib import Path
 from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
@@ -17,9 +17,9 @@ except ImportError:
     from typing_extensions import Literal
 
 try:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 except ImportError:
-    from collections import Sequence
+    from collections import Sequence, Iterable
 
 from sqlite3 import Connection
 
@@ -688,7 +688,7 @@ class PandasHtmlReader(DataLoader):
     encoding: Optional[str] = None
     decimal: str = "."
     converters: Optional[Dict[Any, Any]] = None
-    na_values: Iterable[object] = None
+    na_values: Iterable = None
     keep_default_na: bool = True
     displayed_only: bool = True
     extract_links: Optional[Literal["header", "footer", "body", "all"]] = None
