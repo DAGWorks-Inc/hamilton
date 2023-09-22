@@ -4,14 +4,12 @@ import sys
 
 import pandas as pd
 
-# Add the hamilton module to your path - optinal
-# project_dir = "### ADD PATH HERE ###"
-# sys.path.append(project_dir)
-
 from hamilton import base, driver
 from hamilton.io.materialization import to
 
-
+# Add the hamilton module to your path - optinal
+# project_dir = "### ADD PATH HERE ###"
+# sys.path.append(project_dir)
 
 
 logging.basicConfig(stream=sys.stdout)
