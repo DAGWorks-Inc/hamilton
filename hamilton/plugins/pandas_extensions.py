@@ -672,20 +672,20 @@ class PandasHtmlReader(DataLoader):
     io: Union[str, Path, BytesIO, BufferedReader]
     # kwargs
     match: Optional[str] = ".+"
-    flavor: Optional[Union[str, Sequence[str], None]] = None
-    header: Optional[Union[int, Sequence[int], None]] = None
-    index_col: Optional[Union[int, Sequence[int], None]] = None
-    skiprows: Optional[Union[int, Sequence[int], slice, None]] = None
-    attrs: Optional[Union[Dict[str, str], None]] = None
+    flavor: Optional[Union[str, Sequence[str]]] = None
+    header: Optional[Union[int, Sequence[int]]] = None
+    index_col: Optional[Union[int, Sequence[int]]] = None
+    skiprows: Optional[Union[int, Sequence[int], slice]] = None
+    attrs: Optional[Dict[str, str]] = None
     parse_dates: Optional[bool] = None
-    thousands: Optional[Union[str, None]] = ","
-    encoding: Optional[Union[str, None]] = None
+    thousands: Optional[str] = ","
+    encoding: Optional[str] = None
     decimal: str = "."
-    converters: Optional[Union[Dict[Any, Any], None]] = None
-    na_values: Union[Iterable[object], None] = None
+    converters: Optional[Dict[Any, Any]] = None
+    na_values: Iterable[object] = None
     keep_default_na: bool = True
     displayed_only: bool = True
-    extract_links: Literal[None, "header", "footer", "body", "all"] = None
+    extract_links: Optional[Literal["header", "footer", "body", "all"]] = None
     dtype_backend: Literal["pyarrow", "numpy_nullable"] = "numpy_nullable"
     storage_options: Optional[Dict[str, Any]] = None
 
