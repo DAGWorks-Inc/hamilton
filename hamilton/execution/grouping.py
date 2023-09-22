@@ -363,6 +363,7 @@ def create_task_plan(
                     break
             if is_output:
                 outputs.append(node_.name)
+
         task_spec = TaskSpec(
             base_id=node_group.base_id,
             spawning_task_base_id=node_group.spawning_task_base_id,
