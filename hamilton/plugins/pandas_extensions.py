@@ -672,10 +672,16 @@ class PandasHtmlReader(DataLoader):
     io: Union[str, Path, BytesIO, BufferedReader]
     # kwargs
     match: Optional[str] = ".+"
-    flavor: Optional[Union[str, Sequence[str]]] = None
-    header: Optional[Union[int, Sequence[int]]] = None
-    index_col: Optional[Union[int, Sequence[int]]] = None
-    skiprows: Optional[Union[int, Sequence[int], slice]] = None
+    try:
+        flavor: Optional[Union[str, Sequence[str]]] = None
+        header: Optional[Union[int, Sequence[int]]] = None
+        index_col: Optional[Union[int, Sequence[int]]] = None
+        skiprows: Optional[Union[int, Sequence[int], slice]] = None
+    except TypeError:
+        flavor: Optional[Union[str, List[str]]] = None
+        header: Optional[Union[int, List[int]]] = None
+        index_col: Optional[Union[int, List[int]]] = None
+        skiprows: Optional[Union[int, List[int], slice]] = None
     attrs: Optional[Dict[str, str]] = None
     parse_dates: Optional[bool] = None
     thousands: Optional[str] = ","
