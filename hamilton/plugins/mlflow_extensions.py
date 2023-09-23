@@ -6,6 +6,7 @@ from mlflow.models import ModelInputExample, ModelSignature
 from mlflow.sklearn import SERIALIZATION_FORMAT_CLOUDPICKLE, SERIALIZATION_FORMAT_PICKLE
 from mlflow.tracking._model_registry import DEFAULT_AWAIT_MAX_SLEEP_SECONDS
 
+from hamilton import registry
 from hamilton.io.data_adapters import DataLoader, DataSaver
 
 Serialization = Union[SERIALIZATION_FORMAT_CLOUDPICKLE, SERIALIZATION_FORMAT_PICKLE]
@@ -99,3 +100,15 @@ class MlFlowSkLearnModelWriter(DataSaver):
     @classmethod
     def name(cls) -> str:
         return ""  # TODO: Decide on name
+
+
+def register_data_loaders():
+    """Function to register the data loaders for this extension."""
+    for loader in [
+        MlFlowSkLearnModelReader,
+        MlFlowSkLearnModelWriter,
+    ]:
+        registry.register_adapter(loader)
+
+
+register_data_loaders()
