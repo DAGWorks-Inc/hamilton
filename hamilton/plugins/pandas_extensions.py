@@ -958,7 +958,7 @@ class PandasStataWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_stata(self.path, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.buf)
+        return utils.get_file_metadata(self.path)
 
     @classmethod
     def name(cls) -> str:
