@@ -852,7 +852,7 @@ class PandasGbqReader(DataLoader):
     https://pandas-gbq.readthedocs.io/en/latest/howto/authentication.html.
     """
 
-    query: str
+    query_or_table: str
     # kwargs
     auth_local_webserver: bool = True
     col_order: Optional[List[str]] = None
@@ -900,7 +900,7 @@ class PandasGbqReader(DataLoader):
         return kwargs
 
     def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pandas_gbq.read_gbq(self.query, **self._get_loading_kwargs())
+        df = pandas_gbq.read_gbq(self.query_or_table, **self._get_loading_kwargs())
         metadata = utils.get_df_metadata(df)
         return df, metadata
 
@@ -921,7 +921,6 @@ class PandasGbqWriter(DataSaver):
     """
 
     destination_table: str
-
     # kwargs
     auth_local_webserver: bool = True
     chunksize: Optional[int] = None
