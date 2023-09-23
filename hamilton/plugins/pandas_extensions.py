@@ -20,12 +20,17 @@ except ImportError:
 try:
     import google.auth
 except ImportError:
-    raise NotImplementedError("Google.auth is not installed.")
+    raise NotImplementedError("google-auth is not installed.")
+
+try:
+    import pandas_gbq
+except ImportError:
+    raise NotImplementedError("pandas_gbq is not installed.")
 
 try:
     import pandas as pd
 except ImportError:
-    raise NotImplementedError("Pandas is not installed.")
+    raise NotImplementedError("pandas is not installed.")
 
 from pandas._typing import NpDtype
 from pandas.core.dtypes.dtypes import ExtensionDtype
@@ -844,7 +849,7 @@ class PandasHtmlWriter(DataSaver):
 @dataclasses.dataclass
 class PandasGbqReader(DataLoader):
     """Class for loading data from Google BigQuery with Pandas.
-    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_gbq.html#pandas.read_gbq
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_gbq.html.
 
     This class requires the pandas-gbq package. See https://pandas-gbq.readthedocs.io.
 
@@ -857,7 +862,7 @@ class PandasGbqReader(DataLoader):
     auth_local_webserver: bool = True
     col_order: Optional[List[str]] = None
     configuration: Optional[Dict[str, Any]] = None
-    credentials: Optional[google.auth.credentials.Credentials] = None
+    credentials: Optional[google.auth] = None
     dialect: Optional[str] = None
     index_col: Optional[str] = None
     location: Optional[str] = None
@@ -900,8 +905,8 @@ class PandasGbqReader(DataLoader):
         return kwargs
 
     def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pd.read_gbq(self.query, **self._get_loading_kwargs())
-        metadata = {}  # TODO: Figure out what metadata to get
+        df = pandas_gbq.read_gbq(self.query, **self._get_loading_kwargs())
+        metadata = utils.get_df_metadata(df)
         return df, metadata
 
     @classmethod
@@ -962,7 +967,7 @@ class PandasGbqWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_gbq(self.destination_table, **self._get_saving_kwargs())
-        return {}  # TODO: Figure out what metadata to get
+        return utils.get_df_metadata(data)  # get df metadata since to_gbq returns nothing
 
     @classmethod
     def name(cls) -> str:
@@ -975,16 +980,18 @@ def register_data_loaders():
         CSVDataAdapter,
         FeatherDataLoader,
         ParquetDataLoader,
-        PandasPickleReader,
-        PandasPickleWriter,
+        PandasGbqReader,
+        PandasGbqWriter,
+        PandasHtmlReader,
+        PandasHtmlWriter,
         PandasJsonReader,
         PandasJsonWriter,
+        PandasPickleReader,
+        PandasPickleWriter,
         PandasSqlReader,
         PandasSqlWriter,
         PandasXmlReader,
         PandasXmlWriter,
-        PandasHtmlReader,
-        PandasHtmlWriter,
     ]:
         registry.register_adapter(loader)
 
