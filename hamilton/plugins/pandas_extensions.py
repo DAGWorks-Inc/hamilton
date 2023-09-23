@@ -2,6 +2,7 @@ import abc
 import dataclasses
 import sys
 from collections.abc import Hashable
+from datetime import datetime
 from io import BufferedReader, BytesIO, StringIO
 from pathlib import Path
 from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
@@ -837,6 +838,133 @@ class PandasHtmlWriter(DataSaver):
         return "html"
 
 
+@dataclasses.dataclass
+class PandasStataReader(DataLoader):
+    """Class for loading/reading xml files with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_stata.html#pandas.read_stata
+    """
+
+    filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs
+    convert_dates: bool = True
+    convert_categoricals: bool = True
+    index_col: Optional[str] = None
+    convert_missing: bool = False
+    preserve_dtypes: bool = True
+    columns: Optional[Sequence] = None
+    order_categoricals: bool = True
+    chunksize: Optional[int] = None
+    iterator: bool = False
+    compression: Union[
+        Dict[str, Any], Literal["infer", "gzip", "bz2", "zip", "xz", "zstd", "tar"]
+    ] = "infer"
+    storage_options: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.convert_dates is not None:
+            kwargs["convert_dates"] = self.convert_dates
+        if self.convert_categoricals is not None:
+            kwargs["convert_categoricals"] = self.convert_categoricals
+        if self.index_col is not None:
+            kwargs["index_col"] = self.index_col
+        if self.convert_missing is not None:
+            kwargs["convert_missing"] = self.convert_missing
+        if self.preserve_dtypes is not None:
+            kwargs["preserve_dtypes"] = self.preserve_dtypes
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.order_categoricals is not None:
+            kwargs["order_categoricals"] = self.order_categoricals
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.iterator is not None:
+            kwargs["iterator"] = self.iterator
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+
+        return kwargs
+
+    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the xml
+        df = pd.read_stata(self.filepath_or_buffer, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.filepath_or_buffer)
+
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "stata"
+
+
+@dataclasses.dataclass
+class PandasStataWriter(DataSaver):
+    """Class specifically to handle saving xml files/buffers with Pandas.
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_stata.html
+    """
+
+    path: Union[str, Path, BufferedReader] = None
+    # kwargs
+    convert_dates: Optional[Dict[Hashable, str]] = None
+    write_index: bool = True
+    byteorder: Optional[str] = None
+    time_stamp: Optional[datetime] = None
+    data_label: Optional[str] = None
+    variable_labels: Optional[Dict[Hashable, str]] = None
+    version: Literal["114", "117", "118", "119", None] = "114"
+    convert_strl: Optional[str] = None
+    compression: Union[
+        Dict[str, Any], Literal["infer", "gzip", "bz2", "zip", "xz", "zstd", "tar"]
+    ] = "infer"
+    storage_options: Optional[Dict[str, Any]] = None
+    value_labels: Optional[Dict[Hashable, str]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.convert_dates is not None:
+            kwargs["convert_dates"] = self.convert_dates
+        if self.write_index is not None:
+            kwargs["write_index"] = self.write_index
+        if self.byteorder is not None:
+            kwargs["byteorder"] = self.byteorder
+        if self.time_stamp is not None:
+            kwargs["time_stamp"] = self.time_stamp
+        if self.data_label is not None:
+            kwargs["data_label"] = self.data_label
+        if self.variable_labels is not None:
+            kwargs["variable_labels"] = self.variable_labels
+        if self.version is not None:
+            kwargs["version"] = self.version
+        if self.convert_strl is not None and self.version == "117":
+            kwargs["convert_strl"] = self.convert_strl
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.value_labels is not None:
+            kwargs["value_labels"] = self.value_labels
+
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_stata(self.path, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.buf)
+
+    @classmethod
+    def name(cls) -> str:
+        return "stata"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -853,6 +981,8 @@ def register_data_loaders():
         PandasXmlWriter,
         PandasHtmlReader,
         PandasHtmlWriter,
+        PandasStataReader,
+        PandasStataWriter,
     ]:
         registry.register_adapter(loader)
 
