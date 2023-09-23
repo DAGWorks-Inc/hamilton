@@ -18,11 +18,6 @@ except ImportError:
     from typing_extensions import Literal
 
 try:
-    import google.auth
-except ImportError:
-    raise NotImplementedError("google-auth is not installed.")
-
-try:
     import pandas_gbq
 except ImportError:
     raise NotImplementedError("pandas_gbq is not installed.")
@@ -862,7 +857,7 @@ class PandasGbqReader(DataLoader):
     auth_local_webserver: bool = True
     col_order: Optional[List[str]] = None
     configuration: Optional[Dict[str, Any]] = None
-    credentials: Optional[google.auth] = None
+    credentials = None
     dialect: Optional[str] = None
     index_col: Optional[str] = None
     location: Optional[str] = None
