@@ -17,16 +17,22 @@ class MlFlowSkLearnModelReader(DataLoader):
     TODO: Write documentation
     """
 
+    model_uri: str
+    # kwargs
+    dst_path: Optional[str] = None
+
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
         return []  # TODO: Decide on applicable types
 
     def _get_loading_kwargs(self) -> Dict[str, Any]:
-        kwargs = {}  # TODO: Use chat gpt to generate loading kwargs later
+        kwargs = {}
+        if self.dst_path is not None:
+            kwargs["dst_path"] = self.dst_path
         return kwargs
 
     def load_data(self, type: Type) -> Tuple[Type, Dict[str, Any]]:  # TODO: Decide on type
-        model = mlflow.sklearn.load_model(**self._get_loading_kwargs())
+        model = mlflow.sklearn.load_model(self.model_uri, **self._get_loading_kwargs())
         metadata = {}  # TODO: Decide on meta data fn
         return model, metadata
 
@@ -42,7 +48,7 @@ class MlFlowSkLearnModelWriter(DataSaver):
     """
 
     sk_model: Union[mlflow.sklearn, mlflow.pyfunc]  # TODO: Finalize type hint
-    artifact_path: str
+    path: str
     # kwargs
     await_registration_for: Optional[int] = DEFAULT_AWAIT_MAX_SLEEP_SECONDS
     code_paths: List[str] = None
@@ -87,7 +93,7 @@ class MlFlowSkLearnModelWriter(DataSaver):
         return kwargs
 
     def save_data(self, data) -> Dict[str, Any]:  # TODO: Decide on data type
-        data.log_model(self.sk_model, self.artifact_path, **self._get_saving_kwargs())
+        data.save_model(self.sk_model, self.path, **self._get_saving_kwargs())
         return {}  # TODO: Decide on metadata to return
 
     @classmethod
