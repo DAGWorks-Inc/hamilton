@@ -945,7 +945,7 @@ class PandasStataWriter(DataSaver):
             kwargs["variable_labels"] = self.variable_labels
         if self.version is not None:
             kwargs["version"] = self.version
-        if self.convert_strl is not None and self.version == "117":
+        if self.convert_strl is not None and self.version == 117:
             kwargs["convert_strl"] = self.convert_strl
         if self.compression is not None:
             kwargs["compression"] = self.compression
