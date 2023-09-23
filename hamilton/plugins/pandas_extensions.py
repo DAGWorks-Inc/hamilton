@@ -917,7 +917,7 @@ class PandasStataWriter(DataSaver):
     time_stamp: Optional[datetime] = None
     data_label: Optional[str] = None
     variable_labels: Optional[Dict[Hashable, str]] = None
-    version: Literal["114", "117", "118", "119", None] = "114"
+    version: Literal[114, 117, 118, 119] = 114
     convert_strl: Optional[str] = None
     compression: Union[
         Dict[str, Any], Literal["infer", "gzip", "bz2", "zip", "xz", "zstd", "tar"]

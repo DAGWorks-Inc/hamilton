@@ -133,7 +133,7 @@ def test_pandas_stata_reader(tmp_path: pathlib.Path) -> None:
     df, metadata = reader.load_data(pd.DataFrame)
 
     assert PandasStataReader.applicable_types() == [pd.DataFrame]
-    assert df[0].shape == (4, 3)
+    assert df.shape == (4, 3)
 
 
 def test_pandas_stata_writer(tmp_path: pathlib.Path) -> None:
