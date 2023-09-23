@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 from typing import Any, Dict, Union
 
@@ -41,5 +42,22 @@ def get_sql_metadata(query_or_table: str, results: Union[int, pd.DataFrame]) -> 
         "rows": rows,
         "query": query,
         "table_name": table_name,
+        "timestamp": datetime.now().utcnow().timestamp(),
+    }
+
+
+def get_df_metadata(df: pd.DataFrame) -> Dict[str, Any]:
+    """Gives metadata from reading a Pandas DataFrame.
+    This includes:
+    - df size in bytes
+    - df number of rows
+    - df number of columns
+    - the current time
+    """
+    rows, columns = df.shape
+    return {
+        "size": sys.getsizeof(df),
+        "rows": rows,
+        "columns": columns,
         "timestamp": datetime.now().utcnow().timestamp(),
     }
