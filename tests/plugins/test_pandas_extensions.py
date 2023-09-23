@@ -2,12 +2,15 @@ import pathlib
 import sqlite3
 import sys
 from typing import Union
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
 from sqlalchemy import create_engine
 
 from hamilton.plugins.pandas_extensions import (
+    PandasGbqReader,
+    PandasGbqWriter,
     PandasHtmlReader,
     PandasHtmlWriter,
     PandasJsonReader,
@@ -123,3 +126,20 @@ def test_pandas_html_writer(tmp_path: pathlib.Path) -> None:
     assert PandasHtmlWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
     assert metadata["path"] == file_path
+
+
+def test_pandas_gbq(df: pd.DataFrame) -> None:
+    with patch("pandas.DataFrame.to_gbq"), patch("pandas_gbq.read_gbq", return_value=df):
+        writer = PandasGbqWriter("project-id.dataset.table", project_id="test")
+        kwargs1 = writer._get_saving_kwargs()
+        writer.save_data(df)
+
+        reader = PandasGbqReader("SELECT foo FROM bar", max_results=1)
+        kwargs2 = reader._get_loading_kwargs()
+        df2, metadata = reader.load_data(pd.DataFrame)
+
+        assert PandasGbqReader.applicable_types() == [pd.DataFrame]
+        assert PandasGbqWriter.applicable_types() == [pd.DataFrame]
+        assert kwargs1["project_id"] == "test"
+        assert kwargs2["max_results"] == 1
+        assert df.equals(df2)
