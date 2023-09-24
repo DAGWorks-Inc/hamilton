@@ -7,7 +7,7 @@ import pandas as pd
 from hamilton import base, driver
 from hamilton.io.materialization import to
 
-# Add the hamilton module to your path - optinal
+# Add the hamilton module to your path - optinal before hamilton import
 # project_dir = "### ADD PATH HERE ###"
 # sys.path.append(project_dir)
 
@@ -40,6 +40,10 @@ output_columns = [
 
 # set up db connection for sql materializer below
 conn = sqlite3.connect("df.db")
+
+# remove an previous instances of the 'test' table that will be created next
+conn.cursor().execute("DROP TABLE IF EXISTS test;")
+conn.commit()
 
 materializers = [
     # materialize the dataframe to a pickle file
