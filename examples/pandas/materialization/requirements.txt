@@ -1,2 +1,3 @@
+lxml # required for XML
 pandas
 sf-hamilton
