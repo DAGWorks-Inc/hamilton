@@ -78,6 +78,12 @@ materializers = [
         buf="./df.html",
         combine=df_builder,
     ),
+    to.stata(
+        dependencies=output_columns,
+        id="df_to_stata",
+        path="./df.dta",
+        combine=df_builder,
+    ),
 ]
 # Visualize what is happening
 dr.visualize_materialization(
@@ -96,6 +102,7 @@ materialization_results, additional_outputs = dr.materialize(
         "df_to_sql_build_result",
         "df_to_xml_build_result",
         "df_to_html_build_result",
+        "df_to_stata_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
@@ -105,5 +112,6 @@ print(additional_outputs["df_to_json_build_result"])
 print(additional_outputs["df_to_sql_build_result"])
 print(additional_outputs["df_to_xml_build_result"])
 print(additional_outputs["df_to_html_build_result"])
+print(additional_outputs["df_to_stata_build_result"])
 
 conn.close()
