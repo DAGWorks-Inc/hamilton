@@ -8,6 +8,8 @@ import pytest
 from sqlalchemy import create_engine
 
 from hamilton.plugins.pandas_extensions import (
+    PandasFeatherReader,
+    PandasFeatherWriter,
     PandasHtmlReader,
     PandasHtmlWriter,
     PandasJsonReader,
@@ -139,6 +141,25 @@ def test_pandas_stata_reader(tmp_path: pathlib.Path) -> None:
 def test_pandas_stata_writer(tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "test.dta"
     writer = PandasStataWriter(path=file_path)
+    metadata = writer.save_data(pd.DataFrame(data={"col1": [1, 2], "col2": [4, 3]}))
+
+    assert PandasStataWriter.applicable_types() == [pd.DataFrame]
+    assert file_path.exists()
+    assert metadata["path"] == file_path
+
+
+def test_pandas_feather_reader(tmp_path: pathlib.Path) -> None:
+    path_to_test = "tests/resources/data/test_load_from_data.feather"
+    reader = PandasFeatherReader(path=path_to_test)
+    df, metadata = reader.load_data(pd.DataFrame)
+
+    assert PandasFeatherReader.applicable_types() == [pd.DataFrame]
+    assert df.shape == (4, 3)
+
+
+def test_pandas_feather_writer(tmp_path: pathlib.Path) -> None:
+    file_path = tmp_path / "test.dta"
+    writer = PandasFeatherWriter(path=file_path)
     metadata = writer.save_data(pd.DataFrame(data={"col1": [1, 2], "col2": [4, 3]}))
 
     assert PandasStataWriter.applicable_types() == [pd.DataFrame]
