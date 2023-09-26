@@ -1,5 +1,6 @@
 graphviz
 lxml
+lz4
 networkx
 polars
 pyarrow
