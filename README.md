@@ -1,4 +1,5 @@
 <div align="center">
+    <img src="https://github.com/DAGWorks-Inc/hamilton/assets/2328071/feb6abaa-b6d5-4271-a320-0ae4a18d8aa7" width="100"/>
     <h1>Welcome to the official Hamilton Github Repository</h1>
     <a href="https://circleci.com/gh/DAGWorks-Inc/hamilton/tree/main" target="_blank">
       <img src="https://circleci.com/gh/DAGWorks-Inc/hamilton/tree/main.svg?style=svg" alt="Hamilton CircleCI"/>
