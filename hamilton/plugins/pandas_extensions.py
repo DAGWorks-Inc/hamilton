@@ -24,7 +24,7 @@ except ImportError:
 
 from sqlite3 import Connection
 
-from pandas._typing import NpDtype
+from pandas._typing import FilePath, NpDtype, ReadBuffer, StorageOptions, WriteBuffer
 from pandas.core.dtypes.dtypes import ExtensionDtype
 
 from hamilton import registry
@@ -965,6 +965,93 @@ class PandasStataWriter(DataSaver):
         return "stata"
 
 
+@dataclasses.dataclass
+class PandasFeatherReader(DataLoader):
+    """Class for loading/reading feather files with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_feather.html
+    """
+
+    path: Union[str, Path, FilePath, ReadBuffer[bytes]]
+    # kwargs
+    columns: Optional[Sequence] = None
+    use_threads: bool = True
+    storage_options: Optional[StorageOptions]
+    dtype_backend: Literal["pyarrow", "numpy_nullable"] = "numpy_nullable"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.use_threads is not None:
+            kwargs["use_threads"] = self.use_threads
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.dtype_backend is not None:
+            kwargs["dtype_backend"] = self.dtype_backend
+
+        return kwargs
+
+    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the xml
+        df = pd.read_feather(self.path, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.path)
+
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "feather"
+
+
+@dataclasses.dataclass
+class PandasFeatherWriter(DataSaver):
+    """Class specifically to handle saving xml files/buffers with Pandas.
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_feather.html
+    Additional Parameters passed to: https://arrow.apache.org/docs/python/generated/pyarrow.feather.write_feather.html#pyarrow.feather.write_feather
+
+    Requires `lz4` https://pypi.org/project/lz4/
+    """
+
+    path: Union[str, Path, FilePath, WriteBuffer[bytes]]
+    # kwargs
+    dest: Optional[str] = None
+    compression: Literal["zstd", "lz4", "uncompressed"] = None
+    compression_level: Optional[int] = None
+    chunksize: Optional[int] = None
+    version: Optional[int] = 2
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.dest is not None:
+            kwargs["dest"] = self.dest
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.compression_level is not None:
+            kwargs["compression_level"] = self.compression_level
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.version is not None:
+            kwargs["version"] = self.version
+
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_feather(self.path, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.path)
+
+    @classmethod
+    def name(cls) -> str:
+        return "feather"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -983,6 +1070,8 @@ def register_data_loaders():
         PandasHtmlWriter,
         PandasStataReader,
         PandasStataWriter,
+        PandasFeatherReader,
+        PandasFeatherWriter,
     ]:
         registry.register_adapter(loader)
 
