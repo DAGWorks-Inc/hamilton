@@ -975,7 +975,7 @@ class PandasFeatherReader(DataLoader):
     # kwargs
     columns: Optional[Sequence] = None
     use_threads: bool = True
-    storage_options: Optional[StorageOptions]
+    storage_options: Optional[StorageOptions] = None
     dtype_backend: Literal["pyarrow", "numpy_nullable"] = "numpy_nullable"
 
     @classmethod
