@@ -24,7 +24,7 @@ except ImportError:
 
 from sqlite3 import Connection
 
-from pandas._typing import NpDtype, ReadBuffer, StorageOptions, WriteBuffer
+from pandas._typing import NpDtype
 from pandas.core.dtypes.dtypes import ExtensionDtype
 
 from hamilton import registry
@@ -971,11 +971,11 @@ class PandasFeatherReader(DataLoader):
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_feather.html
     """
 
-    path: Union[str, Path, ReadBuffer[bytes]]
+    path: Union[str, Path, BytesIO, BufferedReader]
     # kwargs
     columns: Optional[Sequence] = None
     use_threads: bool = True
-    storage_options: Optional[StorageOptions] = None
+    storage_options: Optional[Dict[str, Any]] = None
     dtype_backend: Literal["pyarrow", "numpy_nullable"] = "numpy_nullable"
 
     @classmethod
@@ -1016,7 +1016,7 @@ class PandasFeatherWriter(DataSaver):
     Requires `lz4` https://pypi.org/project/lz4/
     """
 
-    path: Union[str, Path, WriteBuffer[bytes]]
+    path: Union[str, Path, BytesIO, BufferedReader]
     # kwargs
     dest: Optional[str] = None
     compression: Literal["zstd", "lz4", "uncompressed"] = None
