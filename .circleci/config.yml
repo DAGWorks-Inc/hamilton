@@ -1,5 +1,26 @@
 version: 2.1
 jobs:
+  check_for_changes:
+    docker:
+      - image: circleci/python:3.10
+    steps:
+      - checkout
+      - run:
+          name: Check for changes in specific paths
+          command: |
+            set +e
+            git diff --name-only HEAD^ HEAD | grep '^.ci\|^.circleci\|^graph_adapter_tests\|^hamilton\|^plugin_tests\|^tests\|^requirements\|setup' > /dev/null
+            if [ $? -eq 0 ]; then
+              echo "Changes found in target paths."
+              echo 'true' > /tmp/changes_detected
+            else
+              echo "No changes found in target paths."
+              echo 'false' > /tmp/changes_detected
+            fi
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - changes_detected
   test:
     parameters:
       python-version:
@@ -13,6 +34,15 @@ jobs:
       CI: true
     steps:
       - checkout
+      - attach_workspace:
+          at: /tmp
+      - run:
+          name: Check if changes were detected
+          command: |
+            if grep -q 'false' /tmp/changes_detected; then
+              echo "No changes detected, skipping job..."
+              circleci-agent step halt
+            fi
       - run:
           name: install dependencies
           command: .ci/setup.sh
@@ -22,19 +52,28 @@ jobs:
 workflows:
   unit-test-workflow:
     jobs:
+      - check_for_changes
       - test:
+          requires:
+            - check_for_changes
           name: build-py37
           python-version: '3.7'
           task: tests
       - test:
+          requires:
+            - check_for_changes
           name: build-py38
           python-version: '3.8'
           task: tests
       - test:
+          requires:
+            - check_for_changes
           name: build-py39
           python-version: '3.9'
           task: tests
       - test:
+          requires:
+            - check_for_changes
           name: build-py310
           python-version: '3.10'
           task: tests
@@ -47,22 +86,32 @@ workflows:
           python-version: '3.9'
           task: pre-commit
       - test:
+          requires:
+            - check_for_changes
           name: dask-py39
           python-version: '3.9'
           task: dask
       - test:
+          requires:
+            - check_for_changes
           name: ray-py39
           python-version: '3.9'
           task: ray
       - test:
+          requires:
+            - check_for_changes
           name: spark-py39
           python-version: '3.9'
           task: pyspark
       - test:
+          requires:
+            - check_for_changes
           name: spark-py310
           python-version: '3.10'
           task: pyspark
       - test:
+          requires:
+            - check_for_changes
           name: spark-py311
           python-version: '3.11'
           task: pyspark
@@ -71,30 +120,44 @@ workflows:
           python-version: '3.7'
           task: integrations
       - test:
+          requires:
+            - check_for_changes
           name: integrations-py38
           python-version: '3.8'
           task: integrations
       - test:
+          requires:
+            - check_for_changes
           name: integrations-py39
           python-version: '3.9'
           task: integrations
       - test:
+          requires:
+            - check_for_changes
           name: integrations-py310
           python-version: '3.10'
           task: integrations
       - test:
+          requires:
+            - check_for_changes
           name: integrations-py311
           python-version: '3.11'
           task: integrations
       - test:
+          requires:
+            - check_for_changes
           name: asyncio-py39
           python-version: '3.9'
           task: async
       - test:
+          requires:
+            - check_for_changes
           name: asyncio-py310
           python-version: '3.10'
           task: async
       - test:
+          requires:
+            - check_for_changes
           name: asyncio-py311
           python-version: '3.11'
           task: async
