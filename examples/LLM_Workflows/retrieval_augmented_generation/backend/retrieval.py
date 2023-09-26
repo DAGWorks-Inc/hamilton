@@ -10,6 +10,9 @@ from hamilton.htypes import Collect, Parallelizable
 def all_documents_file_name(weaviate_client: weaviate.Client) -> list[str]:
     """Get the `file_name` of all `Document` objects stored in Weaviate"""
     response = weaviate_client.query.get("Document", ["file_name"]).do()
+    if response.get("data") is None:
+        raise ValueError(response["errors"][0]["message"])
+
     return [d["file_name"] for d in response["data"]["Get"]["Document"]]
 
 
@@ -62,6 +65,8 @@ def document_chunk_hybrid_search_result(
         .with_limit(retrieve_top_k)
         .do()
     )
+    if response.get("data") is None:
+        raise ValueError(response["errors"][0]["message"])
 
     results = []
     for idx, chunk in enumerate(response["data"]["Get"]["Chunk"]):
@@ -111,9 +116,17 @@ def _summarize_text__openai(prompt: str, summarize_model_name: str) -> str:
     return response["choices"][0]["message"]["content"]
 
 
-def prompt_to_summarize_chunk() -> str:
+def prompt_template_to_summarize_chunk() -> str:
     """Base prompt for summarize a chunk of text"""
-    return f"Write a brief bulleted summary of this content.\n\nContent:{{content}}"  # noqa: F541
+    return "Write a brief bulleted summary of this content.\n\nContent: {content}"  # noqa: F541
+
+
+def prompt_to_summarize_chunk(
+    chunk_without_summary: dict,
+    prompt_template_to_summarize_chunk: str,
+) -> str:
+    """fill the prompt template with chunk content"""
+    return prompt_template_to_summarize_chunk.format(content=chunk_without_summary["content"])
 
 
 def chunk_with_new_summary(
@@ -124,9 +137,8 @@ def chunk_with_new_summary(
     """Fill a base prompt with a chunk's content and summarize it;
     Store the summary in the chunk object
     """
-    filled_prompt = prompt_to_summarize_chunk.format(content=chunk_without_summary["content"])
     new_chunk = dict(**chunk_without_summary)
-    new_chunk["summary"] = _summarize_text__openai(filled_prompt, summarize_model_name)
+    new_chunk["summary"] = _summarize_text__openai(prompt_to_summarize_chunk, summarize_model_name)
     return new_chunk
 
 
@@ -148,15 +160,6 @@ def store_chunk_summary(
     return dict(updated_chunk_with_id=chunk_with_new_summary["id"])
 
 
-def prompt_to_reduce_summaries() -> str:
-    """Prompt for a "reduce" operation to summarize a list of summaries into a single text"""
-    return f"""Write a summary from this collection of key points.
-    First answer the question in two sentences. Then, highlight the core argument, conclusions and evidence.
-    User query: {{query}}
-    The summary should be structured in bulleted lists following the headings Answer, Core Argument, Evidence, and Conclusions.
-    Key points:\n{{chunks_summary}}\nSummary:\n"""  # noqa: F541
-
-
 def chunk_with_new_summary_collection(chunk_with_new_summary: Collect[dict]) -> list[dict]:
     """Collect chunks for which a new summary was just computed"""
     return chunk_with_new_summary
@@ -172,20 +175,33 @@ def all_chunks(
     return sorted_chunks
 
 
-def rag_summary(
+def prompt_template_to_reduce_summaries() -> str:
+    """Prompt for a "reduce" operation to summarize a list of summaries into a single text"""
+    return """Write a summary from this collection of key points.
+    First answer the question in two sentences. Then, highlight the core argument, conclusions and evidence.
+    User query: {query}
+    The summary should be structured in bulleted lists following the headings Answer, Core Argument, Evidence, and Conclusions.
+    Key points:\n{chunks_summary}\nSummary:\n"""  # noqa: F541
+
+
+def prompt_to_reduce_summaries(
     rag_query: str,
     all_chunks: list[dict],
+    prompt_template_to_reduce_summaries: str
+) -> str:
+    """Concatenate the list of chunk summaries into a single text, fill the prompt template"""
+    concatenated_summaries = " ".join(chunk["summary"] for chunk in all_chunks)
+    return prompt_template_to_reduce_summaries.format(
+        query=rag_query, chunks_summary=concatenated_summaries
+    )
+
+
+def rag_summary(
     prompt_to_reduce_summaries: str,
     summarize_model_name: str,
 ) -> str:
-    """Concatenate the list of chunk summaries into a single text,fill the prompt template,
-    and use OpenAI to reduce the content into a single summary;
-    """
-    concatenated_summaries = " ".join(chunk["summary"] for chunk in all_chunks)
-    filled_prompt = prompt_to_reduce_summaries.format(
-        query=rag_query, chunks_summary=concatenated_summaries
-    )
-    return _summarize_text__openai(filled_prompt, summarize_model_name)
+    """use OpenAI to reduce the concatenated summaries into a single summary"""
+    return _summarize_text__openai(prompt_to_reduce_summaries, summarize_model_name)
 
 
 if __name__ == "__main__":
