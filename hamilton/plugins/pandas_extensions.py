@@ -126,28 +126,6 @@ class CSVDataAdapter(DataFrameDataLoader):
 
 
 @dataclasses.dataclass
-class FeatherDataLoader(DataFrameDataLoader):
-    """Data loader for feather files. Note that this currently does not support the wide array of
-    data loading functionality that pandas does. We will be adding this in over time, but for now
-    you can subclass this or open up an issue if this doesn't have what you want."""
-
-    path: str
-
-    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.to_feather(self.path)
-        return utils.get_file_metadata(self.path)
-
-    def load_data(self, type_: Type[DATAFRAME_TYPE]) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pd.read_feather(self.path)
-        metadata = utils.get_file_metadata(self.path)
-        return df, metadata
-
-    @classmethod
-    def name(cls) -> str:
-        return "feather"
-
-
-@dataclasses.dataclass
 class ParquetDataLoader(DataFrameDataLoader):
     """Data loader for feather files. Note that this currently does not support the wide array of
     data loading functionality that pandas does. We will be adding this in over time, but for now
@@ -1056,7 +1034,6 @@ def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
         CSVDataAdapter,
-        FeatherDataLoader,
         ParquetDataLoader,
         PandasPickleReader,
         PandasPickleWriter,
