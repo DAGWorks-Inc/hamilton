@@ -990,7 +990,7 @@ class PandasFeatherReader(DataLoader):
             kwargs["use_threads"] = self.use_threads
         if self.storage_options is not None:
             kwargs["storage_options"] = self.storage_options
-        if self.dtype_backend is not None:
+        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
 
         return kwargs
