@@ -3,7 +3,7 @@ fastapi
 openai
 pandas
 pydantic
-PyPDF2
+pypdf
 python-multipart
 sf-hamilton[visualization] == 1.27.3
 tenacity

@@ -5,7 +5,7 @@ from typing import Generator
 
 import fastapi
 import openai
-import PyPDF2
+import pypdf
 import tiktoken
 import weaviate
 from weaviate.util import generate_uuid5
@@ -51,7 +51,7 @@ def raw_text(pdf_content: io.BytesIO) -> str:
     """Read local PDF files and return the raw text as string;
     Throw exception if unable to read PDF
     """
-    reader = PyPDF2.PdfReader(pdf_content)
+    reader = pypdf.PdfReader(pdf_content)
     pdf_text = " ".join((page.extract_text() for page in reader.pages))
     return pdf_text
 
