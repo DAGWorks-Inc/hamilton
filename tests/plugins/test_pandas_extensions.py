@@ -8,6 +8,8 @@ import pytest
 from sqlalchemy import create_engine
 
 from hamilton.plugins.pandas_extensions import (
+    PandasExcelReader,
+    PandasExcelWriter,
     PandasFeatherReader,
     PandasFeatherWriter,
     PandasHtmlReader,
@@ -165,3 +167,27 @@ def test_pandas_feather_writer(tmp_path: pathlib.Path) -> None:
     assert PandasStataWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
     assert metadata["path"] == file_path
+
+
+def test_pandas_excel(tmp_path: pathlib.Path) -> None:
+    data = {
+        "item": ["t-shirt", "trousers", "sock"],
+        "n_items": [3, 2, 9],
+        "average_n_holes": [4, 3, 1.33],
+    }
+
+    sample_df = pd.DataFrame(data)
+
+    save_path = tmp_path / "sample_df.xlsx"
+    writer = PandasExcelWriter(
+        excel_writer=save_path, index=False
+    )  # set index to false to avoid extra index col
+    writer.save_data(sample_df)
+
+    # for excel data conversion problems
+    dtype_dict = {"item": "str", "n_items": "int64", "average_n_holes": "float64"}
+    reader = PandasExcelReader(io=save_path, dtype=dtype_dict)
+    read_df, metadata = reader.load_data(type(sample_df))
+
+    # same contents
+    assert read_df.equals(sample_df), "DataFrames do not match"

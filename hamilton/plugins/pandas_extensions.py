@@ -3,7 +3,8 @@ import dataclasses
 import sys
 from collections.abc import Hashable
 from datetime import datetime
-from io import BufferedReader, BytesIO, StringIO
+from io import BufferedReader, BytesIO, StringIO, TextIOWrapper
+from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
 
@@ -1030,6 +1031,188 @@ class PandasFeatherWriter(DataSaver):
         return "feather"
 
 
+@dataclasses.dataclass
+class PandasExcelReader(DataLoader):
+    """Class for loading/reading excel files with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_excel.html
+    """
+
+    io: Union[str, PathLike, TextIOWrapper, BytesIO]
+    sheet_name: Union[str, int, List[Union[str, int]], None] = 0
+    header: Union[int, List[int]] = 0
+    names: Optional[List[str]] = None
+    index_col: Union[int, str, List[Union[int]], None] = None
+    usecols: Union[str, List[Union[int, str]], Callable] = None
+    dtype: Union[Type, Dict[Union[str, int], Type], None] = None
+    engine: Optional[str] = None
+    converters: Optional[Dict[Union[str, int], Callable]] = None
+    true_values: Optional[List[Any]] = None
+    false_values: Optional[List[Any]] = None
+    skiprows: Union[List[int], int, Callable] = None
+    nrows: Optional[int] = None
+    na_values: Union[str, List[str], Dict[str, Any], None] = None
+    keep_default_na: bool = True
+    na_filter: bool = True
+    verbose: bool = False
+    parse_dates: Union[bool, List[Union[int, str, List[int]]], Dict[str, List[int]]] = False
+    date_parser: Optional[Callable] = None
+    date_format: Union[str, Dict[Union[str, int], str], None] = None
+    thousands: Optional[str] = None
+    decimal: str = "."
+    comment: Optional[str] = None
+    skipfooter: int = 0
+    storage_options: Optional[Dict[str, Any]] = None
+    dtype_backend: Literal["numpy_nullable", "pyarrow"] = "numpy_nullable"
+    engine_kwargs: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        # Returns type for which data loader is available
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        # Puts kwargs in a dict
+        kwargs = {}
+        if self.sheet_name is not None:
+            kwargs["sheet_name"] = self.sheet_name
+        if self.header is not None:
+            kwargs["header"] = self.header
+        if self.names is not None:
+            kwargs["names"] = self.names
+        if self.index_col is not None:
+            kwargs["index_col"] = self.index_col
+        if self.usecols is not None:
+            kwargs["usecols"] = self.usecols
+        if self.dtype is not None:
+            kwargs["dtype"] = self.dtype
+        if self.engine is not None:
+            kwargs["engine"] = self.engine
+        if self.converters is not None:
+            kwargs["converters"] = self.converters
+        if self.true_values is not None:
+            kwargs["true_values"] = self.true_values
+        if self.false_values is not None:
+            kwargs["false_values"] = self.false_values
+        if self.skiprows is not None:
+            kwargs["skiprows"] = self.skiprows
+        if self.nrows is not None:
+            kwargs["nrows"] = self.nrows
+        if self.na_values is not None:
+            kwargs["na_values"] = self.na_values
+        if self.keep_default_na is not None:
+            kwargs["keep_default_na"] = self.keep_default_na
+        if self.na_filter is not None:
+            kwargs["na_filter"] = self.na_filter
+        if self.verbose is not None:
+            kwargs["verbose"] = self.verbose
+        if self.parse_dates is not None:
+            kwargs["parse_dates"] = self.parse_dates
+        if self.date_parser is not None:
+            kwargs["date_parser"] = self.date_parser
+        if self.date_format is not None:
+            kwargs["date_format"] = self.date_format
+        if self.thousands is not None:
+            kwargs["thousands"] = self.thousands
+        if sys.version_info >= (3, 8) and self.decimal is not None:
+            kwargs["decimal"] = self.decimal
+        if self.comment is not None:
+            kwargs["comment"] = self.comment
+        if self.skipfooter is not None:
+            kwargs["skipfooter"] = self.skipfooter
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.dtype_backend is not None:
+            kwargs["dtype_backend"] = self.dtype_backend
+        if self.engine_kwargs is not None:
+            kwargs["engine_kwargs"] = self.engine_kwargs
+
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the pickle
+        df = pd.read_excel(self.io, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.io)
+
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "excel"
+
+
+@dataclasses.dataclass
+class PandasExcelWriter(DataSaver):
+    """Class that handles saving excel files with pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_excel.html
+    """
+
+    excel_writer: Union[str, Path, PathLike]
+    sheet_name: str = "Sheet1"
+    na_rep: str = ""
+    float_format: Optional[str] = None
+    columns: Optional[List[str]] = None
+    header: Union[bool, List[str]] = True
+    index: bool = True
+    index_label: Union[str, List[str], None] = None
+    startrow: int = 0
+    startcol: int = 0
+    engine: Optional[str] = None
+    merge_cells: bool = True
+    inf_rep: str = "inf"
+    freeze_panes: Optional[Tuple[int, int]] = None
+    storage_options: Optional[Dict[str, Any]] = None
+    engine_kwargs: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self) -> Dict[str, Any]:
+
+        kwargs = {}
+
+        if self.sheet_name is not None:
+            kwargs["sheet_name"] = self.sheet_name
+        if self.na_rep is not None:
+            kwargs["na_rep"] = self.na_rep
+        if self.float_format is not None:
+            kwargs["float_format"] = self.float_format
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.header is not None:
+            kwargs["header"] = self.header
+        if self.index is not None:
+            kwargs["index"] = self.index
+        if self.index_label is not None:
+            kwargs["index_label"] = self.index_label
+        if self.startrow is not None:
+            kwargs["startrow"] = self.startrow
+        if self.startcol is not None:
+            kwargs["startcol"] = self.startcol
+        if self.engine is not None:
+            kwargs["engine"] = self.engine
+        if self.merge_cells is not None:
+            kwargs["merge_cells"] = self.merge_cells
+        if self.inf_rep is not None:
+            kwargs["inf_rep"] = self.inf_rep
+        if self.freeze_panes is not None:
+            kwargs["freeze_panes"] = self.freeze_panes
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.engine_kwargs is not None:
+            kwargs["engine_kwargs"] = self.engine_kwargs
+
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_excel(self.excel_writer, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.excel_writer)
+
+    @classmethod
+    def name(cls) -> str:
+        return "excel"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -1049,6 +1232,8 @@ def register_data_loaders():
         PandasStataWriter,
         PandasFeatherReader,
         PandasFeatherWriter,
+        PandasExcelReader,
+        PandasExcelWriter,
     ]:
         registry.register_adapter(loader)
 

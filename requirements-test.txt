@@ -2,6 +2,7 @@ graphviz
 lxml
 lz4
 networkx
+openpyxl
 polars
 pyarrow
 pytest
