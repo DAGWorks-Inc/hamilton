@@ -21,7 +21,7 @@ from tests.resources.dq_dummy_examples import (
 def test_check_output_node_transform():
     decorator = check_output(
         importance="warn",
-        default_decorator_candidates=DUMMY_VALIDATORS_FOR_TESTING,
+        default_validator_candidates=DUMMY_VALIDATORS_FOR_TESTING,
         dataset_length=1,
         dtype=np.int64,
     )
