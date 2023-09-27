@@ -179,7 +179,7 @@ class check_output(BaseDataValidationDecorator):
             return default_validators.resolve_default_validators(
                 node_to_validate.type,
                 importance=self.importance,
-                available_validators=self.default_decorator_candidates,
+                available_validators=self.default_validator_candidates,
                 **self.default_validator_kwargs,
             )
         except ValueError as e:
@@ -192,7 +192,7 @@ class check_output(BaseDataValidationDecorator):
     def __init__(
         self,
         importance: str = dq_base.DataValidationLevel.WARN.value,
-        default_decorator_candidates: Type[dq_base.BaseDefaultValidator] = None,
+        default_validator_candidates: List[Type[dq_base.BaseDefaultValidator]] = None,
         target_: base.TargetType = None,
         **default_validator_kwargs: Any,
     ):
@@ -204,6 +204,7 @@ class check_output(BaseDataValidationDecorator):
         TODO -- enable construction of custom validators using check_output.custom(\\*validators).
 
         :param importance: For the default validator, how important is it that this passes.
+        :param default_validator_candidates: List of validators to be considerred for this check.
         :param default_validator_kwargs: keyword arguments to be passed to the validator.
         :param target\\_: a target specifying which nodes to decorate. See the docs in check_output_custom\
         for a quick overview and the docs in function_modifiers.base.NodeTransformer for more detail.
@@ -211,7 +212,7 @@ class check_output(BaseDataValidationDecorator):
         super(check_output, self).__init__(target=target_)
         self.importance = importance
         self.default_validator_kwargs = default_validator_kwargs
-        self.default_decorator_candidates = default_decorator_candidates
+        self.default_validator_candidates = default_validator_candidates
         # We need to wait until we actually have the function in order to construct the validators
         # So, we'll just store the constructor arguments for now and check it in validation
 
