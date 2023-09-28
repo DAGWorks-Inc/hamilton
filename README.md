@@ -39,7 +39,7 @@ Hamilton is a novel paradigm for specifying a flow of delayed execution in pytho
 - Store execution data/telemetry on your behalf (see the [dagworks product](www.dagworks.io)
 - Work with non-python logic (aside from tooling such as SQL, which can happily interfact with python tooling)
 
-See the table below for more specifics/how it compares to other common tooling:
+See the table below for more specifics/how it compares to other common tooling.
 
 ## Full Feature Comparison
 Here are common things that Hamilton is compared to, and how Hamilton compares to them.
