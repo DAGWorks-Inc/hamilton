@@ -5,7 +5,7 @@ import styles from './styles.module.css';
 const FeatureList = [
   {
     title: 'Easy to Use',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    Svg: require('@site/static/img/undraw_hamilton_mountain.svg').default,
     description: (
       <>
         Hamilton was designed from the ground up to quickly and easily create
@@ -16,7 +16,7 @@ const FeatureList = [
   },
   {
     title: 'Focus on What Matters',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    Svg: require('@site/static/img/undraw_hamilton_tree.svg').default,
     description: (
       <>
         Hamilton allows you to focus atomically on each step of your dataflow.
@@ -27,7 +27,7 @@ const FeatureList = [
   },
   {
     title: 'Powered by Python',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    Svg: require('@site/static/img/undraw_hamilton_python.svg').default,
     description: (
       <>
         Hamilton is built by defining python functions. You can do anything you can
