@@ -20,24 +20,22 @@
 
 # Hamilton
 
-The general purpose micro-orchestration framework for creating dataflows from python functions! That is, your single tool to express things like data, ML, LLM pipelines/workflows, and even web request logic!
+The general purpose micro-orchestration framework for creating [dataflows](https://en.wikipedia.org/wiki/Dataflow) from python functions! That is, your single tool to express things like data, ML, LLM pipelines/workflows, and even web request logic!
 
-Hamilton is a novel paradigm for specifying a flow of delayed execution in python. It was originally built to simplify the creation of wide (1000+) column dataframes, but works on python objects of any type and dataflows of any complexity. Core to the design of Hamilton is a clear mapping of function name to components of the generated artifact, allowing you to quickly grok the relationship between the code you write and the data you produce. This paradigm makes modifications easy to build and track, ensures code is self-documenting, and makes it natural to unit test your data transformations. When connected together, these functions form a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG), which the Hamilton framework can execute, optimize, and report on.
+Hamilton is a novel paradigm for specifying a flow of delayed execution in python. It works on python objects of any type and dataflows of any complexity. Core to the design of Hamilton is a clear mapping of function name to artifact, allowing you to quickly grok the relationship between the code you write and the data you produce. 
 
-# Feature comparison
+This paradigm makes modifications easy to build and track, ensures code is self-documenting, and makes it natural to unit test your data transformations. When connected together, these functions form a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG), which the Hamilton framework can execute, optimize, and report on.
 
-## Hamilton Does
-- Help you express your dataflow (data, ML, LLM, micro-service) logic in a readable, self-documenting way in python.
-- Enable you to break your code into small, modular, and unit-testable pieces.
-- Make it easier to port dataflows between different execution contexts.
-- Scale as much as any underlying library you might choose to use.
-- Work nicely with a variety of computational/orchestration tools.
+## Problems Hamilton Solves
+✅ Model a dataflow -- If you can model your problem as a DAG in python, Hamilton is the cleanest way to build it. 
+✅ Unmaintainable spaghetti code -- Hamilton dataflows are unit testable, self-documenting, and provide lineage.
+✅ Long iteration/experimentation cycles -- Hamilton provides a clear, quick, and methodical path to debugging/modifying/extending your code.
+✅ Reusing code across contexts -- Hamilton encourages code that is independent of infrastructure and can run regardless of execution setting. 
 
-## Hamilton Does Not
-- Provision infrastructure -- a macro orchestration/execution framework is what you're looking for. Hamilton does have hooks/integrations for a few frameworks.
-- Care about what you put inside a function, or what ML modeling/methodology you use.
-- Come with storing execution data/telemetry on your behalf. If that is of interest, see the [DAGWorks product](www.dagworks.io).
-- Work with non-python logic (aside from tooling such as SQL, which can happily interfact with python tooling).
+## Problems Hamilton Does not Solve
+❌ Provisioning infrastructure -- you want a macro-orchestration system (see airflow, kubeflow, sagemaker, etc...).
+❌ Doing your ML for you -- we organize youir code, BYOL (bring your own libraries).
+❌ Tracking execution + associated artifacts -- Hamilton is lightweight, but if this is important to you see the [DAGWorks product](www.dagworks.io).
 
 See the table below for more specifics/how it compares to other common tooling.
 
@@ -57,6 +55,7 @@ Here are common things that Hamilton is compared to, and how Hamilton compares t
 | Can model GenerativeAI/LLM based workflows | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
 | Replaces macro orchestration systems      | ❌  |                   ✅                          |   ❌  | ❌  |  ❌   |
 | Is a feature store                        | ❌  |                   ❌                          |   ✅  | ❌  |  ❌   |
+| Can model transforms at row/column/object/dataset level | ✅  |                   ❌            |   ❌  | ❌  |  ❌   |
 
 # Getting Started
 If you don't want to install anything to try Hamilton, we recommend trying [www.tryhamilton.dev](https://www.tryhamilton.dev/?utm_source=README).
