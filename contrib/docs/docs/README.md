@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Hamilton Dataflows
 
-Welcome!
+<h3> Welcome!</h3>
 
 Here you'll find a website that curates a collection of Hamilton Dataflows that are
 ready to be used in your own projects. They are user-contributed and maintained, with
@@ -15,6 +15,10 @@ We expect this collection to grow over time, so check back often! As dataflows b
 will move them into the official sub-package of this site and become maintained by the
 Hamilton team.
 
+## Navigation
+👈 On the left hand you'll have the ability to find user and official dataflows.
+COMING SOON: search & filtering by tags.
+
 ## Usage
 There are two methods to get access to dataflows presented here.
 
@@ -23,8 +27,8 @@ Assumptions:
 1. You are familiar with Hamilton and have it installed. If not, take
 [15 minutes to learn Hamilton in your browser](https://www.tryhamilton.dev/) and then `pip install sf-hamilton` to get started.
 Come back here when you're ready to use Hamilton.
-2. The assumption is that you have the requisite python dependencies installed on your system.
-You'll get import errors if you don't. Don't know what you need? We have convenience functions to help!
+2. You have the requisite python dependencies installed on your system.
+You'll get import errors if you don't. Don't know what you need? Scroll to the bottom of a dataflow to find the requirements. We're working on convenience functions to help!
 
 For more extensive documentation, please see [Hamilton User Contrib documentation](https://hamilton.dagworks.io).
 

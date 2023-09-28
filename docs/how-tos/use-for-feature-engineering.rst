@@ -19,7 +19,6 @@ reading the Offline Feature Engineering section first, since it's the most commo
 python module structure you should be going for with Hamilton. If you need more guidance here, please reach out to us on
 `slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`__.
 
-
 Offline Feature Engineering
 ---------------------------
 To use Hamilton for offline feature engineering, a common pattern is:
@@ -53,7 +52,7 @@ Here is a sketch of the above pattern:
 
 
 Hamilton Example
-__________________
+^^^^^^^^^^^^^^^^
 We do not provide a specific example here, since most of the examples in the examples folder fall under this category.
 Some examples to browse:
 
@@ -63,7 +62,7 @@ Some examples to browse:
   runtime data quality checks into your feature engineering pipeline.
 * `Time-series Kaggle Example <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/model_examples/time-series>`__
   shows one way to structure your code to ingest, create features, and fit a model.
-* `Feature engineering in multiple contexts <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/feature_engineering_multiple_contexts>`__
+* `Feature engineering in multiple contexts <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/feature_engineering/feature_engineering_multiple_contexts>`__
   helps show how you can use Hamilton in multiple contexts reusing code where possible, e.g. offline, & online.
 * `PySpark UDF Map Examples <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/spark/pyspark_udfs>`__
   shows how to use Hamilton to encode map operations for use with PySpark.
@@ -97,7 +96,7 @@ Here's a sketch of how you might use Hamilton in conjunction with a Kafka Client
 
 
 Hamilton Example
-__________________
+^^^^^^^^^^^^^^^^
 Currently we don't have a streaming example. But we are working on it. We direct users to look at the online example
 for now, since conceptually from a modularity stand point, things would be set up in a similar way.
 
@@ -121,11 +120,16 @@ the `@config.*` decorator, to help you segment your feature computation dataflow
 We skip showing a sketch of structure here, and invite you to look at the examples below.
 
 Hamilton Example
-__________________
-We direct users to look at `Feature engineering in multiple contexts <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/feature_engineering_multiple_contexts>`__
+^^^^^^^^^^^^^^^^
+We direct users to look at `Feature engineering in multiple contexts <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/feature_engineering/feature_engineering_multiple_contexts>`__
 that currently describes two scenarios around how you could incorporate Hamilton into an online web-service, and have
 it aligned with your batch offline processes. Note, these examples should give you the high level first principles
 view of how to do things. Since having something running in production , we didn't want to get too specific.
+
+Write once, run anywhere blog post:
+-----------------------------------
+For a comprehensive post on writing a feature once and using it anywhere see `this blog <https://blog.dagworks.io/p/feature-engineering-with-hamilton>`__.
+The companion example code can be found `here <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/feature_engineering/write_once_run_everywhere_blog_post>`__.
 
 
 FAQ
