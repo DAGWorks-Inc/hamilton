@@ -105,7 +105,7 @@ const config = {
             items: [
               {
                 label: 'Dataflows',
-                to: '/docs/intro',
+                to: '/docs/',
               },
             ],
           },
