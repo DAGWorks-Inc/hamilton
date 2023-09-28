@@ -35,7 +35,7 @@ Hamilton is a novel paradigm for specifying a flow of delayed execution in pytho
 
 ## Hamilton Does Not
 - Provision infrastructure -- a macro orchestration/execution framework is what you're looking for. Hamilton does have hooks/integrations for a few frameworks.
-- Care about the modeling logic you use
+- Care about what you put inside a function, or what ML modeling/methodology you use.
 - Come with storing execution data/telemetry on your behalf. If that is of interest, see the [DAGWorks product](www.dagworks.io).
 - Work with non-python logic (aside from tooling such as SQL, which can happily interfact with python tooling).
 
