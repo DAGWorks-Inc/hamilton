@@ -3,5 +3,5 @@ Polars
 =======================
 
 
-.. autoclass:: hamilton.plugins.polars_implementations.PolarsDataFrameResult
+.. autoclass:: hamilton.plugins.h_polars.PolarsDataFrameResult
    :members: build_result
