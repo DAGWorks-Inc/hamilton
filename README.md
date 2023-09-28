@@ -24,13 +24,24 @@ The general purpose micro-orchestration framework for creating dataflows from py
 
 Hamilton is a novel paradigm for specifying a flow of delayed execution in python. It was originally built to simplify the creation of wide (1000+) column dataframes, but works on python objects of any type and dataflows of any complexity. Core to the design of Hamilton is a clear mapping of function name to components of the generated artifact, allowing you to quickly grok the relationship between the code you write and the data you produce. This paradigm makes modifications easy to build and track, ensures code is self-documenting, and makes it natural to unit test your data transformations. When connected together, these functions form a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG), which the Hamilton framework can execute, optimize, and report on.
 
-# We forked and lost some stars
-This repository is maintained by the original creators of Hamilton, who have since founded [DAGWorks inc.](https://dagworks.io/), a company largely dedicated to building and maintaining the Hamilton library. We decided to fork the original because Stitch Fix did not want to transfer ownership to us; we had grown the star count in the original repository to 893: <img width="141" alt="Screen Shot 2023-02-23 at 12 58 43 PM" src="https://user-images.githubusercontent.com/2328071/221029806-36a4e088-809b-4b08-9199-2fbf8049be34.png">
-before forking.
-
-For the backstory on how Hamilton came about, see the original Stitch Fix [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
-
 # Feature comparison
+
+## Hamilton Does
+- Help you express your dataflow (data, ML, LLM, microservice) logic in a readable, self-documenting way in python
+- Enable you to break your code into small, modular, and unit-testable pieces
+- Make it easier to port these flows between different contexts
+- Scale as much as any underlying library you might choose to use
+- Work nicely with a variety of computational/orchestration tools
+
+## Hamilton Does Not
+- Provision infrastructure -- an orchestration/execution framework is what you're looking for, and Hamilton will happily run on top
+- Care about the modeling logic you use
+- Store execution data/telemetry on your behalf (see the [dagworks product](www.dagworks.io)
+- Work with non-python logic (aside from tooling such as SQL, which can happily interfact with python tooling)
+
+See the table below for more specifics/how it compares to other common tooling:
+
+## Full Feature Comparison
 Here are common things that Hamilton is compared to, and how Hamilton compares to them.
 
 | Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | dbt | Dask |
@@ -173,6 +184,11 @@ E.g.
 * Training [a model with scikit-learn](https://github.com/dagworks-inc/hamilton/tree/main/examples/model_examples)
 * Doing [air quality analysis solely in numpy](https://github.com/dagworks-inc/hamilton/tree/main/examples/numpy/air-quality-analysis)
 
+# We forked and lost some stars
+This repository is maintained by the original creators of Hamilton, who have since founded [DAGWorks inc.](https://dagworks.io/), a company largely dedicated to building and maintaining the Hamilton library. We decided to fork the original because Stitch Fix did not want to transfer ownership to us; we had grown the star count in the original repository to 893: <img width="141" alt="Screen Shot 2023-02-23 at 12 58 43 PM" src="https://user-images.githubusercontent.com/2328071/221029806-36a4e088-809b-4b08-9199-2fbf8049be34.png">
+before forking.
+
+For the backstory on how Hamilton came about, see the original Stitch Fix [blog post!](https://multithreaded.stitchfix.com/blog/2021/10/14/functions-dags-hamilton/).
 
 # Slack Community
 We have a small but active community on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg). Come join us!
