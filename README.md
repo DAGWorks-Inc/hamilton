@@ -31,7 +31,7 @@ Hamilton is a novel paradigm for specifying a flow of delayed execution in pytho
 - Enable you to break your code into small, modular, and unit-testable pieces
 - Make it easier to port these flows between different contexts
 - Scale as much as any underlying library you might choose to use
-- Work nicely with a variety of computational/orchestration tools
+- Work nicely with a variety of computational/orchestration tools.
 
 ## Hamilton Does Not
 - Provision infrastructure -- a macro orchestration/execution framework is what you're looking for. Hamilton does have hooks/integrations for a few frameworks.
