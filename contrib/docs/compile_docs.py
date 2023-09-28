@@ -224,12 +224,13 @@ import example2 from '!!raw-loader!./example2.py';
 {README}
 
 ## Source code
-TODO: make collapsable.
 
 import MyComponentSource from '!!raw-loader!./__init__.py';
 
-<CodeBlock language="python">{{MyComponentSource}}</CodeBlock>
-
+<details>
+    <summary>__init__.py</summary>
+    <CodeBlock language="python">{{MyComponentSource}}</CodeBlock>
+</details>
 
 ## Requirements
 import requirements from '!!raw-loader!./requirements.txt';
