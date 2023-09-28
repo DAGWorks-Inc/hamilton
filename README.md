@@ -22,15 +22,15 @@
 
 The general purpose micro-orchestration framework for creating [dataflows](https://en.wikipedia.org/wiki/Dataflow) from python functions! That is, your single tool to express things like data, ML, LLM pipelines/workflows, and even web request logic!
 
-Hamilton is a novel paradigm for specifying a flow of delayed execution in python. It works on python objects of any type and dataflows of any complexity. Core to the design of Hamilton is a clear mapping of function name to artifact, allowing you to quickly grok the relationship between the code you write and the data you produce. 
+Hamilton is a novel paradigm for specifying a flow of delayed execution in python. It works on python objects of any type and dataflows of any complexity. Core to the design of Hamilton is a clear mapping of function name to artifact, allowing you to quickly grok the relationship between the code you write and the data you produce.
 
 This paradigm makes modifications easy to build and track, ensures code is self-documenting, and makes it natural to unit test your data transformations. When connected together, these functions form a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG), which the Hamilton framework can execute, optimize, and report on.
 
 ## Problems Hamilton Solves
-✅ Model a dataflow -- If you can model your problem as a DAG in python, Hamilton is the cleanest way to build it. 
+✅ Model a dataflow -- If you can model your problem as a DAG in python, Hamilton is the cleanest way to build it.
 ✅ Unmaintainable spaghetti code -- Hamilton dataflows are unit testable, self-documenting, and provide lineage.
 ✅ Long iteration/experimentation cycles -- Hamilton provides a clear, quick, and methodical path to debugging/modifying/extending your code.
-✅ Reusing code across contexts -- Hamilton encourages code that is independent of infrastructure and can run regardless of execution setting. 
+✅ Reusing code across contexts -- Hamilton encourages code that is independent of infrastructure and can run regardless of execution setting.
 
 ## Problems Hamilton Does not Solve
 ❌ Provisioning infrastructure -- you want a macro-orchestration system (see airflow, kubeflow, sagemaker, etc...).
