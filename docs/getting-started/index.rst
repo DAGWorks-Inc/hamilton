@@ -27,4 +27,5 @@ The following section of the docs will teach you how to install Hamilton and get
    install
    write-first-dataflow
    run-first-dataflow
+   hamilton-hub
    next-steps
