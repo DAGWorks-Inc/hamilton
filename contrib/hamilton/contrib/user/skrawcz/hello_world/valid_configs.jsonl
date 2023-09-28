@@ -1,0 +1,2 @@
+{"description": "Default way to run the dataflow.", "name": "default", "config": {"default":  "True"}}
+{"description": "Bring your own spend & signup values.", "name": "bring-your-own", "config": {}}
