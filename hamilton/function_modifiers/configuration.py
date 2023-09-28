@@ -6,6 +6,80 @@ from . import base
 replacing if/else/switch statements in standard dataflow definition libraries"""
 
 
+class ConfigResolver:
+    """Base class for resolving configuration so we can share the tooling between different functions."""
+
+    def __init__(self, resolves: Callable[[Dict[str, Any]], bool], config_used: List[str]):
+        self.resolves = resolves
+        self._config_used = config_used
+
+    @property
+    def optional_config(self) -> Dict[str, Any]:
+        """Gives the optional configuration for this resolver -- to be used by the @config decorator."""
+        return {key: None for key in self._config_used}
+
+    def __call__(self, config: Dict[str, Any]) -> bool:
+        return self.resolves(config)
+
+    @staticmethod
+    def when(**key_value_pairs) -> "ConfigResolver":
+        """Gives a resolver that resolves iff all keys in the config are equal to the corresponding value.
+
+
+        :param key_value_pairs: Keys and corresponding values to look up in the config
+        :return: a configuration decorator
+        """
+
+        def resolves(configuration: Dict[str, Any]) -> bool:
+            return all(value == configuration.get(key) for key, value in key_value_pairs.items())
+
+        return ConfigResolver(resolves, config_used=list(key_value_pairs.keys()))
+
+    @staticmethod
+    def when_not(**key_value_pairs: Any) -> "ConfigResolver":
+        """Gives a resolver that resolves iff the keys in the config are all not equal to the corresponding value
+
+        :param key_value_pairs: Keys and corresponding values to look up in the config
+        :return: a configuration decorator
+        """
+
+        def resolves(configuration: Dict[str, Any]) -> bool:
+            return all(value != configuration.get(key) for key, value in key_value_pairs.items())
+
+        return ConfigResolver(resolves, config_used=list(key_value_pairs.keys()))
+
+    @staticmethod
+    def when_in(**key_value_group_pairs: Collection[Any]) -> "ConfigResolver":
+        """Gives a resolver that the function if all the
+        values corresponding to the config keys are equal to one of items in the list of values.
+
+        :param key_value_group_pairs: pairs of key-value mappings where the value is a list of possible values
+        :return: a configuration decorator
+        """
+
+        def resolves(configuration: Dict[str, Any]) -> bool:
+            return all(
+                configuration.get(key) in value for key, value in key_value_group_pairs.items()
+            )
+
+        return ConfigResolver(resolves, config_used=list(key_value_group_pairs.keys()))
+
+    @staticmethod
+    def when_not_in(**key_value_group_pairs: Collection[Any]) -> "ConfigResolver":
+        """Gives a decorator that resolves the function only if none of the keys are in the list of values.
+
+        :param key_value_group_pairs: pairs of key-value mappings where the value is a list of possible values
+        :return: a configuration decorator
+        """
+
+        def resolves(configuration: Dict[str, Any]) -> bool:
+            return all(
+                configuration.get(key) not in value for key, value in key_value_group_pairs.items()
+            )
+
+        return ConfigResolver(resolves, config_used=list(key_value_group_pairs.keys()))
+
+
 class config(base.NodeResolver):
     """Decorator class that determines whether a function should be in the DAG based on some configuration variable.
 
@@ -118,11 +192,8 @@ class config(base.NodeResolver):
         :param key_value_pairs: Keys and corresponding values to look up in the config
         :return: a configuration decorator
         """
-
-        def resolves(configuration: Dict[str, Any]) -> bool:
-            return all(value == configuration.get(key) for key, value in key_value_pairs.items())
-
-        return config(resolves, target_name=name, config_used=list(key_value_pairs.keys()))
+        resolver = ConfigResolver.when(**key_value_pairs)
+        return config(resolver, target_name=name, config_used=list(resolver.optional_config))
 
     @staticmethod
     def when_not(name=None, **key_value_pairs: Any) -> "config":
@@ -134,10 +205,8 @@ class config(base.NodeResolver):
         :return: a configuration decorator
         """
 
-        def resolves(configuration: Dict[str, Any]) -> bool:
-            return all(value != configuration.get(key) for key, value in key_value_pairs.items())
-
-        return config(resolves, target_name=name, config_used=list(key_value_pairs.keys()))
+        resolver = ConfigResolver.when_not(**key_value_pairs)
+        return config(resolver, target_name=name, config_used=list(resolver.optional_config))
 
     @staticmethod
     def when_in(name=None, **key_value_group_pairs: Collection[Any]) -> "config":
@@ -151,12 +220,8 @@ class config(base.NodeResolver):
         :return: a configuration decorator
         """
 
-        def resolves(configuration: Dict[str, Any]) -> bool:
-            return all(
-                configuration.get(key) in value for key, value in key_value_group_pairs.items()
-            )
-
-        return config(resolves, target_name=name, config_used=list(key_value_group_pairs.keys()))
+        resolver = ConfigResolver.when_in(**key_value_group_pairs)
+        return config(resolver, target_name=name, config_used=list(resolver.optional_config))
 
     @staticmethod
     def when_not_in(**key_value_group_pairs: Collection[Any]) -> "config":
@@ -183,9 +248,5 @@ class config(base.NodeResolver):
             :ref:config.when_not
         """
 
-        def resolves(configuration: Dict[str, Any]) -> bool:
-            return all(
-                configuration.get(key) not in value for key, value in key_value_group_pairs.items()
-            )
-
-        return config(resolves, config_used=list(key_value_group_pairs.keys()))
+        resolver = ConfigResolver.when_not_in(**key_value_group_pairs)
+        return config(resolver, config_used=list(resolver.optional_config))

@@ -305,7 +305,9 @@ class Node(object):
         """
         return self.copy_with(include_refs)
 
-    def reassign_input_names(self, input_names: Dict[str, Any]) -> "Node":
+    def reassign_inputs(
+        self, input_names: Dict[str, Any] = None, input_values: Dict[str, Any] = None
+    ) -> "Node":
         """Reassigns the input names of a node. Useful for applying
         a node to a separate input if needed. Note that things can get a
         little strange if you have multiple inputs with the same name, so
@@ -314,12 +316,19 @@ class Node(object):
         :param input_names: Input name map to reassign
         :return: A node with the input names reassigned
         """
+        if input_names is None:
+            input_names = {}
+        if input_values is None:
+            input_values = {}
 
         def new_callable(**kwargs) -> Any:
             reverse_input_names = {v: k for k, v in input_names.items()}
+            kwargs = {**kwargs, **input_values}
             return self.callable(**{reverse_input_names.get(k, k): v for k, v in kwargs.items()})
 
-        new_input_types = {input_names.get(k, k): v for k, v in self.input_types.items()}
+        new_input_types = {
+            input_names.get(k, k): v for k, v in self.input_types.items() if k not in input_values
+        }
         out = self.copy_with(callabl=new_callable, input_types=new_input_types)
         return out
 
