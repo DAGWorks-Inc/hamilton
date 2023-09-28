@@ -239,7 +239,7 @@ class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
 
 # TODO -- delete this/replace with the version that will be added by
 # https://github.com/DAGWorks-Inc/hamilton/pull/249/ as part of the Node class
-def _reassign_input_names(node_: node.Node, input_names: Dict[str, Any]) -> node.Node:
+def _reassign_inputs(node_: node.Node, input_names: Dict[str, Any]) -> node.Node:
     """Reassigns the input names of a node. Useful for applying
     a node to a separate input if needed. Note that things can get a
     little strange if you have multiple inputs with the same name, so
@@ -309,7 +309,7 @@ class NodeInjector(SubDAGModifier, abc.ABC):
         for node_ in nodes:
             # if there's an intersection then we want to rename the input
             if set(node_.input_types.keys()) & set(rename_map.keys()):
-                out.append(_reassign_input_names(node_, rename_map))
+                out.append(_reassign_inputs(node_, rename_map))
             else:
                 out.append(node_)
         out.extend(nodes_to_inject)

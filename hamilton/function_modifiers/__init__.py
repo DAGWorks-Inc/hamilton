@@ -60,6 +60,8 @@ extract_fields = expanders.extract_fields
 
 # does decorator
 does = macros.does
+pipe = macros.pipe
+step = macros.step
 
 # resolve transform/model decorator
 dynamic_transform = macros.dynamic_transform

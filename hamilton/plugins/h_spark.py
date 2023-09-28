@@ -1185,7 +1185,7 @@ class with_columns(fm_base.NodeCreator):
             output_nodes.append(select_node)
             current_dataframe_node = select_node.name
         output_nodes = subdag.add_namespace(output_nodes, namespace)
-        final_node = node.Node.from_fn(fn).reassign_input_names(
+        final_node = node.Node.from_fn(fn).reassign_inputs(
             {inject_parameter: assign_namespace(current_dataframe_node, namespace)}
         )
         return output_nodes + [final_node]
