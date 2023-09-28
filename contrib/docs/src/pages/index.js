@@ -18,7 +18,7 @@ function HomepageHeader() {
           <Link
             className="button button--secondary button--lg"
             to="/docs/intro">
-            Find and use a Hamilton Dataflow - 5min ⏱️
+            Integrate with your code in 5 minutes ⏱️
           </Link>
         </div>
       </div>
