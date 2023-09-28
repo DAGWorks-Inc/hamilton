@@ -29,7 +29,7 @@ Hamilton is a novel paradigm for specifying a flow of delayed execution in pytho
 ## Hamilton Does
 - Help you express your dataflow (data, ML, LLM, microservice) logic in a readable, self-documenting way in python
 - Enable you to break your code into small, modular, and unit-testable pieces
-- Make it easier to port these flows between different contexts
+- Make it easier to port dataflows between different execution contexts.
 - Scale as much as any underlying library you might choose to use
 - Work nicely with a variety of computational/orchestration tools.
 
