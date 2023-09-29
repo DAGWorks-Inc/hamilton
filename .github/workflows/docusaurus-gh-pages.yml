@@ -4,7 +4,6 @@ name: Deploy Docusaurus with GitHub Pages dependencies preinstalled
 on:
   # Runs on pushes targeting the default branch & contrib subdirectory
   push:
-    branches: ["user_contrib", "main"]
     paths:
       - 'contrib/**'
 
@@ -25,7 +24,7 @@ concurrency:
 
 jobs:
   branch-build:
-    if: GITHUB_REF_NAME != 'main'
+    if: ${{ github.ref != 'refs/heads/main' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -64,7 +63,7 @@ jobs:
         run: yarn build
       # 👆 Build steps
   deploy:
-    if: GITHUB_REF_NAME == 'main'
+    if: ${{ github.ref == 'refs/heads/main' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
