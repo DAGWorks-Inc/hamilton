@@ -1,6 +1,6 @@
 # skrawcz
 
-Hi I'm Stefan Krawczyk. I am on of the co-creators of Hamilton.
+Hi I'm Stefan Krawczyk. I am one of the co-creators of Hamilton.
 
 # Github
 https://github.com/skrawcz
