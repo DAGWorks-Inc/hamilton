@@ -1,9 +1,12 @@
+--- PR TEMPLATE INSTRUCTIONS (1) ---
+
 Looking to submit a Hamilton Dataflow to the sf-hamilton-contrib module? If so go the the `Preview` tab and select the appropriate sub-template:
 * [sf-hamilton-contrib template](?expand=1&template=HAMILTON_CONTRIB_PR_TEMPLATE.md)
 
-Else remove this block.
+Else, if not, please remove this block of text.
 
----
+--- PR TEMPLATE INSTRUCTIONS (2) ---
+
 [Short description explaining the high-level reason for the pull request]
 
 ## Changes
