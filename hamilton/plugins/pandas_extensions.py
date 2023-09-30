@@ -842,7 +842,7 @@ class PandasHtmlWriter(DataSaver):
 
 
 @dataclasses.dataclass
-class PandasGbqReader(DataLoader):
+class PandasGBQReader(DataLoader):
     """Class for loading data from Google BigQuery with Pandas.
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_gbq.html.
 
@@ -910,7 +910,7 @@ class PandasGbqReader(DataLoader):
 
 
 @dataclasses.dataclass
-class PandasGbqWriter(DataSaver):
+class PandasGBQWriter(DataSaver):
     """Class specifically to handle saving a Pandas DataFrame to a Google BigQuery table.
     Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_gbq.html.
 
@@ -974,8 +974,8 @@ def register_data_loaders():
         CSVDataAdapter,
         FeatherDataLoader,
         ParquetDataLoader,
-        PandasGbqReader,
-        PandasGbqWriter,
+        PandasGBQReader,
+        PandasGBQWriter,
         PandasHtmlReader,
         PandasHtmlWriter,
         PandasJsonReader,
