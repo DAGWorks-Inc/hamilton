@@ -9,8 +9,8 @@ import pytest
 from sqlalchemy import create_engine
 
 from hamilton.plugins.pandas_extensions import (
-    PandasGbqReader,
-    PandasGbqWriter,
+    PandasGBQReader,
+    PandasGBQWriter,
     PandasHtmlReader,
     PandasHtmlWriter,
     PandasJsonReader,
@@ -133,16 +133,18 @@ def test_pandas_gbq(df: pd.DataFrame) -> None:
     mock_conn.run_query.return_value = df
 
     with mock.patch("pandas_gbq.gbq.GbqConnector", return_value=mock_conn):
-        writer = PandasGbqWriter("project-id.dataset.table", project_id="test")
+        writer = PandasGBQWriter("project-id.dataset.table", project_id="test")
         kwargs1 = writer._get_saving_kwargs()
         writer.save_data(df)
 
-        reader = PandasGbqReader("SELECT foo FROM bar", max_results=1)
+        reader = PandasGBQReader("SELECT foo FROM bar", max_results=1)
         kwargs2 = reader._get_loading_kwargs()
         df2, metadata = reader.load_data(pd.DataFrame)
 
-    assert PandasGbqReader.applicable_types() == [pd.DataFrame]
-    assert PandasGbqWriter.applicable_types() == [pd.DataFrame]
+        mock_conn.run_query.assert_called_once()
+
+    assert PandasGBQReader.applicable_types() == [pd.DataFrame]
+    assert PandasGBQWriter.applicable_types() == [pd.DataFrame]
     assert kwargs1["project_id"] == "test"
     assert kwargs2["max_results"] == 1
     assert df.equals(df2)
