@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pandas as pd
 from io import BytesIO, BufferedReader
-from typing import Union, Dict, Any, Type, Tuple, Collection, Optional
 from pandas import DataFrame
 from pandas.api.types import infer_dtype
 from pandas.io.common import get_handle
@@ -1200,7 +1199,6 @@ class PandasFeatherWriter(DataSaver):
 
 
 def register_data_loaders():
-    """Function to register the data loaders for this extension."""
     for loader in [
         CSVDataAdapter,
         ParquetDataLoader,
@@ -1217,7 +1215,6 @@ def register_data_loaders():
         PandasStataReader,
         PandasStataWriter,
         PandasFeatherReader,
-        PandasTableReader,
         PandasFeatherWriter,
     ]:
         registry.register_adapter(loader)
