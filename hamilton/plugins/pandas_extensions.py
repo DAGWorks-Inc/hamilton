@@ -992,7 +992,6 @@ class PandasFeatherReader(DataLoader):
     @classmethod
     def name(cls) -> str:
         return "feather"
-    
 class PandasTableReader(DataLoader):
     def __init__(
         self,
