@@ -1215,6 +1215,7 @@ def register_data_loaders():
         PandasStataReader,
         PandasStataWriter,
         PandasFeatherReader,
+        PandasTableReader,
         PandasFeatherWriter,
     ]:
         registry.register_adapter(loader)
