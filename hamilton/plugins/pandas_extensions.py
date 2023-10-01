@@ -6,6 +6,16 @@ from datetime import datetime
 from io import BufferedReader, BytesIO, StringIO
 from pathlib import Path
 from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
+import pandas as pd
+from io import BytesIO, BufferedReader
+from typing import Union, Dict, Any, Type, Tuple, Collection, Optional
+from pandas import DataFrame
+from pandas.api.types import infer_dtype
+from pandas.io.common import get_handle
+from pandas.io.parsers import read_table
+from pandas.io.sql import SQLTable, pandasSQL_builder
+from pandas.io.sql import get_schema
+from pathlib import Path
 
 try:
     import pandas as pd
@@ -983,6 +993,165 @@ class PandasFeatherReader(DataLoader):
     @classmethod
     def name(cls) -> str:
         return "feather"
+    
+class PandasTableReader(DataLoader):
+    def __init__(
+        self,
+        path_or_buffer,
+        sep="\t",
+        delimiter=None,
+        header="infer",
+        names=None,
+        index_col=None,
+        usecols=None,
+        engine="c",
+        converters=None,
+        true_values=None,
+        false_values=None,
+        skipinitialspace=False,
+        skiprows=None,
+        skipfooter=0,
+        nrows=None,
+        na_values=None,
+        keep_default_na=True,
+        na_filter=True,
+        verbose=False,
+        skip_blank_lines=True,
+        parse_dates=False,
+        infer_datetime_format=False,
+        keep_date_col=False,
+        date_parser=None,
+        dayfirst=False,
+        cache_dates=True,
+        iterator=False,
+        chunksize=None,
+        compression="infer",
+        thousands=None,
+        decimal: str = ".",
+        lineterminator=None,
+        quotechar='"',
+        quoting=0,
+        doublequote=True,
+        escapechar=None,
+        comment=None,
+        encoding=None,
+        dialect=None,
+        error_bad_lines=True,
+        warn_bad_lines=True,
+        delim_whitespace=False,
+        low_memory=True,
+        memory_map=False,
+        float_precision=None,
+        storage_options=None,
+    ):
+        self.path_or_buffer = path_or_buffer
+        self.sep = sep
+        self.delimiter = delimiter
+        self.header = header
+        self.names = names
+        self.index_col = index_col
+        self.usecols = usecols
+        self.engine = engine
+        self.converters = converters
+        self.true_values = true_values
+        self.false_values = false_values
+        self.skipinitialspace = skipinitialspace
+        self.skiprows = skiprows
+        self.skipfooter = skipfooter
+        self.nrows = nrows
+        self.na_values = na_values
+        self.keep_default_na = keep_default_na
+        self.na_filter = na_filter
+        self.verbose = verbose
+        self.skip_blank_lines = skip_blank_lines
+        self.parse_dates = parse_dates
+        self.infer_datetime_format = infer_datetime_format
+        self.keep_date_col = keep_date_col
+        self.date_parser = date_parser
+        self.dayfirst = dayfirst
+        self.cache_dates = cache_dates
+        self.iterator = iterator
+        self.chunksize = chunksize
+        self.compression = compression
+        self.thousands = thousands
+        self.decimal = decimal
+        self.lineterminator = lineterminator
+        self.quotechar = quotechar
+        self.quoting = quoting
+        self.doublequote = doublequote
+        self.escapechar = escapechar
+        self.comment = comment
+        self.encoding = encoding
+        self.dialect = dialect
+        self.error_bad_lines = error_bad_lines
+        self.warn_bad_lines = warn_bad_lines
+        self.delim_whitespace = delim_whitespace
+        self.low_memory = low_memory
+        self.memory_map = memory_map
+        self.float_precision = float_precision
+        self.storage_options = storage_options
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DataFrame]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {
+            "sep": self.sep,
+            "delimiter": self.delimiter,
+            "header": self.header,
+            "names": self.names,
+            "index_col": self.index_col,
+            "usecols": self.usecols,
+            "engine": self.engine,
+            "converters": self.converters,
+            "true_values": self.true_values,
+            "false_values": self.false_values,
+            "skipinitialspace": self.skipinitialspace,
+            "skiprows": self.skiprows,
+            "skipfooter": self.skipfooter,
+            "nrows": self.nrows,
+            "na_values": self.na_values,
+            "keep_default_na": self.keep_default_na,
+            "na_filter": self.na_filter,
+            "verbose": self.verbose,
+            "skip_blank_lines": self.skip_blank_lines,
+            "parse_dates": self.parse_dates,
+            "infer_datetime_format": self.infer_datetime_format,
+            "keep_date_col": self.keep_date_col,
+            "date_parser": self.date_parser,
+            "dayfirst": self.dayfirst,
+            "cache_dates": self.cache_dates,
+            "iterator": self.iterator,
+            "chunksize": self.chunksize,
+            "compression": self.compression,
+            "thousands": self.thousands,
+            "decimal": self.decimal,
+            "lineterminator": self.lineterminator,
+            "quotechar": self.quotechar,
+            "quoting": self.quoting,
+            "doublequote": self.doublequote,
+            "escapechar": self.escapechar,
+            "comment": self.comment,
+            "encoding": self.encoding,
+            "dialect": self.dialect,
+            "error_bad_lines": self.error_bad_lines,
+            "warn_bad_lines": self.warn_bad_lines,
+            "delim_whitespace": self.delim_whitespace,
+            "low_memory": self.low_memory,
+            "memory_map": self.memory_map,
+            "float_precision": self.float_precision,
+            "storage_options": self.storage_options,
+        }
+        return kwargs
+
+    def load_data(self, type: Type) -> Tuple[DataFrame, Dict[str, Any]]:
+        filepath_or_buffer = get_filepath_or_buffer(
+            self.path_or_buffer
+        )
+        kwargs = self._get_loading_kwargs()
+        data = read_table(filepath_or_buffer, **kwargs)
+        return data, {}
 
 
 @dataclasses.dataclass
@@ -1048,6 +1217,7 @@ def register_data_loaders():
         PandasStataReader,
         PandasStataWriter,
         PandasFeatherReader,
+        PandasTableReader,
         PandasFeatherWriter,
     ]:
         registry.register_adapter(loader)
