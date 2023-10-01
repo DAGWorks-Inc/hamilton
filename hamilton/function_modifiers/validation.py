@@ -26,8 +26,7 @@ class BaseDataValidationDecorator(base.NodeTransformer):
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         raw_node = node.Node(
-            name=node_.name
-            + "_raw",  # TODO -- make this unique -- this will break with multiple validation decorators, which we *don't* want
+            name=base.create_anonymous_node_name(node_.name, "raw"),
             typ=node_.type,
             doc_string=node_.documentation,
             callabl=node_.callable,

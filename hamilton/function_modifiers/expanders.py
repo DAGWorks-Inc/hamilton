@@ -588,7 +588,7 @@ class extract_columns(base.SingleNodeNodeTransformer):
             registry.get_column_type_from_df_type(output_type)
         except NotImplementedError:
             raise base.InvalidDecoratorException(
-                # TODO: capture was dataframe libraries are supported and print here.
+                # TODO: capture what dataframe libraries are supported and print here.
                 f"Error {fn} does not output a type we know about. Is it a dataframe type we "
                 f"support? "
             )

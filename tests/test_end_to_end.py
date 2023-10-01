@@ -47,10 +47,9 @@ def test_data_quality_workflow_passes(driver_factory: Callable[[], driver.Driver
         for var in all_vars
         if var.tags.get("hamilton.data_quality.contains_dq_results", False)
     ]
-    assert len(dq_nodes) == 1
-    dq_result = result[dq_nodes[0]]
-    assert isinstance(dq_result, ValidationResult)
-    assert dq_result.passes is True
+    assert len(dq_nodes) == 3
+    assert all([result[n].passes for n in dq_nodes])
+    assert all([isinstance(result[n], ValidationResult) for n in dq_nodes])
 
 
 @pytest.mark.parametrize(
@@ -83,8 +82,8 @@ def test_data_quality_workflow_fails(driver_factory):
         dr.execute([var.name for var in all_vars], inputs={"data_quality_should_fail": True})
 
 
-# Adapted from https://stackoverflow.com/questions/41858147/how-to-modify-imported-source-code-on-the-fly
-# This is needed to decide whether to import annotations...
+# Adapted from https://stackoverflow.com/questions/41858147/how-to-modify-imported-source-code-on
+# -the-fly This is needed to decide whether to import annotations...
 def modify_and_import(module_name, package, modification_func):
     spec = importlib.util.find_spec(module_name, package)
     source = spec.loader.get_source(module_name)

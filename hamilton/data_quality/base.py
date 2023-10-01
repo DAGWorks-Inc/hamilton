@@ -2,7 +2,7 @@ import abc
 import dataclasses
 import enum
 import logging
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,13 @@ class ValidationResult:
     )  # Any extra diagnostics information needed, free-form
 
 
+def matches_any_type(datatype: type, applicable_types: List[type]) -> bool:
+    for type_ in applicable_types:
+        if type_ == Any or issubclass(datatype, type_):
+            return True
+    return False
+
+
 class DataValidator(abc.ABC):
     """Base class for a data quality operator. This will be used by the `data_quality` operator"""
 
@@ -35,12 +42,23 @@ class DataValidator(abc.ABC):
     def importance(self) -> DataValidationLevel:
         return self._importance
 
-    @abc.abstractmethod
-    def applies_to(self, datatype: Type[Type]) -> bool:
-        """Whether or not this data validator can apply to the specified dataset
+    @classmethod
+    def applies_to(cls, datatype: type) -> bool:
+        """Whether or not this data validator can apply to the specified dataset.
+        Note that overriding this is not the intended API (it was the old one),
+        but this will be a stable part of the API moving forward, at least until
+        Hamilton 2.0.
 
-        :param datatype:
+        :param datatype: Datatype to validate.
         :return: True if it can be run on the specified type, false otherwise
+        """
+        return matches_any_type(datatype, cls.applicable_types())
+
+    @classmethod
+    def applicable_types(cls) -> List[type]:
+        """Returns the list of classes for which this is valid.
+
+        :return: List of classes
         """
         pass
 
@@ -118,7 +136,7 @@ class BaseDefaultValidator(DataValidator, abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def applies_to(cls, datatype: Type[Type]) -> bool:
+    def applicable_types(cls) -> List[type]:
         pass
 
     @abc.abstractmethod
