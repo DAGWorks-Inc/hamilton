@@ -34,7 +34,7 @@ This paradigm makes modifications easy to build and track, ensures code is self-
 
 ## Problems Hamilton Does not Solve
 ❌ Provisioning infrastructure -- you want a macro-orchestration system (see airflow, kubeflow, sagemaker, etc...).<br/>
-❌ Doing your ML for you -- we organize youir code, BYOL (bring your own libraries).<br/>
+❌ Doing your ML for you -- we organize your code, BYOL (bring your own libraries).<br/>
 ❌ Tracking execution + associated artifacts -- Hamilton is lightweight, but if this is important to you see the [DAGWorks product](www.dagworks.io).
 
 See the table below for more specifics/how it compares to other common tooling.
