@@ -25,7 +25,7 @@ except ImportError:
 
 from sqlite3 import Connection
 
-from pandas._typing import FilePath, NpDtype, WriteBuffer
+from pandas._typing import NpDtype, WriteBuffer
 from pandas.core.dtypes.dtypes import ExtensionDtype
 
 from hamilton import registry
@@ -99,16 +99,14 @@ class PandasCsvReader(DataLoader):
     usecols: Optional[Union[List[Hashable], Callable, tuple]] = None
     dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
     engine: Optional[Literal["c", "python", "pyarrow", "python-fwf"]] = None
-    converters: Optional[Mapping[Hashable, Callable]] = None
+    converters: Optional[Mapping] = None
     true_values: Optional[List] = None
     false_values: Optional[List] = None
     skipinitialspace: Optional[bool] = False
     skiprows: Optional[Union[List[int], int, Callable[[Hashable], bool]]] = None
     skipfooter: int = 0
     nrows: Optional[int] = None
-    na_values: Optional[
-        Union[Hashable, Iterable[Hashable], Mapping[Hashable, Iterable[Hashable]]]
-    ] = None
+    na_values: Optional[Union[Hashable, Iterable[Hashable], Mapping]] = None
     keep_default_na: bool = True
     na_filter: bool = True
     verbose: bool = False
@@ -257,7 +255,7 @@ class PandasCsvWriter(DataSaver):
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html
     """
 
-    path_or_buf: Union[str, FilePath, WriteBuffer]
+    path_or_buf: Union[str, Path, WriteBuffer]
     # kwargs
     sep: Union[str, None] = ","
     na_rep: str = ""
