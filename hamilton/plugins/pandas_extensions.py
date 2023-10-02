@@ -325,7 +325,7 @@ class PandasCsvWriter(DataSaver):
     escapechar: Optional[str] = None
     decimal: str = "."
     errors: str = "strict"
-    storage_options = Optional[Dict[str, Any]] = None
+    storage_options: Optional[Dict[str, Any]] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
