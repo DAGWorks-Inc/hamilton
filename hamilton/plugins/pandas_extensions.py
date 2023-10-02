@@ -302,7 +302,7 @@ class PandasCsvWriter(DataSaver):
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html
     """
 
-    path_of_buf: Union[str, FilePath, WriteBuffer]
+    path_or_buf: Union[str, FilePath, WriteBuffer]
     # kwargs
     sep: Union[str, None] = ","
     na_rep: str = ""
@@ -378,7 +378,7 @@ class PandasCsvWriter(DataSaver):
         return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.to_csv(self.path_of_buf, **self._get_saving_kwargs())
+        data.to_csv(self.path_or_buf, **self._get_saving_kwargs())
         return utils.get_file_metadata(self.path_or_buf)
 
     @classmethod
