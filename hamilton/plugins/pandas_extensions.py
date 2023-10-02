@@ -83,50 +83,6 @@ class DataFrameDataLoader(DataLoader, DataSaver, abc.ABC):
 
 
 @dataclasses.dataclass
-class CSVDataAdapter(DataFrameDataLoader):
-    """Data loader for CSV files. Note that this currently does not support the wide array of
-    data loading functionality that pandas does. We will be adding this in over time, but for now
-    you can subclass this or open up an issue if this doesn't have what you want.
-
-    Note that, when saving, this does not currently save the index.
-    We'll likely want to enable this in the future as an optional subclass,
-    in which case we'll separate it out.
-    """
-
-    path: str
-    sep: str = None
-
-    def _get_loading_kwargs(self):
-        kwargs = {}
-        if self.sep is not None:
-            kwargs["sep"] = self.sep
-        return kwargs
-
-    def _get_saving_kwargs(self):
-        kwargs = {"index": False}
-        if self.sep is not None:
-            kwargs["sep"] = self.sep
-        return kwargs
-
-    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.to_csv(self.path, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.path)
-
-    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pd.read_csv(self.path, **self._get_loading_kwargs())
-        # Pandas allows URLs for paths in load_csv...
-        if str(self.path).startswith("https://"):
-            metadata = {"path": self.path}
-        else:
-            metadata = utils.get_file_metadata(self.path)
-        return df, metadata
-
-    @classmethod
-    def name(cls) -> str:
-        return "csv"
-
-
-@dataclasses.dataclass
 class PandasCsvReader(DataLoader):
     """
     Class that handles saving CSV files with pandas.
