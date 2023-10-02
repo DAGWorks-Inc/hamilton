@@ -175,12 +175,12 @@ def test_pandas_csv_reader(tmp_path: pathlib.Path) -> None:
     df, metadata = reader.load_data(pd.DataFrame)
 
     assert PandasCsvReader.applicable_types() == [pd.DataFrame]
-    assert df.shape == (4, 3)
+    assert df.shape == (3, 5)
 
 
 def test_pandas_csv_writer(tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "test.csv"
-    writer = PandasCsvWriter(path=file_path)
+    writer = PandasCsvWriter(path_or_buf=file_path)
     metadata = writer.save_data(pd.DataFrame(data={"col1": [1, 2], "col2": [4, 3]}))
 
     assert PandasCsvWriter.applicable_types() == [pd.DataFrame]
