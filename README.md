@@ -27,14 +27,14 @@ Hamilton is a novel paradigm for specifying a flow of delayed execution in pytho
 This paradigm makes modifications easy to build and track, ensures code is self-documenting, and makes it natural to unit test your data transformations. When connected together, these functions form a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG), which the Hamilton framework can execute, optimize, and report on.
 
 ## Problems Hamilton Solves
-✅ Model a dataflow -- If you can model your problem as a DAG in python, Hamilton is the cleanest way to build it.
-✅ Unmaintainable spaghetti code -- Hamilton dataflows are unit testable, self-documenting, and provide lineage.
-✅ Long iteration/experimentation cycles -- Hamilton provides a clear, quick, and methodical path to debugging/modifying/extending your code.
+✅ Model a dataflow -- If you can model your problem as a DAG in python, Hamilton is the cleanest way to build it.<br/>
+✅ Unmaintainable spaghetti code -- Hamilton dataflows are unit testable, self-documenting, and provide lineage.<br/>
+✅ Long iteration/experimentation cycles -- Hamilton provides a clear, quick, and methodical path to debugging/modifying/extending your code.<br/>
 ✅ Reusing code across contexts -- Hamilton encourages code that is independent of infrastructure and can run regardless of execution setting.
 
 ## Problems Hamilton Does not Solve
-❌ Provisioning infrastructure -- you want a macro-orchestration system (see airflow, kubeflow, sagemaker, etc...).
-❌ Doing your ML for you -- we organize youir code, BYOL (bring your own libraries).
+❌ Provisioning infrastructure -- you want a macro-orchestration system (see airflow, kubeflow, sagemaker, etc...).<br/>
+❌ Doing your ML for you -- we organize your code, BYOL (bring your own libraries).<br/>
 ❌ Tracking execution + associated artifacts -- Hamilton is lightweight, but if this is important to you see the [DAGWorks product](www.dagworks.io).
 
 See the table below for more specifics/how it compares to other common tooling.
