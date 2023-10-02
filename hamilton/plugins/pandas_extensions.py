@@ -131,7 +131,6 @@ class PandasCsvReader(DataLoader):
     """
     Class that handles saving CSV files with pandas.
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
-
     """
 
     filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader]
@@ -142,7 +141,7 @@ class PandasCsvReader(DataLoader):
     names: Optional[Sequence] = None
     index_col: Optional[Union[Hashable, Sequence, Literal[False]]] = None
     usecols: Optional[Union[List[Hashable], Callable, tuple]] = None
-    dtype: Optional[Union[Dtype, dict[Hashable, Dtype]]] = None
+    dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
     engine: Optional[Literal["c", "python", "pyarrow", "python-fwf"]] = None
     converters: Optional[Mapping[Hashable, Callable]] = None
     true_values: Optional[List] = None
