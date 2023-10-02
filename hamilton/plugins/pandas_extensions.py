@@ -25,7 +25,7 @@ except ImportError:
 
 from sqlite3 import Connection
 
-from pandas._typing import NpDtype, WriteBuffer
+from pandas._typing import NpDtype
 from pandas.core.dtypes.dtypes import ExtensionDtype
 
 from hamilton import registry
@@ -106,7 +106,7 @@ class PandasCsvReader(DataLoader):
     skiprows: Optional[Union[List[int], int, Callable[[Hashable], bool]]] = None
     skipfooter: int = 0
     nrows: Optional[int] = None
-    na_values: Optional[Union[Hashable, Iterable[Hashable], Mapping]] = None
+    na_values: Optional[Union[Hashable, Iterable, Mapping]] = None
     keep_default_na: bool = True
     na_filter: bool = True
     verbose: bool = False
@@ -255,7 +255,7 @@ class PandasCsvWriter(DataSaver):
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html
     """
 
-    path_or_buf: Union[str, Path, WriteBuffer]
+    path_or_buf: Union[str, Path, BytesIO, BufferedReader]
     # kwargs
     sep: Union[str, None] = ","
     na_rep: str = ""
