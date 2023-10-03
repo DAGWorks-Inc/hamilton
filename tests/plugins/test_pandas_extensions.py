@@ -5,6 +5,7 @@ from typing import Union
 
 import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 from sqlalchemy import create_engine
 
 from hamilton.plugins.pandas_extensions import (
@@ -40,6 +41,7 @@ def test_pandas_parquet(df: pd.DataFrame, tmp_path: pathlib.Path) -> None:
     reader = PandasParquetReader(path=file_path, engine="pyarrow")
     read_df, metadata = reader.load_data(pd.DataFrame)
 
+    assert_frame_equal(read_df, df, check_dtype=False)
     assert read_df.shape == df.shape, "DataFrames do not match"
     assert read_df.columns == df.columns
     assert len(list(tmp_path.iterdir())) == 1, "Unexpected number of files in tmp_path directory."
