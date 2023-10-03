@@ -252,7 +252,7 @@ class PolarsParquetReader(DataLoader):
     n_rows: int = None
     use_pyarrow: bool = False
     memory_map: bool = True
-    storage_options: dict[str, Any] = None
+    storage_options: Dict[str, Any] = None
     parallel: Any = "auto"
     row_count_name: str = None
     row_count_offset: int = 0
