@@ -1195,11 +1195,13 @@ class Builder:
         """Builds the driver -- note that this can return a different class, so you'll likely
         want to have a sense of what it returns.
 
+        Note: this defaults to a dictionary adapter if no adapter is set.
+
         :return: The driver you specified.
         """
         adapter = self.adapter if self.adapter is not None else base.DefaultAdapter()
         if not self.v2_executor:
-            return Driver(self.config, *self.modules, adapter=self.adapter)
+            return Driver(self.config, *self.modules, adapter=adapter)
         execution_manager = self.execution_manager
         if execution_manager is None:
             local_executor = self.local_executor or executors.SynchronousLocalTaskExecutor()
