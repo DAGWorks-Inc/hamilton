@@ -1001,6 +1001,9 @@ class Driver:
         """
         if additional_vars is None:
             additional_vars = []
+
+        module_set = {_module.__name__ for _module in self.graph_modules}
+        materializers = [m.sanitize_dependencies(module_set) for m in materializers]
         function_graph = materialization.modify_graph(self.graph, materializers)
         final_vars = self._create_final_vars(additional_vars)
         materializer_vars = [materializer.id for materializer in materializers]
@@ -1039,6 +1042,9 @@ class Driver:
         """
         if additional_vars is None:
             additional_vars = []
+
+        module_set = {_module.__name__ for _module in self.graph_modules}
+        materializers = [m.sanitize_dependencies(module_set) for m in materializers]
         function_graph = materialization.modify_graph(self.graph, materializers)
         _final_vars = self._create_final_vars(additional_vars) + [
             materializer.id for materializer in materializers
