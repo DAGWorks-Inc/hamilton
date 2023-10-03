@@ -189,6 +189,7 @@ class PandasParquetWriter(DataSaver):
     index: Optional[bool] = None
     partition_cols: Optional[List[str]] = None
     storage_options: Optional[Dict[str, Any]] = None
+    extra_kwargs: Optional[Dict[str, Any]] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -207,6 +208,8 @@ class PandasParquetWriter(DataSaver):
             kwargs["partition_cols"] = self.partition_cols
         if self.storage_options is not None:
             kwargs["storage_options"] = self.storage_options
+        if self.extra_kwargs is not None:
+            kwargs.update(self.extra_kwargs)
         return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
