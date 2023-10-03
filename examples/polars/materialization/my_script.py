@@ -48,49 +48,6 @@ conn.commit()
 
 materializers = [
     # materialize the dataframe to a pickle file
-    to.pickle(
-        dependencies=output_columns,
-        id="df_to_pickle",
-        path="./df.pkl",
-        combine=df_builder,
-    ),
-    to.json(
-        dependencies=output_columns,
-        id="df_to_json",
-        filepath_or_buffer="./df.json",
-        combine=df_builder,
-    ),
-    to.sql(
-        dependencies=output_columns,
-        id="df_to_sql",
-        table_name="test",
-        db_connection=conn,
-        combine=df_builder,
-    ),
-    to.xml(
-        dependencies=output_columns,
-        id="df_to_xml",
-        path_or_buffer="./df.xml",
-        combine=df_builder,
-    ),
-    to.html(
-        dependencies=output_columns,
-        id="df_to_html",
-        buf="./df.html",
-        combine=df_builder,
-    ),
-    to.stata(
-        dependencies=output_columns,
-        id="df_to_stata",
-        path="./df.dta",
-        combine=df_builder,
-    ),
-    to.feather(
-        dependencies=output_columns,
-        id="df_to_feather",
-        path="./df.feather",
-        combine=df_builder,
-    ),    
     to.parquet(
         dependencies=output_columns,
         id="df_to_parquet",
@@ -110,25 +67,11 @@ dr.visualize_materialization(
 materialization_results, additional_outputs = dr.materialize(
     *materializers,
     additional_vars=[
-        "df_to_pickle_build_result",
-        "df_to_json_build_result",
-        "df_to_sql_build_result",
-        "df_to_xml_build_result",
-        "df_to_html_build_result",
-        "df_to_stata_build_result",
-        "df_to_feather_build_result",
         "df_to_parquet_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
 print(materialization_results)
-print(additional_outputs["df_to_pickle_build_result"])
-print(additional_outputs["df_to_json_build_result"])
-print(additional_outputs["df_to_sql_build_result"])
-print(additional_outputs["df_to_xml_build_result"])
-print(additional_outputs["df_to_html_build_result"])
-print(additional_outputs["df_to_stata_build_result"])
-print(additional_outputs["df_to_feather_build_result"])
 print(additional_outputs["df_to_parquet_build_result"])
 
 conn.close()
