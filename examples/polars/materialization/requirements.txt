@@ -1,0 +1,3 @@
+lxml # required for XML
+polars
+sf-hamilton
