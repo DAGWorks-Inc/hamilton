@@ -13,7 +13,7 @@ from hamilton.plugins.polars_extensions import (
 
 @pytest.fixture
 def df():
-    yield pl.DataFrame({"foo": ["bar"]})
+    yield pl.DataFrame({"a": [1, 2], "b": [3, 4]})
 
 
 def test_polars_csv(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
@@ -41,12 +41,12 @@ def test_polars_parquet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     kwargs1 = writer._get_saving_kwargs()
     writer.save_data(df)
 
-    reader = PolarsParquetReader(file=file)
+    reader = PolarsParquetReader(file=file, n_rows=2)
     kwargs2 = reader._get_loading_kwargs()
     df2, metadata = reader.load_data(pl.DataFrame)
 
     assert PolarsParquetWriter.applicable_types() == [pl.DataFrame]
     assert PolarsParquetReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["compression"] == 'zstd'
-    assert kwargs2["n_rows"] == 1
+    assert kwargs2["n_rows"] == 2
     assert df.frame_equal(df2)
