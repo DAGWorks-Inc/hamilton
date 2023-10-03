@@ -349,7 +349,7 @@ class PolarsParquetWriter(DataSaver):
 
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
-    for loader in [PolarsCSVReader, PolarsCSVWriter, PolarsParquetReader]:
+    for loader in [PolarsCSVReader, PolarsCSVWriter, PolarsParquetReader, PolarsParquetWriter]:
         registry.register_adapter(loader)
 
 
