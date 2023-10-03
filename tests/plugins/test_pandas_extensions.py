@@ -14,6 +14,7 @@ from hamilton.plugins.pandas_extensions import (
     PandasHtmlWriter,
     PandasJsonReader,
     PandasJsonWriter,
+    PandasParquetReader,
     PandasParquetWriter,
     PandasPickleReader,
     PandasPickleWriter,
@@ -33,9 +34,14 @@ def df():
 
 def test_pandas_parquet(df: pd.DataFrame, tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "sample_df.parquet.gzip"
-    writer = PandasParquetWriter(path=file_path)
-    writer.save_data(pd.DataFrame({"foo": ["bar"]}))
+    writer = PandasParquetWriter(path=file_path, engine="pyarrow")
+    writer.save_data(df)
 
+    reader = PandasParquetReader(path=file_path, engine="pyarrow")
+    read_df, metadata = reader.load_data(pd.DataFrame)
+
+    assert read_df.shape == df.shape, "DataFrames do not match"
+    assert read_df.columns == df.columns
     assert len(list(tmp_path.iterdir())) == 1, "Unexpected number of files in tmp_path directory."
 
 

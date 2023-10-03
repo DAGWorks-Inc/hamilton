@@ -126,6 +126,57 @@ class CSVDataAdapter(DataFrameDataLoader):
 
 
 @dataclasses.dataclass
+class PandasParquetReader(DataLoader):
+    """Class that handles saving parquet files with pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_parquet.html#pandas.read_parquet
+    """
+
+    path: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs
+    engine: Literal["auto", "pyarrow", "fastparquet"] = "auto"
+    columns: Optional[List[str]] = None
+    storage_options: Optional[Dict[str, Any]] = None
+    use_nullable_dtypes: bool = False
+    dtype_backend: Literal["numpy_nullable", "pyarrow"] = "numpy_nullable"
+    filesystem: Optional[str] = None
+    filters: Optional[Union[List[Tuple], List[List[Tuple]]]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self):
+        kwargs = {}
+        if self.engine is not None:
+            kwargs["engine"] = self.engine
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.use_nullable_dtypes is not None:
+            kwargs["use_nullable_dtypes"] = self.use_nullable_dtypes
+        if self.dtype_backend is not None:
+            kwargs["dtype_backend"] = self.dtype_backend
+        if self.filesystem is not None:
+            kwargs["filesystem"] = self.filesystem
+        if self.filters is not None:
+            kwargs["filters"] = self.filters
+
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the pickle
+        df = pd.read_parquet(self.path, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.path)
+
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "parquet"
+
+
+@dataclasses.dataclass
 class PandasParquetWriter(DataSaver):
     """Class that handles saving parquet files with pandas.
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_parquet.html#pandas.DataFrame.to_parquet
@@ -1054,7 +1105,8 @@ def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
         CSVDataAdapter,
-        # ParquetDataLoader,
+        PandasParquetReader,
+        PandasParquetWriter,
         PandasPickleReader,
         PandasPickleWriter,
         PandasJsonReader,
@@ -1069,7 +1121,6 @@ def register_data_loaders():
         PandasStataWriter,
         PandasFeatherReader,
         PandasFeatherWriter,
-        PandasParquetWriter,
     ]:
         registry.register_adapter(loader)
 
