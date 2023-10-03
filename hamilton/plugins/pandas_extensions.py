@@ -155,7 +155,7 @@ class PandasParquetReader(DataLoader):
             kwargs["storage_options"] = self.storage_options
         if self.use_nullable_dtypes is not None:
             kwargs["use_nullable_dtypes"] = self.use_nullable_dtypes
-        if self.dtype_backend is not None:
+        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
         if self.filesystem is not None:
             kwargs["filesystem"] = self.filesystem
