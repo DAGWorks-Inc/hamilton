@@ -5,17 +5,8 @@ from collections.abc import Hashable
 from datetime import datetime
 from io import BufferedReader, BytesIO, StringIO
 from pathlib import Path
-from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
-import pandas as pd
-from io import BytesIO, BufferedReader
-from typing import Union, Dict, Any, Type, Tuple, Collection, Optional
-from pandas import DataFrame
-from pandas.api.types import infer_dtype
-from pandas.io.common import get_handle
-from pandas.io.parsers import read_table
-from pandas.io.sql import SQLTable, pandasSQL_builder
-from pandas.io.sql import get_schema
-from pathlib import Path
+from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union,ClassVar
+from dataclasses import dataclass
 
 try:
     import pandas as pd
@@ -994,106 +985,61 @@ class PandasFeatherReader(DataLoader):
     def name(cls) -> str:
         return "feather"
     
-class PandasTableReader(DataLoader):
-    def __init__(
-        self,
-        path_or_buffer,
-        sep="\t",
-        delimiter=None,
-        header="infer",
-        names=None,
-        index_col=None,
-        usecols=None,
-        engine="c",
-        converters=None,
-        true_values=None,
-        false_values=None,
-        skipinitialspace=False,
-        skiprows=None,
-        skipfooter=0,
-        nrows=None,
-        na_values=None,
-        keep_default_na=True,
-        na_filter=True,
-        verbose=False,
-        skip_blank_lines=True,
-        parse_dates=False,
-        infer_datetime_format=False,
-        keep_date_col=False,
-        date_parser=None,
-        dayfirst=False,
-        cache_dates=True,
-        iterator=False,
-        chunksize=None,
-        compression="infer",
-        thousands=None,
-        decimal: str = ".",
-        lineterminator=None,
-        quotechar='"',
-        quoting=0,
-        doublequote=True,
-        escapechar=None,
-        comment=None,
-        encoding=None,
-        dialect=None,
-        error_bad_lines=True,
-        warn_bad_lines=True,
-        delim_whitespace=False,
-        low_memory=True,
-        memory_map=False,
-        float_precision=None,
-        storage_options=None,
-    ):
-        self.path_or_buffer = path_or_buffer
-        self.sep = sep
-        self.delimiter = delimiter
-        self.header = header
-        self.names = names
-        self.index_col = index_col
-        self.usecols = usecols
-        self.engine = engine
-        self.converters = converters
-        self.true_values = true_values
-        self.false_values = false_values
-        self.skipinitialspace = skipinitialspace
-        self.skiprows = skiprows
-        self.skipfooter = skipfooter
-        self.nrows = nrows
-        self.na_values = na_values
-        self.keep_default_na = keep_default_na
-        self.na_filter = na_filter
-        self.verbose = verbose
-        self.skip_blank_lines = skip_blank_lines
-        self.parse_dates = parse_dates
-        self.infer_datetime_format = infer_datetime_format
-        self.keep_date_col = keep_date_col
-        self.date_parser = date_parser
-        self.dayfirst = dayfirst
-        self.cache_dates = cache_dates
-        self.iterator = iterator
-        self.chunksize = chunksize
-        self.compression = compression
-        self.thousands = thousands
-        self.decimal = decimal
-        self.lineterminator = lineterminator
-        self.quotechar = quotechar
-        self.quoting = quoting
-        self.doublequote = doublequote
-        self.escapechar = escapechar
-        self.comment = comment
-        self.encoding = encoding
-        self.dialect = dialect
-        self.error_bad_lines = error_bad_lines
-        self.warn_bad_lines = warn_bad_lines
-        self.delim_whitespace = delim_whitespace
-        self.low_memory = low_memory
-        self.memory_map = memory_map
-        self.float_precision = float_precision
-        self.storage_options = storage_options
+@dataclass
+
+class PandasTableReader:
+    path_or_buffer: str
+    sep: str = "\t"
+    delimiter: str = None
+    header: str = "infer"
+    names: str = None
+    index_col: str = None
+    usecols: str = None
+    engine: str = "c"
+    converters: str = None
+    true_values: str = None
+    false_values: str = None
+    skipinitialspace: bool = False
+    skiprows: str = None
+    skipfooter: int = 0
+    nrows: int = None
+    na_values: str = None
+    keep_default_na: bool = True
+    na_filter: bool = True
+    verbose: bool = False
+    skip_blank_lines: bool = True
+    parse_dates: bool = False
+    infer_datetime_format: bool = False
+    keep_date_col: bool = False
+    date_parser: str = None
+    dayfirst: bool = False
+    cache_dates: bool = True
+    iterator: bool = False
+    chunksize: int = None
+    compression: str = "infer"
+    thousands: str = None
+    decimal: str = "."
+    lineterminator: str = None
+    quotechar: str = '"'
+    quoting: int = 0
+    doublequote: bool = True
+    escapechar: str = None
+    comment: str = None
+    encoding: str = None
+    dialect: str = None
+    error_bad_lines: bool = True
+    warn_bad_lines: bool = True
+    delim_whitespace: bool = False
+    low_memory: bool = True
+    memory_map: bool = False
+    float_precision: str = None
+    storage_options: str = None
+
+    reader_name: ClassVar[str] = "feather"
 
     @classmethod
-    def applicable_types(cls) -> Collection[Type]:
-        return [DataFrame]
+    def name(cls) -> str:
+        return cls.reader_name
 
     def _get_loading_kwargs(self) -> Dict[str, Any]:
         kwargs = {
@@ -1144,14 +1090,31 @@ class PandasTableReader(DataLoader):
             "storage_options": self.storage_options,
         }
         return kwargs
+   
 
-    def load_data(self, type: Type) -> Tuple[DataFrame, Dict[str, Any]]:
-        filepath_or_buffer = get_filepath_or_buffer(
-            self.path_or_buffer
-        )
+    def load_data(self, data_type: Type) -> Tuple[DataFrameDataLoader, Dict[str, Any]]:
+        filepath = utils.get_file_metadata(self.path)
         kwargs = self._get_loading_kwargs()
-        data = read_table(filepath_or_buffer, **kwargs)
-        return data, {}
+        data = pd.read_table(self.io, **self._get_loading_kwargs()) # Use pd.read_table
+
+        # Get metadata about the file being loaded
+        metadata = utils.get_file_metadata(self.path)
+
+        return data, metadata
+
+if __name__ == "__main__":
+    filepath = "pyarrow.feather"
+
+    reader = PandasTableReader(filepath)
+
+    print(PandasTableReader.name())
+
+    data, metadata = reader.load_data(DataFrameDataLoader)
+    print("Data loaded:", data)
+    print("Metadata:", metadata)
+       
+    
+    
 
 
 @dataclasses.dataclass
