@@ -126,20 +126,40 @@ class CSVDataAdapter(DataFrameDataLoader):
 
 
 @dataclasses.dataclass
-class ParquetDataLoader(DataFrameDataLoader):
-    """Data loader for feather files. Note that this currently does not support the wide array of
-    data loading functionality that pandas does. We will be adding this in over time, but for now
-    you can subclass this or open up an issue if this doesn't have what you want."""
+class PandasParquetWriter(DataSaver):
+    """Class that handles saving parquet files with pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_parquet.html#pandas.DataFrame.to_parquet
+    """
 
-    path: str
+    path: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs
+    engine: Literal["auto", "pyarrow", "fastparquet"] = "auto"
+    compression: Optional[str] = "snappy"
+    index: Optional[bool] = None
+    partition_cols: Optional[List[str]] = None
+    storage_options: Optional[Dict[str, Any]] = None
 
-    def load_data(self, type_: Type[DATAFRAME_TYPE]) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pd.read_parquet(self.path)
-        metadata = utils.get_file_metadata(self.path)
-        return df, metadata
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self) -> Dict[str, Any]:
+        # Puts kwargs in a dict
+        kwargs = {}
+        if self.engine is not None:
+            kwargs["engine"] = self.engine
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.index is not None:
+            kwargs["index"] = self.index
+        if self.partition_cols is not None:
+            kwargs["partition_cols"] = self.partition_cols
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.to_parquet(self.path)
+        data.to_parquet(self.path, **self._get_saving_kwargs())
         return utils.get_file_metadata(self.path)
 
     @classmethod
@@ -1034,7 +1054,7 @@ def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
         CSVDataAdapter,
-        ParquetDataLoader,
+        # ParquetDataLoader,
         PandasPickleReader,
         PandasPickleWriter,
         PandasJsonReader,
@@ -1049,6 +1069,7 @@ def register_data_loaders():
         PandasStataWriter,
         PandasFeatherReader,
         PandasFeatherWriter,
+        PandasParquetWriter,
     ]:
         registry.register_adapter(loader)
 

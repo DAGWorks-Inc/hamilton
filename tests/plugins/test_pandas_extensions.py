@@ -14,6 +14,7 @@ from hamilton.plugins.pandas_extensions import (
     PandasHtmlWriter,
     PandasJsonReader,
     PandasJsonWriter,
+    PandasParquetWriter,
     PandasPickleReader,
     PandasPickleWriter,
     PandasSqlReader,
@@ -28,6 +29,14 @@ from hamilton.plugins.pandas_extensions import (
 @pytest.fixture
 def df():
     yield pd.DataFrame({"foo": ["bar"]})
+
+
+def test_pandas_parquet(df: pd.DataFrame, tmp_path: pathlib.Path) -> None:
+    file_path = tmp_path / "sample_df.parquet.gzip"
+    writer = PandasParquetWriter(path=file_path)
+    writer.save_data(pd.DataFrame({"foo": ["bar"]}))
+
+    assert len(list(tmp_path.iterdir())) == 1, "Unexpected number of files in tmp_path directory."
 
 
 def test_pandas_pickle(df: pd.DataFrame, tmp_path: pathlib.Path) -> None:
