@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 import tests.resources.cyclic_functions
+import tests.resources.dummy_functions
 import tests.resources.dynamic_parallelism.parallel_linear_basic
 import tests.resources.tagging
 import tests.resources.test_default_args
@@ -445,3 +446,10 @@ def test_executor_validates_happy_parallel_executor():
 
     nodes, user_nodes = dr.graph.get_upstream_nodes(["final"])
     dr.graph_executor.validate(nodes | user_nodes)
+
+
+def test_builder_defaults_to_dict_result():
+    dr = Builder().with_modules(tests.resources.dummy_functions).build()
+
+    result = dr.execute(["C"], inputs={"b": 1, "c": 1})
+    assert result == {"C": 4}
