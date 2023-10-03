@@ -5,7 +5,8 @@ from collections.abc import Hashable
 from datetime import datetime
 from io import BufferedReader, BytesIO, StringIO
 from pathlib import Path
-from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union,ClassVar
+from dataclasses import dataclass
 
 try:
     import pandas as pd
@@ -983,6 +984,137 @@ class PandasFeatherReader(DataLoader):
     @classmethod
     def name(cls) -> str:
         return "feather"
+    
+@dataclass
+
+class PandasTableReader:
+    path_or_buffer: str
+    sep: str = "\t"
+    delimiter: str = None
+    header: str = "infer"
+    names: str = None
+    index_col: str = None
+    usecols: str = None
+    engine: str = "c"
+    converters: str = None
+    true_values: str = None
+    false_values: str = None
+    skipinitialspace: bool = False
+    skiprows: str = None
+    skipfooter: int = 0
+    nrows: int = None
+    na_values: str = None
+    keep_default_na: bool = True
+    na_filter: bool = True
+    verbose: bool = False
+    skip_blank_lines: bool = True
+    parse_dates: bool = False
+    infer_datetime_format: bool = False
+    keep_date_col: bool = False
+    date_parser: str = None
+    dayfirst: bool = False
+    cache_dates: bool = True
+    iterator: bool = False
+    chunksize: int = None
+    compression: str = "infer"
+    thousands: str = None
+    decimal: str = "."
+    lineterminator: str = None
+    quotechar: str = '"'
+    quoting: int = 0
+    doublequote: bool = True
+    escapechar: str = None
+    comment: str = None
+    encoding: str = None
+    dialect: str = None
+    error_bad_lines: bool = True
+    warn_bad_lines: bool = True
+    delim_whitespace: bool = False
+    low_memory: bool = True
+    memory_map: bool = False
+    float_precision: str = None
+    storage_options: str = None
+
+    reader_name: ClassVar[str] = "feather"
+
+    @classmethod
+    def name(cls) -> str:
+        return cls.reader_name
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {
+            "sep": self.sep,
+            "delimiter": self.delimiter,
+            "header": self.header,
+            "names": self.names,
+            "index_col": self.index_col,
+            "usecols": self.usecols,
+            "engine": self.engine,
+            "converters": self.converters,
+            "true_values": self.true_values,
+            "false_values": self.false_values,
+            "skipinitialspace": self.skipinitialspace,
+            "skiprows": self.skiprows,
+            "skipfooter": self.skipfooter,
+            "nrows": self.nrows,
+            "na_values": self.na_values,
+            "keep_default_na": self.keep_default_na,
+            "na_filter": self.na_filter,
+            "verbose": self.verbose,
+            "skip_blank_lines": self.skip_blank_lines,
+            "parse_dates": self.parse_dates,
+            "infer_datetime_format": self.infer_datetime_format,
+            "keep_date_col": self.keep_date_col,
+            "date_parser": self.date_parser,
+            "dayfirst": self.dayfirst,
+            "cache_dates": self.cache_dates,
+            "iterator": self.iterator,
+            "chunksize": self.chunksize,
+            "compression": self.compression,
+            "thousands": self.thousands,
+            "decimal": self.decimal,
+            "lineterminator": self.lineterminator,
+            "quotechar": self.quotechar,
+            "quoting": self.quoting,
+            "doublequote": self.doublequote,
+            "escapechar": self.escapechar,
+            "comment": self.comment,
+            "encoding": self.encoding,
+            "dialect": self.dialect,
+            "error_bad_lines": self.error_bad_lines,
+            "warn_bad_lines": self.warn_bad_lines,
+            "delim_whitespace": self.delim_whitespace,
+            "low_memory": self.low_memory,
+            "memory_map": self.memory_map,
+            "float_precision": self.float_precision,
+            "storage_options": self.storage_options,
+        }
+        return kwargs
+   
+
+    def load_data(self, data_type: Type) -> Tuple[DataFrameDataLoader, Dict[str, Any]]:
+        filepath = utils.get_file_metadata(self.path)
+        kwargs = self._get_loading_kwargs()
+        data = pd.read_table(self.io, **self._get_loading_kwargs()) # Use pd.read_table
+
+        # Get metadata about the file being loaded
+        metadata = utils.get_file_metadata(self.path)
+
+        return data, metadata
+
+if __name__ == "__main__":
+    filepath = "pyarrow.feather"
+
+    reader = PandasTableReader(filepath)
+
+    print(PandasTableReader.name())
+
+    data, metadata = reader.load_data(DataFrameDataLoader)
+    print("Data loaded:", data)
+    print("Metadata:", metadata)
+       
+    
+    
 
 
 @dataclasses.dataclass
@@ -1048,6 +1180,7 @@ def register_data_loaders():
         PandasStataReader,
         PandasStataWriter,
         PandasFeatherReader,
+        PandasTableReader,
         PandasFeatherWriter,
     ]:
         registry.register_adapter(loader)
