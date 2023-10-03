@@ -47,6 +47,6 @@ def test_polars_parquet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
 
     assert PolarsParquetWriter.applicable_types() == [pl.DataFrame]
     assert PolarsParquetReader.applicable_types() == [pl.DataFrame]
-    assert kwargs1["compression"] == 'zstd'
+    assert kwargs1["compression"] == "zstd"
     assert kwargs2["n_rows"] == 2
     assert df.frame_equal(df2)
