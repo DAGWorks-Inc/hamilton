@@ -997,7 +997,7 @@ class Driver:
         :param additional_vars: Additional variables to return from the graph
         :param overrides: Overrides to pass to execution
         :param inputs: Inputs to pass to execution
-        :return: Tuple[Materialization metadata, additional_vars result]
+        :return: Tuple[Materialization metadata|data, additional_vars result]
         """
         if additional_vars is None:
             additional_vars = []
