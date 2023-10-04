@@ -47,7 +47,7 @@ conn.cursor().execute("DROP TABLE IF EXISTS test;")
 conn.commit()
 
 materializers = [
-    # materialize the dataframe to a pickle file
+    # materialize the dataframe to a parquet file
     to.parquet(
         dependencies=output_columns,
         id="df_to_parquet",
