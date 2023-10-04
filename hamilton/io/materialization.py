@@ -1,3 +1,6 @@
+import dataclasses
+import functools
+import inspect
 import sys
 import typing
 from typing import Any, Dict, List, Optional, Type, Union
@@ -12,18 +15,22 @@ from hamilton.registry import SAVER_REGISTRY
 
 class materialization_meta__(type):
     """Metaclass for the load_from decorator. This is specifically to allow class access method.
-    Note that there *is* another way to do this -- we couold add attributes dynamically on the
-    class in registry, or make it a function that just proxies to the decorator. We can always
-    change this up, but this felt like a pretty clean way of doing it, where we can decouple the
-    registry from the decorator class.
+    This only exists to add more helpful error messages. We dynamically assign the attributes
+    below (see `_set_materializer_attrs`), which helps with auto-complete.
     """
 
-    def __getattr__(cls, item: str):
-        if item in SAVER_REGISTRY:
-            potential_loaders = SAVER_REGISTRY[item]
-            savers = [loader for loader in potential_loaders if issubclass(loader, DataSaver)]
-            if len(savers) > 0:
-                return Materialize.partial(SAVER_REGISTRY[item])
+    def __new__(cls, name, bases, clsdict):
+        """Boiler plate for a metaclass -- this just instantiates it as a type. It also sets the
+        annotations to be available later.
+        """
+        clsobj = super().__new__(cls, name, bases, clsdict)
+        clsobj.__annotations__ = {}
+        return clsobj
+
+    def __getattr__(cls, item: str) -> "MaterializerFactory":
+        """This *just* exists to provide a more helpful error message. If you try to access
+        a property that doesn't exist, we'll raise an error that tells you what properties
+        are available/where to learn more."""
         try:
             return super().__getattribute__(item)
         except AttributeError as e:
@@ -155,36 +162,31 @@ else:
     _FactoryProtocol = object
 
 
+def partial_materializer(data_savers: List[Type[DataSaver]]) -> _FactoryProtocol:
+    """Creates a partial materializer, with the specified data savers."""
+
+    def create_materializer_factory(
+        id: str,
+        dependencies: List[str],
+        combine: base.ResultMixin = None,
+        **kwargs: typing.Any,
+    ) -> MaterializerFactory:
+        return MaterializerFactory(
+            id=id,
+            savers=data_savers,
+            result_builder=combine,
+            dependencies=dependencies,
+            **kwargs,
+        )
+
+    return create_materializer_factory
+
+
 class Materialize(metaclass=materialization_meta__):
     """Materialize class to facilitate easy reference. Note that you should never need to refer
     to this directly. Rather, this should be referred as `to` in hamilton.io."""
 
-    @classmethod
-    def partial(cls, data_savers: List[Type[DataSaver]]) -> _FactoryProtocol:
-        """Creates a partial materializer, with the specified data savers."""
 
-        def create_materializer_factory(
-            id: str,
-            dependencies: List[str],
-            combine: base.ResultMixin = None,
-            **kwargs: typing.Any,
-        ) -> MaterializerFactory:
-            return MaterializerFactory(
-                id=id,
-                savers=data_savers,
-                result_builder=combine,
-                dependencies=dependencies,
-                **kwargs,
-            )
-
-        return create_materializer_factory
-
-
-# Note that we have a circular import issue that we'll need to deal with
-# This refers to save_to, which also refers to the io module
-# Its fine for now, as we can just import this directly and avoid calling it in
-# the __init__.py of io, but we'll likely want to think this through and extract the tooling
-# in save_to to a separate, third module.
 class to(Materialize):
     """This is the entry point for Materialization. Note that this is coupled
     with the driver's materialize function -- properties are dynamically assigned
@@ -193,6 +195,86 @@ class to(Materialize):
     driver."""
 
     pass
+
+
+def _set_materializer_attrs():
+    """Sets materialization attributes for easy reference. This sets it to the available keys.
+    This is so one can get auto-complete"""
+
+    def with_modified_signature(
+        fn: Type[_FactoryProtocol], dataclasses_union: List[Type[dataclasses.dataclass]]
+    ):
+        """Modifies the signature to include the parameters from *all* dataclasses.
+        Note this just replaces **kwargs with the union of the parameters. Its not
+        strictly correct, as (a) its a superset of the available ones and (b) it doesn't
+        include the source/value parameters. However, this can help the development experience
+        on jupyter notebooks, and is a good enough approximation for now.
+
+
+        :param fn: Function to modify -- will change the signature.
+        :param dataclasses_union: All dataclasses to union.
+        :return: The function without **kwargs and with the union of the parameters.
+        """
+        original_signature = inspect.signature(fn)
+        original_parameters = list(original_signature.parameters.values())
+
+        new_parameters = []
+        seen = set()
+        for dataclass in dataclasses_union:
+            for field in dataclasses.fields(dataclass):
+                if field.name not in seen:
+                    new_parameters.append(
+                        inspect.Parameter(
+                            field.name,
+                            inspect.Parameter.KEYWORD_ONLY,
+                            annotation=field.type,
+                            default=None,
+                        )
+                    )
+                seen.add(field.name)
+
+        # Combining old and new parameters
+        # Checking for position of **kwargs and insert new params before
+        for idx, param in enumerate(original_parameters):
+            if param.kind == inspect.Parameter.VAR_KEYWORD:
+                break
+        else:
+            idx = len(original_parameters)
+
+        # Insert new parameters while respecting the order
+        combined_parameters = original_parameters[:idx] + new_parameters + original_parameters[idx:]
+        combined_parameters = [param for param in combined_parameters if param.name != "kwargs"]
+
+        # Creating a new signature with combined parameters
+        new_signature = original_signature.replace(parameters=combined_parameters)
+
+        # Creating a new function with the new signature
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            bound_arguments = new_signature.bind(*args, **kwargs)
+            return fn(*bound_arguments.args, **bound_arguments.kwargs)
+
+        # Assign the new signature to the wrapper function
+        wrapper.__signature__ = new_signature
+        wrapper.__doc__ = f"""
+        Materializes data to {key} format. Note that the parameters are a superset of possible parameters -- this might depend on
+        the actual type of the data passed in. For more information, see: https://hamilton.dagworks.io/en/latest/reference/io/available-data-adapters/#data-loaders.
+        You can also pass `source` and `value` in as kwargs.
+        """
+        return wrapper
+
+    # only go through the savers as those are the targets of materializers
+    for key, item in SAVER_REGISTRY.items():
+        potential_loaders = SAVER_REGISTRY[key]
+        savers = [loader for loader in potential_loaders if issubclass(loader, DataSaver)]
+        if len(savers) > 0:
+            partial = partial_materializer(SAVER_REGISTRY[key])
+            partial_with_signature = with_modified_signature(partial, SAVER_REGISTRY[key])
+            setattr(Materialize, key, partial_with_signature)
+            Materialize.__annotations__[key] = type(partial_with_signature)
+
+
+_set_materializer_attrs()
 
 
 def modify_graph(
