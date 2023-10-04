@@ -300,6 +300,7 @@ def test_validate_selects_correct_type():
         (int, [StringDataLoader], None),
         (str, [IntDataLoader], None),
         (dict, [IntDataLoader], None),
+        (dict, [IntDataLoader, StringDataLoader], None),
     ],
 )
 def test_resolve_correct_loader_class(
