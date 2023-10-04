@@ -1,6 +1,7 @@
 import inspect
+import logging
 import typing
-from typing import Any, Callable, Collection, Dict, List, Tuple, Type
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type
 
 from hamilton import node
 from hamilton.function_modifiers.base import (
@@ -16,6 +17,8 @@ from hamilton.function_modifiers.dependencies import (
 from hamilton.io.data_adapters import AdapterCommon, DataLoader, DataSaver
 from hamilton.node import DependencyType
 from hamilton.registry import LOADER_REGISTRY, SAVER_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 class AdapterFactory:
@@ -93,16 +96,25 @@ def resolve_kwargs(kwargs: Dict[str, Any]) -> Tuple[Dict[str, str], Dict[str, An
 
 def resolve_adapter_class(
     type_: Type[Type], loader_classes: List[Type[AdapterCommon]]
-) -> Type[AdapterCommon]:
+) -> Optional[Type[AdapterCommon]]:
     """Resolves the loader class for a function. This will return the most recently
     registered loader class that applies to the injection type, hence the reversed order.
 
     :param fn: Function to inject the loaded data into.
     :return: The loader class to use.
     """
+    applicable_adapters: List[Type[AdapterCommon]] = []
     for loader_cls in reversed(loader_classes):
         if loader_cls.applies_to(type_):
-            return loader_cls
+            applicable_adapters.append(loader_cls)
+    if len(applicable_adapters) > 0:
+        if len(applicable_adapters) > 1:
+            logger.warning(
+                f"More than one applicable adapter detected for {type_}. "
+                f"Using the last one registered {applicable_adapters[0]}."
+            )
+        return applicable_adapters[0]
+    return None
 
 
 class LoadFromDecorator(NodeInjector):
