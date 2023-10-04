@@ -114,6 +114,7 @@ def execute_subdag(
         overrides = {}
     if computed is None:
         computed = {}
+    nodes_to_compute = {node_.name for node_ in nodes}
 
     def dfs_traverse(
         node_: node.Node, dependency_type: node.DependencyType = node.DependencyType.REQUIRED
@@ -148,6 +149,25 @@ def execute_subdag(
                 logger.exception(f"Node {node_.name} encountered an error")
                 raise
         computed[node_.name] = value
+        # > pruning the graph
+        # This doesn't narrow it down to the entire space of the graph
+        # E.G. if something is not needed by this current execution due to
+        # the selection of nodes to run it might not prune everything.
+        # to do this we'd need to first determine all nodes on the path, then prune
+        # We may also want to use a reference counter for slightly cleaner/more efficient memory management
+
+        for dep in node_.dependencies:
+            if dep.name in computed and dep.name not in nodes_to_compute:
+                for downstream_node in dep.depended_on_by:
+                    # if it isn't computed, and it isn't required, we can't prune
+                    if (
+                        downstream_node.name not in computed
+                        or downstream_node.name in nodes_to_compute
+                    ):
+                        break
+                # If the result of this node is no longer needed, we can prune it/save the memory
+                else:
+                    del computed[dep.name]
 
     for final_var_node in nodes:
         dep_type = node.DependencyType.REQUIRED
