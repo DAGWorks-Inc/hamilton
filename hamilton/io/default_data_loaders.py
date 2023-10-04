@@ -9,7 +9,7 @@ from hamilton.io.utils import get_file_metadata
 
 
 @dataclasses.dataclass
-class JSONDataAdapter(DataLoader, DataSaver):
+class JSONDataLoader(DataLoader):
     path: str
 
     @classmethod
@@ -24,6 +24,19 @@ class JSONDataAdapter(DataLoader, DataSaver):
     def name(cls) -> str:
         return "json"
 
+
+@dataclasses.dataclass
+class JSONDataSaver(DataSaver):
+    path: str
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [dict]
+
+    @classmethod
+    def name(cls) -> str:
+        return "json"
+
     def save_data(self, data: Any) -> Dict[str, Any]:
         with open(self.path, "w") as f:
             json.dump(data, f)
@@ -31,13 +44,27 @@ class JSONDataAdapter(DataLoader, DataSaver):
 
 
 @dataclasses.dataclass
-class RawFileDataLoader(DataLoader, DataSaver):
+class RawFileDataLoader(DataLoader):
     path: str
     encoding: str = "utf-8"
 
     def load_data(self, type_: Type) -> Tuple[str, Dict[str, Any]]:
         with open(self.path, "r", encoding=self.encoding) as f:
             return f.read(), get_file_metadata(self.path)
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [str]
+
+    @classmethod
+    def name(cls) -> str:
+        return "file"
+
+
+@dataclasses.dataclass
+class RawFileDataSaver(DataSaver):
+    path: str
+    encoding: str = "utf-8"
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -65,9 +92,22 @@ class PickleLoader(DataLoader):
     def name(cls) -> str:
         return "pickle"
 
-    def load_data(self, type_: Type[dict]) -> Tuple[str, Dict[str, Any]]:
+    def load_data(self, type_: Type[object]) -> Tuple[object, Dict[str, Any]]:
         with open(self.path, "rb") as f:
             return pickle.load(f), get_file_metadata(self.path)
+
+
+@dataclasses.dataclass
+class PickleSaver(DataSaver):
+    path: str
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [object]
+
+    @classmethod
+    def name(cls) -> str:
+        return "pickle"
 
     def save_data(self, data: Any) -> Dict[str, Any]:
         with open(self.path, "wb") as f:
@@ -127,10 +167,13 @@ class InMemoryResult(DataSaver):
 
 
 DATA_ADAPTERS = [
-    JSONDataAdapter,
+    JSONDataSaver,
+    JSONDataLoader,
     LiteralValueDataLoader,
     RawFileDataLoader,
+    RawFileDataSaver,
     PickleLoader,
+    PickleSaver,
     EnvVarDataLoader,
     InMemoryResult,
 ]
