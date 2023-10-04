@@ -23,6 +23,8 @@ custom_type = typing.TypeVar("FOOBAR")
     [
         (custom_type, custom_type, True),
         (custom_type, typing.TypeVar("FOO"), False),
+        (typing.Any, typing.TypeVar("FOO"), True),
+        (typing.Any, custom_type, True),
         (int, int, True),
         (int, float, False),
         (typing.List[int], typing.List, True),
@@ -47,6 +49,8 @@ custom_type = typing.TypeVar("FOOBAR")
         (X, X, True),
         (X, Y, True),
         (Y, X, False),
+        (typing.Any, Y, True),
+        (Y, typing.Any, False),
         (typing.Union[X, int], X, True),
         (typing.Union[str, X], str, True),
         (typing.Union[custom_type, X], Y, True),
@@ -59,6 +63,8 @@ custom_type = typing.TypeVar("FOOBAR")
         (typing.FrozenSet[int], typing.Set[int], False),
         (htypes.column[pd.Series, int], pd.Series, True),
         (htypes.column[pd.Series, int], int, False),
+        (typing.Any, pd.DataFrame, True),
+        (pd.DataFrame, typing.Any, False),
     ],
 )
 def test_custom_subclass_check(param_type, requested_type, expected):

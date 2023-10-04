@@ -39,15 +39,18 @@ def custom_subclass_check(requested_type: Type, param_type: Type):
 
     We will likely need to revisit this in the future (perhaps integrate with graphadapter?)
 
-    :param requested_type: Candidate subclass
-    :param param_type: Type of parameter to check
-    :return: Whether or not this is a valid subclass.
+    :param requested_type: Candidate subclass.
+    :param param_type: Type of parameter to check against.
+    :return: Whether or not requested_type is a valid subclass of param_type.
     """
     # handles case when someone is using primitives and generics
     requested_origin_type = requested_type
     param_type, _ = get_type_information(param_type)
     param_origin_type = param_type
     has_generic = False
+    if param_type == Any:
+        # any type is a valid subclass of Any.
+        return True
     if _safe_subclass(requested_type, param_type):
         return True
     if typing_inspect.is_union_type(param_type):
