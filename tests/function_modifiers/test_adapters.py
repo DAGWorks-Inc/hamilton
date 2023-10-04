@@ -106,6 +106,20 @@ def test_load_from_decorator_resolve_kwargs():
     assert literal_kwargs == {"required_param_2": 2, "required_param_3": "3", "default_param_2": 5}
 
 
+def test_load_from_decorator_resolve_kwargs_with_literals():
+    kwargs = dict(
+        required_param=source("1"),
+        required_param_2=2,
+        required_param_3="3",
+        default_param=source("4"),
+        default_param_2=5,
+    )
+
+    dependency_kwargs, literal_kwargs = resolve_kwargs(kwargs)
+    assert dependency_kwargs == {"required_param": "1", "default_param": "4"}
+    assert literal_kwargs == {"required_param_2": 2, "required_param_3": "3", "default_param_2": 5}
+
+
 def test_load_from_decorator_validate_succeeds():
     decorator = LoadFromDecorator(
         [MockDataLoader],

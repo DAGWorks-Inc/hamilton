@@ -56,8 +56,10 @@ class AdapterFactory:
                 f"{optional_args}. "
             )
         if len(extra_params) > 0:
+            available_args = {**required_args, **optional_args}.keys()
             raise InvalidDecoratorException(
-                f"Extra parameters for loader: {self.adapter_cls} {extra_params}"
+                f"Extra parameters for loader: {self.adapter_cls} {extra_params}. Choices for parameters are: "
+                f"{available_args}."
             )
 
     def create_loader(self, **resolved_kwargs: Any) -> DataLoader:
@@ -84,6 +86,8 @@ def resolve_kwargs(kwargs: Dict[str, Any]) -> Tuple[Dict[str, str], Dict[str, An
             dependencies[name] = dependency.source
         elif isinstance(dependency, LiteralDependency):
             resolved_kwargs[name] = dependency.value
+        else:
+            resolved_kwargs[name] = dependency
     return dependencies, resolved_kwargs
 
 
@@ -339,6 +343,15 @@ class load_from(metaclass=load_from__meta__):
     .. code-block:: python
 
         @load_from.json(path=value("some/path.json"))
+        def raw_data(input_data: dict) -> dict:
+            return input_data
+
+    Note that, if neither `source` nor `value` is specified, the value will be passed in as a
+    literal value.
+
+    .. code-block:: python
+
+        @load_from.json(path="some/path.json")
         def raw_data(input_data: dict) -> dict:
             return input_data
 
@@ -599,8 +612,9 @@ class save_to(metaclass=save_to__meta__):
         def final_output(data: dict, valid_keys: List[str]) -> dict:
             return [item for item in data if item in valid_keys]
 
-    For a list of available "keys" (E.G. json), you currently have to look at the classes that
-    implement DataSaver. In the future, this will be more discoverable with documentation.
+    Note that, like the loader function, you can use literal values as kwargs and they'll get interpreted as values.
+    If you needs savers, you should also look into `.materialize` on the driver -- it's a clean way to do this in a more
+    ad-hoc/decoupled manner.
     """
 
     def __call__(self, *args, **kwargs):

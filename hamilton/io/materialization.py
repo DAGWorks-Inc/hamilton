@@ -78,7 +78,6 @@ class MaterializerFactory:
         """
         processed_kwargs = {}
         for kwarg, kwarg_val in data_saver_kwargs.items():
-
             if not isinstance(kwarg_val, SingleDependency):
                 processed_kwargs[kwarg] = value(kwarg_val)
             else:
