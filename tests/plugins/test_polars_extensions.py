@@ -6,6 +6,8 @@ import pytest
 from hamilton.plugins.polars_extensions import (
     PolarsCSVReader,
     PolarsCSVWriter,
+    PolarsFeatherReader,
+    PolarsFeatherWriter,
     PolarsParquetReader,
     PolarsParquetWriter,
 )
@@ -50,3 +52,24 @@ def test_polars_parquet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert kwargs1["compression"] == "zstd"
     assert kwargs2["n_rows"] == 2
     assert df.frame_equal(df2)
+
+
+def test_polars_feather(tmp_path: pathlib.Path) -> None:
+    test_data_file_path = "tests/resources/data/test_load_from_data.feather"
+    reader = PolarsFeatherReader(source=test_data_file_path)
+    read_kwargs = reader._get_loading_kwargs()
+    df, _ = reader.load_data(pl.DataFrame)
+
+    file_path = tmp_path / "test.dta"
+    writer = PolarsFeatherWriter(file=file_path)
+    write_kwargs = writer._get_saving_kwargs()
+    metadata = writer.save_data(df)
+
+    assert PolarsFeatherReader.applicable_types() == [pl.DataFrame]
+    assert "n_rows" not in read_kwargs
+    assert df.shape == (4, 3)
+
+    assert PolarsFeatherWriter.applicable_types() == [pl.DataFrame]
+    assert "compression" in write_kwargs
+    assert file_path.exists()
+    assert metadata["path"] == file_path

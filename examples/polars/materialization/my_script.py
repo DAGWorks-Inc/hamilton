@@ -47,6 +47,12 @@ materializers = [
         file="./df.parquet",
         combine=df_builder,
     ),
+    to.feather(
+        dependencies=output_columns,
+        id="df_to_feather",
+        file="./df.feather",
+        combine=df_builder,
+    ),
 ]
 # Visualize what is happening
 dr.visualize_materialization(
@@ -61,8 +67,10 @@ materialization_results, additional_outputs = dr.materialize(
     *materializers,
     additional_vars=[
         "df_to_parquet_build_result",
+        "df_to_feather_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
 print(materialization_results)
 print(additional_outputs["df_to_parquet_build_result"])
+print(additional_outputs["df_to_feather_build_result"])

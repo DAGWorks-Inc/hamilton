@@ -9,6 +9,7 @@ from typing import (
     Dict,
     List,
     Mapping,
+    Optional,
     Sequence,
     TextIO,
     Tuple,
@@ -37,6 +38,10 @@ if has_alias and hasattr(pl.type_aliases, "CsvQuoteStyle"):
     from polars.type_aliases import CsvQuoteStyle
 else:
     CsvQuoteStyle = Type
+if has_alias and hasattr(pl.type_aliases, "IpcCompression"):
+    from polars.type_aliases import IpcCompression
+else:
+    IpcCompression = Type
 
 from hamilton import registry
 from hamilton.io import utils
@@ -347,9 +352,98 @@ class PolarsParquetWriter(DataSaver):
         return "parquet"
 
 
+@dataclasses.dataclass
+class PolarsFeatherReader(DataLoader):
+    """
+    Class specifically to handle loading Feather/Arrow IPC files with Polars.
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.read_ipc.html
+    """
+
+    source: Union[str, BinaryIO, BytesIO, Path, bytes]
+    # kwargs:
+    columns: Optional[Union[List[str], List[int]]] = None
+    n_rows: Optional[int] = None
+    use_pyarrow: bool = False
+    memory_map: bool = True
+    storage_options: Optional[Dict[str, Any]] = None
+    row_count_name: Optional[str] = None
+    row_count_offset: int = 0
+    rechunk: bool = True
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self):
+        kwargs = {}
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.n_rows is not None:
+            kwargs["n_rows"] = self.n_rows
+        if self.use_pyarrow is not None:
+            kwargs["use_pyarrow"] = self.use_pyarrow
+        if self.memory_map is not None:
+            kwargs["memory_map"] = self.memory_map
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.row_count_name is not None:
+            kwargs["row_count_name"] = self.row_count_name
+        if self.row_count_offset is not None:
+            kwargs["row_count_offset"] = self.row_count_offset
+        if self.rechunk is not None:
+            kwargs["rechunk"] = self.rechunk
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pl.read_ipc(self.source, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.source)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "feather"
+
+
+@dataclasses.dataclass
+class PolarsFeatherWriter(DataSaver):
+    """
+    Class specifically to handle saving Feather/Arrow IPC files with Polars.
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.write_ipc.html
+    """
+
+    file: Optional[Union[BinaryIO, BytesIO, str, Path]] = None
+    # kwargs:
+    compression: IpcCompression = "uncompressed"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.write_ipc(self.file, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.file)
+
+    @classmethod
+    def name(cls) -> str:
+        return "feather"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
-    for loader in [PolarsCSVReader, PolarsCSVWriter, PolarsParquetReader, PolarsParquetWriter]:
+    for loader in [
+        PolarsCSVReader,
+        PolarsCSVWriter,
+        PolarsParquetReader,
+        PolarsParquetWriter,
+        PolarsFeatherReader,
+        PolarsFeatherWriter,
+    ]:
         registry.register_adapter(loader)
 
 
