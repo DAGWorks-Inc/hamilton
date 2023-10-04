@@ -26,21 +26,21 @@ class AdapterCommon(abc.ABC):
         pass
 
     @classmethod
+    @abc.abstractmethod
     def applies_to(cls, type_: Type[Type]) -> bool:
-        """Tells whether or not this data loader can load to a specific type.
-        For instance, a CSV data loader might be able to load to a dataframe,
-        a json, but not an integer.
+        """Tells whether or not this adapter applies to the given type.
+
+        Note: you need to understand the edge direction to properly determine applicability.
+        For loading data, the loader type needs to be a subclass of the type being loaded into.
+        For saving data, the saver type needs to be a superclass of the type being passed in.
 
         This is a classmethod as it will be easier to validate, and we have to
         construct this, delayed, with a factory.
 
         :param type_: Candidate type
-        :return: True if this data loader can load to the type, False otherwise.
+        :return: True if this adapter can be used with that type, False otherwise.
         """
-        for load_to in cls.applicable_types():
-            if custom_subclass_check(load_to, type_):
-                return True
-        return False
+        pass
 
     @classmethod
     @abc.abstractmethod
@@ -137,6 +137,26 @@ class DataLoader(AdapterCommon, abc.ABC):
     def can_load(cls) -> bool:
         return True
 
+    @classmethod
+    def applies_to(cls, type_: Type[Type]) -> bool:
+        """Tells whether or not this data loader can load to a specific type.
+        For instance, a CSV data loader might be able to load to a dataframe,
+        a json, but not an integer.
+
+        I.e. is the adapter type a subclass of the passed in type?
+
+        This is a classmethod as it will be easier to validate, and we have to
+        construct this, delayed, with a factory.
+
+        :param type_: Candidate type
+        :return: True if this data loader can load to the type, False otherwise.
+        """
+        for load_to in cls.applicable_types():
+            # is the adapter type `load_to` a subclass of `type_` ?
+            if custom_subclass_check(load_to, type_):
+                return True
+        return False
+
 
 class DataSaver(AdapterCommon, abc.ABC):
     """Base class for data savers. Data savers are used to save data to a data source.
@@ -165,3 +185,22 @@ class DataSaver(AdapterCommon, abc.ABC):
     @classmethod
     def can_save(cls) -> bool:
         return True
+
+    @classmethod
+    def applies_to(cls, type_: Type[Type]) -> bool:
+        """Tells whether or not this data saver can ingest a specific type to save it.
+
+        I.e. is the adapter type a superclass of the passed in type?
+
+        This is a classmethod as it will be easier to validate, and we have to
+        construct this, delayed, with a factory.
+
+        :param type_: Candidate type
+        :return: True if this data saver can handle to the type, False otherwise.
+        """
+        for save_to in cls.applicable_types():
+            # is the adapter type `save_to` a superclass of `type_` ?
+            # i.e. is `type_` a subclass of `save_to` ?
+            if custom_subclass_check(type_, save_to):
+                return True
+        return False
