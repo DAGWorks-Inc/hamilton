@@ -107,10 +107,30 @@ class LiteralValueDataLoader(DataLoader):
         return "literal"
 
 
+@dataclasses.dataclass
+class InMemoryResult(DataSaver):
+    """Class specifically to returning an in memory result without saving it anywhere.
+
+    Use this to get the result of a combiner easily; depends on their use.
+    """
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [Any]
+
+    def save_data(self, data: Any) -> Any:
+        return data
+
+    @classmethod
+    def name(cls) -> str:
+        return "memory"
+
+
 DATA_ADAPTERS = [
     JSONDataAdapter,
     LiteralValueDataLoader,
     RawFileDataLoader,
     PickleLoader,
     EnvVarDataLoader,
+    InMemoryResult,
 ]
