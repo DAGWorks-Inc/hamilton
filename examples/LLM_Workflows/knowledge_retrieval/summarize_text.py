@@ -5,6 +5,7 @@ from typing import Callable, Generator, List
 import openai
 import pandas as pd
 import tiktoken
+import litellm
 from PyPDF2 import PdfReader
 from scipy import spatial
 from tenacity import retry, stop_after_attempt, wait_random_exponential
@@ -134,7 +135,7 @@ def _summarize_chunk(content: str, template_prompt: str, openai_gpt_model: str) 
     :return: the response from the openai API.
     """
     prompt = template_prompt + content
-    response = openai.ChatCompletion.create(
+    response = litellm.completion(
         model=openai_gpt_model, messages=[{"role": "user", "content": prompt}], temperature=0
     )
     return response["choices"][0]["message"]["content"]
@@ -199,7 +200,7 @@ def summarize_text(
     :param openai_gpt_model: which openai gpt model to use.
     :return: the string response from the openai API.
     """
-    response = openai.ChatCompletion.create(
+    response = litellm.completion(
         model=openai_gpt_model,
         messages=[
             {
