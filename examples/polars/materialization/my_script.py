@@ -44,7 +44,7 @@ materializers = [
     to.parquet(
         dependencies=output_columns,
         id="df_to_parquet",
-        path="./df.parquet",
+        file="./df.parquet",
         combine=df_builder,
     ),
 ]
@@ -53,7 +53,7 @@ dr.visualize_materialization(
     *materializers,
     additional_vars=output_columns,
     output_file_path="./dag",
-    render_kwargs={},
+    render_kwargs={"format": "png"},
     inputs=initial_columns,
 )
 # Materialize a result, i.e. execute the DAG!
