@@ -2,7 +2,19 @@ import dataclasses
 import sys
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
-from typing import Any, BinaryIO, Collection, Dict, Mapping, Sequence, TextIO, Tuple, Type, Union
+from typing import (
+    Any,
+    BinaryIO,
+    Collection,
+    Dict,
+    List,
+    Mapping,
+    Sequence,
+    TextIO,
+    Tuple,
+    Type,
+    Union,
+)
 
 try:
     import polars as pl
@@ -228,9 +240,116 @@ class PolarsCSVWriter(DataSaver):
         return "csv"
 
 
+@dataclasses.dataclass
+class PolarsParquetReader(DataLoader):
+    """Class specifically to handle loading parquet files with polars
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.read_parquet.html
+    """
+
+    file: Union[str, TextIO, BytesIO, Path, BinaryIO, bytes]
+    # kwargs:
+    columns: Union[List[int], List[str]] = None
+    n_rows: int = None
+    use_pyarrow: bool = False
+    memory_map: bool = True
+    storage_options: Dict[str, Any] = None
+    parallel: Any = "auto"
+    row_count_name: str = None
+    row_count_offset: int = 0
+    low_memory: bool = False
+    pyarrow_options: Dict[str, Any] = None
+    use_statistics: bool = True
+    rechunk: bool = True
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self):
+        kwargs = {}
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.n_rows is not None:
+            kwargs["n_rows"] = self.n_rows
+        if self.use_pyarrow is not None:
+            kwargs["use_pyarrow"] = self.use_pyarrow
+        if self.memory_map is not None:
+            kwargs["memory_map"] = self.memory_map
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.parallel is not None:
+            kwargs["parallel"] = self.parallel
+        if self.row_count_name is not None:
+            kwargs["row_count_name"] = self.row_count_name
+        if self.row_count_offset is not None:
+            kwargs["row_count_offset"] = self.row_count_offset
+        if self.low_memory is not None:
+            kwargs["low_memory"] = self.low_memory
+        if self.pyarrow_options is not None:
+            kwargs["pyarrow_options"] = self.pyarrow_options
+        if self.use_statistics is not None:
+            kwargs["use_statistics"] = self.use_statistics
+        if self.rechunk is not None:
+            kwargs["rechunk"] = self.rechunk
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pl.read_parquet(self.file, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.file)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "parquet"
+
+
+@dataclasses.dataclass
+class PolarsParquetWriter(DataSaver):
+    """Class specifically to handle saving CSV files with Polars.
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.write_parquet.html
+    """
+
+    file: Union[BytesIO, TextIOWrapper, str, Path]
+    # kwargs:
+    compression: Any = "zstd"
+    compression_level: int = None
+    statistics: bool = False
+    row_group_size: int = None
+    use_pyarrow: bool = False
+    pyarrow_options: Dict[str, Any] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.compression is not None:
+            kwargs["compression_level"] = self.compression_level
+        if self.compression is not None:
+            kwargs["statistics"] = self.statistics
+        if self.compression is not None:
+            kwargs["row_group_size"] = self.row_group_size
+        if self.compression is not None:
+            kwargs["use_pyarrow"] = self.use_pyarrow
+        if self.compression is not None:
+            kwargs["pyarrow_options"] = self.pyarrow_options
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.write_parquet(self.file, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.file)
+
+    @classmethod
+    def name(cls) -> str:
+        return "parquet"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
-    for loader in [PolarsCSVReader, PolarsCSVWriter]:
+    for loader in [PolarsCSVReader, PolarsCSVWriter, PolarsParquetReader, PolarsParquetWriter]:
         registry.register_adapter(loader)
 
 
