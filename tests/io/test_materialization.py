@@ -1,6 +1,10 @@
 import dataclasses
 from typing import Any, Collection, Dict, List, Optional, Type
 
+import pytest
+
+import tests.resources.cyclic_functions
+import tests.resources.test_default_args
 from hamilton import base, graph, node
 from hamilton.io import materialization
 from hamilton.io.data_adapters import DataSaver
@@ -152,3 +156,39 @@ def test_modify_function_graph():
     assert "materializer_2" in fn_graph_modified.nodes
     assert "first_node" in fn_graph_modified.nodes
     assert "second_node" in fn_graph_modified.nodes
+
+
+def test_sanitize_materializer_dependencies_happy():
+    """Tests that we return new objects & appropriately sanitize dependency types - converting them as necessary."""
+    factory_1 = MaterializerFactory(
+        "materializer_1",
+        [MockDataSaver],
+        dependencies=[
+            tests.resources.test_default_args.A,
+            tests.resources.test_default_args.B,
+            "C",
+        ],
+        result_builder=JoinBuilder(),
+        storage_key="test_modify_function_graph_2",
+    )
+    s = {tests.resources.test_default_args.__name__}
+    actual = factory_1.sanitize_dependencies(s)
+    assert actual.id == factory_1.id
+    assert actual.savers == factory_1.savers
+    assert actual.result_builder == factory_1.result_builder
+    assert actual.dependencies == ["A", "B", "C"]
+    assert actual is not factory_1
+
+
+def test_sanitize_materializer_dependencies_error():
+    """Tests that we error when bad cases are encountered."""
+    factory_1 = MaterializerFactory(
+        "materializer_1",
+        [MockDataSaver],
+        dependencies=["B", tests.resources.cyclic_functions.A],
+        result_builder=JoinBuilder(),
+        storage_key="test_modify_function_graph_2",
+    )
+    with pytest.raises(ValueError):
+        s = {tests.resources.test_default_args.__name__}
+        factory_1.sanitize_dependencies(s)

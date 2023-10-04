@@ -14,6 +14,7 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, 
 
 import pandas as pd
 
+from hamilton import common
 from hamilton.execution import executors, graph_functions, grouping, state
 from hamilton.io import materialization
 
@@ -419,31 +420,8 @@ class Driver:
         :param final_vars:
         :return: list of strings in the order that final_vars was provided.
         """
-        _final_vars = []
-        errors = []
-        module_set = {_module.__name__ for _module in self.graph_modules}
-        for final_var in final_vars:
-            if isinstance(final_var, str):
-                _final_vars.append(final_var)
-            elif isinstance(final_var, Variable):
-                _final_vars.append(final_var.name)
-            elif isinstance(final_var, Callable):
-                if final_var.__module__ in module_set:
-                    _final_vars.append(final_var.__name__)
-                else:
-                    errors.append(
-                        f"Function {final_var.__module__}.{final_var.__name__} is a function not "
-                        f"in a "
-                        f"module given to the driver. Valid choices are {module_set}."
-                    )
-            else:
-                errors.append(
-                    f"Final var {final_var} is not a string, a function, or a driver.Variable."
-                )
-        if errors:
-            errors.sort()
-            error_str = f"{len(errors)} errors encountered:\n  " + "\n  ".join(errors)
-            raise ValueError(error_str)
+        _module_set = {_module.__name__ for _module in self.graph_modules}
+        _final_vars = common.convert_output_values(final_vars, _module_set)
         return _final_vars
 
     def capture_execute_telemetry(

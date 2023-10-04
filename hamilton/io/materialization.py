@@ -1,9 +1,8 @@
 import sys
 import typing
-from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
+from typing import Any, Dict, List, Optional, Set, Type, Union
 
-from hamilton import base, graph, node
+from hamilton import base, common, graph, node
 from hamilton.function_modifiers.adapters import SaveToDecorator
 from hamilton.function_modifiers.dependencies import SingleDependency, value
 from hamilton.graph import FunctionGraph
@@ -68,7 +67,7 @@ class MaterializerFactory:
         self.dependencies = dependencies
         self.data_saver_kwargs = self._process_kwargs(data_saver_kwargs)
 
-    def sanitize_dependencies(self, module_set: Set[ModuleType]) -> "MaterializerFactory":
+    def sanitize_dependencies(self, module_set: Set[str]) -> "MaterializerFactory":
         """Sanitizes the dependencies to ensure they're strings.
 
         This replaces the internal value for self.dependencies and returns a new object.
@@ -77,32 +76,9 @@ class MaterializerFactory:
         :param module_set: modules that "functions" could come from if that's passed in.
         :return: new object with sanitized_dependencies.
         """
-        _final_vars = []
-        errors = []
-        for final_var in self.dependencies:
-            if isinstance(final_var, str):
-                _final_vars.append(final_var)
-            elif hasattr(final_var, "name"):
-                _final_vars.append(final_var.name)
-            elif isinstance(final_var, Callable):
-                if final_var.__module__ in module_set:
-                    _final_vars.append(final_var.__name__)
-                else:
-                    errors.append(
-                        f"Function {final_var.__module__}.{final_var.__name__} is a function not "
-                        f"in a "
-                        f"module given to the materializer. Valid choices are {module_set}."
-                    )
-            else:
-                errors.append(
-                    f"Materializer dependency {final_var} is not a string, a function, or a driver.Variable."
-                )
-        if errors:
-            errors.sort()
-            error_str = f"{len(errors)} errors encountered:\n  " + "\n  ".join(errors)
-            raise ValueError(error_str)
+        final_vars = common.convert_output_values(self.dependencies, module_set)
         return MaterializerFactory(
-            self.id, self.savers, self.result_builder, _final_vars, **self.data_saver_kwargs
+            self.id, self.savers, self.result_builder, final_vars, **self.data_saver_kwargs
         )
 
     @staticmethod
