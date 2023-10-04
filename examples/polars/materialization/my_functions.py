@@ -10,7 +10,7 @@ Notes:
 
 def avg_3wk_spend(spend: pl.Series) -> pl.Series:
     """Rolling 3 week average spend."""
-    return spend.rolling(3).mean()
+    return spend.rolling_mean(3)
 
 
 def spend_per_signup(spend: pl.Series, signups: pl.Series) -> pl.Series:
