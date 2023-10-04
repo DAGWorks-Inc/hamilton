@@ -1,5 +1,4 @@
 import logging
-import sqlite3
 import sys
 
 import polars as pl
@@ -39,12 +38,6 @@ output_columns = [
     "spend_zero_mean_unit_variance",
 ]
 
-# set up db connection for sql materializer below
-conn = sqlite3.connect("df.db")
-
-# remove an previous instances of the 'test' table that will be created next
-conn.cursor().execute("DROP TABLE IF EXISTS test;")
-conn.commit()
 
 materializers = [
     # materialize the dataframe to a parquet file
@@ -74,4 +67,3 @@ materialization_results, additional_outputs = dr.materialize(
 print(materialization_results)
 print(additional_outputs["df_to_parquet_build_result"])
 
-conn.close()
