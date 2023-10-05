@@ -90,6 +90,6 @@ def test_polars_json(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert PolarsJSONWriter.applicable_types() == [pl.DataFrame]
     assert PolarsJSONReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["pretty"]
-    assert df2.shape == (2,2)
-    assert 'schema' not in kwargs2
+    assert df2.shape == (2, 2)
+    assert "schema" not in kwargs2
     assert df.frame_equal(df2)

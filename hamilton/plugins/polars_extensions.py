@@ -59,7 +59,9 @@ def get_column_polars(df: pl.DataFrame, column_name: str) -> pl.Series:
 
 
 @registry.fill_with_scalar.register(pl.DataFrame)
-def fill_with_scalar_polars(df: pl.DataFrame, column_name: str, scalar_value: Any) -> pl.DataFrame:
+def fill_with_scalar_polars(
+    df: pl.DataFrame, column_name: str, scalar_value: Any
+) -> pl.DataFrame:
     if not isinstance(scalar_value, pl.Series):
         scalar_value = [scalar_value]
     return df.with_column(pl.Series(name=column_name, values=scalar_value))
@@ -442,9 +444,10 @@ class PolarsJSONReader(DataLoader):
     Class specifically to handle loading JSON files with Polars.
     Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.read_json.html
     """
+
     source: Union[str | Path | IOBase | bytes]
-    schema: Any = None
-    schema_overrides: Any = None
+    schema: SchemaDefinition = None
+    schema_overrides: SchemaDefinition = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -467,15 +470,18 @@ class PolarsJSONReader(DataLoader):
     def name(cls) -> str:
         return "json"
 
+
 @dataclasses.dataclass
 class PolarsJSONWriter(DataSaver):
     """
     Class specifically to handle saving JSON files with Polars.
     Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.write_json.html
     """
+
     file: None = None
     pretty: bool = False
     row_oriented: bool = False
+
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
         return [DATAFRAME_TYPE]
@@ -495,6 +501,7 @@ class PolarsJSONWriter(DataSaver):
     @classmethod
     def name(cls) -> str:
         return "json"
+
 
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
