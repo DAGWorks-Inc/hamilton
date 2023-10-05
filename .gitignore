@@ -137,3 +137,6 @@ dask-worker-space/
 # Ignore dbt artifacts
 examples/dbt/target/*
 examples/dbt/logs/*
+
+# Ignore hamilton-env virtual envs
+examples/**/hamilton-env
