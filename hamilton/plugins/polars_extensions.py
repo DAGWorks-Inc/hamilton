@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import dataclasses
 import sys
-from io import BytesIO, TextIOWrapper
+from io import BytesIO, TextIOWrapper, IOBase
 from pathlib import Path
 from typing import (
     Any,
@@ -31,7 +33,7 @@ if hasattr(pl, "type_aliases"):
 
 # for polars 0.18.0 we need to check what to do.
 if has_alias and hasattr(pl.type_aliases, "CsvEncoding"):
-    from polars.type_aliases import CsvEncoding
+    from polars.type_aliases import CsvEncoding, SchemaDefinition
 else:
     CsvEncoding = Type
 if has_alias and hasattr(pl.type_aliases, "CsvQuoteStyle"):
@@ -434,6 +436,66 @@ class PolarsFeatherWriter(DataSaver):
         return "feather"
 
 
+@dataclasses.dataclass
+class PolarsJSONReader(DataLoader):
+    """
+    Class specifically to handle loading JSON files with Polars.
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.read_json.html
+    """
+    source: Union[str | Path | IOBase | bytes]
+    schema: Any = None
+    schema_overrides: Any = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self):
+        kwargs = {}
+        if self.schema is not None:
+            kwargs["schema"] = self.schema
+        if self.schema_overrides is not None:
+            kwargs["schema_overrides"] = self.schema_overrides
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pl.read_json(self.source, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.source)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "json"
+
+@dataclasses.dataclass
+class PolarsJSONWriter(DataSaver):
+    """
+    Class specifically to handle saving JSON files with Polars.
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.write_json.html
+    """
+    file: None = None
+    pretty: bool = False
+    row_oriented: bool = False
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.pretty is not None:
+            kwargs["pretty"] = self.pretty
+        if self.row_oriented is not None:
+            kwargs["row_oriented"] = self.row_oriented
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.write_json(self.file, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.file)
+
+    @classmethod
+    def name(cls) -> str:
+        return "json"
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -443,6 +505,8 @@ def register_data_loaders():
         PolarsParquetWriter,
         PolarsFeatherReader,
         PolarsFeatherWriter,
+        PolarsJSONReader,
+        PolarsJSONWriter,
     ]:
         registry.register_adapter(loader)
 

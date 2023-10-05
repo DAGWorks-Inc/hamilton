@@ -47,10 +47,18 @@ materializers = [
         file="./df.parquet",
         combine=df_builder,
     ),
+    # materialize the dataframe to a feather file
     to.feather(
         dependencies=output_columns,
         id="df_to_feather",
         file="./df.feather",
+        combine=df_builder,
+    ),
+    # materialize the dataframe to a json file
+    to.json(
+        dependencies=output_columns,
+        id="df_to_json",
+        file="./df.json",
         combine=df_builder,
     ),
 ]
@@ -68,9 +76,11 @@ materialization_results, additional_outputs = dr.materialize(
     additional_vars=[
         "df_to_parquet_build_result",
         "df_to_feather_build_result",
+        "df_to_json_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
 print(materialization_results)
 print(additional_outputs["df_to_parquet_build_result"])
 print(additional_outputs["df_to_feather_build_result"])
+print(additional_outputs["df_to_json_build_result"])
