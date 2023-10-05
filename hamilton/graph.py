@@ -365,7 +365,7 @@ class FunctionGraph(object):
                 " networkx is required for detecting cycles in the function graph. Install it with:"
                 '\n\n  pip install "sf-hamilton[visualization]" or pip install networkx \n\n'
             )
-            return False
+            return []
         digraph = create_networkx_graph(nodes, user_nodes, "Dependency Graph")
         cycles = list(networkx.simple_cycles(digraph))
         return cycles
