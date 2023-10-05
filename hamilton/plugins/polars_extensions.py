@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from io import BytesIO, TextIOWrapper, IOBase
+from io import BytesIO, IOBase, TextIOWrapper
 from pathlib import Path
 from typing import (
     Any,
@@ -59,9 +59,7 @@ def get_column_polars(df: pl.DataFrame, column_name: str) -> pl.Series:
 
 
 @registry.fill_with_scalar.register(pl.DataFrame)
-def fill_with_scalar_polars(
-    df: pl.DataFrame, column_name: str, scalar_value: Any
-) -> pl.DataFrame:
+def fill_with_scalar_polars(df: pl.DataFrame, column_name: str, scalar_value: Any) -> pl.DataFrame:
     if not isinstance(scalar_value, pl.Series):
         scalar_value = [scalar_value]
     return df.with_column(pl.Series(name=column_name, values=scalar_value))

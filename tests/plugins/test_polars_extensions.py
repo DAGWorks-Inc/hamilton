@@ -8,10 +8,10 @@ from hamilton.plugins.polars_extensions import (
     PolarsCSVWriter,
     PolarsFeatherReader,
     PolarsFeatherWriter,
-    PolarsParquetReader,
-    PolarsParquetWriter,
     PolarsJSONReader,
     PolarsJSONWriter,
+    PolarsParquetReader,
+    PolarsParquetWriter,
 )
 
 
