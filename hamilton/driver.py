@@ -850,6 +850,7 @@ class Driver:
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
 
+    @capture_function_usage
     def materialize(
         self,
         *materializers: materialization.MaterializerFactory,
@@ -979,23 +980,38 @@ class Driver:
         """
         if additional_vars is None:
             additional_vars = []
+        start_time = time.time()
+        run_successful = True
+        error = None
 
-        module_set = {_module.__name__ for _module in self.graph_modules}
-        materializers = [m.sanitize_dependencies(module_set) for m in materializers]
-        function_graph = materialization.modify_graph(self.graph, materializers)
         final_vars = self._create_final_vars(additional_vars)
         materializer_vars = [materializer.id for materializer in materializers]
-        raw_results = self.graph_executor.execute(
-            function_graph,
-            final_vars=final_vars + materializer_vars,
-            overrides=overrides,
-            inputs=inputs,
-        )
-        materialization_output = {key: raw_results[key] for key in materializer_vars}
-        raw_results_output = {key: raw_results[key] for key in final_vars}
+        try:
+            module_set = {_module.__name__ for _module in self.graph_modules}
+            materializers = [m.sanitize_dependencies(module_set) for m in materializers]
+            function_graph = materialization.modify_graph(self.graph, materializers)
+            raw_results = self.graph_executor.execute(
+                function_graph,
+                final_vars=final_vars + materializer_vars,
+                overrides=overrides,
+                inputs=inputs,
+            )
+            materialization_output = {key: raw_results[key] for key in materializer_vars}
+            raw_results_output = {key: raw_results[key] for key in final_vars}
 
-        return materialization_output, raw_results_output
+            return materialization_output, raw_results_output
+        except Exception as e:
+            run_successful = False
+            logger.error(SLACK_ERROR_MESSAGE)
+            error = telemetry.sanitize_error(*sys.exc_info())
+            raise e
+        finally:
+            duration = time.time() - start_time
+            self.capture_execute_telemetry(
+                error, final_vars + materializer_vars, inputs, overrides, run_successful, duration
+            )
 
+    @capture_function_usage
     def visualize_materialization(
         self,
         *materializers: materialization.MaterializerFactory,
