@@ -990,6 +990,14 @@ class Driver:
             module_set = {_module.__name__ for _module in self.graph_modules}
             materializers = [m.sanitize_dependencies(module_set) for m in materializers]
             function_graph = materialization.modify_graph(self.graph, materializers)
+            # need to validate the right inputs has been provided.
+            # we do this on the modified graph.
+            nodes, user_nodes = function_graph.get_upstream_nodes(
+                final_vars + materializer_vars, inputs, overrides
+            )
+            Driver.validate_inputs(function_graph, self.adapter, user_nodes, inputs, nodes)
+            all_nodes = nodes | user_nodes
+            self.graph_executor.validate(list(all_nodes))
             raw_results = self.graph_executor.execute(
                 function_graph,
                 final_vars=final_vars + materializer_vars,
