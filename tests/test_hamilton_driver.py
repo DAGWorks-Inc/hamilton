@@ -453,3 +453,15 @@ def test_builder_defaults_to_dict_result():
 
     result = dr.execute(["C"], inputs={"b": 1, "c": 1})
     assert result == {"C": 4}
+
+
+def test_materialize_checks_required_input(tmp_path):
+    dr = Builder().with_modules(tests.resources.dummy_functions).build()
+    from hamilton.io.materialization import to
+
+    with pytest.raises(ValueError):
+        dr.materialize(additional_vars=["C"], inputs={"c": 1})
+    with pytest.raises(ValueError):
+        dr.materialize(
+            to.pickle(id="1", path=f"{tmp_path}/foo.pkl", dependencies=["C"]), inputs={"c": 1}
+        )
