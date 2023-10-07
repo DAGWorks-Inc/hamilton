@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import dataclasses
 import sys
 from io import BytesIO, IOBase, TextIOWrapper
@@ -443,7 +441,7 @@ class PolarsJSONReader(DataLoader):
     Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.read_json.html
     """
 
-    source: Union[str | Path | IOBase | bytes]
+    source: Union[str, Path, IOBase, bytes]
     schema: SchemaDefinition = None
     schema_overrides: SchemaDefinition = None
 
