@@ -230,7 +230,7 @@ def kaggle_submission_df(filled_test: pd.DataFrame, submission: pd.DataFrame) ->
     :param submission: the submission dataframe.
     :return: massaged DF for submission.
     """
-    predictions = filled_test[["date", "demand"]]
+    predictions = filled_test[["date", "demand"]].copy()
     predictions["id"] = predictions.index
     predictions = pd.pivot(predictions, index="id", columns="date", values="demand").reset_index()
     predictions.columns = ["id"] + ["F" + str(i + 1) for i in range(28)]
