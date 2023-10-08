@@ -8,6 +8,8 @@ from hamilton.plugins.polars_extensions import (
     PolarsCSVWriter,
     PolarsFeatherReader,
     PolarsFeatherWriter,
+    PolarsJSONReader,
+    PolarsJSONWriter,
     PolarsParquetReader,
     PolarsParquetWriter,
 )
@@ -73,3 +75,21 @@ def test_polars_feather(tmp_path: pathlib.Path) -> None:
     assert "compression" in write_kwargs
     assert file_path.exists()
     assert metadata["path"] == file_path
+
+
+def test_polars_json(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
+    file = tmp_path / "test.json"
+    writer = PolarsJSONWriter(file=file, pretty=True)
+    kwargs1 = writer._get_saving_kwargs()
+    writer.save_data(df)
+
+    reader = PolarsJSONReader(source=file)
+    kwargs2 = reader._get_loading_kwargs()
+    df2, metadata = reader.load_data(pl.DataFrame)
+
+    assert PolarsJSONWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsJSONReader.applicable_types() == [pl.DataFrame]
+    assert kwargs1["pretty"]
+    assert df2.shape == (2, 2)
+    assert "schema" not in kwargs2
+    assert df.frame_equal(df2)
