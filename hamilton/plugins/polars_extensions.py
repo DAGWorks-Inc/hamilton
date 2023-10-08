@@ -474,7 +474,7 @@ class PolarsJSONWriter(DataSaver):
     Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.write_json.html
     """
 
-    file: None = None
+    file: Union[IOBase, str, Path] 
     pretty: bool = False
     row_oriented: bool = False
 
