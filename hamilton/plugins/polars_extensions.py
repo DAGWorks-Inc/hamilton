@@ -435,6 +435,68 @@ class PolarsFeatherWriter(DataSaver):
 
 
 @dataclasses.dataclass
+class PolarsAvroReader(DataLoader):
+    """Class specifically to handle loading Avro files with polars
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.read_avro.html
+    """
+
+    file: Union[str, TextIO, BytesIO, Path, BinaryIO, bytes]
+    # kwargs:
+    columns: Union[List[int], List[str], None] = None
+    n_rows: Union[int, None] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self):
+        kwargs = {}
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.n_rows is not None:
+            kwargs["n_rows"] = self.n_rows
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pl.read_avro(self.file, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.file)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "avro"
+
+
+@dataclasses.dataclass
+class PolarsAvroWriter(DataSaver):
+    """Class specifically to handle saving Avro files with Polars.
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.write_avro.html
+    """
+
+    file: Union[BytesIO, TextIOWrapper, str, Path]
+    # kwargs:
+    compression: Any = "uncompressed"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.write_avro(self.file, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.file)
+
+    @classmethod
+    def name(cls) -> str:
+        return "avro"
+
+
+@dataclasses.dataclass
 class PolarsJSONReader(DataLoader):
     """
     Class specifically to handle loading JSON files with Polars.
@@ -508,6 +570,8 @@ def register_data_loaders():
         PolarsParquetWriter,
         PolarsFeatherReader,
         PolarsFeatherWriter,
+        PolarsAvroReader,
+        PolarsAvroWriter,
         PolarsJSONReader,
         PolarsJSONWriter,
     ]:
