@@ -12,10 +12,10 @@ import os
 import shutil
 import sys
 import time
+import urllib.error
+import urllib.request
 from types import ModuleType
 from typing import Callable, Dict, List, NamedTuple, Optional, Tuple, Type, Union
-
-import requests
 
 from hamilton import driver, telemetry
 
@@ -76,6 +76,21 @@ def _track_download(is_official: bool, user: Optional[str], dataflow_name: str, 
     telemetry.send_event_json(event_json)
 
 
+def _get_request(url: str) -> Tuple[int, str]:
+    """Makes a GET request to the given URL and returns the status code and response data.
+
+    :param url: the url to make the request to.
+    :return: tuple of status code and text response decoded as utf-8.
+    """
+    try:
+        with urllib.request.urlopen(url) as response:
+            data = response.read().decode("utf-8")
+            return response.status, data
+
+    except urllib.error.HTTPError as e:
+        return e.code, e.reason
+
+
 @_track_function_call
 def clear_storage():
     """Clears all the data under DATAFLOW_FOLDER."""
@@ -104,12 +119,13 @@ def resolve_latest(branch: str = "main") -> str:
             logger.info("using cached resolve_latest")
             return last_resolve_value
     url = f"https://api.github.com/repos/DAGWorks-Inc/hamilton/git/refs/heads/{branch}"
-    response = requests.get(url)
-    if response.status_code != 200:
+    status_code, text = _get_request(url)
+    # response = requests.get(url)
+    if status_code != 200:
         raise ValueError(
-            f"Failed to resolve latest commit for branch {branch}:\n{response.status_code}\n{response.text}"
+            f"Failed to resolve latest commit for branch {branch}:\n{status_code}\n{text}"
         )
-    commit_sha = json.loads(response.text)["object"]["sha"]
+    commit_sha = json.loads(text)["object"]["sha"]
     last_time_called = time.time()
     last_resolve_value = commit_sha
     return commit_sha
@@ -127,15 +143,16 @@ def resolve_dataflow_commit(dataflow: str, user: str = None) -> str:
         url = f"https://hub.dagworks.io/commits/Users/{user}/{dataflow}/commit.txt"
     else:
         url = f"https://hub.dagworks.io/commits/Official/{dataflow}/commit.txt"
-    response = requests.get(url)
-    if response.status_code != 200:
+    # response = requests.get(url)
+    status_code, text = _get_request(url)
+    if status_code != 200:
         raise ValueError(
-            f"Failed to resolve latest commit for {user}/{dataflow}:\n{response.status_code}\n{response.text}"
+            f"Failed to resolve latest commit for {user}/{dataflow}:\n{status_code}\n{text}"
         )
-    chunk_index = response.text.find("[commit::")
+    chunk_index = text.find("[commit::")
     if chunk_index < 0:
         raise ValueError("No commit found")
-    commit = response.text[chunk_index + len("[commit::") :]
+    commit = text[chunk_index + len("[commit::") :]
     commit_sha = commit[: commit.find("]")]
     return commit_sha
 
@@ -176,14 +193,15 @@ def pull_module(dataflow: str, user: str = None, version: str = "latest", overwr
     os.makedirs(local_file_path, exist_ok=True)
     for h_file in h_files:
         url = BASE_URL.format(commit_ish=version) + f"/user/{user}/{dataflow}/{h_file}"
-        response = requests.get(url)
-        if response.status_code == 404:
+        # response = requests.get(url)
+        status_code, text = _get_request(url)
+        if status_code == 404:
             raise ValueError(f"Dataflow {user}/{dataflow}/{h_file} not found at {url}.")
-        elif response.status_code != 200:
+        elif status_code != 200:
             raise ValueError(
-                f"Dataflow {user}/{dataflow} returned status code {response.status_code}:\n{response.text}"
+                f"Dataflow {user}/{dataflow} returned status code {status_code}:\n{text}"
             )
-        file_contents = response.text
+        file_contents = text
         if os.path.exists(os.path.join(local_file_path, h_file)):
             logger.info(f"Warning: overwriting {h_file} in {local_file_path}")
         with open(os.path.join(local_file_path, h_file), "w") as f:
@@ -508,7 +526,7 @@ def init():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     _user = "zilto"
-    _version = "user_contrib"  # or a git commit hash
+    _version = "latest"  # or a git commit hash
     _dataflow = "text_summarization"
     _module = import_module(_dataflow, _user, _version, overwrite=True)
 
@@ -518,12 +536,22 @@ if __name__ == "__main__":
     # logger.info(dr.list_available_variables())
     dr.display_all_functions("./dag", {"format": "png", "view": False})
 
-    list_dataflows("user_contrib")
-    find("chunk")
+    logger.info("Listing dataflows ---")
+    dfs = list_dataflows(commit_ish=None, user="zilto")
+    logger.info(dfs)
+    logger.info("Listing chunks ---")
+    chunks = find("chunk")
+    logger.info(chunks)
+    logger.info("Determining python dependencies ---")
     are_py_dependencies_satisfied(_user, _dataflow, _version)
     import pprint
 
+    logger.info("Inspect module output ---")
     logger.info(pprint.pformat(inspect_module(_module)))
+    logger.info("Resolve dataflow commit output ---")
+    _version = resolve_dataflow_commit(_dataflow, _user)
+    logger.info(_version)
+    logger.info("Install dependencies output ---")
     logger.info(install_dependencies(_user, _dataflow, _version))
-    logger.info(resolve_dataflow_commit(_dataflow, _user))
+    logger.info("Inspect output ---")
     logger.info(inspect(_user, _dataflow, _version))
