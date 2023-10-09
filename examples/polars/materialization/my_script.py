@@ -61,6 +61,12 @@ materializers = [
         file="./df.json",
         combine=df_builder,
     ),
+    to.avro(
+        dependencies=output_columns,
+        id="df_to_avro",
+        file="./df.avro",
+        combine=df_builder,
+    ),
 ]
 # Visualize what is happening
 dr.visualize_materialization(
@@ -77,6 +83,7 @@ materialization_results, additional_outputs = dr.materialize(
         "df_to_parquet_build_result",
         "df_to_feather_build_result",
         "df_to_json_build_result",
+        "df_to_avro_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
@@ -84,3 +91,4 @@ print(materialization_results)
 print(additional_outputs["df_to_parquet_build_result"])
 print(additional_outputs["df_to_feather_build_result"])
 print(additional_outputs["df_to_json_build_result"])
+print(additional_outputs["df_to_avro_build_result"])
