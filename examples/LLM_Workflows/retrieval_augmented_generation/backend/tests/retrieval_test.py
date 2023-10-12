@@ -36,7 +36,8 @@ def test_prompt_to_summarize_chunk():
     # act
     prompt = retrieval.prompt_to_summarize_chunk(chunk_without_summary, prompt_template)
     # assert
-    assert "{content}" not in prompt 
+    assert "{content}" not in prompt
+    assert prompt == "Prompt template: Chunk text content"
 
 
 def test_prompt_template_to_reduce_summaries():
@@ -53,9 +54,9 @@ def test_prompt_to_reduce_summaries():
     # arrange
     rag_query = "Who is B?"
     chunks = [
-        dict(uuid=0, summary="summary A"),
-        dict(uuid=1, name="John", summary="summary B"),
-        dict(uuid=2, name="Kevin", summary="summary C"),
+        dict(uuid=0, summary="summary A."),
+        dict(uuid=1, name="John", summary="summary B."),
+        dict(uuid=2, name="Kevin", summary="summary C."),
     ]
     prompt_template = "Prompt template: {query}\n{chunks_summary}"
     #act
@@ -63,6 +64,7 @@ def test_prompt_to_reduce_summaries():
     #assert
     assert "{query}" not in prompt
     assert "{chunks_summary}" not in prompt
+    assert prompt == "Prompt template: Who is B?\nsummary A. summary B. summary C."
 
 
 # parametrized alternative to above tests
