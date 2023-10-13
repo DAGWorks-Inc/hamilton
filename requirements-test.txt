@@ -1,4 +1,5 @@
 graphviz
+lightgbm
 lxml
 lz4
 networkx
