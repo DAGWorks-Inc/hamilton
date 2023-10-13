@@ -17,8 +17,8 @@ from hamilton import registry
 from hamilton.io import utils
 from hamilton.io.data_adapters import DataLoader, DataSaver
 
-XGBOOST_MODEL_TYPES = [xgboost.XGBModel, xgboost.Booster]
-XGBOOST_MODEL_TYPES_ANNOTATION = Union[xgboost.XGBModel, xgboost.Booster]
+XGBOOST_MODEL_TYPES = [xgboost.XGBModel, xgboost.Booster, xgboost.XGBClassifier]
+XGBOOST_MODEL_TYPES_ANNOTATION = Union[xgboost.XGBModel, xgboost.Booster, xgboost.XGBClassifier]
 
 
 @dataclasses.dataclass
@@ -77,3 +77,5 @@ def register_data_loaders():
 
 
 register_data_loaders()
+
+COLUMN_FRIENDLY_DF_TYPE = False

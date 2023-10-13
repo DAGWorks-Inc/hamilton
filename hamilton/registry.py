@@ -77,7 +77,9 @@ def load_extension(plugin_module: str):
     :param plugin_module: the module name sans .py. e.g. pandas, polars, pyspark_pandas.
     """
     mod = importlib.import_module(f"hamilton.plugins.{plugin_module}_extensions")
-    # Non standard means we can't apply extradction like we usually do
+    # We have various plugin extensions. We default to assuming it's a dataframe extension with columns,
+    # unless it explicitly says it's not.
+    # We need to check the following if we are to enable `@extract_columns` for example.
     extractable = getattr(mod, "COLUMN_FRIENDLY_DF_TYPE", True)
     if extractable:
         assert hasattr(mod, "register_types"), "Error extension missing function register_types()"
