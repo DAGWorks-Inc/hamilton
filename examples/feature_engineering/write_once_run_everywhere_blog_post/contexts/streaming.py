@@ -2,7 +2,7 @@ import json
 import logging
 import pathlib
 
-from bytewax.connectors.files import FileInput, FileOutput
+from bytewax.connectors.files import CSVInput, FileOutput
 from bytewax.dataflow import Dataflow
 from components import aggregations, data_loaders, features, joins, model
 
@@ -41,7 +41,7 @@ def hamilton_predict(payload: dict):
 
 
 flow = Dataflow()
-flow.input("foobar", FileInput(pathlib.Path("streaming.in")))
+flow.input("surveys-in", CSVInput(pathlib.Path("streaming.csv")))
 flow.inspect(logger.info)
 
 flow.map(deserialize)
@@ -50,4 +50,4 @@ flow.map(hamilton_predict)
 
 flow.map(serialize_with_key)
 
-flow.output("foobar", FileOutput(pathlib.Path("streaming.out")))
+flow.output("surveys-out", FileOutput(pathlib.Path("streaming.out")))
