@@ -466,7 +466,7 @@ class parameterize_sources(parameterize):
 
     """
 
-    def __init__(self, **parameterization: Dict[str, Dict[str, str]]):
+    def __init__(self, **parameterization: Dict[str, str]):
         """Constructor for a modifier that expands a single function into n, each of which corresponds to replacing\
         some subset of the specified parameters with specific upstream nodes.
 
