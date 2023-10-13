@@ -4,10 +4,7 @@ import pytest
 import xgboost
 from sklearn.utils.validation import check_is_fitted
 
-from hamilton.plugins.xgboost_extensions import (
-    XGBoostJsonReader,
-    XGBoostJsonWriter,
-)
+from hamilton.plugins.xgboost_extensions import XGBoostJsonReader, XGBoostJsonWriter
 
 
 @pytest.fixture
@@ -24,7 +21,9 @@ def fitted_xgboost_booster() -> xgboost.Booster:
     return booster
 
 
-def test_xgboost_model_json_writer(fitted_xgboost_model: xgboost.XGBModel, tmp_path: pathlib.Path) -> None:
+def test_xgboost_model_json_writer(
+    fitted_xgboost_model: xgboost.XGBModel, tmp_path: pathlib.Path
+) -> None:
     model_path = tmp_path / "model.json"
     writer = XGBoostJsonWriter(path=model_path)
 
@@ -35,8 +34,7 @@ def test_xgboost_model_json_writer(fitted_xgboost_model: xgboost.XGBModel, tmp_p
 
 
 def test_xgboost_model_json_reader(
-    fitted_xgboost_model: xgboost.XGBModel,
-    tmp_path: pathlib.Path
+    fitted_xgboost_model: xgboost.XGBModel, tmp_path: pathlib.Path
 ) -> None:
     model_path = tmp_path / "model.json"
     fitted_xgboost_model.save_model(model_path)
@@ -48,7 +46,9 @@ def test_xgboost_model_json_reader(
     assert XGBoostJsonReader.applicable_types() == [xgboost.XGBModel, xgboost.Booster]
 
 
-def test_xgboost_booster_json_writer(fitted_xgboost_booster: xgboost.Booster, tmp_path: pathlib.Path) -> None:
+def test_xgboost_booster_json_writer(
+    fitted_xgboost_booster: xgboost.Booster, tmp_path: pathlib.Path
+) -> None:
     booster_path = tmp_path / "booster.json"
     writer = XGBoostJsonWriter(path=booster_path)
 
@@ -59,8 +59,7 @@ def test_xgboost_booster_json_writer(fitted_xgboost_booster: xgboost.Booster, tm
 
 
 def test_xgboost_booster_json_reader(
-    fitted_xgboost_booster: xgboost.Booster,
-    tmp_path: pathlib.Path
+    fitted_xgboost_booster: xgboost.Booster, tmp_path: pathlib.Path
 ) -> None:
     booster_path = tmp_path / "booster.json"
     fitted_xgboost_booster.save_model(booster_path)
@@ -70,5 +69,3 @@ def test_xgboost_booster_json_reader(
 
     assert len(booster.get_dump()) > 0
     assert XGBoostJsonReader.applicable_types() == [xgboost.XGBModel, xgboost.Booster]
-
-

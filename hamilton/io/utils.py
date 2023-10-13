@@ -9,12 +9,9 @@ def get_exception_details(exception: Exception):
     """Gives details about exception from saving or loading a file
     This includes:
     - the exception class name
-    - the exception message    
+    - the exception message
     """
-    return {
-        "exception": exception.__class__.__name__,
-        "message": exception.args[0]
-    }
+    return {"exception": exception.__class__.__name__, "message": exception.args[0]}
 
 
 def get_file_metadata(path: str) -> Dict[str, Any]:
