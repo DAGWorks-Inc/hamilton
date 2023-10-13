@@ -1,3 +1,4 @@
+bytewax
 fastapi
 sf-hamilton
 uvicorn
