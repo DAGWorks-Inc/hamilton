@@ -1,6 +1,11 @@
 import dataclasses
 from pathlib import Path
-from typing import Any, Collection, Dict, Literal, Optional, Tuple, Type, Union
+from typing import Any, Collection, Dict, Optional, Tuple, Type, Union
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 try:
     import lightgbm
