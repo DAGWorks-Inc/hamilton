@@ -8,11 +8,12 @@ import pytest
 import tests.resources.data_quality
 import tests.resources.dynamic_config
 import tests.resources.overrides
-from hamilton import base, driver, settings
+from hamilton import ad_hoc_utils, base, driver, settings
 from hamilton.base import DefaultAdapter
 from hamilton.data_quality.base import DataValidationError, ValidationResult
 from hamilton.execution import executors, grouping
-from hamilton.io.materialization import to
+from hamilton.function_modifiers import source, value
+from hamilton.io.materialization import from_, to
 
 
 @pytest.mark.parametrize(
@@ -314,6 +315,40 @@ def test_materialize_driver_call_end_to_end(tmp_path_factory):
             **tests.resources.test_for_materialization.json_to_save_2(),
             **tests.resources.test_for_materialization.json_to_save_1(),
         }
+
+
+def test_materialize_and_loaders_end_to_end(tmp_path_factory):
+    def processed_data(input_data: dict) -> dict:
+        data = input_data.copy()
+        data["processed"] = True
+        return data
+
+    path_in = tmp_path_factory.mktemp("home") / "unprocessed_data.json"
+    path_out = tmp_path_factory.mktemp("home") / "processed_data.json"
+
+    with open(path_in, "w") as f:
+        json.dump({"processed": False}, f)
+
+    mod = ad_hoc_utils.create_temporary_module(processed_data)
+
+    dr = driver.Driver({}, mod)
+
+    materialization_result, result = dr.materialize(
+        from_.json(target="input_data", path=value(path_in)),
+        to.json(
+            id="materializer",
+            dependencies=["processed_data"],
+            path=source("output_path"),
+            combine=JoinBuilder(),
+        ),
+        additional_vars=["processed_data"],
+        inputs={"output_path": str(path_out)},
+    )
+    assert result["processed_data"] == {"processed": True}
+    assert "materializer" in materialization_result
+
+    with open(path_out) as f:
+        assert json.load(f) == {"processed": True}
 
 
 def test_driver_validate_with_overrides():

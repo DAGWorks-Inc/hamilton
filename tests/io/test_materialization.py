@@ -1,14 +1,22 @@
 import dataclasses
-from typing import Any, Collection, Dict, List, Optional, Type
+from typing import Any, Collection, Dict, List, Optional, Tuple, Type
 
 import pytest
 
 import tests.resources.cyclic_functions
 import tests.resources.test_default_args
 from hamilton import base, graph, node
+from hamilton.function_modifiers import value
 from hamilton.io import materialization
-from hamilton.io.data_adapters import DataSaver
-from hamilton.io.materialization import Materialize, MaterializerFactory, _FactoryProtocol
+from hamilton.io.data_adapters import DataLoader, DataSaver
+from hamilton.io.materialization import (
+    Extract,
+    ExtractorFactory,
+    Materialize,
+    MaterializerFactory,
+    _ExtractorFactoryProtocol,
+    _MaterializerFactoryProtocol,
+)
 
 global_mock_data_saver_cache = {}
 
@@ -23,6 +31,22 @@ class MockDataSaver(DataSaver):
         if self.other_storage_key is not None:
             global_mock_data_saver_cache[self.other_storage_key] = data
         return {"saved": True}
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [dict]
+
+    @classmethod
+    def name(cls) -> str:
+        return "mock_for_testing"
+
+
+@dataclasses.dataclass
+class MockDataLoader(DataLoader):
+    fixed_data: Any
+
+    def load_data(self, type_: Type[Type]) -> Tuple[Type, Dict[str, Any]]:
+        return self.fixed_data, {}
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -50,7 +74,16 @@ class JoinBuilder(base.ResultMixin):
 
 def test_materialization_dynamic_property_access():
     json_materializer = Materialize.json
-    assert isinstance(json_materializer, _FactoryProtocol)  # It should produce a factory function
+    assert isinstance(
+        json_materializer, _MaterializerFactoryProtocol
+    )  # It should produce a factory function
+
+
+def test_extraction_dynamic_property_access():
+    json_extractor = Extract.json
+    assert isinstance(
+        json_extractor, _ExtractorFactoryProtocol
+    )  # It should produce a factory function
 
 
 def test_materializer_factory_generates_nodes_no_builder():
@@ -62,21 +95,43 @@ def test_materializer_factory_generates_nodes_no_builder():
         storage_key="test_materializer_factory_generates_nodes_no_builder",
     )
 
-    def test() -> dict:
+    def only_node() -> dict:
         return {"test_materializer_factory_generates_nodes_no_builder": "ran_correctly"}
 
-    base_node = node.Node.from_fn(test)
-    fn_graph = graph.FunctionGraph({"only_node": base_node}, {})
-    nodes = factory.resolve(fn_graph)
+    base_node = node.Node.from_fn(only_node)
+    fn_graph = graph.FunctionGraph({base_node.name: base_node}, {})
+    nodes = factory.generate_nodes(fn_graph)
     assert len(nodes) == 1  # No builder node
     (node_,) = nodes
     # Call, test the side effect as well as the ret val
-    res = node_(test=test())
+    res = node_(only_node=only_node())
     assert res == {"saved": True}
     assert (
         global_mock_data_saver_cache["test_materializer_factory_generates_nodes_no_builder"]
-        == test()
+        == only_node()
     )
+
+
+def test_extractor_factory_generates_nodes():
+    factory = ExtractorFactory(
+        "input_data",
+        loaders=[MockDataLoader],
+        fixed_data=value({"loaded": True}),
+    )
+
+    def test(input_data: dict) -> dict:
+        return {"loaded_value": input_data}
+
+    base_node = node.Node.from_fn(test)
+    nodes_without_dependencies = graph.update_dependencies(
+        {base_node.name: base_node}, base.DefaultAdapter()
+    )
+    fn_graph = graph.FunctionGraph(nodes_without_dependencies, {})
+    nodes = factory.generate_nodes(fn_graph)
+    nodes_by_name = {node_.name: node_ for node_ in nodes}
+    assert "input_data" in nodes_by_name
+    input_data_node = nodes_by_name["input_data"]
+    assert input_data_node.type == dict  # From above
 
 
 def test_materializer_factory_generates_nodes_with_builder():
@@ -101,7 +156,7 @@ def test_materializer_factory_generates_nodes_with_builder():
     fn_graph = graph.FunctionGraph(
         {"first_node": base_node_0, "second_node": base_node_1}, {}, None
     )
-    nodes = factory.resolve(fn_graph)
+    nodes = factory.generate_nodes(fn_graph)
     assert len(nodes) == 2  # One builder node
     nodes_by_name = {node_.name: node_ for node_ in nodes}
     # Call, test the side effect as well as the ret val
@@ -121,7 +176,7 @@ def test_materializer_factory_generates_nodes_with_builder():
     ] == {**first_node(), **second_node()}
 
 
-def test_modify_function_graph():
+def test_modify_function_graph_materializers():
     factory_1 = MaterializerFactory(
         "materializer_1",
         [MockDataSaver],
@@ -151,11 +206,72 @@ def test_modify_function_graph():
         {"first_node": base_node_0, "second_node": base_node_1}, {}, None
     )
 
-    fn_graph_modified = materialization.modify_graph(fn_graph, [factory_1, factory_2])
+    fn_graph_modified = materialization.modify_graph(fn_graph, [factory_1, factory_2], [])
     assert "materializer_1" in fn_graph_modified.nodes
     assert "materializer_2" in fn_graph_modified.nodes
     assert "first_node" in fn_graph_modified.nodes
     assert "second_node" in fn_graph_modified.nodes
+
+
+# TODO -- add loaders in
+def test_modify_function_graph_with_extractor_factories():
+    factory_1 = ExtractorFactory(
+        "input_data_1", [MockDataLoader], fixed_data={"test_extractor_factory_1": "ran_correctly"}
+    )
+
+    factory_2 = ExtractorFactory(
+        "input_data_2", [MockDataLoader], fixed_data={"test_extractor_factory_2": "ran_correctly"}
+    )
+
+    def first_node(input_data_1: dict) -> dict:
+        return {"loaded_result": input_data_1}
+
+    def second_node(input_data_2: dict) -> dict:
+        return {"loaded_result": input_data_2}
+
+    base_node_0 = node.Node.from_fn(first_node)
+    base_node_1 = node.Node.from_fn(second_node)
+
+    fn_graph = graph.FunctionGraph(
+        {"first_node": base_node_0, "second_node": base_node_1}, {}, None
+    )
+
+    fn_graph_modified = materialization.modify_graph(fn_graph, [], [factory_1, factory_2])
+    assert "input_data_1" in fn_graph_modified.nodes
+    assert "input_data_2" in fn_graph_modified.nodes
+    res = fn_graph_modified.execute(
+        nodes=[fn_graph_modified.nodes["first_node"], fn_graph_modified.nodes["second_node"]]
+    )
+    assert res["input_data_1"] == {"test_extractor_factory_1": "ran_correctly"}
+    assert res["input_data_2"] == {"test_extractor_factory_2": "ran_correctly"}
+    assert res["first_node"] == {"loaded_result": {"test_extractor_factory_1": "ran_correctly"}}
+    assert res["second_node"] == {"loaded_result": {"test_extractor_factory_2": "ran_correctly"}}
+
+
+def test_modify_function_graph_with_extractor_factories_override():
+    """Tests that if we use an injector as an override, its gets run, and the node its replacing does not"""
+    factory = ExtractorFactory(
+        "value_to_override", [MockDataLoader], fixed_data={"overwritten_result": True}
+    )
+    ran = False
+
+    def value_to_override() -> dict:
+        nonlocal ran
+        ran = True
+        return {"overwritten_result": False}
+
+    base_node_0 = node.Node.from_fn(value_to_override)
+
+    fn_graph = graph.FunctionGraph({base_node_0.name: base_node_0}, {}, None)
+
+    fn_graph_modified = materialization.modify_graph(fn_graph, [], [factory])
+    assert "value_to_override" in fn_graph_modified.nodes
+    assert (
+        len(fn_graph_modified.nodes[base_node_0.name].input_types) > 0
+    )  # It actually has some as its a loader
+    res = fn_graph_modified.execute(nodes=[fn_graph_modified.nodes["value_to_override"]])
+    assert res["value_to_override"] == {"overwritten_result": True}
+    assert ran is False
 
 
 def test_sanitize_materializer_dependencies_happy():

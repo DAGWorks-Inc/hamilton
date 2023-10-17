@@ -17,6 +17,7 @@ import pandas as pd
 from hamilton import common
 from hamilton.execution import executors, graph_functions, grouping, state
 from hamilton.io import materialization
+from hamilton.io.materialization import ExtractorFactory, MaterializerFactory
 
 SLACK_ERROR_MESSAGE = (
     "-------------------------------------------------------------------\n"
@@ -850,21 +851,42 @@ class Driver:
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
 
+    def _process_materializers(
+        self, materializers: typing.Sequence[Union[MaterializerFactory, ExtractorFactory]]
+    ) -> Tuple[List[MaterializerFactory], List[ExtractorFactory]]:
+        """Processes materializers, splitting them into materializers and extractors.
+        Note that this also sanitizes the variable names in the materializer dependencies,
+        so one can pass in functions instead of strings.
+
+        :param materializers: Materializers to process
+        :return: Tuple of materializers and extractors
+        """
+        module_set = {_module.__name__ for _module in self.graph_modules}
+        materializer_factories = [
+            m.sanitize_dependencies(module_set)
+            for m in materializers
+            if isinstance(m, MaterializerFactory)
+        ]
+        extractor_factories = [m for m in materializers if isinstance(m, ExtractorFactory)]
+        return materializer_factories, extractor_factories
+
     @capture_function_usage
     def materialize(
         self,
-        *materializers: materialization.MaterializerFactory,
+        *materializers: Union[
+            materialization.MaterializerFactory, materialization.ExtractorFactory
+        ],
         additional_vars: List[Union[str, Callable, Variable]] = None,
         overrides: Dict[str, Any] = None,
         inputs: Dict[str, Any] = None,
     ) -> Tuple[Any, Dict[str, Any]]:
-        """Executes and materializes with ad-hoc materializers.This does the following:
-        1. Creates a new graph, appending the desired materialization nodes
-        2. Runs the graph with the materialization nodes outputted, as well as any additional
-        nodes requested (which can be empty)
-        3. Returns a Tuple[Materialization metadata, additional_vars result]
+        """Executes and materializes with ad-hoc materializers (`to`) and extractors (`from_`).This does the following:
 
-        For instance, say you want to Materialize the output of a node to CSV:
+        1. Creates a new graph, appending the desired materialization nodes and prepending the desired extraction nodes
+        2. Runs the portion of the DAG upstream of the materialization nodes outputted, as well as any additional nodes requested (which can be empty)
+        3. Returns a Tuple[Materialization metadata, additional vars result]
+
+        For instance, say you want to load data, process it, then materialize the output of a node to CSV:
 
         .. code-block:: python
 
@@ -872,7 +894,11 @@ class Driver:
              from hamilton.io.materialization import to
              dr = driver.Driver(my_module, {})
              # foo, bar are pd.Series
-             metadata, result = dr.Materialize(
+             metadata, result = dr.materialize(
+                 from_.csv(
+                     target="input_data",
+                     path="./input.csv"
+                 ),
                  to.csv(
                      path="./output.csv"
                      id="foo_bar_csv",
@@ -882,17 +908,20 @@ class Driver:
                  additional_vars=["foo", "bar"]
              )
 
-        The code above will Materialize the dataframe with "foo" and "bar" as columns, saving it as
-        a CSV file at "./output.csv". The metadata will contain any additional relevant information,
-        and result will be a dictionary with the keys "foo" and "bar" containing the original data.
+        The code above will do the following:
 
-        Note that we pass in a `ResultBuilder` as the `combine` argument, as we may be materializing
-        several nodes.
+        1. Load the CSV at "./input.csv" and inject it into he DAG as input_data
+        2. Run the nodes in the DAG on which "foo" and "bar" depend
+        3. Materialize the dataframe with "foo" and "bar" as columns, saving it as a CSV file at "./output.csv". The metadata will contain any additional relevant information, and result will be a dictionary with the keys "foo" and "bar" containing the original data.
+
+        Note that we pass in a `ResultBuilder` as the `combine` argument to `to`, as we may be materializing
+        several nodes. This is not relevant in `from_` as we are only loading one dataset.
 
         additional_vars is used for debugging -- E.G. if you want to both realize side-effects and
         return an output for inspection. If left out, it will return an empty dictionary.
 
-        You can bypass the `combine` keyword if only one output is required. In this circumstance "combining/joining" isn't required, e.g. you do that yourself in a function and/or the output of the function
+        You can bypass the `combine` keyword for `to` if only one output is required. In this circumstance
+        "combining/joining" isn't required, e.g. you do that yourself in a function and/or the output of the function
         can be directly used. In the case below the output can be turned in to a CSV.
 
         .. code-block:: python
@@ -901,7 +930,11 @@ class Driver:
              from hamilton.io.materialization import to
              dr = driver.Driver(my_module, {})
              # foo, bar are pd.Series
-             metadata, _ = dr.Materialize(
+             metadata, _ = dr.materialize(
+                 from_.csv(
+                     target="input_data",
+                     path="./input.csv"
+                 ),
                  to.csv(
                      path="./output.csv"
                      id="foo_bar_csv",
@@ -929,6 +962,10 @@ class Driver:
              dr = driver.Driver(my_module, {})
              # foo, bar are pd.Series
              metadata, result = dr.Materialize(
+                 from_.csv(
+                    target="input_data",
+                    path=source("load_path")
+                 ),
                  to.csv(
                      path=source("save_path"),
                      id="foo_bar_csv",
@@ -954,25 +991,48 @@ class Driver:
                 to.model_registry(
                     training_data=source("training_data"),
                     id="foo_model_registry",
+                    tags={"run_id" : ..., "training_date" : ..., ...},
                     dependencies=["foo_model"]
                 ),
             )
 
         In this case, we bypass a result builder (as there's only one model), the single
         node we depend on gets saved, and we pass in the training data as an input so the
-        materializer can infer the signature
+        materializer can infer the signature.
 
-        This is customizable through two APIs:
-            1. Custom data savers ( :doc:`/concepts/decorators-overview`
+        You could also imagine a driver that loads up a model, runs inference, then saves the result:
+
+        .. code-block:: python
+
+            from hamilton import driver, base
+            from hamilton.function_modifiers import source
+            from hamilton.io.materialization import to
+            dr = driver.Driver(my_module, {})
+            metadata, _ = dr.Materialize(
+                from_.model_registry(
+                    target="input_model",
+                    query_tags={"training_date" : ..., model_version: ...}, # query based on run_id, model_version
+                ),
+                to.csv(
+                    path=source("save_path"),
+                    id="save_inference_data",
+                    dependencies=["inference_data"],
+                )
+            )
+
+        Note that the "from" extractor has an interesting property -- it effectively functions as overrides. This
+        means that it can *replace* nodes within a DAG, short-circuiting their behavior. Similar to passing overrides, but they
+        are dynamically computed with the DAG, rather than statically included from the beginning.
+
+        This is customizable through a few APIs:
+            1. Custom data savers ( :doc:`/concepts/decorators-overview`)
             2. Custom result builders
+            3. Custom data loaders ( :doc:`/concepts/decorators-overview`)
 
         If you find yourself writing these, please consider contributing back! We would love
         to round out the set of available materialization tools.
 
-        If you find yourself writing these, please consider contributing back! We would love
-        to round out the set of available materialization tools.
-
-        :param materializers: Materializer factories, created with Materialize.<output_type>
+        :param materializers: Materializer/extractors to use, created with to.xyz or `from.xyz`
         :param additional_vars: Additional variables to return from the graph
         :param overrides: Overrides to pass to execution
         :param inputs: Inputs to pass to execution
@@ -985,13 +1045,18 @@ class Driver:
         error = None
 
         final_vars = self._create_final_vars(additional_vars)
-        materializer_vars = [materializer.id for materializer in materializers]
+        # This is so the finally logging statement does not accidentally die
+        materializer_vars = []
         try:
-            module_set = {_module.__name__ for _module in self.graph_modules}
-            materializers = [m.sanitize_dependencies(module_set) for m in materializers]
-            function_graph = materialization.modify_graph(self.graph, materializers)
+            materializer_factories, extractor_factories = self._process_materializers(materializers)
+            function_graph = materialization.modify_graph(
+                self.graph, materializer_factories, extractor_factories
+            )
             # need to validate the right inputs has been provided.
             # we do this on the modified graph.
+            # Note we will not run the loaders if they're not upstream of the
+            # materializers or additional_vars
+            materializer_vars = [m.id for m in materializer_factories]
             nodes, user_nodes = function_graph.get_upstream_nodes(
                 final_vars + materializer_vars, inputs, overrides
             )
@@ -1022,7 +1087,7 @@ class Driver:
     @capture_function_usage
     def visualize_materialization(
         self,
-        *materializers: materialization.MaterializerFactory,
+        *materializers: Union[MaterializerFactory, ExtractorFactory],
         output_file_path: str = None,
         render_kwargs: dict = None,
         additional_vars: List[Union[str, Callable, Variable]] = None,
@@ -1033,7 +1098,7 @@ class Driver:
         """Visualizes materialization. This helps give you a sense of how materialization
         will impact the DAG.
 
-        :param materializers: Materializers to use, see the materialize() function
+        :param materializers: Materializers/Extractors to use, see the materialize() function
         :param additional_vars: Additional variables to compute (in addition to materializers)
         :param output_file_path: Path to output file. Optional. Skip if in a Jupyter Notebook.
         :param render_kwargs: Arguments to pass to render. Optional.
@@ -1044,12 +1109,12 @@ class Driver:
         """
         if additional_vars is None:
             additional_vars = []
-
-        module_set = {_module.__name__ for _module in self.graph_modules}
-        materializers = [m.sanitize_dependencies(module_set) for m in materializers]
-        function_graph = materialization.modify_graph(self.graph, materializers)
+        materializer_factories, extractor_factories = self._process_materializers(materializers)
+        function_graph = materialization.modify_graph(
+            self.graph, materializer_factories, extractor_factories
+        )
         _final_vars = self._create_final_vars(additional_vars) + [
-            materializer.id for materializer in materializers
+            materializer.id for materializer in materializer_factories
         ]
         return Driver._visualize_execution_helper(
             function_graph,

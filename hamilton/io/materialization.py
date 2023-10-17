@@ -6,15 +6,15 @@ import typing
 from typing import Any, Dict, List, Optional, Set, Type, Union
 
 from hamilton import base, common, graph, node
-from hamilton.function_modifiers.adapters import SaveToDecorator
+from hamilton.function_modifiers.adapters import LoadFromDecorator, SaveToDecorator
 from hamilton.function_modifiers.dependencies import SingleDependency, value
-from hamilton.graph import FunctionGraph
-from hamilton.io.data_adapters import DataSaver
-from hamilton.registry import SAVER_REGISTRY
+from hamilton.graph import FunctionGraph, update_dependencies
+from hamilton.io.data_adapters import DataLoader, DataSaver
+from hamilton.registry import LOADER_REGISTRY, SAVER_REGISTRY
 
 
 class materialization_meta__(type):
-    """Metaclass for the load_from decorator. This is specifically to allow class access method.
+    """Metaclass for the to. materializer. This is specifically to allow class access method.
     This only exists to add more helpful error messages. We dynamically assign the attributes
     below (see `_set_materializer_attrs`), which helps with auto-complete.
     """
@@ -38,11 +38,107 @@ class materialization_meta__(type):
                 f"No data materializer named: {item}. "
                 f"Available materializers are: {SAVER_REGISTRY.keys()}. "
                 "If you've gotten to this point, you either (1) spelled the "
-                "loader name wrong, (2) are trying to use a loader that does"
+                "materializer name wrong, (2) are trying to use a materializer that does"
                 "not exist (yet). For a list of available materializers, see  "
                 "https://hamilton.readthedocs.io/reference/io/available-data-adapters/#data"
                 "-loaders "
             ) from e
+
+
+class extractor_meta__(type):
+    """Metaclass for the from_. extractor pattern. This is specifically to allow class access method.
+    This only exists to add more helpful error messages. We dynamically assign the attributes
+    below (see `_set_extractor_attrs`), which helps with auto-complete.
+
+    TODO -- reduce shared code between this and the loader above.
+    """
+
+    def __new__(cls, name, bases, clsdict):
+        """Boiler plate for a metaclass -- this just instantiates it as a type. It also sets the
+        annotations to be available later.
+        """
+        clsobj = super().__new__(cls, name, bases, clsdict)
+        clsobj.__annotations__ = {}
+        return clsobj
+
+    def __getattr__(cls, item: str) -> "MaterializerFactory":
+        """This *just* exists to provide a more helpful error message. If you try to access
+        a property that doesn't exist, we'll raise an error that tells you what properties
+        are available/where to learn more."""
+        try:
+            return super().__getattribute__(item)
+        except AttributeError as e:
+            raise AttributeError(
+                f"No data loadder named: {item}. "
+                f"Available loaders are: {LOADER_REGISTRY.keys()}. "
+                "If you've gotten to this point, you either (1) spelled the "
+                "loader name wrong, (2) are trying to use a loader that does"
+                "not exist (yet). For a list of available loaders, see  "
+                "https://hamilton.readthedocs.io/reference/io/available-data-adapters/#data"
+                "-loaders "
+            ) from e
+
+
+def process_kwargs(
+    data_saver_kwargs: Dict[str, Union[Any, SingleDependency]]
+) -> Dict[str, SingleDependency]:
+    """Processes raw strings from the user, converting them into dependency specs.
+    This goes according to the following rules.
+
+    1. If it is a `SingleDependency`, we leave it alone
+    2. If it is anything else, we treat it as a literal, and convert it to a value(...)
+
+    This is so that everything is in the shape of source/value, and we can uniformally handle it later.
+
+    :param data_saver_kwargs: Kwargs passed in from the user
+    :return: Processed kwargs
+    """
+    processed_kwargs = {}
+    for kwarg, kwarg_val in data_saver_kwargs.items():
+        if not isinstance(kwarg_val, SingleDependency):
+            processed_kwargs[kwarg] = value(kwarg_val)
+        else:
+            processed_kwargs[kwarg] = kwarg_val
+    return processed_kwargs
+
+
+class ExtractorFactory:
+    def __init__(
+        self,
+        target: str,
+        loaders: List[Type[DataLoader]],
+        **data_loader_kwargs: Union[Any, SingleDependency],
+    ):
+        """Instantiates an ExtractorFactory. Note this is not a public API -- this is
+        internally what gets called (through a factory method) to create it. Called using `from_`,
+        E.G. `from_.csv`.
+
+        :param target: Parameter, into which we're loading the data
+        :param loaders: A list of data loaders that are viable candidates, given the key after `from_`
+        :param data_loader_kwargs: Keyword arguments for the data loaders.
+        """
+        self.target = target
+        self.loaders = loaders
+        self.data_loader_kwargs = process_kwargs(data_loader_kwargs)
+
+    def generate_nodes(self, fn_graph: graph.FunctionGraph) -> List[node.Node]:
+        """Resolves the extractor, returning the set of nodes that should get
+        added to the function graph. Note that this is an upsert operation --
+        these nodes can replace existing nodes.
+
+        :param fn_graph: Function graph
+        :return: List of nodes to add/upsert to the graph
+        """
+
+        decorator = LoadFromDecorator(self.loaders, self.target, **self.data_loader_kwargs)
+        # TODO -- add some nodes to the graph
+        node_with_target = fn_graph.nodes.get(self.target)
+        if node_with_target is None:
+            raise ValueError(
+                f"Could not find node with name: {self.target} in function "
+                f"graph. Available nodes: {list(fn_graph.nodes.keys()) + [...] if len(fn_graph.nodes) > 10 else []}"
+            )
+        return decorator.get_loader_nodes(self.target, node_with_target.type, namespace=None)
 
 
 class MaterializerFactory:
@@ -72,7 +168,7 @@ class MaterializerFactory:
         self.savers = savers
         self.result_builder = result_builder
         self.dependencies = dependencies
-        self.data_saver_kwargs = self._process_kwargs(data_saver_kwargs)
+        self.data_saver_kwargs = process_kwargs(data_saver_kwargs)
 
     def sanitize_dependencies(self, module_set: Set[str]) -> "MaterializerFactory":
         """Sanitizes the dependencies to ensure they're strings.
@@ -88,28 +184,11 @@ class MaterializerFactory:
             self.id, self.savers, self.result_builder, final_vars, **self.data_saver_kwargs
         )
 
-    @staticmethod
-    def _process_kwargs(
-        data_saver_kwargs: Dict[str, Union[Any, SingleDependency]]
-    ) -> Dict[str, SingleDependency]:
-        """Processes raw strings from the user, converting them into dependency specs.
-
-        :param data_saver_kwargs: Kwargs passed in from the user
-        :return:
-        """
-        processed_kwargs = {}
-        for kwarg, kwarg_val in data_saver_kwargs.items():
-            if not isinstance(kwarg_val, SingleDependency):
-                processed_kwargs[kwarg] = value(kwarg_val)
-            else:
-                processed_kwargs[kwarg] = kwarg_val
-        return processed_kwargs
-
     def _resolve_dependencies(self, fn_graph: graph.FunctionGraph) -> List[node.Node]:
         return [fn_graph.nodes[name] for name in self.dependencies]
 
-    def resolve(self, fn_graph: graph.FunctionGraph) -> List[node.Node]:
-        """Resolves a materializer, returning the set of nodes that should get
+    def generate_nodes(self, fn_graph: graph.FunctionGraph) -> List[node.Node]:
+        """Generates additional nodes from a materializer, returning the set of nodes that should get
         appended to the function graph. This does two things:
 
         1. Adds a node that handles result-building
@@ -160,7 +239,7 @@ if sys.version_info >= (3, 8):
     from typing import Protocol
 
     @typing.runtime_checkable
-    class _FactoryProtocol(Protocol):
+    class _MaterializerFactoryProtocol(Protocol):
         """Typing for the create_materializer_factory function"""
 
         def __call__(
@@ -172,11 +251,17 @@ if sys.version_info >= (3, 8):
         ) -> MaterializerFactory:
             ...
 
+    @typing.runtime_checkable
+    class _ExtractorFactoryProtocol(Protocol):
+        def __call__(self, target: str, **kwargs: Union[str, SingleDependency]) -> ExtractorFactory:
+            ...
+
 else:
-    _FactoryProtocol = object
+    _MaterializerFactoryProtocol = object
+    _ExtractorFactoryProtocol = object
 
 
-def partial_materializer(data_savers: List[Type[DataSaver]]) -> _FactoryProtocol:
+def partial_materializer(data_savers: List[Type[DataSaver]]) -> _MaterializerFactoryProtocol:
     """Creates a partial materializer, with the specified data savers."""
 
     def create_materializer_factory(
@@ -196,6 +281,22 @@ def partial_materializer(data_savers: List[Type[DataSaver]]) -> _FactoryProtocol
     return create_materializer_factory
 
 
+def partial_extractor(data_loaders: List[Type[DataLoader]]) -> _ExtractorFactoryProtocol:
+    """Creates a partial materializer, with the specified data savers."""
+
+    def create_extractor_factory(
+        target: str,
+        **kwargs: typing.Any,
+    ) -> ExtractorFactory:
+        return ExtractorFactory(
+            target=target,
+            loaders=data_loaders,
+            **kwargs,
+        )
+
+    return create_extractor_factory
+
+
 class Materialize(metaclass=materialization_meta__):
     """Materialize class to facilitate easy reference. Note that you should never need to refer
     to this directly. Rather, this should be referred as `to` in hamilton.io."""
@@ -211,12 +312,28 @@ class to(Materialize):
     pass
 
 
+class Extract(metaclass=extractor_meta__):
+    """Extract class to facilitate easy reference. Note that you should never need to refer
+    to this directly. Rather, this should be referred as `from_` in hamilton.io."""
+
+
+class from_(Extract):
+    """This is the entry point for Extraction. Note that this is coupled
+    with the driver's materialiez function -- properties are dynamically assigned
+    based on data loaders that have been registered, allowing you to call `from_.csv`/`from_.json`.
+    For full documentation, see the documentation for the `materialize` function in the hamilton
+    driver.
+    """
+
+
 def _set_materializer_attrs():
     """Sets materialization attributes for easy reference. This sets it to the available keys.
     This is so one can get auto-complete"""
 
     def with_modified_signature(
-        fn: Type[_FactoryProtocol], dataclasses_union: List[Type[dataclasses.dataclass]]
+        fn: Type[_MaterializerFactoryProtocol],
+        dataclasses_union: List[Type[dataclasses.dataclass]],
+        key: str,
     ):
         """Modifies the signature to include the parameters from *all* dataclasses.
         Note this just replaces **kwargs with the union of the parameters. Its not
@@ -227,6 +344,7 @@ def _set_materializer_attrs():
 
         :param fn: Function to modify -- will change the signature.
         :param dataclasses_union: All dataclasses to union.
+        :param key: Key to use for the materializer.
         :return: The function without **kwargs and with the union of the parameters.
         """
         original_signature = inspect.signature(fn)
@@ -277,31 +395,66 @@ def _set_materializer_attrs():
         """
         return wrapper
 
-    # only go through the savers as those are the targets of materializers
-    for key, item in SAVER_REGISTRY.items():
-        potential_loaders = SAVER_REGISTRY[key]
-        savers = [loader for loader in potential_loaders if issubclass(loader, DataSaver)]
-        if len(savers) > 0:
-            partial = partial_materializer(SAVER_REGISTRY[key])
-            partial_with_signature = with_modified_signature(partial, SAVER_REGISTRY[key])
-            setattr(Materialize, key, partial_with_signature)
-            Materialize.__annotations__[key] = type(partial_with_signature)
+    # Go through savers and loaders and add them to the class
+    # This way we can access with from_.xyz/to.xyz
+    for registry, cls_target, adapter_type, partial_factory in [
+        (SAVER_REGISTRY, Materialize, DataSaver, partial_materializer),
+        (LOADER_REGISTRY, Extract, DataLoader, partial_extractor),
+    ]:
+        for key, potential_loaders in registry.items():
+            loaders = [loader for loader in potential_loaders if issubclass(loader, adapter_type)]
+            if len(loaders) > 0:
+                partial = partial_factory(potential_loaders)
+                partial_with_signature = with_modified_signature(partial, potential_loaders, key)
+                setattr(cls_target, key, partial_with_signature)
+                cls_target.__annotations__[key] = type(partial_with_signature)
 
 
 _set_materializer_attrs()
 
 
 def modify_graph(
-    fn_graph: FunctionGraph, materializer_factories: List[MaterializerFactory]
+    fn_graph: FunctionGraph,
+    materializer_factories: List[MaterializerFactory],
+    extractor_factories: List[ExtractorFactory],
 ) -> FunctionGraph:
-    """Modifies the function graph, adding in the specified materialization nodes.
-    This is purely a utility function to make reading upstream code easier.
+    """Modifies the function graph, adding in the specified materialization/loader nodes.
+
+    Note that this is not simple -- adding materializers is different from adding loaders:
+    1. Materializers can simply be appended to the beginning of the graph
+    2. loaders (currently) function as "injected nodes", meaning they behave as overrides.
+    We don't actually *feed* them in as overrides (as that would have to be a 2-pass process).
+    Rather, we add them to the graph, then prune the paths that are upstream of *just them*,
+    that can't possibly be executed
 
     :param graph: Graph to modify.
-    :param materializers: Materializers to add to the graph
+    :param materializer_factories: Materializer factories (created by to.xyz) to add to the graph
+    :param extractor_factories: Loader factories (created by from_.xyz) to add to the graph
     :return: A new graph with the materializers.
     """
-    additional_nodes = []
+    materializer_nodes = []
     for materializer in materializer_factories:
-        additional_nodes.extend(materializer.resolve(fn_graph))
-    return fn_graph.with_nodes({node_.name: node_ for node_ in additional_nodes})
+        materializer_nodes.extend(materializer.generate_nodes(fn_graph))
+    fn_graph = fn_graph.with_nodes({node_.name: node_ for node_ in materializer_nodes})
+    loader_nodes = []
+    # We want to treat this as an override
+    # For now what we'll do is:
+    # 1. Replace the nodes we're replacing
+    # 2. Update dependencies
+    # This will leave some dangling nodes, but we can deal with those later...
+    for loader in extractor_factories:
+        loader_nodes.extend(loader.generate_nodes(fn_graph))
+    graph_nodes = fn_graph.nodes.copy()
+    for loader_node in loader_nodes:
+        graph_nodes[loader_node.name] = loader_node
+    # Simpler to just create a new one
+    # This leaks some details slightly -- E.G. how the dependencies work
+    # We should probably add this as part of the functiong raph constructor?
+    # For now this will be OK
+    fn_graph = graph.FunctionGraph(
+        nodes=update_dependencies(graph_nodes, fn_graph.adapter),
+        config=fn_graph.config,
+        adapter=fn_graph.adapter,
+    )
+    # TODO -- prune the nodes that are upstream *only* of the old loader nodes, and not
+    return fn_graph
