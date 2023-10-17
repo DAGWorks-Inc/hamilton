@@ -25,7 +25,9 @@ For reference we list available decorators for Hamilton here. Note: use
    parameterize_sources
    parameterize_subdag
    parameterize_values
+   pipe
    resolve
    save_to
    subdag
    tag
+   with_columns
