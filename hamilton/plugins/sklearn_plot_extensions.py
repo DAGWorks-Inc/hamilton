@@ -4,7 +4,7 @@ from typing import Any, Collection, Dict, Tuple, Type, Union
 
 
 try:
-    import sklearn.metrics #import ConfusionMatrixDisplay, plot_confusion_matrix
+    import sklearn.metrics
 except ImportError:
     raise NotImplementedError("scikit-learn is not installed.")
 
