@@ -153,29 +153,16 @@ class LoadFromDecorator(NodeInjector):
             )
         return self.inject
 
-    def inject_nodes(
-        self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
-    ) -> Tuple[Collection[node.Node], Dict[str, str]]:
-        pass
-        """Generates two nodes:
-        1. A node that loads the data from the data source, and returns that + metadata
-        2. A node that takes the data from the data source, injects it into, and runs, the function.
-
-        :param fn: The function to decorate.
-        :param config: The configuration to use.
-        :return: The resolved nodes
-        """
-        inject_parameter = self._select_param_to_inject(list(params.keys()), fn)
-        load_type = params[inject_parameter]
+    def get_loader_nodes(
+        self, inject_parameter: str, load_type: Type[Type], namespace: str = None
+    ) -> List[node.Node]:
         loader_cls = resolve_adapter_class(
             load_type,
             self.loader_classes,
         )
         if loader_cls is None:
             raise InvalidDecoratorException(
-                f"If you have multiple parameters required, "
-                f"you must pass `inject_` to the load_from decorator for "
-                f"function: {fn.__qualname__}"
+                f"Could not resolve adapter for type: {load_type} given key"
             )
         loader_factory = AdapterFactory(loader_cls, **self.kwargs)
         # dependencies is a map from param name -> source name
@@ -233,7 +220,9 @@ class LoadFromDecorator(NodeInjector):
                 "hamilton.data_loader.classname": f"{loader_cls.__qualname__}",
                 "hamilton.data_loader.node": inject_parameter,
             },
-            namespace=(fn.__name__, "load_data"),
+            namespace=(namespace, "load_data")
+            if namespace
+            else ("load_data",),  # We want no namespace in this case
         )
 
         # the filter node is the node that takes the data from the data source, filters out
@@ -255,8 +244,35 @@ class LoadFromDecorator(NodeInjector):
                 "hamilton.data_loader.classname": f"{loader_cls.__qualname__}",
                 "hamilton.data_loader.node": inject_parameter,
             },
-            namespace=(fn.__name__, "select_data"),
+            # This is a little sloppy -- we need to figure out the best way to handle namespacing
+            # In reality we will likely be changing the API -- using the logging construct so we don't have
+            # to have this weird DAG shape. For now, this solves the problem, and this is an internal component of the API
+            # so we're good to go
+            namespace=(namespace, "select_data") if namespace else (),  # We want no namespace
         )
+        return [loader_node, filter_node]
+
+    def inject_nodes(
+        self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
+    ) -> Tuple[Collection[node.Node], Dict[str, str]]:
+        pass
+        """Generates two nodes:
+        1. A node that loads the data from the data source, and returns that + metadata
+        2. A node that takes the data from the data source, injects it into, and runs, the function.
+
+        :param fn: The function to decorate.
+        :param config: The configuration to use.
+        :return: The resolved nodes
+        """
+        inject_parameter = self._select_param_to_inject(list(params.keys()), fn)
+        load_type = params[inject_parameter]
+        try:
+            loader_node, filter_node = self.get_loader_nodes(
+                inject_parameter, load_type, fn.__name__
+            )
+        except InvalidDecoratorException as e:
+            raise InvalidDecoratorException(f"Cannot find : {fn.__qualname__}: {e}") from e
+
         return [loader_node, filter_node], {inject_parameter: filter_node.name}
 
     def _get_inject_parameter_from_function(self, fn: Callable) -> Tuple[str, Type[Type]]:
