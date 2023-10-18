@@ -4,6 +4,7 @@ import pandas as pd
 import pandera as pa
 
 from hamilton.data_quality import base
+from hamilton.htypes import custom_subclass_check
 
 
 class PanderaDataFrameValidator(base.BaseDefaultValidator):
@@ -15,7 +16,7 @@ class PanderaDataFrameValidator(base.BaseDefaultValidator):
 
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
-        return issubclass(
+        return custom_subclass_check(
             datatype, pd.DataFrame
         )  # TODO -- allow for modin, etc. as they come for free with pandera
 
@@ -55,7 +56,7 @@ class PanderaSeriesSchemaValidator(base.BaseDefaultValidator):
 
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
-        return issubclass(
+        return custom_subclass_check(
             datatype, pd.Series
         )  # TODO -- allow for modin, etc. as they come for free with pandera
 
