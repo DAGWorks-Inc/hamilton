@@ -12,6 +12,8 @@ from hamilton.plugins.polars_extensions import (
     PolarsJSONWriter,
     PolarsParquetReader,
     PolarsParquetWriter,
+    PolarsSpreadsheetReader,
+    PolarsSpreadsheetWriter,
 )
 
 
@@ -75,6 +77,24 @@ def test_polars_feather(tmp_path: pathlib.Path) -> None:
     assert "compression" in write_kwargs
     assert file_path.exists()
     assert metadata["path"] == file_path
+
+
+def test_polars_spreadsheet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
+    file = tmp_path / "test.excel"
+    writer = PolarsSpreadsheetWriter(workbook=file)
+    kwargs1 = writer._get_saving_kwargs()
+    writer.save_data(df)
+
+    reader = PolarsSpreadsheetReader(source=file)
+    kwargs2 = reader._get_loading_kwargs()
+    df2, metadata = reader.load_data(pl.DataFrame)
+
+    assert PolarsJSONWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsJSONReader.applicable_types() == [pl.DataFrame]
+    assert kwargs1["position"] == 'A1'
+    assert df2.shape == (2, 2)
+    assert kwargs2['raise_if_empty'] is True
+    assert df.frame_equal(df2)
 
 
 def test_polars_json(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:

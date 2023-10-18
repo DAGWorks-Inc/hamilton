@@ -15,6 +15,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    Literal,
 )
 
 try:
@@ -23,11 +24,18 @@ except ImportError:
     raise NotImplementedError("Polars is not installed.")
 
 from polars import PolarsDataType
-
+from xlsxwriter.workbook import Workbook
 # for polars <0.16.0 we need to determine whether type_aliases exist.
 has_alias = False
 if hasattr(pl, "type_aliases"):
     has_alias = True
+
+
+from polars.type_aliases import ColumnFormatDict, OneOrMoreDataTypes, \
+    ConditionalFormatDict, ColumnTotalsDefinition, ColumnWidthsDefinition, RowTotalsDefinition, SelectorType, SchemaDict
+
+from polars.selectors import _selector_proxy_
+from polars.datatypes import DataType, DataTypeClass
 
 # for polars 0.18.0 we need to check what to do.
 if has_alias and hasattr(pl.type_aliases, "CsvEncoding"):
@@ -499,6 +507,146 @@ class PolarsJSONWriter(DataSaver):
         return "json"
 
 
+@dataclasses.dataclass
+class PolarsSpreadsheetReader(DataLoader):
+    """
+    Class specifically to handle loading Spreadsheet files with Polars.
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.read_excel.html
+    """
+
+    source: Union[str, BytesIO, Path, BinaryIO, bytes]
+    sheet_id = None
+    sheet_name = None
+    engine: Literal['xlsx2csv', 'openpyxl', 'pyxlsb'] = None
+    xlsx2csv_options: Dict[str, Any] = None
+    read_csv_options: Dict[str, Any] = None
+    schema_overrides: SchemaDict = None
+    raise_if_empty: bool = True
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self):
+        kwargs = {}
+        if self.sheet_id is not None:
+            kwargs["sheet_id"] = self.sheet_id
+        if self.sheet_name is not None:
+            kwargs["sheet_name"] = self.sheet_name
+        if self.engine is not None:
+            kwargs["engine"] = self.engine
+        if self.xlsx2csv_options is not None:
+            kwargs["xlsx2csv_options"] = self.xlsx2csv_options
+        if self.read_csv_options is not None:
+            kwargs["read_csv_options"] = self.read_csv_options
+        if self.schema_overrides is not None:
+            kwargs["schema_overrides"] = self.schema_overrides
+        if self.raise_if_empty is not None:
+            kwargs["raise_if_empty"] = self.raise_if_empty
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pl.read_excel(self.source, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.source)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "excel"
+
+
+@dataclasses.dataclass
+class PolarsSpreadsheetWriter(DataSaver):
+    """
+    Class specifically to handle saving Spreadsheet files with Polars.
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.write_excel.html
+    """
+
+    workbook: Union[Workbook, BytesIO, str, Path] = None
+    worksheet: str = None
+    position: Union[Tuple[int, int], str] = 'A1'
+    table_style: str = None
+    table_name: str = None
+    column_formats: ColumnFormatDict = None
+    dtype_formats: Dict[OneOrMoreDataTypes, str] = None
+    conditional_formats: ConditionalFormatDict = None
+    header_format: Dict[str, Any] = None
+    column_totals: ColumnTotalsDefinition = None
+    column_widths: ColumnWidthsDefinition = None
+    row_totals: RowTotalsDefinition = None
+    row_heights: Union[Dict[Union[int, Tuple[int, ...]], int], int] = None
+    sparklines: Dict[str, Union[Sequence[str], Dict[str, Any]]] = None
+    formulas: Dict[str, Union[str, Dict[str, str]]] = None
+    float_precision: int = 3
+    has_header: bool = True
+    autofilter: bool = True
+    autofit: bool = False
+    hidden_columns: Union[Sequence[str], SelectorType] = None
+    hide_gridlines: bool = False
+    sheet_zoom: int= None
+    freeze_panes: Union[str, Tuple[int, int], Tuple[str, int, int], Tuple[int, int, int, int]]  = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.worksheet is not None:
+            kwargs["worksheet"] = self.worksheet
+        if self.position is not None:
+            kwargs["position"] = self.position
+        if self.table_style is not None:
+            kwargs["table_style"] = self.table_style
+        if self.table_name is not None:
+            kwargs["table_name"] = self.table_name
+        if self.column_formats is not None:
+            kwargs["column_formats"] = self.column_formats
+        if self.dtype_formats is not None:
+            kwargs["dtype_formats"] = self.dtype_formats
+        if self.conditional_formats is not None:
+            kwargs["conditional_formats"] = self.conditional_formats
+        if self.header_format is not None:
+            kwargs["header_format"] = self.header_format
+        if self.column_totals is not None:
+            kwargs["column_totals"] = self.column_totals
+        if self.column_widths is not None:
+            kwargs["column_widths"] = self.column_widths
+        if self.row_totals is not None:
+            kwargs["row_totals"] = self.row_totals
+        if self.row_heights is not None:
+            kwargs["row_heights"] = self.row_heights
+        if self.sparklines is not None:
+            kwargs["sparklines"] = self.sparklines
+        if self.formulas is not None:
+            kwargs["formulas"] = self.formulas
+        if self.float_precision is not None:
+            kwargs["float_precision"] = self.float_precision
+        if self.has_header is not None:
+            kwargs["has_header"] = self.has_header
+        if self.autofilter is not None:
+            kwargs["autofilter"] = self.autofilter
+        if self.autofit is not None:
+            kwargs["autofit"] = self.autofit
+        if self.hidden_columns is not None:
+            kwargs["hidden_columns"] = self.hidden_columns
+        if self.hide_gridlines is not None:
+            kwargs["hide_gridlines"] = self.hide_gridlines
+        if self.sheet_zoom is not None:
+            kwargs["sheet_zoom"] = self.sheet_zoom
+        if self.freeze_panes is not None:
+            kwargs["freeze_panes"] = self.freeze_panes
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.write_excel(self.workbook, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.workbook)
+
+    @classmethod
+    def name(cls) -> str:
+        return "excel"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -510,6 +658,8 @@ def register_data_loaders():
         PolarsFeatherWriter,
         PolarsJSONReader,
         PolarsJSONWriter,
+        PolarsSpreadsheetReader,
+        PolarsSpreadsheetWriter
     ]:
         registry.register_adapter(loader)
 
