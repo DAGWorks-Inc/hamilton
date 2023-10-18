@@ -756,8 +756,6 @@ class require_columns(fm_base.NodeTransformer):
         :return:
         """
         param = derive_dataframe_parameter_from_node(node_)
-        with open("./debug.txt", "a") as f:
-            f.write(f"{node_.name}={param}\n")
 
         # This allows for injection of any extra parameters
         def new_callable(__input_types=node_.input_types, **kwargs):
