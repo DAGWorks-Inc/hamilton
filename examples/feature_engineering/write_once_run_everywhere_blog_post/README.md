@@ -73,3 +73,12 @@ we have exposed mock functions. To adapt this to your (real-world) use-case, you
 2. Change to use your features by modifying, adding, and removing functions.
 3. Use an actual model! Change [model.py](components/model.py) to load your pretrained model, or make it do something interesting with the input data.
 4. See the commit history on this example, and see what was changed to accommodate the streaming context. You'll want to do something similar.
+
+
+# Pictures of the Hamilton DAG
+## Batch
+![batch](batch.png)
+## Online
+![online](online.png)
+## Streaming
+![streaming](streaming.png)

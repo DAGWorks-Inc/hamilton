@@ -45,7 +45,10 @@ def serve(port: int):
 def visualize(output_file: str):
     """This command will visualize execution"""
     return dr.visualize_execution(
-        ["predictions"], output_file, {}, inputs={"client_id": 0, "execution_time": datetime.now()}
+        ["predictions"],
+        output_file,
+        {"format": "png"},
+        inputs={"client_id": 0, "execution_time": datetime.now()},
     )
 
 
