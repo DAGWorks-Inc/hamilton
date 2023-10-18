@@ -29,7 +29,7 @@ def survey_results__online(client_id: int) -> pd.DataFrame:
 @config.when(mode="streaming")
 @extract_columns("budget", "age", "gender", "client_id")
 def survey_results__streaming(survey_event: dict) -> pd.DataFrame:
-    """Results"""
+    """Results come in from a survey event, which is just a dict passed to us by the upstream streaming engine."""
     return pd.DataFrame([survey_event])
 
 

@@ -38,7 +38,9 @@ def run():
 def visualize(output_file: str):
     """This command will visualize execution"""
     dr = _create_driver()
-    return dr.visualize_execution(["predictions"], output_file, {}, inputs=_get_inputs())
+    return dr.visualize_execution(
+        ["predictions"], output_file, {"format": "png"}, inputs=_get_inputs()
+    )
 
 
 if __name__ == "__main__":

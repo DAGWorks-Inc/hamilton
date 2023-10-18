@@ -51,11 +51,26 @@ def hamilton_predict(payload: dict):
     return {"prediction": series_out.values[0], "client_id": payload["client_id"]}
 
 
+"""
+Bytewax dataflow.
+
+Note (1) : bytewax has ways to batch events (https://www.bytewax.io/apidocs/bytewax.dataflow#bytewax.dataflow.Dataflow.batch)
+> e.g. flow.batch("batch_inputs", max_size=10, timeout=timedelta(.01))
+We stick to mapping over single events in this example.
+
+Note (2): bytewax has the ability to redistribute events for parallel computation (https://www.bytewax.io/apidocs/bytewax.dataflow#bytewax.dataflow.Dataflow.redistribute)
+In this example we just stick to the simplest thing possible. Mapping over single events.
+
+Note (3): you could also model the following code as Hamilton code too! But for this example we'll skip that extra
+level of abstraction for now.
+"""
 # Bytewax dataflow.
 flow = Dataflow()
 # pull in the data
 flow.input("surveys-in", CSVInput(pathlib.Path("survey_results.csv")))
-flow.inspect(logger.debug)
+if logger.isEnabledFor(logging.DEBUG):
+    # this will print out the events as they come in using the logger.debug function.
+    flow.inspect(logger.debug)
 # run the hamilton_predict function on each event
 flow.map(hamilton_predict)
 # print the output -- in real life you'd put this back into the stream, or write it to a database.
