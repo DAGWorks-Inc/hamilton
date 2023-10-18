@@ -7,10 +7,6 @@ try:
 except ImportError:
     raise NotImplementedError("scikit-learn is not installed.")
 
-try:
-    from matplotlib import pyplot as plt
-except ImportError:
-    raise NotImplementedError("matplotlib is not installed")
 
 from hamilton import registry
 from hamilton.io import utils
@@ -42,7 +38,7 @@ class SklearnPlotSaver(DataSaver):
         return SKLEARN_PLOT_TYPES
 
     def save_plot(self, data: SKLEARN_PLOT_TYPES_ANNOTATION) -> Dict[str, Any]:
-        plt.savefig(self.path, dpi=200)
+        data.figure_.savefig(self.path, dpi=200)
         return utils.get_file_metadata(self.path)
 
     @classmethod
