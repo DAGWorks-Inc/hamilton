@@ -12,11 +12,6 @@ try:
 except ImportError:
     raise NotImplementedError("LightGBM is not installed.")
 
-try:
-    from sklearn.exceptions import NotFittedError
-except ImportError:
-    raise NotImplementedError("scikit-learn is not installed.")
-
 
 from hamilton import registry
 from hamilton.io import utils
@@ -41,23 +36,14 @@ class LightGBMFileWriter(DataSaver):
 
     def save_data(self, data: LIGHTGBM_MODEL_TYPES_ANNOTATION) -> Dict[str, Any]:
         if isinstance(data, lightgbm.LGBMModel):
-            try:
-                data.booster_.save_model(
-                    filename=self.path,
-                    num_iteration=self.num_iteration,
-                    start_iteration=self.start_iteration,
-                    importance_type=self.importance_type,
-                )
-            except NotFittedError as e:
-                return utils.get_exception_details(e)
-        else:
-            data.save_model(
-                filename=self.path,
-                num_iteration=self.num_iteration,
-                start_iteration=self.start_iteration,
-                importance_type=self.importance_type,
-            )
+            data = data.booster_
 
+        data.save_model(
+            filename=self.path,
+            num_iteration=self.num_iteration,
+            start_iteration=self.start_iteration,
+            importance_type=self.importance_type,
+        )
         return utils.get_file_metadata(self.path)
 
     @classmethod
