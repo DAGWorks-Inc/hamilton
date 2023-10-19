@@ -37,7 +37,8 @@ class SklearnPlotSaver(DataSaver):
     def applicable_types(cls) -> Collection[Type]:
         return SKLEARN_PLOT_TYPES
 
-    def save_plot(self, data: SKLEARN_PLOT_TYPES_ANNOTATION) -> Dict[str, Any]:
+    def save_data(self, data: SKLEARN_PLOT_TYPES_ANNOTATION) -> Dict[str, Any]:
+        data.plot()
         data.figure_.savefig(self.path, dpi=200)
         return utils.get_file_metadata(self.path)
 
