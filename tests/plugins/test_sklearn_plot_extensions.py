@@ -1,10 +1,11 @@
 import pathlib
 
-import pytest
 import numpy as np
-from sklearn.datasets import make_classification, load_diabetes
+import pytest
+import sklearn.calibration as calib
 import sklearn.metrics as metrics
-from sklearn.linear_model import Ridge
+from sklearn.datasets import load_diabetes, make_classification
+from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 
@@ -54,14 +55,30 @@ def prediction_error_display() -> metrics.PredictionErrorDisplay:
     pred_error = metrics.PredictionErrorDisplay.from_predictions(y_true=y, y_pred=y_pred)
     return pred_error
 
+
 @pytest.fixture
 def roc_curve_display() -> metrics.RocCurveDisplay:
     y = np.array([0, 0, 1, 1])
     pred = np.array([0.1, 0.4, 0.35, 0.8])
     fpr, tpr, threshold = metrics.roc_curve(y, pred)
     roc_auc = metrics.auc(fpr, tpr)
-    roccurve = metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc, estimator_name='example estimator')
+    roccurve = metrics.RocCurveDisplay(
+        fpr=fpr, tpr=tpr, roc_auc=roc_auc, estimator_name="example estimator"
+    )
     return roccurve
+
+
+@pytest.fixture
+def calibration_display() -> calib.CalibrationDisplay:
+    X, y = make_classification(random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+    clf = LogisticRegression(random_state=0)
+    clf.fit(X_train, y_train)
+    LogisticRegression(random_state=0)
+    y_prob = clf.predict_proba(X_test)[:, 1]
+    prob_true, prob_pred = calib.calibration_curve(y_test, y_prob, n_bins=10)
+    disp = calib.CalibrationDisplay(prob_true, prob_pred, y_prob)
+    return disp
 
 
 def test_cm_plot_saver(
@@ -119,6 +136,18 @@ def test_roc_curve_display(
     writer = SklearnPlotSaver(path=plot_path)
 
     metadata = writer.save_data(roc_curve_display)
+
+    assert plot_path.exists()
+    assert metadata["path"] == plot_path
+
+
+def test_calibration_display(
+    calibration_display: calib.CalibrationDisplay, tmp_path: pathlib.Path
+) -> None:
+    plot_path = tmp_path / "calibration_curve.png"
+    writer = SklearnPlotSaver(path=plot_path)
+
+    metadata = writer.save_data(calibration_display)
 
     assert plot_path.exists()
     assert metadata["path"] == plot_path
