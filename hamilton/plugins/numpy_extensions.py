@@ -39,7 +39,7 @@ class NumpyNpyWriter(DataSaver):
 
     @classmethod
     def name(cls) -> str:
-        return "file"
+        return "npy"
 
 
 @dataclasses.dataclass
@@ -71,7 +71,7 @@ class NumpyNpyReader(DataLoader):
 
     @classmethod
     def name(cls) -> str:
-        return "file"
+        return "npy"
 
 
 def register_data_loaders():
