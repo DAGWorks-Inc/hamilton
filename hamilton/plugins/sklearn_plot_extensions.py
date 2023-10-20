@@ -3,7 +3,9 @@ from os import PathLike
 from typing import Any, Collection, Dict, Optional, Type, Union
 
 try:
+    import sklearn.inspection
     import sklearn.metrics
+    import sklearn.model_selection
 except ImportError:
     raise NotImplementedError("scikit-learn is not installed.")
 
@@ -18,13 +20,24 @@ display_classes = [
     "PrecisionRecallDisplay",
     "PredictionErrorDisplay",
     "RocCurveDisplay",
+    "CalibrationDisplay",
+    "DecisionBoundaryDisplay",
+    "LearningCurveDisplay",
+    "PartialDependenceDisplay",
+    "ValidationCurveDisplay",
 ]
 SKLEARN_PLOT_TYPES = []
 for class_name in display_classes:
     # get the attribute via string from sklearn.metrics; if not found return None
-    class_ = getattr(sklearn.metrics, class_name, None)
-    if class_:
-        SKLEARN_PLOT_TYPES.append(class_)
+    class_metrics = getattr(sklearn.metrics, class_name, None)
+    class_inspection = getattr(sklearn.inspection, class_name, None)
+    class_model_selection = getattr(sklearn.model_selection, class_name, None)
+    if class_metrics:
+        SKLEARN_PLOT_TYPES.append(class_metrics)
+    if class_inspection:
+        SKLEARN_PLOT_TYPES.append(class_inspection)
+    if class_model_selection:
+        SKLEARN_PLOT_TYPES.append(class_model_selection)
 
 SKLEARN_PLOT_TYPES_ANNOTATION = Union[tuple(SKLEARN_PLOT_TYPES)]
 
