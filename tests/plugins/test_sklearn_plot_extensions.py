@@ -91,67 +91,91 @@ def calibration_display() -> calib.CalibrationDisplay:
     return disp
 
 
-@pytest.fixture
-def decision_boundary_display() -> inspection.DecisionBoundaryDisplay:
-    iris = load_iris()
-    feature_1, feature_2 = np.meshgrid(
-        np.linspace(iris.data[:, 0].min(), iris.data[:, 0].max()),
-        np.linspace(iris.data[:, 1].min(), iris.data[:, 1].max()),
-    )
-    grid = np.vstack([feature_1.ravel(), feature_2.ravel()]).T
-    tree = DecisionTreeClassifier().fit(iris.data[:, :2], iris.target)
-    y_pred = np.reshape(tree.predict(grid), feature_1.shape)
-    decision_curve = inspection.DecisionBoundaryDisplay(
-        xx0=feature_1, xx1=feature_2, response=y_pred
-    )
-    return decision_curve
+if sys.version_info >= (3, 8):
+
+    @pytest.fixture
+    def decision_boundary_display() -> inspection.DecisionBoundaryDisplay:
+        iris = load_iris()
+        feature_1, feature_2 = np.meshgrid(
+            np.linspace(iris.data[:, 0].min(), iris.data[:, 0].max()),
+            np.linspace(iris.data[:, 1].min(), iris.data[:, 1].max()),
+        )
+        grid = np.vstack([feature_1.ravel(), feature_2.ravel()]).T
+        tree = DecisionTreeClassifier().fit(iris.data[:, :2], iris.target)
+        y_pred = np.reshape(tree.predict(grid), feature_1.shape)
+        decision_curve = inspection.DecisionBoundaryDisplay(
+            xx0=feature_1, xx1=feature_2, response=y_pred
+        )
+        return decision_curve
+
+else:
+    pass
 
 
-@pytest.fixture
-def partial_dependence_display() -> inspection.PartialDependenceDisplay:
-    X, y = make_friedman1()
-    clf = GradientBoostingRegressor(n_estimators=10).fit(X, y)
-    features, feature_names = [(0,)], [f"Features #{i}" for i in range(X.shape[1])]
-    deciles = {0: np.linspace(0, 1, num=5)}
-    pd_results = inspection.partial_dependence(
-        clf, X, features=0, kind="average", grid_resolution=5
-    )
-    partial_dep_disp = inspection.PartialDependenceDisplay(
-        [pd_results], features=features, feature_names=feature_names, target_idx=0, deciles=deciles
-    )
-    return partial_dep_disp
+if sys.version_info >= (3, 8):
+
+    @pytest.fixture
+    def partial_dependence_display() -> inspection.PartialDependenceDisplay:
+        X, y = make_friedman1()
+        clf = GradientBoostingRegressor(n_estimators=10).fit(X, y)
+        features, feature_names = [(0,)], [f"Features #{i}" for i in range(X.shape[1])]
+        deciles = {0: np.linspace(0, 1, num=5)}
+        pd_results = inspection.partial_dependence(
+            clf, X, features=0, kind="average", grid_resolution=5
+        )
+        partial_dep_disp = inspection.PartialDependenceDisplay(
+            [pd_results],
+            features=features,
+            feature_names=feature_names,
+            target_idx=0,
+            deciles=deciles,
+        )
+        return partial_dep_disp
+
+else:
+    pass
 
 
-@pytest.fixture
-def learning_curve_display() -> model_selection.LearningCurveDisplay:
-    X, y = load_iris(return_X_y=True)
-    tree = DecisionTreeClassifier(random_state=0)
-    train_sizes, train_scores, test_scores = model_selection.learning_curve(tree, X, y)
-    learn_curve_disp = model_selection.LearningCurveDisplay(
-        train_sizes=train_sizes,
-        train_scores=train_scores,
-        test_scores=test_scores,
-        score_name="Score",
-    )
-    return learn_curve_disp
+if sys.version_info >= (3, 8):
+
+    @pytest.fixture
+    def learning_curve_display() -> model_selection.LearningCurveDisplay:
+        X, y = load_iris(return_X_y=True)
+        tree = DecisionTreeClassifier(random_state=0)
+        train_sizes, train_scores, test_scores = model_selection.learning_curve(tree, X, y)
+        learn_curve_disp = model_selection.LearningCurveDisplay(
+            train_sizes=train_sizes,
+            train_scores=train_scores,
+            test_scores=test_scores,
+            score_name="Score",
+        )
+        return learn_curve_disp
+
+else:
+    pass
 
 
-@pytest.fixture
-def validation_curve_display() -> model_selection.ValidationCurveDisplay:
-    X, y = make_classification(n_samples=1_000, random_state=0)
-    logistic_regression = LogisticRegression()
-    param_name, param_range = "C", np.logspace(-8, 3, 10)
-    train_scores, test_scores = model_selection.validation_curve(
-        logistic_regression, X, y, param_name=param_name, param_range=param_range
-    )
-    valid_curve_disp = model_selection.ValidationCurveDisplay(
-        param_name=param_name,
-        param_range=param_range,
-        train_scores=train_scores,
-        test_scores=test_scores,
-        score_name="Score",
-    )
-    return valid_curve_disp
+if sys.version_info >= (3, 8):
+
+    @pytest.fixture
+    def validation_curve_display() -> model_selection.ValidationCurveDisplay:
+        X, y = make_classification(n_samples=1_000, random_state=0)
+        logistic_regression = LogisticRegression()
+        param_name, param_range = "C", np.logspace(-8, 3, 10)
+        train_scores, test_scores = model_selection.validation_curve(
+            logistic_regression, X, y, param_name=param_name, param_range=param_range
+        )
+        valid_curve_disp = model_selection.ValidationCurveDisplay(
+            param_name=param_name,
+            param_range=param_range,
+            train_scores=train_scores,
+            test_scores=test_scores,
+            score_name="Score",
+        )
+        return valid_curve_disp
+
+else:
+    pass
 
 
 def test_cm_plot_saver(
@@ -231,49 +255,69 @@ def test_calibration_display(
     assert metadata["path"] == plot_path
 
 
-def test_decision_boundary_display(
-    decision_boundary_display: inspection.DecisionBoundaryDisplay, tmp_path: pathlib.Path
-) -> None:
-    plot_path = tmp_path / "dbd.png"
-    writer = SklearnPlotSaver(path=plot_path)
+if sys.version_info >= (3, 8):
 
-    metadata = writer.save_data(decision_boundary_display)
+    def test_decision_boundary_display(
+        decision_boundary_display: inspection.DecisionBoundaryDisplay, tmp_path: pathlib.Path
+    ) -> None:
+        plot_path = tmp_path / "dbd.png"
+        writer = SklearnPlotSaver(path=plot_path)
 
-    assert plot_path.exists()
-    assert metadata["path"] == plot_path
+        metadata = writer.save_data(decision_boundary_display)
 
+        assert plot_path.exists()
+        assert metadata["path"] == plot_path
 
-def test_partial_dependence_display(
-    partial_dependence_display: inspection.PartialDependenceDisplay, tmp_path: pathlib.Path
-) -> None:
-    plot_path = tmp_path / "pdd.png"
-    writer = SklearnPlotSaver(path=plot_path)
-
-    metadata = writer.save_data(partial_dependence_display)
-
-    assert plot_path.exists()
-    assert metadata["path"] == plot_path
+else:
+    pass
 
 
-def test_learning_curve_display(
-    learning_curve_display: model_selection.LearningCurveDisplay, tmp_path: pathlib.Path
-) -> None:
-    plot_path = tmp_path / "lcd.png"
-    writer = SklearnPlotSaver(path=plot_path)
+if sys.version_info >= (3, 8):
 
-    metadata = writer.save_data(learning_curve_display)
+    def test_partial_dependence_display(
+        partial_dependence_display: inspection.PartialDependenceDisplay, tmp_path: pathlib.Path
+    ) -> None:
+        plot_path = tmp_path / "pdd.png"
+        writer = SklearnPlotSaver(path=plot_path)
 
-    assert plot_path.exists()
-    assert metadata["path"] == plot_path
+        metadata = writer.save_data(partial_dependence_display)
+
+        assert plot_path.exists()
+        assert metadata["path"] == plot_path
+
+else:
+    pass
 
 
-def test_validation_curve_display(
-    validation_curve_display: model_selection.ValidationCurveDisplay, tmp_path: pathlib.Path
-) -> None:
-    plot_path = tmp_path / "vcd.png"
-    writer = SklearnPlotSaver(path=plot_path)
+if sys.version_info >= (3, 8):
 
-    metadata = writer.save_data(validation_curve_display)
+    def test_learning_curve_display(
+        learning_curve_display: model_selection.LearningCurveDisplay, tmp_path: pathlib.Path
+    ) -> None:
+        plot_path = tmp_path / "lcd.png"
+        writer = SklearnPlotSaver(path=plot_path)
 
-    assert plot_path.exists()
-    assert metadata["path"] == plot_path
+        metadata = writer.save_data(learning_curve_display)
+
+        assert plot_path.exists()
+        assert metadata["path"] == plot_path
+
+else:
+    pass
+
+
+if sys.version_info >= (3, 8):
+
+    def test_validation_curve_display(
+        validation_curve_display: model_selection.ValidationCurveDisplay, tmp_path: pathlib.Path
+    ) -> None:
+        plot_path = tmp_path / "vcd.png"
+        writer = SklearnPlotSaver(path=plot_path)
+
+        metadata = writer.save_data(validation_curve_display)
+
+        assert plot_path.exists()
+        assert metadata["path"] == plot_path
+
+else:
+    pass
