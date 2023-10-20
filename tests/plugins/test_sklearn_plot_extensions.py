@@ -48,7 +48,7 @@ def precision_recall_display() -> metrics.PrecisionRecallDisplay:
     return precision_recall
 
 
-if sys.version_info >= (3, 7):
+if sys.version_info >= (3, 8):
 
     @pytest.fixture
     def prediction_error_display() -> metrics.PredictionErrorDisplay:
