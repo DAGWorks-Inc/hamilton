@@ -123,16 +123,21 @@ def test_precision_recall_display(
     assert metadata["path"] == plot_path
 
 
-def test_prediction_error_display(
-    prediction_error_display: metrics.PredictionErrorDisplay, tmp_path: pathlib.Path
-) -> None:
-    plot_path = tmp_path / "prediction_error_plot.png"
-    writer = SklearnPlotSaver(path=plot_path)
+if sys.version_info >= (3, 8):
 
-    metadata = writer.save_data(prediction_error_display)
+    def test_prediction_error_display(
+        prediction_error_display: metrics.PredictionErrorDisplay, tmp_path: pathlib.Path
+    ) -> None:
+        plot_path = tmp_path / "prediction_error_plot.png"
+        writer = SklearnPlotSaver(path=plot_path)
 
-    assert plot_path.exists()
-    assert metadata["path"] == plot_path
+        metadata = writer.save_data(prediction_error_display)
+
+        assert plot_path.exists()
+        assert metadata["path"] == plot_path
+
+else:
+    pass
 
 
 def test_roc_curve_display(
