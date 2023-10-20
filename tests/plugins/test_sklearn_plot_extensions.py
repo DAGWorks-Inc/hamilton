@@ -1,4 +1,5 @@
 import pathlib
+import sys
 
 import numpy as np
 import pytest
@@ -47,13 +48,18 @@ def precision_recall_display() -> metrics.PrecisionRecallDisplay:
     return precision_recall
 
 
-@pytest.fixture
-def prediction_error_display() -> metrics.PredictionErrorDisplay:
-    X, y = load_diabetes(return_X_y=True)
-    ridge = Ridge().fit(X, y)
-    y_pred = ridge.predict(X)
-    pred_error = metrics.PredictionErrorDisplay.from_predictions(y_true=y, y_pred=y_pred)
-    return pred_error
+if sys.version_info >= (3, 7):
+
+    @pytest.fixture
+    def prediction_error_display() -> metrics.PredictionErrorDisplay:
+        X, y = load_diabetes(return_X_y=True)
+        ridge = Ridge().fit(X, y)
+        y_pred = ridge.predict(X)
+        pred_error = metrics.PredictionErrorDisplay.from_predictions(y_true=y, y_pred=y_pred)
+        return pred_error
+
+else:
+    pass
 
 
 @pytest.fixture
