@@ -214,21 +214,17 @@ def test_precision_recall_display(
     assert metadata["path"] == plot_path
 
 
-if sys.version_info >= (3, 8):
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
+def test_prediction_error_display(
+    prediction_error_display: metrics.PredictionErrorDisplay, tmp_path: pathlib.Path
+) -> None:
+    plot_path = tmp_path / "prediction_error_plot.png"
+    writer = SklearnPlotSaver(path=plot_path)
 
-    def test_prediction_error_display(
-        prediction_error_display: metrics.PredictionErrorDisplay, tmp_path: pathlib.Path
-    ) -> None:
-        plot_path = tmp_path / "prediction_error_plot.png"
-        writer = SklearnPlotSaver(path=plot_path)
+    metadata = writer.save_data(prediction_error_display)
 
-        metadata = writer.save_data(prediction_error_display)
-
-        assert plot_path.exists()
-        assert metadata["path"] == plot_path
-
-else:
-    pass
+    assert plot_path.exists()
+    assert metadata["path"] == plot_path
 
 
 def test_roc_curve_display(
@@ -255,69 +251,52 @@ def test_calibration_display(
     assert metadata["path"] == plot_path
 
 
-if sys.version_info >= (3, 8):
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
+def test_decision_boundary_display(
+    decision_boundary_display: inspection.DecisionBoundaryDisplay, tmp_path: pathlib.Path
+) -> None:
+    plot_path = tmp_path / "dbd.png"
+    writer = SklearnPlotSaver(path=plot_path)
 
-    def test_decision_boundary_display(
-        decision_boundary_display: inspection.DecisionBoundaryDisplay, tmp_path: pathlib.Path
-    ) -> None:
-        plot_path = tmp_path / "dbd.png"
-        writer = SklearnPlotSaver(path=plot_path)
+    metadata = writer.save_data(decision_boundary_display)
 
-        metadata = writer.save_data(decision_boundary_display)
-
-        assert plot_path.exists()
-        assert metadata["path"] == plot_path
-
-else:
-    pass
+    assert plot_path.exists()
+    assert metadata["path"] == plot_path
 
 
-if sys.version_info >= (3, 8):
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
+def test_partial_dependence_display(
+    partial_dependence_display: inspection.PartialDependenceDisplay, tmp_path: pathlib.Path
+) -> None:
+    plot_path = tmp_path / "pdd.png"
+    writer = SklearnPlotSaver(path=plot_path)
 
-    def test_partial_dependence_display(
-        partial_dependence_display: inspection.PartialDependenceDisplay, tmp_path: pathlib.Path
-    ) -> None:
-        plot_path = tmp_path / "pdd.png"
-        writer = SklearnPlotSaver(path=plot_path)
+    metadata = writer.save_data(partial_dependence_display)
 
-        metadata = writer.save_data(partial_dependence_display)
-
-        assert plot_path.exists()
-        assert metadata["path"] == plot_path
-
-else:
-    pass
+    assert plot_path.exists()
+    assert metadata["path"] == plot_path
 
 
-if sys.version_info >= (3, 8):
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
+def test_learning_curve_display(
+    learning_curve_display: model_selection.LearningCurveDisplay, tmp_path: pathlib.Path
+) -> None:
+    plot_path = tmp_path / "lcd.png"
+    writer = SklearnPlotSaver(path=plot_path)
 
-    def test_learning_curve_display(
-        learning_curve_display: model_selection.LearningCurveDisplay, tmp_path: pathlib.Path
-    ) -> None:
-        plot_path = tmp_path / "lcd.png"
-        writer = SklearnPlotSaver(path=plot_path)
+    metadata = writer.save_data(learning_curve_display)
 
-        metadata = writer.save_data(learning_curve_display)
+    assert plot_path.exists()
+    assert metadata["path"] == plot_path
 
-        assert plot_path.exists()
-        assert metadata["path"] == plot_path
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
+def test_validation_curve_display(
+    validation_curve_display: model_selection.ValidationCurveDisplay, tmp_path: pathlib.Path
+) -> None:
+    plot_path = tmp_path / "vcd.png"
+    writer = SklearnPlotSaver(path=plot_path)
 
-else:
-    pass
+    metadata = writer.save_data(validation_curve_display)
 
-
-if sys.version_info >= (3, 8):
-
-    def test_validation_curve_display(
-        validation_curve_display: model_selection.ValidationCurveDisplay, tmp_path: pathlib.Path
-    ) -> None:
-        plot_path = tmp_path / "vcd.png"
-        writer = SklearnPlotSaver(path=plot_path)
-
-        metadata = writer.save_data(validation_curve_display)
-
-        assert plot_path.exists()
-        assert metadata["path"] == plot_path
-
-else:
-    pass
+    assert plot_path.exists()
+    assert metadata["path"] == plot_path
