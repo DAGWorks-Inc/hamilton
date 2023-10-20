@@ -28,6 +28,7 @@ if not registry.INITIALIZED:
         "dask",
         "geopandas",
         "xgboost",
+        "lightgbm",
     ]
     for plugin_module in plugins_modules:
         try:
