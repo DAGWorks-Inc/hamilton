@@ -12,20 +12,20 @@ from hamilton import registry
 from hamilton.io import utils
 from hamilton.io.data_adapters import DataSaver
 
-SKLEARN_PLOT_TYPES = [
-    sklearn.metrics.ConfusionMatrixDisplay,
-    sklearn.metrics.DetCurveDisplay,
-    sklearn.metrics.PrecisionRecallDisplay,
-    sklearn.metrics.PredictionErrorDisplay,
-    sklearn.metrics.RocCurveDisplay,
+display_classes = [
+    "ConfusionMatrixDisplay",
+    "DetCurveDisplay",
+    "PrecisionRecallDisplay",
+    "PredictionErrorDisplay",
+    "RocCurveDisplay",
 ]
-SKLEARN_PLOT_TYPES_ANNOTATION = Union[
-    sklearn.metrics.ConfusionMatrixDisplay,
-    sklearn.metrics.DetCurveDisplay,
-    sklearn.metrics.PrecisionRecallDisplay,
-    sklearn.metrics.PredictionErrorDisplay,
-    sklearn.metrics.RocCurveDisplay,
-]
+SKLEARN_PLOT_TYPES = []
+for class_name in display_classes:
+    # get the attribute via string from sklearn.metrics; if not found return None
+    if class_ := getattr(sklearn.metrics, class_name, None):
+        SKLEARN_PLOT_TYPES.append(class_)
+
+SKLEARN_PLOT_TYPES_ANNOTATION = Union[tuple(SKLEARN_PLOT_TYPES)]
 
 
 @dataclasses.dataclass
