@@ -7,11 +7,6 @@ try:
 except ImportError:
     raise NotImplementedError("XGBoost is not installed.")
 
-try:
-    from sklearn.exceptions import NotFittedError
-except ImportError:
-    raise NotImplementedError("scikit-learn is not installed.")
-
 
 from hamilton import registry
 from hamilton.io import utils
@@ -34,10 +29,7 @@ class XGBoostJsonWriter(DataSaver):
         return XGBOOST_MODEL_TYPES
 
     def save_data(self, data: XGBOOST_MODEL_TYPES_ANNOTATION) -> Dict[str, Any]:
-        try:
-            data.save_model(self.path)
-        except NotFittedError as e:
-            return utils.get_exception_details(e)
+        data.save_model(self.path)
         return utils.get_file_metadata(self.path)
 
     @classmethod
