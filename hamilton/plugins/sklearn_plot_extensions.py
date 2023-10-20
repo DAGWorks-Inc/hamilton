@@ -22,7 +22,8 @@ display_classes = [
 SKLEARN_PLOT_TYPES = []
 for class_name in display_classes:
     # get the attribute via string from sklearn.metrics; if not found return None
-    if class_ := getattr(sklearn.metrics, class_name, None):
+    class_ = getattr(sklearn.metrics, class_name, None)
+    if class_:
         SKLEARN_PLOT_TYPES.append(class_)
 
 SKLEARN_PLOT_TYPES_ANNOTATION = Union[tuple(SKLEARN_PLOT_TYPES)]
