@@ -192,7 +192,7 @@ def test_pandas_csv_reader(tmp_path: pathlib.Path) -> None:
     df, metadata = reader.load_data(pd.DataFrame)
 
     assert PandasCsvReader.applicable_types() == [pd.DataFrame]
-    assert df.shape == (3, 5)
+    assert df.shape == (3, 6)
 
 
 def test_pandas_csv_writer(tmp_path: pathlib.Path) -> None:
