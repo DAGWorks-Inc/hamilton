@@ -1,4 +1,5 @@
 import abc
+import csv
 import dataclasses
 import sys
 from collections.abc import Hashable
@@ -18,9 +19,9 @@ except ImportError:
     from typing_extensions import Literal
 
 try:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
 except ImportError:
-    from collections import Sequence, Iterable
+    from collections import Sequence, Iterable, Mapping
 
 from sqlite3 import Connection
 
@@ -119,6 +120,265 @@ class CSVDataAdapter(DataFrameDataLoader):
         else:
             metadata = utils.get_file_metadata(self.path)
         return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "csv"
+
+
+@dataclasses.dataclass
+class PandasCsvReader(DataLoader):
+    """
+    Class that handles saving CSV files with pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+    """
+
+    # the filepath_or_buffer param will be changed to path for backwards compatibility
+    path: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs
+    sep: Union[str, None] = ","
+    delimiter: Optional[str] = None
+    header: Union[Sequence, int, Literal["infer"], None] = "infer"
+    names: Optional[Sequence] = None
+    index_col: Optional[Union[Hashable, Sequence, Literal[False]]] = None
+    usecols: Optional[Union[List[Hashable], Callable, tuple]] = None
+    dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
+    engine: Optional[Literal["c", "python", "pyarrow", "python-fwf"]] = None
+    converters: Optional[Mapping] = None
+    true_values: Optional[List] = None
+    false_values: Optional[List] = None
+    skipinitialspace: Optional[bool] = False
+    skiprows: Optional[Union[List[int], int, Callable[[Hashable], bool]]] = None
+    skipfooter: int = 0
+    nrows: Optional[int] = None
+    na_values: Optional[Union[Hashable, Iterable, Mapping]] = None
+    keep_default_na: bool = True
+    na_filter: bool = True
+    verbose: bool = False
+    skip_blank_lines: bool = True
+    parse_dates: Optional[Union[bool, Sequence, None]] = False
+    keep_date_col: bool = False
+    date_format: Optional[str] = None
+    dayfirst: bool = False
+    cache_dates: bool = True
+    iterator: bool = False
+    chunksize: Optional[int] = None
+    compression: Optional[
+        Union[Literal["infer", "gzip", "bz2", "zip", "xz", "zstd", "tar"], Dict[str, Any]]
+    ] = "infer"
+    thousands: Optional[str] = None
+    decimal: str = "."
+    lineterminator: Optional[str] = None
+    quotechar: Optional[str] = None
+    quoting: int = 0
+    doublequote: bool = True
+    escapechar: Optional[str] = None
+    comment: Optional[str] = None
+    encoding: str = "utf-8"
+    encoding_errors: Union[
+        Literal["strict", "ignore", "replace", "backslashreplace", "surrogateescape"], str
+    ] = "strict"
+    dialect: Optional[Union[str, csv.Dialect]] = None
+    on_bad_lines: Union[Literal["error", "warn", "skip"], Callable] = "error"
+    delim_whitespace: bool = False
+    low_memory: bool = True
+    memory_map: bool = False
+    float_precision: Optional[Literal["high", "legacy", "round_trip"]] = None
+    storage_options: Optional[Dict[str, Any]] = None
+    dtype_backend: Literal["pyarrow", "numpy_nullable"] = "numpy_nullable"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.sep is not None:
+            kwargs["sep"] = self.sep
+        if self.delimiter is not None:
+            kwargs["delimiter"] = self.delimiter
+        if self.header is not None:
+            kwargs["header"] = self.header
+        if self.names is not None:
+            kwargs["names"] = self.names
+        if self.index_col is not None:
+            kwargs["index_col"] = self.index_col
+        if self.usecols is not None:
+            kwargs["usecols"] = self.usecols
+        if self.dtype is not None:
+            kwargs["dtype"] = self.dtype
+        if sys.version_info >= (3, 8) and self.engine is not None:
+            kwargs["engine"] = self.engine
+        if self.converters is not None:
+            kwargs["converters"] = self.converters
+        if self.true_values is not None:
+            kwargs["true_values"] = self.true_values
+        if self.false_values is not None:
+            kwargs["false_values"] = self.false_values
+        if self.skipinitialspace is not None:
+            kwargs["skipinitialspace"] = self.skipinitialspace
+        if self.skiprows is not None:
+            kwargs["skiprows"] = self.skiprows
+        if self.nrows is not None:
+            kwargs["nrows"] = self.nrows
+        if self.na_values is not None:
+            kwargs["na_values"] = self.na_values
+        if self.keep_default_na is not None:
+            kwargs["keep_default_na"] = self.keep_default_na
+        if self.na_filter is not None:
+            kwargs["na_filter"] = self.na_filter
+        if self.verbose is not None:
+            kwargs["verbose"] = self.verbose
+        if self.skip_blank_lines is not None:
+            kwargs["skip_blank_lines"] = self.skip_blank_lines
+        if sys.version_info >= (3, 8) and self.parse_dates is not None:
+            kwargs["parse_dates"] = self.parse_dates
+        if self.keep_date_col is not None:
+            kwargs["keep_date_col"] = self.keep_date_col
+        if self.date_format is not None:
+            kwargs["date_format"] = self.date_format
+        if self.dayfirst is not None:
+            kwargs["dayfirst"] = self.dayfirst
+        if self.cache_dates is not None:
+            kwargs["cache_dates"] = self.cache_dates
+        if self.iterator is not None:
+            kwargs["iterator"] = self.iterator
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.thousands is not None:
+            kwargs["thousands"] = self.thousands
+        if self.lineterminator is not None:
+            kwargs["lineterminator"] = self.lineterminator
+        if self.quotechar is not None:
+            kwargs["quotechar"] = self.quotechar
+        if self.quoting is not None:
+            kwargs["quoting"] = self.quoting
+        if self.doublequote is not None:
+            kwargs["doublequote"] = self.doublequote
+        if self.escapechar is not None:
+            kwargs["escapechar"] = self.escapechar
+        if self.comment is not None:
+            kwargs["comment"] = self.comment
+        if self.encoding is not None:
+            kwargs["encoding"] = self.encoding
+        if self.encoding_errors is not None:
+            kwargs["encoding_errors"] = self.encoding_errors
+        if self.dialect is not None:
+            kwargs["dialect"] = self.dialect
+        if self.on_bad_lines is not None:
+            kwargs["on_bad_lines"] = self.on_bad_lines
+        if self.delim_whitespace is not None:
+            kwargs["delim_whitespace"] = self.delim_whitespace
+        if self.low_memory is not None:
+            kwargs["low_memory"] = self.low_memory
+        if self.memory_map is not None:
+            kwargs["memory_map"] = self.memory_map
+        if self.float_precision is not None:
+            kwargs["float_precision"] = self.float_precision
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
+            kwargs["dtype_backend"] = self.dtype_backend
+
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pd.read_csv(self.path, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.path)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "csv"
+
+
+@dataclasses.dataclass
+class PandasCsvWriter(DataSaver):
+    """Class that handles saving pickle files with pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html
+    """
+
+    # the path_or_buf parameter will be changed to path for backwards compatibilty
+    path: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs
+    sep: Union[str, None] = ","
+    na_rep: str = ""
+    float_format: Optional[Union[str, Callable]] = None
+    columns: Optional[Sequence] = None
+    header: Optional[Union[bool, List[str]]] = True
+    index: Optional[bool] = True
+    index_label: Optional[IndexLabel] = None
+    mode: str = "w"
+    encoding: Optional[str] = None
+    compression: Optional[
+        Union[Literal["infer", "gzip", "bz2", "zip", "xz", "zstd", "tar"], Dict[str, Any]]
+    ] = "infer"
+    quoting: Optional[int] = None
+    quotechar: Optional[str] = '"'
+    lineterminator: Optional[str] = None
+    chunksize: Optional[int] = None
+    date_format: Optional[str] = None
+    doublequote: bool = True
+    escapechar: Optional[str] = None
+    decimal: str = "."
+    errors: str = "strict"
+    storage_options: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self) -> Dict[str, Any]:
+        # Puts kwargs in a dict
+        kwargs = {}
+        if self.sep is not None:
+            kwargs["sep"] = self.sep
+        if self.na_rep is not None:
+            kwargs["na_rep"] = self.na_rep
+        if self.float_format is not None:
+            kwargs["float_format"] = self.float_format
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.header is not None:
+            kwargs["header"] = self.header
+        if self.index is not None:
+            kwargs["index"] = self.index
+        if self.index_label is not None:
+            kwargs["index_label"] = self.index_label
+        if self.mode is not None:
+            kwargs["mode"] = self.mode
+        if self.encoding is not None:
+            kwargs["encoding"] = self.encoding
+        if self.compression is not None:
+            kwargs["compression"] = self.compression
+        if self.quoting is not None:
+            kwargs["quoting"] = self.quoting
+        if self.quotechar is not None:
+            kwargs["quotechar"] = self.quotechar
+        if self.lineterminator is not None:
+            kwargs["lineterminator"] = self.lineterminator
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.date_format is not None:
+            kwargs["date_format"] = self.date_format
+        if self.doublequote is not None:
+            kwargs["doublequote"] = self.doublequote
+        if self.escapechar is not None:
+            kwargs["escapechar"] = self.escapechar
+        if self.decimal is not None:
+            kwargs["decimal"] = self.decimal
+        if self.errors is not None:
+            kwargs["errors"] = self.errors
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_csv(self.path, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.path)
 
     @classmethod
     def name(cls) -> str:
@@ -1108,6 +1368,8 @@ def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
         CSVDataAdapter,
+        PandasCsvReader,
+        PandasCsvWriter,
         PandasParquetReader,
         PandasParquetWriter,
         PandasPickleReader,
