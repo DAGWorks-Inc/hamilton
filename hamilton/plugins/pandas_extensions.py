@@ -82,6 +82,7 @@ class DataFrameDataLoader(DataLoader, DataSaver, abc.ABC):
         pass
 
 
+'''
 @dataclasses.dataclass
 class CSVDataAdapter(DataFrameDataLoader):
     """Data loader for CSV files. Note that this currently does not support the wide array of
@@ -124,6 +125,7 @@ class CSVDataAdapter(DataFrameDataLoader):
     @classmethod
     def name(cls) -> str:
         return "csv"
+'''
 
 
 @dataclasses.dataclass
@@ -296,7 +298,7 @@ class PandasCsvReader(DataLoader):
 
 @dataclasses.dataclass
 class PandasCsvWriter(DataSaver):
-    """Class that handles saving pickle files with pandas.
+    """Class that handles saving Csv files with pandas.
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html
     """
 
@@ -1367,7 +1369,7 @@ class PandasFeatherWriter(DataSaver):
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
-        CSVDataAdapter,
+        # CSVDataAdapter,
         PandasCsvReader,
         PandasCsvWriter,
         PandasParquetReader,
