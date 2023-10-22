@@ -102,3 +102,5 @@ def register_data_loaders():
 
 
 register_data_loaders()
+
+COLUMN_FRIENDLY_DF_TYPE = False
