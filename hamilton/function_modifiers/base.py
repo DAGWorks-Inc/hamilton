@@ -30,6 +30,7 @@ if not registry.INITIALIZED:
         "geopandas",
         "xgboost",
         "lightgbm",
+        "sklearn_plot",
     ]
     for plugin_module in plugins_modules:
         try:
