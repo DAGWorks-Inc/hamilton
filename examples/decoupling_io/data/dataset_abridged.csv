@@ -1,0 +1,100 @@
+PassengerId,Survived,Pclass,Name,Sex,Age,SibSp,Parch,Ticket,Fare,Cabin,Embarked
+0,1,1,"Oconnor, Frankie",male,,2,0,209245,27.14,C12239,S
+1,0,3,"Bryan, Drew",male,,0,0,27323,13.35,,S
+2,0,3,"Owens, Kenneth",male,0.33,1,2,CA 457703,71.29,,S
+3,0,3,"Kramer, James",male,19.0,0,0,A. 10866,13.04,,S
+4,1,3,"Bond, Michael",male,25.0,0,0,427635,7.76,,S
+5,0,2,"Sassano, Jonathan",male,35.0,0,0,13363,6.71,,S
+6,0,3,"Conway, Jose",male,7.0,0,0,A/5 ,9.77,,S
+7,1,3,"Werner, Linda",female,6.0,1,2,434426,31.5,,S
+8,0,1,"Wardlaw, Michael",male,27.0,2,1,474849,73.02,A7253,S
+9,0,2,"Greigo, Rudy",male,66.0,0,0,6981,9.14,D2969,C
+10,0,3,"Nichols, William",male,31.0,0,0,459690,8.06,,S
+11,0,1,"Telschow, Robert",male,60.0,0,0,19600,31.5,A9055,S
+12,0,3,"Stewart, Pat",male,36.0,0,0,434108,9.34,C8674,S
+13,1,2,"Raef, Phillip",male,50.0,0,0,3790453,7.88,,Q
+14,1,1,"Seaton, Karen",female,44.0,0,1,12425,28.4,D6945,C
+15,1,3,"Estrada, Nancy",female,57.0,0,0,A/S 53862,9.31,,S
+16,0,3,"Feller, Jimmie",male,53.0,0,0,,7.92,,S
+17,0,1,"Geiger, Maria",male,43.0,0,0,487299,29.84,,S
+18,0,2,"Barren, Albert",male,25.0,0,0,24142,8.85,,S
+19,1,1,"Hall, Stephanie",female,61.0,0,4,PC 174821,205.01,B7010,Q
+20,0,3,"Lim, Tiana",female,17.0,0,0,A. 38515,8.28,,S
+21,0,1,"Andrews, Tommie",male,39.0,1,0,43632,30.72,,S
+22,0,1,"Welter, Robert",male,59.0,2,0,W./C. 27217,28.56,,S
+23,1,3,"Brown, Pat",female,23.0,0,0,428754,7.95,,Q
+24,0,3,"Fetterolf, Andy",male,21.0,0,0,433460,10.38,,S
+25,0,1,"Dagostino, Christa",female,53.0,1,1,11856,82.57,B11790,Q
+26,0,3,"Liang, Amanda",female,26.0,0,0,A. 12030,10.24,,S
+27,1,1,"Way, Tina",female,35.0,0,2,476162,154.61,C20297,C
+28,1,2,"Cook, Mark",male,23.0,0,0,18633,8.62,,S
+29,0,3,"Robinson, James",male,36.0,0,0,419996,8.6,,S
+30,1,3,"Escareno, William",male,5.0,1,1,14288,31.35,,S
+31,1,3,"Hollander, Richard",male,7.0,1,0,,28.75,,S
+32,1,2,"Venhorst, Eva",female,31.0,0,1,23918,19.83,,C
+33,1,1,"Roth, Pamela",female,67.0,1,0,448145,97.2,B16390,Q
+34,1,2,"Mcmullen, Delores",female,,0,0,15940,33.66,,C
+35,0,3,"Hall, Booker",male,,0,0,422605,5.77,,C
+36,1,1,"Crowder, Nicole",female,,0,0,341631,60.02,C19277,Q
+37,1,1,"Sell, Dewayne",male,54.0,0,0,207138,228.82,B7665,S
+38,0,2,"Dickey, Patricia",female,53.0,0,0,A. 8160,13.33,,S
+39,1,2,"Cultice, May",female,61.0,0,0,10193,,,S
+40,1,1,"Lynch, Carmen",female,69.0,1,0,PC 420055,116.65,D6224,Q
+41,1,3,"Dixon, Ray",male,22.0,0,0,12720,6.03,,S
+42,1,2,"Nielsen, Linda",female,7.0,0,1,39411,28.53,B21244,S
+43,0,2,"Sprinkle, Richard",male,23.0,1,0,10176,35.18,,S
+44,0,3,"Hickey, Gregory",male,,1,0,11059,27.49,,S
+45,0,3,"Gallagher, Theresa",female,68.0,0,1,SC/PARIS 11177,31.01,,C
+46,0,3,"Bennett, Christopher",male,71.0,0,0,318079,25.6,,C
+47,0,1,"Welch, William",male,43.0,0,0,453379,61.21,D1695,S
+48,1,2,"Moore, Arthur",male,66.0,0,0,40610,26.48,,S
+49,0,3,"Sohn, Shane",male,22.0,0,3,A. 440907,9.29,,Q
+50,1,1,"Thomas, Craig",male,63.0,0,0,8189,80.11,C12615,C
+51,0,2,"Watson, Stephanie",female,47.0,1,5,S.C./PARIS 449882,72.45,,C
+52,0,1,"Collins, Anthony",male,45.0,1,0,44605,67.23,D19734,S
+53,1,1,"Walker, Wanda",female,34.0,1,0,200280,88.88,C11880,C
+54,0,1,"Estes, Lawrence",male,31.0,3,0,4090791,24.33,,S
+55,0,3,"Persad, Elbert",male,3.0,1,2,424265,80.84,,S
+56,1,1,"Mccoy, Jason",male,27.0,0,0,7875,93.36,A19055,C
+57,1,1,"Charles, Ruth",female,28.0,0,1,20140,13.31,D6286,S
+58,0,3,"Olsson, Aaron",male,37.0,0,0,14214,10.46,,S
+59,0,1,"Bocchi, William",male,64.0,0,0,11652,9.11,,S
+60,1,3,"Bopp, Trudie",female,39.0,0,0,344270,11.49,,S
+61,1,2,"Eddy, John",male,58.0,0,0,16391,24.39,,S
+62,0,2,"Nicols, Jerry",male,56.0,0,0,437720,71.39,,S
+63,0,1,"Moreno, Carla",female,36.0,0,2,SC/Paris 231091,473.49,A6932,C
+64,0,3,"Schaefer, Stephen",male,,0,0,A. 431755,10.69,,S
+65,1,2,"Jones, Betty",female,40.0,0,0,442609,24.17,,S
+66,1,1,"Murray, Emilie",female,5.0,1,0,341482,69.41,C15652,C
+67,0,1,"Stefani, Alfred",male,38.0,1,2,CA. 6654,27.7,B4480,S
+68,1,1,"Goodman, Helena",female,40.0,0,0,PC 448684,92.34,C5522,C
+69,0,3,"Butler, David",male,21.0,0,0,441973,9.89,,S
+70,0,1,"Lybrand, Stanley",male,40.0,3,0,PC 9037,28.44,A19030,S
+71,0,2,"Her, Frederick",male,5.0,2,0,17873,29.33,,S
+72,0,2,"Wilson, Paul",male,56.0,0,0,7901,6.71,,S
+73,1,1,"Vanburen, Andrea",female,47.0,0,0,405916,31.72,D19747,C
+74,0,3,"Madero, Ken",male,20.0,0,0,14042,7.71,,S
+75,1,3,"Jackson, Joyce",female,27.0,0,0,8776,13.32,,S
+76,1,2,"Kavanaugh, Velma",female,61.0,0,0,300240,7.87,,S
+77,0,3,"Ortiz, Nelson",male,23.0,0,0,13276,5.04,,S
+78,1,2,"Phillips, Anna",female,67.0,0,0,23354,11.91,,C
+79,1,3,"Dameron, Maria",female,8.0,0,1,345304,24.84,,S
+80,0,2,"Goodman, Dennis",male,66.0,0,0,468154,7.26,,S
+81,0,3,"Novack, Joshua",male,60.0,0,0,10520,12.47,,S
+82,1,1,"Lindsey, Marsha",female,70.0,0,0,PC 15393,104.43,B19226,Q
+83,0,3,"Hall, Jennifer",female,25.0,0,0,369013,13.86,,S
+84,0,2,"Herrin, Barbara",female,11.0,0,0,,9.12,,S
+85,0,3,"Mitchell, Jose",male,22.0,0,0,SOTON/O.Q. ,7.11,,S
+86,0,2,"Boucher, Joseph",male,28.0,0,0,SOTON/O.Q. 57358,5.09,,S
+87,0,3,"Shiver, Charles",male,39.0,0,0,11290,9.78,,S
+88,0,3,"Villarreal, Orville",male,27.0,0,0,14574,6.04,,S
+89,0,1,"Richman, Efrain",male,54.0,1,0,252834,21.79,A18210,S
+90,1,3,"Knapp, Rena",female,54.0,0,0,4073710,6.76,,C
+91,0,1,"Lavadera, Richard",male,50.0,1,2,12272,8.82,B5371,S
+92,0,3,"Pye, Albert",male,49.0,0,0,8528,5.34,,S
+93,0,2,"Soto, Robt",male,39.0,0,0,CA 12119,4.67,,S
+94,1,3,"Level, Tammara",female,59.0,0,0,10156,24.93,C11610,C
+95,1,2,"Gruska, Karen",female,53.0,0,0,325538,32.24,,S
+96,1,2,"Jordan, Emma",female,28.0,0,0,167707,26.46,,Q
+97,1,1,"Elliott, Monica",female,56.0,0,0,PC 11617,131.28,D7415,Q
+98,1,2,"Bohn, Teresa",female,8.0,0,0,,27.88,,S
