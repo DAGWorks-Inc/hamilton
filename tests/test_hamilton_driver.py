@@ -18,6 +18,7 @@ from hamilton.driver import (
     Variable,
 )
 from hamilton.execution import executors
+from hamilton.io.materialization import to
 
 """This file tests driver capabilities.
 Anything involving execution is tested for multiple executors/driver configuration.
@@ -457,11 +458,39 @@ def test_builder_defaults_to_dict_result():
 
 def test_materialize_checks_required_input(tmp_path):
     dr = Builder().with_modules(tests.resources.dummy_functions).build()
-    from hamilton.io.materialization import to
 
     with pytest.raises(ValueError):
         dr.materialize(additional_vars=["C"], inputs={"c": 1})
     with pytest.raises(ValueError):
         dr.materialize(
             to.pickle(id="1", path=f"{tmp_path}/foo.pkl", dependencies=["C"]), inputs={"c": 1}
+        )
+
+
+def test_validate_execution_happy():
+    dr = Builder().with_modules(tests.resources.very_simple_dag).build()
+    dr.validate_execution(["b"], inputs={"a": 1})
+
+
+def test_validate_execution_sad():
+    dr = Builder().with_modules(tests.resources.very_simple_dag).build()
+    with pytest.raises(ValueError):
+        dr.validate_execution(["b"], inputs={})
+
+
+def test_validate_materialization_happy(tmp_path):
+    dr = Builder().with_modules(tests.resources.very_simple_dag).build()
+    dr.validate_materialization(
+        to.pickle(id="1", path=f"{tmp_path}/foo.pkl", dependencies=["b"]), inputs={"a": 1}
+    )
+
+
+def test_validate_materialization_sad(tmp_path):
+    dr = Builder().with_modules(tests.resources.very_simple_dag).build()
+    with pytest.raises(ValueError):
+        dr.validate_materialization(
+            # c does not exist
+            # no inputs either
+            to.pickle(id="1", path=f"{tmp_path}/foo.pkl", dependencies=["c"]),
+            inputs={},
         )

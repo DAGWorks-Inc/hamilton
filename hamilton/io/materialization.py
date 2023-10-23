@@ -106,6 +106,17 @@ class MaterializerFactory:
         return processed_kwargs
 
     def _resolve_dependencies(self, fn_graph: graph.FunctionGraph) -> List[node.Node]:
+        out = []
+        missing_nodes = []
+        for name in self.dependencies:
+            if name in fn_graph.nodes:
+                out.append(fn_graph.nodes[name])
+            else:
+                missing_nodes.append(name)
+        if missing_nodes:
+            raise ValueError(
+                f"Materializer {self.id} has dependencies that are not in the graph: {missing_nodes}."
+            )
         return [fn_graph.nodes[name] for name in self.dependencies]
 
     def resolve(self, fn_graph: graph.FunctionGraph) -> List[node.Node]:
