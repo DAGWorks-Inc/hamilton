@@ -1127,6 +1127,56 @@ class Driver:
             overrides,
         )
 
+    def validate_execution(
+        self,
+        final_vars: List[Union[str, Callable, Variable]],
+        overrides: Dict[str, Any] = None,
+        inputs: Dict[str, Any] = None,
+    ):
+        """Validates execution of the graph. One can call this to validate execution, independently of actually executing.
+        Note this has no return -- it will raise a ValueError if there is an issue.
+
+        :param final_vars: Final variables to compute
+        :param overrides: Overrides to pass to execution.
+        :param inputs: Inputs to pass to execution.
+        :raise ValueError: if any issues with executino can be detected.
+        """
+        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs, overrides)
+        Driver.validate_inputs(self.graph, self.adapter, user_nodes, inputs, nodes)
+        self.graph_executor.validate(list(nodes | user_nodes))
+
+    def validate_materialization(
+        self,
+        *materializers: materialization.MaterializerFactory,
+        additional_vars: List[Union[str, Callable, Variable]] = None,
+        overrides: Dict[str, Any] = None,
+        inputs: Dict[str, Any] = None,
+    ):
+        """Validates materialization of the graph. Effectively .materialize() with a dry-run.
+        Note this has no return -- it will raise a ValueError if there is an issue.
+
+        :param materializers: Materializers to use, see the materialize() function
+        :param additional_vars: Additional variables to compute (in addition to materializers)
+        :param overrides: Overrides to pass to execution. Optional.
+        :param inputs: Inputs to pass to execution. Optional.
+        :raise ValueError: if any issues with materialization can be detected.
+        """
+        if additional_vars is None:
+            additional_vars = []
+        final_vars = self._create_final_vars(additional_vars)
+        materializer_vars = [materializer.id for materializer in materializers]
+        module_set = {_module.__name__ for _module in self.graph_modules}
+        materializers = [m.sanitize_dependencies(module_set) for m in materializers]
+        function_graph = materialization.modify_graph(self.graph, materializers)
+        # need to validate the right inputs has been provided.
+        # we do this on the modified graph.
+        nodes, user_nodes = function_graph.get_upstream_nodes(
+            final_vars + materializer_vars, inputs, overrides
+        )
+        Driver.validate_inputs(function_graph, self.adapter, user_nodes, inputs, nodes)
+        all_nodes = nodes | user_nodes
+        self.graph_executor.validate(list(all_nodes))
+
 
 class Builder:
     def __init__(self):
