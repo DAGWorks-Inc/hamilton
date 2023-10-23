@@ -6,6 +6,9 @@ dask[distributed]
 git+https://github.com/pradyunsg/furo@main
 gitpython # Required for parsing git info for generation of data-adapter docs
 grpcio-status
+lightgbm
+lxml
+lz4
 mock==1.0.1 # read the docs pins
 myst-parser==2.0.0  # latest version of myst at this time
 pandera
@@ -17,7 +20,9 @@ pyspark
 ray
 readthedocs-sphinx-ext<2.3 # read the docs pins
 recommonmark==0.5.0  # read the docs pins
+scikit-learn
 sphinx # unpinned because myst-parser doesn't break anymore
 sphinx-autobuild
 sphinx-rtd-theme # read the docs pins
 sphinx-sitemap
+xgboost
