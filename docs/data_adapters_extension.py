@@ -1,4 +1,5 @@
 import dataclasses
+import importlib
 import inspect
 import os
 from typing import List, Optional, Tuple, Type
@@ -21,15 +22,10 @@ GIT_ID = os.environ.get("READTHEDOCS_GIT_IDENTIFIER", "main")
 
 # All the modules that register data adapters
 # When you register a new one, add it here
-MODULES_TO_IMPORT = [
-    "hamilton.io.default_data_loaders",
-    "hamilton.plugins.pandas_extensions",
-    "hamilton.plugins.polars_extensions",
-    "hamilton.plugins.spark_extensions",
-]
 
-for module in MODULES_TO_IMPORT:
-    __import__(module)
+# Keep these two around so we
+importlib.import_module("hamilton.function_modifiers.base")
+importlib.import_module("hamilton.io")
 
 
 def get_git_root(path: str) -> str:
@@ -115,7 +111,7 @@ class AdapterInfo:
                 Param(name=p.name, type=get_class_repr(p.type), default=get_default(p))
                 for p in dataclasses.fields(loader)
             ]
-            if issubclass(loader, hamilton.io.data_adapters.DataSaver)
+            if issubclass(loader, hamilton.io.data_adapters.DataLoader)
             else None,
             save_params=[
                 Param(name=p.name, type=get_class_repr(p.type), default=get_default(p))
@@ -273,7 +269,9 @@ class DataAdapterTableDirective(Directive):
 
             # Add the paragraph nodes to the entry nodes
             key_entry += render_key(row_data.key)
-            load_params_entry += render_adapter_params(row_data.load_params)
+            load_params_entry += render_adapter_params(
+                row_data.load_params if saver_or_loader == "loader" else row_data.save_params
+            )
             applicable_types_entry += render_applicable_types(row_data.applicable_types)
             class_path_entry += render_class_path(
                 row_data.class_path, row_data.file_, *row_data.line_nos
