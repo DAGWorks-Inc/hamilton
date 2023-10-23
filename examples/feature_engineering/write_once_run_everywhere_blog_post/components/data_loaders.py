@@ -26,6 +26,13 @@ def survey_results__online(client_id: int) -> pd.DataFrame:
     return utils.query_survey_results(client_id=client_id)
 
 
+@config.when(mode="streaming")
+@extract_columns("budget", "age", "gender", "client_id")
+def survey_results__streaming(survey_event: dict) -> pd.DataFrame:
+    """Results come in from a survey event, which is just a dict passed to us by the upstream streaming engine."""
+    return pd.DataFrame([survey_event])
+
+
 @config.when(mode="batch")
 def client_login_data__batch(client_login_db: str, client_login_table: str) -> pd.DataFrame:
     """Load the client login data"""
@@ -34,5 +41,11 @@ def client_login_data__batch(client_login_db: str, client_login_table: str) -> p
 
 @config.when(mode="online")
 def last_logged_in__online(client_id: int) -> pd.Series:
+    """Query a service for the client login data"""
+    return utils.query_login_data(client_id=client_id)["last_logged_in"]
+
+
+@config.when(mode="streaming")
+def last_logged_in__streaming(client_id: pd.Series) -> pd.Series:
     """Query a service for the client login data"""
     return utils.query_login_data(client_id=client_id)["last_logged_in"]

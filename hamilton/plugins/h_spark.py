@@ -756,8 +756,6 @@ class require_columns(fm_base.NodeTransformer):
         :return:
         """
         param = derive_dataframe_parameter_from_node(node_)
-        with open("./debug.txt", "a") as f:
-            f.write(f"{node_.name}={param}\n")
 
         # This allows for injection of any extra parameters
         def new_callable(__input_types=node_.input_types, **kwargs):
@@ -937,34 +935,35 @@ class with_columns(fm_base.NodeCreator):
         """Initializes a with_columns decorator for spark. This allows you to efficiently run
          groups of map operations on a dataframe, represented as pandas/primitives UDFs. This
          effectively "linearizes" compute -- meaning that a DAG of map operations can be run
-         as a set of .withColumn operations on a single dataframe -- ensuring that you don't have
+         as a set of `.withColumn` operations on a single dataframe -- ensuring that you don't have
          to do a complex `extract` then `join` process on spark, which can be inefficient.
 
          Here's an example of calling it -- if you've seen `@subdag`, you should be familiar with
          the concepts:
 
          .. code-block:: python
-         # my_module.py
-         def a(a_from_df: pd.Series) -> pd.Series:
-             return _process(a)
 
-         def b(b_from_df: pd.Series) -> pd.Series:
-             return _process(b)
+             # my_module.py
+             def a(a_from_df: pd.Series) -> pd.Series:
+                 return _process(a)
 
-         def a_plus_b(a_from_df: pd.Series, b_from_df: pd.Series) -> pd.Series:
-             return a + b
+             def b(b_from_df: pd.Series) -> pd.Series:
+                 return _process(b)
+
+             def a_plus_b(a_from_df: pd.Series, b_from_df: pd.Series) -> pd.Series:
+                 return a + b
 
 
-         # the with_columns call
-         @with_columns(
-             load_from=[my_module], # Load from any module
-             columns_to_pass=["a_from_df", "b_from_df"], # The columns to pass from the dataframe to
-             # the subdag
-             select=["a", "b", "a_plus_b"], # The columns to select from the dataframe
-         )
-         def final_df(initial_df: ps.DataFrame) -> ps.DataFrame:
-             # process, or just return unprocessed
-             ...
+             # the with_columns call
+             @with_columns(
+                 load_from=[my_module], # Load from any module
+                 columns_to_pass=["a_from_df", "b_from_df"], # The columns to pass from the dataframe to
+                 # the subdag
+                 select=["a", "b", "a_plus_b"], # The columns to select from the dataframe
+             )
+             def final_df(initial_df: ps.DataFrame) -> ps.DataFrame:
+                 # process, or just return unprocessed
+                 ...
 
          You can think of the above as a series of withColumn calls on the dataframe, where the
          operations are applied in topological order. This is significantly more efficient than
@@ -1187,7 +1186,7 @@ class with_columns(fm_base.NodeCreator):
             output_nodes.append(select_node)
             current_dataframe_node = select_node.name
         output_nodes = subdag.add_namespace(output_nodes, namespace)
-        final_node = node.Node.from_fn(fn).reassign_input_names(
+        final_node = node.Node.from_fn(fn).reassign_inputs(
             {inject_parameter: assign_namespace(current_dataframe_node, namespace)}
         )
         return output_nodes + [final_node]

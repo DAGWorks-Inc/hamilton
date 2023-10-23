@@ -1,4 +1,5 @@
 import random
+from typing import List
 
 import pandas as pd
 
@@ -8,7 +9,7 @@ is make them load from your sources (or, better, yet, use the load_from decorato
 """
 
 
-def fabricate_client_login_data(client_ids: list[int]) -> pd.DataFrame:
+def fabricate_client_login_data(client_ids: List[int]) -> pd.DataFrame:
     """Fabricates a dataframe of client login data.
     This contains the columns client ID (int) and last_logged_in (datetime)
 
@@ -28,7 +29,7 @@ def fabricate_client_login_data(client_ids: list[int]) -> pd.DataFrame:
     )
 
 
-def fabricate_survey_results_data(client_ids: list[int]) -> pd.DataFrame:
+def fabricate_survey_results_data(client_ids: List[int]) -> pd.DataFrame:
     """Fabricates a dataframe of survey results.
     This has the following (random) columns:
     - budget -- amount they're willing to spend on an order (number between 1 and 1000)
@@ -43,7 +44,7 @@ def fabricate_survey_results_data(client_ids: list[int]) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "client_id": client_ids,
-            "budget": [min(random.gauss(100, 50), 20) for _ in client_ids],
+            "budget": [max(random.gauss(100, 50), 20) for _ in client_ids],
             "age": [random.randint(18, 100) for _ in client_ids],
             "gender": [["male", "female"][random.randint(0, 1)] for _ in client_ids],
         }
@@ -90,3 +91,10 @@ def query_scalar(value: str) -> float:
         return 38.8
     if value == "age_stddev":
         return 13.5
+
+
+if __name__ == "__main__":
+    # use this to recreate the input CSV
+    df = query_table("survey_results", "survey_results")
+    print(df)
+    df.to_csv("survey_results.csv", index=False)
