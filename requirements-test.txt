@@ -3,6 +3,7 @@ lightgbm
 lxml
 lz4
 networkx
+plotly
 polars
 pyarrow
 pytest
