@@ -22,27 +22,6 @@ with contrib.catch_import_errors(__name__, __file__, logger):
     from utilsforecast.losses import mse
 
 
-def raw_dataset() -> pd.DataFrame:
-    """Download Nixtla's version of the M4 hourly dataset. ref: https://paperswithcode.com/dataset/m4
-
-    Needs to have columns an `id`, a `time`, and a `target` columns.
-    Nixtla defaults are:
-        id: "unique_id"
-        time: "ds"
-        target: "y"
-
-    """
-    return pd.read_parquet("https://datasets-nixtla.s3.amazonaws.com/m4-hourly.parquet")
-
-
-def dataset(raw_dataset: pd.DataFrame, n_ids: int = 5, n_days: int = 7) -> pd.DataFrame:
-    """Filter the dataset to `n_ids` series for a period of `n_days`"""
-    selection = raw_dataset.unique_id.unique()[:n_ids]
-    df = raw_dataset.loc[raw_dataset.unique_id.isin(selection)]
-    df = df.groupby("unique_id").tail(n_days * 24)
-    return df
-
-
 def base_models() -> list[_TS]:
     """Nixtla stats models to fit and evaluate
     Override with your own models at the Hamilton Driver level.
@@ -63,7 +42,7 @@ def fallback_model() -> _TS:
     return SeasonalNaive(season_length=7)
 
 
-def forecast_harness(
+def forecaster(
     dataset: pd.DataFrame,
     base_models: list[_TS],
     fallback_model: _TS,
@@ -88,13 +67,13 @@ def forecast_harness(
 
 def cross_validation_predictions(
     dataset: pd.DataFrame,
-    forecast_harness: StatsForecast,
+    forecaster: StatsForecast,
     cv_forecast_steps: int = 24,
     cv_window_size: int = 24,
     n_cv_windows: int = 2,
 ) -> pd.DataFrame:
     """Fit models and predict over `n_cv_windows` time windows"""
-    return forecast_harness.cross_validation(
+    return forecaster.cross_validation(
         df=dataset,
         h=cv_forecast_steps,
         step_size=cv_window_size,
@@ -128,7 +107,7 @@ def cross_validation_evaluation(
     for cutoff in df.cutoff.unique():
         eval_ = evaluate(
             df=df.loc[df.cutoff == cutoff],
-            metrics=[mse],
+            metrics=evaluation_metrics,
             models=models,
         )
         evals.append(eval_)
@@ -144,7 +123,7 @@ def best_model_per_series(cross_validation_evaluation: pd.DataFrame) -> pd.Serie
 
 
 def inference_predictions(
-    forecast_harness: StatsForecast,
+    forecaster: StatsForecast,
     inference_forecast_steps: int = 12,
     inference_confidence_percentile: list[float] = [90.0],
 ) -> pd.DataFrame:
@@ -152,7 +131,7 @@ def inference_predictions(
 
     :param inference_forecast_steps: number of steps in the future to forecast
     """
-    return forecast_harness.forecast(
+    return forecaster.forecast(
         h=inference_forecast_steps,
         level=inference_confidence_percentile,
     )
