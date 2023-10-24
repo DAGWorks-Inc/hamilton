@@ -1,4 +1,5 @@
 graphviz
+kaleido
 lightgbm
 lxml
 lz4
