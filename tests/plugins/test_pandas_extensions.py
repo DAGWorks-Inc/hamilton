@@ -9,8 +9,8 @@ from pandas.testing import assert_frame_equal
 from sqlalchemy import create_engine
 
 from hamilton.plugins.pandas_extensions import (
-    PandasCsvReader,
-    PandasCsvWriter,
+    PandasCSVReader,
+    PandasCSVWriter,
     PandasFeatherReader,
     PandasFeatherWriter,
     PandasHtmlReader,
@@ -188,19 +188,19 @@ def test_pandas_feather_writer(tmp_path: pathlib.Path) -> None:
 
 def test_pandas_csv_reader(tmp_path: pathlib.Path) -> None:
     path_to_test = "tests/resources/data/test_load_from_data.csv"
-    reader = PandasCsvReader(path=path_to_test)
+    reader = PandasCSVReader(path=path_to_test)
     df, metadata = reader.load_data(pd.DataFrame)
 
-    assert PandasCsvReader.applicable_types() == [pd.DataFrame]
+    assert PandasCSVReader.applicable_types() == [pd.DataFrame]
     assert df.loc[0, "firstName"] == "John"
     assert df.shape == (3, 5)
 
 
 def test_pandas_csv_writer(tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "test.csv"
-    writer = PandasCsvWriter(path=file_path)
+    writer = PandasCSVWriter(path=file_path)
     metadata = writer.save_data(pd.DataFrame(data={"col1": [1, 2], "col2": [4, 3]}))
 
-    assert PandasCsvWriter.applicable_types() == [pd.DataFrame]
+    assert PandasCSVWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
     assert metadata["path"] == file_path

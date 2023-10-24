@@ -83,7 +83,7 @@ class DataFrameDataLoader(DataLoader, DataSaver, abc.ABC):
 
 
 @dataclasses.dataclass
-class PandasCsvReader(DataLoader):
+class PandasCSVReader(DataLoader):
     """
     Class that handles saving CSV files with pandas.
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
@@ -251,8 +251,8 @@ class PandasCsvReader(DataLoader):
 
 
 @dataclasses.dataclass
-class PandasCsvWriter(DataSaver):
-    """Class that handles saving Csv files with pandas.
+class PandasCSVWriter(DataSaver):
+    """Class that handles saving CSV files with pandas.
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html
     """
 
@@ -1323,8 +1323,8 @@ class PandasFeatherWriter(DataSaver):
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
-        PandasCsvReader,
-        PandasCsvWriter,
+        PandasCSVReader,
+        PandasCSVWriter,
         PandasParquetReader,
         PandasParquetWriter,
         PandasPickleReader,
