@@ -2,6 +2,7 @@ graphviz
 lightgbm
 lxml
 lz4
+matplotlib
 networkx
 polars
 pyarrow

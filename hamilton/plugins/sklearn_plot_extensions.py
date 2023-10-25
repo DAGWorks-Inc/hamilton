@@ -3,6 +3,7 @@ from os import PathLike
 from typing import Any, Collection, Dict, Optional, Type, Union
 
 try:
+    import matplotlib  # noqa: F401
     import sklearn.inspection
     import sklearn.metrics
     import sklearn.model_selection
