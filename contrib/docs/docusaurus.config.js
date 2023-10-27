@@ -88,13 +88,19 @@ const config = {
             position: 'left',
             label: 'Dataflows',
           },
+
           {to: '/blog', label: 'Changelog ', position: 'left'},
+          {
+            type: 'search',
+            position: 'left',
+          },
           {href: 'https://blog.dagworks.io', label: 'DAGWorks Blog', position: 'right'},
           {
             href: 'https://github.com/dagworks-inc/hamilton',
             label: 'GitHub',
             position: 'right',
           },
+
         ],
       },
       footer: {
