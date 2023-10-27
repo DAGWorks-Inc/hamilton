@@ -50,7 +50,7 @@ def lag_transforms() -> LAG_TRANSFORMS_TYPE:
     return {
         1: [expanding_mean],  # function without arguments
         24: [(rolling_mean, 24)],  # function with arguments as tuple
-        48: [_rolling_mean_48],  # wrapped function
+        48: [_rolling_mean_48],  # function returning a parameterized function (wrapped)
     }
 
 

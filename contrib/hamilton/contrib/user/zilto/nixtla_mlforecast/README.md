@@ -23,4 +23,4 @@ This module doesn't receive configurations.
 
 
 # Limitations
-- This module defines simple transforms as illustration. You should define relevant values
+- You should implement your the `lag_transforms()`, `date_features()`, and `target_transforms` that best suit your problem.
