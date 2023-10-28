@@ -1,33 +1,31 @@
 import pathlib
-import geopandas as gpd 
+
 import geodatasets
-import sys
+import geopandas as gpd
 from geopandas.testing import assert_geodataframe_equal
 
-from hamilton.plugins.pandas_extensions import (
-    GeopandasFileReader,
-    GeopandasFileWriter,
-)
+from hamilton.plugins.geopandas_extensions import GeopandasFileReader, GeopandasFileWriter
+
 
 def test_geopandas_file(tmp_path: pathlib.Path) -> None:
     # load in the example data
-    new_york_example_data = geopandas.read_file(geodatasets.get_path("nybb"))
+    new_york_example_data = gpd.read_file(geodatasets.get_path("nybb"))
 
-    #write the data to a shapefile
+    # write the data to a shapefile
     file_path = tmp_path / "ShapeFileTest"
     writer = GeopandasFileWriter(filename=file_path)
-    metadata = writer.save_data(data = new_york_example_data)
+    writer.save_data(data=new_york_example_data)
 
-    #read in the multiple files that we output
-    dbf_file_path = tmp_path / "ShapeFileTest/ShapeFileTest.dbf" 
-    shp_file_path = tmp_path / "ShapeFileTest/ShapeFileTest.shp" 
+    # read in the multiple files that we output
+    dbf_file_path = tmp_path / "ShapeFileTest/ShapeFileTest.dbf"
+    shp_file_path = tmp_path / "ShapeFileTest/ShapeFileTest.shp"
     shx_file_path = tmp_path / "ShapeFileTest/ShapeFileTest.shx"
 
     dbf_data, dbf_metadata = GeopandasFileReader(dbf_file_path)
     shp_data, shp_metadata = GeopandasFileReader(shp_file_path)
     shx_data, shx_metadata = GeopandasFileReader(shx_file_path)
 
-    #check that each is the same as the original 
+    # check that each is the same as the original
     assert_geodataframe_equal(new_york_example_data, dbf_data)
     assert_geodataframe_equal(new_york_example_data, shp_data)
     assert_geodataframe_equal(new_york_example_data, shx_data)
