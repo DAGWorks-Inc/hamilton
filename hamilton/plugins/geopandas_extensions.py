@@ -2,7 +2,7 @@ import dataclasses
 import os
 from io import BufferedReader, BytesIO
 from pathlib import Path
-from typing import IO, Any, Collection, Dict, Optional, Tuple, Type, Union
+from typing import IO, Any, Collection, Dict, List, Optional, Tuple, Type, Union
 
 from pyproj import CRS
 from shapely import (
@@ -149,7 +149,7 @@ class GeopandasFileReader(DataLoader):
 
         return loading_kwargs
 
-    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         gdf = gpd.read_file(self.filename, **self._get_loading_kwargs())
         metedata = utils.get_file_metadata(self.filename)
 
@@ -160,10 +160,157 @@ class GeopandasFileReader(DataLoader):
         return ["shp", "shx", "dbf"]
 
 
+@dataclasses.dataclass
+class GeopandasParquetWriter(DataSaver):
+    """
+    Class that handles writing a GeoDataFrame to Parquet File.
+    Maps to: https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.to_parquet.html
+    """
+
+    path: Union[str, Path]
+    # kwargs
+    index: Optional[bool] = None
+    compression: Literal["snappy", "gzip", "brotli", None] = "snappy"
+    schema_version = Optional[Literal["0.1.0", "0.4.0", None]] = None
+    # TO DO: allow additional arguments via the kwargs keyword
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return DATAFRAME_TYPE
+
+    def _get_saving_kwargs(self) -> Dict[str, Any]:
+        saving_kwargs = {}
+        if self.index is not None:
+            saving_kwargs["index"] = self.index
+        if self.compression is not None:
+            saving_kwargs["compression"] = self.compression
+        if self.schema_version is not None:
+            saving_kwargs["schema_version"] = self.schema_version
+
+    def load_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_parquet(self.path, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.path)
+
+    @classmethod
+    def name(cls) -> str:
+        return "parquet"
+
+
+@dataclasses.dataclass
+class GeopandasParquetReader(DataLoader):
+    """
+    Class that handles reading Parquet Files and outputs a GeoDataFrame.
+    Maps to: https://geopandas.org/en/stable/docs/reference/api/geopandas.read_parquet.html
+    """
+
+    path: Union[str, Path]
+    # kwargs
+    columns: Optional[List] = None
+    storage_options: Optional[Dict] = None
+
+    # TO DO: allow additional arguments via kwargs
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return DATAFRAME_TYPE
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        loading_kwargs = {}
+        if self.columns is not None:
+            loading_kwargs["columns"] = self.columns
+        if self.storage_options is not None:
+            loading_kwargs["storage_options"] = self.storage_options
+
+        return loading_kwargs
+
+    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        gdf = gpd.read_parquet(self.path, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.path)
+
+        return gdf, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "parquet"
+
+
+@dataclasses.dataclass
+class GeopandasFeatherWriter(DataSaver):
+    """
+    Class that handles writing a GeoDataFrame to a Feather File.
+    Maps to: https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.to_feather.html
+    """
+
+    path: Union[str, Path]
+    # kwargs
+    index: Optional[bool] = None
+    compression: Optional[Literal["zstd", "lz4", "uncompressed"]] = None
+    schema_version = Optional[Literal["0.1.0", "0.4.0", None]] = None
+    # TO DO: allow additional arguments via the kwargs keyword
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return DATAFRAME_TYPE
+
+    def _get_saving_kwargs(self) -> Dict[str, Any]:
+        saving_kwargs = {}
+        if self.index is not None:
+            saving_kwargs["index"] = self.index
+        if self.compression is not None:
+            saving_kwargs["compression"] = self.compression
+        if self.schema_version is not None:
+            saving_kwargs["schema_version"] = self.schema_version
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_feather(self.path, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.path)
+
+    @classmethod
+    def name(cls) -> str:
+        return "feather"
+
+
+@dataclasses.dataclass
+class GeopandasFeatherReader(DataLoader):
+    """
+    Class that handles reading Feather Files and outputs a GeoDataFrame.
+    Maps to: https://geopandas.org/en/stable/docs/reference/api/geopandas.read_feather.html
+    """
+
+    path: Union[str, Path]
+    # kwargs
+    columns: Optional[List] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        loading_kwargs = {}
+        if self.columns is not None:
+            loading_kwargs["columns"] = self.columns
+
+        return loading_kwargs
+
+    def load_data(self, type: Type) -> Tuple[Any, Dict[str, Any]]:
+        gdf = gpd.read_feather(self.path, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.path)
+
+        return gdf, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "feather"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
         GeopandasFileReader,
         GeopandasFileWriter,
+        GeopandasParquetReader,
+        GeopandasParquetWriter,
+        GeopandasFeatherReader,
+        GeopandasFeatherWriter,
     ]:
         registry.register_adapter(loader)

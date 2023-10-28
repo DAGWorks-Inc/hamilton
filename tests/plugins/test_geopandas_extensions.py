@@ -4,7 +4,14 @@ import geodatasets
 import geopandas as gpd
 from geopandas.testing import assert_geodataframe_equal
 
-from hamilton.plugins.geopandas_extensions import GeopandasFileReader, GeopandasFileWriter
+from hamilton.plugins.geopandas_extensions import (
+    GeopandasFeatherReader,
+    GeopandasFeatherWriter,
+    GeopandasFileReader,
+    GeopandasFileWriter,
+    GeopandasParquetReader,
+    GeopandasParquetWriter,
+)
 
 
 def test_geopandas_file(tmp_path: pathlib.Path) -> None:
@@ -32,3 +39,41 @@ def test_geopandas_file(tmp_path: pathlib.Path) -> None:
     assert_geodataframe_equal(new_york_example_data, dbf_data)
     assert_geodataframe_equal(new_york_example_data, shp_data)
     assert_geodataframe_equal(new_york_example_data, shx_data)
+
+
+def test_geopandas_parquet(tmp_path: pathlib.Path) -> None:
+    # load in the example data
+    new_york_example_data = gpd.read_file(geodatasets.get_path("nybb"))
+
+    # write the data to a shapefile
+    file_path = tmp_path / "ParquetFileTest.parquet"
+    writer = GeopandasParquetWriter(path=file_path)
+    writer.save_data(data=new_york_example_data)
+
+    # read in the multiple files that we output
+    parquet_file_path = file_path
+
+    parquet_reader = GeopandasParquetReader(parquet_file_path)
+    parquet_data, parquet_metadata = parquet_reader.load_data(gpd.GeoDataFrame)
+
+    # check that each is the same as the original
+    assert_geodataframe_equal(new_york_example_data, parquet_data)
+
+
+def test_geopandas_feather(tmp_path: pathlib.Path) -> None:
+    # load in the example data
+    new_york_example_data = gpd.read_file(geodatasets.get_path("nybb"))
+
+    # write the data to a shapefile
+    file_path = tmp_path / "FeatherFileTest.feather"
+    writer = GeopandasFeatherWriter(path=file_path)
+    writer.save_data(data=new_york_example_data)
+
+    # read in the multiple files that we output
+    feather_file_path = file_path
+
+    feather_reader = GeopandasFeatherReader(feather_file_path)
+    feather_data, feather_metadata = feather_reader.load_data(gpd.GeoDataFrame)
+
+    # check that each is the same as the original
+    assert_geodataframe_equal(new_york_example_data, feather_data)
