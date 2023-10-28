@@ -21,9 +21,12 @@ def test_geopandas_file(tmp_path: pathlib.Path) -> None:
     shp_file_path = tmp_path / "ShapeFileTest/ShapeFileTest.shp"
     shx_file_path = tmp_path / "ShapeFileTest/ShapeFileTest.shx"
 
-    dbf_data, dbf_metadata = GeopandasFileReader(dbf_file_path)
-    shp_data, shp_metadata = GeopandasFileReader(shp_file_path)
-    shx_data, shx_metadata = GeopandasFileReader(shx_file_path)
+    dbf_reader = GeopandasFileReader(dbf_file_path)
+    dbf_data, dbf_metadata = dbf_reader.load_data(gpd.GeoDataFrame)
+    shp_reader = GeopandasFileReader(shp_file_path)
+    shp_data, shp_metadata = shp_reader.load_data(gpd.GeoDataFrame)
+    shx_reader = GeopandasFileReader(shx_file_path)
+    shx_data, shx_metadata = shx_reader.load_data(gpd.GeoDataFrame)
 
     # check that each is the same as the original
     assert_geodataframe_equal(new_york_example_data, dbf_data)
