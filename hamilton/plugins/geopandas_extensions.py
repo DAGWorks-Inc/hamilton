@@ -187,7 +187,9 @@ class GeopandasParquetWriter(DataSaver):
         if self.schema_version is not None:
             saving_kwargs["schema_version"] = self.schema_version
 
-    def load_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        return saving_kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_parquet(self.path, **self._get_saving_kwargs())
         return utils.get_file_metadata(self.path)
 
@@ -260,6 +262,8 @@ class GeopandasFeatherWriter(DataSaver):
             saving_kwargs["compression"] = self.compression
         if self.schema_version is not None:
             saving_kwargs["schema_version"] = self.schema_version
+
+        return saving_kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_feather(self.path, **self._get_saving_kwargs())
