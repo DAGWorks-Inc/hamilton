@@ -170,8 +170,8 @@ class GeopandasParquetWriter(DataSaver):
     path: Union[str, Path]
     # kwargs
     index: Optional[bool] = None
-    compression: Literal["snappy", "gzip", "brotli", None] = "snappy"
-    schema_version = Optional[Literal["0.1.0", "0.4.0", None]] = None
+    compression: Union[Literal["snappy", "gzip", "brotli"], None] = "snappy"
+    schema_version: Optional[Union[Literal["0.1.0", "0.4.0"], None]] = None
     # TO DO: allow additional arguments via the kwargs keyword
 
     @classmethod
@@ -244,8 +244,8 @@ class GeopandasFeatherWriter(DataSaver):
     path: Union[str, Path]
     # kwargs
     index: Optional[bool] = None
-    compression: Optional[Literal["zstd", "lz4", "uncompressed"]] = None
-    schema_version = Optional[Literal["0.1.0", "0.4.0", None]] = None
+    compression: Optional[Union[Literal["zstd", "lz4", "uncompressed"], None]] = None
+    schema_version: Optional[Union[Literal["0.1.0", "0.4.0"], None]] = None
     # TO DO: allow additional arguments via the kwargs keyword
 
     @classmethod
