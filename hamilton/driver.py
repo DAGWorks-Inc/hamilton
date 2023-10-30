@@ -1164,10 +1164,15 @@ class Driver:
         if additional_vars is None:
             additional_vars = []
         final_vars = self._create_final_vars(additional_vars)
-        materializer_vars = [materializer.id for materializer in materializers]
         module_set = {_module.__name__ for _module in self.graph_modules}
-        materializers = [m.sanitize_dependencies(module_set) for m in materializers]
-        function_graph = materialization.modify_graph(self.graph, materializers)
+        materializer_factories, extractor_factories = self._process_materializers(materializers)
+        materializer_factories = [
+            m.sanitize_dependencies(module_set) for m in materializer_factories
+        ]
+        materializer_vars = [m.id for m in materializer_factories]
+        function_graph = materialization.modify_graph(
+            self.graph, materializer_factories, extractor_factories
+        )
         # need to validate the right inputs has been provided.
         # we do this on the modified graph.
         nodes, user_nodes = function_graph.get_upstream_nodes(
@@ -1187,6 +1192,7 @@ class Builder:
         # common fields
         self.config = {}
         self.modules = []
+
         # V1 fields
         self.adapter = None
 
