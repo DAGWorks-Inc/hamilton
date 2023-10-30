@@ -3,10 +3,10 @@ from os import PathLike
 from typing import Any, Collection, Dict, Optional, Type, Union
 
 try:
-    import matplotlib  # noqa: F401
     import sklearn.inspection
     import sklearn.metrics
     import sklearn.model_selection
+    from matplotlib import pyplot
 except ImportError:
     raise NotImplementedError("scikit-learn is not installed.")
 
@@ -40,6 +40,7 @@ for class_name in display_classes:
     if class_model_selection:
         SKLEARN_PLOT_TYPES.append(class_model_selection)
 
+SKLEARN_PLOT_TYPES.append(pyplot.Figure)
 SKLEARN_PLOT_TYPES_ANNOTATION = Union[tuple(SKLEARN_PLOT_TYPES)]
 
 
@@ -88,8 +89,12 @@ class SklearnPlotSaver(DataSaver):
         return kwargs
 
     def save_data(self, data: SKLEARN_PLOT_TYPES_ANNOTATION) -> Dict[str, Any]:
-        data.plot()
-        data.figure_.savefig(self.path, **self._get_saving_kwargs())
+        if isinstance(data, pyplot.Figure):
+            figure = data
+        else:
+            data.plot()
+            figure = data.figure_
+        figure.savefig(self.path, **self._get_saving_kwargs())
         return utils.get_file_metadata(self.path)
 
     @classmethod
