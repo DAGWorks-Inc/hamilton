@@ -256,7 +256,6 @@ class PandasCSVWriter(DataSaver):
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html
     """
 
-    # the path_or_buf parameter will be changed to path for backwards compatibilty
     path: Union[str, Path, BytesIO, BufferedReader]
     # kwargs
     sep: Union[str, None] = ","
@@ -443,7 +442,10 @@ class PandasPickleReader(DataLoader):
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_pickle.html#pandas.read_pickle
     """
 
-    filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader]
+    filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader] = None
+    path: Union[
+        str, Path, BytesIO, BufferedReader
+    ] = None  # alias for `filepath_or_buffer` to keep reading/writing args symmetric.
     # kwargs:
     compression: Union[str, Dict[str, Any], None] = "infer"
     storage_options: Optional[Dict[str, Any]] = None
@@ -472,6 +474,19 @@ class PandasPickleReader(DataLoader):
     @classmethod
     def name(cls) -> str:
         return "pickle"
+
+    def __post_init__(self):
+        """As we're adding in a path alias for filepath_or_buffer, we need to ensure that
+        we have backwards compatibility with the old parameter. That means that:
+        1. Either filepath_or_buffer or path must be specified, not both
+        2. If path is specified, filepath_or_buffer is set to path
+        """
+        if self.filepath_or_buffer is None and self.path is None:
+            raise ValueError("Either filepath_or_buffer or path must be specified")
+        elif self.filepath_or_buffer is not None and self.path is not None:
+            raise ValueError("Only one of filepath_or_buffer or path must be specified")
+        elif self.filepath_or_buffer is None:
+            self.filepath_or_buffer = self.path
 
 
 # for python 3.7 compatibility
