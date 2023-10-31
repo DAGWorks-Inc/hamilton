@@ -1,3 +1,4 @@
+fsspec
 graphviz
 lightgbm
 lxml

@@ -17,6 +17,8 @@ from hamilton.plugins.pandas_extensions import (
     PandasHtmlWriter,
     PandasJsonReader,
     PandasJsonWriter,
+    PandasORCReader,
+    PandasORCWriter,
     PandasParquetReader,
     PandasParquetWriter,
     PandasPickleReader,
@@ -204,3 +206,24 @@ def test_pandas_csv_writer(tmp_path: pathlib.Path) -> None:
     assert PandasCSVWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
     assert metadata["path"] == file_path
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
+def test_pandas_orc_writer(tmp_path: pathlib.Path) -> None:
+    file_path = tmp_path / "test.orc"
+    writer = PandasORCWriter(path=file_path)
+    metadata = writer.save_data(pd.DataFrame(data={"col1": [1, 2], "col2": [4, 3]}))
+
+    assert PandasORCWriter.applicable_types() == [pd.DataFrame]
+    assert file_path.exists()
+    assert metadata["path"] == file_path
+
+
+def test_pandas_orc_reader(tmp_path: pathlib.Path) -> None:
+    path_to_test = "tests/resources/data/test_load_from_data.orc"
+    reader = PandasORCReader(path=path_to_test)
+    df, metadata = reader.load_data(pd.DataFrame)
+
+    assert PandasORCReader.applicable_types() == [pd.DataFrame]
+    assert df.loc[0, "firstName"] == "John"
+    assert df.shape == (3, 5)
