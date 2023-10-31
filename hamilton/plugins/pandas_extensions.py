@@ -8,6 +8,9 @@ from io import BufferedReader, BytesIO, StringIO
 from pathlib import Path
 from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
 
+import fsspec
+import pyarrow.fs
+
 try:
     import pandas as pd
 except ImportError:
@@ -1320,6 +1323,83 @@ class PandasFeatherWriter(DataSaver):
         return "feather"
 
 
+@dataclasses.dataclass
+class PandasORCReader(DataLoader):
+    """
+    Class that handles reading ORC files and output a pandas DataFrame
+    Maps to: https://pandas.pydata.org/docs/reference/api/pandas.read_orc.html#pandas.read_orc
+    """
+
+    path: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs
+    columns: Optional[List[str]] = None
+    dtype_backend: Literal["pyarrow", "numpy_nullable"] = "numpy_nullable"
+    filesystem: Optional[Union[pyarrow.fs.FileSystem, fsspec.spec.AbstractFileSystem]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
+            kwargs["dtype_backend"] = self.dtype_backend
+        if self.filesystem is not None:
+            kwargs["filesystem"] = self.filesystem
+
+        return kwargs
+
+    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the orc
+        df = pd.read_orc(self.path, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.path)
+
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "orc"
+
+
+@dataclasses.dataclass
+class PandasORCWriter(DataSaver):
+    """
+    Class that handles writing DataFrames to ORC files.
+    Maps to: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_orc.html
+    """
+
+    path: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs
+    engine: Literal["pyarrow"] = "pyarrow"
+    index: Optional[bool] = None
+    engine_kwargs: Optional[Union[Dict[str, Any], None]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.engine is not None:
+            kwargs["engine"] = self.engine
+        if self.index is not None:
+            kwargs["index"] = self.index
+        if self.engine is not None:
+            kwargs["engine"] = self.engine
+
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_orc(self.path, **self._get_saving_kwargs())
+        return utils.get_file_metadata(self.path)
+
+    @classmethod
+    def name(cls) -> str:
+        return "orc"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -1341,6 +1421,8 @@ def register_data_loaders():
         PandasStataWriter,
         PandasFeatherReader,
         PandasFeatherWriter,
+        PandasORCWriter,
+        PandasORCReader,
     ]:
         registry.register_adapter(loader)
 
