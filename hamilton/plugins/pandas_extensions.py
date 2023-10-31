@@ -1388,8 +1388,8 @@ class PandasORCWriter(DataSaver):
             kwargs["engine"] = self.engine
         if self.index is not None:
             kwargs["index"] = self.index
-        if self.engine is not None:
-            kwargs["engine"] = self.engine
+        if self.engine_kwargs is not None:
+            kwargs["engine_kwargs"] = self.engine_kwargs
 
         return kwargs
 
