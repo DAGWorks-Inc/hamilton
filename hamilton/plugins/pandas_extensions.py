@@ -8,9 +8,6 @@ from io import BufferedReader, BytesIO, StringIO
 from pathlib import Path
 from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type, Union
 
-import fsspec
-import pyarrow.fs
-
 try:
     import pandas as pd
 except ImportError:
@@ -24,7 +21,15 @@ except ImportError:
 try:
     from collections.abc import Iterable, Mapping, Sequence
 except ImportError:
-    from collections import Sequence, Iterable, Mapping
+    from collections import Iterable, Mapping, Sequence
+
+try:
+    import fsspec
+    import pyarrow.fs
+
+    FILESYSTEM_TYPE = Optional[Union[pyarrow.fs.FileSystem, fsspec.spec.AbstractFileSystem]]
+except ImportError:
+    FILESYSTEM_TYPE = Optional[Type]
 
 from sqlite3 import Connection
 
@@ -1334,7 +1339,7 @@ class PandasORCReader(DataLoader):
     # kwargs
     columns: Optional[List[str]] = None
     dtype_backend: Literal["pyarrow", "numpy_nullable"] = "numpy_nullable"
-    filesystem: Optional[Union[pyarrow.fs.FileSystem, fsspec.spec.AbstractFileSystem]] = None
+    filesystem: Optional[FILESYSTEM_TYPE] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
