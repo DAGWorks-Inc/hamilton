@@ -162,7 +162,7 @@ class LoadFromDecorator(NodeInjector):
         )
         if loader_cls is None:
             raise InvalidDecoratorException(
-                f"Could not resolve adapter for type: {load_type} given key"
+                f"Could not resolve loader for type: {load_type} given possibilities: {self.loader_classes} "
             )
         loader_factory = AdapterFactory(loader_cls, **self.kwargs)
         # dependencies is a map from param name -> source name
