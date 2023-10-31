@@ -235,7 +235,7 @@ class PandasCSVReader(DataLoader):
             kwargs["float_precision"] = self.float_precision
         if self.storage_options is not None:
             kwargs["storage_options"] = self.storage_options
-        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
+        if pd.__version__ >= "2.0" and self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
 
         return kwargs
@@ -368,9 +368,9 @@ class PandasParquetReader(DataLoader):
             kwargs["columns"] = self.columns
         if self.storage_options is not None:
             kwargs["storage_options"] = self.storage_options
-        if self.use_nullable_dtypes is not None:
+        if pd.__version__ < "2.0" and self.use_nullable_dtypes is not None:
             kwargs["use_nullable_dtypes"] = self.use_nullable_dtypes
-        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
+        if pd.__version__ >= "2.0" and self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
         if self.filesystem is not None:
             kwargs["filesystem"] = self.filesystem
@@ -581,7 +581,7 @@ class PandasJsonReader(DataLoader):
             kwargs["date_unit"] = self.date_unit
         if self.dtype is not None:
             kwargs["dtype"] = self.dtype
-        if self.dtype_backend is not None:
+        if pd.__version__ >= "2.0" and self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
         if self.encoding is not None:
             kwargs["encoding"] = self.encoding
@@ -720,7 +720,7 @@ class PandasSqlReader(DataLoader):
             kwargs["columns"] = self.columns
         if self.dtype is not None:
             kwargs["dtype"] = self.dtype
-        if self.dtype_backend is not None:
+        if pd.__version__ >= "2.0" and self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
         if self.index_col is not None:
             kwargs["index_col"] = self.index_col
@@ -858,7 +858,7 @@ class PandasXmlReader(DataLoader):
             kwargs["compression"] = self.compression
         if self.storage_options is not None:
             kwargs["storage_options"] = self.storage_options
-        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
+        if pd.__version__ >= "2.0" and self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
         return kwargs
 
@@ -1009,7 +1009,7 @@ class PandasHtmlReader(DataLoader):
             kwargs["displayed_only"] = self.displayed_only
         if self.extract_links is not None:
             kwargs["extract_links"] = self.extract_links
-        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
+        if pd.__version__ >= "2.0" and self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
         if self.storage_options is not None:
             kwargs["storage_options"] = self.storage_options
@@ -1273,7 +1273,7 @@ class PandasFeatherReader(DataLoader):
             kwargs["use_threads"] = self.use_threads
         if self.storage_options is not None:
             kwargs["storage_options"] = self.storage_options
-        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
+        if pd.__version__ >= "2.0" and self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
 
         return kwargs
