@@ -209,13 +209,15 @@ def test_pandas_csv_writer(tmp_path: pathlib.Path) -> None:
 
 
 def test_pandas_orc_writer(tmp_path: pathlib.Path) -> None:
-    file_path = tmp_path / "test.orc"
-    writer = PandasORCWriter(path=file_path)
-    metadata = writer.save_data(pd.DataFrame(data={"col1": [1, 2], "col2": [4, 3]}))
+    # only avaible for python 3.8 forward
+    if sys.version_info >= (3, 8):
+        file_path = tmp_path / "test.orc"
+        writer = PandasORCWriter(path=file_path)
+        metadata = writer.save_data(pd.DataFrame(data={"col1": [1, 2], "col2": [4, 3]}))
 
-    assert PandasORCWriter.applicable_types() == [pd.DataFrame]
-    assert file_path.exists()
-    assert metadata["path"] == file_path
+        assert PandasORCWriter.applicable_types() == [pd.DataFrame]
+        assert file_path.exists()
+        assert metadata["path"] == file_path
 
 
 def test_pandas_orc_reader(tmp_path: pathlib.Path) -> None:

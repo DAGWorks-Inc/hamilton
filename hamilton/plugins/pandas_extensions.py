@@ -1368,6 +1368,8 @@ class PandasORCWriter(DataSaver):
     """
     Class that handles writing DataFrames to ORC files.
     Maps to: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_orc.html
+
+    Requires python version 3.8 or greater
     """
 
     path: Union[str, Path, BytesIO, BufferedReader]
