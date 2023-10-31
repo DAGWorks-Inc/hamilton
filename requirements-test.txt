@@ -1,4 +1,5 @@
-geodatasets
+geoalchemy2
+geodatasets; python_version >= '3.8'
 geopandas
 graphviz
 lightgbm

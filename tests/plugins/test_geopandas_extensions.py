@@ -1,8 +1,11 @@
 import pathlib
+import sqlite3
+from typing import Union
 
-import geodatasets
 import geopandas as gpd
+import pytest
 from geopandas.testing import assert_geodataframe_equal
+from sqlalchemy import create_engine
 
 from hamilton.plugins.geopandas_extensions import (
     GeopandasFeatherReader,
@@ -11,17 +14,29 @@ from hamilton.plugins.geopandas_extensions import (
     GeopandasFileWriter,
     GeopandasParquetReader,
     GeopandasParquetWriter,
+    GeopandasPostGISReader,
+    GeopandasPostGISWriter,
 )
+
+try:
+    # load in the example data used for python >= 3.8
+    import geodatasets
+
+    example_data = gpd.read_file(geodatasets.get_path("nybb"))
+except ImportError:
+    # create example for python 3.7
+    from shapely.geometry import Point
+
+    gdf = {"col1": ["name1", "name2"], "geometry": [Point(1, 2), Point(2, 1)]}
+    example_data = gpd.GeoDataFrame(gdf, crs="EPSG:4326")
 
 
 def test_geopandas_file(tmp_path: pathlib.Path) -> None:
-    # load in the example data
-    new_york_example_data = gpd.read_file(geodatasets.get_path("nybb"))
 
     # write the data to a shapefile
     file_path = tmp_path / "ShapeFileTest"
     writer = GeopandasFileWriter(filename=file_path)
-    writer.save_data(data=new_york_example_data)
+    writer.save_data(data=example_data)
 
     # read in the multiple files that we output
     dbf_file_path = tmp_path / "ShapeFileTest/ShapeFileTest.dbf"
@@ -36,19 +51,17 @@ def test_geopandas_file(tmp_path: pathlib.Path) -> None:
     shx_data, shx_metadata = shx_reader.load_data(gpd.GeoDataFrame)
 
     # check that each is the same as the original
-    assert_geodataframe_equal(new_york_example_data, dbf_data)
-    assert_geodataframe_equal(new_york_example_data, shp_data)
-    assert_geodataframe_equal(new_york_example_data, shx_data)
+    assert_geodataframe_equal(example_data, dbf_data)
+    assert_geodataframe_equal(example_data, shp_data)
+    assert_geodataframe_equal(example_data, shx_data)
 
 
 def test_geopandas_parquet(tmp_path: pathlib.Path) -> None:
-    # load in the example data
-    new_york_example_data = gpd.read_file(geodatasets.get_path("nybb"))
 
     # write the data to a shapefile
     file_path = tmp_path / "ParquetFileTest.parquet"
     writer = GeopandasParquetWriter(path=file_path)
-    writer.save_data(data=new_york_example_data)
+    writer.save_data(data=example_data)
 
     # read in the multiple files that we output
     parquet_file_path = file_path
@@ -57,17 +70,15 @@ def test_geopandas_parquet(tmp_path: pathlib.Path) -> None:
     parquet_data, parquet_metadata = parquet_reader.load_data(gpd.GeoDataFrame)
 
     # check that each is the same as the original
-    assert_geodataframe_equal(new_york_example_data, parquet_data)
+    assert_geodataframe_equal(example_data, parquet_data)
 
 
 def test_geopandas_feather(tmp_path: pathlib.Path) -> None:
-    # load in the example data
-    new_york_example_data = gpd.read_file(geodatasets.get_path("nybb"))
 
     # write the data to a shapefile
     file_path = tmp_path / "FeatherFileTest.feather"
     writer = GeopandasFeatherWriter(path=file_path)
-    writer.save_data(data=new_york_example_data)
+    writer.save_data(data=example_data)
 
     # read in the multiple files that we output
     feather_file_path = file_path
@@ -76,4 +87,27 @@ def test_geopandas_feather(tmp_path: pathlib.Path) -> None:
     feather_data, feather_metadata = feather_reader.load_data(gpd.GeoDataFrame)
 
     # check that each is the same as the original
-    assert_geodataframe_equal(new_york_example_data, feather_data)
+    assert_geodataframe_equal(example_data, feather_data)
+
+
+@pytest.mark.parametrize(
+    "conn",
+    [
+        sqlite3.connect(":memory:"),
+        create_engine("sqlite://"),
+    ],
+)
+def test_geopandas_postgis(conn: Union[str, sqlite3.Connection]) -> None:
+    # write the file to a test database
+    writer = GeopandasPostGISWriter(name="test_example", con=conn)
+    writer.save_data(example_data)
+
+    # read the file
+    reader = GeopandasPostGISReader(sql="SELECT * FROM test_table", con=conn)
+    postgis_data, postgis_metadata = reader.load_data(gpd.GeoDataFrame)
+
+    # check that each is the same as the original
+    assert_geodataframe_equal(example_data, postgis_data)
+
+    if hasattr(conn, "close"):
+        conn.close()

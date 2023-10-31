@@ -4,6 +4,13 @@ from io import BufferedReader, BytesIO
 from pathlib import Path
 from typing import IO, Any, Collection, Dict, List, Optional, Tuple, Type, Union
 
+from sqlalchemy.engine import Connection, Engine
+
+try:
+    from collections.abc import Sequence
+except ImportError:
+    from collections import Sequence
+
 from pyproj import CRS
 from shapely import (
     GeometryCollection,
@@ -83,8 +90,8 @@ class GeopandasFileWriter(DataSaver):
     mode: str = "w"
     crs: Optional[CRS] = None
     engine: Literal["fiona", "pyogrio"] = None
-
-    # TODO Allow additional arguments via kwargs
+    # additional kwargs not listed
+    extra_kwargs: Optional[Dict[str, Any]] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -104,6 +111,8 @@ class GeopandasFileWriter(DataSaver):
             saving_kwargs["crs"] = self.crs
         if self.engine is not None:
             saving_kwargs["engine"] = self.engine
+        if self.extra_kwargs is not None:
+            saving_kwargs.update(self.extra_kwargs)
 
         return saving_kwargs
 
@@ -129,6 +138,8 @@ class GeopandasFileReader(DataLoader):
     mask: Optional[Union[Dict, DATAFRAME_TYPE, COLUMN_TYPE, Geometry]] = None
     rows: Optional[Union[int, slice]] = None
     engine: Literal["fiona", "pyogrio"] = None
+    # additional kwargs not listed
+    extra_kwargs: Optional[Dict[str, Any]] = None
 
     # TODO: allow additional arguments via kwargs
     @classmethod
@@ -146,10 +157,12 @@ class GeopandasFileReader(DataLoader):
             loading_kwargs["rows"] = self.rows
         if self.engine is not None:
             loading_kwargs["engine"] = self.engine
+        if self.extra_kwargs is not None:
+            loading_kwargs.update(self.extra_kwargs)
 
         return loading_kwargs
 
-    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         gdf = gpd.read_file(self.filename, **self._get_loading_kwargs())
         metedata = utils.get_file_metadata(self.filename)
 
@@ -172,7 +185,8 @@ class GeopandasParquetWriter(DataSaver):
     index: Optional[bool] = None
     compression: Union[Literal["snappy", "gzip", "brotli"], None] = "snappy"
     schema_version: Optional[Union[Literal["0.1.0", "0.4.0"], None]] = None
-    # TO DO: allow additional arguments via the kwargs keyword
+    # additional kwargs not listed
+    extra_kwargs: Optional[Dict[str, Any]] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -186,6 +200,8 @@ class GeopandasParquetWriter(DataSaver):
             saving_kwargs["compression"] = self.compression
         if self.schema_version is not None:
             saving_kwargs["schema_version"] = self.schema_version
+        if self.extra_kwargs is not None:
+            saving_kwargs.update(self.extra_kwargs)
 
         return saving_kwargs
 
@@ -209,8 +225,8 @@ class GeopandasParquetReader(DataLoader):
     # kwargs
     columns: Optional[List] = None
     storage_options: Optional[Dict] = None
-
-    # TO DO: allow additional arguments via kwargs
+    # additional kwargs not listed
+    extra_kwargs: Optional[Dict[str, Any]] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -222,10 +238,12 @@ class GeopandasParquetReader(DataLoader):
             loading_kwargs["columns"] = self.columns
         if self.storage_options is not None:
             loading_kwargs["storage_options"] = self.storage_options
+        if self.extra_kwargs is not None:
+            loading_kwargs.update(self.extra_kwargs)
 
         return loading_kwargs
 
-    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         gdf = gpd.read_parquet(self.path, **self._get_loading_kwargs())
         metadata = utils.get_file_metadata(self.path)
 
@@ -248,7 +266,8 @@ class GeopandasFeatherWriter(DataSaver):
     index: Optional[bool] = None
     compression: Optional[Union[Literal["zstd", "lz4", "uncompressed"], None]] = None
     schema_version: Optional[Union[Literal["0.1.0", "0.4.0"], None]] = None
-    # TO DO: allow additional arguments via the kwargs keyword
+    # additional kwargs not listed
+    extra_kwargs: Optional[Dict[str, Any]] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -262,6 +281,8 @@ class GeopandasFeatherWriter(DataSaver):
             saving_kwargs["compression"] = self.compression
         if self.schema_version is not None:
             saving_kwargs["schema_version"] = self.schema_version
+        if self.extra_kwargs is not None:
+            saving_kwargs.update(self.extra_kwargs)
 
         return saving_kwargs
 
@@ -284,6 +305,8 @@ class GeopandasFeatherReader(DataLoader):
     path: Union[str, Path]
     # kwargs
     columns: Optional[List] = None
+    # additional kwargs not listed
+    extra_kwargs: Optional[Dict[str, Any]] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -293,10 +316,12 @@ class GeopandasFeatherReader(DataLoader):
         loading_kwargs = {}
         if self.columns is not None:
             loading_kwargs["columns"] = self.columns
+        if self.extra_kwargs is not None:
+            loading_kwargs.update(self.extra_kwargs)
 
         return loading_kwargs
 
-    def load_data(self, type: Type) -> Tuple[Any, Dict[str, Any]]:
+    def load_data(self, type_: Type) -> Tuple[Any, Dict[str, Any]]:
         gdf = gpd.read_feather(self.path, **self._get_loading_kwargs())
         metadata = utils.get_file_metadata(self.path)
 
@@ -305,6 +330,104 @@ class GeopandasFeatherReader(DataLoader):
     @classmethod
     def name(cls) -> str:
         return "feather"
+
+
+@dataclasses.dataclass
+class GeopandasPostGISWriter(DataSaver):
+    """
+    Class tha handles uploading a GeoDataFrame to a PostGIS database
+    Maps to: https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.to_postgis.html
+    """
+
+    name: str
+    con: Union[Connection, Engine]
+    # kwargs
+    if_exists: Literal["fail", "replace", "append"] = "fail"
+    schema: Optional[str] = None
+    index: bool = False
+    index_label: Optional[Union[str, Sequence]] = None
+    chunksize: Optional[int] = None
+    dtype: Optional[Dict] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        saving_kwargs = {}
+        if self.if_exists is not None:
+            saving_kwargs["if_exists"] = self.if_exists
+        if self.schema is not None:
+            saving_kwargs["schema"] = self.schema
+        if self.index is not None:
+            saving_kwargs["index"] = self.index
+        if self.index_label is not None:
+            saving_kwargs["index_label"] = self.index_label
+        if self.chunksize is not None:
+            saving_kwargs["chunksize"] = self.chunksize
+        if self.dtype is not None:
+            saving_kwargs["dtype"] = self.dtype
+
+        return saving_kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        results = data.to_postgis(self.name, self.con, **self._get_saving_kwargs())
+        return utils.get_sql_metadata(self.name, results)
+
+    @classmethod
+    def name(cls) -> str:
+        return "PostGIS"
+
+
+@dataclasses.dataclass
+class GeopandasPostGISReader(DataLoader):
+    """
+    Class that handles reading from a PostGIS databse and outputs a GeoDataFrame
+    Maps to: https://geopandas.org/en/stable/docs/reference/api/geopandas.read_postgis.html
+    """
+
+    sql: str
+    con: Union[Engine, Connection]
+    # kwargs
+    geom_col: str = "geom"
+    crs: Optional[Union[Dict, str]] = None
+    chunksize: Optional[int] = None
+    index_col: Optional[Union[str, List[str]]] = None
+    coerce_float: bool = True
+    parse_dates: Optional[Union[List, Dict]] = None
+    params: Optional[Union[List, Tuple, Dict]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self):
+        loading_kwargs = {}
+        if self.geom_col is not None:
+            loading_kwargs["geom_col"] = self.geom_col
+        if self.crs is not None:
+            loading_kwargs["crs"] = self.crs
+        if self.chunksize is not None:
+            loading_kwargs["chunksize"] = self.chunksize
+        if self.index_col is not None:
+            loading_kwargs["index_col"] = self.index_col
+        if self.coerce_float is not None:
+            loading_kwargs["coerce_float"] = self.coerce_float
+        if self.parse_dates is not None:
+            loading_kwargs["parse_dates"] = self.parse_dates
+        if self.params is not None:
+            loading_kwargs["params"] = self.params
+
+        return loading_kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        gdf = gpd.read_postgis(self.sql, self.con, **self._get_loading_kwargs())
+        metadata = utils.get_sql_metadata(self.sql, gdf)
+        return gdf, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "PostGIS"
 
 
 def register_data_loaders():
@@ -316,5 +439,7 @@ def register_data_loaders():
         GeopandasParquetWriter,
         GeopandasFeatherReader,
         GeopandasFeatherWriter,
+        GeopandasPostGISReader,
+        GeopandasPostGISWriter,
     ]:
         registry.register_adapter(loader)
