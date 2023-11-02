@@ -1,5 +1,4 @@
 import inspect
-import pathlib
 import uuid
 from itertools import permutations
 
@@ -502,7 +501,7 @@ def test_function_graph_has_cycles_false():
     assert fg.has_cycles(nodes, user_nodes) is False
 
 
-def test_function_graph_display(tmp_path: pathlib.Path):
+def test_function_graph_display(tmp_path):
     """Tests that display saves a file"""
     dot_file_path = tmp_path / "dag.dot"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
@@ -550,7 +549,7 @@ def test_function_graph_display(tmp_path: pathlib.Path):
     assert dot_set.issuperset(expected_set) and len(dot_set.difference(expected_set)) == 1
 
 
-def test_function_graph_display_no_dot_output(tmp_path: pathlib.Path):
+def test_function_graph_display_no_dot_output(tmp_path):
     dot_file_path = tmp_path / "dag.dot"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
 
@@ -560,7 +559,7 @@ def test_function_graph_display_no_dot_output(tmp_path: pathlib.Path):
 
 
 @pytest.mark.parametrize("show_legend", [(True), (False)])
-def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path):
+def test_function_graph_display_legend(show_legend, tmp_path):
     dot_file_path = tmp_path / "dag.dot"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
 
@@ -577,7 +576,7 @@ def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path
 
 
 @pytest.mark.parametrize("orient", [("LR"), ("TB"), ("RL"), ("BT")])
-def test_function_graph_display_orient(orient: str, tmp_path: pathlib.Path):
+def test_function_graph_display_orient(orient, tmp_path):
     dot_file_path = tmp_path / "dag.dot"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
 
@@ -594,7 +593,7 @@ def test_function_graph_display_orient(orient: str, tmp_path: pathlib.Path):
 
 
 @pytest.mark.parametrize("hide_inputs", [(True), (False)])
-def test_function_graph_display_inputs(hide_inputs: bool, tmp_path: pathlib.Path):
+def test_function_graph_display_inputs(hide_inputs, tmp_path):
     dot_file_path = tmp_path / "dag.dot"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
 
