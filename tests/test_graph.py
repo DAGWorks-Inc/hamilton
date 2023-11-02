@@ -1,6 +1,5 @@
 import inspect
 import pathlib
-import tempfile
 import uuid
 from itertools import permutations
 
@@ -21,6 +20,7 @@ import tests.resources.multiple_decorators_together
 import tests.resources.optional_dependencies
 import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
+import tests.resources.test_default_args
 import tests.resources.typing_vs_not_typing
 from hamilton import ad_hoc_utils, base, graph, node
 from hamilton.execution import graph_functions
@@ -502,8 +502,9 @@ def test_function_graph_has_cycles_false():
     assert fg.has_cycles(nodes, user_nodes) is False
 
 
-def test_function_graph_display():
+def test_function_graph_display(tmp_path: pathlib.Path):
     """Tests that display saves a file"""
+    dot_file_path = tmp_path / "dag.dot"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
     node_modifiers = {"B": {graph.VisualizationNodeModifiers.IS_OUTPUT}}
     all_nodes = set()
@@ -513,30 +514,49 @@ def test_function_graph_display():
         all_nodes.add(n)
     # hack of a test -- but it works... sort the lines and match them up.
     # why? because for some reason given the same graph, the output file isn't deterministic.
-    expected = sorted(
+    # for the same reason, order of input nodes are non-deterministic
+    expected_set = set(
         [
+            '\t\tfunction [fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
+            "\t\tgraph [fontname=helvetica label=Legend rank=same]\n",
+            "\t\tinput [fontname=Helvetica margin=0.15 shape=rectangle style=dashed]\n",
+            '\t\toutput [fillcolor="#FFC857" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
+            "\tA -> B\n",
+            "\tA -> C\n",
+            '\tA [label=<<b>A</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
+            '\tB [label=<<b>B</b><br /><br /><i>int</i>> fillcolor="#FFC857" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
+            '\tC [label=<<b>C</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
+            "\t_A_inputs -> A\n",
+            # commenting out input node: '\t_A_inputs [label=<<table border="0"><tr><td>c</td><td>int</td></tr><tr><td>b</td><td>int</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style=dashed]\n',
+            "\tgraph [compound=true concentrate=true rankdir=LR ranksep=0.4]\n",
+            "\tsubgraph cluster__legend {\n",
+            "\t}\n",
             "// Dependency Graph\n",
             "digraph {\n",
-            "\tA [label=A]\n",
-            "\tC [label=C]\n",
-            "\tB [label=B shape=rectangle]\n",
-            '\tc [label="Input: c" style=dashed]\n',
-            '\tb [label="Input: b" style=dashed]\n',
-            "\tb -> A\n",
-            "\tc -> A\n",
-            "\tA -> C\n",
-            "\tA -> B\n",
             "}\n",
         ]
     )
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        path = tmp_dir.join("test.dot")
-        fg.display(all_nodes, str(path), {"view": False}, None, node_modifiers)
-        with open(str(path), "r") as dot_file:
-            actual = sorted(dot_file.readlines())
-            assert actual == expected
-        dot_file = fg.display(all_nodes, output_file_path=None, node_modifiers=node_modifiers)
-        assert dot_file is not None
+
+    fg.display(
+        all_nodes,
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
+        node_modifiers=node_modifiers,
+    )
+
+    dot = dot_file_path.open("r").readlines()
+    dot_set = set(dot)
+
+    assert dot_set.issuperset(expected_set) and len(dot_set.difference(expected_set)) == 1
+
+
+def test_function_graph_display_no_dot_output(tmp_path: pathlib.Path):
+    dot_file_path = tmp_path / "dag.dot"
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+
+    fg.display(set(fg.get_nodes()), output_file_path=None)
+
+    assert not dot_file_path.exists()
 
 
 @pytest.mark.parametrize("show_legend", [(True), (False)])
@@ -618,33 +638,41 @@ def test_create_graphviz_graph():
     }
     # hack of a test -- but it works... sort the lines and match them up.
     # why? because for some reason given the same graph, the output file isn't deterministic.
-    expected = sorted(
+    # for the same reason, order of input nodes are non-deterministic
+    expected_set = set(
         [
-            "// test-graph",
+            "// Dependency Graph",
+            "",
             "digraph {",
             "\tgraph [ratio=1]",
-            "\tB [label=B shape=rectangle]",
-            "\tA [label=A]",
-            "\tC [label=C]",
-            '\tb [label="Input: b" style=dashed]',
-            '\tc [label="Input: c" style=dashed]',
+            '\tB [label=<<b>B</b><br /><br /><i>int</i>> fillcolor="#FFC857" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
+            '\tC [label=<<b>C</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
+            '\tA [label=<<b>A</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
             "\tA -> B",
-            "\tb -> A",
-            "\tc -> A",
             "\tA -> C",
+            # commenting out input node: '\t_A_inputs [label=<<table border="0"><tr><td>c</td><td>int</td></tr><tr><td>b</td><td>int</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style=dashed]',
+            "\t_A_inputs -> A",
+            "\tsubgraph cluster__legend {",
+            "\t\tgraph [fontname=helvetica label=Legend rank=same]",
+            "\t\tinput [fontname=Helvetica margin=0.15 shape=rectangle style=dashed]",
+            '\t\tfunction [fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
+            '\t\toutput [fillcolor="#FFC857" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
+            "\t}",
             "}",
             "",
         ]
     )
-    if "" in expected:
-        expected.remove("")
+
     digraph = graph.create_graphviz_graph(
-        nodez, "test-graph", dict(graph_attr={"ratio": "1"}), node_modifiers, False
+        nodez,
+        "Dependency Graph\n",
+        graphviz_kwargs=dict(graph_attr={"ratio": "1"}),
+        node_modifiers=node_modifiers,
+        strictly_display_only_nodes_passed_in=False,
     )
-    actual = sorted(str(digraph).split("\n"))
-    if "" in actual:
-        actual.remove("")
-    assert actual == expected
+    dot_set = set(str(digraph).split("\n"))
+
+    assert dot_set.issuperset(expected_set) and len(dot_set.difference(expected_set)) == 1
 
 
 def test_create_networkx_graph():
