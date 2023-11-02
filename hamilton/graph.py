@@ -249,7 +249,7 @@ def create_graphviz_graph(
 
         return node_style
 
-    def _get_function_modifier_style(modifier: str) -> dict[str, str]:
+    def _get_function_modifier_style(modifier: str) -> Dict[str, str]:
         """Get the style of a modifier. The dictionary returned
         is used to overwrite values of the base node style.
         Graphviz needs values to be strings.
@@ -269,7 +269,7 @@ def create_graphviz_graph(
 
         return modifier_style
 
-    def _get_edge_style(from_type: str, to_type: str) -> dict:
+    def _get_edge_style(from_type: str, to_type: str) -> Dict:
         """
 
         Graphviz needs values to be strings.
