@@ -56,12 +56,6 @@ workflows:
       - test:
           requires:
             - check_for_changes
-          name: build-py37
-          python-version: '3.7'
-          task: tests
-      - test:
-          requires:
-            - check_for_changes
           name: build-py38
           python-version: '3.8'
           task: tests
@@ -80,6 +74,10 @@ workflows:
       - test:
           name: build-py311
           python-version: '3.11'
+          task: tests
+      - test:
+          name: build-py312
+          python-version: '3.12'
           task: tests
       - test:
           name: pre-commit
@@ -115,10 +113,12 @@ workflows:
           name: spark-py311
           python-version: '3.11'
           task: pyspark
-      - test:
-          name: integrations-py37
-          python-version: '3.7'
-          task: integrations
+#      - test: # TODO -- enable when install works on CircleCI
+#          requires:
+#            - check_for_changes
+#          name: spark-py312
+#          python-version: '3.12'
+#          task: pyspark
       - test:
           requires:
             - check_for_changes
@@ -146,6 +146,12 @@ workflows:
       - test:
           requires:
             - check_for_changes
+          name: integrations-py312
+          python-version: '3.12'
+          task: integrations
+      - test:
+          requires:
+            - check_for_changes
           name: asyncio-py39
           python-version: '3.9'
           task: async
@@ -160,4 +166,10 @@ workflows:
             - check_for_changes
           name: asyncio-py311
           python-version: '3.11'
+          task: async
+      - test:
+          requires:
+            - check_for_changes
+          name: asyncio-py311
+          python-version: '3.12'
           task: async
