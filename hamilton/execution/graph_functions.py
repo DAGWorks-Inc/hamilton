@@ -19,7 +19,7 @@ def topologically_sort_nodes(nodes: List[node.Node]) -> List[node.Node]:
     Note that this assumes that the nodes are continuous -- if there is a hidden dependency that
     connects them, this has no way of knowing about it.
 
-    TODO -- use python graphlib when we no longer have to support 3.7/3.8.
+    TODO -- use python graphlib when we no longer have to support 3.8.
 
     https://docs.python.org/3/library/graphlib.html
 

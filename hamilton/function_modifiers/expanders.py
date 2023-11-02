@@ -746,9 +746,7 @@ class extract_fields(base.SingleNodeNodeTransformer):
         output_type = typing.get_type_hints(fn).get("return")
         if typing_inspect.is_generic_type(output_type):
             base_type = typing_inspect.get_origin(output_type)
-            if (
-                base_type == dict or base_type == Dict
-            ):  # different python versions return different things 3.7+ vs 3.6.
+            if base_type == dict or base_type == Dict:
                 pass
             else:
                 raise base.InvalidDecoratorException(
