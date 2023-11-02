@@ -1,4 +1,5 @@
 import inspect
+import pathlib
 import tempfile
 import uuid
 from itertools import permutations
@@ -536,6 +537,57 @@ def test_function_graph_display():
             assert actual == expected
         dot_file = fg.display(all_nodes, output_file_path=None, node_modifiers=node_modifiers)
         assert dot_file is not None
+
+
+@pytest.mark.parametrize("show_legend", [(True), (False)])
+def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path):
+    dot_file_path = tmp_path / "dag.dot"
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+
+    fg.display(
+        set(fg.get_nodes()),
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
+        show_legend=show_legend,
+    )
+    dot = dot_file_path.open("r").read()
+
+    found_legend = "cluster__legend" in dot
+    assert found_legend is show_legend
+
+
+@pytest.mark.parametrize("orient", [("LR"), ("TB"), ("RL"), ("BT")])
+def test_function_graph_display_orient(orient: str, tmp_path: pathlib.Path):
+    dot_file_path = tmp_path / "dag.dot"
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+
+    fg.display(
+        set(fg.get_nodes()),
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
+        orient=orient,
+    )
+    dot = dot_file_path.open("r").read()
+
+    # this could break if a rankdir is given to the legend subgraph
+    assert f"rankdir={orient}" in dot
+
+
+@pytest.mark.parametrize("hide_inputs", [(True), (False)])
+def test_function_graph_display_inputs(hide_inputs: bool, tmp_path: pathlib.Path):
+    dot_file_path = tmp_path / "dag.dot"
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+
+    fg.display(
+        set(fg.get_nodes()),
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
+        hide_inputs=hide_inputs,
+    )
+    dot_lines = dot_file_path.open("r").readlines()
+
+    found_input = any(line.startswith("\t_") for line in dot_lines)
+    assert found_input is not hide_inputs
 
 
 def test_function_graph_display_without_saving():
