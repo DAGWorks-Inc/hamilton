@@ -70,7 +70,9 @@ def add_dependency(
 
 
 def update_dependencies(
-    nodes: Dict[str, node.Node], adapter: base.HamiltonGraphAdapter, reset_dependencies: bool = True
+    nodes: Dict[str, node.Node],
+    adapter: base.HamiltonGraphAdapter,
+    reset_dependencies: bool = True,
 ):
     """Adds dependencies to a dictionary of nodes. If in_place is False,
     it will deepcopy the dict + nodes and return that. Otherwise it will
@@ -138,7 +140,7 @@ def create_graphviz_graph(
     graphviz_kwargs: dict,
     node_modifiers: Dict[str, Set[VisualizationNodeModifiers]],
     strictly_display_only_nodes_passed_in: bool,
-    left_to_right: bool = True,
+    orient: str = "LR",
     hide_inputs: bool = False,
     deduplicate_inputs: bool = False,
 ) -> "graphviz.Digraph":  # noqa: F821
@@ -151,24 +153,49 @@ def create_graphviz_graph(
     :param node_modifiers: A dictionary of node names to dictionaries of node attributes to modify.
     :param strictly_display_only_nodes_passed_in: If True, only display the nodes passed in. Else defaults to displaying
         also what nodes a node depends on (i.e. all nodes that feed into it).
-    :param left_to_right: If True, the DAG is displayed from left to right. Else, top to bottom. This value can
-        be overriden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+    :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
+        `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+        see (https://graphviz.org/docs/attr-types/rankdir/)
+    :param hide_inputs: If True, no input nodes are displayed.
+    :param deduplicate_inputs: If True, remove duplicate input nodes.
+        Can improve readability depending on the specifics of the DAG.
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
     PATH_COLOR = "#7A3B69"
 
     import graphviz
 
-    def _get_node_label(n: node.Node, name=None, type_=None) -> str:
+    def _get_node_label(
+        n: node.Node,
+        name: Optional[str] = None,
+        type_: Optional[str] = None,
+    ) -> str:
+        """Get a graphviz HTML-like node label. It uses the DAG node
+        name and type but values can be overridden. Overriding is currently
+        used for materializers since `type_` is stored in n._tags.
+
+        ref: https://graphviz.org/doc/info/shapes.html#html
+        """
         name = n.name if name is None else name
         type_ = n.type.__name__ if type_ is None else type_
         return f"<<b>{name}</b><br /><br /><i>{type_}</i>>"
 
     def _get_input_label(input_nodes: frozenset[node.Node]) -> str:
+        """Get a graphviz HTML-like node label formatted as a table.
+        Each row is a different input node with one column containing
+        the name and the other the type.
+        ref: https://graphviz.org/doc/info/shapes.html#html
+        """
         rows = [f"<tr><td>{dep.name}</td><td>{dep.type.__name__}</td></tr>" for dep in input_nodes]
         return f"<<table border=\"0\">{''.join(rows)}</table>>"
 
     def _get_node_type(n: node.Node) -> str:
+        """Get the node type of a DAG node.
+
+        Input: is external, doesn't originate from a function, functions depend on it
+        Config: is external, doesn't originate from a function, no function depedends on it
+        Function: others
+        """
         if (
             n._node_source == node.NodeType.EXTERNAL
             and n._originating_functions is None
@@ -184,7 +211,10 @@ def create_graphviz_graph(
         else:
             return "function"
 
-    def _get_node_style(node_type: str):
+    def _get_node_style(node_type: str) -> dict[str, str]:
+        """Get the style of a node type.
+        Graphviz needs values to be strings.
+        """
         fontname = "Helvetica"
 
         if node_type == "config":
@@ -217,7 +247,11 @@ def create_graphviz_graph(
 
         return node_style
 
-    def _get_function_modifier_style(modifier: str):
+    def _get_function_modifier_style(modifier: str) -> dict[str, str]:
+        """Get the style of a modifier. The dictionary returned
+        is used to overwrite values of the base node style.
+        Graphviz needs values to be strings.
+        """
         if modifier == "output":
             modifier_style = dict(fillcolor="#FFC857")
         elif modifier == "collect":
@@ -233,26 +267,35 @@ def create_graphviz_graph(
 
         return modifier_style
 
-    def _get_edge_style(node_type: str):
-        if node_type == "expand":
-            edge_style = dict(
+    def _get_edge_style(from_type: str, to_type: str) -> dict:
+        """
+
+        Graphviz needs values to be strings.
+        """
+        edge_style = dict()
+
+        if from_type == "expand":
+            print(from_type, to_type)
+            edge_style.update(
                 dir="both",
                 arrowhead="crow",
                 arrowtail="none",
             )
-        elif node_type == "collect":
-            edge_style = dict(dir="both", arrowtail="crow")
-        else:
-            edge_style = dict()
+
+        if to_type == "collect":
+            edge_style.update(dir="both", arrowtail="crow")
 
         return edge_style
 
     def _get_legend(node_types):
+        """Create a visualization legend as a graphviz subgraph. The legend includes the
+        node types and modifiers presente in the visualization.
+        """
         legend_subgraph = graphviz.Digraph(
-            name="cluster_legend",  # needs to start with `cluster_` for graphviz layout
+            name="cluster__legend",  # needs to start with `cluster` for graphviz layout
             graph_attr=dict(
                 label="Legend",
-                rank="same",
+                rank="same",  # makes the legend perpendicular to the main DAG
                 fontname="helvetica",
             ),
         )
@@ -260,9 +303,9 @@ def create_graphviz_graph(
         sorted_types = [
             "config",
             "input",
-            "materializer",
             "function",
             "output",
+            "materializer",
             "override",
             "expand",
             "collect",
@@ -276,12 +319,11 @@ def create_graphviz_graph(
 
         return legend_subgraph
 
-    rankdir = "LR" if left_to_right is False else "TB"
     # handle default values in nested dict
     digraph_attr = dict(
         comment=comment,
         graph_attr=dict(
-            rankdir=rankdir,
+            rankdir=orient,
             ranksep="0.4",
             compound="true",
             concentrate="true",
@@ -302,8 +344,10 @@ def create_graphviz_graph(
         node_style = _get_node_style(node_type)
 
         # prefer having the conditions explicit for now since they rely on
-        # VisualizationNodeModifiers and node.Node.node_role
-        if modifiers := node_modifiers.get(n.name):
+        # heterogeneous VisualizationNodeModifiers and node.Node.node_role.
+        # Otherwise, it's difficult to manage seen nodes and the legend.
+        if node_modifiers.get(n.name):
+            modifiers = node_modifiers[n.name]
             if VisualizationNodeModifiers.IS_OUTPUT in modifiers:
                 modifier_style = _get_function_modifier_style("output")
                 node_style.update(**modifier_style)
@@ -339,30 +383,36 @@ def create_graphviz_graph(
     # create edges
     input_sets = dict()
     for n in nodes:
-        input_nodes = set()
+        to_type = "collect" if n.node_role == node.NodeType.COLLECT else ""
 
+        input_nodes = set()
         for d in n.dependencies:
             if strictly_display_only_nodes_passed_in and d not in nodes:
                 continue
 
-            node_type = _get_node_type(d)
-            if node_type == "input":
+            dependency_type = _get_node_type(d)
+            # input nodes and edges are gathered instead of drawn
+            # they are drawn later, see below
+            if dependency_type == "input":
                 input_nodes.add(d)
                 continue
 
-            edge_style = _get_edge_style(d)
+            from_type = "expand" if d.node_role == node.NodeType.EXPAND else ""
+            edge_style = _get_edge_style(from_type, to_type)
             digraph.edge(d.name, n.name, **edge_style)
 
         # skip input node creation
         if hide_inputs:
             continue
 
+        # draw input nodes if at least 1 exist
         if len(input_nodes) > 0:
-            input_node_name = f"{n.name}_inputs"
+            input_node_name = f"_{n.name}_inputs"
 
             # following block is for input node deduplication
             input_nodes = frozenset(input_nodes)
-            if existing_input_name := input_sets.get(input_nodes):
+            if input_sets.get(input_nodes):
+                existing_input_name = input_sets[input_nodes]
                 digraph.edge(existing_input_name, n.name)
                 continue
 
@@ -433,7 +483,9 @@ class FunctionGraph(object):
 
     @staticmethod
     def from_modules(
-        *modules: ModuleType, config: Dict[str, Any], adapter: base.HamiltonGraphAdapter = None
+        *modules: ModuleType,
+        config: Dict[str, Any],
+        adapter: base.HamiltonGraphAdapter = None,
     ):
         """Initializes a function graph from the specified modules. Note that this was the old
         way we constructed FunctionGraph -- this is not a public-facing API, so we replaced it
@@ -668,7 +720,9 @@ class FunctionGraph(object):
         return set(([start_node] if start_node is not None else []) + between + [end_node])
 
     def directional_dfs_traverse(
-        self, next_nodes_fn: Callable[[node.Node], Collection[node.Node]], starting_nodes: List[str]
+        self,
+        next_nodes_fn: Callable[[node.Node], Collection[node.Node]],
+        starting_nodes: List[str],
     ):
         """Traverses the DAG directionally using a DFS.
 
