@@ -8,7 +8,7 @@ Note: one should largely consider the code in this module to be "private".
 import logging
 from enum import Enum
 from types import ModuleType
-from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Callable, Collection, Dict, FrozenSet, List, Optional, Set, Tuple, Type
 
 from hamilton import base, node
 from hamilton.execution import graph_functions
@@ -182,7 +182,7 @@ def create_graphviz_graph(
         type_ = n.type.__name__ if type_ is None else type_
         return f"<<b>{name}</b><br /><br /><i>{type_}</i>>"
 
-    def _get_input_label(input_nodes: frozenset[node.Node]) -> str:
+    def _get_input_label(input_nodes: FrozenSet[node.Node]) -> str:
         """Get a graphviz HTML-like node label formatted aspyer a table.
         Each row is a different input node with one column containing
         the name and the other the type.
@@ -289,7 +289,7 @@ def create_graphviz_graph(
 
         return edge_style
 
-    def _get_legend(node_types):
+    def _get_legend(node_types: Set[str]):
         """Create a visualization legend as a graphviz subgraph. The legend includes the
         node types and modifiers presente in the visualization.
         """
