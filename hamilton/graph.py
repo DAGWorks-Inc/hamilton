@@ -183,7 +183,7 @@ def create_graphviz_graph(
         return f"<<b>{name}</b><br /><br /><i>{type_}</i>>"
 
     def _get_input_label(input_nodes: frozenset[node.Node]) -> str:
-        """Get a graphviz HTML-like node label formatted as a table.
+        """Get a graphviz HTML-like node label formatted aspyer a table.
         Each row is a different input node with one column containing
         the name and the other the type.
         ref: https://graphviz.org/doc/info/shapes.html#html
@@ -600,6 +600,10 @@ class FunctionGraph(object):
         graphviz_kwargs: dict = None,
         node_modifiers: Dict[str, Set[VisualizationNodeModifiers]] = None,
         strictly_display_only_passed_in_nodes: bool = False,
+        show_legend: bool = True,
+        orient: str = "LR",
+        hide_inputs: bool = False,
+        deduplicate_inputs: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
@@ -612,6 +616,13 @@ class FunctionGraph(object):
             e.g. {'node_name': {NodeModifiers.IS_USER_INPUT}} will set the node named 'node_name' to be a user input.
         :param strictly_display_only_passed_in_nodes: if True, only display the nodes passed in.  Else defaults to
             displaying also what nodes a node depends on (i.e. all nodes that feed into it).
+        :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
+        :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
+            `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+            see (https://graphviz.org/docs/attr-types/rankdir/)
+        :param hide_inputs: If True, no input nodes are displayed.
+        :param deduplicate_inputs: If True, remove duplicate input nodes.
+            Can improve readability depending on the specifics of the DAG.
         :return: the graphviz graph object if it was created. None if not.
         """
         # Check to see if optional dependencies have been installed.
@@ -633,6 +644,10 @@ class FunctionGraph(object):
             graphviz_kwargs,
             node_modifiers,
             strictly_display_only_passed_in_nodes,
+            show_legend,
+            orient,
+            hide_inputs,
+            deduplicate_inputs,
         )
         kwargs = {"view": True}
         if render_kwargs and isinstance(render_kwargs, dict):
