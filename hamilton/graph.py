@@ -213,7 +213,7 @@ def create_graphviz_graph(
         else:
             return "function"
 
-    def _get_node_style(node_type: str) -> dict[str, str]:
+    def _get_node_style(node_type: str) -> Dict[str, str]:
         """Get the style of a node type.
         Graphviz needs values to be strings.
         """
