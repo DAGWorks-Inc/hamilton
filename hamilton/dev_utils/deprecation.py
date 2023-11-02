@@ -156,7 +156,7 @@ class deprecated:
         Note that this has different implementations for functions and
         objects that masquerade as functions (E.G. by implementing __call__.
 
-        TODO -- use @singledispatchmethod when we no longer support 3.6/3.7
+        TODO -- use @singledispatchmethod  -- this was written before that was available
         https://docs.python.org/3/library/functools.html#functools.singledispatchmethod
 
         :param fn: function (or class) to decorate

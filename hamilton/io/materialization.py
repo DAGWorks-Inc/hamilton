@@ -1,9 +1,8 @@
 import dataclasses
 import functools
 import inspect
-import sys
 import typing
-from typing import Any, Dict, List, Optional, Set, Type, Union
+from typing import Any, Dict, List, Optional, Protocol, Set, Type, Union
 
 from hamilton import base, common, graph, node
 from hamilton.function_modifiers.adapters import LoadFromDecorator, SaveToDecorator
@@ -245,31 +244,24 @@ class MaterializerFactory:
         return out
 
 
-# TODO -- get rid of this once we decide to no longer support 3.7
-if sys.version_info >= (3, 8):
-    from typing import Protocol
+@typing.runtime_checkable
+class _MaterializerFactoryProtocol(Protocol):
+    """Typing for the create_materializer_factory function"""
 
-    @typing.runtime_checkable
-    class _MaterializerFactoryProtocol(Protocol):
-        """Typing for the create_materializer_factory function"""
+    def __call__(
+        self,
+        id: str,
+        dependencies: List[str],
+        combine: base.ResultMixin = None,
+        **kwargs: Union[str, SingleDependency],
+    ) -> MaterializerFactory:
+        ...
 
-        def __call__(
-            self,
-            id: str,
-            dependencies: List[str],
-            combine: base.ResultMixin = None,
-            **kwargs: Union[str, SingleDependency],
-        ) -> MaterializerFactory:
-            ...
 
-    @typing.runtime_checkable
-    class _ExtractorFactoryProtocol(Protocol):
-        def __call__(self, target: str, **kwargs: Union[str, SingleDependency]) -> ExtractorFactory:
-            ...
-
-else:
-    _MaterializerFactoryProtocol = object
-    _ExtractorFactoryProtocol = object
+@typing.runtime_checkable
+class _ExtractorFactoryProtocol(Protocol):
+    def __call__(self, target: str, **kwargs: Union[str, SingleDependency]) -> ExtractorFactory:
+        ...
 
 
 def partial_materializer(data_savers: List[Type[DataSaver]]) -> _MaterializerFactoryProtocol:

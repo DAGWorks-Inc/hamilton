@@ -1,7 +1,6 @@
 import abc
 import csv
 import dataclasses
-import sys
 from collections.abc import Hashable
 from datetime import datetime
 from io import BufferedReader, BytesIO, StringIO
@@ -13,10 +12,7 @@ try:
 except ImportError:
     raise NotImplementedError("Pandas is not installed.")
 
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal
+from typing import Literal
 
 try:
     from collections.abc import Iterable, Mapping, Sequence
@@ -171,7 +167,7 @@ class PandasCSVReader(DataLoader):
             kwargs["usecols"] = self.usecols
         if self.dtype is not None:
             kwargs["dtype"] = self.dtype
-        if sys.version_info >= (3, 8) and self.engine is not None:
+        if self.engine is not None:
             kwargs["engine"] = self.engine
         if self.converters is not None:
             kwargs["converters"] = self.converters
@@ -195,7 +191,7 @@ class PandasCSVReader(DataLoader):
             kwargs["verbose"] = self.verbose
         if self.skip_blank_lines is not None:
             kwargs["skip_blank_lines"] = self.skip_blank_lines
-        if sys.version_info >= (3, 8) and self.parse_dates is not None:
+        if self.parse_dates is not None:
             kwargs["parse_dates"] = self.parse_dates
         if self.keep_date_col is not None:
             kwargs["keep_date_col"] = self.keep_date_col
@@ -497,11 +493,7 @@ class PandasPickleReader(DataLoader):
             self.filepath_or_buffer = self.path
 
 
-# for python 3.7 compatibility
-if sys.version_info < (3, 8):
-    pickle_protocol_default = 4
-else:
-    pickle_protocol_default = 5
+pickle_protocol_default = 5
 
 
 @dataclasses.dataclass
@@ -595,7 +587,7 @@ class PandasJsonReader(DataLoader):
             kwargs["encoding"] = self.encoding
         if self.encoding_errors is not None:
             kwargs["encoding_errors"] = self.encoding_errors
-        if sys.version_info >= (3, 8) and self.engine is not None:
+        if self.engine is not None:
             kwargs["engine"] = self.engine
         if self.keep_default_dates is not None:
             kwargs["keep_default_dates"] = self.keep_default_dates
@@ -673,7 +665,7 @@ class PandasJsonWriter(DataSaver):
             kwargs["indent"] = self.indent
         if self.lines is not False:
             kwargs["lines"] = self.lines
-        if sys.version_info >= (3, 8) and self.mode is not None:
+        if self.mode is not None:
             kwargs["mode"] = self.mode
         if self.orient is not None:
             kwargs["orient"] = self.orient
@@ -848,7 +840,7 @@ class PandasXmlReader(DataLoader):
             kwargs["dtype"] = self.dtype
         if self.converters is not None:
             kwargs["converters"] = self.converters
-        if sys.version_info >= (3, 8) and self.parse_dates is not None:
+        if self.parse_dates is not None:
             kwargs["parse_dates"] = self.parse_dates
         if self.encoding is not None:
             kwargs["encoding"] = self.encoding
@@ -999,7 +991,7 @@ class PandasHtmlReader(DataLoader):
             kwargs["skiprows"] = self.skiprows
         if self.attrs is not None:
             kwargs["attrs"] = self.attrs
-        if sys.version_info >= (3, 8) and self.parse_dates is not None:
+        if self.parse_dates is not None:
             kwargs["parse_dates"] = self.parse_dates
         if self.thousands is not None:
             kwargs["thousands"] = self.thousands
@@ -1364,7 +1356,7 @@ class PandasORCReader(DataLoader):
         kwargs = {}
         if self.columns is not None:
             kwargs["columns"] = self.columns
-        if sys.version_info >= (3, 8) and self.dtype_backend is not None:
+        if self.dtype_backend is not None:
             kwargs["dtype_backend"] = self.dtype_backend
         if self.filesystem is not None:
             kwargs["filesystem"] = self.filesystem
@@ -1388,8 +1380,6 @@ class PandasORCWriter(DataSaver):
     """
     Class that handles writing DataFrames to ORC files.
     Maps to: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_orc.html
-
-    Requires python version 3.8 or greater
     """
 
     path: Union[str, Path, BytesIO, BufferedReader]

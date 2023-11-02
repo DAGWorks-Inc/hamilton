@@ -372,7 +372,7 @@ def test_PandasDataFrameResult_build_dataframe_with_dataframes(outputs, expected
     pd.testing.assert_frame_equal(actual, expected_result)
 
 
-# we have to support this in the tests as pandas 2.0 doesn't support python 3.7 and we still do
+# Still supporting old pandas version, although we should phase off...
 int_64_index = "Index:::int64" if pd.__version__ >= "2.0.0" else "RangeIndex:::int64"
 
 PD_VERSION = tuple(int(item) for item in pd.__version__.split("."))
@@ -423,8 +423,7 @@ PD_VERSION = tuple(int(item) for item in pd.__version__.split("."))
             ({"Index:::int64": ["a"]}, {}, {}),
             marks=pytest.mark.skipif(
                 PD_VERSION < (2, 0, 0),
-                reason="Pandas 2.0 changed default indices but we have to "
-                "support old pandas in unit tests due to python 3.7 support",
+                reason="Pandas 2.0 changed default indices but we still " "support pandas <2.0",
             ),
         ),
         pytest.param(
@@ -432,8 +431,7 @@ PD_VERSION = tuple(int(item) for item in pd.__version__.split("."))
             ({"Int64Index:::int64": ["a"]}, {}, {}),
             marks=pytest.mark.skipif(
                 PD_VERSION >= (2, 0, 0),
-                reason="Pandas 2.0 changed default indices but we have to "
-                "support old pandas in unit tests due to python 3.7 support",
+                reason="Pandas 2.0 changed default indices but we still " "support pandas <2.0",
             ),
         ),
     ],

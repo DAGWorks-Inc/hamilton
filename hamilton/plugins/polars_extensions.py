@@ -1,5 +1,4 @@
 import dataclasses
-import sys
 from io import BytesIO, IOBase, TextIOWrapper
 from pathlib import Path
 from typing import (
@@ -165,7 +164,7 @@ class PolarsCSVReader(DataLoader):
             kwargs["sample_size"] = self.sample_size
         if self.eol_char is not None:
             kwargs["eol_char"] = self.eol_char
-        if sys.version_info >= (3, 8) and self.raise_if_empty is not None:
+        if self.raise_if_empty is not None:
             kwargs["raise_if_empty"] = self.raise_if_empty
         return kwargs
 
@@ -211,7 +210,7 @@ class PolarsCSVWriter(DataSaver):
             kwargs["has_header"] = self.has_header
         if self.separator is not None:
             kwargs["separator"] = self.separator
-        if sys.version_info >= (3, 8) and self.line_terminator is not None:
+        if self.line_terminator is not None:
             kwargs["line_terminator"] = self.line_terminator
         if self.quote is not None:
             kwargs["quote"] = self.quote

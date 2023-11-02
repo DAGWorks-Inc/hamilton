@@ -7,10 +7,7 @@ try:
 except ImportError:
     raise NotImplementedError("Numpy is not installed.")
 
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal
+from typing import Literal
 
 from hamilton import registry
 from hamilton.io import utils

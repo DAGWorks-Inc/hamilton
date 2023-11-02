@@ -10,10 +10,8 @@ if _version_tuple < (3, 11, 0):
 else:
     from typing import NotRequired
 
-if _version_tuple < (3, 8, 0):
-    from typing_extensions import TypedDict
-else:
-    from typing import TypedDict
+
+from typing import TypedDict
 
 # Copied this over from function_graph
 # TODO -- determine the best place to put this code

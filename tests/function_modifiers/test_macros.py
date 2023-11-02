@@ -1,5 +1,4 @@
 import inspect
-import sys
 from typing import List, Set
 
 import pandas as pd
@@ -279,20 +278,12 @@ def test_applicable_does_not_validate(args, kwargs, chain_first_param: bool):
         applicable.validate(chain_first_param=chain_first_param, allow_custom_namespace=True)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python 3.8 or higher")
 def test_applicable_does_not_validate_invalid_function_pos_only():
-    # We have to do this as this doesn't parse in 3.7 :/
-    if sys.version_info >= (3, 8):
-        code = """
-def foo(a: int, /, b: int) -> int:
-    return a + b
-        """
-        scope = {}
-        eval(compile(code, "<string>", "exec"), scope)
-    else:
-        return
+    def foo(a: int, /, b: int) -> int:
+        return a + b
+
     with pytest.raises(hamilton.function_modifiers.base.InvalidDecoratorException):
-        applicable = Applicable(scope["foo"], args=(source("a"), source("b")), kwargs={})
+        applicable = Applicable(foo, args=(source("a"), source("b")), kwargs={})
         applicable.validate(chain_first_param=True, allow_custom_namespace=True)
 
 
