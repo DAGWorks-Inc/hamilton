@@ -140,6 +140,7 @@ def create_graphviz_graph(
     graphviz_kwargs: dict,
     node_modifiers: Dict[str, Set[VisualizationNodeModifiers]],
     strictly_display_only_nodes_passed_in: bool,
+    show_legend: bool = True,
     orient: str = "LR",
     hide_inputs: bool = False,
     deduplicate_inputs: bool = False,
@@ -153,6 +154,7 @@ def create_graphviz_graph(
     :param node_modifiers: A dictionary of node names to dictionaries of node attributes to modify.
     :param strictly_display_only_nodes_passed_in: If True, only display the nodes passed in. Else defaults to displaying
         also what nodes a node depends on (i.e. all nodes that feed into it).
+    :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
     :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
         `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
         see (https://graphviz.org/docs/attr-types/rankdir/)
@@ -427,7 +429,8 @@ def create_graphviz_graph(
             # create edge for input node
             digraph.edge(input_node_name, n.name)
 
-    digraph.subgraph(_get_legend(seen_node_types))
+    if show_legend:
+        digraph.subgraph(_get_legend(seen_node_types))
     return digraph
 
 
