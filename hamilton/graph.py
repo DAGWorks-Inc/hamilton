@@ -193,7 +193,7 @@ def create_graphviz_graph(
         rows = []
         for dep in input_nodes:
             name = dep.name
-            type_string = get_type_as_string(n.type) if get_type_as_string(n.type) else ""
+            type_string = get_type_as_string(dep.type) if get_type_as_string(dep.type) else ""
             rows.append(f"<tr><td>{name}</td><td>{type_string}</td></tr>")
         return f"<<table border=\"0\">{''.join(rows)}</table>>"
 
