@@ -91,9 +91,11 @@ def custom_subclass_check(requested_type: Type, param_type: Type):
 
 
 def get_type_as_string(type_: Type) -> Optional[str]:
-    """Get a string representation of a type. Returns an empty string if everything fails
+    """Get a string representation of a type.
 
     The logic supports the evolution of the type system between 3.8 and 3.10.
+    :param type_: Any Type object. Typically the node type found at Node.type.
+    :return: string representation of the type. An empty string if everything fails.
     """
 
     if getattr(type_, "__name__", None):
