@@ -150,3 +150,46 @@ def test_validate_types_sad(type_):
 )
 def test__safe_subclass(candidate, type_, expected):
     assert htypes._safe_subclass(candidate, type_) == expected
+
+
+@pytest.mark.parametrize(
+    "type_",
+    [
+        (custom_type),
+        (typing.TypeVar("FOO")),
+        (typing.Any),
+        (int),
+        (float),
+        (typing.List[int]),
+        (typing.List),
+        (list),
+        (typing.Iterable),
+        (typing.Dict),
+        (dict),
+        (typing.Mapping),
+        (collections.Counter),
+        (typing.Tuple[str, str]),
+        (typing.Tuple[str]),
+        (typing.Tuple),
+        (typing.Union[str, str]),
+        (X),
+        (Y),
+        (typing.Any),
+        (typing.Union[X, int]),
+        (typing.Union[str, X]),
+        (typing.Union[custom_type, X]),
+        (typing.Union[float, str]),
+        (typing.Union[int, float]),
+        (typing.FrozenSet[int]),
+        (typing.Set[int]),
+        (pd.Series),
+        (htypes.column[pd.Series, int]),
+        (pd.DataFrame),
+    ],
+)
+def test_get_type_as_string(type_):
+    """Tests the custom_subclass_check"""
+    try:
+        type_string = htypes.get_type_as_string(type_)  # noqa: F841
+    except Exception as e:
+        pytest.fail(f"test get_type_as_string raised: {e}")

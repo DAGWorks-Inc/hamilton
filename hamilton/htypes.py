@@ -2,7 +2,7 @@ import inspect
 import sys
 import typing
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Generator, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Generator, Optional, Tuple, Type, TypeVar
 
 import typing_inspect
 
@@ -88,6 +88,27 @@ def custom_subclass_check(requested_type: Type, param_type: Type):
                 return requested_args == param_args
         return True
     return False
+
+
+def get_type_as_string(type_: Type) -> Optional[str]:
+    """Get a string representation of a type.
+
+    The logic supports the evolution of the type system between 3.8 and 3.10.
+    :param type_: Any Type object. Typically the node type found at Node.type.
+    :return: string representation of the type. An empty string if everything fails.
+    """
+
+    if getattr(type_, "__name__", None):
+        type_string = type_.__name__
+    elif typing_inspect.get_origin(type_):
+        base_type = typing_inspect.get_origin(type_)
+        type_string = get_type_as_string(base_type)
+    elif getattr(type_, "__repr__", None):
+        type_string = type_.__repr__()
+    else:
+        type_string = None
+
+    return type_string
 
 
 def types_match(

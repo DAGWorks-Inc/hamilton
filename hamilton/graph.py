@@ -15,7 +15,7 @@ from hamilton.execution import graph_functions
 from hamilton.execution.graph_functions import combine_config_and_inputs, execute_subdag
 from hamilton.function_modifiers import base as fm_base
 from hamilton.graph_utils import find_functions
-from hamilton.htypes import types_match
+from hamilton.htypes import get_type_as_string, types_match
 from hamilton.node import Node
 
 logger = logging.getLogger(__name__)
@@ -170,7 +170,7 @@ def create_graphviz_graph(
     def _get_node_label(
         n: node.Node,
         name: Optional[str] = None,
-        type_: Optional[str] = None,
+        type_string: Optional[str] = None,
     ) -> str:
         """Get a graphviz HTML-like node label. It uses the DAG node
         name and type but values can be overridden. Overriding is currently
@@ -179,8 +179,10 @@ def create_graphviz_graph(
         ref: https://graphviz.org/doc/info/shapes.html#html
         """
         name = n.name if name is None else name
-        type_ = n.type.__name__ if type_ is None else type_
-        return f"<<b>{name}</b><br /><br /><i>{type_}</i>>"
+        if type_string is None:
+            type_string = get_type_as_string(n.type) if get_type_as_string(n.type) else ""
+
+        return f"<<b>{name}</b><br /><br /><i>{type_string}</i>>"
 
     def _get_input_label(input_nodes: FrozenSet[node.Node]) -> str:
         """Get a graphviz HTML-like node label formatted aspyer a table.
@@ -188,7 +190,11 @@ def create_graphviz_graph(
         the name and the other the type.
         ref: https://graphviz.org/doc/info/shapes.html#html
         """
-        rows = [f"<tr><td>{dep.name}</td><td>{dep.type.__name__}</td></tr>" for dep in input_nodes]
+        rows = []
+        for dep in input_nodes:
+            name = dep.name
+            type_string = get_type_as_string(n.type) if get_type_as_string(n.type) else ""
+            rows.append(f"<tr><td>{name}</td><td>{type_string}</td></tr>")
         return f"<<table border=\"0\">{''.join(rows)}</table>>"
 
     def _get_node_type(n: node.Node) -> str:
@@ -375,7 +381,7 @@ def create_graphviz_graph(
 
         if n._tags.get("hamilton.data_saver"):
             materializer_type = n._tags["hamilton.data_saver.classname"]
-            label = _get_node_label(n, type_=materializer_type)
+            label = _get_node_label(n, type_string=materializer_type)
             modifier_style = _get_function_modifier_style("materializer")
             node_style.update(**modifier_style)
             seen_node_types.add("materializer")
