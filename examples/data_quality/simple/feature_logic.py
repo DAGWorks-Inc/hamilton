@@ -82,25 +82,25 @@ def seasons_encoded__dask(seasons: pd.Series) -> pd.DataFrame:
     return df
 
 
-@check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
+@check_output(data_type=np.bool_, values_in=[0, 1], allow_nans=False)
 def seasons_1(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_1"""
     return seasons_encoded["seasons_1"]
 
 
-@check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
+@check_output(data_type=np.bool_, values_in=[0, 1], allow_nans=False)
 def seasons_2(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_2"""
     return seasons_encoded["seasons_2"]
 
 
-@check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
+@check_output(data_type=np.bool_, values_in=[0, 1], allow_nans=False)
 def seasons_3(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_3"""
     return seasons_encoded["seasons_3"]
 
 
-@check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
+@check_output(data_type=np.bool_, values_in=[0, 1], allow_nans=False)
 def seasons_4(seasons_encoded: pd.DataFrame) -> pd.Series:
     """Returns column seasons_4"""
     return seasons_encoded["seasons_4"]
@@ -136,31 +136,31 @@ def day_of_week_encoded__dask(day_of_the_week: pd.Series) -> pd.DataFrame:
     return df
 
 
-@check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
+@check_output(data_type=np.bool_, values_in=[0, 1], allow_nans=False)
 def day_of_the_week_2(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_2 column."""
     return day_of_week_encoded["day_of_the_week_2"]
 
 
-@check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
+@check_output(data_type=np.bool_, values_in=[0, 1], allow_nans=False)
 def day_of_the_week_3(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_3 column."""
     return day_of_week_encoded["day_of_the_week_3"]
 
 
-@check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
+@check_output(data_type=np.bool_, values_in=[0, 1], allow_nans=False)
 def day_of_the_week_4(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_4 column."""
     return day_of_week_encoded["day_of_the_week_4"]
 
 
-@check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
+@check_output(data_type=np.bool_, values_in=[0, 1], allow_nans=False)
 def day_of_the_week_5(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_5 column."""
     return day_of_week_encoded["day_of_the_week_5"]
 
 
-@check_output(data_type=np.uint8, values_in=[0, 1], allow_nans=False)
+@check_output(data_type=np.bool_, values_in=[0, 1], allow_nans=False)
 def day_of_the_week_6(day_of_week_encoded: pd.DataFrame) -> pd.Series:
     """Pulls out the day_of_the_week_6 column."""
     return day_of_week_encoded["day_of_the_week_6"]
