@@ -551,6 +551,10 @@ class Driver:
         inputs: Dict[str, Any] = None,
         graphviz_kwargs: dict = None,
         overrides: Dict[str, Any] = None,
+        show_legend: bool = True,
+        orient: str = "LR",
+        hide_inputs: bool = False,
+        deduplicate_inputs: bool = False,
     ):
         """Helper function to visualize execution, using a passed-in function graph.
 
@@ -559,8 +563,13 @@ class Driver:
         :param render_kwargs:
         :param inputs:
         :param graphviz_kwargs:
+        :param show_legend:
+        :param orient:
+        :param hide_inputs:
+        :param deduplicate_inputs:
         :return:
         """
+        # TODO should determine if the visualization logic should live here or in the graph.py module
         nodes, user_nodes = fn_graph.get_upstream_nodes(final_vars, inputs, overrides)
         Driver.validate_inputs(fn_graph, adapter, user_nodes, inputs, nodes)
         node_modifiers = {fv: {graph.VisualizationNodeModifiers.IS_OUTPUT} for fv in final_vars}
@@ -585,6 +594,10 @@ class Driver:
                 graphviz_kwargs=graphviz_kwargs,
                 node_modifiers=node_modifiers,
                 strictly_display_only_passed_in_nodes=True,
+                show_legend=show_legend,
+                orient=orient,
+                hide_inputs=hide_inputs,
+                deduplicate_inputs=deduplicate_inputs,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -598,6 +611,10 @@ class Driver:
         inputs: Dict[str, Any] = None,
         graphviz_kwargs: dict = None,
         overrides: Dict[str, Any] = None,
+        show_legend: bool = True,
+        orient: str = "LR",
+        hide_inputs: bool = False,
+        deduplicate_inputs: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes Execution.
 
@@ -620,6 +637,13 @@ class Driver:
             E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
             See https://graphviz.org/doc/info/attrs.html for options.
         :param overrides: Optional. Overrides to the DAG.
+        :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
+        :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
+            `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+            see (https://graphviz.org/docs/attr-types/rankdir/)
+        :param hide_inputs: If True, no input nodes are displayed.
+        :param deduplicate_inputs: If True, remove duplicate input nodes.
+            Can improve readability depending on the specifics of the DAG.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -633,6 +657,10 @@ class Driver:
             inputs,
             graphviz_kwargs,
             overrides,
+            show_legend=show_legend,
+            orient=orient,
+            hide_inputs=hide_inputs,
+            deduplicate_inputs=deduplicate_inputs,
         )
 
     @capture_function_usage
@@ -665,6 +693,10 @@ class Driver:
         output_file_path: str = None,
         render_kwargs: dict = None,
         graphviz_kwargs: dict = None,
+        show_legend: bool = True,
+        orient: str = "LR",
+        hide_inputs: bool = False,
+        deduplicate_inputs: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG starting from the passed in function name(s).
 
@@ -678,17 +710,37 @@ class Driver:
             If you do not want to view the file, pass in `{'view':False}`.
         :param graphviz_kwargs: Kwargs to be passed to the graphviz graph object to configure it.
             E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
+        :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
+        :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
+            `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+            see (https://graphviz.org/docs/attr-types/rankdir/)
+        :param hide_inputs: If True, no input nodes are displayed.
+        :param deduplicate_inputs: If True, remove duplicate input nodes.
+            Can improve readability depending on the specifics of the DAG.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
         downstream_nodes = self.graph.get_downstream_nodes(list(node_names))
+
+        nodes_to_display = set()
+        for n in downstream_nodes:
+            nodes_to_display.add(n)
+
+            for d in n.dependencies:
+                if d not in downstream_nodes:
+                    nodes_to_display.add(d)
+
         try:
             return self.graph.display(
-                downstream_nodes,
+                nodes_to_display,
                 output_file_path,
                 render_kwargs=render_kwargs,
                 graphviz_kwargs=graphviz_kwargs,
-                strictly_display_only_passed_in_nodes=False,
+                strictly_display_only_passed_in_nodes=True,
+                show_legend=show_legend,
+                orient=orient,
+                hide_inputs=hide_inputs,
+                deduplicate_inputs=deduplicate_inputs,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -700,6 +752,10 @@ class Driver:
         output_file_path: str = None,
         render_kwargs: dict = None,
         graphviz_kwargs: dict = None,
+        show_legend: bool = True,
+        orient: str = "LR",
+        hide_inputs: bool = False,
+        deduplicate_inputs: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG going backwards from the passed in function name(s).
 
@@ -713,6 +769,13 @@ class Driver:
             If you do not want to view the file, pass in `{'view':False}`. Optional.
         :param graphviz_kwargs: Kwargs to be passed to the graphviz graph object to configure it.
             E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image. Optional.
+        :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
+        :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
+            `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+            see (https://graphviz.org/docs/attr-types/rankdir/)
+        :param hide_inputs: If True, no input nodes are displayed.
+        :param deduplicate_inputs: If True, remove duplicate input nodes.
+            Can improve readability depending on the specifics of the DAG.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -726,8 +789,12 @@ class Driver:
                 output_file_path,
                 render_kwargs=render_kwargs,
                 graphviz_kwargs=graphviz_kwargs,
-                strictly_display_only_passed_in_nodes=False,
+                strictly_display_only_passed_in_nodes=True,
                 node_modifiers=node_modifiers,
+                show_legend=show_legend,
+                orient=orient,
+                hide_inputs=hide_inputs,
+                deduplicate_inputs=deduplicate_inputs,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -792,6 +859,10 @@ class Driver:
         render_kwargs: dict = None,
         graphviz_kwargs: dict = None,
         strict_path_visualization: bool = False,
+        show_legend: bool = True,
+        orient: str = "LR",
+        hide_inputs: bool = False,
+        deduplicate_inputs: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes the path between two nodes.
 
@@ -807,6 +878,13 @@ class Driver:
             E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
         :param strict_path_visualization: If True, only the nodes in the path will be visualized. If False, the
             nodes in the path and their dependencies, i.e. parents, will be visualized.
+        :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
+        :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
+            `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+            see (https://graphviz.org/docs/attr-types/rankdir/)
+        :param hide_inputs: If True, no input nodes are displayed.
+        :param deduplicate_inputs: If True, remove duplicate input nodes.
+            Can improve readability depending on the specifics of the DAG.
         :return: graphviz object.
         :raise ValueError: if the upstream or downstream node names are not found in the graph,
             or there is no path between them.
@@ -839,14 +917,27 @@ class Driver:
             if n.name not in node_modifiers:
                 node_modifiers[n.name] = set()
             node_modifiers[n.name].add(graph.VisualizationNodeModifiers.IS_PATH)
+
+        nodes_to_display = set()
+        for n in nodes_for_path:
+            nodes_to_display.add(n)
+
+            if strict_path_visualization is False:
+                for d in n.dependencies:
+                    nodes_to_display.add(d)
+
         try:
             return self.graph.display(
-                nodes_for_path,
+                nodes_to_display,
                 output_file_path,
                 render_kwargs=render_kwargs,
                 graphviz_kwargs=graphviz_kwargs,
                 node_modifiers=node_modifiers,
-                strictly_display_only_passed_in_nodes=strict_path_visualization,
+                strictly_display_only_passed_in_nodes=True,
+                show_legend=show_legend,
+                orient=orient,
+                hide_inputs=hide_inputs,
+                deduplicate_inputs=deduplicate_inputs,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1094,6 +1185,10 @@ class Driver:
         inputs: Dict[str, Any] = None,
         graphviz_kwargs: dict = None,
         overrides: Dict[str, Any] = None,
+        show_legend: bool = True,
+        orient: str = "LR",
+        hide_inputs: bool = False,
+        deduplicate_inputs: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes materialization. This helps give you a sense of how materialization
         will impact the DAG.
@@ -1105,6 +1200,13 @@ class Driver:
         :param inputs: Inputs to pass to execution. Optional.
         :param graphviz_kwargs: Arguments to pass to graphviz. Optional.
         :param overrides: Overrides to pass to execution. Optional.
+        :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
+        :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
+            `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+            see (https://graphviz.org/docs/attr-types/rankdir/)
+        :param hide_inputs: If True, no input nodes are displayed.
+        :param deduplicate_inputs: If True, remove duplicate input nodes.
+            Can improve readability depending on the specifics of the DAG.
         :return: The graphviz graph, if you want to do something with it
         """
         if additional_vars is None:
@@ -1125,6 +1227,10 @@ class Driver:
             inputs,
             graphviz_kwargs,
             overrides,
+            show_legend=show_legend,
+            orient=orient,
+            hide_inputs=hide_inputs,
+            deduplicate_inputs=deduplicate_inputs,
         )
 
     def validate_execution(

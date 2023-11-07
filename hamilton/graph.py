@@ -163,7 +163,7 @@ def create_graphviz_graph(
         Can improve readability depending on the specifics of the DAG.
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
-    PATH_COLOR = "#7A3B69"
+    PATH_COLOR = "red"
 
     import graphviz
 
@@ -283,7 +283,6 @@ def create_graphviz_graph(
         edge_style = dict()
 
         if from_type == "expand":
-            print(from_type, to_type)
             edge_style.update(
                 dir="both",
                 arrowhead="crow",
@@ -354,21 +353,6 @@ def create_graphviz_graph(
         # prefer having the conditions explicit for now since they rely on
         # heterogeneous VisualizationNodeModifiers and node.Node.node_role.
         # Otherwise, it's difficult to manage seen nodes and the legend.
-        if node_modifiers.get(n.name):
-            modifiers = node_modifiers[n.name]
-            if VisualizationNodeModifiers.IS_OUTPUT in modifiers:
-                modifier_style = _get_function_modifier_style("output")
-                node_style.update(**modifier_style)
-                seen_node_types.add("output")
-
-            if VisualizationNodeModifiers.IS_OVERRIDE in modifiers:
-                modifier_style = _get_function_modifier_style("override")
-                node_style.update(**modifier_style)
-                seen_node_types.add("override")
-
-            if VisualizationNodeModifiers.IS_PATH in modifiers:
-                node_style["color"] = PATH_COLOR
-
         if n.node_role == node.NodeType.EXPAND:
             modifier_style = _get_function_modifier_style("expand")
             node_style.update(**modifier_style)
@@ -386,12 +370,30 @@ def create_graphviz_graph(
             node_style.update(**modifier_style)
             seen_node_types.add("materializer")
 
+        if node_modifiers.get(n.name):
+            modifiers = node_modifiers[n.name]
+            if VisualizationNodeModifiers.IS_OUTPUT in modifiers:
+                modifier_style = _get_function_modifier_style("output")
+                node_style.update(**modifier_style)
+                seen_node_types.add("output")
+
+            if VisualizationNodeModifiers.IS_OVERRIDE in modifiers:
+                modifier_style = _get_function_modifier_style("override")
+                node_style.update(**modifier_style)
+                seen_node_types.add("override")
+
+            if VisualizationNodeModifiers.IS_PATH in modifiers:
+                # use PATH_COLOR only if no color applied, edges provide enough clarity
+                # currently, only EXPAND and COLLECT use the `color` attribue
+                node_style["color"] = node_style.get("color", PATH_COLOR)
+
         digraph.node(n.name, label=label, **node_style)
 
     # create edges
     input_sets = dict()
     for n in nodes:
         to_type = "collect" if n.node_role == node.NodeType.COLLECT else ""
+        to_modifiers = node_modifiers.get(n.name, set())
 
         input_nodes = set()
         for d in n.dependencies:
@@ -406,7 +408,14 @@ def create_graphviz_graph(
                 continue
 
             from_type = "expand" if d.node_role == node.NodeType.EXPAND else ""
+            dependency_modifiers = node_modifiers.get(d.name, set())
             edge_style = _get_edge_style(from_type, to_type)
+            if (
+                VisualizationNodeModifiers.IS_PATH in dependency_modifiers
+                and VisualizationNodeModifiers.IS_PATH in to_modifiers
+            ):
+                edge_style["color"] = PATH_COLOR
+
             digraph.edge(d.name, n.name, **edge_style)
 
         # skip input node creation
