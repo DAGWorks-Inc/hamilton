@@ -259,6 +259,8 @@ class DataTypeValidatorPandasSeries(base.BaseDefaultValidator):
 
     def validate(self, data: pd.Series) -> base.ValidationResult:
         dtype = data.dtype
+        if hasattr(dtype, "type"):
+            dtype = dtype.type
         passes = np.issubdtype(dtype, self.datatype)
         return base.ValidationResult(
             passes=passes,

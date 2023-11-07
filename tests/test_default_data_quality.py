@@ -173,6 +173,12 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
         ),
         (
             default_validators.DataTypeValidatorPandasSeries,
+            np.float64,
+            pd.Series([2.3, 4.5, 6.6], dtype=pd.Float64Dtype()),
+            True,
+        ),
+        (
+            default_validators.DataTypeValidatorPandasSeries,
             numpy.dtype("object"),
             pd.Series([1, 2]),
             False,
