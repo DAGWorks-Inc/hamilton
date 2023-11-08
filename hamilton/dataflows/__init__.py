@@ -2,7 +2,7 @@
 This module houses functions and tools to interact with off-the-shelf
 dataflows.
 
-Probably want this to be a CLI too. -- e.g. init would make more sense.
+TODO: expect this to have a CLI interface in the future.
 """
 import functools
 import importlib
@@ -510,6 +510,40 @@ def find(query: str, commit_ish: str = None, user: str = None):
                                 matches.add((ci, usr, df))
     # TODO: incorporate tags
     return matches
+
+
+@_track_function_call
+def copy(dataflow: ModuleType, destination_path: str, overwrite: bool = False):
+    """Copies a dataflow module to the passed in path.
+
+    :param dataflow: the module to copy.
+    :param destination_path: the path to a directory to place the module in.
+    :param overwrite: whether to overwrite the destination. Default is False and raise an error.
+    """
+    # make sure the module exists and has a file to copy
+    if not os.path.exists(dataflow.__file__):
+        raise ValueError(f"Dataflow {dataflow.__name__} does not exist locally. Not copying.")
+    # make sure path string ends with a slash
+    if not destination_path.endswith("/"):
+        destination_path += "/"
+    # get the module name
+    module_name = dataflow.__name__.split(".")[-1]
+    # append the module name to the destination path
+    destination_path += module_name
+    # make the directories if they don't exist
+    if not os.path.exists(destination_path):
+        os.makedirs(destination_path, exist_ok=True)
+
+    # Note: we'll need to change this if we change how module code is structured.
+    file_path = os.path.join(destination_path, "__init__.py")
+    # if the file_path exists and overwrite is False, raise an error
+    if os.path.exists(file_path) and not overwrite:
+        raise ValueError(
+            f"Destination {file_path} already exists. Not copying. Use overwrite=True to overwrite."
+        )
+    # save the module code to the destination path
+    shutil.copy(dataflow.__file__, file_path)
+    logger.info(f"Successfully copied {dataflow.__name__} to {file_path}.")
 
 
 @_track_function_call
