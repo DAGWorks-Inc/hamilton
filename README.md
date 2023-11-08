@@ -168,9 +168,11 @@ You should see the following output:
     4     40      200      33.333333             0.200
     5     50      400      43.333333             0.125
 
-You should see the following image if you ran `dr.visualize_execution(output_columns, './my-dag.dot', {})`:
+You should see the following image if you ran `dr.visualize_execution(output_columns, './my-dag.dot', {"format": "png"}, orient="TB")`:
 
 ![hello_world_image](hello_world_image.png)
+Note: we treat displaying `Inputs` in a special manner for readability in our visualizations. So you'll likely see input
+nodes repeated.
 
 Congratulations - you just created your Hamilton dataflow that created a dataframe!
 
