@@ -1,6 +1,6 @@
 import dataclasses
 import pathlib
-from typing import IO, Any, Collection, Dict, Optional, Type, Union
+from typing import IO, Any, Collection, Dict, List, Optional, Type, Union
 
 try:
     import plotly.graph_objects
@@ -63,15 +63,15 @@ class PlotlyInteractiveWriter(DataSaver):
     """
 
     path: Union[str, pathlib.Path, IO]
-    config: Optional[dict] = None
+    config: Optional[Dict] = None
     auto_play: bool = True
     include_plotlyjs: Union[
         bool, str
     ] = True  # or "cdn", "directory", "require", "False", "other string .js"
     include_mathjax: Union[bool, str] = False  # "cdn", "string .js"
-    post_script: Union[str, list[str], None] = None
+    post_script: Union[str, List[str], None] = None
     full_html: bool = True
-    animation_opts: Optional[dict] = None
+    animation_opts: Optional[Dict] = None
     default_width: Union[int, float, str] = "100%"
     default_height: Union[int, float, str] = "100%"
     validate: bool = True
