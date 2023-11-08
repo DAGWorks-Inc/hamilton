@@ -1,0 +1,53 @@
+name: Publish SF Hamilton Contrib Python Package
+
+on:
+  push:
+    branches:
+      - main  # or the branch of your choice
+
+jobs:
+  publish-to-pypi:
+    runs-on: ubuntu-latest
+    # Specifying a GitHub environment is optional, but strongly encouraged
+    environment: sf-hamilton-contrib-publishing-environment
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+    defaults:
+      run:
+        working-directory: contrib/
+
+    steps:
+    - uses: actions/checkout@v3
+
+    # Setup Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8' # Set up your required Python version
+
+      # Check current published version
+    - name: Check if version is greater than the one on PyPI
+      id: check_version
+      run: |
+        # Use a script or a method to get the current version and the PyPI version
+        # For example, use a Python script that uses the `packaging` library to compare versions
+        # Set the output `version_is_greater` to `true` or `false`
+        python scripts/version_check.py
+
+    # Install dependencies required to build
+    - name: Install dependencies
+      if: steps.check_version.outputs.version_is_greater == 'true'
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel twine build
+
+    # If the version is greater, build
+    - name: Build
+      if: steps.check_version.outputs.version_is_greater == 'true'
+      run: |
+        python -m build
+    # Use the trusted publisher set up to remove the need for tokens
+    - name: Publish package distributions to PyPI
+      if: steps.check_version.outputs.version_is_greater == 'true'
+      uses: pypa/gh-action-pypi-publish@release/v1
