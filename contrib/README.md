@@ -24,7 +24,7 @@ production purposes as you can version-lock your dependencies.
 To install the package, run:
 
 ```bash
-pip install sf-hamilton-contrib==0.0.1rc1
+pip install sf-hamilton-contrib --upgrade
 ```
 
 Once installed, you can import the dataflows as follows.
@@ -72,6 +72,24 @@ result = dr.execute(
   inputs={...}  # pass in inputs as appropriate
 )
 ```
+### Modification
+Getting started is one thing, but then modifying to your needs is another. So we have a prescribed
+flow to enable you to take a dataflow, and copy the code to a place of your choosing. This allows
+you to easily modify the dataflow as you see fit. You will need to adhere to any licenses the code may come with.
+The default, if not specified, is the "BSD-3 clear clause".
+
+Run this in a notebook or python script to copy the dataflow to a directory of your choosing.
+```python
+from hamilton import dataflow
+
+# dynamically pull and then copy
+NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
+dataflow.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
+# copy from the installed library
+from hamilton.contrib.user.NAME_OF_USER import NAME_OF_DATAFLOW
+dataflow.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
+```
+
 
 ## How to contribute
 
