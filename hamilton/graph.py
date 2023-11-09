@@ -551,7 +551,11 @@ class FunctionGraph(object):
         output_file_path: str = "test-output/graph-all.gv",
         render_kwargs: dict = None,
         graphviz_kwargs: dict = None,
-    ):
+        show_legend: bool = True,
+        orient: str = "LR",
+        hide_inputs: bool = False,
+        deduplicate_inputs: bool = False,
+    ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays & saves a dot file of the entire DAG structure constructed.
 
         :param output_file_path: the place to save the files.
@@ -559,6 +563,14 @@ class FunctionGraph(object):
             If you do not want to view the file, pass in `{'view':False}`.
         :param graphviz_kwargs: kwargs to be passed to the graphviz graph object to configure it.
             e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
+        :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
+        :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
+            `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+            see (https://graphviz.org/docs/attr-types/rankdir/)
+        :param hide_inputs: If True, no input nodes are displayed.
+        :param deduplicate_inputs: If True, remove duplicate input nodes.
+            Can improve readability depending on the specifics of the DAG.
+        :return: the graphviz graph object if it was created. None if not.
         """
         all_nodes = set()
         node_modifiers = {}
@@ -576,6 +588,10 @@ class FunctionGraph(object):
             render_kwargs=render_kwargs,
             graphviz_kwargs=graphviz_kwargs,
             node_modifiers=node_modifiers,
+            show_legend=show_legend,
+            orient=orient,
+            hide_inputs=hide_inputs,
+            deduplicate_inputs=deduplicate_inputs,
         )
 
     def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
