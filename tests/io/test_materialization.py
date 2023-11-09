@@ -5,8 +5,8 @@ import pytest
 
 import tests.resources.cyclic_functions
 import tests.resources.test_default_args
-from hamilton import base, graph, node
-from hamilton.function_modifiers import value
+from hamilton import base, graph, node, registry
+from hamilton.function_modifiers import load_from, save_to, value
 from hamilton.io import materialization
 from hamilton.io.data_adapters import DataLoader, DataSaver
 from hamilton.io.materialization import (
@@ -16,6 +16,8 @@ from hamilton.io.materialization import (
     MaterializerFactory,
     _ExtractorFactoryProtocol,
     _MaterializerFactoryProtocol,
+    from_,
+    to,
 )
 
 global_mock_data_saver_cache = {}
@@ -308,3 +310,51 @@ def test_sanitize_materializer_dependencies_error():
     with pytest.raises(ValueError):
         s = {tests.resources.test_default_args.__name__}
         factory_1.sanitize_dependencies(s)
+
+
+def test_dynamic_properties_can_be_registered_after_import_for_saver():
+    @dataclasses.dataclass
+    class CustomDataSaver(DataSaver):
+        def save_data(self, type_: Type[Type]) -> Tuple[Type, Dict[str, Any]]:
+            return "value", {}
+
+        @classmethod
+        def applicable_types(cls) -> Collection[Type]:
+            return [dict]
+
+        @classmethod
+        def name(cls) -> str:
+            return "testing_unique_key_saver"
+
+    registry.register_adapter(CustomDataSaver)
+
+    materialize_property = Materialize.testing_unique_key_saver
+    to_property = to.testing_unique_key_saver
+    load_from_property = save_to.testing_unique_key_saver
+    assert materialize_property is not None
+    assert to_property is not None
+    assert load_from_property is not None
+
+
+def test_dynamic_properties_can_be_registered_after_import_for_loader():
+    @dataclasses.dataclass
+    class CustomDataLoader(DataLoader):
+        def load_data(self, type_: Type[int]) -> Tuple[Type[int], Dict[str, Any]]:
+            return int, {}
+
+        @classmethod
+        def applicable_types(cls) -> Collection[Type]:
+            return [int]
+
+        @classmethod
+        def name(cls) -> str:
+            return "testing_unique_key_loader"
+
+    registry.register_adapter(CustomDataLoader)
+
+    extract_property = Extract.testing_unique_key_loader
+    to_property = from_.testing_unique_key_loader
+    load_from_property = load_from.testing_unique_key_loader
+    assert extract_property is not None
+    assert to_property is not None
+    assert load_from_property is not None

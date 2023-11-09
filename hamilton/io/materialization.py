@@ -30,15 +30,24 @@ class materialization_meta__(type):
         """This *just* exists to provide a more helpful error message. If you try to access
         a property that doesn't exist, we'll raise an error that tells you what properties
         are available/where to learn more."""
+
         try:
             return super().__getattribute__(item)
         except AttributeError as e:
+            if item in SAVER_REGISTRY:
+                # In this case we want to dynamically access it after registering
+                # This is so that we can register post-importing
+                # Note that this will register all new ones in bulk --
+                # which will (in most cases) be a one-time-cost
+                _set_materializer_attrs()
+                return super().__getattribute__(item)
             raise AttributeError(
                 f"No data materializer named: {item}. "
-                f"Available materializers are: {SAVER_REGISTRY.keys()}. "
-                "If you've gotten to this point, you either (1) spelled the "
-                "materializer name wrong, (2) are trying to use a materializer that does"
-                "not exist (yet). For a list of available materializers, see  "
+                f"Available materializers are: {list(SAVER_REGISTRY.keys())}. "
+                "If you've gotten to this point, you either (1) Have created the custom materializer and not "
+                "registered it (in which case, call registry.register_adapter...) "
+                "(2) spelled the materializer name wrong, or (e) are trying to use a materialiazer that does"
+                "not exist (yet). For a list of available materialiazers, see  "
                 "https://hamilton.readthedocs.io/reference/io/available-data-adapters/#data"
                 "-loaders "
             ) from e
@@ -67,8 +76,12 @@ class extractor_meta__(type):
         try:
             return super().__getattribute__(item)
         except AttributeError as e:
+            if item in LOADER_REGISTRY:
+                # See note on data savers/__getattr__ above
+                _set_materializer_attrs()
+                return super().__getattribute__(item)
             raise AttributeError(
-                f"No data loadder named: {item}. "
+                f"No data loader named: {item}. "
                 f"Available loaders are: {LOADER_REGISTRY.keys()}. "
                 "If you've gotten to this point, you either (1) spelled the "
                 "loader name wrong, (2) are trying to use a loader that does"
