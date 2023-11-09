@@ -23,6 +23,7 @@ if not registry.INITIALIZED:
     plugins_modules = [
         "numpy",
         "pandas",
+        "plotly",
         "polars",
         "pyspark_pandas",
         "spark",

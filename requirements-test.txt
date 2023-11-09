@@ -1,10 +1,12 @@
 fsspec
 graphviz
+kaleido
 lightgbm
 lxml
 lz4
 matplotlib
 networkx
+plotly
 polars
 pyarrow
 pytest
