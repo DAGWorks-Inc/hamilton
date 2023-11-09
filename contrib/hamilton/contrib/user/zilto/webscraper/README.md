@@ -2,10 +2,9 @@
 
 This module implements a simple webscraper that collects the specified HTML tags and removes undesirable ones. Simply give it a list of URLs.
 
-Timeout and retry logic for HTTP request is implemented using the `tenacity` package
+Timeout and retry logic for HTTP request is implemented using the `tenacity` package.
 
 # Configuration Options
-## Config.when
 This module doesn't receive any configuration.
 
 ## Inputs
