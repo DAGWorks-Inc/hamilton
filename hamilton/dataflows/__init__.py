@@ -93,7 +93,7 @@ def _get_request(url: str) -> Tuple[int, str]:
 
 @_track_function_call
 def clear_storage():
-    """Clears all the data under DATAFLOW_FOLDER."""
+    """Clears all the data under DATAFLOW_FOLDER. By default its "~/.hamilton/dataflows"."""
     if os.path.exists(DATAFLOW_FOLDER):
         shutil.rmtree(DATAFLOW_FOLDER)
         logger.info(f"Cleared storage at {DATAFLOW_FOLDER}")
@@ -107,9 +107,9 @@ last_resolve_value = None
 
 
 @_track_function_call
-def resolve_latest(branch: str = "main") -> str:
-    """Resolves
-    https://api.github.com/repos/DAGWorks-Inc/hamilton/git/refs/heads/main
+def resolve_latest_branch_commit(branch: str = "main") -> str:
+    """Resolves https://api.github.com/repos/DAGWorks-Inc/hamilton/git/refs/heads/{branch}
+
     :return: commit for what "main" is.
     """
     global last_time_called
@@ -132,18 +132,19 @@ def resolve_latest(branch: str = "main") -> str:
 
 
 @_track_function_call
-def resolve_dataflow_commit(dataflow: str, user: str = None) -> str:
-    """Resolves the commit for a dataflow.
+def latest_commit(dataflow: str, user: str = None) -> str:
+    """Determines the latest commit for a dataflow.
 
-    :param dataflow:
-    :param user:
-    :return:
+    This is useful to know if you want to pull the latest version of a dataflow.
+
+    :param dataflow: the string name of the dataflow
+    :param user: the name of the user. None if official.
+    :return: the commit sha.
     """
     if user:
         url = f"https://hub.dagworks.io/commits/Users/{user}/{dataflow}/commit.txt"
     else:
         url = f"https://hub.dagworks.io/commits/Official/{dataflow}/commit.txt"
-    # response = requests.get(url)
     status_code, text = _get_request(url)
     if status_code != 200:
         raise ValueError(
@@ -152,6 +153,7 @@ def resolve_dataflow_commit(dataflow: str, user: str = None) -> str:
     chunk_index = text.find("[commit::")
     if chunk_index < 0:
         raise ValueError("No commit found")
+    # Gets the latest commit from potentially multiple.
     commit = text[chunk_index + len("[commit::") :]
     commit_sha = commit[: commit.find("]")]
     return commit_sha
@@ -159,23 +161,24 @@ def resolve_dataflow_commit(dataflow: str, user: str = None) -> str:
 
 @_track_function_call
 def pull_module(dataflow: str, user: str = None, version: str = "latest", overwrite: bool = False):
-    """Pulls a dataflow
+    """Pulls a dataflow module.
 
-    Saves to current working directory so that an import should just work right after doing this.
-    1. create URL
-    2. pull dataflow
-    3. save to location
+    Saves to hamilton.dataflow.USER_PATH. An import should just work right after doing this.
 
-    Warn if overwriting the location.
+    It performs the following:
+
+      1. Creates a URL to pull from github.
+      2. Pulls the code for the dataflow.
+      3. Save to the local location based on hamilton.dataflow.USER_PATH.
 
     :param dataflow: the dataflow name.
-    :param user: the user's github handle
-    :param version: the commit version. Latest is the default.
-    :param overwrite: whether to overwrite.
-    :return:
+    :param user: the user's github handle.
+    :param version: the commit version. "latest" will resolve to the most recent commit, else pass \
+        a commit SHA.
+    :param overwrite: whether to overwrite. Default is False.
     """
     if version == "latest":
-        version = resolve_dataflow_commit(dataflow, user)
+        version = latest_commit(dataflow, user)
     if user:
         _track_download(False, user, dataflow, version)
         logger.info(f"pulling dataflow {user}/{dataflow} with version {version}")
@@ -213,16 +216,35 @@ def pull_module(dataflow: str, user: str = None, version: str = "latest", overwr
 def import_module(
     dataflow: str, user: str = None, version: str = "latest", overwrite: bool = False
 ) -> ModuleType:
-    """Pulls & imports dataflow
+    """Pulls & imports dataflow code from github and returns a module.
 
-    :param dataflow:
+    .. code-block:: python
+
+        from hamilton import dataflow, driver
+        # downloads into ~/.hamilton/dataflows and loads the module -- WARNING: ensure you know what code you're importing!
+        # NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW") # if using official dataflow
+        NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
+        dr = (
+          driver.Builder()
+          .with_config({})  # replace with configuration as appropriate
+          .with_modules(NAME_OF_DATAFLOW)
+          .build()
+        )
+        # execute the dataflow, specifying what you want back. Will return a dictionary.
+        result = dr.execute(
+          [NAME_OF_DATAFLOW.FUNCTION_NAME, ...],  # this specifies what you want back
+          inputs={...}  # pass in inputs as appropriate
+        )
+
+    :param dataflow: the name of the dataflow.
     :param user: Optional. If none it assumes official.
-    :param version:
-    :param overwrite:
-    :return:
+    :param version: the version to get. "latest" will resolve to the most recent commit. \
+        Otherwise pass a the commit SHA you want to pull.
+    :param overwrite: whether to overwrite the local path. Default is False.
+    :return: a Module that you can then pass to Hamilton.
     """
     if version == "latest":
-        version = resolve_dataflow_commit(dataflow, user)
+        version = latest_commit(dataflow, user)
     if user:
         local_file_path = (
             USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow) + "/__init__.py"
@@ -258,16 +280,25 @@ class InspectResult(NamedTuple):
 
 @_track_function_call
 def inspect(user: str, dataflow: str, version: str = "latest") -> InspectResult:
-    """Inspects the dataflow for information
+    """Inspects a dataflow for information.
 
-    - python deps  (people will have to pin/hamilton version things too)
-    - inputs
-    - nodes
-    - designated outputs
-    - commit hash
+    This is a helper function to get information about a dataflow that exists locally.
+    It does not get more information because we don't want to assume we can import the module.
+
+    .. code-block:: python
+
+        from hamilton import dataflows
+
+        info = dataflows.inspect("zilto", "text_summarization")
+
+    :param user: the github name of the user.
+    :param dataflow: the dataflow name.
+    :param version: the version to inspect. "latest" will resolve to the most recent commit, else pass \
+       a commit SHA.
+    :return: hamilton.dataflow.InspectResult object that contains version, user URL, dataflow URL, python dependencies, configurations.
     """
     if version == "latest":
-        version = resolve_dataflow_commit(dataflow, user)
+        version = latest_commit(dataflow, user)
 
     local_file_path = USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow)
     if not os.path.exists(local_file_path):
@@ -293,19 +324,37 @@ def inspect(user: str, dataflow: str, version: str = "latest") -> InspectResult:
     return InspectResult(**info)
 
 
-@_track_function_call
-def inspect_module(module: ModuleType) -> dict:
-    """Inspects the dataflow for information
+class InspectModuleResult(NamedTuple):
+    version: str  # git commit sha/package version
+    user: str  # github user URL
+    dataflow: str  # dataflow URL
+    python_dependencies: List[str]  # python dependencies
+    configurations: List[str]  # configurations for the dataflow stored as a JSON string
+    possible_inputs: List[Tuple[str, Type]]
+    nodes: List[Tuple[str, Type]]
+    designated_outputs: List[Tuple[str, Type]]
 
-    - python deps  (people will have to pin/hamilton version things too)
-    - inputs
-    - nodes
-    - designated outputs
-    - commit hash
+
+@_track_function_call
+def inspect_module(module: ModuleType) -> InspectModuleResult:
+    """Inspects the import module for information.
+
+    This does more than `inspect` because the module has been loaded and thus
+    we can put it into a Hamilton driver and ask questions of it.
+
+    .. code-block:: python
+
+        from hamilton.contrib.user.zilto import text_summarization
+        from hamilton import dataflows
+
+        info = dataflows.inspect_module(text_summarization)
+
+    :param module: the module with Hamilton code to deeply introspect.
+    :return: hamilton.dataflow.InspectModuleResult object.
     """
     if not module.__file__.startswith(DATAFLOW_FOLDER):
         logger.info("not a downloaded dataflow module.")
-        return {}
+        return None
     user = module.__file__.split("/")[-3]
     dataflow = module.__file__.split("/")[-2]
     version = module.__version__
@@ -317,11 +366,11 @@ def inspect_module(module: ModuleType) -> dict:
         )
     # return dictionary of python deps, inputs, nodes, designated outputs, commit hash
     info: Dict[str, Union[str, List[Dict], List[str], List[Tuple[str, Type]]]] = {
-        "git-reference/version": version,
+        "version": version,
         "user": f"https://github.com/{user}",
         "dataflow": f"https://github.com/dagworks-inc/hamilton/tree/{version}/contrib/contrib/user/{user}/{dataflow}",
         "python_dependencies": [],
-        "inputs": [],
+        "possible_inputs": [],
         "nodes": [],
         "designated_outputs": [],
         "configurations": [],
@@ -337,22 +386,23 @@ def inspect_module(module: ModuleType) -> dict:
 
     dr = driver.Driver(info["configurations"][0], module)
     vars = dr.list_available_variables()
-    info["inputs"] = [(var.name, var.type) for var in vars if var.is_external_input]
+    info["possible_inputs"] = [(var.name, var.type) for var in vars if var.is_external_input]
     info["nodes"] = [(var.name, var.type) for var in vars if not var.is_external_input]
     info["designated_outputs"] = [
         (var.name, var.type) for var in vars if var.tags.get("designated_output", False) == "True"
     ]
-    return info
+    return InspectModuleResult(**info)
 
 
 @_track_function_call
-def install_dependencies(user: str, dataflow: str, version: str = "latest") -> str:
+def install_dependencies_string(user: str, dataflow: str, version: str = "latest") -> str:
     """Returns a string for the user to install dependencies.
 
-    :param user:
-    :param dataflow:
-    :param version:
-    :return:
+    :param user: the github name of the user.
+    :param dataflow: the name of the dataflow.
+    :param version: the version to inspect. "latest" will resolve to the most recent commit, else pass \
+         a commit SHA.
+    :return: pip install string to use.
     """
     local_file_path = USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow)
     if not os.path.exists(local_file_path):
@@ -368,15 +418,17 @@ from importlib.metadata import version as pkg_version
 
 
 @_track_function_call
-def are_py_dependencies_satisfied(user, dataflow, version="latest", engine: str = "pip"):
-    """Given a commit_ish, user & dataflow, reads the requirements.txt and checks if
+def are_py_dependencies_satisfied(user, dataflow, version="latest"):
+    """Given a commit_ish, user & dataflow, reads the requirements.txt and checks if \
     those dependencies have been satisfied in the currently running python interpreter.
 
-    :param user:
-    :param dataflow:
-    :param version:
-    :param engine: pip; conda not supported yet.
-    :return:
+    Note: this does not handle versions. Just whether the package is installed or not.
+
+    :param user: the github name of the user.
+    :param dataflow: the name of the dataflow.
+    :param version: the version to inspect. "latest" will resolve to the most recent commit, else pass \
+         a commit SHA.
+    :return: boolean whether the dependencies are satisfied.
     """
     if version == "latest":
         version = "main"
@@ -422,15 +474,16 @@ def are_py_dependencies_satisfied(user, dataflow, version="latest", engine: str 
 
 
 @_track_function_call
-def list_dataflows(commit_ish: str = "latest", user: str = None):
+def list(version: str = "latest", user: str = None) -> list:
     """Lists dataflows locally downloaded based on commit_ish and user.
 
-    :param commit_ish:
-    :param user:
-    :return:
+    :param version: the version to inspect. "latest" will resolve to the most recent commit, else pass \
+         a commit SHA.
+    :param user: the github name of the user.
+    :return: list of tuples of (version, user, dataflow)
     """
-    if commit_ish == "latest":
-        commit_ish = "main"
+    if version == "latest":
+        version = "main"
     if not os.path.exists(DATAFLOW_FOLDER):
         # TODO better error message here.
         logger.info(f"Folder {DATAFLOW_FOLDER} does not exist.")
@@ -440,7 +493,7 @@ def list_dataflows(commit_ish: str = "latest", user: str = None):
 
     for ci in os.listdir(DATAFLOW_FOLDER):
         if (
-            (commit_ish and ci != commit_ish)
+            (version and ci != version)
             or os.path.isfile(os.path.join(DATAFLOW_FOLDER, ci))
             or ci.startswith(".")
         ):
@@ -466,12 +519,14 @@ def list_dataflows(commit_ish: str = "latest", user: str = None):
 
 
 @_track_function_call
-def find(query: str, commit_ish: str = None, user: str = None):
+def find(query: str, version: str = None, user: str = None):
     """Searches for locally downloaded dataflows based on a query string.
-    :param query:
-    :param commit_ish:
-    :param user:
-    :return:
+
+    :param query: key words to search for.
+    :param version: the version to inspect. "latest" will resolve to the most recent commit, else pass \
+         a commit SHA.
+    :param user: the github name of the user.
+    :return: list of tuples of (version, user, dataflow)
     """
     if not os.path.exists(DATAFLOW_FOLDER):
         logger.info(f"Folder {DATAFLOW_FOLDER} does not exist.")
@@ -481,7 +536,7 @@ def find(query: str, commit_ish: str = None, user: str = None):
 
     for ci in os.listdir(DATAFLOW_FOLDER):
         if (
-            (commit_ish and ci != commit_ish)
+            (version and ci != version)
             or os.path.isfile(os.path.join(DATAFLOW_FOLDER, ci))
             or ci.startswith(".")
         ):
@@ -513,23 +568,39 @@ def find(query: str, commit_ish: str = None, user: str = None):
 
 
 @_track_function_call
-def copy(dataflow: ModuleType, destination_path: str, overwrite: bool = False):
+def copy(
+    dataflow: ModuleType, destination_path: str, overwrite: bool = False, renamed_module: str = None
+):
     """Copies a dataflow module to the passed in path.
+
+    .. code-block:: python
+
+        from hamilton import dataflow
+
+        # dynamically pull and then copy
+        NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
+        dataflow.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
+        # copy from the installed library
+        from hamilton.contrib.user.NAME_OF_USER import NAME_OF_DATAFLOW
+        dataflow.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
 
     :param dataflow: the module to copy.
     :param destination_path: the path to a directory to place the module in.
     :param overwrite: whether to overwrite the destination. Default is False and raise an error.
+    :param renamed_module: whether to rename the copied module. Default is None and will use the original name.
     """
     # make sure the module exists and has a file to copy
     if not os.path.exists(dataflow.__file__):
         raise ValueError(f"Dataflow {dataflow.__name__} does not exist locally. Not copying.")
-    # make sure path string ends with a slash
-    if not destination_path.endswith("/"):
-        destination_path += "/"
-    # get the module name
-    module_name = dataflow.__name__.split(".")[-1]
+
+    if renamed_module:  # rename the module
+        module_name = renamed_module
+    else:
+        # get the module name
+        module_name = dataflow.__name__.split(".")[-1]
+
     # append the module name to the destination path
-    destination_path += module_name
+    destination_path = os.path.join(destination_path, module_name)
     # make the directories if they don't exist
     if not os.path.exists(destination_path):
         os.makedirs(destination_path, exist_ok=True)
@@ -571,7 +642,7 @@ if __name__ == "__main__":
     dr.display_all_functions("./dag", {"format": "png", "view": False})
 
     logger.info("Listing dataflows ---")
-    dfs = list_dataflows(commit_ish=None, user="zilto")
+    dfs = list(version=None, user="zilto")
     logger.info(dfs)
     logger.info("Listing chunks ---")
     chunks = find("chunk")
@@ -583,9 +654,16 @@ if __name__ == "__main__":
     logger.info("Inspect module output ---")
     logger.info(pprint.pformat(inspect_module(_module)))
     logger.info("Resolve dataflow commit output ---")
-    _version = resolve_dataflow_commit(_dataflow, _user)
+    _version = latest_commit(_dataflow, _user)
     logger.info(_version)
     logger.info("Install dependencies output ---")
-    logger.info(install_dependencies(_user, _dataflow, _version))
+    logger.info(install_dependencies_string(_user, _dataflow, _version))
     logger.info("Inspect output ---")
     logger.info(inspect(_user, _dataflow, _version))
+
+    copy(
+        text_summarization,
+        destination_path="~/temp/",
+        overwrite=True,
+        renamed_module="text_summarization_copy",
+    )

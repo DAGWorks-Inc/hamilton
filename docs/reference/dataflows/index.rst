@@ -1,0 +1,26 @@
+==============
+Dataflows
+==============
+
+Here lies reference documentation for `dataflow` module functions that
+integrate with the `hub.dagworks.io <https://hub.dagworks.io>`_ so you can pull off-the-shelf dataflows
+and get started quickly with Hamilton.
+
+See :doc:`../../getting-started/hamilton-hub` for more information.
+
+Reference Documentation
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+   :maxdepth: 1
+
+   clear_storage
+   copy
+   find
+   import_module
+   inspect
+   inspect_module
+   install_dependencies_string
+   latest_commit
+   list
+   pull_module
