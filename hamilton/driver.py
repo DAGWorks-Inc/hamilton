@@ -521,7 +521,14 @@ class Driver:
 
     @capture_function_usage
     def display_all_functions(
-        self, output_file_path: str = None, render_kwargs: dict = None, graphviz_kwargs: dict = None
+        self,
+        output_file_path: str = None,
+        render_kwargs: dict = None,
+        graphviz_kwargs: dict = None,
+        show_legend: bool = True,
+        orient: str = "LR",
+        hide_inputs: bool = False,
+        deduplicate_inputs: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays the graph of all functions loaded!
 
@@ -533,11 +540,26 @@ class Driver:
         :param graphviz_kwargs: Optional. Kwargs to be passed to the graphviz graph object to configure it.
             E.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
             See https://graphviz.org/doc/info/attrs.html for options.
+        :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
+        :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
+            `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+            see (https://graphviz.org/docs/attr-types/rankdir/)
+        :param hide_inputs: If True, no input nodes are displayed.
+        :param deduplicate_inputs: If True, remove duplicate input nodes.
+            Can improve readability depending on the specifics of the DAG.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
         try:
-            return self.graph.display_all(output_file_path, render_kwargs, graphviz_kwargs)
+            return self.graph.display_all(
+                output_file_path,
+                render_kwargs,
+                graphviz_kwargs,
+                show_legend=show_legend,
+                orient=orient,
+                hide_inputs=hide_inputs,
+                deduplicate_inputs=deduplicate_inputs,
+            )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
 
