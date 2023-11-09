@@ -15,7 +15,7 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/",
     "announcement": "📢 Find Hamilton next at "
-    + '<a target="_blank" href="https://www.featurestoresummit.com/">Feature Store Summit\'23</a>📢',
+    + '<a target="_blank" href="https://www.scale.bythebay.io/schedule">Scale By The Bay\'23</a>📢',
     "light_css_variables": {
         "color-announcement-background": "#ffba00",
         "color-announcement-text": "#091E42",
