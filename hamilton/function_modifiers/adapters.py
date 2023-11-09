@@ -468,8 +468,8 @@ class save_to__meta__(type):
             return super().__getattribute__(item)
         except AttributeError as e:
             raise AttributeError(
-                "No saver named: {item} available for {cls.__name__}. "
-                "Available data savers are: {list(SAVER_REGISTRY.keys())}. "
+                f"No saver named: {item} available for {cls.__name__}. "
+                f"Available data savers are: {list(SAVER_REGISTRY.keys())}. "
                 "If you've gotten to this point, you either (1) spelled the "
                 "loader name wrong, (2) are trying to use a saver that does"
                 "not exist (yet). For a list of available savers, see "

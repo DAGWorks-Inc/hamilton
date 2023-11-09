@@ -43,6 +43,10 @@ If you want to extend these, see :doc:`/reference/io/available-data-adapters` fo
 and `the example <https://github.com/DAGWorks-Inc/hamilton/blob/main/examples/materialization/README.md>`_
 in the repository for an example of how to do so.
 
+Note that you will need to call `registry.register_adapters` (or import a module that does that)
+prior to dynamically referring to these in the code -- otherwise we won't know about them, and
+won't be able to access that key!
+
 =============
 Data Loaders
 =============
