@@ -39,6 +39,7 @@ contributing
 :hidden: True
 :caption: REFERENCE
 
+reference/dataflows/index
 reference/decorators/index
 reference/drivers/index
 reference/io/index
