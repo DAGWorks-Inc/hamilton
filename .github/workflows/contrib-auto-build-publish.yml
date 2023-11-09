@@ -3,7 +3,7 @@ name: Publish SF Hamilton Contrib Python Package
 on:
   push:
     branches:
-      - main  # or the branch of your choice
+      - hub_improvements  # or the branch of your choice
 
 jobs:
   publish-to-pypi:
