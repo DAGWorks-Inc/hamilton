@@ -6,8 +6,8 @@ This module implements simple operations to interact with LanceDB.
 This module doesn't receive any configuration.
 
 ## Inputs:
- - `schema`: To create a new table, you need to specified a pyarrow schema
- - `overwrite_table`: Allows you to overwrite existing table
+ - `schema`: To create a new table, you need to specify a pyarrow schema.
+ - `overwrite_table`: Allows you to overwrite an existing table.
 
 
 # Limitations
