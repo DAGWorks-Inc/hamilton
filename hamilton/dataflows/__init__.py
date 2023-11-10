@@ -39,7 +39,7 @@ COMMON_PATH = "{commit_ish}/contrib/hamilton/contrib"
 BASE_URL = f"https://raw.githubusercontent.com/dagworks-inc/hamilton/{COMMON_PATH}"
 DATAFLOW_FOLDER = os.path.expanduser("~/.hamilton/dataflows")
 USER_PATH = DATAFLOW_FOLDER + "/" + COMMON_PATH + "/user/{user}/{dataflow}"
-OFFICIAL_PATH = DATAFLOW_FOLDER + "/" + COMMON_PATH + "/official/{dataflow}"
+OFFICIAL_PATH = DATAFLOW_FOLDER + "/" + COMMON_PATH + "/dagworks/{dataflow}"
 
 
 def _track_function_call(call_fn: Callable) -> Callable:

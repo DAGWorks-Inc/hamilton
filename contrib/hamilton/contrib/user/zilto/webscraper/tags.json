@@ -3,5 +3,8 @@
   "use_case_tags": ["webscraper"],
   "secondary_tags": {
     "language": "English"
+  },
+  "driver_tags": {
+    "executor": "multithreading"
   }
 }
