@@ -1,0 +1,3 @@
+lancedb
+pyarrow
+sf-hamilton[visualization]
