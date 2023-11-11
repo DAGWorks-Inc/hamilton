@@ -44,6 +44,7 @@ END_EVENT = "os_hamilton_run_end"
 DRIVER_FUNCTION = "os_hamilton_driver_function_call"
 DATAFLOW_FUNCTION = "os_hamilton_dataflow_function_call"
 DATAFLOW_DOWNLOAD = "os_hamilton_dataflow_download_call"
+DATAFLOW_IMPORT = "os_hamilton_dataflow_import_call"
 TIMEOUT = 2
 MAX_COUNT_SESSION = 1000
 
@@ -278,14 +279,17 @@ def create_dataflow_function_invocation_event_json(canonical_function_name: str)
 
 
 def create_dataflow_download_event_json(
-    category: str, user: str, dataflow_name: str, version: str
+    category: str,
+    user: str,
+    dataflow_name: str,
+    version: str,
 ) -> dict:
     """Function that creates JSON to track dataflow download calls.
 
-    :param category: the category of the dataflow. OFFICIAL or USER.
+    :param category: the category of the dataflow. DAGWORKS or USER.
     :param user: the user's github handle, if applicable.
     :param dataflow_name: the name of the dataflow.
-    :param version: the git commit version of the dataflow, OR the sf-hamilton-contrib package version.
+    :param version: the git commit version of the dataflow, OR the sf-hamilton-contrib package version, or __dynamic__.
     :return: dictionary representing the event.
     """
     event = {
@@ -294,7 +298,7 @@ def create_dataflow_download_event_json(
         "properties": {},
     }
     event["properties"].update(BASE_PROPERTIES)
-    _category = "OFFICIAL" if category == "OFFICIAL" else "USER"
+    _category = "DAGWORKS" if category == "DAGWORKS" else "USER"
 
     payload = {
         "category": _category,
@@ -310,21 +314,40 @@ def create_dataflow_download_event_json(
 def create_and_send_contrib_use(module_name: str, version: str):
     """Function to send contrib module use -- this is used from the contrib package.
 
-    :param module_name: the name of the module
+    :param module_name: the name of the module, or file location of the code.
     :param version: the package version.
     """
     if module_name == "__main__" or module_name == "__init__":
         return
     try:
-        parts = module_name.split(".")
-        if "official" in parts:
-            category = "OFFICIAL"
+        # we need to handle the case that sf-hamilton-contrib is not installed.
+        # if that's the case the file location will be the module name.
+        if ".py" in module_name:
+            contrib_index = module_name.rfind("/contrib/")
+            if contrib_index == -1:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        "Encountered error while constructing create_and_send_contrib_use."
+                    )
+                return
+            parts = module_name[contrib_index:].split(os.sep)[1:-1]
+            dataflows_index = module_name.find("/dataflows/")
+            # get the commit sha out as the version
+            version = module_name[
+                dataflows_index + len("/dataflows/") : module_name.find("/contrib/")
+            ]
+        else:
+            parts = module_name.split(".")
+            version = "sf-contrib-" + ".".join(map(str, version))
+        if "dagworks" in parts:
+            category = "DAGWORKS"
+            user = None
         else:
             category = "USER"
             user = parts[-2]
         dataflow = parts[-1]
-        version = "sf-contrib-" + ".".join(map(str, version))
         event_json = create_dataflow_download_event_json(category, user, dataflow, version)
+        event_json["event"] = DATAFLOW_IMPORT  # overwrite the event name.
     except Exception as e:
         # capture any exception!
         if logger.isEnabledFor(logging.DEBUG):
