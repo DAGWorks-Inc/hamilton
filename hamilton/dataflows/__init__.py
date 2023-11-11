@@ -39,7 +39,7 @@ COMMON_PATH = "{commit_ish}/contrib/hamilton/contrib"
 BASE_URL = f"https://raw.githubusercontent.com/dagworks-inc/hamilton/{COMMON_PATH}"
 DATAFLOW_FOLDER = os.path.expanduser("~/.hamilton/dataflows")
 USER_PATH = DATAFLOW_FOLDER + "/" + COMMON_PATH + "/user/{user}/{dataflow}"
-OFFICIAL_PATH = DATAFLOW_FOLDER + "/" + COMMON_PATH + "/official/{dataflow}"
+OFFICIAL_PATH = DATAFLOW_FOLDER + "/" + COMMON_PATH + "/dagworks/{dataflow}"
 
 
 def _track_function_call(call_fn: Callable) -> Callable:
@@ -67,7 +67,7 @@ def _track_download(is_official: bool, user: Optional[str], dataflow_name: str, 
     :param version: the version. Either git hash, or the package version.
     """
     if is_official:
-        category = "OFFICIAL"
+        category = "DAGWORKS"
     else:
         category = "USER"
     event_json = telemetry.create_dataflow_download_event_json(

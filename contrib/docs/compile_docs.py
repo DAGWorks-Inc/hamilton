@@ -15,15 +15,17 @@ import os
 import shutil
 import subprocess
 
+import jinja2
+
 from hamilton.function_modifiers import config
 from hamilton.htypes import Collect, Parallelizable
 
 DATAFLOW_FOLDER = ".."
 USER_PATH = DATAFLOW_FOLDER + "/hamilton/contrib/user"
-OFFICIAL_PATH = DATAFLOW_FOLDER + "/hamilton/contrib/official"
+DAGWORKS_PATH = DATAFLOW_FOLDER + "/hamilton/contrib/dagworks"
 
 
-@config.when(is_official="False")
+@config.when(is_dagworks="False")
 def user__usr(path: str) -> Parallelizable[dict]:
     """Find all users in the contrib/user folder."""
     for _user in os.listdir(path):
@@ -36,10 +38,10 @@ def user__usr(path: str) -> Parallelizable[dict]:
         yield {"user": _user, "path": os.path.join(path, _user)}
 
 
-@config.when(is_official="True")
-def user__official(path: str) -> Parallelizable[dict]:
-    """Find all users in the contrib/official folder."""
-    yield {"user": "::OFFICIAL::", "path": path}
+@config.when(is_dagworks="True")
+def user__dagworks(path: str) -> Parallelizable[dict]:
+    """Find all users in the contrib/dagworks folder."""
+    yield {"user": "::DAGWORKS::", "path": path}
 
 
 def dataflows(user: dict) -> list[dict]:
@@ -127,71 +129,8 @@ def dataflows_with_everything(
 
 
 # TEMPLATES!
-python_user_dataflow_template = """from hamilton import dataflow, driver
-# downloads into ~/.hamilton/dataflows and loads the module -- WARNING: ensure you know what code you're importing!
-{MODULE_NAME} = dataflow.import_module("{MODULE_NAME}", "{USER}")
-dr = (
-    driver.Builder()
-    .with_config({{}})  # replace with configuration as appropriate
-    .with_modules({MODULE_NAME})
-    .build()
-)
-# execute the dataflow, specifying what you want back. Will return a dictionary.
-result = dr.execute(
-    [{MODULE_NAME}.CHANGE_ME, ...],  # this specifies what you want back
-    inputs={{...}}  # pass in inputs as appropriate
-)
-"""
-
-python_official_dataflow_template = """from hamilton import dataflow, driver
-# downloads into ~/.hamilton/dataflows and loads the module
-{MODULE_NAME} = dataflow.import_module("{MODULE_NAME}")
-dr = (
-    driver.Builder()
-    .with_config({{}})  # replace with configuration as appropriate
-    .with_modules({MODULE_NAME})
-    .build()
-)
-# execute the dataflow, specifying what you want back. Will return a dictionary.
-result = dr.execute(
-    [{MODULE_NAME}.CHANGE_ME, ...],  # this specifies what you want back
-    inputs={{...}}  # pass in inputs as appropriate
-)
-"""
-
-python_user_import_template = """# pip install sf-hamilton-contrib==0.0.1rc1
-from hamilton import driver
-from hamilton.contrib.user.{USER} import {MODULE_NAME}
-
-dr = (
-    driver.Builder()
-    .with_config({{}})  # replace with configuration as appropriate
-    .with_modules({MODULE_NAME})
-    .build()
-)
-# execute the dataflow, specifying what you want back. Will return a dictionary.
-result = dr.execute(
-    [{MODULE_NAME}..., ...],  # this specifies what you want back
-    inputs={{...}}  # pass in inputs as appropriate
-)
-"""
-
-python_official_import_template = """# pip install sf-hamilton-contrib==0.0.1rc1
-from hamilton import driver
-from hamilton.contrib.official import {MODULE_NAME}
-
-dr = (
-    driver.Builder()
-    .with_config({{}})  # replace with configuration as appropriate
-    .with_modules({MODULE_NAME})
-    .build()
-)
-# execute the dataflow, specifying what you want back. Will return a dictionary.
-result = dr.execute(
-    [{MODULE_NAME}..., ...],  # this specifies what you want back
-    inputs={{...}}  # pass in inputs as appropriate
-)
-"""
+template_env = jinja2.Environment(loader=jinja2.FileSystemLoader("templates/"))
+builder_template = template_env.get_template("driver_builder.py.jinja2")
 
 mdx_template = """---
 id: {USER}-{DATAFLOW_NAME}
@@ -214,7 +153,7 @@ import example from '!!raw-loader!./example1.py';
 
 ### Use published library version
 ```bash
-pip install sf-hamilton-contrib==0.0.1rc1  # make sure you have the latest
+pip install sf-hamilton-contrib --upgrade  # make sure you have the latest
 ```
 
 import example2 from '!!raw-loader!./example2.py';
@@ -239,8 +178,8 @@ import requirements from '!!raw-loader!./requirements.txt';
 
 """
 
-mdx_official_template = """---
-id: OFFICIAL-{DATAFLOW_NAME}
+mdx_dagworks_template = """---
+id: DAGWorks-{DATAFLOW_NAME}
 title: {DATAFLOW_NAME}
 tags: {USE_CASE_TAGS}
 ---
@@ -260,7 +199,7 @@ import example from '!!raw-loader!./example1.py';
 
 ### Use published library version
 ```bash
-pip install sf-hamilton-contrib==0.0.1rc1  # make sure you have the latest
+pip install sf-hamilton-contrib --upgrade  # make sure you have the latest
 ```
 
 import example2 from '!!raw-loader!./example2.py';
@@ -286,7 +225,7 @@ import requirements from '!!raw-loader!./requirements.txt';
 # TODO: edit/adjust links to docs, etc.
 
 
-@config.when(is_official="False")
+@config.when(is_dagworks="False")
 def user_dataflows__user(dataflows_with_everything: Collect[list[dict]]) -> dict[str, list[dict]]:
     """Big function that creates the docs for a user."""
     result = {}
@@ -314,17 +253,31 @@ def user_dataflows__user(dataflows_with_everything: Collect[list[dict]]) -> dict
                 ]:
                     continue
                 shutil.copyfile(os.path.join(single_df["path"], file), os.path.join(df_path, file))
+
+            # get tags
+            with open(os.path.join(single_df["path"], "tags.json"), "r") as f:
+                tags = json.load(f)
+            # checks for driver related tags
+            uses_executor = tags.get("driver_tags", {}).get("executor", None)
             # create python file
             with open(os.path.join(df_path, "example1.py"), "w") as f:
                 f.write(
-                    python_user_dataflow_template.format(
-                        MODULE_NAME=single_df["dataflow"], USER=_user_name
+                    builder_template.render(
+                        use_executor=uses_executor,
+                        dynamic_import=True,
+                        is_user=True,
+                        MODULE_NAME=single_df["dataflow"],
+                        USER=_user_name,
                     )
                 )
             with open(os.path.join(df_path, "example2.py"), "w") as f:
                 f.write(
-                    python_user_import_template.format(
-                        MODULE_NAME=single_df["dataflow"], USER=_user_name
+                    builder_template.render(
+                        use_executor=uses_executor,
+                        dynamic_import=False,
+                        is_user=True,
+                        MODULE_NAME=single_df["dataflow"],
+                        USER=_user_name,
                     )
                 )
             # create MDX file
@@ -333,9 +286,6 @@ def user_dataflows__user(dataflows_with_everything: Collect[list[dict]]) -> dict
             readme_string = ""
             for line in readme_lines:
                 readme_string += line.replace("#", "##", 1)
-            # get tags
-            with open(os.path.join(single_df["path"], "tags.json"), "r") as f:
-                tags = json.load(f)
 
             with open(os.path.join(df_path, "README.mdx"), "w") as f:
                 f.write(
@@ -362,28 +312,28 @@ def _create_commit_file(df_path, single_df):
             f.write(f"[commit::{commit}][ts::{ts}]\n")
 
 
-@config.when(is_official="True")
-def user_dataflows__official(
+@config.when(is_dagworks="True")
+def user_dataflows__dagworks(
     dataflows_with_everything: Collect[list[dict]],
 ) -> dict[str, list[dict]]:
-    """Big function that creates the docs for official dataflow."""
+    """Big function that creates the docs for dagworks dataflow."""
     result = {}
-    for _official_dataflows in dataflows_with_everything:
-        if len(_official_dataflows) < 1:
+    for _dagworks_dataflows in dataflows_with_everything:
+        if len(_dagworks_dataflows) < 1:
             continue
-        _user_name = _official_dataflows[0]["user"]
-        result[_user_name] = _official_dataflows
+        _user_name = _dagworks_dataflows[0]["user"]
+        result[_user_name] = _dagworks_dataflows
         # make the folder
-        official_path = os.path.join("docs", "Official")
-        os.makedirs(official_path, exist_ok=True)
+        dagworks_path = os.path.join("docs", "DAGWorks")
+        os.makedirs(dagworks_path, exist_ok=True)
         # copy the author.md file
         shutil.copyfile(
-            _official_dataflows[0]["author_path"], os.path.join(official_path, "index.mdx")
+            _dagworks_dataflows[0]["author_path"], os.path.join(dagworks_path, "index.mdx")
         )
         # make all dataflow folders
-        for single_df in _official_dataflows:
+        for single_df in _dagworks_dataflows:
             # make the folder
-            df_path = os.path.join(official_path, single_df["dataflow"])
+            df_path = os.path.join(dagworks_path, single_df["dataflow"])
             os.makedirs(df_path, exist_ok=True)
             # copy the files
             for file in os.listdir(single_df["path"]):
@@ -396,16 +346,27 @@ def user_dataflows__official(
                 ]:
                     continue
                 shutil.copyfile(os.path.join(single_df["path"], file), os.path.join(df_path, file))
+            # get tags
+            with open(os.path.join(single_df["path"], "tags.json"), "r") as f:
+                tags = json.load(f)
+            # checks for driver related tags
+            uses_executor = tags.get("driver_tags", {}).get("executor", None)
             # create python file
             with open(os.path.join(df_path, "example1.py"), "w") as f:
                 f.write(
-                    python_official_dataflow_template.format(
+                    builder_template.render(
+                        use_executor=uses_executor,
+                        dynamic_import=True,
+                        is_user=False,
                         MODULE_NAME=single_df["dataflow"],
                     )
                 )
             with open(os.path.join(df_path, "example2.py"), "w") as f:
                 f.write(
-                    python_official_import_template.format(
+                    builder_template.render(
+                        use_executor=uses_executor,
+                        dynamic_import=False,
+                        is_user=False,
                         MODULE_NAME=single_df["dataflow"],
                     )
                 )
@@ -415,13 +376,10 @@ def user_dataflows__official(
             readme_string = ""
             for line in readme_lines:
                 readme_string += line.replace("#", "##", 1)
-            # get tags
-            with open(os.path.join(single_df["path"], "tags.json"), "r") as f:
-                tags = json.load(f)
 
             with open(os.path.join(df_path, "README.mdx"), "w") as f:
                 f.write(
-                    mdx_official_template.format(
+                    mdx_dagworks_template.format(
                         DATAFLOW_NAME=single_df["dataflow"],
                         USE_CASE_TAGS=tags["use_case_tags"],
                         README=readme_string,
@@ -443,7 +401,7 @@ if __name__ == "__main__":
     remote_executor = executors.MultiThreadingExecutor(max_tasks=100)
     dr = (
         driver.Builder()
-        .with_config(dict(is_official="False"))
+        .with_config(dict(is_dagworks="False"))
         .enable_dynamic_execution(allow_experimental_mode=True)
         .with_remote_executor(remote_executor)  # We only need to specify remote executor
         # The local executor just runs it synchronously
@@ -463,13 +421,13 @@ if __name__ == "__main__":
 
     dr = (
         driver.Builder()
-        .with_config(dict(is_official="True"))
+        .with_config(dict(is_dagworks="True"))
         .enable_dynamic_execution(allow_experimental_mode=True)
         .with_remote_executor(remote_executor)  # We only need to specify remote executor
         # The local executor just runs it synchronously
         .with_modules(compile_docs)
         .build()
     )
-    res = dr.execute(["user_dataflows"], inputs={"path": OFFICIAL_PATH})
+    res = dr.execute(["user_dataflows"], inputs={"path": DAGWORKS_PATH})
 
     pprint.pprint(res)
