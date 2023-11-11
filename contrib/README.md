@@ -26,11 +26,11 @@ pip install sf-hamilton-contrib --upgrade
 Once installed, you can import the dataflows as follows.
 
 Things you need to know:
-1. Whether it's a user or official dataflow. If user, what the name of the user is.
+1. Whether it's a user or official DAGWorks supported dataflow. If user, what the name of the user is.
 2. The name of the dataflow.
 ```python
 from hamilton import driver
-# from hamilton.contrib.official import NAME_OF_DATAFLOW
+# from hamilton.contrib.dagworks import NAME_OF_DATAFLOW
 from hamilton.contrib.user.NAME_OF_USER import NAME_OF_DATAFLOW
 
 dr = (
@@ -45,6 +45,7 @@ result = dr.execute(
     inputs={...}  # pass in inputs as appropriate
 )
 ```
+To find an example [go to the hub](https://hub.dagworks.io/docs/).
 
 #### Dynamic installation
 Here we dynamically download the dataflow from the internet and execute it. This is useful for quickly
@@ -54,7 +55,7 @@ iterating in a notebook and pulling in just the dataflow you need.
 from hamilton import dataflow, driver
 
 # downloads into ~/.hamilton/dataflows and loads the module -- WARNING: ensure you know what code you're importing!
-# NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW") # if using official dataflow
+# NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW") # if using official DAGWorks dataflow
 NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
 dr = (
   driver.Builder()
@@ -68,11 +69,12 @@ result = dr.execute(
   inputs={...}  # pass in inputs as appropriate
 )
 ```
+To find an example [go to the hub](https://hub.dagworks.io/docs/).
+
 #### Modification
 Getting started is one thing, but then modifying to your needs is another. So we have a prescribed
 flow to enable you to take a dataflow, and copy the code to a place of your choosing. This allows
-you to easily modify the dataflow as you see fit. You will need to adhere to any licenses the code may come with.
-The default, if not specified, is the "BSD-3 clear clause".
+you to easily modify the dataflow as you see fit.
 
 Run this in a notebook or python script to copy the dataflow to a directory of your choosing.
 ```python
@@ -85,6 +87,8 @@ dataflow.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
 from hamilton.contrib.user.NAME_OF_USER import NAME_OF_DATAFLOW
 dataflow.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
 ```
+You can then modify/import the code as you see fit. See [copy()](https://hamilton.dagworks.io/en/latest/reference/dataflows/copy/)
+for more details.
 
 
 ### How to contribute

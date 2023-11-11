@@ -11,13 +11,15 @@ from hamilton.execution import executors
   {%- endif %}
 {%- else %}
   {%- if is_user %}
+# Make sure you've done - `pip install sf-hamilton-contrib --upgrade`
 from hamilton.contrib.user.{{USER}} import {{MODULE_NAME}}
   {%- else %}
+# Make sure you've done - `pip install sf-hamilton-contrib --upgrade`
 from hamilton.contrib.dagworks import {{MODULE_NAME}}
   {%- endif %}
 {%- endif %}
 {%- if use_executor %}
-# switch this out for ray, dask, etc. See docs for more info.
+# Switch this out for ray, dask, etc. See docs for more info.
 remote_executor = executors.MultiThreadingExecutor(max_tasks=20)
 {% endif %}
 dr = (
@@ -29,7 +31,7 @@ dr = (
     .with_modules({{MODULE_NAME}})
     .build()
 )
-# execute the dataflow, specifying what you want back. Will return a dictionary.
+# Execute the dataflow, specifying what you want back. Will return a dictionary.
 result = dr.execute(
     [{{MODULE_NAME}}.CHANGE_ME, ...],  # this specifies what you want back
     inputs={...}  # pass in inputs as appropriate
