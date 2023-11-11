@@ -16,9 +16,9 @@ will move them into the official DAGWorks sub-package of this site and become ma
 DAGWorks's Hamilton team.
 
 ## Navigation
-☝️ Above you'll find a search bar to help you find what you're looking for.
+☝️ Use the search bar above to quickly find dataflows based on keyword search.
 
-👈 On the left hand you'll have the ability to find _User_ and _DAGWorks_ maintained dataflows.
+👈 On the left hand can find dataflows organized by _User_, _DAGWorks_, and tags.
 
 
 ## Usage
