@@ -1,8 +1,8 @@
 import pathlib
 
-import polars as pl
 import pytest
 
+import polars as pl
 from hamilton.plugins.polars_extensions import (
     PolarsAvroReader,
     PolarsAvroWriter,
