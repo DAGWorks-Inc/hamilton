@@ -85,7 +85,9 @@ jobs:
           pip install -e .
       - name: Compile code to create pages
         working-directory: contrib/docs
-        run: python compile_docs.py
+        run: |
+          pip install jinja2
+          python compile_docs.py
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
