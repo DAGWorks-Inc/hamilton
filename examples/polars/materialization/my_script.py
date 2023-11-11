@@ -2,6 +2,7 @@ import logging
 import sys
 
 import polars as pl
+
 from hamilton import driver
 from hamilton.io.materialization import to
 from hamilton.plugins import h_polars

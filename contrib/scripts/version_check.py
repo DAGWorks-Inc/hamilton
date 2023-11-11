@@ -1,8 +1,8 @@
 import requests
-from packaging import version
 
 # Assume CURRENT_VERSION is extracted from your package file
 from hamilton.contrib import version as contrib_version
+from packaging import version
 
 CURRENT_VERSION = ".".join(map(str, contrib_version.VERSION))
 
