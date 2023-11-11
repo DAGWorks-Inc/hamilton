@@ -67,7 +67,7 @@ def _track_download(is_official: bool, user: Optional[str], dataflow_name: str, 
     :param version: the version. Either git hash, or the package version.
     """
     if is_official:
-        category = "OFFICIAL"
+        category = "DAGWORKS"
     else:
         category = "USER"
     event_json = telemetry.create_dataflow_download_event_json(

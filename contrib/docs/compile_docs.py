@@ -41,7 +41,7 @@ def user__usr(path: str) -> Parallelizable[dict]:
 @config.when(is_dagworks="True")
 def user__dagworks(path: str) -> Parallelizable[dict]:
     """Find all users in the contrib/dagworks folder."""
-    yield {"user": "::OFFICIAL::", "path": path}
+    yield {"user": "::DAGWORKS::", "path": path}
 
 
 def dataflows(user: dict) -> list[dict]:

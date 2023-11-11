@@ -289,7 +289,7 @@ def create_dataflow_download_event_json(
     :param category: the category of the dataflow. DAGWORKS or USER.
     :param user: the user's github handle, if applicable.
     :param dataflow_name: the name of the dataflow.
-    :param version: the git commit version of the dataflow, OR the sf-hamilton-contrib package version, or __dynamic__.
+    :param version: the git commit version of the dataflow, OR the sf-hamilton-contrib package version, or __unknown__.
     :return: dictionary representing the event.
     """
     event = {
