@@ -18,10 +18,10 @@ from typing import (
 
 try:
     import polars as pl
+    from polars import PolarsDataType
 except ImportError:
     raise NotImplementedError("Polars is not installed.")
 
-from polars import PolarsDataType
 
 # for polars <0.16.0 we need to determine whether type_aliases exist.
 has_alias = False
