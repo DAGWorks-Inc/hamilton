@@ -1,3 +1,4 @@
 lancedb
+numpy
 pyarrow
 sf-hamilton[visualization]
