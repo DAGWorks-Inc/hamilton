@@ -155,6 +155,7 @@ def full_text_search(
     full_text_index: Union[str, List[str]],
     where: Optional[str] = None,
     limit: int = 10,
+    rebuild_index: bool = True,
 ) -> pd.DataFrame:
     """Search database using an embedding vector.
 
@@ -163,12 +164,14 @@ def full_text_search(
     :param full_text_index: one or more text columns to search
     :param where: SQL where clause to pre- or post-filter results
     :param limit: number of rows to return
+    :param rebuild_index: If True rebuild the index
     :return: A dataframe of results
     """
-
     # NOTE. Currently, the index needs to be recreated whenever data is added
     # ref: https://lancedb.github.io/lancedb/fts/#installation
-    table_ref.create_fts_index(full_text_index)
+    if rebuild_index:
+        table_ref.create_fts_index(full_text_index)
+
     query_ = (
         table_ref.search(query=full_text_query, query_type="fts")
         .select(full_text_index)
