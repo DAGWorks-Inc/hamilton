@@ -10,7 +10,7 @@ from hamilton import contrib
 with contrib.catch_import_errors(__name__, __file__, logger):
     import openai
     import tiktoken
-    from PyPDF2 import PdfReader
+    from pypdf import PdfReader
     from tenacity import retry, stop_after_attempt, wait_random_exponential
     from tqdm import tqdm
 
@@ -189,4 +189,4 @@ if __name__ == "__main__":
         adapter=base.DefaultAdapter(),
     )
     # create the DAG image
-    dr.display_all_functions("dag", {"format": "png", "view": False})
+    dr.display_all_functions("dag", {"format": "png", "view": False}, orient="TB")
