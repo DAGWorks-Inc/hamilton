@@ -86,7 +86,7 @@ class PickleLoader(DataLoader):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [object]
+        return [object, Any]
 
     @classmethod
     def name(cls) -> str:

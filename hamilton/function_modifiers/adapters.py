@@ -104,7 +104,14 @@ def resolve_adapter_class(
     :return: The loader class to use.
     """
     applicable_adapters: List[Type[AdapterCommon]] = []
+    loaders_with_any = []
     for loader_cls in reversed(loader_classes):
+        # We do this here, rather than in applies_to, as its a bit of a special case
+        # Any should always get last priority, as its very non-specific and should be able to
+        # This is partially for backwards compatibility as we haven't always supported these -- including it now
+        # would potentially use the wrong loader for production cases
+        if Any in loader_cls.applicable_types():
+            loaders_with_any.append(loader_cls)
         if loader_cls.applies_to(type_):
             applicable_adapters.append(loader_cls)
     if len(applicable_adapters) > 0:
@@ -114,6 +121,8 @@ def resolve_adapter_class(
                 f"Using the last one registered {applicable_adapters[0]}."
             )
         return applicable_adapters[0]
+    if loaders_with_any:
+        return loaders_with_any[0]
     return None
 
 
