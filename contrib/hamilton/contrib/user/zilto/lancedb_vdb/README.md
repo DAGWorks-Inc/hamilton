@@ -5,7 +5,7 @@ This module implements vector and full-text search using LanceDB.
 # Configuration Options
 This module doesn't receive any configuration.
 
-## Required Inputs:
+## Inputs:
  - `url`: The url to the local LanceDB instance.
  - `table_name`: The name of the table to interact with.
  - `schema`: To create a new table, you need to specify a pyarrow schema.
