@@ -1,13 +1,13 @@
-from hamilton import dataflow, driver
+from hamilton import dataflows, driver
 {%- if use_executor %}
 from hamilton.execution import executors
 {% endif -%}
 {%- if dynamic_import %}
 # downloads into ~/.hamilton/dataflows and loads the module -- WARNING: ensure you know what code you're importing!
   {%- if is_user %}
-{{ MODULE_NAME }} = dataflow.import_module("{{MODULE_NAME}}", "{{USER}}")
+{{ MODULE_NAME }} = dataflows.import_module("{{MODULE_NAME}}", "{{USER}}")
   {%- else %}
-{{ MODULE_NAME }} = dataflow.import_module("{{MODULE_NAME}}")
+{{ MODULE_NAME }} = dataflows.import_module("{{MODULE_NAME}}")
   {%- endif %}
 {%- else %}
   {%- if is_user %}
