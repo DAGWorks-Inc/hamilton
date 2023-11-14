@@ -52,11 +52,11 @@ Here we dynamically download the dataflow from the internet and execute it. This
 iterating in a notebook and pulling in just the dataflow you need.
 
 ```python
-from hamilton import dataflow, driver
+from hamilton import dataflows, driver
 
 # downloads into ~/.hamilton/dataflows and loads the module -- WARNING: ensure you know what code you're importing!
-# NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW") # if using official DAGWorks dataflow
-NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
+# NAME_OF_DATAFLOW = dataflows.import_module("NAME_OF_DATAFLOW") # if using official DAGWorks dataflow
+NAME_OF_DATAFLOW = dataflows.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
 dr = (
   driver.Builder()
   .with_config({})  # replace with configuration as appropriate
@@ -78,14 +78,14 @@ you to easily modify the dataflow as you see fit.
 
 Run this in a notebook or python script to copy the dataflow to a directory of your choosing.
 ```python
-from hamilton import dataflow
+from hamilton import dataflows
 
 # dynamically pull and then copy
-NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
-dataflow.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
+NAME_OF_DATAFLOW = dataflows.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
+dataflows.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
 # copy from the installed library
 from hamilton.contrib.user.NAME_OF_USER import NAME_OF_DATAFLOW
-dataflow.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
+dataflows.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
 ```
 You can then modify/import the code as you see fit. See [copy()](https://hamilton.dagworks.io/en/latest/reference/dataflows/copy/)
 for more details.
