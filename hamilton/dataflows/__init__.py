@@ -148,7 +148,7 @@ def latest_commit(dataflow: str, user: str = None) -> str:
     status_code, text = _get_request(url)
     if status_code != 200:
         raise ValueError(
-            f"Failed to resolve latest commit for {user}/{dataflow}:\n{status_code}\n{text}"
+            f"Failed to resolve latest commit [{url}] for {user}/{dataflow}:\n{status_code}\n{text}"
         )
     chunk_index = text.find("[commit::")
     if chunk_index < 0:
@@ -279,7 +279,7 @@ class InspectResult(NamedTuple):
 
 
 @_track_function_call
-def inspect(user: str, dataflow: str, version: str = "latest") -> InspectResult:
+def inspect(dataflow: str, user: str = None, version: str = "latest") -> InspectResult:
     """Inspects a dataflow for information.
 
     This is a helper function to get information about a dataflow that exists locally.
@@ -289,10 +289,10 @@ def inspect(user: str, dataflow: str, version: str = "latest") -> InspectResult:
 
         from hamilton import dataflows
 
-        info = dataflows.inspect("zilto", "text_summarization")
+        info = dataflows.inspect("text_summarization", "zilto")
 
-    :param user: the github name of the user.
     :param dataflow: the dataflow name.
+    :param user: the github name of the user. None for DAGWorks official.
     :param version: the version to inspect. "latest" will resolve to the most recent commit, else pass \
        a commit SHA.
     :return: hamilton.dataflow.InspectResult object that contains version, user URL, dataflow URL, python dependencies, configurations.
@@ -300,16 +300,27 @@ def inspect(user: str, dataflow: str, version: str = "latest") -> InspectResult:
     if version == "latest":
         version = latest_commit(dataflow, user)
 
-    local_file_path = USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow)
+    if user:
+        local_file_path = USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow)
+        dataflow_url = (
+            f"https://github.com/dagworks-inc/hamilton/tree/{version}/contrib/contrib/user/{user}/{dataflow}",
+        )
+        user_url = f"https://github.com/{user}"
+    else:
+        local_file_path = OFFICIAL_PATH.format(commit_ish=version, dataflow=dataflow)
+        dataflow_url = (
+            f"https://github.com/dagworks-inc/hamilton/tree/{version}/contrib/contrib/dagworks/{dataflow}",
+        )
+        user_url = None
     if not os.path.exists(local_file_path):
         raise ValueError(
-            f"Dataflow {user}/{dataflow} with version {version} does not exist locally. Not inspecting."
+            f"Dataflow {user or 'dagworks'}/{dataflow} with version {version} does not exist locally. Not inspecting."
         )
     # return dictionary of python deps, inputs, nodes, designated outputs, commit hash
     info: Dict[str, Union[str, List[Dict], List[str]]] = {
         "version": version,
-        "user": f"https://github.com/{user}",
-        "dataflow": f"https://github.com/dagworks-inc/hamilton/tree/{version}/contrib/contrib/user/{user}/{dataflow}",
+        "user": user_url,
+        "dataflow": dataflow_url,
         "python_dependencies": [],
         "configurations": [],
     }
@@ -355,20 +366,28 @@ def inspect_module(module: ModuleType) -> InspectModuleResult:
     if not module.__file__.startswith(DATAFLOW_FOLDER):
         logger.info("not a downloaded dataflow module.")
         return None
-    user = module.__file__.split("/")[-3]
-    dataflow = module.__file__.split("/")[-2]
     version = module.__version__
+    dataflow = module.__file__.split("/")[-2]
+    if "hamilton/contrib/dagworks" in module.__file__:
+        user = None
+        local_file_path = OFFICIAL_PATH.format(commit_ish=version, dataflow=dataflow)
+        user_url = None
+        dataflow_url = f"https://github.com/dagworks-inc/hamilton/tree/{version}/contrib/contrib/dagworks/{dataflow}"
+    else:
+        user = module.__file__.split("/")[-3]
+        user_url = f"https://github.com/{user}"
+        local_file_path = USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow)
+        dataflow_url = f"https://github.com/dagworks-inc/hamilton/tree/{version}/contrib/contrib/user/{user}/{dataflow}"
 
-    local_file_path = USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow)
     if not os.path.exists(local_file_path):
         raise ValueError(
-            f"Dataflow {user}/{dataflow} with version {version} does not exist locally. Not inspecting."
+            f"Dataflow {user or 'dagworks'}/{dataflow} with version {version} does not exist locally. Not inspecting."
         )
     # return dictionary of python deps, inputs, nodes, designated outputs, commit hash
     info: Dict[str, Union[str, List[Dict], List[str], List[Tuple[str, Type]]]] = {
         "version": version,
-        "user": f"https://github.com/{user}",
-        "dataflow": f"https://github.com/dagworks-inc/hamilton/tree/{version}/contrib/contrib/user/{user}/{dataflow}",
+        "user": user_url,
+        "dataflow": dataflow_url,
         "python_dependencies": [],
         "possible_inputs": [],
         "nodes": [],
@@ -418,23 +437,28 @@ from importlib.metadata import version as pkg_version
 
 
 @_track_function_call
-def are_py_dependencies_satisfied(user, dataflow, version="latest"):
+def are_py_dependencies_satisfied(dataflow, user=None, version="latest"):
     """Given a commit_ish, user & dataflow, reads the requirements.txt and checks if \
     those dependencies have been satisfied in the currently running python interpreter.
 
     Note: this does not handle versions. Just whether the package is installed or not.
 
-    :param user: the github name of the user.
     :param dataflow: the name of the dataflow.
+    :param user: the github name of the user. None if DAGWorks official.
     :param version: the version to inspect. "latest" will resolve to the most recent commit, else pass \
          a commit SHA.
     :return: boolean whether the dependencies are satisfied.
     """
     if version == "latest":
-        version = "main"
-    requirements_path = (
-        USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow) + "/requirements.txt"
-    )
+        version = latest_commit(dataflow, user)
+    if user:
+        requirements_path = (
+            USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow) + "/requirements.txt"
+        )
+    else:
+        requirements_path = (
+            OFFICIAL_PATH.format(commit_ish=version, dataflow=dataflow) + "/requirements.txt"
+        )
 
     if not os.path.exists(requirements_path):
         logger.info(f"requirements.txt not found at {requirements_path}")
@@ -635,8 +659,6 @@ if __name__ == "__main__":
     _dataflow = "text_summarization"
     _module = import_module(_dataflow, _user, _version, overwrite=True)
 
-    from hamilton.contrib.user.zilto import text_summarization  # noqa:F401
-
     dr = driver.Driver({}, _module)
     # logger.info(dr.list_available_variables())
     dr.display_all_functions("./dag", {"format": "png", "view": False})
@@ -659,11 +681,19 @@ if __name__ == "__main__":
     logger.info("Install dependencies output ---")
     logger.info(install_dependencies_string(_user, _dataflow, _version))
     logger.info("Inspect output ---")
-    logger.info(inspect(_user, _dataflow, _version))
+    logger.info(inspect(_dataflow, _user, _version))
+
+    from hamilton.contrib.user.zilto import text_summarization  # noqa:F401
 
     copy(
         text_summarization,
         destination_path="~/temp/",
         overwrite=True,
         renamed_module="text_summarization_copy",
+    )
+    copy(
+        _module,
+        destination_path="~/temp/",
+        overwrite=True,
+        renamed_module="text_summarization_copy2",
     )
