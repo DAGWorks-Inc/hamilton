@@ -211,6 +211,22 @@ class StringDataLoader(DataLoader):
 
 
 @dataclasses.dataclass
+class AnyDataLoader(DataLoader):
+    value: Any
+
+    def load_data(self, type_: Type) -> Tuple[Any, Dict[str, Any]]:
+        return self.value, {"loader": "any_data_loader"}
+
+    @classmethod
+    def name(cls) -> str:
+        return "dummy"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [Any]
+
+
+@dataclasses.dataclass
 class IntDataLoader(DataLoader):
     def load_data(self, type_: Type) -> Tuple[int, Dict[str, Any]]:
         return 1, {"loader": "int_data_loader"}
@@ -301,6 +317,8 @@ def test_validate_selects_correct_type():
         (str, [IntDataLoader], None),
         (dict, [IntDataLoader], None),
         (dict, [IntDataLoader, StringDataLoader], None),
+        (str, [AnyDataLoader, StringDataLoader], StringDataLoader),
+        (dict, [AnyDataLoader, StringDataLoader], AnyDataLoader),
     ],
 )
 def test_resolve_correct_loader_class(
