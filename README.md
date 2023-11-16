@@ -10,7 +10,7 @@
     <a href="https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg" target="_blank"><img src="https://img.shields.io/badge/Join-Hamilton_Slack-brightgreen?logo=slack" alt="Hamilton Slack"/></a>
         <a href="https://twitter.com/hamilton_os" target="_blank"><img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Twitter"/></a>
         <br/>
-    <a href="https://www.python.org/downloads/" target="_blank"><img src="https://img.shields.io/badge/python-3.7|%203.8|%203.9|%203.10|%203.11-brightgreen.svg" alt="Python supported"/></a>
+    <a href="https://www.python.org/downloads/" target="_blank"><img src="https://img.shields.io/badge/python-3.8|%203.9|%203.10|%203.11|%203.12-brightgreen.svg" alt="Python supported"/></a>
     <a href="https://pypi.org/project/sf-hamilton/" target="_blank"><img src="https://badge.fury.io/py/sf-hamilton.svg" alt="PyPi Version"/></a>
     <a href="https://pepy.tech/project/sf-hamilton" target="_blank"><img src="https://pepy.tech/badge/sf-hamilton" alt="Total Downloads"/></a>
     <br/>
@@ -44,7 +44,7 @@ Here are common things that Hamilton is compared to, and how Hamilton compares t
 
 | Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | dbt | Dask |
 |-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:----:|
-| Python 3.7+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅   |
+| Python 3.8+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅   |
 | Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌   |
 | Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
 | Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
@@ -66,7 +66,7 @@ For the latest updates, follow us on [twitter](https://twitter.com/hamilton_os)!
 ## Installation
 Requirements:
 
-* Python 3.7+
+* Python 3.8+
 
 To get started, first you need to install hamilton. It is published to pypi under `sf-hamilton`:
 > pip install sf-hamilton
