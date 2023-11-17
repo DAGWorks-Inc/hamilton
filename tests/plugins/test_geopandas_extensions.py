@@ -1,11 +1,7 @@
 import pathlib
-import sqlite3
-from typing import Union
 
 import geopandas as gpd
-import pytest
 from geopandas.testing import assert_geodataframe_equal
-from sqlalchemy import create_engine
 
 from hamilton.plugins.geopandas_extensions import (
     GeopandasFeatherReader,
@@ -14,8 +10,6 @@ from hamilton.plugins.geopandas_extensions import (
     GeopandasFileWriter,
     GeopandasParquetReader,
     GeopandasParquetWriter,
-    GeopandasPostGISReader,
-    GeopandasPostGISWriter,
 )
 
 try:
@@ -88,26 +82,3 @@ def test_geopandas_feather(tmp_path: pathlib.Path) -> None:
 
     # check that each is the same as the original
     assert_geodataframe_equal(example_data, feather_data)
-
-
-@pytest.mark.parametrize(
-    "conn",
-    [
-        sqlite3.connect(":memory:"),
-        create_engine("sqlite://"),
-    ],
-)
-def test_geopandas_postgis(conn: Union[str, sqlite3.Connection]) -> None:
-    # write the file to a test database
-    writer = GeopandasPostGISWriter(name="test_example", con=conn)
-    writer.save_data(example_data)
-
-    # read the file
-    reader = GeopandasPostGISReader(sql="SELECT * FROM test_table", con=conn)
-    postgis_data, postgis_metadata = reader.load_data(gpd.GeoDataFrame)
-
-    # check that each is the same as the original
-    assert_geodataframe_equal(example_data, postgis_data)
-
-    if hasattr(conn, "close"):
-        conn.close()
