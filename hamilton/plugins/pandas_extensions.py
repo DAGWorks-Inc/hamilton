@@ -753,7 +753,7 @@ class PandasSqlWriter(DataSaver):
     """
 
     table_name: str
-    db_connection: Union[str, Connection]  # can pass in SQLAlchemy engine/connection
+    db_connection: Any  # can pass in SQLAlchemy engine/connection
     # kwargs
     chunksize: Optional[int] = None
     dtype: Optional[Union[Dtype, Dict[Hashable, Dtype]]] = None
