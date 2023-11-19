@@ -1,14 +1,14 @@
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+
+from hamilton import base, driver
+
+# import the dataflow from the contrib module
+from hamilton.contrib.user.zilto import xgboost_optuna
+from hamilton.io.materialization import to
+from hamilton.plugins import xgboost_extensions  # noqa: F401
+
 if __name__ == "__main__":
-    from sklearn.datasets import load_breast_cancer
-    from sklearn.model_selection import train_test_split
-
-    from hamilton import base, driver
-
-    # import the dataflow from the contrib module
-    from hamilton.contrib.user.zilto import xgboost_optuna
-    from hamilton.io.materialization import to
-    from hamilton.plugins import xgboost_extensions  # noqa: F401
-
     dr = (
         driver.Builder()
         .with_modules(xgboost_optuna)  # use the contrib dataflow

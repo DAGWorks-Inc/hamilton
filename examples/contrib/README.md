@@ -24,3 +24,4 @@ After completing the dynamic installation, the second part of the notebook inclu
 
 
 # Contribute your own dataflow!
+You can find more information on how to contribute in the `contrib` module's [README](https://github.com/DAGWorks-Inc/hamilton/tree/main/contrib)
