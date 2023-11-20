@@ -16,6 +16,7 @@ from hamilton.function_modifiers.dependencies import (
     source,
     value,
 )
+from hamilton.htypes import Collect, Parallelizable
 from hamilton.node import DependencyType
 
 
@@ -748,3 +749,26 @@ def test_parameterize_repeated_sources_with_group():
     )
     (node_,) = annotation.expand_node(node.Node.from_fn(foo), {}, foo)
     assert node_(x=1) == 2
+
+
+def test_parameterize_with_parallelizable():
+    def foo(n: int) -> Parallelizable[int]:
+        for i in range(n):
+            yield i
+
+    annotation = function_modifiers.parameterize(
+        foo=dict(x=source("x"), y=source("x")),
+    )
+    (node_,) = annotation.expand_node(node.Node.from_fn(foo), {}, foo)
+    assert node_.node_role == node.NodeType.EXPAND
+
+
+def test_parameterize_with_collect():
+    def foo(n: Collect[int]) -> int:
+        return sum(n)
+
+    annotation = function_modifiers.parameterize(
+        foo=dict(x=source("x"), y=source("x")),
+    )
+    (node_,) = annotation.expand_node(node.Node.from_fn(foo), {}, foo)
+    assert node_.node_role == node.NodeType.COLLECT

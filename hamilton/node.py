@@ -284,8 +284,8 @@ class Node(object):
             doc_string=self.documentation,
             callabl=self.callable,
             node_source=self.node_role,
-            input_types=self.input_types,
-            tags=self.tags,
+            input_types=self.input_types.copy(),
+            tags=self.tags.copy(),
             originating_functions=self.originating_functions,
         )
         constructor_args.update(**overrides)
