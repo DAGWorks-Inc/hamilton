@@ -5,17 +5,21 @@ By importing `hamilton.plugins.plotly_extensions`, you can register two addition
 ## How to
 You need to install `plotly` (low-level API) to annotate your function with `plotly.graph_objects.Figure` even if you are using `plotly_express` (high-level API) to generate figures.
 ```python
-# 1. define a function returning a plotly.graph_objects.Figure
+# 1. define a function returning a `plotly.graph_objects.Figure` in a python module.
 def confusion_matrix(...) -> plotly.graph_objects.Figure:
     return plotly.express.imshow(...)
 
-
-# 2. register materializers
-from hamilton.plugins import plotly_extensions
-
-# ... create driver
+# 2. import the module and create the Hamilton driver
+dr = (
+    driver.Builder()
+    .with_config({...})
+    .with_modules(MODULE_NAME)
+    .build()
+)
 
 # 3. define the materializers
+from hamilton.io.materialization import to
+
 materializers = [
     to.plotly(
         dependencies=["confusion_matrix_figure"],
