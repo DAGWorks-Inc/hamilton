@@ -1,10 +1,14 @@
 import requests
 from packaging import version
 
-# Assume CURRENT_VERSION is extracted from your package file
-from hamilton.contrib import version as contrib_version
+VERSION = None
+with open("hamilton/contrib/version.py", "r") as f:
+    lines = f.readlines()
+    for line in lines:
+        if line.startswith("VERSION"):
+            exec(line)  # this will set VERSION to the correct tuple.
 
-CURRENT_VERSION = ".".join(map(str, contrib_version.VERSION))
+CURRENT_VERSION = ".".join(map(str, VERSION))
 
 # Replace 'your-package-name' with your actual package name on PyPI
 response = requests.get("https://pypi.org/pypi/sf-hamilton-contrib/json")
