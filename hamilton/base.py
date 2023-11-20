@@ -509,6 +509,10 @@ class SimplePythonGraphAdapter(SimplePythonDataFrameGraphAdapter):
 
     This executes the Hamilton dataflow locally on a machine in a single threaded, single process fashion. It allows\
     you to specify a ResultBuilder to control the return type of what ``execute()`` returns.
+
+    Currently this extends SimplePythonDataFrameGraphAdapter, although that's largely for legacy reasons (and can probably be changed).
+
+    TODO -- change this to extend the right class.
     """
 
     def __init__(self, result_builder: ResultMixin = None):
@@ -523,6 +527,9 @@ class SimplePythonGraphAdapter(SimplePythonDataFrameGraphAdapter):
     def build_result(self, **outputs: Dict[str, Any]) -> Any:
         """Delegates to the result builder function supplied."""
         return self.result_builder.build_result(**outputs)
+
+    def output_type(self) -> Type:
+        return self.result_builder.output_type()
 
 
 class DefaultAdapter(SimplePythonGraphAdapter):
