@@ -36,7 +36,6 @@ jobs:
         # For example, use a Python script that uses the `packaging` library to compare versions
         # Set the output `version_is_greater` to `true` or `false`
         pip install requests packaging
-        pip install -e .
         python scripts/version_check.py
 
     # Install dependencies required to build
