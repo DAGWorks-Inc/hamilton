@@ -256,16 +256,16 @@ class parameterize(base.NodeExpander):
                         param
                     ] = val  # We just use the standard one, nothing is getting replaced
             nodes.append(
-                node.Node(
+                node_.copy_with(
                     name=output_node,
-                    typ=node_.type,
                     doc_string=docstring,  # TODO -- change docstring
                     callabl=functools.partial(
                         replacement_function,
                         **{parameter: val.value for parameter, val in literal_dependencies.items()},
                     ),
                     input_types=new_input_types,
-                    tags=node_.tags.copy(),
+                    include_refs=False  # Include refs is here as this is earlier than compile time
+                    # TODO -- figure out why this isn't getting replaced later...
                 )
             )
         return nodes
@@ -287,7 +287,7 @@ class parameterize(base.NodeExpander):
 
         if self.RESERVED_KWARG in func_param_names:
             raise base.InvalidDecoratorException(
-                f"Error function {fn.__module__}.{fn.__name__} cannot have `{self.RESERVED_KWARG}` "
+                f"Error function {fn.__module__}.{fn.__name__} cannot have '{self.RESERVED_KWARG}'"
                 f"as a parameter it is reserved."
             )
         missing_parameters = set()
@@ -344,7 +344,7 @@ class parameterize(base.NodeExpander):
                             invalid_types.append((param, param_annotation))
             if invalid_types:
                 raise base.InvalidDecoratorException(
-                    f"Validation for fn: {fn.__qualname__} All parameters with a group() parameterization must be annotated as a list:"
+                    f"Validation for fn: {fn.__qualname__} All parameters with a group() parameterization must be annotated as a list: "
                     f"the following are not: {', '.join([f'{param} ({annotation})' for param, annotation in invalid_types])}"
                 )
 
