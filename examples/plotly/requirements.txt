@@ -1,0 +1,2 @@
+plotly
+sf-hamilton[visualization]
