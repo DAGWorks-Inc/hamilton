@@ -34,6 +34,30 @@ You'll get import errors if you don't. Don't know what you need? Scroll to the b
 
 For more extensive documentation, please see [Hamilton User Contrib documentation](https://hamilton.dagworks.io).
 
+### Dynamic installation
+Here we dynamically download the dataflow from the internet and execute it. This is useful for quickly
+iterating in a notebook and pulling in just the dataflow you need.
+
+```python
+from hamilton import dataflow, driver
+
+# download into ~/.hamilton/dataflows and load the module -- WARNING: ensure you know what code you're importing!
+# NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW") # if official dataflow
+NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
+dr = (
+  driver.Builder()
+  .with_config({})  # replace with configuration as appropriate
+  .with_modules(NAME_OF_DATAFLOW)
+  .build()
+)
+# execute the dataflow, specifying what you want back. Will return a dictionary.
+result = dr.execute(
+  [NAME_OF_DATAFLOW.FUNCTION_NAME, ...],  # this specifies what you want back
+  inputs={...}  # pass in inputs as appropriate
+)
+```
+See [this notebook for an example](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/contrib/notebook.ipynb).
+
 ### Static installation
 This approach relies on you installing the package on your system. This is the recommended path for
 production purposes as you can version-lock your dependencies.
@@ -64,29 +88,6 @@ dr = (
 result = dr.execute(
     [NAME_OF_DATAFLOW.FUNCTION_NAME, ...],  # this specifies what you want back
     inputs={...}  # pass in inputs as appropriate
-)
-```
-
-### Dynamic installation
-Here we dynamically download the dataflow from the internet and execute it. This is useful for quickly
-iterating in a notebook and pulling in just the dataflow you need.
-
-```python
-from hamilton import dataflows, driver
-
-# download into ~/.hamilton/dataflows and load the module -- WARNING: ensure you know what code you're importing!
-# NAME_OF_DATAFLOW = dataflows.import_module("NAME_OF_DATAFLOW") # if official dataflow
-NAME_OF_DATAFLOW = dataflows.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
-dr = (
-  driver.Builder()
-  .with_config({})  # replace with configuration as appropriate
-  .with_modules(NAME_OF_DATAFLOW)
-  .build()
-)
-# execute the dataflow, specifying what you want back. Will return a dictionary.
-result = dr.execute(
-  [NAME_OF_DATAFLOW.FUNCTION_NAME, ...],  # this specifies what you want back
-  inputs={...}  # pass in inputs as appropriate
 )
 ```
 
