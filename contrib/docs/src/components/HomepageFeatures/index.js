@@ -34,7 +34,8 @@ const FeatureList = [
       <>
         Hamilton is built by defining python functions. You can do anything you can
           do in python in a Hamilton dataflow, and run hamilton code
-          anywhere python runs.
+          anywhere python runs: in a notebook, in a script, with Ray, Dask, or Spark, or even
+          in a web app.
       </>
     ),
   },
