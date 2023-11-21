@@ -144,7 +144,7 @@ def latest_commit(dataflow: str, user: str = None) -> str:
     if user:
         url = f"https://hub.dagworks.io/commits/Users/{user}/{dataflow}/commit.txt"
     else:
-        url = f"https://hub.dagworks.io/commits/Official/{dataflow}/commit.txt"
+        url = f"https://hub.dagworks.io/commits/DAGWorks/{dataflow}/commit.txt"
     status_code, text = _get_request(url)
     if status_code != 200:
         raise ValueError(
@@ -182,20 +182,24 @@ def pull_module(dataflow: str, user: str = None, version: str = "latest", overwr
     if user:
         _track_download(False, user, dataflow, version)
         logger.info(f"pulling dataflow {user}/{dataflow} with version {version}")
+        local_file_path = USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow)
     else:
         _track_download(True, None, dataflow, version)
         logger.info(f"pulling official dataflow {dataflow} with version {version}")
+        local_file_path = OFFICIAL_PATH.format(commit_ish=version, dataflow=dataflow)
 
     h_files = ["__init__.py", "requirements.txt", "README.md", "valid_configs.jsonl", "tags.json"]
 
-    local_file_path = USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow)
     if os.path.exists(local_file_path) and not overwrite:
         raise ValueError(
             f"Dataflow {user}/{dataflow} with version {version} already exists locally. Not downloading."
         )
     os.makedirs(local_file_path, exist_ok=True)
     for h_file in h_files:
-        url = BASE_URL.format(commit_ish=version) + f"/user/{user}/{dataflow}/{h_file}"
+        if user:
+            url = BASE_URL.format(commit_ish=version) + f"/user/{user}/{dataflow}/{h_file}"
+        else:
+            url = BASE_URL.format(commit_ish=version) + f"/dagworks/{dataflow}/{h_file}"
         # response = requests.get(url)
         status_code, text = _get_request(url)
         if status_code == 404:
@@ -414,16 +418,21 @@ def inspect_module(module: ModuleType) -> InspectModuleResult:
 
 
 @_track_function_call
-def install_dependencies_string(user: str, dataflow: str, version: str = "latest") -> str:
+def install_dependencies_string(dataflow: str, user: str = None, version: str = "latest") -> str:
     """Returns a string for the user to install dependencies.
 
-    :param user: the github name of the user.
     :param dataflow: the name of the dataflow.
+    :param user: the github name of the user.
     :param version: the version to inspect. "latest" will resolve to the most recent commit, else pass \
          a commit SHA.
     :return: pip install string to use.
     """
-    local_file_path = USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow)
+    if version == "latest":
+        version = latest_commit(dataflow, user)
+    if user:
+        local_file_path = USER_PATH.format(commit_ish=version, user=user, dataflow=dataflow)
+    else:
+        local_file_path = OFFICIAL_PATH.format(commit_ish=version, dataflow=dataflow)
     if not os.path.exists(local_file_path):
         logger.info(
             "Dataflow does not exist locally. Can't provide details on how to install dependencies."
@@ -679,7 +688,7 @@ if __name__ == "__main__":
     _version = latest_commit(_dataflow, _user)
     logger.info(_version)
     logger.info("Install dependencies output ---")
-    logger.info(install_dependencies_string(_user, _dataflow, _version))
+    logger.info(install_dependencies_string(_dataflow, _user, _version))
     logger.info("Inspect output ---")
     logger.info(inspect(_dataflow, _user, _version))
 
