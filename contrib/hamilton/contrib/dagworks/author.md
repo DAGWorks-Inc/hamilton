@@ -3,5 +3,6 @@ title: DAGWorks
 ---
 # Officially maintained Hamilton dataflows
 
-Here you'll find dataflows that are officially maintained by the DAGWorks. The maintenance
-of them is taken over by the DAGWorks's Hamilton team.
+Here you'll find dataflows that are officially maintained by the DAGWorks team. Popular
+user-contributed dataflows will be moved here as necessary to support their continued
+development and maintenance.
