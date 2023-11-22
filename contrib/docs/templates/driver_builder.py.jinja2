@@ -25,7 +25,8 @@ remote_executor = executors.MultiThreadingExecutor(max_tasks=20)
 dr = (
     driver.Builder()
     {%- if use_executor %}
-    .with_executor(remote_executor)
+    .enable_dynamic_execution(allow_experimental_mode=True)
+    .with_remote_executor(remote_executor)
     {%- endif %}
     .with_config({})  # replace with configuration as appropriate
     .with_modules({{MODULE_NAME}})
