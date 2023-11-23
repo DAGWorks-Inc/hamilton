@@ -8,6 +8,7 @@ numpy
 openai
 pandas
 pinecone-client
+pymilvus
 sentence-transformers
 sf-hamilton
 sf-hamilton[visualization]

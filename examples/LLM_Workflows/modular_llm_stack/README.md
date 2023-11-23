@@ -36,6 +36,7 @@ don't want before doing `pip install -r requirements.txt`.
 - For Marqo `docker pull marqoai/marqo:latest` followed by
 `docker run --name marqo -it --privileged -p 8882:8882 --add-host host.docker.internal:host-gateway marqoai/marqo:latest`.
 Note: this will require 10GB+ of disk space since the image is large...
+- For Milvus start your local instance using `docker compose -f docker-compose-milvus.yml up -d`.
 1. Run `python run.py --help` to learn about the options. You will options to:
     - Select a vector database from: weaviate, pinecone
     - Select an text embedding service from: openai, cohere, sentence_transformer
@@ -54,6 +55,7 @@ To change vector database you need to pass a JSON config argument:
 - Weaviate: `--vector_db=weaviate --vector_db_config='{"url": "http://locahost:8080/"}'`
 - Pinecone: `--vector_db=pinecone --vector_db_config='{"environment": "ENVIRONMENT", "api_key": "API_KEY"}'`
 - Marqo: `--vector_db=marqo --vector_db_config='{"url":"http://localhost:8882"}' --other_input_kwargs '{"index_name":"hamilton"}'`
+- Milvus: `--vector_db=milvus --vector_db_config='{"host":"localhost", "alias":"default", "port":"19530"}' --other_input_kwargs '{"index_name":"hamilton"}'`
 
 # Next step / Exercises
 - Implement the code to read data from the vector database

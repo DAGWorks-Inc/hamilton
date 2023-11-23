@@ -12,16 +12,17 @@ from hamilton import base, driver
 @click.command()
 @click.option(
     "--vector_db",
-    type=click.Choice(["lancedb", "weaviate", "pinecone", "marqo"], case_sensitive=False),
+    type=click.Choice(["lancedb", "weaviate", "pinecone", "marqo", "milvus"], case_sensitive=False),
     default="lancedb",
     help="Vector database service",
 )
 @click.option(
     "--vector_db_config",
     default='{"uri": "data/lancedb"}',
-    help="Pass a JSON string for vector database config.\
+    help="""Pass a JSON string for vector database config.\
         Weaviate needs a dictionary {'url': ''}\
-        Pinecone needs dictionary {'environment': '', 'api_key': ''}",
+        Pinecone needs a dictionary {'environment': '', 'api_key': ''}\
+        Milvus needs a dictionary {'host': '', 'port': '', 'alias': ''}""",
 )
 @click.option(
     "--embedding_service",
@@ -64,6 +65,10 @@ def main(
         import marqo_module
 
         vector_db_module = marqo_module
+    elif vector_db == "milvus":
+        import milvus_module
+
+        vector_db_module = milvus_module
     else:
         raise ValueError(f"Unknown vector_db {vector_db}")
 
