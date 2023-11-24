@@ -32,6 +32,9 @@ dr = (
     .with_modules({{MODULE_NAME}})
     .build()
 )
+# If you have sf-hamilton[visualization] installed, you can see the dataflow graph
+# In a notebook this will show an image, else pass in arguments to save to a file
+# dr.display_all_functions()
 # Execute the dataflow, specifying what you want back. Will return a dictionary.
 result = dr.execute(
     [{{MODULE_NAME}}.CHANGE_ME, ...],  # this specifies what you want back
