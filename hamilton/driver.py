@@ -61,7 +61,7 @@ def capture_function_usage(call_fn: Callable) -> Callable:
                 except Exception as e:
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.error(
-                            f"Failed to send telemetry for function usage. Encountered:{e}\n"
+                            f"Failed to send telemetry for function usage. Encountered: {e}\n"
                         )
 
     return wrapped_fn
@@ -77,7 +77,8 @@ class Variable:
     type: typing.Type
     tags: Dict[str, str] = field(default_factory=dict)
     is_external_input: bool = field(default=False)
-    originating_functions: Optional[Tuple[Callable, ...]] = None
+    originating_functions: Optional[Tuple[Callable, ...]] = field(default=None)
+    documentation: Optional[str] = field(default=None)
 
     @staticmethod
     def from_node(n: node.Node) -> "Variable":
@@ -92,6 +93,7 @@ class Variable:
             tags=n.tags,
             is_external_input=n.user_defined,
             originating_functions=n.originating_functions,
+            documentation=n.documentation,
         )
 
 
@@ -366,12 +368,12 @@ class Driver:
                 user_node.type, all_inputs[user_node.name]
             ):
                 errors.append(
-                    f"Error: Type requirement mismatch. Expected {user_node.name}:{user_node.type} "
-                    f"got {all_inputs[user_node.name]}:{type(all_inputs[user_node.name])} instead."
+                    f"Error: Type requirement mismatch. Expected {user_node.name}:{user_node.type} "  # noqa: E231
+                    f"got {all_inputs[user_node.name]}:{type(all_inputs[user_node.name])} instead."  # noqa: E231
                 )
         if errors:
             errors.sort()
-            error_str = f"{len(errors)} errors encountered:\n  " + "\n  ".join(errors)
+            error_str = f"{len(errors)} errors encountered: \n  " + "\n  ".join(errors)
             raise ValueError(error_str)
 
     def execute(
@@ -462,7 +464,7 @@ class Driver:
             except Exception as e:
                 # we don't want this to fail at all!
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f"Error caught in processing telemetry:\n{e}")
+                    logger.debug(f"Error caught in processing telemetry: \n{e}")
 
     def raw_execute(
         self,
@@ -849,9 +851,13 @@ class Driver:
         all_variables = {n.name: n for n in self.graph.get_nodes()}
         # ensure that the nodes exist
         if upstream_node_name not in all_variables:
-            raise ValueError(f"Upstream node {upstream_node_name} not found in graph.")
+            raise ValueError(
+                f"Upstream node {upstream_node_name} not found in graph."  # noqa: E713
+            )  # noqa: E713
         if downstream_node_name not in all_variables:
-            raise ValueError(f"Downstream node {downstream_node_name} not found in graph.")
+            raise ValueError(
+                f"Downstream node {downstream_node_name} not found in graph."  # noqa: E713
+            )  # noqa: E713
         nodes_for_path = self._get_nodes_between(upstream_node_name, downstream_node_name)
         return [Variable.from_node(n) for n in nodes_for_path]
 
@@ -918,9 +924,13 @@ class Driver:
         all_variables = {n.name: n for n in self.graph.get_nodes()}
         # ensure that the nodes exist
         if upstream_node_name not in all_variables:
-            raise ValueError(f"Upstream node {upstream_node_name} not found in graph.")
+            raise ValueError(
+                f"Upstream node {upstream_node_name} not found in graph."  # noqa: E713
+            )  # noqa: E713
         if downstream_node_name not in all_variables:
-            raise ValueError(f"Downstream node {downstream_node_name} not found in graph.")
+            raise ValueError(
+                f"Downstream node {downstream_node_name} not found in graph."  # noqa: E713
+            )  # noqa: E713
 
         # set whether the node is user input
         node_modifiers = {}

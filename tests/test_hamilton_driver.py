@@ -9,7 +9,7 @@ import tests.resources.dynamic_parallelism.parallel_linear_basic
 import tests.resources.tagging
 import tests.resources.test_default_args
 import tests.resources.very_simple_dag
-from hamilton import base
+from hamilton import base, node
 from hamilton.driver import (
     Builder,
     Driver,
@@ -494,3 +494,20 @@ def test_validate_materialization_sad(tmp_path):
             to.pickle(id="1", path=f"{tmp_path}/foo.pkl", dependencies=["c"]),
             inputs={},
         )
+
+
+def test_variable_from_node():
+    # Quick test for creating variables from nodes --
+    # this is simple but its nice to have
+
+    def func_to_test(a: int) -> int:
+        """This is a doctstring"""
+        return a + 1
+
+    n = node.Node.from_fn(func_to_test)
+    v = Variable.from_node(n)
+    assert v.name == n.name
+    assert v.type == n.type
+    assert v.tags == n.tags
+    assert v.documentation == n.documentation == "This is a doctstring"
+    assert v.originating_functions == n.originating_functions
