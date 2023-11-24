@@ -24,6 +24,7 @@ from hamilton.htypes import Collect, Parallelizable
 from tests.resources.dynamic_parallelism import (
     inputs_in_collect,
     no_parallel,
+    parallel_collect_multiple_arguments,
     parallel_complex,
     parallel_delayed,
     parallel_linear_basic,
@@ -262,14 +263,13 @@ def test_end_to_end_parallelizable_with_overrides_on_collect_node():
     assert dr.execute(["collect_plus_one"], overrides={"collect": 100})["collect_plus_one"] == 101
 
 
-@pytest.mark.parametrize("executor_factory", [SynchronousLocalTaskExecutor])
 @pytest.mark.skipif(
     os.environ.get("CI") != "true",
     reason="This test tests memory usage and takes quite a while to run."
     "We don't run it locally as its a low-touch part of the codebase"
     "TODO -- actually measure the memory allocated/remaining",
 )
-def test_sequential_would_use_too_much_memory_no_garbage_collector(executor_factory):
+def test_sequential_would_use_too_much_memory_no_garbage_collector():
     NUM_REPS = 1000
 
     def foo() -> Parallelizable[int]:
@@ -301,9 +301,32 @@ def test_sequential_would_use_too_much_memory_no_garbage_collector(executor_fact
         driver.Builder()
         .with_modules(mod)
         .enable_dynamic_execution(allow_experimental_mode=True)
-        .with_remote_executor(executor_factory())
+        .with_remote_executor(SynchronousLocalTaskExecutor())
         .with_grouping_strategy(GroupByRepeatableBlocks())
         .build()
     )
     result = dr.execute(["concatenated"])
     assert result["concatenated"] == NUM_REPS
+
+
+def test_parallel_end_to_end_with_collect_multiple_inputs():
+    dr = (
+        driver.Builder()
+        .with_modules(parallel_collect_multiple_arguments)
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .with_remote_executor(SynchronousLocalTaskExecutor())
+        .with_grouping_strategy(GroupByRepeatableBlocks())
+        .build()
+    )
+    parallel_collect_multiple_arguments._reset_counter()
+    ITERS = 100
+    res = dr.execute(["summed"], inputs={"iterations": ITERS})
+    assert res["summed"] == ((ITERS**2 - ITERS) / 2) * 2 - 2 - 1
+    counts = parallel_collect_multiple_arguments._fn_call_counter
+    assert counts == {
+        "not_to_repeat": 1,
+        "number_to_repeat": 1,
+        "something_else_not_to_repeat": 1,
+        "double": ITERS,
+        "summed": 1,
+    }

@@ -170,6 +170,6 @@ workflows:
       - test:
           requires:
             - check_for_changes
-          name: asyncio-py311
+          name: asyncio-py312
           python-version: '3.12'
           task: async

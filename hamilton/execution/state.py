@@ -110,7 +110,7 @@ class DictBasedResultCache(ResultCache):
                 if optional:
                     continue
                 else:
-                    raise KeyError(f"Key {formatted_key} not found in cache")
+                    raise KeyError(f"Key {formatted_key} not found in cache")  # noqa E713
             out[key] = self.cache[formatted_key]
         return out
 
@@ -187,6 +187,7 @@ class ExecutionState:
         for task in self.task_pool.values():
             if len(task.base_dependencies) == 0:
                 self.task_queue.append(task)
+                self.task_states[task.task_id] = TaskState.QUEUED
 
     def realize_task(
         self,
@@ -349,6 +350,11 @@ class ExecutionState:
             f"Received update for task {task_id} with state {new_state.value}, "
             f"current queue is {self._format_task_queue()}"
         )
+        for item in self.task_queue:
+            assert self.task_states[item.task_id] == TaskState.QUEUED, (
+                f"Task {item.task_id} is in the queue but not queued, "
+                f"state is {self.task_states[item.task_id].value}"
+            )
         # Creating task implementations
         task_to_update = self.task_pool[task_id]
         if new_state == TaskState.SUCCESSFUL:
@@ -408,7 +414,7 @@ class ExecutionState:
             if len(task_names) > 0:
                 logger.info(
                     f"Enqueuing {len(task_names)} task{'s' if len(task_names) > 1 else ''}: "
-                    f"{', '.join(task_names[:2] +(['...'] if len(task_names) > 2 else []))}"
+                    f"{', '.join(task_names[:2] + (['...'] if len(task_names) > 2 else []))}"
                 )
             for task_to_enqueue in tasks_to_enqueue:
                 self.task_queue.append(task_to_enqueue)
