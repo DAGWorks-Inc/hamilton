@@ -853,11 +853,11 @@ class Driver:
         if upstream_node_name not in all_variables:
             raise ValueError(
                 f"Upstream node {upstream_node_name} not found in graph."  # noqa: E713
-            )  # noqa: E713
+            )
         if downstream_node_name not in all_variables:
             raise ValueError(
                 f"Downstream node {downstream_node_name} not found in graph."  # noqa: E713
-            )  # noqa: E713
+            )
         nodes_for_path = self._get_nodes_between(upstream_node_name, downstream_node_name)
         return [Variable.from_node(n) for n in nodes_for_path]
 
