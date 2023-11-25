@@ -231,8 +231,14 @@ def _get_pandas_annotations(node_: node.Node, bound_parameters: Dict[str, Any]) 
     :param hamilton_udf: the function to check.
     :return: dictionary of parameter names to boolean indicating if they are pandas series.
     """
+
+    def _get_type_from_annotation(annotation: Any) -> Any:
+        """Gets the type from the annotation if there is one."""
+        actual_type, extras = htypes.get_type_information(annotation)
+        return actual_type
+
     return {
-        name: type_ == pd.Series
+        name: _get_type_from_annotation(type_) == pd.Series
         for name, (type_, dep_type) in node_.input_types.items()
         if name not in bound_parameters and dep_type == node.DependencyType.REQUIRED
     }

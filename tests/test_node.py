@@ -1,4 +1,5 @@
-from typing import Annotated, Any, Literal, TypeVar
+import sys
+from typing import Any, Literal, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -39,7 +40,10 @@ def test_node_copy_with_retains_originating_functions():
     assert node_copy_copy.name == "rename_fn_again"
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python 3.9 or higher")
 def test_node_handles_annotated():
+    from typing import Annotated
+
     DType = TypeVar("DType", bound=np.generic)
     ArrayN = Annotated[npt.NDArray[DType], Literal["N"]]
 
