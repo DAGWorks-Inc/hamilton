@@ -141,6 +141,15 @@ def test__get_pandas_annotations_with_pandas():
     assert h_spark._get_pandas_annotations(node.Node.from_fn(with_pandas), {}) == {"a": True}
 
 
+def test__get_pandas_annotations_with_annotated_pandas():
+    IntSeries = htypes.column[pd.Series, int]
+
+    def with_pandas(a: IntSeries) -> IntSeries:
+        return a * 2
+
+    assert h_spark._get_pandas_annotations(node.Node.from_fn(with_pandas), {}) == {"a": True}
+
+
 def test__get_pandas_annotations_with_pandas_and_other_default():
     def with_pandas_and_other_default(a: pd.Series, b: int) -> pd.Series:
         return a * b
