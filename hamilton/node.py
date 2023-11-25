@@ -97,7 +97,9 @@ class Node(object):
                             for key, value in input_types.items()
                         }
             else:
-                input_types = typing.get_type_hints(callabl)
+                # TODO -- remove this when we no longer support 3.8 -- 10/14/2024
+                type_hint_kwargs = {} if sys.version_info < (3, 9) else {"include_extras": True}
+                input_types = typing.get_type_hints(callabl, **type_hint_kwargs)
                 signature = inspect.signature(callabl)
                 for key, value in signature.parameters.items():
                     if key not in input_types:
