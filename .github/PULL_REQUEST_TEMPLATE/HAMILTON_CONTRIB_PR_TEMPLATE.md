@@ -15,6 +15,8 @@ Do you have the following?
   - [ ] Added tags.json under my dataflow directory to curate my dataflow.
   - [ ] Added valid_configs.jsonl under my dataflow directory to specify the valid configurations.
   - [ ] Added a dag.png that shows one possible configuration of my dataflow.
+- [ ] I hearby acknowledge that to the best of my ability, that the code I have contributed contains correct attribution
+and notices as appropriate.
 
 ## For existing dataflows -- what has changed?
 
