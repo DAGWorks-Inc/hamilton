@@ -1,5 +1,7 @@
 import inspect
 
+import pytest
+
 from hamilton import ad_hoc_utils, function_modifiers
 
 
@@ -37,6 +39,10 @@ def test_create_temporary_module():
         """dummy function"""
         return bar + 1
 
+    def _baz(bar: int) -> int:
+        """dummy function, not to be included"""
+        return bar + 1
+
     temp_module = ad_hoc_utils.create_temporary_module(bar, foo)
     expected_members = {
         "__spec__",
@@ -52,3 +58,22 @@ def test_create_temporary_module():
     temp_module_2 = ad_hoc_utils.create_temporary_module(bar, foo, module_name="test_module")
     assert set(dict(inspect.getmembers(temp_module_2)).keys()) == expected_members
     assert temp_module_2.__name__ == "test_module"
+
+
+def test_create_temporary_module_breaks_helper():
+    """Tests that we create a module with the passed in functions."""
+
+    def bar(baz: int) -> int:
+        """dummy function"""
+        return baz + 1
+
+    def foo(bar: int) -> int:
+        """dummy function"""
+        return bar + 1
+
+    def _baz(bar: int) -> int:
+        """dummy function, not to be included"""
+        return bar + 1
+
+    with pytest.raises(ValueError):
+        ad_hoc_utils.create_temporary_module(bar, foo, _baz)

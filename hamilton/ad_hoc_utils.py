@@ -30,6 +30,8 @@ def create_temporary_module(*functions: Callable, module_name: str = None) -> Mo
     NOTE (2): that this is slightly dangerous -- we want the module to look and feel like an actual module
     so we can fully duck-type it. We thus stick it in sys.modules (checking if it already exists).
 
+    NOTE (3): If you pass in functions that start with "_" we will error out! That will just confuse you in the long run.
+
     :param functions: Functions to use
     :param module_name: Module name to use. If not provided will default to a unique one.
     :return: a "module" housing the passed in functions
@@ -43,6 +45,12 @@ def create_temporary_module(*functions: Callable, module_name: str = None) -> Mo
         if hasattr(module, fn_name):
             raise ValueError(
                 f"Duplicate/reserved function name: {fn_name} cannot be used to create a temporary module."
+            )
+        if fn_name.startswith("_"):
+            raise ValueError(
+                f"In Hamilton, functions that start with '_' are reserved as helpers, and cannot be compiled into nodes in a DAG. "
+                f"The function {fn_name} starts with '_' and would thus be pointless to include in a temprary module created"
+                f" solely for the purpose of building a Hamilton DAG."
             )
         fn.__module__ = module.__name__
         setattr(module, fn_name, fn)
