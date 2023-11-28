@@ -1,0 +1,8 @@
+{
+  "schema": "1.0",
+  "use_case_tags": ["parallelism", "io", "s3"],
+  "secondary_tags": {
+    "dataframe-library" : "pandas",
+    "cloud-provider": "aws"
+  }
+}
