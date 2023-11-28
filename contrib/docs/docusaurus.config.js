@@ -70,6 +70,8 @@ const config = {
     ],
   ],
 
+  scripts: ["/js/posthog.js"],
+
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
