@@ -1,12 +1,12 @@
 ---
 title: Example Template
 ---
-# GITHUB USER NAME GOES HERE
+# {github_username}
 
 Fill in information about yourself here. This is a template.
 
 # Github
-https://github.com/{username}
+https://github.com/{github_username}
 # Linkedin
 [optional]
 # X (Twitter)
