@@ -156,7 +156,7 @@ To get started, you'll want to do the following:
   - [ ] Commit the files we just added
   - [ ] Create a PR
   - [ ] Tag one of the maintainers [elijahbenizzy](https://github.com/elijahbenizzy), [skrawcz](https://github.com/skrawcz), or [zilto](https://github.com/zilto) for a review
-  - [ ] Ping us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) if you don't hear back within a few hours
+  - [ ] Ping us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) if you don't hear back within a few days
 
 #### Username Management
 

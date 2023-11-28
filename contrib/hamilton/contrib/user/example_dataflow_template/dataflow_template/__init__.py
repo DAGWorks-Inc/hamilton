@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from hamilton import contrib  # noqa E402
+from hamilton import contrib
 
 with contrib.catch_import_errors(__name__, __file__, logger):
     # non-hamilton imports go here
