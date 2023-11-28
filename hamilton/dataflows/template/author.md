@@ -1,9 +1,9 @@
-# {username}
+# {github_username}
 
 Hi I'm ...
 
 # Github
-https://github.com/{username}
+https://github.com/{github_username}
 # Linkedin
 
 # X (Twitter)
