@@ -1,11 +1,11 @@
 import pandas as pd
 import pytest
 import ray
+from plugin_tests.h_ray.resources import example_module, smoke_screen_module
 from ray import workflow
 
 from hamilton import base, driver
 from hamilton.plugins import h_ray
-from plugin_tests.h_ray.resources import example_module, smoke_screen_module
 
 
 @pytest.fixture(scope="module")

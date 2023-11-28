@@ -4,10 +4,10 @@ import sys
 from typing import Any, Callable, Dict, List, Type
 
 import pytest
-
 import tests.resources.data_quality
 import tests.resources.dynamic_config
 import tests.resources.overrides
+
 from hamilton import ad_hoc_utils, base, driver, settings
 from hamilton.base import DefaultAdapter
 from hamilton.data_quality.base import DataValidationError, ValidationResult

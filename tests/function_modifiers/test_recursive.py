@@ -3,8 +3,8 @@ import random
 from typing import Tuple
 
 import pytest
-
 import tests.resources.reuse_subdag
+
 from hamilton import ad_hoc_utils, graph
 from hamilton.function_modifiers import (
     InvalidDecoratorException,

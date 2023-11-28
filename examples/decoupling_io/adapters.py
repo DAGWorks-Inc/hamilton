@@ -45,7 +45,6 @@ SKLEARN_PLOT_TYPES_ANNOTATION = Union[tuple(SKLEARN_PLOT_TYPES)]
 
 @dataclasses.dataclass
 class SklearnPlotSaver(DataSaver):
-
     path: Union[str, PathLike]
     # kwargs
     dpi: float = 200

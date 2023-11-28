@@ -19,7 +19,6 @@ def reduce_mem_usage(df: pd.DataFrame, name: str, verbose=True):
     for col in df.columns:
         col_type = df[col].dtypes
         if col_type in numerics:
-
             c_min = df[col].min()
             c_max = df[col].max()
             if str(col_type)[:3] == "int":

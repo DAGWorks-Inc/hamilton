@@ -3,11 +3,11 @@ from typing import Any
 
 import pandas as pd
 import pytest
+from tests import nodes
 
 from hamilton import base
 from hamilton.driver import Driver
 from hamilton.experimental import h_cache
-from tests import nodes
 
 
 @pytest.fixture
