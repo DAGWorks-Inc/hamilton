@@ -68,10 +68,17 @@ setup(
     # adding this to slim the package down, since these dependencies are only used in certain contexts.
     extras_require={
         "visualization": ["sf-hamilton[visualization]"],
+        "contribute": ["click>8.0.0", "gitpython"],
     },
     # Relevant project URLs
     project_urls={  # Optional
         "Bug Reports": "https://github.com/dagworks-inc/hamilton/issues",
         "Source": "https://github.com/dagworks-inc/hamilton/contrib",
+    },
+    # Useful scripts
+    entry_points={
+        "console_scripts": [
+            "init-dataflow = hamilton.contribute:initialize",
+        ]
     },
 )

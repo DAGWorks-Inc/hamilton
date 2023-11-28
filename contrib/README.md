@@ -98,6 +98,7 @@ to this repository. We will review your dataflow and if it meets our standards w
 package. To submit a pull request please use [this template](https://github.com/DAGWorks-Inc/hamilton/blob/main/.github/PULL_REQUEST_TEMPLATE/HAMILTON_CONTRIB_PR_TEMPLATE.md)
 . To access it, create a new Pull Request, then hit the `preview` tab, and click the link to append `template=HAMILTON_CONTRIB_PR_TEMPLATE.md` to the URL.
 
+
 #### Dataflow standards
 We want to ensure that the dataflows in this package are of high quality and are easy to use. To that end,
 we have a set of standards that we expect all dataflows to meet. If you have any questions, please reach out.
@@ -109,22 +110,75 @@ Standards:
 - It must work.
 - It must follow our standard structure as outlined below.
 
+#### Getting started with development
 
-#### Checklist for new dataflows:
-Do you have the following?
-- [ ] Added a directory mapping to my github user name in the contrib/hamilton/contrib/user directory.
-  - [ ] If my author names contains hyphens I have replaced them with underscores.
-  - [ ] If my author name starts with a number, I have prefixed it with an underscore.
+To get started with development, you'll want to first fork the hamilton repository from the github UI.
+
+Then, clone it locally and install the package in editable mode, ensuring you install any dependencies required for the initilization script
+```bash
+cd hamilton # Your fork
+pip install -e "./contrib[contribute]" # Note that this package lives under the `contrib` folder
+```
+
+Next, you need to initialize your dataflow. This will create the necessary files and directories for you to get started.
+```bash
+init-dataflow -u <your_github_username> -n <name_of_dataflow>
+```
+
+This will do the following:
+
+1. Create a package under `contrib/hamilton/contrib/user/<your_github_username>` with the appropriate files to describe you
+   -  `author.md` -- this will describe you with links out to github/socials
+   - `__init__.py` -- this will be an empty file that allows you to import your dataflow
+2. Create a package under `contrib/hamilton/contrib/user/<your_github_username>/<name_of_dataflow>` with the appropriate files to describe your dataflow:
+   - `README.md` to describe the dataflow with the standard headings
+   - `__init__.py` to contain the Hamilton code
+   - `requirements.txt` to contain the required packages outside of Hamilton
+   - `tags.json` to curate your dataflow
+   - `valid_configs.jsonl` to specify the valid configurations for it to be run
+   - `dag.png` to show one possible configuration of your dataflow
+3. Add all the above files to git!
+
+These are all required. You do not have to use the initialization script -- you can always copy the files over directly. That said, it is idempotent (it will fill out any missing files),
+and will ensure that you have the correct structure.
+
+#### Developing your dataflow
+
+To get started, you'll want to do the following:
+
+- [ ] Fill out your `__init__.py` with the appropriate code -- see [this issue](https://github.com/DAGWorks-Inc/hamilton/issues/559) if you want some inspiration for where to get started
+- [ ] Fill out the sections of your `README.md` with the appropriate documentation -- follow one of the approved dataflows
+- [ ] Fill out your `tags.json` with the appropriate tags -- follow one of the approved dataflows
+- [ ] Fill out your `valid_configs.jsonl` with the appropriate configurations -- this is not necessary if you have no configurations that can change the shape of your DAG
+- [ ] Generate a visual representation of your DAG -- you can use the following `if __name__ == '__main__'` block to do so:
+```python
+import __init__ as my_module
+
+from hamilton import base, driver
+
+dr = driver.Driver(
+    {},
+    my_module,
+    adapter=base.DefaultAdapter(),
+)
+# create the DAG image
+dr.display_all_functions("dag", {"format": "png", "view": False})
+```
+- [ ] Push a branch back to your fork
+- [ ] Open up a pull request to the main Hamilton repo!
+  - [ ] Commit the files we just added
+  - [ ] Create a PR
+  - [ ] Tag one of the maintainers [elijahbenizzy](https://github.com/elijahbenizzy), [skrawcz](https://github.com/skrawcz), or [zilto](https://github.com/zilto) for a review
+  - [ ] Ping us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) if you don't hear back within a few days
+
+#### Username Management
+
+As usernames map to packages, we need to ensure that they are valid. To that end, we have a few rules:
+  - [ ] If your username contains hyphens, replace them with underscores.
+  - [ ] If your username starts with a number, prefix it with an underscore.
   - [ ] If your author name is a python reserved keyword. Reach out to the maintainers for help.
-  - [ ] Added an author.md file under my username directory and is filled out.
-  - [ ] Added an __init__.py file under my username directory.
-- [ ] Added a new folder for my dataflow under my username directory.
-  - [ ] Added a README.md file under my dataflow directory that follows the standard headings and is filled out.
-  - [ ] Added a __init__.py file under my dataflow directory that contains the Hamilton code.
-  - [ ] Added a requirements.txt under my dataflow directory that contains the required packages outside of Hamilton.
-  - [ ] Added tags.json under my dataflow directory to curate my dataflow.
-  - [ ] Added valid_configs.jsonl under my dataflow directory to specify the valid configurations.
-  - [ ] Added a dag.png that shows one possible configuration of my dataflow.
+
+If the above apply, run the `init-dataflow` command with `-s` to specify a sanitized username.
 
 ## Got questions?
 Join our [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) community to chat/ask Qs/etc.
