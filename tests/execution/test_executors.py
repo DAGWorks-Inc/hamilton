@@ -330,3 +330,17 @@ def test_parallel_end_to_end_with_collect_multiple_inputs():
         "double": ITERS,
         "summed": 1,
     }
+
+
+def test_parallel_end_to_end_with_empty_list():
+    dr = (
+        driver.Builder()
+        .with_modules(parallel_linear_basic)
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .with_remote_executor(SynchronousLocalTaskExecutor())
+        .with_adapter(base.DefaultAdapter())
+        .build()
+    )
+    parallel_collect_multiple_arguments._reset_counter()
+    res = dr.execute(["final"], overrides={"number_of_steps": 0})
+    assert res["final"] == parallel_linear_basic._calc(0)

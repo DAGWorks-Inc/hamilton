@@ -459,6 +459,9 @@ class ExecutionState:
             for dependency_base, dependencies in task.realized_dependencies.copy().items():
                 # We know that if one has the collector node, they all will
                 # As that's how we run it
+                if len(dependencies) == 0:
+                    # This is a parameterized task, so we'll just end up passing an empty array, and not computing anything from it
+                    continue
                 produces_collector_arg = self.task_pool[dependencies[0]].produces(collector_arg)
                 if produces_collector_arg:
                     for dependency in dependencies:

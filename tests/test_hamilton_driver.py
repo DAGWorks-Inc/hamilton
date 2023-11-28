@@ -100,7 +100,7 @@ def test_driver_has_cycles_true(driver_factory):
         # TODO -- fix erroring out when we try to run a driver with cycles
         # should display a better error
         # (lambda: Builder()
-        #     .enabble_parallelizable_type(allow_experimental_mode=True)
+        #     .enable_parallelizable_type(allow_experimental_mode=True)
         #     .with_modules(tests.resources.cyclic_functions)
         #     .with_remote_executor(executors.SynchronousLocalTaskExecutor())
         #     .with_adapter(base.DefaultAdapter())

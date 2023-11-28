@@ -38,9 +38,8 @@ def final(sum_step_squared_plus_step_cubed: int) -> int:
     return sum_step_squared_plus_step_cubed
 
 
-def _calc():
-    number_of_steps_ = number_of_steps()
-    steps_ = steps(number_of_steps_)
+def _calc(number_of_steps: int = number_of_steps()) -> int:
+    steps_ = steps(number_of_steps)
     to_sum = []
     for step_ in steps_:
         step_squared_ = step_squared(step_)
