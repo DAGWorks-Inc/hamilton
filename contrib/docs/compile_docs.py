@@ -215,15 +215,25 @@ import example2 from '!!raw-loader!./example2.py';
 
 <CodeBlock language="python">{{example2}}</CodeBlock>
 
+### Modify for your needs
+Now if you want to modify the dataflow, you can copy it to a new folder (renaming is possible), and modify it there.
+
+<CodeBlock language="python">
+dataflows.copy({DATAFLOW_NAME}, "path/to/save/to")
+</CodeBlock>
+
+<hr/>
+
 {README}
 
 ## Source code
-TODO: make collapsable.
 
 import MyComponentSource from '!!raw-loader!./__init__.py';
 
-<CodeBlock language="python">{{MyComponentSource}}</CodeBlock>
-
+<details>
+    <summary>__init__.py</summary>
+    <CodeBlock language="python">{{MyComponentSource}}</CodeBlock>
+</details>
 
 ## Requirements
 import requirements from '!!raw-loader!./requirements.txt';
