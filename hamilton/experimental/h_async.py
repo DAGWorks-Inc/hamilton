@@ -67,7 +67,7 @@ class AsyncGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
             task_dict = {key: process_value(value) for key, value in fn_kwargs.items()}
             fn_kwargs = await await_dict_of_tasks(task_dict)
             if inspect.iscoroutinefunction(fn):
-                return await (fn(**fn_kwargs))
+                return await fn(**fn_kwargs)
             return fn(**fn_kwargs)
 
         coroutine = new_fn(**kwargs)

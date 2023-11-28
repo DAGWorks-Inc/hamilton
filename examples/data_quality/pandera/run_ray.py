@@ -26,7 +26,6 @@ from hamilton import base, driver
 from hamilton.plugins import h_ray
 
 if __name__ == "__main__":
-
     logging.basicConfig(stream=sys.stdout)
     logger = logging.getLogger(__name__)
     # Setup a local cluster.

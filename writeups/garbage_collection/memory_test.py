@@ -56,7 +56,6 @@ def foo_i(foo_i_minus_one: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-
     import os
 
     import psutil

@@ -6,6 +6,12 @@ import numpy
 import numpy as np
 import pandas as pd
 import pytest
+from tests.resources.dq_dummy_examples import (
+    DUMMY_VALIDATORS_FOR_TESTING,
+    SampleDataValidator1,
+    SampleDataValidator2,
+    SampleDataValidator3,
+)
 
 import hamilton.data_quality.base
 from hamilton.data_quality import default_validators
@@ -13,12 +19,6 @@ from hamilton.data_quality.base import BaseDefaultValidator
 from hamilton.data_quality.default_validators import (
     AVAILABLE_DEFAULT_VALIDATORS,
     resolve_default_validators,
-)
-from tests.resources.dq_dummy_examples import (
-    DUMMY_VALIDATORS_FOR_TESTING,
-    SampleDataValidator1,
-    SampleDataValidator2,
-    SampleDataValidator3,
 )
 
 

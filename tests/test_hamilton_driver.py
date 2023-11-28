@@ -2,13 +2,13 @@ from unittest import mock
 
 import pandas as pd
 import pytest
-
 import tests.resources.cyclic_functions
 import tests.resources.dummy_functions
 import tests.resources.dynamic_parallelism.parallel_linear_basic
 import tests.resources.tagging
 import tests.resources.test_default_args
 import tests.resources.very_simple_dag
+
 from hamilton import base, node
 from hamilton.driver import (
     Builder,

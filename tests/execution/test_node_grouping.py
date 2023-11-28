@@ -1,3 +1,5 @@
+from tests.resources.dynamic_parallelism import no_parallel, parallel_complex, parallel_linear_basic
+
 from hamilton import ad_hoc_utils, base, graph, node
 from hamilton.execution import grouping
 from hamilton.execution.grouping import (
@@ -9,7 +11,6 @@ from hamilton.execution.grouping import (
 )
 from hamilton.graph import FunctionGraph
 from hamilton.node import NodeType
-from tests.resources.dynamic_parallelism import no_parallel, parallel_complex, parallel_linear_basic
 
 
 def test_group_individually():

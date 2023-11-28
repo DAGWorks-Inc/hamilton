@@ -3,6 +3,14 @@ import time
 
 import numpy as np
 import pytest
+from tests.resources.dynamic_parallelism import (
+    inputs_in_collect,
+    no_parallel,
+    parallel_collect_multiple_arguments,
+    parallel_complex,
+    parallel_delayed,
+    parallel_linear_basic,
+)
 
 import hamilton.ad_hoc_utils
 from hamilton import base, driver
@@ -21,14 +29,6 @@ from hamilton.execution.grouping import (
     TaskImplementation,
 )
 from hamilton.htypes import Collect, Parallelizable
-from tests.resources.dynamic_parallelism import (
-    inputs_in_collect,
-    no_parallel,
-    parallel_collect_multiple_arguments,
-    parallel_complex,
-    parallel_delayed,
-    parallel_linear_basic,
-)
 
 ADAPTER = base.DefaultAdapter()
 

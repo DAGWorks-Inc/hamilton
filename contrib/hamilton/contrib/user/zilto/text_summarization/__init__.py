@@ -14,7 +14,6 @@ with contrib.catch_import_errors(__name__, __file__, logger):
     from tenacity import retry, stop_after_attempt, wait_random_exponential
     from tqdm import tqdm
 
-
 from hamilton.function_modifiers import config
 
 

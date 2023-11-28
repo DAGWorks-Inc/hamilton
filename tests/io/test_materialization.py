@@ -2,9 +2,9 @@ import dataclasses
 from typing import Any, Collection, Dict, List, Optional, Tuple, Type
 
 import pytest
-
 import tests.resources.cyclic_functions
 import tests.resources.test_default_args
+
 from hamilton import base, graph, node, registry
 from hamilton.function_modifiers import load_from, save_to, value
 from hamilton.io import materialization
