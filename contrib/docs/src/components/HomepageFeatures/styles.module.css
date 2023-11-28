@@ -9,3 +9,19 @@
   height: 200px;
   width: 200px;
 }
+
+.videoWrapper {
+  width: 80%; /* Set the width to 80% of its parent */
+  margin: 0 auto; /* This will center the div */
+  position: relative; /* Position relative so that padding-top percentage is relative to width */
+  padding-top: 45%; /* This sets aspect ratio for the iframe */
+  overflow: hidden; /* In case of overflow, it will be hidden */
+}
+
+.videoWrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; /* Full width of the .videoWrapper */
+  height: 100%; /* Full height of the .videoWrapper */
+}

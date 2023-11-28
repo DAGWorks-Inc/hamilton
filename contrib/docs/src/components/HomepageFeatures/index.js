@@ -57,14 +57,31 @@ function Feature({Svg, title, description}) {
 
 export default function HomepageFeatures() {
   return (
-    <section className={styles.features}>
+      <div>
+          <section className={styles.features}>
       <div className="container">
         <div className="row">
           {FeatureList.map((props, idx) => (
             <Feature key={idx} {...props} />
           ))}
         </div>
+      <div className="row">
+          </div>
       </div>
     </section>
+      <section className={styles.features}>
+    <div className={styles.videoWrapper}>
+      <iframe
+        src="https://www.loom.com/embed/ee3c984f51ba4d5baddab414df346f90?sid=4d5ee9d7-3be2-42b2-af29-793249d909ee"
+        frameBorder="0"
+        webkitallowfullscreen
+        mozallowfullscreen
+        allowFullScreen
+      >
+      </iframe>
+    </div>
+  </section>
+
+          </div>
   );
 }
