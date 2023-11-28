@@ -15,7 +15,7 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/",
     "announcement": "📢 Find Hamilton next at "
-    + '<a target="_blank" href="https://www.scale.bythebay.io/schedule">Scale By The Bay\'23</a>📢',
+    + '<a target="_blank" href="https://global2023.pydata.org/cfp/talk/3REDA9/">PyData Global\'23</a>📢',
     "light_css_variables": {
         "color-announcement-background": "#ffba00",
         "color-announcement-text": "#091E42",
