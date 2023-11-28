@@ -1,5 +1,5 @@
-# --- START LICENSE (optional)
-# --- END LICENSE
+# --- START NOTICES (optional)
+# --- END NOTICES
 # --- START IMPORT SECTION
 import logging
 
