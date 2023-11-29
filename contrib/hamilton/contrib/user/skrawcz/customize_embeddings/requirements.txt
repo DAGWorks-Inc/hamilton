@@ -1,3 +1,5 @@
 openai
+plotly
 scikit-learn
 sf-hamilton
+torch
