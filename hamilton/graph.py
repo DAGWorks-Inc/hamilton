@@ -336,7 +336,11 @@ def create_graphviz_graph(
             concentrate="true",
         ),
     )
-    digraph_attr.update(**graphviz_kwargs)
+    for g_key, g_value in graphviz_kwargs.items():
+        if isinstance(g_value, dict):
+            digraph_attr[g_key].update(**g_value)
+        else:
+            digraph_attr[g_key] = g_value
     digraph = graphviz.Digraph(**digraph_attr)
 
     # create nodes
@@ -649,7 +653,7 @@ class FunctionGraph(object):
             displaying also what nodes a node depends on (i.e. all nodes that feed into it).
         :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
         :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
-            `orient` will be overwridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
+            `orient` will be overridden by the value of `graphviz_kwargs['graph_attr']['rankdir']`
             see (https://graphviz.org/docs/attr-types/rankdir/)
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
