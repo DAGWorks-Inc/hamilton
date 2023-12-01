@@ -5,6 +5,9 @@ from itertools import permutations
 
 import pandas as pd
 import pytest
+
+import hamilton.graph_utils
+import hamilton.htypes
 import tests.resources.bad_functions
 import tests.resources.config_modifier
 import tests.resources.cyclic_functions
@@ -19,9 +22,6 @@ import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
 import tests.resources.test_default_args
 import tests.resources.typing_vs_not_typing
-
-import hamilton.graph_utils
-import hamilton.htypes
 from hamilton import ad_hoc_utils, base, graph, node
 from hamilton.execution import graph_functions
 from hamilton.node import NodeType
@@ -644,13 +644,13 @@ def test_create_graphviz_graph():
             "// Dependency Graph",
             "",
             "digraph {",
-            "\tgraph [ratio=1]",
+            "\tgraph [compound=true concentrate=true rankdir=LR ranksep=0.4 ratio=1]",
             '\tB [label=<<b>B</b><br /><br /><i>int</i>> fillcolor="#FFC857" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
             '\tC [label=<<b>C</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
             '\tA [label=<<b>A</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
             "\tA -> B",
             "\tA -> C",
-            # commenting out input node: '\t_A_inputs [label=<<table border="0"><tr><td>c</td><td>int</td></tr><tr><td>b</td><td>int</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style=dashed]',
+            '\t_A_inputs [label=<<table border="0"><tr><td>b</td><td>int</td></tr><tr><td>b</td><td>int</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style=dashed]',
             "\t_A_inputs -> A",
             "\tsubgraph cluster__legend {",
             "\t\tgraph [fontname=helvetica label=Legend rank=same]",
@@ -670,9 +670,9 @@ def test_create_graphviz_graph():
         node_modifiers=node_modifiers,
         strictly_display_only_nodes_passed_in=False,
     )
-    dot_set = set(str(digraph).split("\n"))
-
-    assert dot_set.issuperset(expected_set) and len(dot_set.difference(expected_set)) == 1
+    # the HTML table isn't deterministic. Replace the value in it with a single one.
+    dot_set = set(str(digraph).replace("<td>c</td>", "<td>b</td>").split("\n"))
+    assert dot_set == expected_set
 
 
 def test_create_networkx_graph():
