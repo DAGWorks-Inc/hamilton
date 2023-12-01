@@ -103,6 +103,11 @@ const config = {
             label: 'GitHub',
             position: 'right',
           },
+            {
+            href: 'https://www.tryhamilton.dev',
+            label: 'Try Hamilton',
+            position: 'right',
+          },
 
         ],
       },
