@@ -1,6 +1,7 @@
 from typing import Any, Dict, Type, Union
 
 import polars as pl
+
 from hamilton import base
 
 
