@@ -4,6 +4,10 @@ from typing import Any, Dict, Union
 
 import pandas as pd
 
+DATAFRAME_METADATA = "dataframe_metadata"
+SQL_METADATA = "sql_metadata"
+FILE_METADATA = "file_metadata"
+
 
 def get_file_metadata(path: str) -> Dict[str, Any]:
     """Gives metadata from loading a file.
@@ -19,6 +23,39 @@ def get_file_metadata(path: str) -> Dict[str, Any]:
         "last_modified": os.path.getmtime(path),
         "timestamp": datetime.now().utcnow().timestamp(),
     }
+
+
+def get_dataframe_metadata(df: pd.DataFrame) -> Dict[str, Any]:
+    """Gives metadata from loading a dataframe.
+    This includes:
+    - the number of rows
+    - the number of columns
+    - the column names
+    - the data types
+    """
+    return {
+        "rows": len(df),
+        "columns": len(df.columns),
+        "column_names": list(df.columns),
+        "datatypes": [str(t) for t in list(df.dtypes)],  # for serialization purposes
+    }
+
+
+def get_file_and_dataframe_metadata(path: str, df: pd.DataFrame) -> Dict[str, Any]:
+    """Gives metadata from loading a file and a dataframe.
+    This includes:
+        file_meta:
+            - the file size
+            - the file path
+            - the last modified time
+            - the current time
+        dataframe_meta:
+        - the number of rows
+        - the number of columns
+        - the column names
+        - the data types
+    """
+    return {FILE_METADATA: get_file_metadata(path), DATAFRAME_METADATA: get_dataframe_metadata(df)}
 
 
 def get_sql_metadata(query_or_table: str, results: Union[int, pd.DataFrame]) -> Dict[str, Any]:

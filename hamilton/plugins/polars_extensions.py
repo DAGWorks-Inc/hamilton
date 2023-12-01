@@ -170,7 +170,7 @@ class PolarsCSVReader(DataLoader):
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pl.read_csv(self.file, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.file)
+        metadata = utils.get_file_and_dataframe_metadata(self.file, df)
         return df, metadata
 
     @classmethod
@@ -232,11 +232,11 @@ class PolarsCSVWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.write_csv(self.file, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.file)
+        return utils.get_file_and_dataframe_metadata(self.file, data)
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pl.read_csv(self.file, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.file)
+        metadata = utils.get_file_and_dataframe_metadata(self.file, df)
         return df, metadata
 
     @classmethod
@@ -299,7 +299,7 @@ class PolarsParquetReader(DataLoader):
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pl.read_parquet(self.file, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.file)
+        metadata = utils.get_file_and_dataframe_metadata(self.file, df)
         return df, metadata
 
     @classmethod
@@ -344,7 +344,7 @@ class PolarsParquetWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.write_parquet(self.file, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.file)
+        return utils.get_file_and_dataframe_metadata(self.file, data)
 
     @classmethod
     def name(cls) -> str:
@@ -426,7 +426,7 @@ class PolarsFeatherWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.write_ipc(self.file, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.file)
+        return utils.get_file_and_dataframe_metadata(self.file, data)
 
     @classmethod
     def name(cls) -> str:
@@ -458,7 +458,7 @@ class PolarsAvroReader(DataLoader):
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pl.read_avro(self.file, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.file)
+        metadata = utils.get_file_and_dataframe_metadata(self.file, df)
         return df, metadata
 
     @classmethod
@@ -488,7 +488,7 @@ class PolarsAvroWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.write_avro(self.file, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.file)
+        return utils.get_file_and_dataframe_metadata(self.file, data)
 
     @classmethod
     def name(cls) -> str:
@@ -553,7 +553,7 @@ class PolarsJSONWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.write_json(self.file, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.file)
+        return utils.get_file_and_dataframe_metadata(self.file, data)
 
     @classmethod
     def name(cls) -> str:

@@ -246,7 +246,7 @@ class PandasCSVReader(DataLoader):
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pd.read_csv(self.path, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.path)
+        metadata = utils.get_file_and_dataframe_metadata(self.path, df)
         return df, metadata
 
     @classmethod
@@ -337,7 +337,7 @@ class PandasCSVWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_csv(self.path, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.path)
+        return utils.get_file_and_dataframe_metadata(self.path, data)
 
     @classmethod
     def name(cls) -> str:
@@ -386,8 +386,7 @@ class PandasParquetReader(DataLoader):
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         # Loads the data and returns the df and metadata of the pickle
         df = pd.read_parquet(self.path, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.path)
-
+        metadata = utils.get_file_and_dataframe_metadata(self.path, df)
         return df, metadata
 
     @classmethod
@@ -433,7 +432,7 @@ class PandasParquetWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_parquet(self.path, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.path)
+        return utils.get_file_and_dataframe_metadata(self.path, data)
 
     @classmethod
     def name(cls) -> str:
@@ -471,8 +470,7 @@ class PandasPickleReader(DataLoader):
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         # Loads the data and returns the df and metadata of the pickle
         df = pd.read_pickle(self.filepath_or_buffer, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.filepath_or_buffer)
-
+        metadata = utils.get_file_and_dataframe_metadata(self.filepath_or_buffer, df)
         return df, metadata
 
     @classmethod
@@ -525,7 +523,7 @@ class PandasPickleWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_pickle(self.path, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.path)
+        return utils.get_file_and_dataframe_metadata(self.path, data)
 
     @classmethod
     def name(cls) -> str:
@@ -607,7 +605,7 @@ class PandasJsonReader(DataLoader):
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pd.read_json(self.filepath_or_buffer, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.filepath_or_buffer)
+        metadata = utils.get_file_and_dataframe_metadata(self.filepath_or_buffer, df)
         return df, metadata
 
     @classmethod
@@ -675,7 +673,7 @@ class PandasJsonWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_json(self.filepath_or_buffer, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.filepath_or_buffer)
+        return utils.get_file_and_dataframe_metadata(self.filepath_or_buffer, data)
 
     @classmethod
     def name(cls) -> str:
@@ -732,7 +730,9 @@ class PandasSqlReader(DataLoader):
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pd.read_sql(self.query_or_table, self.db_connection, **self._get_loading_kwargs())
-        metadata = utils.get_sql_metadata(self.query_or_table, df)
+        sql_metadata = utils.get_sql_metadata(self.query_or_table, df)
+        df_metadata = utils.get_dataframe_metadata(df)
+        metadata = {utils.SQL_METADATA: sql_metadata, utils.DATAFRAME_METADATA: df_metadata}
         return df, metadata
 
     @classmethod
@@ -787,7 +787,10 @@ class PandasSqlWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         results = data.to_sql(self.table_name, self.db_connection, **self._get_saving_kwargs())
-        return utils.get_sql_metadata(self.table_name, results)
+        sql_metadata = utils.get_sql_metadata(self.table_name, results)
+        df_metadata = utils.get_dataframe_metadata(data)
+        metadata = {utils.SQL_METADATA: sql_metadata, utils.DATAFRAME_METADATA: df_metadata}
+        return metadata
 
     @classmethod
     def name(cls) -> str:
@@ -865,8 +868,7 @@ class PandasXmlReader(DataLoader):
     def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         # Loads the data and returns the df and metadata of the xml
         df = pd.read_xml(self.path_or_buffer, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.path_or_buffer)
-
+        metadata = utils.get_file_and_dataframe_metadata(self.path_or_buffer, df)
         return df, metadata
 
     @classmethod
@@ -940,7 +942,7 @@ class PandasXmlWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_xml(self.path_or_buffer, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.path_or_buffer)
+        return utils.get_file_and_dataframe_metadata(self.path_or_buffer, data)
 
     @classmethod
     def name(cls) -> str:
@@ -1016,11 +1018,10 @@ class PandasHtmlReader(DataLoader):
 
         return kwargs
 
-    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+    def load_data(self, type: Type) -> Tuple[List[DATAFRAME_TYPE], Dict[str, Any]]:
         # Loads the data and returns the df and metadata of the xml
         df = pd.read_html(self.io, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.io)
-
+        metadata = utils.get_file_and_dataframe_metadata(self.io, df[0])
         return df, metadata
 
     @classmethod
@@ -1114,7 +1115,7 @@ class PandasHtmlWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_html(self.buf, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.buf)
+        return utils.get_file_and_dataframe_metadata(self.buf, data)
 
     @classmethod
     def name(cls) -> str:
@@ -1177,8 +1178,7 @@ class PandasStataReader(DataLoader):
     def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         # Loads the data and returns the df and metadata of the xml
         df = pd.read_stata(self.filepath_or_buffer, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.filepath_or_buffer)
-
+        metadata = utils.get_file_and_dataframe_metadata(self.filepath_or_buffer, df)
         return df, metadata
 
     @classmethod
@@ -1241,7 +1241,7 @@ class PandasStataWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_stata(self.path, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.path)
+        return utils.get_file_and_dataframe_metadata(self.path, data)
 
     @classmethod
     def name(cls) -> str:
@@ -1281,8 +1281,7 @@ class PandasFeatherReader(DataLoader):
     def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         # Loads the data and returns the df and metadata of the xml
         df = pd.read_feather(self.path, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.path)
-
+        metadata = utils.get_file_and_dataframe_metadata(self.path, df)
         return df, metadata
 
     @classmethod
@@ -1328,7 +1327,7 @@ class PandasFeatherWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_feather(self.path, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.path)
+        return utils.get_file_and_dataframe_metadata(self.path, data)
 
     @classmethod
     def name(cls) -> str:
@@ -1366,8 +1365,7 @@ class PandasORCReader(DataLoader):
     def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         # Loads the data and returns the df and metadata of the orc
         df = pd.read_orc(self.path, **self._get_loading_kwargs())
-        metadata = utils.get_file_metadata(self.path)
-
+        metadata = utils.get_file_and_dataframe_metadata(self.path, df)
         return df, metadata
 
     @classmethod
@@ -1405,7 +1403,7 @@ class PandasORCWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         data.to_orc(self.path, **self._get_saving_kwargs())
-        return utils.get_file_metadata(self.path)
+        return utils.get_file_and_dataframe_metadata(self.path, data)
 
     @classmethod
     def name(cls) -> str:

@@ -1,8 +1,8 @@
 import pathlib
 
-import polars as pl
 import pytest
 
+import polars as pl
 from hamilton.plugins.polars_extensions import (
     PolarsAvroReader,
     PolarsAvroWriter,
@@ -76,7 +76,9 @@ def test_polars_feather(tmp_path: pathlib.Path) -> None:
     assert PolarsFeatherWriter.applicable_types() == [pl.DataFrame]
     assert "compression" in write_kwargs
     assert file_path.exists()
-    assert metadata["path"] == file_path
+    assert metadata["file_metadata"]["path"] == file_path
+    assert metadata["dataframe_metadata"]["column_names"] == ["animal", "points", "environment"]
+    assert metadata["dataframe_metadata"]["datatypes"] == ["Utf8", "Int64", "Utf8"]
 
 
 def test_polars_json(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
