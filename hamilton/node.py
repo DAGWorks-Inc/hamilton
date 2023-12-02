@@ -158,6 +158,11 @@ class Node(object):
     def type(self) -> Any:
         return self._type
 
+    def set_type(self, typ: Any):
+        """Sets the type of the node"""
+        assert self.user_defined is True, "Cannot reset type of non-user-defined node"
+        self._type = typ
+
     @property
     def callable(self):
         return self._callable
@@ -195,6 +200,18 @@ class Node(object):
         :return: A Tuple consisting of functions from which this node was created.
         """
         return self._originating_functions
+
+    def add_originating_function(self, fn: Callable):
+        """Adds a function to the list of originating functions.
+
+        This is used in the case to attach originating functions to user-defined (i.e. external/input nodes).
+        :param fn: Function to add
+        """
+        assert self.user_defined is True, "Cannot add originating function to non-user-defined node"
+        if self._originating_functions is None:
+            self._originating_functions = (fn,)
+        else:
+            self._originating_functions += (fn,)
 
     def add_tag(self, tag_name: str, tag_value: str):
         self._tags[tag_name] = tag_value
