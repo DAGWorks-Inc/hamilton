@@ -5,9 +5,6 @@ from itertools import permutations
 
 import pandas as pd
 import pytest
-
-import hamilton.graph_utils
-import hamilton.htypes
 import tests.resources.bad_functions
 import tests.resources.compatible_input_types
 import tests.resources.config_modifier
@@ -24,6 +21,9 @@ import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
 import tests.resources.test_default_args
 import tests.resources.typing_vs_not_typing
+
+import hamilton.graph_utils
+import hamilton.htypes
 from hamilton import ad_hoc_utils, base, graph, node
 from hamilton.execution import graph_functions
 from hamilton.node import NodeType
@@ -237,7 +237,10 @@ def test_add_dependency_input_nodes_compatible_types():
 
 
 def test_add_dependency_input_nodes_compatible_types_order_check():
-    """Tests that if functions request an input that we correctly accept compatible types independent of order."""
+    """Tests that if functions request an input that we correctly accept compatible types independent of order.
+
+    This just reorders test_add_dependency_input_nodes_compatible_types to ensure the outcome does not change.
+    """
     b_sig = inspect.signature(tests.resources.compatible_input_types.b)
     c_sig = inspect.signature(tests.resources.compatible_input_types.c)
     d_sig = inspect.signature(tests.resources.compatible_input_types.d)

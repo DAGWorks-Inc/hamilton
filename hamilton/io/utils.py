@@ -11,6 +11,10 @@ FILE_METADATA = "file_metadata"
 
 def get_file_metadata(path: str) -> Dict[str, Any]:
     """Gives metadata from loading a file.
+
+    Note: we reserve the right to change this schema. So if you're using this come
+    chat so that we can make sure we don't break your code.
+
     This includes:
     - the file size
     - the file path
@@ -27,6 +31,10 @@ def get_file_metadata(path: str) -> Dict[str, Any]:
 
 def get_dataframe_metadata(df: pd.DataFrame) -> Dict[str, Any]:
     """Gives metadata from loading a dataframe.
+
+    Note: we reserve the right to change this schema. So if you're using this come
+    chat so that we can make sure we don't break your code.
+
     This includes:
     - the number of rows
     - the number of columns
@@ -43,6 +51,10 @@ def get_dataframe_metadata(df: pd.DataFrame) -> Dict[str, Any]:
 
 def get_file_and_dataframe_metadata(path: str, df: pd.DataFrame) -> Dict[str, Any]:
     """Gives metadata from loading a file and a dataframe.
+
+    Note: we reserve the right to change this schema. So if you're using this come
+    chat so that we can make sure we don't break your code.
+
     This includes:
         file_meta:
             - the file size
@@ -60,6 +72,10 @@ def get_file_and_dataframe_metadata(path: str, df: pd.DataFrame) -> Dict[str, An
 
 def get_sql_metadata(query_or_table: str, results: Union[int, pd.DataFrame]) -> Dict[str, Any]:
     """Gives metadata from reading a SQL table or writing to SQL db.
+
+    Note: we reserve the right to change this schema. So if you're using this come
+    chat so that we can make sure we don't break your code.
+
     This includes:
     - the number of rows read, added, or to add.
     - the sql query (e.g., "SELECT foo FROM bar")
