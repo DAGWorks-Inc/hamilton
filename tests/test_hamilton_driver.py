@@ -2,13 +2,13 @@ from unittest import mock
 
 import pandas as pd
 import pytest
+
 import tests.resources.cyclic_functions
 import tests.resources.dummy_functions
 import tests.resources.dynamic_parallelism.parallel_linear_basic
 import tests.resources.tagging
 import tests.resources.test_default_args
 import tests.resources.very_simple_dag
-
 from hamilton import base, node
 from hamilton.driver import (
     Builder,
@@ -136,7 +136,7 @@ def test_driver_variables_exposes_original_function():
         var.name: var.originating_functions for var in dr.list_available_variables()
     }
     assert originating_functions["b"] == (tests.resources.very_simple_dag.b,)
-    assert originating_functions["a"] is None
+    assert originating_functions["a"] == (tests.resources.very_simple_dag.b,)  # a is an input
 
 
 @mock.patch("hamilton.telemetry.send_event_json")

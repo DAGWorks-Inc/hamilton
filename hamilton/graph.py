@@ -51,18 +51,45 @@ def add_dependency(
     """
     if param_name in nodes:
         # validate types match
-        required_node = nodes[param_name]
-        if not types_match(adapter, param_type, required_node.type):
+        required_node: Node = nodes[param_name]
+        types_do_match = types_match(adapter, param_type, required_node.type)
+        if not types_do_match and required_node.user_defined:
+            # check the case that two input type expectations are compatible, e.g. is one a subset of the other
+            # this could be the case when one is a union and the other is a subset of that union
+            # which is fine for inputs. If they are not compatible, we raise an error.
+            types_are_compatible = types_match(adapter, required_node.type, param_type)
+            if not types_are_compatible:
+                raise ValueError(
+                    f"Error: Two or more functions are requesting {param_name}, but have incompatible types. "
+                    f"{func_name} requires {param_name} to be {param_type}, but found another function(s) "
+                    f"{[f.__name__ for f in required_node.originating_functions]} that minimally require {param_name} "
+                    f"as {required_node.type}. Please fix this by ensuring that all functions requesting {param_name} "
+                    f"have compatible types. If you believe they are equivalent, please reach out to the developers. "
+                    f"Note that, if you have types that are equivalent for your purposes, you can create a "
+                    f"graph adapter that checks the types against each other in a more lenient manner."
+                )
+            else:
+                # replace the current type with this "tighter" type.
+                required_node.set_type(param_type)
+                # add to the originating functions
+                for og_func in func_node.originating_functions:
+                    required_node.add_originating_function(og_func)
+        elif not types_do_match:
             raise ValueError(
                 f"Error: {func_name} is expecting {param_name}:{param_type}, but found "
                 f"{param_name}:{required_node.type}. \nHamilton does not consider these types to be "
-                f"equivalent. If you believe they are equivalent, please reach out to the developers."
+                f"equivalent. If you believe they are equivalent, please reach out to the developers. "
                 f"Note that, if you have types that are equivalent for your purposes, you can create a "
                 f"graph adapter that checks the types against each other in a more lenient manner."
             )
     else:
-        # this is a user defined var
-        required_node = node.Node(param_name, param_type, node_source=node.NodeType.EXTERNAL)
+        # this is a user defined var, i.e. an input to the graph.
+        required_node = node.Node(
+            param_name,
+            param_type,
+            node_source=node.NodeType.EXTERNAL,
+            originating_functions=func_node.originating_functions,
+        )
         nodes[param_name] = required_node
     # add edges
     func_node.dependencies.append(required_node)
@@ -77,6 +104,8 @@ def update_dependencies(
     """Adds dependencies to a dictionary of nodes. If in_place is False,
     it will deepcopy the dict + nodes and return that. Otherwise it will
     mutate + return the passed-in dict + nodes.
+
+    Note: this will add in "input" nodes if they are not already present.
 
     :param in_place: Whether or not to modify in-place, or copy/return
     :param nodes: Nodes that form the DAG we're updating
@@ -114,7 +143,7 @@ def create_function_graph(
         nodes = fg.nodes
     functions = sum([find_functions(module) for module in modules], [])
 
-    # create nodes -- easier to just create this in one loop
+    # create non-input nodes -- easier to just create this in one loop
     for func_name, f in functions:
         for n in fm_base.resolve_nodes(f, config):
             if n.name in config:
@@ -125,7 +154,7 @@ def create_function_graph(
                     f" Already defined by function {f}"
                 )
             nodes[n.name] = n
-    # add dependencies -- now that all nodes exist, we just run through edges & validate graph.
+    # add dependencies -- now that all nodes except input nodes, we just run through edges & validate graph.
     nodes = update_dependencies(nodes, adapter, reset_dependencies=False)  # no dependencies
     # present yet
     for key in config.keys():
@@ -204,11 +233,7 @@ def create_graphviz_graph(
         Config: is external, doesn't originate from a function, no function depedends on it
         Function: others
         """
-        if (
-            n._node_source == node.NodeType.EXTERNAL
-            and n._originating_functions is None
-            and n._depended_on_by
-        ):
+        if n._node_source == node.NodeType.EXTERNAL and n._depended_on_by:
             return "input"
         elif (
             n._node_source == node.NodeType.EXTERNAL

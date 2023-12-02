@@ -5,13 +5,18 @@ from itertools import permutations
 
 import pandas as pd
 import pytest
+
+import hamilton.graph_utils
+import hamilton.htypes
 import tests.resources.bad_functions
+import tests.resources.compatible_input_types
 import tests.resources.config_modifier
 import tests.resources.cyclic_functions
 import tests.resources.dummy_functions
 import tests.resources.extract_column_nodes
 import tests.resources.extract_columns_execution_count
 import tests.resources.functions_with_generics
+import tests.resources.incompatible_input_types
 import tests.resources.layered_decorators
 import tests.resources.multiple_decorators_together
 import tests.resources.optional_dependencies
@@ -19,9 +24,6 @@ import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
 import tests.resources.test_default_args
 import tests.resources.typing_vs_not_typing
-
-import hamilton.graph_utils
-import hamilton.htypes
 from hamilton import ad_hoc_utils, base, graph, node
 from hamilton.execution import graph_functions
 from hamilton.node import NodeType
@@ -106,6 +108,185 @@ def test_add_dependency_strict_node_dependencies():
     )
     assert nodes["A"] == func_node.dependencies[0]
     assert func_node.depended_on_by == []
+
+
+def test_add_dependency_input_nodes_mismatch_on_types():
+    """Tests that if two functions request an input that has incompatible types, we error out."""
+    b_sig = inspect.signature(tests.resources.incompatible_input_types.b)
+    c_sig = inspect.signature(tests.resources.incompatible_input_types.c)
+
+    nodes = {
+        "b": node.Node.from_fn(tests.resources.incompatible_input_types.b),
+        "c": node.Node.from_fn(tests.resources.incompatible_input_types.c),
+    }
+    nodes["b"]._originating_functions = (tests.resources.incompatible_input_types.b,)
+    nodes["c"]._originating_functions = (tests.resources.incompatible_input_types.c,)
+    param_name = "a"
+
+    # this adds 'a' to nodes
+    graph.add_dependency(
+        nodes["b"],
+        "b",
+        nodes,
+        param_name,
+        b_sig.parameters[param_name].annotation,
+        base.SimplePythonDataFrameGraphAdapter(),
+    )
+
+    assert "a" in nodes
+
+    # adding dependency of c on a should fail because the types are incompatible
+    with pytest.raises(ValueError):
+        graph.add_dependency(
+            nodes["c"],
+            "c",
+            nodes,
+            param_name,
+            c_sig.parameters[param_name].annotation,
+            base.SimplePythonDataFrameGraphAdapter(),
+        )
+
+
+def test_add_dependency_input_nodes_mismatch_on_types_complex():
+    """Tests a more complex scenario we don't support right now with input types."""
+    e_sig = inspect.signature(tests.resources.incompatible_input_types.e)
+    f_sig = inspect.signature(tests.resources.incompatible_input_types.f)
+
+    nodes = {
+        "e": node.Node.from_fn(tests.resources.incompatible_input_types.e),
+        "f": node.Node.from_fn(tests.resources.incompatible_input_types.f),
+    }
+    nodes["e"]._originating_functions = (tests.resources.incompatible_input_types.e,)
+    nodes["f"]._originating_functions = (tests.resources.incompatible_input_types.f,)
+    param_name = "d"
+
+    # this adds 'a' to nodes
+    graph.add_dependency(
+        nodes["e"],
+        "e",
+        nodes,
+        param_name,
+        e_sig.parameters[param_name].annotation,
+        base.SimplePythonDataFrameGraphAdapter(),
+    )
+
+    assert "d" in nodes
+
+    # adding dependency of c on a should fail because the types are incompatible
+    with pytest.raises(ValueError):
+        graph.add_dependency(
+            nodes["e"],
+            "e",
+            nodes,
+            param_name,
+            f_sig.parameters[param_name].annotation,
+            base.SimplePythonDataFrameGraphAdapter(),
+        )
+
+
+def test_add_dependency_input_nodes_compatible_types():
+    """Tests that if functions request an input that we correctly accept compatible types."""
+    b_sig = inspect.signature(tests.resources.compatible_input_types.b)
+    c_sig = inspect.signature(tests.resources.compatible_input_types.c)
+    d_sig = inspect.signature(tests.resources.compatible_input_types.d)
+
+    nodes = {
+        "b": node.Node.from_fn(tests.resources.compatible_input_types.b),
+        "c": node.Node.from_fn(tests.resources.compatible_input_types.c),
+        "d": node.Node.from_fn(tests.resources.compatible_input_types.d),
+    }
+    nodes["b"]._originating_functions = (tests.resources.compatible_input_types.b,)
+    nodes["c"]._originating_functions = (tests.resources.compatible_input_types.c,)
+    nodes["d"]._originating_functions = (tests.resources.compatible_input_types.d,)
+    # what we want to add
+    param_name = "a"
+
+    # this adds 'a' to nodes
+    graph.add_dependency(
+        nodes["b"],
+        "b",
+        nodes,
+        param_name,
+        b_sig.parameters[param_name].annotation,
+        base.SimplePythonDataFrameGraphAdapter(),
+    )
+
+    assert "a" in nodes
+
+    # this adds 'a' to 'c' as well.
+    graph.add_dependency(
+        nodes["c"],
+        "c",
+        nodes,
+        param_name,
+        c_sig.parameters[param_name].annotation,
+        base.SimplePythonDataFrameGraphAdapter(),
+    )
+
+    # test that we shrink the type to the tighter type
+    assert nodes["a"].type == str
+
+    graph.add_dependency(
+        nodes["d"],
+        "d",
+        nodes,
+        param_name,
+        d_sig.parameters[param_name].annotation,
+        base.SimplePythonDataFrameGraphAdapter(),
+    )
+
+
+def test_add_dependency_input_nodes_compatible_types_order_check():
+    """Tests that if functions request an input that we correctly accept compatible types independent of order."""
+    b_sig = inspect.signature(tests.resources.compatible_input_types.b)
+    c_sig = inspect.signature(tests.resources.compatible_input_types.c)
+    d_sig = inspect.signature(tests.resources.compatible_input_types.d)
+
+    nodes = {
+        "b": node.Node.from_fn(tests.resources.compatible_input_types.b),
+        "c": node.Node.from_fn(tests.resources.compatible_input_types.c),
+        "d": node.Node.from_fn(tests.resources.compatible_input_types.d),
+    }
+    nodes["b"]._originating_functions = (tests.resources.compatible_input_types.b,)
+    nodes["c"]._originating_functions = (tests.resources.compatible_input_types.c,)
+    nodes["d"]._originating_functions = (tests.resources.compatible_input_types.d,)
+    # what we want to add
+    param_name = "a"
+
+    # this adds 'a' to nodes
+    graph.add_dependency(
+        nodes["c"],
+        "c",
+        nodes,
+        param_name,
+        c_sig.parameters[param_name].annotation,
+        base.SimplePythonDataFrameGraphAdapter(),
+    )
+
+    assert "a" in nodes
+    assert nodes["a"].type == str
+
+    # this adds 'a' to 'c' as well.
+    graph.add_dependency(
+        nodes["b"],
+        "b",
+        nodes,
+        param_name,
+        b_sig.parameters[param_name].annotation,
+        base.SimplePythonDataFrameGraphAdapter(),
+    )
+
+    # test that type didn't change
+    assert nodes["a"].type == str
+
+    graph.add_dependency(
+        nodes["d"],
+        "d",
+        nodes,
+        param_name,
+        d_sig.parameters[param_name].annotation,
+        base.SimplePythonDataFrameGraphAdapter(),
+    )
 
 
 def test_typing_to_primitive_conversion():
