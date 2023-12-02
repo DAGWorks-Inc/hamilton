@@ -361,6 +361,8 @@ def create_graphviz_graph(
             concentrate="true",
         ),
     )
+    # we need to update the graph_attr dict instead of overwriting it
+    # so that means we need to handle nested dicts, e.g. graph_attr.
     for g_key, g_value in graphviz_kwargs.items():
         if isinstance(g_value, dict):
             digraph_attr[g_key].update(**g_value)
