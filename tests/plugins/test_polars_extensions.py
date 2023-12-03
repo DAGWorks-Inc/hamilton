@@ -79,6 +79,15 @@ def test_polars_feather(tmp_path: pathlib.Path) -> None:
     assert metadata["path"] == file_path
 
 
+def test_polars_spreadsheet_workbook(df: pl.DataFrame, tmp_path: pathlib.Path):
+    from xlsxwriter import Workbook
+    with Workbook(tmp_path + "/test2.execl") as wb:
+        writer = PolarsSpreadsheetWriter(workbook=wb)
+        kwargs1 = writer._get_saving_kwargs()
+        writer.save_data(df)
+        assert kwargs1["position"] == 'A1'
+
+
 def test_polars_spreadsheet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     file = tmp_path / "test.excel"
     writer = PolarsSpreadsheetWriter(workbook=file)

@@ -15,8 +15,12 @@ from typing import (
     Tuple,
     Type,
     Union,
-    Literal,
 )
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 try:
     import polars as pl
@@ -24,7 +28,11 @@ except ImportError:
     raise NotImplementedError("Polars is not installed.")
 
 from polars import PolarsDataType
-from xlsxwriter.workbook import Workbook
+
+try:
+   from xlsxwriter.workbook import Workbook
+except ImportError:
+    Workbook = Type
 # for polars <0.16.0 we need to determine whether type_aliases exist.
 has_alias = False
 if hasattr(pl, "type_aliases"):
