@@ -53,6 +53,7 @@ from hamilton.function_modifiers import (
     extract_fields,
     group,
     inject,
+    load_from,
     parameterize,
     source,
     value,
@@ -155,22 +156,24 @@ def processed_local_dataset__snli(
 
 @config.when(source="local")
 @check_output(schema=processed_dataset_schema, importance="fail")
+@load_from.csv(
+    path=source("local_dataset_path")
+    # see data loader docuemntation and the PandasCSVReader for values you can pass in:
+    #  - https://hamilton.dagworks.io/en/latest/reference/io/available-data-adapters/#data-loaders
+    #  - https://github.com/dagworks-inc/hamilton/blob/main/hamilton/plugins/pandas_extensions.py#L89-L255
+)
 def processed_local_dataset__local(
-    local_dataset_path: str,
-    read_csv_kwargs: dict = None,
+    local_dataset: pd.DataFrame,
 ) -> pd.DataFrame:
     """Uses a local dataset, reading it from the given path.
 
     Override this with a dataframe (`overrides={"processed_local_dataset": my_df}`) if you have your own dataset
     that's ready in a notebook, or modify it to match your use case.
 
-    :param local_dataset_path: path to file.
-    :param read_csv_kwargs: kwargs to pass to pd.read_csv. e.g. delimiter.
+    :param local_dataset: dataframe loaded by the Pandas CSV Reader.
     :return: dataframe of text pairs with labels. Schema: text_1, text_2, label (1 for similar, -1 for dissimilar).
     """
-    if read_csv_kwargs is None:
-        read_csv_kwargs = {}
-    return pd.read_csv(local_dataset_path, **read_csv_kwargs)
+    return local_dataset
 
 
 # split data into train and test sets
@@ -239,38 +242,40 @@ def test_df_negatives(base_test_df: pd.DataFrame) -> pd.DataFrame:
     return _df
 
 
-def train_df(
-    base_train_df: pd.DataFrame,
-    train_df_negatives: pd.DataFrame,
+@parameterize(
+    train_df={"base_df": source("base_train_df"), "df_negatives": source("train_df_negatives")},
+    test_df={"base_df": source("base_test_df"), "df_negatives": source("test_df_negatives")},
+)
+def construct_df(
+    base_df: pd.DataFrame,
+    df_negatives: pd.DataFrame,
     negatives_per_positive: int = 1,
     random_seed: int = 123,
 ) -> pd.DataFrame:
-    """Return dataframe of training pairs, with negatives added."""
+    f"""Return dataframe of {base_df} paris with negatives added."""
     return pd.concat(
         [
-            base_train_df,
-            train_df_negatives.sample(
-                n=len(base_train_df) * negatives_per_positive, random_state=random_seed
-            ),
+            base_df,
+            df_negatives.sample(n=len(base_df) * negatives_per_positive, random_state=random_seed),
         ]
     )
 
 
-def test_df(
-    base_test_df: pd.DataFrame,
-    test_df_negatives: pd.DataFrame,
-    negatives_per_positive: int = 1,
-    random_seed: int = 123,
-) -> pd.DataFrame:
-    """Return dataframe of testing pairs, with negatives added."""
-    return pd.concat(
-        [
-            base_test_df,
-            test_df_negatives.sample(
-                n=len(base_test_df) * negatives_per_positive, random_state=random_seed
-            ),
-        ]
-    )
+# def test_df(
+#     base_test_df: pd.DataFrame,
+#     test_df_negatives: pd.DataFrame,
+#     negatives_per_positive: int = 1,
+#     random_seed: int = 123,
+# ) -> pd.DataFrame:
+#     """Return dataframe of testing pairs, with negatives added."""
+#     return pd.concat(
+#         [
+#             base_test_df,
+#             test_df_negatives.sample(
+#                 n=len(base_test_df) * negatives_per_positive, random_state=random_seed
+#             ),
+#         ]
+#     )
 
 
 # Expose text_1 and text_2 columns from train and test dataframes
@@ -731,3 +736,7 @@ if __name__ == "__main__":
         ],
         inputs={},
     )
+    print(result["train_accuracy"])
+    print(result["test_accuracy"])
+    print(result["train_accuracy"])
+    print(result["test_accuracy_post_optimization"])

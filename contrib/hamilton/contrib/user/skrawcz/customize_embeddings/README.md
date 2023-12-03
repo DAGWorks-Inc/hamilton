@@ -1,6 +1,7 @@
 # Purpose of this module
 
-This module is used to customize embeddings for text data. It is based on MIT licensed code from the OpenAI cookbook.
+This module is used to customize embeddings for text data. It is based on MIT licensed code from
+this [OpenAI cookbook](https://github.com/openai/openai-cookbook/blob/main/examples/Customizing_embeddings.ipynb).
 
 The output is a matrix that you can use to multiply your embeddings. The product of this multiplication is a
 'custom embedding' that will better emphasize aspects of the text relevant to your use case.
@@ -25,7 +26,7 @@ If you pass in `{"source":"local"}` as configuration to the driver, the module w
 path to. The dataset should be a csv with columns "text_1", "text_2", and "label". The label should be +1 if the text
 pairs are similar and -1 if the text pairs are dissimilar.
 
-Otheriwse if you pass in `{}` as configuration to the driver, the module will require you to pass in a dataframe as
+Otherwise if you pass in `{}` as configuration to the driver, the module will require you to pass in a dataframe as
 `processed_local_dataset` as an input. The dataframe should have columns "text_1", "text_2", and "label". The label should be +1 if the
 text pairs are similar and -1 if the text pairs are dissimilar.
 
