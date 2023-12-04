@@ -1,0 +1,3 @@
+{"description": "Use the Stanford SNLI corpus to exercise the code.", "name": "default", "config": {"source":  "snli"}}
+{"description": "Provide a path to a CSV file to load the data set.", "name": "default", "config": {"source": "local"}}
+{"description": "Provide processed_local_dataset as an input.", "name": "default", "config": {}}

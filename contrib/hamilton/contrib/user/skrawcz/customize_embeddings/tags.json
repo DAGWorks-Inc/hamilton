@@ -1,0 +1,8 @@
+{
+  "schema": "1.0",
+  "use_case_tags": ["embeddings", "vectors", "torch", "optimization", "nlp", "openai"],
+  "secondary_tags": {
+    "dataframe-library": "pandas",
+    "machine-learning-library": "pytorch"
+  }
+}
