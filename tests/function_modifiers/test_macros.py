@@ -3,7 +3,6 @@ from typing import List, Set
 
 import pandas as pd
 import pytest
-import tests.resources.pipe
 
 import hamilton.function_modifiers
 from hamilton import base, driver, function_modifiers, models, node
@@ -11,6 +10,8 @@ from hamilton.function_modifiers import does
 from hamilton.function_modifiers.dependencies import source, value
 from hamilton.function_modifiers.macros import Applicable, ensure_function_empty, pipe, step
 from hamilton.node import DependencyType
+
+import tests.resources.pipe
 
 
 def test_no_code_validator():

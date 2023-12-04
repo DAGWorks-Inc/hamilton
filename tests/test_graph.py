@@ -5,6 +5,13 @@ from itertools import permutations
 
 import pandas as pd
 import pytest
+
+import hamilton.graph_utils
+import hamilton.htypes
+from hamilton import ad_hoc_utils, base, graph, node
+from hamilton.execution import graph_functions
+from hamilton.node import NodeType
+
 import tests.resources.bad_functions
 import tests.resources.compatible_input_types
 import tests.resources.config_modifier
@@ -21,12 +28,6 @@ import tests.resources.parametrized_inputs
 import tests.resources.parametrized_nodes
 import tests.resources.test_default_args
 import tests.resources.typing_vs_not_typing
-
-import hamilton.graph_utils
-import hamilton.htypes
-from hamilton import ad_hoc_utils, base, graph, node
-from hamilton.execution import graph_functions
-from hamilton.node import NodeType
 
 
 def test_find_functions():

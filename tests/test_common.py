@@ -1,8 +1,9 @@
 import pytest
-import tests.resources.cyclic_functions
-import tests.resources.test_default_args
 
 from hamilton import common, driver
+
+import tests.resources.cyclic_functions
+import tests.resources.test_default_args
 
 
 class Object:

@@ -1,11 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from tests.resources.dq_dummy_examples import (
-    DUMMY_VALIDATORS_FOR_TESTING,
-    SampleDataValidator2,
-    SampleDataValidator3,
-)
 
 from hamilton import node
 from hamilton.data_quality.base import DataValidationError, ValidationResult
@@ -16,6 +11,12 @@ from hamilton.function_modifiers import (
     check_output_custom,
 )
 from hamilton.node import DependencyType
+
+from tests.resources.dq_dummy_examples import (
+    DUMMY_VALIDATORS_FOR_TESTING,
+    SampleDataValidator2,
+    SampleDataValidator3,
+)
 
 
 def test_check_output_node_transform():

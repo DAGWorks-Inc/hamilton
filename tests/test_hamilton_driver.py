@@ -2,12 +2,6 @@ from unittest import mock
 
 import pandas as pd
 import pytest
-import tests.resources.cyclic_functions
-import tests.resources.dummy_functions
-import tests.resources.dynamic_parallelism.parallel_linear_basic
-import tests.resources.tagging
-import tests.resources.test_default_args
-import tests.resources.very_simple_dag
 
 from hamilton import base, node
 from hamilton.driver import (
@@ -19,6 +13,13 @@ from hamilton.driver import (
 )
 from hamilton.execution import executors
 from hamilton.io.materialization import to
+
+import tests.resources.cyclic_functions
+import tests.resources.dummy_functions
+import tests.resources.dynamic_parallelism.parallel_linear_basic
+import tests.resources.tagging
+import tests.resources.test_default_args
+import tests.resources.very_simple_dag
 
 """This file tests driver capabilities.
 Anything involving execution is tested for multiple executors/driver configuration.
