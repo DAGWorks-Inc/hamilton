@@ -3,7 +3,6 @@ import random
 from typing import Tuple
 
 import pytest
-import tests.resources.reuse_subdag
 
 from hamilton import ad_hoc_utils, graph
 from hamilton.function_modifiers import (
@@ -17,6 +16,8 @@ from hamilton.function_modifiers import (
 from hamilton.function_modifiers.base import NodeTransformer
 from hamilton.function_modifiers.dependencies import source
 from hamilton.function_modifiers.recursive import _validate_config_inputs
+
+import tests.resources.reuse_subdag
 
 
 def test_collect_function_fns():
