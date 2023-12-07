@@ -146,7 +146,9 @@ def execute_subdag(
             try:
                 value = adapter.execute_node(node_, kwargs)
             except Exception:
-                logger.exception(f"Node {node_.name} encountered an error")
+                message = f"> Node {node_.name} encountered an error <"
+                border = "*" * len(message)
+                logger.exception("\n" + border + "\n" + message + "\n" + border)
                 raise
         computed[node_.name] = value
         # > pruning the graph
