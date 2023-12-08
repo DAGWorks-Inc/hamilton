@@ -177,13 +177,21 @@ nodes repeated.
 Congratulations - you just created your Hamilton dataflow that created a dataframe!
 
 ## Example Hamilton Dataflows
-We have a growing list of examples showcasing how one might use Hamilton. You can find them all under the [`examples/`](https://github.com/dagworks-inc/hamilton/tree/main/examples) directory.
-E.g.
+We have a growing list of examples showcasing how one might use Hamilton. You currently have two places to find them:
 
+1. The [Hamilton Dataflow Hub](https://hub.dagworks.io/) -- which makes it easy to pull and then modify code.
+2. The [`examples/`](https://github.com/dagworks-inc/hamilton/tree/main/examples) folder in this repository.
+
+For the Hub, this will contain user contributed dataflows, e.g. text_summarization, forecasting, data processing, that will be continually added to.
+
+For the [`examples/`](https://github.com/dagworks-inc/hamilton/tree/main/examples) directory, you'll have to copy/fork the repository to run them.
+E.g.
 * [Hello world](https://github.com/dagworks-inc/hamilton/tree/main/examples/hello_world)
 * Scaling on to [Ray](https://github.com/dagworks-inc/hamilton/tree/main/examples/ray), [Dask](https://github.com/dagworks-inc/hamilton/tree/main/examples/dask), or [Pandas on Spark](https://github.com/dagworks-inc/hamilton/tree/main/examples/spark)
 * Training [a model with scikit-learn](https://github.com/dagworks-inc/hamilton/tree/main/examples/model_examples)
 * Doing [air quality analysis solely in numpy](https://github.com/dagworks-inc/hamilton/tree/main/examples/numpy/air-quality-analysis)
+
+We also have a docker container that contains some of these examples so you can pull that and run them locally. See the [examples folder README](https://github.com/DAGWorks-Inc/hamilton/blob/main/examples/README.md#running-examples-through-a-docker-image) for details.
 
 # We forked and lost some stars
 This repository is maintained by the original creators of Hamilton, who have since founded [DAGWorks inc.](https://dagworks.io/), a company largely dedicated to building and maintaining the Hamilton library. We decided to fork the original because Stitch Fix did not want to transfer ownership to us; we had grown the star count in the original repository to 893: <img width="141" alt="Screen Shot 2023-02-23 at 12 58 43 PM" src="https://user-images.githubusercontent.com/2328071/221029806-36a4e088-809b-4b08-9199-2fbf8049be34.png">
