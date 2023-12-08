@@ -224,7 +224,7 @@ def import_module(
 
     .. code-block:: python
 
-        from hamilton import dataflow, driver
+        from hamilton import dataflows, driver
         # downloads into ~/.hamilton/dataflows and loads the module -- WARNING: ensure you know what code you're importing!
         # NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW") # if using official dataflow
         NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
@@ -608,7 +608,7 @@ def copy(
 
     .. code-block:: python
 
-        from hamilton import dataflow
+        from hamilton import dataflows
 
         # dynamically pull and then copy
         NAME_OF_DATAFLOW = dataflow.import_module("NAME_OF_DATAFLOW", "NAME_OF_USER")
