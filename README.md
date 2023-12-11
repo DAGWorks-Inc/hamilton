@@ -338,7 +338,7 @@ Specific integrations with other systems where we help you write code that runs 
 * [x] Python multiprocessing execution (still in beta)
 * [x] Python threading support
 * [x] Grouping of nodes into tasks for efficient parallel computation
-* [x] Breadth first search traversal
+* [ ] Breadth first search traversal
 * [ ] Sequential walk over a generator
 
 ## DAG/Dataflow resolution:
