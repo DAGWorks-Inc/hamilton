@@ -146,8 +146,20 @@ def execute_subdag(
             try:
                 value = adapter.execute_node(node_, kwargs)
             except Exception:
-                message = f"> Node {node_.name} encountered an error <"
-                border = "*" * len(message)
+                if hasattr(node_.originating_functions[0], "__original_name__"):
+                    original_func_name = node_.originating_functions[0].__original_name__
+                else:
+                    original_func_name = node_.originating_functions[0].__name__
+                module = node_.originating_functions[0].__module__
+                message = f"> {node_.name} [{module}.{original_func_name}()] encountered an error"
+                padding = " " * (80 - len(message) - 1)
+                message += padding + "<"
+                import pprint
+
+                pp = pprint.PrettyPrinter(width=80)
+                input_string = pp.pformat(kwargs)
+                message += "\n> Node inputs:\n" + input_string
+                border = "*" * 80
                 logger.exception("\n" + border + "\n" + message + "\n" + border)
                 raise
         computed[node_.name] = value
