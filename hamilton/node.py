@@ -278,12 +278,15 @@ class Node(object):
                     node_source = NodeType.COLLECT
                     break
         module = inspect.getmodule(fn).__name__
+        tags = {"module": module}
+        if hasattr(fn, "__config_decorated__"):
+            tags["hamilton.config"] = ",".join(fn.__config_decorated__)
         return Node(
             name,
             return_type,
             fn.__doc__ if fn.__doc__ else "",
             callabl=fn,
-            tags={"module": module},
+            tags=tags,
             node_source=node_source,
         )
 

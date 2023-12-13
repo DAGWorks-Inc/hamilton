@@ -71,7 +71,9 @@ def test_config_name_resolution():
         pass
 
     annotation = function_modifiers.config.when(key="value")
-    assert annotation.resolve(fn__v2, {"key": "value"}).__name__ == "fn"
+    result = annotation.resolve(fn__v2, {"key": "value"})
+    assert result.__name__ == "fn"
+    assert result.__original_name__ == "fn__v2"
 
 
 def test_config_when_with_custom_name():
@@ -79,7 +81,9 @@ def test_config_when_with_custom_name():
         pass
 
     annotation = function_modifiers.config.when(key="value", name="new_function_name")
-    assert annotation.resolve(config_when_fn, {"key": "value"}).__name__ == "new_function_name"
+    result = annotation.resolve(config_when_fn, {"key": "value"})
+    assert result.__name__ == "new_function_name"
+    assert result.__original_name__ == "config_when_fn"
 
 
 def test_config_base_resolve_nodes():

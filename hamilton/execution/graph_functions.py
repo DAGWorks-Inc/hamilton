@@ -146,11 +146,21 @@ def execute_subdag(
             try:
                 value = adapter.execute_node(node_, kwargs)
             except Exception:
-                if hasattr(node_.originating_functions[0], "__original_name__"):
-                    original_func_name = node_.originating_functions[0].__original_name__
-                else:
-                    original_func_name = node_.originating_functions[0].__name__
-                module = node_.originating_functions[0].__module__
+                # This code is coupled to how @config resolution works. Ideally it shouldn't be,
+                # so when @config resolvers are changed to return Nodes, then fn.__name__ should
+                # just work.
+                original_func_name = "unknown"
+                if node_.originating_functions:
+                    if hasattr(node_.originating_functions[0], "__original_name__"):
+                        original_func_name = node_.originating_functions[0].__original_name__
+                    else:
+                        original_func_name = node_.originating_functions[0].__name__
+                module = (
+                    node_.originating_functions[0].__module__
+                    if node_.originating_functions
+                    and hasattr(node_.originating_functions[0], "__module__")
+                    else "unknown_module"
+                )
                 message = f"> {node_.name} [{module}.{original_func_name}()] encountered an error"
                 padding = " " * (80 - len(message) - 1)
                 message += padding + "<"
