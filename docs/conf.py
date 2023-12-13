@@ -14,8 +14,8 @@ html_theme_options = {
     "source_repository": "https://github.com/dagworks-inc/hamilton",
     "source_branch": "main",
     "source_directory": "docs/",
-    "announcement": "📢 Find Hamilton next at "
-    + '<a target="_blank" href="https://global2023.pydata.org/cfp/talk/3REDA9/">PyData Global\'23</a>📢',
+    "announcement": "📢 Announcing  "
+    + '<a target="_blank" href="https://hub.dagworks.io">hub.dagworks.io</a>. Get started with Hamilton quicker! 📢',
     "light_css_variables": {
         "color-announcement-background": "#ffba00",
         "color-announcement-text": "#091E42",

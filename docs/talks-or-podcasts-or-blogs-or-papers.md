@@ -8,6 +8,21 @@ description: This page curates talks, podcasts, and blogs about Hamilton
 ## Talks
 Talks on Hamilton at conferences and meetups.
 
+### [AICamp End of Year in SF](https://www.aicamp.ai/event/eventdetails/W2023121217) -  December 2023
+Title:
+> Why you should build your GenAI/LLM apps using Hamilton
+* [Slides](https://github.com/skrawcz/talks/files/13666470/Why.you.should.build.your.GenAI_LLM.apps.using.Hamilton.pdf)
+
+### [PyData Global](https://global2023.pydata.org/cfp/talk/3REDA9/) - December 2023
+Title:
+> Bridging Classic ML Pipelines with the World of LLMs
+* [Slides](https://github.com/skrawcz/talks/files/13666479/Bridging.Classic.ML.Pipelines.with.the.World.of.LLMs.1.pdf)
+
+### [Bay Area Python Interest Group (BAYPIGgies) September Meetup 2023](https://www.meetup.com/baypiggies/events/296283989/)
+Title:
+> Hamilton: Natively bringing software engineering best practices to python data transformations
+* [Slides](https://github.com/skrawcz/talks/files/12785978/BayPIGgies_.Hamilton.Talk.pdf)
+
 ### [MDSFest'23](https://www.mdsfest.com/) - August 2023
 Title:
 > dbt + Hamilton: Enabling you to maintain complex Python within dbt models
