@@ -175,6 +175,10 @@ class config(base.NodeResolver):
     def resolve(self, fn, config: Dict[str, Any]) -> Callable:
         if not self.does_resolve(config):
             return None
+        # attaches config keys used to resolve function
+        fn.__config_decorated__ = (
+            self._config_used if self._config_used is not None else ["__UNKNOWN__"]
+        )
         fn.__original_name__ = fn.__name__
         fn.__name__ = self._get_function_name(fn)  # TODO -- copy function to not mutate it
         return fn
