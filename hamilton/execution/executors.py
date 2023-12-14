@@ -90,6 +90,7 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
     :param task: task to execute.
     :return: a diciontary of the results of all the nodes in that task's nodes to compute.
     """
+    print("OnTaskStart(run_id, task_id)")
     # We do this as an edge case to force the callable to return a list if it is an expand,
     # and would normally return a generator. That said, we will likely remove this in the future --
     # its an implementation detail, and a true queuing system between nodes/controller would mean
@@ -114,6 +115,7 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
         for key, value in out.items()
         if key in task.outputs_to_compute or key in task.overrides
     }
+    print("OnTaskEnd(run_id, task_id, status)")
     return final_retval
 
 
@@ -344,8 +346,10 @@ def run_graph_to_completion(
                 task_executor = execution_manager.get_executor_for_task(next_task)
                 if task_executor.can_submit_task():
                     try:
+                        print("OnTaskCreate(run_id, task_id, nodes)")
                         submitted = task_executor.submit_task(next_task)
                     except Exception as e:
+                        print("OnTaskEnd(run_id, task_id, status=Failure)")
                         logger.exception(
                             f"Exception submitting task {next_task.task_id}, with nodes: "
                             f"{[item.name for item in next_task.nodes]}"
@@ -364,6 +368,7 @@ def run_graph_to_completion(
                 result = task_future.get_result()
                 execution_state.update_task_state(task_name, state, result)
                 if TaskState.is_terminal(state):
+                    print("OnTaskEnd(run_id, task_id, status=?)")
                     del task_futures[task_name]
         logger.info(f"Graph is done, graph state is {execution_state.get_graph_state()}")
     finally:

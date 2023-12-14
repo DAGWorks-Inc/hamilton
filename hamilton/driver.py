@@ -160,6 +160,7 @@ class DefaultGraphExecutor(GraphExecutor):
     ) -> Dict[str, Any]:
         """Basic executor for a function graph. Does no task-based execution, just does a DFS
         and executes the graph in order, in memory."""
+        print("OnTaskStart(run_id, task_id, nodes, inputs, overrides]")
         memoized_computation = dict()  # memoized storage
         nodes = [fg.nodes[node_name] for node_name in final_vars]
         fg.execute(nodes, memoized_computation, overrides, inputs)
@@ -167,6 +168,8 @@ class DefaultGraphExecutor(GraphExecutor):
             final_var: memoized_computation[final_var] for final_var in final_vars
         }  # only want request variables in df.
         del memoized_computation  # trying to cleanup some memory
+        print("OnTaskEnd(run_id, task_id, status)")  # we skip adapter
+        # TODO: try catch to capture life cycle hook? (or do that elsewhere?)
         return outputs
 
 
@@ -288,6 +291,7 @@ class Driver:
         self.graph_modules = modules
         try:
             self.graph = graph.FunctionGraph.from_modules(*modules, config=config, adapter=adapter)
+            print("OnGraphBuild(self.graph, modules, config)")
             self.adapter = adapter
         except Exception as e:
             error = telemetry.sanitize_error(*sys.exc_info())
@@ -403,6 +407,9 @@ class Driver:
         error = None
         _final_vars = self._create_final_vars(final_vars)
         try:
+            print(
+                "OnStartExecution(run_id, final_vars, overrides, inputs) # run tags via other means"
+            )
             outputs = self.raw_execute(_final_vars, overrides, display_graph, inputs=inputs)
             result = self.adapter.build_result(**outputs)
             return result
@@ -413,6 +420,7 @@ class Driver:
             raise e
         finally:
             duration = time.time() - start_time
+            print("OnEndExecution(run_id, status)")
             self.capture_execute_telemetry(
                 error, _final_vars, inputs, overrides, run_successful, duration
             )

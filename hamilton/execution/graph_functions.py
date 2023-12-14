@@ -144,12 +144,17 @@ def execute_subdag(
                 if dependency.name in computed:
                     kwargs[dependency.name] = computed[dependency.name]
             try:
+                print("OnNodeStart(run_id, node, kwargs)")
+                print("compute_node hook.")
                 value = adapter.execute_node(node_, kwargs)
+                print("OnNodeEnd(run_id, node, value, status=SUCCESS)")
             except Exception:
                 message = f"> Node {node_.name} encountered an error <"
                 border = "*" * len(message)
                 logger.exception("\n" + border + "\n" + message + "\n" + border)
+                print("OnNodeEnd(run_id, node, status=Failure)")
                 raise
+
         computed[node_.name] = value
         # > pruning the graph
         # This doesn't narrow it down to the entire space of the graph

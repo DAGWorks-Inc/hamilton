@@ -854,6 +854,7 @@ class FunctionGraph(object):
         if inputs is None:
             inputs = {}
         inputs = combine_config_and_inputs(self.config, inputs)
+        # prune graph
         return execute_subdag(
             nodes=nodes,
             inputs=inputs,
