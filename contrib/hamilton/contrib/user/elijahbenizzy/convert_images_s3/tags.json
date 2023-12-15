@@ -1,0 +1,7 @@
+{
+  "schema": "1.0",
+  "use_case_tags": ["image_conversion", "s3", "pillow", "parallelism", "aws"],
+  "secondary_tags": {
+    "cloud-provider": "aws"
+  }
+}
