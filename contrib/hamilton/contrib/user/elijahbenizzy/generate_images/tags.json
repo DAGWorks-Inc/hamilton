@@ -1,0 +1,7 @@
+{
+  "schema": "1.0",
+  "use_case_tags": ["openai", "LLM", "AI", "computer-vision", "image-generation"],
+  "secondary_tags": {
+    "language": "English"
+  }
+}
