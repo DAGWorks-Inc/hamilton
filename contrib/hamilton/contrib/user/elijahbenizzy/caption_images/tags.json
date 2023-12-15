@@ -1,0 +1,7 @@
+{
+  "schema": "1.0",
+  "use_case_tags": ["openai", "LLM", "AI", "text-generation", "computer-vision", "image-captioning", "embeddings"],
+  "secondary_tags": {
+    "language": "English"
+  }
+}
