@@ -619,7 +619,7 @@ class save_to(metaclass=save_to__meta__):
     This adds a final node to the DAG with the name "data_save_output" that
     accepts the output of the function "final_output" and saves it to a json.
     In this case, the JSONSaver accepts a `path` parameter, which is provided
-    by the upstream node (or input) named "raw_data_path". The `artifact_`
+    by the upstream node (or input) named "raw_data_path". The `output_name_`
     parameter then says how to refer to the output of this node in the DAG.
 
     If you called this with the driver:
