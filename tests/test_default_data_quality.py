@@ -155,6 +155,18 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
             False,
         ),
         (
+            default_validators.MaxFractionNansValidatorPandasSeries,
+            0,
+            pd.Series([]),
+            True,
+        ),
+        (
+            default_validators.MaxFractionNansValidatorPandasSeries,
+            1,
+            pd.Series([]),
+            True,
+        ),
+        (
             default_validators.DataTypeValidatorPandasSeries,
             numpy.dtype("int"),
             pd.Series([1, 2, 3]),
