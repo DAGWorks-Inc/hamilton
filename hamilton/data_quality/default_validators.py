@@ -198,8 +198,12 @@ class MaxFractionNansValidatorPandasSeries(base.BaseDefaultValidator):
     def validate(self, data: pd.Series) -> base.ValidationResult:
         total_length = len(data)
         total_na = data.isna().sum()
-        fraction_na = total_na / total_length
-        passes = fraction_na <= self.max_fraction_nans
+        if total_length:
+            fraction_na = total_na / total_length
+            passes = fraction_na <= self.max_fraction_nans
+        else:
+            fraction_na = 0.0
+            passes = True
         return base.ValidationResult(
             passes=passes,
             message=f"Out of {total_length} items in the series, {total_na} of them are Nan, "
