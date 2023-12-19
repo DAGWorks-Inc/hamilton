@@ -27,6 +27,7 @@ fi
 
 if [[ ${TASK} == "integrations" ]]; then
     pip install -e '.[pandera]'
+    pip install dask
     pytest tests/integrations
     exit 0
 fi
