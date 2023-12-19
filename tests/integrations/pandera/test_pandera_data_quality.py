@@ -1,5 +1,6 @@
 import sys
 
+import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import pandera as pa
@@ -149,3 +150,84 @@ def test_pandera_decorator_fails_without_annotation():
     n = node.Node.from_fn(foo)
     with pytest.raises(base.InvalidDecoratorException):
         h_pandera.check_output().get_validators(n)
+
+
+def test_pandera_decorator_dask_df():
+    """Validates that the function can be annotated with a dask dataframe type it'll work appropriately.
+
+    Install dask if this fails.
+    """
+    schema = pa.DataFrameSchema(
+        {
+            "year": pa.Column(int, pa.Check(lambda s: s > 2000)),
+            "month": pa.Column(str),
+            "day": pa.Column(str),
+        },
+        index=pa.Index(int),
+        strict=True,
+    )
+    from hamilton.function_modifiers import check_output
+
+    @check_output(schema=schema)
+    def foo(fail: bool = False) -> dd.DataFrame:
+        if fail:
+            return dd.from_pandas(
+                pd.DataFrame(
+                    {
+                        "year": ["-2001", "-2002", "-2003"],
+                        "month": ["-13", "-6", "120"],
+                        "day": ["700", "-156", "367"],
+                    }
+                ),
+                npartitions=1,
+            )
+        return dd.from_pandas(
+            pd.DataFrame(
+                {
+                    "year": [2001, 2002, 2003],
+                    "month": ["3", "6", "12"],
+                    "day": ["200", "156", "365"],
+                }
+            ),
+            npartitions=1,
+        )
+
+    n = node.Node.from_fn(foo)
+    validators = check_output(schema=schema).get_validators(n)
+    assert len(validators) == 1
+    (validator,) = validators
+    result_success = validator.validate(n())  # should not fail
+    assert result_success.passes
+    result_success = validator.validate(n(True))  # should fail
+    assert not result_success.passes
+
+
+def test_pandera_decorator_dask_series():
+    """Validates that the function can be annotated with a dask series type it'll work appropriately.
+    Install dask if this fails.
+    """
+    schema = pa.SeriesSchema(
+        str,
+        checks=[
+            pa.Check(lambda s: s.str.startswith("foo")),
+            pa.Check(lambda s: s.str.endswith("bar")),
+            pa.Check(lambda x: len(x) > 3, element_wise=True),
+        ],
+        nullable=False,
+    )
+    from hamilton.function_modifiers import check_output
+
+    @check_output(schema=schema)
+    def foo(fail: bool = False) -> dd.Series:
+        if fail:
+            return dd.from_pandas(pd.Series(["xfoobar", "xfoobox", "xfoobaz"]), npartitions=1)
+        return dd.from_pandas(pd.Series(["foobar", "foobar", "foobar"]), npartitions=1)
+
+    n = node.Node.from_fn(foo)
+    validators = check_output(schema=schema).get_validators(n)
+    assert len(validators) == 1
+    (validator,) = validators
+    result_success = validator.validate(n())  # should not fail
+    assert result_success.passes
+    result_success = validator.validate(n(True))  # should fail
+    assert not result_success.passes

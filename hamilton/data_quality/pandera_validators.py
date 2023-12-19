@@ -1,10 +1,12 @@
-from typing import Type
+from typing import Any, Type
 
-import pandas as pd
 import pandera as pa
 
+from hamilton import registry
 from hamilton.data_quality import base
 from hamilton.htypes import custom_subclass_check
+
+pandera_supported_extensions = frozenset(["pandas", "dask", "pyspark_pandas"])
 
 
 class PanderaDataFrameValidator(base.BaseDefaultValidator):
@@ -16,14 +18,18 @@ class PanderaDataFrameValidator(base.BaseDefaultValidator):
 
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
-        return custom_subclass_check(
-            datatype, pd.DataFrame
-        )  # TODO -- allow for modin, etc. as they come for free with pandera
+        for extension_name in pandera_supported_extensions:
+            if extension_name in registry.DF_TYPE_AND_COLUMN_TYPES:
+                df_type = registry.DF_TYPE_AND_COLUMN_TYPES[extension_name][registry.DATAFRAME_TYPE]
+                result = custom_subclass_check(datatype, df_type)
+                if result:
+                    return True
+        return False
 
     def description(self) -> str:
         return "Validates that the returned dataframe matches the pander"
 
-    def validate(self, data: pd.DataFrame) -> base.ValidationResult:
+    def validate(self, data: Any) -> base.ValidationResult:
         try:
             result = self.schema.validate(data, lazy=True, inplace=True)
             if hasattr(result, "dask"):
@@ -56,14 +62,18 @@ class PanderaSeriesSchemaValidator(base.BaseDefaultValidator):
 
     @classmethod
     def applies_to(cls, datatype: Type[Type]) -> bool:
-        return custom_subclass_check(
-            datatype, pd.Series
-        )  # TODO -- allow for modin, etc. as they come for free with pandera
+        for extension_name in pandera_supported_extensions:
+            if extension_name in registry.DF_TYPE_AND_COLUMN_TYPES:
+                df_type = registry.DF_TYPE_AND_COLUMN_TYPES[extension_name][registry.COLUMN_TYPE]
+                result = custom_subclass_check(datatype, df_type)
+                if result:
+                    return True
+        return False
 
     def description(self) -> str:
         pass
 
-    def validate(self, data: pd.Series) -> base.ValidationResult:
+    def validate(self, data: Any) -> base.ValidationResult:
         try:
             result = self.schema.validate(data, lazy=True, inplace=True)
             if hasattr(result, "dask"):
