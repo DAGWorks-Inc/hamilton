@@ -212,7 +212,7 @@ class RayTaskExecutor(executors.TaskExecutor):
     def __init__(
         self,
         num_cpus: int = None,
-        config: typing.Dict[str, typing.Any] = None,
+        ray_init_config: typing.Dict[str, typing.Any] = None,
         skip_init: bool = False,
     ):
         """Creates a ray task executor. Note this will likely take in more parameters. This is
@@ -220,22 +220,23 @@ class RayTaskExecutor(executors.TaskExecutor):
         backwards compatible.
 
         :param num_cpus: Number of cores to use for initialization, passed directly to ray.init. Defaults to all cores.
-        :param config: General configuration to pass to ray.init. Defaults to None.
+        :param ray_init_config: General configuration to pass to ray.init. Defaults to None.
         :param skip_init: Skips ray init if you already have Ray initialized. Default is False.
         """
         self.num_cpus = num_cpus
-        self.config = config if config else {}
+        self.ray_init_config = ray_init_config if ray_init_config else {}
         self.skip_init = skip_init
 
     def init(self):
-        if not self.skip_init:
-            ray.init(num_cpus=self.num_cpus, **self.config)
+        if self.skip_init:
+            return
+        ray.init(num_cpus=self.num_cpus, **self.ray_init_config)
 
     def finalize(self):
-        if (
-            not self.skip_init
-        ):  # we assume that if we didn't init it, we don't need to shutdown either.
-            ray.shutdown()
+        if self.skip_init:
+            # we assume that if we didn't init it, we don't need to shutdown either.
+            return
+        ray.shutdown()
 
     def submit_task(self, task: TaskImplementation) -> TaskFuture:
         """Submits a task, wrapping it in a TaskFuture (after getting the corresponding python
