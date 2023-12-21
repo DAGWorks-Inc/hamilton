@@ -15,6 +15,7 @@ from hamilton.io.materialization import from_, to
 import tests.resources.data_quality
 import tests.resources.dynamic_config
 import tests.resources.overrides
+import tests.resources.test_for_materialization
 
 
 @pytest.mark.parametrize(
