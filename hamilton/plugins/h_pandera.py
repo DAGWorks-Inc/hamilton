@@ -51,7 +51,14 @@ class check_output(BaseDataValidationDecorator):
 
             from hamilton import function_modifiers
 
-            @function_modifiers.check_output(schema=MySchema)
+            schema = pa.DataFrameSchema({
+                "a": pa.Column(pa.Int),
+                "b": pa.Column(pa.Float),
+                "c": pa.Column(pa.String, nullable=True),
+                "d": pa.Column(pa.Float),
+            })
+
+            @function_modifiers.check_output(schema=schema)
             def foo() -> pd.DataFrame:
                 return pd.DataFrame() # will fail
 
