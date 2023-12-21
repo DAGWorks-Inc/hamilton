@@ -24,7 +24,7 @@ def test_plotly_static_writer(figure: go.Figure, tmp_path: pathlib.Path) -> None
 def test_plotly_interactive_writer(figure: go.Figure, tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "figure.html"
 
-    writer = PlotlyInteractiveWriter(path=file_path)
+    writer = PlotlyInteractiveWriter(path=file_path, auto_open=False)
     metadata = writer.save_data(figure)
 
     assert file_path.exists()
