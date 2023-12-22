@@ -203,7 +203,7 @@ def create_graphviz_graph(
     ) -> str:
         """Get a graphviz HTML-like node label. It uses the DAG node
         name and type but values can be overridden. Overriding is currently
-        used for materializers since `type_` is stored in n._tags.
+        used for materializers since `type_` is stored in n.tags.
 
         ref: https://graphviz.org/doc/info/shapes.html#html
         """
@@ -295,6 +295,10 @@ def create_graphviz_graph(
             modifier_style = dict(style="filled,diagonals")
         elif modifier == "materializer":
             modifier_style = dict(shape="cylinder")
+        elif modifier == "column":
+            modifier_style = dict(fillcolor="#c8dae0", fontname="Courier")
+        elif modifier == "cluster":
+            modifier_style = dict(fillcolor="#ffffff", color="#649fb3", style="rounded,filled,dashed")
         else:
             modifier_style = dict()
 
@@ -336,6 +340,8 @@ def create_graphviz_graph(
             "config",
             "input",
             "function",
+            "cluster",
+            "column",
             "output",
             "materializer",
             "override",
@@ -393,9 +399,9 @@ def create_graphviz_graph(
             modifier_style = _get_function_modifier_style("collect")
             node_style.update(**modifier_style)
             seen_node_types.add("collect")
-
-        if n._tags.get("hamilton.data_saver"):
-            materializer_type = n._tags["hamilton.data_saver.classname"]
+        
+        if n.tags.get("hamilton.data_saver"):
+            materializer_type = n.tags["hamilton.data_saver.classname"]
             label = _get_node_label(n, type_string=materializer_type)
             modifier_style = _get_function_modifier_style("materializer")
             node_style.update(**modifier_style)
@@ -418,8 +424,44 @@ def create_graphviz_graph(
                 # currently, only EXPAND and COLLECT use the `color` attribue
                 node_style["color"] = node_style.get("color", PATH_COLOR)
 
-        digraph.node(n.name, label=label, **node_style)
+        digraph.node(n.name, label=label, **node_style)        
+        
+        if n.tags.get("spark_schema"):
+            # When a node is tagged with spark_schema -> add a cluster with a node for each column
+            seen_node_types.add('cluster')
+            seen_node_types.add('column')
+            def _create_equal_length_cols(spark_schema_tag: str) -> list[str]:
+                cols = spark_schema_tag.split(",")
+                for i in range(len(cols)):
+                    def _insert_space_after_colon(col: str) -> str:
+                        colon_index = col.find(':')
+                        if colon_index != -1 and col[colon_index+1] != ' ':
+                            return col[:colon_index+1] + ' ' + col[colon_index+1:]
+                        return col
+                    cols[i] = _insert_space_after_colon(cols[i].strip())
+                max_length = max([len(col) for col in cols])
+                return [col.ljust(max_length) for col in cols]
 
+            cluster_node_style = node_style.copy()
+            cluster_node_style.update({
+                'color': '#649fb3',
+                'style': 'rounded,filled,dashed',
+                'fillcolor': '#ffffff',
+                'margin': '10',
+                })
+            column_node_style = node_style.copy()
+            column_node_style.update({
+                'fillcolor': '#c8dae0',
+                'fontname': 'Courier',
+                'fontsize': '10',
+                })
+            with digraph.subgraph(name='cluster_' + n.name) as c:
+                c.attr(**cluster_node_style)
+                cols = _create_equal_length_cols(n.tags.get("spark_schema"))
+                for i in range(len(cols)):
+                    c.node(cols[i], **column_node_style)
+                c.node(n.name)
+                
     # create edges
     input_sets = dict()
     for n in nodes:
