@@ -7,8 +7,8 @@ How to build your own Result Builder
 Before starting
 ---------------
 
-We suggest reaching out on `slack <https://join.slack.com/t/hamilton-opensource/shared\_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`__\
-or via a github issue, if you have a use case for a custom result builder. Knowing about your use case and talking\
+We suggest reaching out on `slack <https://join.slack.com/t/hamilton-opensource/shared\_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`__ \
+or via a github issue, if you have a use case for a custom result builder. Knowing about your use case and talking \
 through it can help ensure we aren't duplicating effort, and we can help steer you in the right direction.
 
 What you need to do
