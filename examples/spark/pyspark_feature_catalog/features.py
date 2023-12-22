@@ -1,10 +1,9 @@
 import pyspark.sql as ps
 from pyspark.sql import functions as sf
+from with_columns import darkshore_flag, durotar_flag
 
 from hamilton.function_modifiers import tag
 from hamilton.plugins.h_spark import with_columns
-
-from with_columns import durotar_flag, darkshore_flag
 
 WORLD_OF_WARCRAFT__SCHEMA = "zone:str, level:int, avatarId:int"
 
@@ -19,7 +18,7 @@ def world_of_warcraft(spark_session: ps.SparkSession) -> ps.DataFrame:
 
 
 @with_columns(darkshore_flag, durotar_flag, columns_to_pass=["zone"])
-@tag(spark_schema=WORLD_OF_WARCRAFT__SCHEMA+", darkshore_flag:int, durotar_flag:int")
+@tag(spark_schema=WORLD_OF_WARCRAFT__SCHEMA + ", darkshore_flag:int, durotar_flag:int")
 def with_flags(world_of_warcraft: ps.DataFrame) -> ps.DataFrame:
     return world_of_warcraft
 
