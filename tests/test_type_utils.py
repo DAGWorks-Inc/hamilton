@@ -1,10 +1,11 @@
 import collections
+import sys
 import typing
 
 import pandas as pd
 import pytest
 
-from hamilton import base, htypes
+from hamilton import htypes
 
 
 class X:
@@ -73,34 +74,24 @@ def test_custom_subclass_check(param_type, requested_type, expected):
     assert actual == expected
 
 
-class TestAdapter(base.SimplePythonDataFrameGraphAdapter):
-    @staticmethod
-    def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
-        # fake equivalence function
-        return node_type == pd.Series and input_type == list
-
-
-adapter = TestAdapter()
-
-
 @pytest.mark.parametrize(
-    "adapter,param_type,required_type,expected",
+    "param_type,required_type,expected",
     [
-        (None, typing.TypeVar("FOO"), typing.TypeVar("BAR"), False),
-        (None, custom_type, custom_type, True),
-        (None, int, int, True),
-        (adapter, int, float, False),
-        (None, typing.Dict, typing.Any, True),
-        (None, X, X, True),
-        (None, X, Y, True),
-        (adapter, pd.Series, pd.Series, True),
-        (adapter, list, pd.Series, True),
-        (adapter, dict, pd.Series, False),
+        (typing.TypeVar("FOO"), typing.TypeVar("BAR"), False),
+        (custom_type, custom_type, True),
+        (int, int, True),
+        (int, float, False),
+        (typing.Dict, typing.Any, True),
+        (X, X, True),
+        (X, Y, True),
+        (pd.Series, pd.Series, True),
+        (list, pd.Series, False),
+        (dict, pd.Series, False),
     ],
 )
-def test_types_match(adapter, param_type, required_type, expected):
+def test_types_match(param_type, required_type, expected):
     """Tests the types_match function"""
-    actual = htypes.types_match(adapter, param_type, required_type)
+    actual = htypes.types_match(param_type, required_type)
     assert actual == expected
 
 
@@ -193,3 +184,100 @@ def test_get_type_as_string(type_):
         type_string = htypes.get_type_as_string(type_)  # noqa: F841
     except Exception as e:
         pytest.fail(f"test get_type_as_string raised: {e}")
+
+
+@pytest.mark.parametrize(
+    "node_type,input_value",
+    [
+        (pd.DataFrame, pd.Series([1, 2, 3])),
+        (typing.List, {}),
+        (typing.Dict, []),
+        (dict, []),
+        (list, {}),
+        (int, 1.0),
+        (float, 1),
+        (str, 0),
+        (typing.Union[int, pd.Series], pd.DataFrame({"a": [1, 2, 3]})),
+        (typing.Union[int, pd.Series], 1.0),
+    ],
+    ids=[
+        "test-subclass",
+        "test-generic-list",
+        "test-generic-dict",
+        "test-type-match-dict",
+        "test-type-match-list",
+        "test-type-match-int",
+        "test-type-match-float",
+        "test-type-match-str",
+        "test-union-mismatch-dataframe",
+        "test-union-mismatch-float",
+    ],
+)
+def test_check_input_type_mismatch(node_type, input_value):
+    """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
+    actual = htypes.check_input_type(node_type, input_value)
+    assert actual is False
+
+
+T = typing.TypeVar("T")
+
+
+@pytest.mark.parametrize(
+    "node_type,input_value",
+    [
+        (typing.Any, None),
+        (pd.Series, pd.Series([1, 2, 3])),
+        (T, None),
+        (typing.List, []),
+        (typing.Dict, {}),
+        (dict, {}),
+        (list, []),
+        (int, 1),
+        (float, 1.0),
+        (str, "abc"),
+        (typing.Union[int, pd.Series], pd.Series([1, 2, 3])),
+        (typing.Union[int, pd.Series], 1),
+    ],
+    ids=[
+        "test-any",
+        "test-subclass",
+        "test-typevar",
+        "test-generic-list",
+        "test-generic-dict",
+        "test-type-match-dict",
+        "test-type-match-list",
+        "test-type-match-int",
+        "test-type-match-float",
+        "test-type-match-str",
+        "test-union-match-series",
+        "test-union-match-int",
+    ],
+)
+def test_check_input_type_match(node_type, input_value):
+    """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
+    actual = htypes.check_input_type(node_type, input_value)
+    assert actual is True
+
+
+# We cannot parameterize this as the parameterization cannot be
+# included if the
+@pytest.mark.skipif(
+    sys.version_info < (3, 9, 0),
+    reason="Type hinting generics in standard collections " "is only supported in 3.9+",
+)
+def test_check_input_types_subscripted_generics_dict_str_Any():
+    """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
+    actual = htypes.check_input_type(dict[str, typing.Any], {})
+    assert actual is True
+
+
+# We cannot parameterize this as the parameterization cannot be
+# included if the
+@pytest.mark.skipif(
+    sys.version_info < (3, 9, 0),
+    reason="Type hinting generics in standard collections " "is only supported in 3.9+",
+)
+def test_check_input_types_subscripted_generics_list_Any():
+    """Tests check_input_type of SimplePythonDataFrameGraphAdapter"""
+    actual = htypes.check_input_type(list[typing.Any], [])
+    assert actual is True

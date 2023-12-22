@@ -179,7 +179,7 @@ def test_capture_constructor_telemetry(send_event_json):
     assert actual_event_dict["api_key"] == "phc_mZg8bkn3yvMxqvZKRlMlxjekFU5DFDdcdAsijJ2EH5e"
     assert actual_event_dict["event"] == "os_hamilton_run_start"
     # validate schema
-    expected_properites = {
+    expected_properties = {
         "os_type",
         "os_version",
         "python_version",
@@ -195,19 +195,19 @@ def test_capture_constructor_telemetry(send_event_json):
         "driver_run_id",
         "error",
         "graph_executor_class",
+        "lifecycle_adapters_used",
     }
     actual_properties = actual_event_dict["properties"]
-    assert set(actual_properties.keys()) == expected_properites
+    assert set(actual_properties.keys()) == expected_properties
     # validate static parts
     assert actual_properties["error"] is None
     assert actual_properties["number_of_nodes"] == 2  # b, and input a
     assert actual_properties["number_of_modules"] == 1
     assert actual_properties["number_of_config_items"] == 0
     assert actual_properties["number_of_config_items"] == 0
-    assert (
-        actual_properties["graph_adapter_used"] == "hamilton.base.SimplePythonDataFrameGraphAdapter"
-    )
+    assert actual_properties["graph_adapter_used"] == "deprecated -- see lifecycle_adapters_used"
     assert actual_properties["result_builder_used"] == "hamilton.base.PandasDataFrameResult"
+    assert actual_properties["lifecycle_adapters_used"] == ["hamilton.base.PandasDataFrameResult"]
 
 
 @mock.patch("hamilton.telemetry.send_event_json")

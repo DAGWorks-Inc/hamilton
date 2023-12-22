@@ -360,10 +360,8 @@ def test_load_from_decorator_end_to_end():
     def fn_str_inject(injected_data: str) -> str:
         return injected_data
 
-    config = {}
-    adapter = base.DefaultAdapter()
     fg = graph.FunctionGraph.from_modules(
-        ad_hoc_utils.create_temporary_module(fn_str_inject), config=config, adapter=adapter
+        ad_hoc_utils.create_temporary_module(fn_str_inject), config={}
     )
     result = fg.execute(inputs={}, nodes=fg.nodes.values())
     assert result["fn_str_inject"] == "foo"
@@ -389,10 +387,8 @@ def test_load_from_decorator_end_to_end_with_multiple():
     def fn_str_inject(injected_data_1: str, injected_data_2: int) -> str:
         return "".join([injected_data_1] * injected_data_2)
 
-    config = {}
-    adapter = base.DefaultAdapter()
     fg = graph.FunctionGraph.from_modules(
-        ad_hoc_utils.create_temporary_module(fn_str_inject), config=config, adapter=adapter
+        ad_hoc_utils.create_temporary_module(fn_str_inject), config={}
     )
     result = fg.execute(inputs={}, nodes=fg.nodes.values())
     assert result["fn_str_inject"] == "foofoo"
@@ -551,7 +547,6 @@ def test_adapters_optional_params():
     fg = graph.create_function_graph(
         ad_hoc_utils.create_temporary_module(foo),
         config={},
-        adapter=base.DefaultAdapter(),
     )
     assert len(fg) == 3
     assert "foo" in fg
@@ -569,7 +564,6 @@ def test_save_to_with_input_from_other_fn():
     fg = graph.create_function_graph(
         ad_hoc_utils.create_temporary_module(output_path, fn),
         config={},
-        adapter=base.DefaultAdapter(),
     )
 
     assert len(fg) == 3
@@ -587,7 +581,6 @@ def test_load_from_with_input_from_other_fn():
     fg = graph.create_function_graph(
         ad_hoc_utils.create_temporary_module(input_path, fn),
         config={},
-        adapter=base.DefaultAdapter(),
     )
     assert len(fg) == 4
 
@@ -609,7 +602,6 @@ def test_load_from_with_multiple_inputs():
     fg = graph.create_function_graph(
         ad_hoc_utils.create_temporary_module(fn),
         config={},
-        adapter=base.DefaultAdapter(),
     )
     # One filter, one loader for each and the transform function
     assert len(fg) == 5

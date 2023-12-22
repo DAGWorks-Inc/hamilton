@@ -1,4 +1,5 @@
-from hamilton import ad_hoc_utils, base, graph, node
+from hamilton import ad_hoc_utils, graph, node
+from hamilton.customization import base as customization_base
 from hamilton.execution import grouping
 from hamilton.execution.grouping import (
     GroupByRepeatableBlocks,
@@ -75,7 +76,9 @@ def test_create_task_plan():
     fn_graph = FunctionGraph.from_modules(parallel_linear_basic, config={})
     node_grouper = GroupByRepeatableBlocks()
     nodes_grouped = node_grouper.group_nodes(list(fn_graph.nodes.values()))
-    task_plan = grouping.create_task_plan(nodes_grouped, ["final"], {}, [base.DefaultAdapter()])
+    task_plan = grouping.create_task_plan(
+        nodes_grouped, ["final"], {}, customization_base.LifecycleAdapterSet()
+    )
     assert len(task_plan) == 5
     task_plan_by_id = {task.base_id: task for task in task_plan}
     assert {key: value.base_dependencies for key, value in task_plan_by_id.items()} == {
@@ -94,9 +97,7 @@ def test_task_get_input_vars_not_user_defined():
     # This is hacking around function graph which is messy as it is built of larger components
     # (modules), and should instead be broken into smaller pieces (functions/nodes), and have utilities
     # to create it from those.
-    fn_graph = graph.create_function_graph(
-        ad_hoc_utils.create_temporary_module(bar), config={}, adapter=None
-    )
+    fn_graph = graph.create_function_graph(ad_hoc_utils.create_temporary_module(bar), config={})
     node_ = fn_graph["bar"]
     task = grouping.TaskSpec(
         base_id="bar",
@@ -104,7 +105,7 @@ def test_task_get_input_vars_not_user_defined():
         purpose=NodeGroupPurpose.EXECUTE_SINGLE,
         outputs_to_compute=["bar"],
         overrides={},
-        adapters=[],
+        adapter=customization_base.LifecycleAdapterSet(),
         base_dependencies=[],
         spawning_task_base_id=None,
     )
@@ -118,9 +119,7 @@ def test_task_get_input_vars_with_optional():
     # This is hacking around function graph which is messy as it is built of larger components
     # (modules), and should instead be broken into smaller pieces (functions/nodes), and have utilities
     # to create it from those.
-    fn_graph = graph.create_function_graph(
-        ad_hoc_utils.create_temporary_module(bar), config={}, adapter=None
-    )
+    fn_graph = graph.create_function_graph(ad_hoc_utils.create_temporary_module(bar), config={})
     node_ = fn_graph["bar"]
     task = grouping.TaskSpec(
         base_id="bar",
@@ -128,7 +127,7 @@ def test_task_get_input_vars_with_optional():
         purpose=NodeGroupPurpose.EXECUTE_SINGLE,
         outputs_to_compute=["bar"],
         overrides={},
-        adapters=[],
+        adapter=customization_base.LifecycleAdapterSet(),
         base_dependencies=[],
         spawning_task_base_id=None,
     )
@@ -143,7 +142,7 @@ def test_task_get_input_vars_user_defined():
         purpose=NodeGroupPurpose.EXECUTE_SINGLE,
         outputs_to_compute=["foo"],
         overrides={},
-        adapters=[],
+        adapter=customization_base.LifecycleAdapterSet(),
         base_dependencies=[],
         spawning_task_base_id=None,
     )

@@ -9,6 +9,7 @@ import pytest
 import hamilton.graph_utils
 import hamilton.htypes
 from hamilton import ad_hoc_utils, base, graph, node
+from hamilton.customization import base as customization_base
 from hamilton.execution import graph_functions
 from hamilton.node import NodeType
 
@@ -105,7 +106,7 @@ def test_add_dependency_strict_node_dependencies():
         nodes,
         param_name,
         param_type,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
     assert nodes["A"] == func_node.dependencies[0]
     assert func_node.depended_on_by == []
@@ -131,7 +132,7 @@ def test_add_dependency_input_nodes_mismatch_on_types():
         nodes,
         param_name,
         b_sig.parameters[param_name].annotation,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
 
     assert "a" in nodes
@@ -144,7 +145,7 @@ def test_add_dependency_input_nodes_mismatch_on_types():
             nodes,
             param_name,
             c_sig.parameters[param_name].annotation,
-            base.SimplePythonDataFrameGraphAdapter(),
+            customization_base.LifecycleAdapterSet(),
         )
 
 
@@ -168,7 +169,7 @@ def test_add_dependency_input_nodes_mismatch_on_types_complex():
         nodes,
         param_name,
         e_sig.parameters[param_name].annotation,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
 
     assert "d" in nodes
@@ -181,7 +182,7 @@ def test_add_dependency_input_nodes_mismatch_on_types_complex():
             nodes,
             param_name,
             f_sig.parameters[param_name].annotation,
-            base.SimplePythonDataFrameGraphAdapter(),
+            customization_base.LifecycleAdapterSet(),
         )
 
 
@@ -209,7 +210,7 @@ def test_add_dependency_input_nodes_compatible_types():
         nodes,
         param_name,
         b_sig.parameters[param_name].annotation,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
 
     assert "a" in nodes
@@ -221,7 +222,7 @@ def test_add_dependency_input_nodes_compatible_types():
         nodes,
         param_name,
         c_sig.parameters[param_name].annotation,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
 
     # test that we shrink the type to the tighter type
@@ -233,7 +234,7 @@ def test_add_dependency_input_nodes_compatible_types():
         nodes,
         param_name,
         d_sig.parameters[param_name].annotation,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
 
 
@@ -264,7 +265,7 @@ def test_add_dependency_input_nodes_compatible_types_order_check():
         nodes,
         param_name,
         c_sig.parameters[param_name].annotation,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
 
     assert "a" in nodes
@@ -277,7 +278,7 @@ def test_add_dependency_input_nodes_compatible_types_order_check():
         nodes,
         param_name,
         b_sig.parameters[param_name].annotation,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
 
     # test that type didn't change
@@ -289,7 +290,7 @@ def test_add_dependency_input_nodes_compatible_types_order_check():
         nodes,
         param_name,
         d_sig.parameters[param_name].annotation,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
 
 
@@ -317,7 +318,7 @@ def test_typing_to_primitive_conversion():
         nodes,
         param_name,
         param_type,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
     assert nodes["A"] == func_node.dependencies[0]
     assert func_node.depended_on_by == []
@@ -347,7 +348,7 @@ def test_primitive_to_typing_conversion():
         nodes,
         param_name,
         param_type,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
     assert nodes["A2"] == func_node.dependencies[0]
     assert func_node.depended_on_by == []
@@ -375,7 +376,7 @@ def test_throwing_error_on_incompatible_types():
             nodes,
             param_name,
             param_type,
-            base.SimplePythonDataFrameGraphAdapter(),
+            customization_base.LifecycleAdapterSet(),
         )
 
 
@@ -398,7 +399,7 @@ def test_add_dependency_user_nodes():
         nodes,
         param_name,
         param_type,
-        base.SimplePythonDataFrameGraphAdapter(),
+        customization_base.LifecycleAdapterSet(),
     )
     # user node is created and added to nodes.
     assert nodes["b"] == func_node.dependencies[0]
@@ -455,23 +456,18 @@ def create_testing_nodes():
 def test_create_function_graph_simple():
     """Tests that we create a simple function graph."""
     expected = create_testing_nodes()
-    actual = graph.create_function_graph(
-        tests.resources.dummy_functions, config={}, adapter=base.SimplePythonDataFrameGraphAdapter()
-    )
+    actual = graph.create_function_graph(tests.resources.dummy_functions, config={})
     assert actual == expected
 
 
 def test_execute():
     """Tests graph execution along with basic memoization since A is depended on by two functions."""
-    adapter = base.SimplePythonDataFrameGraphAdapter()
     nodes = create_testing_nodes()
     inputs = {"b": 2, "c": 5}
     expected = {"A": 7, "B": 49, "C": 14, "b": 2, "c": 5}
-    actual = graph_functions.execute_subdag(nodes=nodes.values(), inputs=inputs, adapter=adapter)
+    actual = graph_functions.execute_subdag(nodes=nodes.values(), inputs=inputs)
     assert actual == expected
-    actual = graph_functions.execute_subdag(
-        nodes=nodes.values(), inputs=inputs, adapter=adapter, overrides={"A": 8}
-    )
+    actual = graph_functions.execute_subdag(nodes=nodes.values(), inputs=inputs, overrides={"A": 8})
     assert actual["A"] == 8
 
 
@@ -1071,7 +1067,9 @@ def test_in_driver_function_definitions():
 
 def test_update_dependencies():
     nodes = create_testing_nodes()
-    new_nodes = graph.update_dependencies(nodes, base.DefaultAdapter())
+    new_nodes = graph.update_dependencies(
+        nodes, customization_base.LifecycleAdapterSet(base.DefaultAdapter())
+    )
     for node_name, node_ in new_nodes.items():
         assert node_.dependencies == nodes[node_name].dependencies
         assert node_.depended_on_by == nodes[node_name].depended_on_by
