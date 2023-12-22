@@ -6,6 +6,7 @@ import pytest
 
 import hamilton.ad_hoc_utils
 from hamilton import base, driver
+from hamilton.customization import base as customization_base
 from hamilton.execution.executors import (
     DefaultExecutionManager,
     MultiProcessingExecutor,
@@ -208,12 +209,13 @@ def create_dummy_task(task_purpose: NodeGroupPurpose):
         purpose=task_purpose,
         outputs_to_compute=[],
         overrides={},
-        adapters=[],
+        adapter=customization_base.LifecycleAdapterSet(),
         base_dependencies=[],
         group_id=None,
         realized_dependencies={},
         spawning_task_id=None,
         dynamic_inputs={},
+        run_id="foo",
     )
 
 

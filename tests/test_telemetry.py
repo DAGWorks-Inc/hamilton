@@ -2,11 +2,13 @@ import configparser
 import os
 import sys
 import uuid
+from typing import Any, Dict, Type
 from unittest import mock
 
 import pytest
 
-from hamilton import base, telemetry
+from hamilton import base, node, telemetry
+from hamilton.customization import base as customization_base
 from hamilton.experimental import h_async
 
 
@@ -130,6 +132,17 @@ def test_sanitize_error_general():
 
 # classes for the tests below
 class CustomAdapter(base.HamiltonGraphAdapter):
+    @staticmethod
+    def check_input_type(node_type: Type, input_value: Any) -> bool:
+        pass
+
+    @staticmethod
+    def check_node_type_equivalence(node_type: Type, input_type: Type) -> bool:
+        pass
+
+    def execute_node(self, node: node.Node, kwargs: Dict[str, Any]) -> Any:
+        pass
+
     def __init__(self, result_builder: base.ResultMixin):
         self.result_builder = result_builder
 
@@ -182,8 +195,9 @@ def test_get_adapter_name(adapter, expected):
     ],
 )
 def test_get_result_builder_name(adapter, expected):
-    """Tests getting the result builder name"""
-    actual = telemetry.get_result_builder_name(adapter)
+    """Tests getting the result builder name. This is largely backwards compatibility
+    but still provides nice information as to the provided tooling the user leverages."""
+    actual = telemetry.get_result_builder_name(customization_base.LifecycleAdapterSet(adapter))
     assert actual == expected
 
 
