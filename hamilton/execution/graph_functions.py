@@ -1,7 +1,8 @@
 import logging
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
-from hamilton import base, node
+from hamilton import node
+from hamilton.customization.base import LifecycleAdapterSet
 
 logger = logging.getLogger(__name__)
 
@@ -97,9 +98,11 @@ def combine_config_and_inputs(config: Dict[str, Any], inputs: Dict[str, Any]) ->
 def execute_subdag(
     nodes: Collection[node.Node],
     inputs: Dict[str, Any],
-    adapter: base.HamiltonGraphAdapter,
+    adapter: LifecycleAdapterSet = None,
     computed: Dict[str, Any] = None,
     overrides: Dict[str, Any] = None,
+    run_id: str = None,
+    task_id: str = None,
 ) -> Dict[str, Any]:
     """Base function to execute a subdag. This conducts a depth first traversal of the graph.
 
@@ -108,6 +111,8 @@ def execute_subdag(
     :param adapter:  Adapter to use to compute
     :param computed:  Already computed nodes
     :param overrides: Overrides to use, will short-circuit computation
+    :param run_id: Run ID to use
+    :param task_id: Task ID to use -- this is optional for the purpose of the task-based execution...
     :return: The results
     """
     if overrides is None:
@@ -115,6 +120,9 @@ def execute_subdag(
     if computed is None:
         computed = {}
     nodes_to_compute = {node_.name for node_ in nodes}
+
+    if adapter is None:
+        adapter = LifecycleAdapterSet()
 
     def dfs_traverse(
         node_: node.Node, dependency_type: node.DependencyType = node.DependencyType.REQUIRED
@@ -144,11 +152,52 @@ def execute_subdag(
                 if dependency.name in computed:
                     kwargs[dependency.name] = computed[dependency.name]
             try:
-                value = adapter.execute_node(node_, kwargs)
-            except Exception:
+                # TODO -- determine whether I want to check if they exist or not...
+                if adapter.does_hook("pre_node_execute", is_async=False):
+                    adapter.call_all_lifecycle_hooks_sync(
+                        "pre_node_execute",
+                        run_id=run_id,
+                        node_=node_,
+                        kwargs=kwargs,
+                        task_id=task_id,
+                    )
+                # TODO -- validate
+                if adapter.does_method("do_node_execute", is_async=False):
+                    value = adapter.call_lifecycle_method_sync(
+                        "do_node_execute",
+                        run_id=run_id,
+                        node_=node_,
+                        kwargs=kwargs,
+                        task_id=task_id,
+                    )
+                else:
+                    value = node_(**kwargs)
+                if adapter.does_hook("post_node_execute", is_async=False):
+                    adapter.call_all_lifecycle_hooks_sync(
+                        "post_node_execute",
+                        run_id=run_id,
+                        node_=node_,
+                        kwargs=kwargs,
+                        success=True,
+                        error=None,
+                        result=value,
+                        task_id=task_id,
+                    )
+            except Exception as e:
                 # This code is coupled to how @config resolution works. Ideally it shouldn't be,
                 # so when @config resolvers are changed to return Nodes, then fn.__name__ should
                 # just work.
+                if adapter.does_hook("post_node_execute", is_async=False):
+                    adapter.call_all_lifecycle_hooks_sync(
+                        "post_node_execute",
+                        run_id=run_id,
+                        node_=node_,
+                        kwargs=kwargs,
+                        success=False,
+                        error=e,
+                        result=None,
+                        task_id=task_id,
+                    )
                 original_func_name = "unknown"
                 if node_.originating_functions:
                     if hasattr(node_.originating_functions[0], "__original_name__"):

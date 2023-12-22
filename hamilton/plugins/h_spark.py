@@ -115,7 +115,7 @@ class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         elif node_type == np.array and isinstance(input_value, dataframe.DataFrame):
             return True
 
-        return base.SimplePythonGraphAdapter.check_input_type(node_type, input_value)
+        return htypes.check_input_type(node_type, input_value)
 
     @staticmethod
     def check_node_type_equivalence(node_type: Type, input_type: Type) -> bool:
@@ -446,7 +446,7 @@ class PySparkUDFGraphAdapter(base.SimplePythonDataFrameGraphAdapter):
         """If the input is a pyspark dataframe, skip, else delegate the check."""
         if isinstance(input_value, DataFrame):
             return True
-        return base.SimplePythonDataFrameGraphAdapter.check_input_type(node_type, input_value)
+        return htypes.check_input_type(node_type, input_value)
 
     @staticmethod
     def check_node_type_equivalence(node_type: Type, input_type: Type) -> bool:

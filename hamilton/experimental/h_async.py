@@ -112,6 +112,7 @@ class AsyncDriver(driver.Driver):
         overrides: Dict[str, Any] = None,
         display_graph: bool = False,  # don't care
         inputs: Dict[str, Any] = None,
+        run_id: str = None,
     ) -> Dict[str, Any]:
         """Executes the graph, returning a dictionary of strings (node keys) to final results.
 
@@ -161,8 +162,10 @@ class AsyncDriver(driver.Driver):
         error = None
         try:
             outputs = await self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
-            result = self.adapter.build_result(**outputs)
-            return result
+            # Currently we don't allow async build results, but we could.
+            if self.adapter.does_method("do_build_result", is_async=False):
+                return self.adapter.call_lifecycle_method_sync("do_build_result", outputs=outputs)
+            return outputs
         except Exception as e:
             run_successful = False
             logger.error(driver.SLACK_ERROR_MESSAGE)

@@ -100,12 +100,49 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
         if not getattr(node_, "callable_modified", False):
             node_._callable = _modify_callable(node_.node_role, node_.callable)
         setattr(node_, "callable_modified", True)
-    out = execute_subdag(
-        nodes=task.nodes,
-        inputs=task.dynamic_inputs,
-        adapter=task.adapters[0],  # TODO -- wire through multiple graph adapters
-        overrides={**task.dynamic_inputs, **task.overrides},
-    )
+    if task.adapter.does_hook("pre_task_execute", is_async=False):
+        task.adapter.call_all_lifecycle_hooks_sync(
+            "pre_task_execute",
+            run_id=task.run_id,
+            task_id=task.task_id,
+            nodes=task.nodes,
+            inputs=task.dynamic_inputs,
+            overrides=task.overrides,
+        )
+    try:
+        out = execute_subdag(
+            nodes=task.nodes,
+            inputs=task.dynamic_inputs,
+            adapter=task.adapter,  # TODO -- wire through multiple graph adapters
+            overrides={**task.dynamic_inputs, **task.overrides},
+            run_id=task.run_id,
+            task_id=task.task_id,
+        )
+        if task.adapter.does_hook("post_task_execute", is_async=False):
+            task.adapter.call_all_lifecycle_hooks_sync(
+                "post_task_execute",
+                run_id=task.run_id,
+                task_id=task.task_id,
+                nodes=task.nodes,
+                results=out,
+                success=True,
+                error=None,
+            )
+    except Exception as e:
+        if task.adapter.does_hook("post_task_execute", is_async=False):
+            task.adapter.call_all_lifecycle_hooks_sync(
+                "post_task_execute",
+                run_id=task.run_id,
+                task_id=task.task_id,
+                nodes=task.nodes,
+                results=None,
+                success=False,
+                error=e,
+            )
+        logger.exception(
+            f"Exception executing task {task.task_id}, with nodes: {[item.name for item in task.nodes]}"
+        )
+        raise e
     # This selection is for GC
     # We also need to get the override values
     # This way if its overridden we can ensure it gets passed to the right one

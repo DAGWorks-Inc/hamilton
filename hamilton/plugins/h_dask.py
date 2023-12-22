@@ -10,8 +10,7 @@ from dask.base import tokenize
 from dask.delayed import Delayed, delayed
 from dask.distributed import Client as DaskClient
 
-from hamilton import base, node
-from hamilton.base import SimplePythonGraphAdapter
+from hamilton import base, htypes, node
 from hamilton.execution import executors
 
 logger = logging.getLogger(__name__)
@@ -117,7 +116,7 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
             return True
         elif node_type == np.array and isinstance(input_value, dask.array.Array):
             return True
-        return SimplePythonGraphAdapter.check_input_type(node_type, input_value)
+        return htypes.check_input_type(node_type, input_value)
 
     @staticmethod
     def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:

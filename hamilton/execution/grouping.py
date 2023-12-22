@@ -4,7 +4,8 @@ import enum
 from collections import defaultdict
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
-from hamilton import base, node
+from hamilton import node
+from hamilton.customization import base as customization_base
 from hamilton.execution import graph_functions
 from hamilton.execution.graph_functions import get_node_levels, topologically_sort_nodes
 from hamilton.node import Node, NodeType
@@ -85,7 +86,7 @@ class TaskSpec(NodeGroup):
 
     outputs_to_compute: Collection[str]  # list of output names to compute
     overrides: Dict[str, Any]  # overrides for the task, fixed at the time of creation
-    adapters: List[base.HamiltonGraphAdapter]
+    adapter: customization_base.LifecycleAdapterSet
     base_dependencies: List[str]  # list of tasks that must be completed before this task can run
 
     def get_input_vars(self) -> Tuple[List[str], List[str]]:
@@ -137,6 +138,7 @@ class TaskImplementation(TaskSpec):
     spawning_task_id: Optional[str]  # task that spawned this task
     task_id: str = dataclasses.field(init=False)
     dynamic_inputs: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    run_id: str = dataclasses.field(default_factory=str)
 
     def bind(self, dynamic_inputs: Dict[str, Any]) -> "TaskImplementation":
         """Binds dynamic inputs to the task spec, returning a new task spec"""
@@ -319,7 +321,7 @@ def create_task_plan(
     node_groups: List[NodeGroup],
     outputs: List[str],
     overrides: Dict[str, Any],
-    adapters: Collection[base.HamiltonGraphAdapter],
+    adapter: customization_base.LifecycleAdapterSet,
 ) -> List[TaskSpec]:
     """Creates tasks from node groups. This occurs after we group and after execute() is called in
     the driver. Knowing what the user wants, we can finally create the tasks.
@@ -332,10 +334,9 @@ def create_task_plan(
         - Instantiates and returns the task
 
     :param node_groups: Groups of nodes to form tasks
-    :param inputs: inputs to execution
     :param outputs: output nodes the user wants
     :param overrides: Overrides that short-circuit the execution
-    :param adapters: Adapters to use for execution
+    :param adapter: LifecycleAdapterSet to use for execution
     :return: A list of task specs that we will execute later
     """
 
@@ -370,7 +371,7 @@ def create_task_plan(
             nodes=node_group.nodes,
             purpose=node_group.purpose,
             outputs_to_compute=outputs,
-            adapters=list(adapters),
+            adapter=adapter,
             overrides={
                 node_.name: overrides[node_.name]
                 for node_ in node_group.nodes

@@ -4,7 +4,7 @@ import inspect
 import typing
 from typing import Any, Dict, List, Optional, Protocol, Set, Type, Union
 
-from hamilton import base, common, graph, node
+from hamilton import base, common, customization, graph, node
 from hamilton.function_modifiers.adapters import LoadFromDecorator, SaveToDecorator
 from hamilton.function_modifiers.dependencies import SingleDependency, value
 from hamilton.graph import FunctionGraph, update_dependencies
@@ -265,7 +265,7 @@ class _MaterializerFactoryProtocol(Protocol):
         self,
         id: str,
         dependencies: List[str],
-        combine: base.ResultMixin = None,
+        combine: customization.ResultBuilder = None,
         **kwargs: Union[str, SingleDependency],
     ) -> MaterializerFactory:
         ...

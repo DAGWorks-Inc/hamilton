@@ -2,14 +2,12 @@ import inspect
 import sys
 import typing
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Generator, Optional, Tuple, Type, TypeVar
+from typing import Any, Generator, Optional, Tuple, Type, TypeVar
 
 import typing_inspect
 
 from hamilton.registry import COLUMN_TYPE, DF_TYPE_AND_COLUMN_TYPES
 
-if TYPE_CHECKING:
-    from hamilton.base import HamiltonGraphAdapter
 BASE_ARGS_FOR_GENERICS = (typing.T,)
 
 
@@ -111,9 +109,7 @@ def get_type_as_string(type_: Type) -> Optional[str]:
     return type_string
 
 
-def types_match(
-    adapter: "HamiltonGraphAdapter", param_type: Type[Type], required_node_type: Any
-) -> bool:
+def types_match(param_type: Type[Type], required_node_type: Any) -> bool:
     """Checks that we have "types" that "match".
 
     Matching can be loose here -- and depends on the adapter being used as to what is
@@ -132,8 +128,6 @@ def types_match(
     elif required_node_type == param_type:
         return True
     elif custom_subclass_check(required_node_type, param_type):
-        return True
-    elif adapter.check_node_type_equivalence(required_node_type, param_type):
         return True
     return False
 
@@ -287,7 +281,26 @@ class Collect(Generator[V, None, None], ABC):
     pass
 
 
-if __name__ == "__main__":
-    print(get_type_information(column[list, int]))
-    print(get_type_information(column[list, int, float]))
-    print(get_type_information(float))
+def check_input_type(node_type: Type, input_value: Any) -> bool:
+    if node_type == Any:
+        return True
+    # In the case of dict[str, Any] (or equivalent) in python 3.9 +
+    # we need to double-check that its not generic, as the isinstance clause will break this
+    elif (
+        inspect.isclass(node_type)
+        and not typing_inspect.is_generic_type(node_type)
+        and isinstance(input_value, node_type)
+    ):
+        return True
+    elif typing_inspect.is_typevar(node_type):  # skip runtime comparison for now.
+        return True
+    elif typing_inspect.is_generic_type(node_type) and typing_inspect.get_origin(node_type) == type(
+        input_value
+    ):
+        return True
+    elif typing_inspect.is_union_type(node_type):
+        union_types = typing_inspect.get_args(node_type)
+        return any([check_input_type(ut, input_value) for ut in union_types])
+    elif node_type == type(input_value):
+        return True
+    return False
