@@ -122,7 +122,7 @@ class ExecutionState:
     3. Prep the task for execution (give it the results it needs)
     """
 
-    def __init__(self, tasks: List[TaskSpec], result_cache: ResultCache):
+    def __init__(self, tasks: List[TaskSpec], result_cache: ResultCache, run_id: str):
         """Initializes an ExecutionState to all uninitialized. TBD if we want to add in an initialization
         step that can, say, read from a db.
 
@@ -133,6 +133,7 @@ class ExecutionState:
         # Pool of available tasks. Note these get added dynamically as
         # tasks are run, in case we want to split out
         self.result_cache = result_cache
+        self.run_id = run_id
         self.task_states = collections.defaultdict(lambda: TaskState.UNINITIALIZED)
         self.task_pool = {}
         self._initialize_task_pool(tasks)
@@ -219,13 +220,14 @@ class ExecutionState:
             purpose=task_spec.purpose,
             outputs_to_compute=task_spec.outputs_to_compute,
             overrides=task_spec.overrides,
-            adapters=task_spec.adapters,
+            adapter=task_spec.adapter,
             base_dependencies=task_spec.base_dependencies,
             spawning_task_id=spawning_task,
             group_id=group_id,
             # TODO -- actually get these correct...
             # This just assigns the realized dependencies to be the base dependencies
             realized_dependencies=realized_dependencies,
+            run_id=self.run_id,
         )
         if bind is not None:
             task_implementation = task_implementation.bind(bind)

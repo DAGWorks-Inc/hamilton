@@ -22,16 +22,18 @@ import platform
 import threading
 import traceback
 import uuid
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from urllib import request
 
 try:
     from . import base
+    from .customization import base as customization_base
     from .version import VERSION
 except ImportError:
     from version import VERSION
 
     from hamilton import base
+    from hamilton.customization import base as customization_base
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +160,7 @@ def create_start_event_json(
     number_of_config_items: int,
     decorators_used: Dict[str, int],
     graph_adapter_used: str,
+    lifecycle_adapters_used: List[str],
     result_builder_used: str,
     driver_run_id: uuid.UUID,
     error: Optional[str],
@@ -194,6 +197,7 @@ def create_start_event_json(
         "driver_run_id": str(driver_run_id),  # was this a new driver object? or?
         "error": error,  # if there was an error, what was the trace? (limited to Hamilton code)
         "graph_executor_class": graph_executor_class,  # what driver class was used to call this
+        "lifecycle_adapters_used": lifecycle_adapters_used,  # what lifecycle adapters were used?
     }
     event["properties"].update(payload)
     return event
@@ -430,7 +434,15 @@ def sanitize_error(exc_type, exc_value, exc_traceback) -> str:
         return "FAILED_TO_SANITIZE_ERROR"
 
 
-def get_adapter_name(adapter: base.HamiltonGraphAdapter) -> str:
+def get_all_adapters_names(adapter: customization_base.LifecycleAdapterSet) -> List[str]:
+    adapters = adapter.adapters
+    out = []
+    for adapter in adapters:
+        out.append(get_adapter_name(adapter))
+    return out
+
+
+def get_adapter_name(adapter: customization_base.LifecycleAdapter) -> str:
     """Get the class name of the `hamilton` adapter used.
 
     If we detect it's not a Hamilton one, we do not track it.
@@ -446,7 +458,7 @@ def get_adapter_name(adapter: base.HamiltonGraphAdapter) -> str:
     return adapter_name
 
 
-def get_result_builder_name(adapter: base.HamiltonGraphAdapter) -> str:
+def get_result_builder_name(adapter: customization_base.LifecycleAdapterSet) -> str:
     """Get the class name of the `hamilton` result builder used.
 
     If we detect it's not a base one, we do not track it.
@@ -454,10 +466,15 @@ def get_result_builder_name(adapter: base.HamiltonGraphAdapter) -> str:
     :param adapter: base.HamiltonGraphAdapter object.
     :return: string module + class name of the result builder.
     """
-    class_to_inspect = adapter
     # if there is an attribute, get that out to use as the class to inspect
-    if hasattr(adapter, "result_builder"):
-        class_to_inspect = getattr(adapter, "result_builder")
+    result_builders = [item for item in adapter.adapters if hasattr(item, "build_result")]
+    if len(result_builders) == 0:
+        result_builder_name = "no_result_builder"
+        return result_builder_name
+    class_to_inspect = result_builders[0]
+    # all_adapters = adapter.adapters
+    if hasattr(class_to_inspect, "result_builder"):
+        class_to_inspect = getattr(class_to_inspect, "result_builder")
     # Go by class itself
     if isinstance(class_to_inspect, base.StrictIndexTypePandasDataFrameResult):
         result_builder_name = "hamilton.base.StrictIndexTypePandasDataFrameResult"

@@ -5,8 +5,7 @@ import typing
 import ray
 from ray import workflow
 
-from hamilton import base, node
-from hamilton.base import SimplePythonGraphAdapter
+from hamilton import base, htypes, node
 from hamilton.execution import executors
 from hamilton.execution.executors import TaskFuture
 from hamilton.execution.grouping import TaskImplementation
@@ -85,7 +84,7 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         # NOTE: the type of a raylet is unknown until they are computed
         if isinstance(input_value, ray._raylet.ObjectRef):
             return True
-        return SimplePythonGraphAdapter.check_input_type(node_type, input_value)
+        return htypes.check_input_type(node_type, input_value)
 
     @staticmethod
     def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
@@ -178,7 +177,7 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         # NOTE: the type of a raylet is unknown until they are computed
         if isinstance(input_value, ray._raylet.ObjectRef):
             return True
-        return SimplePythonGraphAdapter.check_input_type(node_type, input_value)
+        return htypes.check_input_type(node_type, input_value)
 
     @staticmethod
     def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:

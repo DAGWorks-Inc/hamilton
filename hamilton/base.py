@@ -4,55 +4,25 @@ It cannot import hamilton.graph, or hamilton.driver.
 """
 import abc
 import collections
-import inspect
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
-import typing_inspect
 from pandas.core.indexes import extension as pd_extension
 
 try:
-    from . import node
+    from . import customization, htypes, node
 except ImportError:
     import node
 
 logger = logging.getLogger(__name__)
 
 
-class ResultMixin(object):
-    """Abstract base class housing the static function.
+class ResultMixin(customization.LegacyResultMixin):
+    """Legacy result builder -- see lifecycle methods for more information."""
 
-    Why a static function? That's because certain frameworks can only pickle a static function,
-    not an entire object. # TODO -- fix this so this can carry state/act as a standard object.
-
-
-    All result builders should inherit from this class and implement the build_result function.
-    Note that applicable_input_type and output_type are optional, but recommended, for backwards
-    compatibility. They let us type-check this. They will default to Any, which means that they'll
-    connect to anything.
-    """
-
-    @staticmethod
-    @abc.abstractmethod
-    def build_result(**outputs: Dict[str, Any]) -> Any:
-        """This function builds the result given the computed values."""
-        pass
-
-    def input_types(self) -> List[Type[Type]]:
-        """Gives the applicable types to this result builder.
-        This is optional for backwards compatibility, but is recommended.
-
-        :return: A list of types that this can apply to.
-        """
-        return [Any]
-
-    def output_type(self) -> Type:
-        """Returns the output type of this result builder
-        :return: the type that this creates
-        """
-        return Any
+    pass
 
 
 class DictResult(ResultMixin):
@@ -413,47 +383,10 @@ class NumpyMatrixResult(ResultMixin):
         return pd.DataFrame
 
 
-class HamiltonGraphAdapter(ResultMixin):
-    """Any GraphAdapters should implement this interface to adapt the HamiltonGraph for that particular context.
+class HamiltonGraphAdapter(customization.GraphAdapter, abc.ABC):
+    """Legacy graph adapter -- see lifecycle methods for more information."""
 
-    Note since it inherits ResultMixin -- HamiltonGraphAdapters need a `build_result` function too.
-    """
-
-    @staticmethod
-    @abc.abstractmethod
-    def check_input_type(node_type: Type, input_value: Any) -> bool:
-        """Used to check whether the user inputs match what the execution strategy & functions can handle.
-
-        :param node_type: The type of the node.
-        :param input_value: An actual value that we want to inspect matches our expectation.
-        :return:
-        """
-        pass
-
-    @staticmethod
-    @abc.abstractmethod
-    def check_node_type_equivalence(node_type: Type, input_type: Type) -> bool:
-        """Used to check whether two types are equivalent.
-
-        This is used when the function graph is being created and we're statically type checking the annotations
-        for compatibility.
-
-        :param node_type: The type of the node.
-        :param input_type: The type of the input that would flow into the node.
-        :return:
-        """
-        pass
-
-    @abc.abstractmethod
-    def execute_node(self, node: node.Node, kwargs: Dict[str, Any]) -> Any:
-        """Given a node that represents a hamilton function, execute it.
-        Note, in some adapters this might just return some type of "future".
-
-        :param node: the Hamilton Node
-        :param kwargs: the kwargs required to exercise the node function.
-        :return: the result of exercising the node.
-        """
-        pass
+    pass
 
 
 class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameResult):
@@ -468,33 +401,7 @@ class SimplePythonDataFrameGraphAdapter(HamiltonGraphAdapter, PandasDataFrameRes
 
     @staticmethod
     def check_input_type(node_type: Type, input_value: Any) -> bool:
-        if node_type == Any:
-            return True
-        # In the case of dict[str, Any] (or equivalent) in python 3.9 +
-        # we need to double-check that its not generic, as the isinstance clause will break this
-        elif (
-            inspect.isclass(node_type)
-            and not typing_inspect.is_generic_type(node_type)
-            and isinstance(input_value, node_type)
-        ):
-            return True
-        elif typing_inspect.is_typevar(node_type):  # skip runtime comparison for now.
-            return True
-        elif typing_inspect.is_generic_type(node_type) and typing_inspect.get_origin(
-            node_type
-        ) == type(input_value):
-            return True
-        elif typing_inspect.is_union_type(node_type):
-            union_types = typing_inspect.get_args(node_type)
-            return any(
-                [
-                    SimplePythonDataFrameGraphAdapter.check_input_type(ut, input_value)
-                    for ut in union_types
-                ]
-            )
-        elif node_type == type(input_value):
-            return True
-        return False
+        return htypes.check_input_type(node_type, input_value)
 
     @staticmethod
     def check_node_type_equivalence(node_type: Type, input_type: Type) -> bool:

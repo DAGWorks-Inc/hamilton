@@ -14,7 +14,8 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, 
 
 import pandas as pd
 
-from hamilton import common
+from hamilton import common, customization, htypes
+from hamilton.customization import base as customization_base
 from hamilton.execution import executors, graph_functions, grouping, state
 from hamilton.io import materialization
 from hamilton.io.materialization import ExtractorFactory, MaterializerFactory
@@ -114,6 +115,7 @@ class GraphExecutor(abc.ABC):
         final_vars: List[Union[str, Callable, Variable]],
         overrides: Dict[str, Any],
         inputs: Dict[str, Any],
+        run_id: str,
     ) -> Dict[str, Any]:
         """Executes a graph in a blocking function.
 
@@ -121,6 +123,8 @@ class GraphExecutor(abc.ABC):
         :param final_vars: Variables we want
         :param overrides: Overrides --- these short-circuit computation
         :param inputs: Inputs to the Graph.
+        :param run_id: Run ID for the DAG run.
+        :param adapter: Adapter to use for execution (optional).
         :return: The output of the final variables, in dictionary form.
         """
 
@@ -137,6 +141,15 @@ class GraphExecutor(abc.ABC):
 
 
 class DefaultGraphExecutor(GraphExecutor):
+    DEFAULT_TASK_NAME = "root"  # Not task-based, so we just assign a default name for a task
+
+    def __init__(self, adapter: Optional[customization_base.LifecycleAdapterSet] = None):
+        """Constructor for the default graph executor.
+
+        :param adapter: Adapter to use for execution (optional).
+        """
+        self.adapter = adapter
+
     def validate(self, nodes_to_execute: List[node.Node]):
         """The default graph executor cannot handle parallelizable[]/collect[] nodes.
 
@@ -157,12 +170,13 @@ class DefaultGraphExecutor(GraphExecutor):
         final_vars: List[str],
         overrides: Dict[str, Any],
         inputs: Dict[str, Any],
+        run_id: str,
     ) -> Dict[str, Any]:
         """Basic executor for a function graph. Does no task-based execution, just does a DFS
         and executes the graph in order, in memory."""
         memoized_computation = dict()  # memoized storage
         nodes = [fg.nodes[node_name] for node_name in final_vars]
-        fg.execute(nodes, memoized_computation, overrides, inputs)
+        fg.execute(nodes, memoized_computation, overrides, inputs, run_id=run_id)
         outputs = {
             final_var: memoized_computation[final_var] for final_var in final_vars
         }  # only want request variables in df.
@@ -179,7 +193,7 @@ class TaskBasedGraphExecutor(GraphExecutor):
         self,
         execution_manager: executors.ExecutionManager,
         grouping_strategy: grouping.GroupingStrategy,
-        adapter: base.HamiltonGraphAdapter,
+        adapter: customization_base.LifecycleAdapterSet,
     ):
         """Executor for task-based execution. This enables grouping of nodes into tasks, as
         well as parallel execution/dynamic spawning of nodes.
@@ -198,6 +212,7 @@ class TaskBasedGraphExecutor(GraphExecutor):
         final_vars: List[str],
         overrides: Dict[str, Any],
         inputs: Dict[str, Any],
+        run_id: str,
     ) -> Dict[str, Any]:
         """Executes a graph, task by task. This blocks until completion.
 
@@ -226,14 +241,16 @@ class TaskBasedGraphExecutor(GraphExecutor):
         prehydrated_results = {**overrides, **inputs}
         results_cache = state.DictBasedResultCache(prehydrated_results)
         # Create tasks from the grouped nodes, filtering/pruning as we go
-        tasks = grouping.create_task_plan(grouped_nodes, final_vars, overrides, [fg.adapter])
+        tasks = grouping.create_task_plan(grouped_nodes, final_vars, overrides, self.adapter)
         # Create a task graph and execution state
-        execution_state = state.ExecutionState(tasks, results_cache)  # Stateful storage for the DAG
+        execution_state = state.ExecutionState(
+            tasks, results_cache, run_id
+        )  # Stateful storage for the DAG
         # Blocking call to run through until completion
         executors.run_graph_to_completion(execution_state, self.execution_manager)
         # Read the final variables from the result cache
         raw_result = results_cache.read(final_vars)
-        return self.adapter.build_result(**raw_result)
+        return raw_result
 
 
 class Driver:
@@ -260,12 +277,43 @@ class Driver:
         dr = driver.Driver(config, module, adapter=adapter)
     """
 
+    @staticmethod
+    def normalize_adapter_input(
+        adapter: Optional[
+            Union[
+                customization_base.LifecycleAdapter,
+                List[customization_base.LifecycleAdapter],
+                customization_base.LifecycleAdapterSet,
+            ]
+        ],
+        use_legacy_adapter: bool = True,
+    ) -> customization_base.LifecycleAdapterSet:
+        """Normalizes the adapter argument in the driver to a list of adapters. Adds back the legacy adapter."""
+        if adapter is None:
+            adapter = []
+        if isinstance(adapter, customization_base.LifecycleAdapterSet):
+            return adapter
+        if not isinstance(adapter, list):
+            adapter = [adapter]
+        # we have to have exactly one result builder
+        contains_result_builder = False
+        for adapter_impl in adapter:
+            if isinstance(adapter_impl, customization_base.BaseDoBuildResult):
+                contains_result_builder = True
+        if not contains_result_builder:
+            if use_legacy_adapter:
+                adapter.append(base.PandasDataFrameResult())
+        return customization_base.LifecycleAdapterSet(*adapter)
+
     def __init__(
         self,
         config: Dict[str, Any],
         *modules: ModuleType,
-        adapter: base.HamiltonGraphAdapter = None,
+        adapter: Optional[
+            Union[customization.LifecycleAdapter, List[customization.LifecycleAdapter]]
+        ] = None,
         _graph_executor: GraphExecutor = None,
+        _use_legacy_adapter: bool = True,
     ):
         """Constructor: creates a DAG given the configuration & modules to crawl.
 
@@ -277,23 +325,29 @@ class Driver:
         :param graph_executor: This is injected by the builder -- if you want to set different graph
             execution parameters, use the builder rather than instantiating this directly.
         """
-        if _graph_executor is None:
-            _graph_executor = DefaultGraphExecutor()
-        self.graph_executor = _graph_executor
 
         self.driver_run_id = uuid.uuid4()
-        if adapter is None:
-            adapter = base.SimplePythonDataFrameGraphAdapter()
+        adapter = self.normalize_adapter_input(adapter, use_legacy_adapter=_use_legacy_adapter)
+        if adapter.does_hook("pre_do_anything", is_async=False):
+            adapter.call_all_lifecycle_hooks_sync("pre_do_anything")
         error = None
         self.graph_modules = modules
         try:
             self.graph = graph.FunctionGraph.from_modules(*modules, config=config, adapter=adapter)
+            if adapter.does_hook("post_graph_construct", is_async=False):
+                adapter.call_all_lifecycle_hooks_sync(
+                    "post_graph_construct", graph=self.graph, modules=modules, config=config
+                )
             self.adapter = adapter
+            if _graph_executor is None:
+                _graph_executor = DefaultGraphExecutor(self.adapter)
+            self.graph_executor = _graph_executor
         except Exception as e:
             error = telemetry.sanitize_error(*sys.exc_info())
             logger.error(SLACK_ERROR_MESSAGE)
             raise e
         finally:
+            # TODO -- update this to use the lifecycle methods
             self.capture_constructor_telemetry(error, modules, config, adapter)
 
     def capture_constructor_telemetry(
@@ -301,7 +355,7 @@ class Driver:
         error: Optional[str],
         modules: Tuple[ModuleType],
         config: Dict[str, Any],
-        adapter: base.HamiltonGraphAdapter,
+        adapter: customization_base.LifecycleAdapterSet,
     ):
         """Captures constructor telemetry. Notes:
         (1) we want to do this in a way that does not break.
@@ -315,7 +369,8 @@ class Driver:
         """
         if telemetry.is_telemetry_enabled():
             try:
-                adapter_name = telemetry.get_adapter_name(adapter)
+                # adapter_name = telemetry.get_adapter_name(adapter)
+                lifecycle_adapter_names = telemetry.get_all_adapters_names(adapter)
                 result_builder = telemetry.get_result_builder_name(adapter)
                 # being defensive here with ensuring values exist
                 payload = telemetry.create_start_event_json(
@@ -323,7 +378,8 @@ class Driver:
                     len(modules) if modules else 0,
                     len(config) if config else 0,
                     dict(self.graph.decorator_counter) if hasattr(self, "graph") else {},
-                    adapter_name,
+                    "deprecated -- see lifecycle_adapters_used",
+                    lifecycle_adapter_names,
                     result_builder,
                     self.driver_run_id,
                     error,
@@ -338,7 +394,11 @@ class Driver:
     @staticmethod
     def validate_inputs(
         fn_graph: graph.FunctionGraph,
-        adapter: base.HamiltonGraphAdapter,
+        adapter: Union[
+            customization.LifecycleAdapter,
+            List[customization.LifecycleAdapter],
+            customization_base.LifecycleAdapterSet,
+        ],
         user_nodes: Collection[node.Node],
         inputs: typing.Optional[Dict[str, Any]] = None,
         nodes_set: Collection[node.Node] = None,
@@ -347,10 +407,13 @@ class Driver:
         1. The runtime inputs don't clash with the graph's config
         2. All expected graph inputs are provided, either in config or at runtime
 
+        :param fn_graph: The function graph to validate.
+        :param adapter: The adapter to use for validation.
         :param user_nodes: The required nodes we need for computation.
         :param inputs: the user inputs provided.
         :param nodes_set: the set of nodes to use for validation; Optional.
         """
+        adapter = Driver.normalize_adapter_input(adapter)
         if inputs is None:
             inputs = {}
         if nodes_set is None:
@@ -364,13 +427,21 @@ class Driver:
                         f"Error: Required input {user_node.name} not provided "
                         f"for nodes: {[node.name for node in user_node.depended_on_by]}."
                     )
-            elif all_inputs[user_node.name] is not None and not adapter.check_input_type(
-                user_node.type, all_inputs[user_node.name]
-            ):
-                errors.append(
-                    f"Error: Type requirement mismatch. Expected {user_node.name}:{user_node.type} "  # noqa: E231
-                    f"got {all_inputs[user_node.name]}:{type(all_inputs[user_node.name])} instead."  # noqa: E231
-                )
+            else:
+                valid = all_inputs[user_node.name] is None
+                if adapter.does_method("do_validate_input", is_async=False):
+                    valid |= adapter.call_lifecycle_method_sync(
+                        "do_validate_input",
+                        node_type=user_node.type,
+                        input_value=all_inputs[user_node.name],
+                    )
+                else:
+                    valid |= htypes.check_input_type(user_node.type, all_inputs[user_node.name])
+                if not valid:
+                    errors.append(
+                        f"Error: Type requirement mismatch. Expected {user_node.name}:{user_node.type} "  # noqa: E231
+                        f"got {all_inputs[user_node.name]}:{type(all_inputs[user_node.name])} instead."  # noqa: E231
+                    )
         if errors:
             errors.sort()
             error_str = f"{len(errors)} errors encountered: \n  " + "\n  ".join(errors)
@@ -404,8 +475,11 @@ class Driver:
         _final_vars = self._create_final_vars(final_vars)
         try:
             outputs = self.raw_execute(_final_vars, overrides, display_graph, inputs=inputs)
-            result = self.adapter.build_result(**outputs)
-            return result
+            if self.adapter.does_method("do_build_result", is_async=False):
+                # Build the result if we have a result builder
+                return self.adapter.call_lifecycle_method_sync("do_build_result", outputs=outputs)
+            # Otherwise just return a dict
+            return outputs
         except Exception as e:
             run_successful = False
             logger.error(SLACK_ERROR_MESSAGE)
@@ -472,8 +546,11 @@ class Driver:
         overrides: Dict[str, Any] = None,
         display_graph: bool = False,
         inputs: Dict[str, Any] = None,
+        _fn_graph: graph.FunctionGraph = None,
     ) -> Dict[str, Any]:
-        """Raw execute function that does the meat of execute.
+        """Raw execute function that does the meat of execute. This entrypoint for running the graph
+        will be deprecated in favor of using Base.DictResult(), which will be the default,
+        and already forms the default in the new builder pattern.
 
         It does not try to stitch anything together. Thus allowing wrapper executes around this to shape the output
         of the data.
@@ -484,9 +561,11 @@ class Driver:
         :param inputs: Runtime inputs to the DAG
         :return:
         """
-        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs, overrides)
+        function_graph = _fn_graph if _fn_graph is not None else self.graph
+        run_id = str(uuid.uuid4())
+        nodes, user_nodes = function_graph.get_upstream_nodes(final_vars, inputs, overrides)
         Driver.validate_inputs(
-            self.graph, self.adapter, user_nodes, inputs, nodes
+            function_graph, self.adapter, user_nodes, inputs, nodes
         )  # TODO -- validate within the function graph itself
         if display_graph:  # deprecated flow.
             logger.warning(
@@ -494,16 +573,52 @@ class Driver:
                 "Please use visualize_execution()."
             )
             self.visualize_execution(final_vars, "test-output/execute.gv", {"view": True})
-            if self.has_cycles(final_vars):  # here for backwards compatible driver behavior.
+            if self.has_cycles(
+                final_vars, function_graph
+            ):  # here for backwards compatible driver behavior.
                 raise ValueError("Error: cycles detected in your graph.")
         all_nodes = nodes | user_nodes
         self.graph_executor.validate(list(all_nodes))
-        return self.graph_executor.execute(
-            self.graph,
-            final_vars,
-            overrides if overrides is not None else {},
-            inputs if inputs is not None else {},
-        )
+        if self.adapter.does_hook("pre_graph_execute", is_async=False):
+            self.adapter.call_all_lifecycle_hooks_sync(
+                "pre_graph_execute",
+                run_id=run_id,
+                graph=function_graph,
+                final_vars=final_vars,
+                inputs=inputs,
+                overrides=overrides,
+            )
+        try:
+            out = self.graph_executor.execute(
+                function_graph,
+                final_vars,
+                overrides if overrides is not None else {},
+                inputs if inputs is not None else {},
+                run_id,
+            )
+            if self.adapter.does_hook("post_graph_execute", is_async=False):
+                self.adapter.call_all_lifecycle_hooks_sync(
+                    "post_graph_execute",
+                    run_id=run_id,
+                    graph=function_graph,
+                    success=True,
+                    error=None,
+                    results=out,
+                )
+        except Exception as e:
+            if self.adapter.does_hook("post_graph_execute", is_async=False):
+                self.adapter.call_all_lifecycle_hooks_sync(
+                    "post_graph_execute",
+                    run_id=run_id,
+                    graph=function_graph,
+                    success=False,
+                    error=e,
+                    results=None,
+                )
+            raise e
+
+        # TODO -- add error case
+        return out
 
     @capture_function_usage
     def list_available_variables(self) -> List[Variable]:
@@ -568,7 +683,7 @@ class Driver:
     @staticmethod
     def _visualize_execution_helper(
         fn_graph: graph.FunctionGraph,
-        adapter: base.HamiltonGraphAdapter,
+        adapter: customization_base.LifecycleAdapterSet,
         final_vars: List[str],
         output_file_path: str,
         render_kwargs: dict,
@@ -688,15 +803,21 @@ class Driver:
         )
 
     @capture_function_usage
-    def has_cycles(self, final_vars: List[Union[str, Callable, Variable]]) -> bool:
+    def has_cycles(
+        self,
+        final_vars: List[Union[str, Callable, Variable]],
+        _fn_graph: graph.FunctionGraph = None,
+    ) -> bool:
         """Checks that the created graph does not have cycles.
 
         :param final_vars: the outputs we want to compute.
+        :param _fn_graph: the function graph to check for cycles, used internally
         :return: boolean True for cycles, False for no cycles.
         """
+        function_graph = _fn_graph if _fn_graph is not None else self.graph
         _final_vars = self._create_final_vars(final_vars)
         # get graph we'd be executing over
-        nodes, user_nodes = self.graph.get_upstream_nodes(_final_vars)
+        nodes, user_nodes = function_graph.get_upstream_nodes(_final_vars)
         return self.graph.has_cycles(nodes, user_nodes)
 
     @capture_function_usage
@@ -1175,6 +1296,14 @@ class Driver:
             function_graph = materialization.modify_graph(
                 self.graph, materializer_factories, extractor_factories
             )
+            if self.adapter.does_hook("post_graph_construct", is_async=False):
+                self.adapter.call_all_lifecycle_hooks_sync(
+                    "post_graph_construct",
+                    graph=function_graph,
+                    modules=self.graph_modules,
+                    config=function_graph.config,
+                )
+
             # need to validate the right inputs has been provided.
             # we do this on the modified graph.
             # Note we will not run the loaders if they're not upstream of the
@@ -1186,11 +1315,11 @@ class Driver:
             Driver.validate_inputs(function_graph, self.adapter, user_nodes, inputs, nodes)
             all_nodes = nodes | user_nodes
             self.graph_executor.validate(list(all_nodes))
-            raw_results = self.graph_executor.execute(
-                function_graph,
+            raw_results = self.raw_execute(
                 final_vars=final_vars + materializer_vars,
-                overrides=overrides,
                 inputs=inputs,
+                overrides=overrides,
+                _fn_graph=function_graph,
             )
             materialization_output = {key: raw_results[key] for key in materializer_vars}
             raw_results_output = {key: raw_results[key] for key in final_vars}
@@ -1331,10 +1460,11 @@ class Builder:
         self.config = {}
         self.modules = []
 
-        # V1 fields
-        self.adapter = None
+        self.legacy_graph_adapter = None
+        # Standard execution fields
+        self.adapters: List[customization.LifecycleAdapter] = []
 
-        # V2 fields
+        # Dynamic execution fields
         self.execution_manager = None
         self.local_executor = None
         self.remote_executor = None
@@ -1364,7 +1494,6 @@ class Builder:
                 "Remote execution is currently experimental. "
                 "Please set allow_experiemental_mode=True to enable it."
             )
-        self._require_field_unset("adapter", "Cannot enable remote execution with an adapter set.")
         self.v2_executor = True
         return self
 
@@ -1394,8 +1523,17 @@ class Builder:
         :param adapter: Adapter to use.
         :return: self
         """
-        self._require_field_unset("adapter", "Cannot set adapter twice.")
-        self.adapter = adapter
+        self._require_field_unset("legacy_graph_adapter", "Cannot set adapter twice.")
+        self.legacy_graph_adapter = adapter
+        return self
+
+    def with_adapters(self, *adapters: customization.LifecycleAdapter) -> "Builder":
+        """Sets the adapter to use.
+
+        :param adapter: Adapter to use.
+        :return: self
+        """
+        self.adapters.extend(adapters)
         return self
 
     def with_execution_manager(self, execution_manager: executors.ExecutionManager) -> "Builder":
@@ -1466,9 +1604,15 @@ class Builder:
 
         :return: The driver you specified.
         """
-        adapter = self.adapter if self.adapter is not None else base.DefaultAdapter()
+
+        adapter = self.adapters if self.adapters is not None else []
+        if self.legacy_graph_adapter is not None:
+            adapter.append(self.legacy_graph_adapter)
+
         if not self.v2_executor:
-            return Driver(self.config, *self.modules, adapter=adapter)
+            return Driver(
+                self.config, *self.modules, adapter=adapter, _use_legacy_adapter=False
+            )  # TODO -- validate that this is backwards compatible
         execution_manager = self.execution_manager
         if execution_manager is None:
             local_executor = self.local_executor or executors.SynchronousLocalTaskExecutor()
@@ -1480,13 +1624,14 @@ class Builder:
         graph_executor = TaskBasedGraphExecutor(
             execution_manager=execution_manager,
             grouping_strategy=grouping_strategy,
-            adapter=adapter,
+            adapter=customization_base.LifecycleAdapterSet(*adapter),
         )
         return Driver(
             self.config,
             *self.modules,
             adapter=adapter,
             _graph_executor=graph_executor,
+            _use_legacy_adapter=False,
         )
 
 

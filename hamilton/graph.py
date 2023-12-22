@@ -6,11 +6,13 @@ It should only house the graph & things required to create and traverse one.
 Note: one should largely consider the code in this module to be "private".
 """
 import logging
+import uuid
 from enum import Enum
 from types import ModuleType
 from typing import Any, Callable, Collection, Dict, FrozenSet, List, Optional, Set, Tuple, Type
 
 from hamilton import base, node
+from hamilton.customization.base import LifecycleAdapterSet
 from hamilton.execution import graph_functions
 from hamilton.execution.graph_functions import combine_config_and_inputs, execute_subdag
 from hamilton.function_modifiers import base as fm_base
@@ -36,7 +38,7 @@ def add_dependency(
     nodes: Dict[str, node.Node],
     param_name: str,
     param_type: Type,
-    adapter: base.HamiltonGraphAdapter,
+    adapter_group: LifecycleAdapterSet,
 ):
     """Adds dependencies to the node objects.
 
@@ -49,15 +51,25 @@ def add_dependency(
     :param param_type: the type of the parameter.
     :param adapter: The adapter that adapts our node type checking based on the context.
     """
+    adapter_checks_types = adapter_group.does_method("do_check_edge_types_match", is_async=False)
     if param_name in nodes:
         # validate types match
         required_node: Node = nodes[param_name]
-        types_do_match = types_match(adapter, param_type, required_node.type)
+        types_do_match = types_match(param_type, required_node.type)
+        types_do_match |= adapter_checks_types and adapter_group.call_lifecycle_method_sync(
+            "do_check_edge_types_match", type_from=param_type, type_to=required_node.type
+        )
         if not types_do_match and required_node.user_defined:
             # check the case that two input type expectations are compatible, e.g. is one a subset of the other
             # this could be the case when one is a union and the other is a subset of that union
             # which is fine for inputs. If they are not compatible, we raise an error.
-            types_are_compatible = types_match(adapter, required_node.type, param_type)
+            types_are_compatible = types_match(required_node.type, param_type)
+            types_are_compatible |= (
+                adapter_checks_types
+                and adapter_group.call_lifecycle_method_sync(
+                    "do_check_edge_types_match", type_from=param_type, type_to=required_node.type
+                )
+            )
             if not types_are_compatible:
                 raise ValueError(
                     f"Error: Two or more functions are requesting {param_name}, but have incompatible types. "
@@ -98,7 +110,7 @@ def add_dependency(
 
 def update_dependencies(
     nodes: Dict[str, node.Node],
-    adapter: base.HamiltonGraphAdapter,
+    adapter_group: LifecycleAdapterSet,
     reset_dependencies: bool = True,
 ):
     """Adds dependencies to a dictionary of nodes. If in_place is False,
@@ -120,14 +132,14 @@ def update_dependencies(
         nodes = {k: v.copy(include_refs=False) for k, v in nodes.items()}
     for node_name, n in list(nodes.items()):
         for param_name, (param_type, _) in n.input_types.items():
-            add_dependency(n, node_name, nodes, param_name, param_type, adapter)
+            add_dependency(n, node_name, nodes, param_name, param_type, adapter_group)
     return nodes
 
 
 def create_function_graph(
     *modules: ModuleType,
     config: Dict[str, Any],
-    adapter: base.HamiltonGraphAdapter,
+    adapter: LifecycleAdapterSet = None,
     fg: Optional["FunctionGraph"] = None,
 ) -> Dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
@@ -137,6 +149,10 @@ def create_function_graph(
     :return: list of nodes in the graph.
     If it needs to be more complicated, we'll return an actual networkx graph and get all the rest of the logic for free
     """
+    if adapter is None:
+        adapter = (
+            LifecycleAdapterSet()
+        )  # empty one -- not provided/necessary, we can run without it
     if fg is None:
         nodes = {}  # name -> Node
     else:
@@ -504,7 +520,7 @@ def create_networkx_graph(
     return digraph
 
 
-class FunctionGraph(object):
+class FunctionGraph:
     """Note: this object should be considered private until stated otherwise.
 
     That is, you should not try to build off of it directly without chatting to us first.
@@ -514,17 +530,17 @@ class FunctionGraph(object):
         self,
         nodes: Dict[str, Node],
         config: Dict[str, Any],
-        adapter: base.HamiltonGraphAdapter = None,
+        adapter: LifecycleAdapterSet = None,
     ):
         """Initializes a function graph from specified nodes. See note on `from_modules` if you
         start getting an error here because you use an internal API.
 
         :param nodes: Nodes, taken from the output of create_function_graph.
         :param config: this is configuration and/or initial data.
-        :param adapter: adapts function building and graph execution for different contexts.
+        :param adapter: Group of adapters, to use for node resolution.
         """
         if adapter is None:
-            adapter = base.SimplePythonDataFrameGraphAdapter()
+            adapter = LifecycleAdapterSet(base.SimplePythonDataFrameGraphAdapter())
 
         self._config = config
         self.nodes = nodes
@@ -534,7 +550,7 @@ class FunctionGraph(object):
     def from_modules(
         *modules: ModuleType,
         config: Dict[str, Any],
-        adapter: base.HamiltonGraphAdapter = None,
+        adapter: LifecycleAdapterSet = None,
     ):
         """Initializes a function graph from the specified modules. Note that this was the old
         way we constructed FunctionGraph -- this is not a public-facing API, so we replaced it
@@ -544,7 +560,7 @@ class FunctionGraph(object):
 
         :param modules: Modules to crawl, resolve to nodes
         :param config: Config to use for node resolution
-        :param adapter: Adapter to use for node resolution, edge creation
+        :param adapter: All adapters, to use for node resolution
         :return: a function graph.
         """
 
@@ -840,6 +856,7 @@ class FunctionGraph(object):
         computed: Dict[str, Any] = None,
         overrides: Dict[str, Any] = None,
         inputs: Dict[str, Any] = None,
+        run_id: str = None,
     ) -> Dict[str, Any]:
         """Executes the DAG, given potential inputs/previously computed components.
 
@@ -853,6 +870,8 @@ class FunctionGraph(object):
             nodes = self.get_nodes()
         if inputs is None:
             inputs = {}
+        if run_id is None:
+            run_id = str(uuid.uuid4())
         inputs = combine_config_and_inputs(self.config, inputs)
         return execute_subdag(
             nodes=nodes,
@@ -860,4 +879,5 @@ class FunctionGraph(object):
             adapter=self.adapter,
             computed=computed,
             overrides=overrides,
+            run_id=run_id,
         )
