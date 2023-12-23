@@ -19,15 +19,10 @@ You need to implement a class that implements a single function - see \
 
 .. code-block:: python
 
-    class ResultMixin(object):
-        """Base class housing the static function.
-
-        Why a static function? That's because certain frameworks can only pickle a static function, not an entire
-        object.
-        """
-        @staticmethod
+    class ResultBuilder(object):
+        """Base class housing the result builder"""
         @abc.abstractmethod
-        def build_result(**outputs: typing.Dict[str, typing.Any]) -> typing.Any:
+        def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
             """This function builds the result given the computed values."""
             pass
 
@@ -36,8 +31,8 @@ E.g.
 .. code-block:: python
 
     import typing
-    from hamilton import base
-    class MyCustomBuilder(base.ResultMixin):
+    from hamilton import customization
+    class MyCustomBuilder(customization.ResultBuilder):
          # add a constructor if you need to
          @staticmethod
          def build_result(**outputs: typing.Dict[str, typing.Any]) -> YOUR_RETURN_TYPE:
@@ -48,5 +43,8 @@ E.g.
 How to use it
 -------------
 
-You would then pair that with a graph adapter that takes in a ResultMixin object. E.g. ``SimplePythonGraphAdapter``.
-See :doc:`../graph-adapters/index` for which ones take in a custom ResultMixin object.
+You would then have the option to pair that with a graph adapter that takes in a ResultMixin object. E.g. ``SimplePythonGraphAdapter``.
+See :doc:`../customizing-execution/index` for which ones take in a custom ResultMixin object.
+
+You can pass the result builder or a graph adapters to the ``driver.Builder(result_builder).with_adapters(...)``
+function.

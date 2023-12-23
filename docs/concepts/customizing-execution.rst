@@ -9,11 +9,21 @@ The Hamilton Driver by default has the following behaviors:
 #. It is single threaded, and runs on the machine you call execute from.
 #. It is limited to the memory available on your machine.
 #. ``execute()`` by default returns a pandas DataFrame.
+#. Nothing besides the node is executed during node run
 
 To change these behaviors, we need to introduce two concepts:
 
 #. A Result Builder -- this is how we tell Hamilton what kind of object we want to return when we call ``execute()``.
 #. A Graph Adapters -- this is how we tell Hamilton where and how functions should be executed.
+
+Customizing Execution
+#####################
+
+The following tools are all part of the lifecycle customization capability in Hamilton. This is a very powerful set of features,
+a few of which are presented below. See the reference for lifecycle customization for more information.
+
+You can mix/match lifecycle capabilities, although some may not be compatible. To do so, pass a variable number into the ``with_adapters(...)`` function
+of the ``driver.Builder``.
 
 Result Builders
 ###############
@@ -35,57 +45,47 @@ something.
             """This function builds the result given the computed values."""
             pass
 
-So we have a few implementations see :doc:`../../reference/result-builders/index` for the list.
-
-To use it, it needs to be paired with a GraphAdapter - onto the next section!
+So we have a few implementations see :doc:`../../reference/result-builders/index` for the list. These can be run independently,
+or paired with a graph adapter, see next section for details!
 
 Graph Adapters
 ##############
 
 Graph Adapters `adapt` the Hamilton DAG, and change how it is executed. They all implement a single interface called
 ``base.HamiltonGraphAdapter``. They are called internally by Hamilton at the right points in time to make execution
-work. The link with the Result Builders, is that GraphAdapters need to implement a ``build_result()`` function
+work. The link with the Result Builders, is that GraphAdapters (currently) need to implement a ``build_result()`` function
 themselves.
 
 .. code-block:: python
 
-    class HamiltonGraphAdapter(ResultMixin):
+    class HamiltonGraphAdapter(customization.ResultBuilder):
         """Any GraphAdapters should implement this interface to adapt the HamiltonGraph for that particular context.
 
         Note since it inherits ResultMixin -- HamiltonGraphAdapters need a `build_result` function too.
         """
         # four functions not shown
 
-The default GraphAdapter is the ``base.SimplePythonDataFrameGraphAdapter`` which by default makes Hamilton try to build
-a ``pandas.DataFrame`` when ``.execute()`` is called.
+The default behavior is to join all data in a dictionary with nodes as keys and their results as values (unless you bypass `driver.Builder`, in which case it will
+return a pandas dataframe). Should you find aspects you wish to customize, reach out to the maintainers. The odds are high
+that we already have the right abstraction and have not yet exposed it via documentation & examples.
 
-If you want to tell Hamilton to return something else, we suggest starting with the ``base.SimplePythonGraphAdapter``
-and writing a simple class & function that implements the ``base.ResultMixin`` interface and passing that in.  See
-:doc:`../reference/graph-adapters/index` and
+
+If you want to tell Hamilton to return something else, we suggest starting with the ``customization.ResultBuilder``
+and writing a simple class & function that implements the ``customization.ResultBuilder`` interface and passing that into the driver as ``adapter=[result_builder]``.  See
+:doc:`../reference/customizing-execution/index` and
 :doc:`../reference/result-builders/index` for options.
 
-Otherwise, let's quickly walk through some options on how to execute a Hamilton DAG.
+Execution Hooks
+###############
 
-Local Execution
-***************
+You can do anything you want pre/post execution by implementing the interface ``hamilton.customization.NodeExecutionHook``, which
+gives you two methods:
 
-You have two options:
+1. ``run_before_node_execution(node_name, node_tags, node_kwargs, node_return_type, **future_kwargs)``
+2. ``run_after_node_execution(node_name, node_tags, node_kwargs, node_return_type, result, error, success, **future_kwargs)``
 
-#. Do nothing -- and you'll get ``base.SimplePythonDataFrameGraphAdapter`` by default.
-#.  Use ``base.SimplePythonGraphAdapter`` and pass in a subclass of ``base.ResultMixin`` (you can create your own), and then pass that to the constructor of the Driver.
-
-    e.g.
-
-.. code-block:: python
-
-    adapter = base.SimplePythonGraphAdapter(base.DictResult())
-    dr = driver.Driver(..., adapter=adapter)
-
-By passing in ``base.DictResult()`` we are telling Hamilton that the result of ``execute()`` should be a dictionary with
-a map of ``output`` to computed result.
-
-Note that the above is the most common method of executing Hamilton DAGs. You can also use `base.DefaultAdapter`
-to get a `SimplePythonGraphAdapter` with a `DictResult`.
+These both have ``**future_kwargs`` to ensure backwards compatibility. You can use these to do anything you want, including
+logging, sending metrics, telemetry, etc... Otherwise, let's quickly walk through some options on how to execute a Hamilton DAG.
 
 Dynamic DAGs/Parallel Execution
 ----------------------------------

@@ -124,6 +124,6 @@ Examples include:
 
 These all provide capabilities to either (a) express and execute computation over datasets in python or (b)
 parallelize it. Often both. Hamilton has a variety of integrations with these systems. The basics is that Hamilton
-can make use of these systems to execute the DAG using the [GraphAdapter](reference/graph-adapters/index.rst) abstraction.
+can make use of these systems to execute the DAG using the [GraphAdapter](reference/customizing-execution/index.rst) abstraction.
 
 Hamilton also has a variety of plugins that further integrate with these systems. See the [hamilton without pandas](how-tos/use-without-pandas.rst) example for more details.
