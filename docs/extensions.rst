@@ -24,7 +24,7 @@ All that's needed is to:
 
 #. Import system specific code to setup a client/cluster/etc for that distributed/scalable system.
 #. Import a `GraphAdapter <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L91>`_ that implements \
-   using that distributed/scalable system. See :doc:`reference/graph-adapters/index` for what is \
+   using that distributed/scalable system. See :doc:`reference/customizing-execution/index` for what is \
    available.
 #. You may need to provide a specific module that knows how to load data into the scalable system.
 #. Pass the modules, and graph adapter to the Hamilton Driver.
@@ -47,7 +47,7 @@ All that's needed is to:
     output_columns = ['year','week',...,'spend_shift_3weeks_per_signup','special_feature']
     df = dr.execute(output_columns) # only walk DAG for what is needed
 
-See :doc:`reference/graph-adapters/index` and :doc:`reference/api-extensions/custom-graph-adapters`
+See :doc:`reference/customizing-execution/index` and :doc:`reference/api-extensions/index`
 for options.
 
 Ray

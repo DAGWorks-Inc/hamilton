@@ -2,13 +2,20 @@
 API Extensions
 ==============
 
+This contains tooling for extending the API.
+
 .. toctree::
    :hidden:
 
+   extending-lifecycle/lifecycle-customizations
    custom-result-builders
-   custom-graph-adapters
+   extending-lifecycle/ResultBuilder
+   extending-lifecycle/GraphAdapter
+   extending-lifecycle/NodeExecutionHook
+   extending-lifecycle/LegacyResultMixin
    custom-drivers
    custom-decorators
+
 
 Currently a few of the API extensions are still experimental. Note this doesn't mean they're not well-tested or thought out --
 rather that we're actively looking for feedback. More docs upcoming, but for now fish around the

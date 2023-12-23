@@ -43,7 +43,7 @@ reference/dataflows/index
 reference/decorators/index
 reference/drivers/index
 reference/io/index
-reference/graph-adapters/index
+reference/customizing-execution/index
 reference/result-builders/index
 reference/miscellaneous/index
 reference/api-extensions/index

@@ -8,7 +8,7 @@ It's highly parameterizable, allowing you to customize:
 * The way the DAG is executed (how each node is executed), i.e. either locally, in parallel, or on a cluster!
 * How the results are materialized back to you -- e.g. a DataFrame, a dictionary, your custom object!
 
-To tune the above, pass in a Graph Adapter and or Result Builder-- see :doc:`../result-builders/index` & :doc:`../graph-adapters/index`.
+To tune the above, pass in a Graph Adapter, a Result Builder, and/or anotehr lifecycle method -- see :doc:`../result-builders/index`, :doc:`../customizing-execution/index`.
 
 Let's walk through how you might use the Hamilton Driver.
 
