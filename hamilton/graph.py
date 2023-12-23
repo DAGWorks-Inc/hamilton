@@ -8,18 +8,7 @@ Note: one should largely consider the code in this module to be "private".
 import logging
 from enum import Enum
 from types import ModuleType
-from typing import (
-    Any,
-    Callable,
-    Collection,
-    Dict,
-    FrozenSet,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-)
+from typing import Any, Callable, Collection, Dict, FrozenSet, List, Optional, Set, Tuple, Type
 
 from hamilton import base, node
 from hamilton.execution import graph_functions
@@ -166,9 +155,7 @@ def create_function_graph(
                 )
             nodes[n.name] = n
     # add dependencies -- now that all nodes except input nodes, we just run through edges & validate graph.
-    nodes = update_dependencies(
-        nodes, adapter, reset_dependencies=False
-    )  # no dependencies
+    nodes = update_dependencies(nodes, adapter, reset_dependencies=False)  # no dependencies
     # present yet
     for key in config.keys():
         if key not in nodes:
@@ -222,9 +209,7 @@ def create_graphviz_graph(
         """
         name = n.name if name is None else name
         if type_string is None:
-            type_string = (
-                get_type_as_string(n.type) if get_type_as_string(n.type) else ""
-            )
+            type_string = get_type_as_string(n.type) if get_type_as_string(n.type) else ""
 
         return f"<<b>{name}</b><br /><br /><i>{type_string}</i>>"
 
@@ -237,9 +222,7 @@ def create_graphviz_graph(
         rows = []
         for dep in input_nodes:
             name = dep.name
-            type_string = (
-                get_type_as_string(dep.type) if get_type_as_string(dep.type) else ""
-            )
+            type_string = get_type_as_string(dep.type) if get_type_as_string(dep.type) else ""
             rows.append(f"<tr><td>{name}</td><td>{type_string}</td></tr>")
         return f"<<table border=\"0\">{''.join(rows)}</table>>"
 
@@ -703,9 +686,7 @@ class FunctionGraph(object):
         cycles = self.get_cycles(nodes, user_nodes)
         return True if cycles else False
 
-    def get_cycles(
-        self, nodes: Set[node.Node], user_nodes: Set[node.Node]
-    ) -> List[List[str]]:
+    def get_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> List[List[str]]:
         """Returns cycles found in the graph.
 
         :param nodes: the set of nodes that need to be computed.
@@ -848,9 +829,7 @@ class FunctionGraph(object):
                 deps.append(dep)
             return deps
 
-        return self.directional_dfs_traverse(
-            next_nodes_function, starting_nodes=final_vars
-        )
+        return self.directional_dfs_traverse(next_nodes_function, starting_nodes=final_vars)
 
     def nodes_between(self, start: str, end: str) -> Set[node.Node]:
         """Given our function graph, and a list of desired output variables, returns the subgraph
@@ -869,9 +848,7 @@ class FunctionGraph(object):
         path_exists = start_node is not None
         if not path_exists:
             return set()
-        return set(
-            ([start_node] if start_node is not None else []) + between + [end_node]
-        )
+        return set(([start_node] if start_node is not None else []) + between + [end_node])
 
     def directional_dfs_traverse(
         self,
@@ -905,9 +882,7 @@ class FunctionGraph(object):
             dfs_traverse(self.nodes[var])
         if missing_vars:
             missing_vars_str = ",\n".join(missing_vars)
-            raise ValueError(
-                f"Unknown nodes [{missing_vars_str}] requested. Check for typos?"
-            )
+            raise ValueError(f"Unknown nodes [{missing_vars_str}] requested. Check for typos?")
         return nodes, user_nodes
 
     def execute(
