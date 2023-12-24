@@ -6,7 +6,7 @@ from .api import (
     ResultBuilder,
 )
 from .base import LifecycleAdapter
-from .default import PrintLnHook
+from .default import PDBDebugger, PrintLnHook
 
 # All the public-facing types go here
 __all__ = [
@@ -17,4 +17,5 @@ __all__ = [
     "NodeExecutionHook",
     "EdgeConnectionHook",
     "PrintLnHook",
+    "PDBDebugger",
 ]
