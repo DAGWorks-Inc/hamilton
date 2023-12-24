@@ -5,8 +5,8 @@ import pprint
 import time
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from hamilton.customization import NodeExecutionHook
-from hamilton.customization.api import NodeExecutionMethod
+from hamilton.lifecycle import NodeExecutionHook
+from hamilton.lifecycle.api import NodeExecutionMethod
 
 logger = logging.getLogger(__name__)
 

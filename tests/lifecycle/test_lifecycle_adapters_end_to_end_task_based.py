@@ -5,7 +5,10 @@ from typing import Any, Dict, List, Optional
 import pytest
 
 from hamilton import ad_hoc_utils, driver, node
-from hamilton.customization.base import (
+from hamilton.execution.executors import SynchronousLocalTaskExecutor
+from hamilton.graph import FunctionGraph
+from hamilton.htypes import Collect, Parallelizable
+from hamilton.lifecycle.base import (
     BaseDoNodeExecute,
     BasePostGraphConstruct,
     BasePostGraphExecute,
@@ -16,9 +19,6 @@ from hamilton.customization.base import (
     BasePreNodeExecute,
     BasePreTaskExecute,
 )
-from hamilton.execution.executors import SynchronousLocalTaskExecutor
-from hamilton.graph import FunctionGraph
-from hamilton.htypes import Collect, Parallelizable
 from hamilton.node import Node
 
 from .lifecycle_adapters_for_testing import (

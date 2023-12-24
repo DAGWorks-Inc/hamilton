@@ -2,7 +2,7 @@ import logging
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 from hamilton import node
-from hamilton.customization.base import LifecycleAdapterSet
+from hamilton.lifecycle.base import LifecycleAdapterSet
 
 logger = logging.getLogger(__name__)
 

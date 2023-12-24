@@ -1,9 +1,9 @@
-===============================
-customization.NodeExecutionHook
-===============================
+===========================
+lifecycle.NodeExecutionHook
+===========================
 
 
-.. autoclass:: hamilton.customization.api.NodeExecutionHook
+.. autoclass:: hamilton.lifecycle.api.NodeExecutionHook
    :special-members: __init__
    :members:
    :inherited-members:

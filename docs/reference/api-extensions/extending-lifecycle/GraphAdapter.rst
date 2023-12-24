@@ -1,9 +1,9 @@
-==============================
-customization.api.GraphAdapter
-==============================
+==========================
+lifecycle.api.GraphAdapter
+==========================
 
 
-.. autoclass:: hamilton.customization.api.GraphAdapter
+.. autoclass:: hamilton.lifecycle.api.GraphAdapter
    :special-members: __init__
    :members:
    :inherited-members:

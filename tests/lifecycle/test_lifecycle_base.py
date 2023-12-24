@@ -3,7 +3,8 @@ from typing import Any, Dict, Optional
 import pytest
 
 from hamilton import node
-from hamilton.customization.base import (
+from hamilton.graph import FunctionGraph
+from hamilton.lifecycle.base import (
     ASYNC_HOOK,
     ASYNC_METHOD,
     REGISTERED_ASYNC_HOOKS,
@@ -21,9 +22,8 @@ from hamilton.customization.base import (
     lifecycle,
     validate_lifecycle_adapter_function,
 )
-from hamilton.graph import FunctionGraph
 
-from tests.customization.lifecycle_adapters_for_testing import ExtendToTrackCalls
+from tests.lifecycle.lifecycle_adapters_for_testing import ExtendToTrackCalls
 
 
 def _valid_function_empty():

@@ -5,9 +5,9 @@ from collections import defaultdict
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 from hamilton import node
-from hamilton.customization import base as customization_base
 from hamilton.execution import graph_functions
 from hamilton.execution.graph_functions import get_node_levels, topologically_sort_nodes
+from hamilton.lifecycle import base as lifecycle_base
 from hamilton.node import Node, NodeType
 
 """General utilities for grouping nodes in a DAG"""
@@ -86,7 +86,7 @@ class TaskSpec(NodeGroup):
 
     outputs_to_compute: Collection[str]  # list of output names to compute
     overrides: Dict[str, Any]  # overrides for the task, fixed at the time of creation
-    adapter: customization_base.LifecycleAdapterSet
+    adapter: lifecycle_base.LifecycleAdapterSet
     base_dependencies: List[str]  # list of tasks that must be completed before this task can run
 
     def get_input_vars(self) -> Tuple[List[str], List[str]]:
@@ -321,7 +321,7 @@ def create_task_plan(
     node_groups: List[NodeGroup],
     outputs: List[str],
     overrides: Dict[str, Any],
-    adapter: customization_base.LifecycleAdapterSet,
+    adapter: lifecycle_base.LifecycleAdapterSet,
 ) -> List[TaskSpec]:
     """Creates tasks from node groups. This occurs after we group and after execute() is called in
     the driver. Knowing what the user wants, we can finally create the tasks.
