@@ -1,9 +1,9 @@
 ===========================
-customization.ResultBuilder
+lifecycle.ResultBuilder
 ===========================
 
 
-.. autoclass:: hamilton.customization.api.ResultBuilder
+.. autoclass:: hamilton.lifecycle.api.ResultBuilder
    :special-members: __init__
    :members:
    :inherited-members:

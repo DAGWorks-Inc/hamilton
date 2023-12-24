@@ -4,7 +4,6 @@ from typing import Any, Collection, Dict, List, Optional, Tuple, Type
 import pytest
 
 from hamilton import base, graph, node, registry
-from hamilton.customization import base as customization_base
 from hamilton.function_modifiers import load_from, save_to, value
 from hamilton.io import materialization
 from hamilton.io.data_adapters import DataLoader, DataSaver
@@ -18,6 +17,7 @@ from hamilton.io.materialization import (
     from_,
     to,
 )
+from hamilton.lifecycle import base as lifecycle_base
 
 import tests.resources.cyclic_functions
 import tests.resources.test_default_args
@@ -128,7 +128,7 @@ def test_extractor_factory_generates_nodes():
 
     base_node = node.Node.from_fn(test)
     nodes_without_dependencies = graph.update_dependencies(
-        {base_node.name: base_node}, customization_base.LifecycleAdapterSet(base.DefaultAdapter())
+        {base_node.name: base_node}, lifecycle_base.LifecycleAdapterSet(base.DefaultAdapter())
     )
     fn_graph = graph.FunctionGraph(nodes_without_dependencies, {})
     nodes = factory.generate_nodes(fn_graph)

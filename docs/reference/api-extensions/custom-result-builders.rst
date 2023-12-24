@@ -31,8 +31,8 @@ E.g.
 .. code-block:: python
 
     import typing
-    from hamilton import customization
-    class MyCustomBuilder(customization.ResultBuilder):
+    from hamilton import lifecycle
+    class MyCustomBuilder(lifecycle.ResultBuilder):
          # add a constructor if you need to
          @staticmethod
          def build_result(**outputs: typing.Dict[str, typing.Any]) -> YOUR_RETURN_TYPE:

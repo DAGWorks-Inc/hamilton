@@ -3,7 +3,7 @@ from abc import ABC
 from typing import Any, Dict, List, Optional, Type
 
 from hamilton import node
-from hamilton.customization.base import (
+from hamilton.lifecycle.base import (
     BaseDoBuildResult,
     BaseDoCheckEdgeTypesMatch,
     BaseDoNodeExecute,

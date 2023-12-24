@@ -6,7 +6,6 @@ import pytest
 
 import hamilton.ad_hoc_utils
 from hamilton import base, driver
-from hamilton.customization import base as customization_base
 from hamilton.execution.executors import (
     DefaultExecutionManager,
     MultiProcessingExecutor,
@@ -22,6 +21,7 @@ from hamilton.execution.grouping import (
     TaskImplementation,
 )
 from hamilton.htypes import Collect, Parallelizable
+from hamilton.lifecycle import base as lifecycle_base
 
 from tests.resources.dynamic_parallelism import (
     inputs_in_collect,
@@ -209,7 +209,7 @@ def create_dummy_task(task_purpose: NodeGroupPurpose):
         purpose=task_purpose,
         outputs_to_compute=[],
         overrides={},
-        adapter=customization_base.LifecycleAdapterSet(),
+        adapter=lifecycle_base.LifecycleAdapterSet(),
         base_dependencies=[],
         group_id=None,
         realized_dependencies={},

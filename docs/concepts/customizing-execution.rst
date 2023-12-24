@@ -58,7 +58,7 @@ themselves.
 
 .. code-block:: python
 
-    class HamiltonGraphAdapter(customization.ResultBuilder):
+    class HamiltonGraphAdapter(lifecycle.ResultBuilder):
         """Any GraphAdapters should implement this interface to adapt the HamiltonGraph for that particular context.
 
         Note since it inherits ResultMixin -- HamiltonGraphAdapters need a `build_result` function too.
@@ -70,15 +70,15 @@ return a pandas dataframe). Should you find aspects you wish to customize, reach
 that we already have the right abstraction and have not yet exposed it via documentation & examples.
 
 
-If you want to tell Hamilton to return something else, we suggest starting with the ``customization.ResultBuilder``
-and writing a simple class & function that implements the ``customization.ResultBuilder`` interface and passing that into the driver as ``adapter=[result_builder]``.  See
+If you want to tell Hamilton to return something else, we suggest starting with the ``lifecycle.ResultBuilder``
+and writing a simple class & function that implements the ``lifecycle.ResultBuilder`` interface and passing that into the driver as ``adapter=[result_builder]``.  See
 :doc:`../reference/customizing-execution/index` and
 :doc:`../reference/result-builders/index` for options.
 
 Execution Hooks
 ###############
 
-You can do anything you want pre/post execution by implementing the interface ``hamilton.customization.NodeExecutionHook``, which
+You can do anything you want pre/post execution by implementing the interface ``hamilton.lifecycle.NodeExecutionHook``, which
 gives you two methods:
 
 1. ``run_before_node_execution(node_name, node_tags, node_kwargs, node_return_type, **future_kwargs)``

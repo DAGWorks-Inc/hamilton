@@ -9,8 +9,8 @@ import pytest
 import hamilton.graph_utils
 import hamilton.htypes
 from hamilton import ad_hoc_utils, base, graph, node
-from hamilton.customization import base as customization_base
 from hamilton.execution import graph_functions
+from hamilton.lifecycle import base as lifecycle_base
 from hamilton.node import NodeType
 
 import tests.resources.bad_functions
@@ -106,7 +106,7 @@ def test_add_dependency_strict_node_dependencies():
         nodes,
         param_name,
         param_type,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
     assert nodes["A"] == func_node.dependencies[0]
     assert func_node.depended_on_by == []
@@ -132,7 +132,7 @@ def test_add_dependency_input_nodes_mismatch_on_types():
         nodes,
         param_name,
         b_sig.parameters[param_name].annotation,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
 
     assert "a" in nodes
@@ -145,7 +145,7 @@ def test_add_dependency_input_nodes_mismatch_on_types():
             nodes,
             param_name,
             c_sig.parameters[param_name].annotation,
-            customization_base.LifecycleAdapterSet(),
+            lifecycle_base.LifecycleAdapterSet(),
         )
 
 
@@ -169,7 +169,7 @@ def test_add_dependency_input_nodes_mismatch_on_types_complex():
         nodes,
         param_name,
         e_sig.parameters[param_name].annotation,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
 
     assert "d" in nodes
@@ -182,7 +182,7 @@ def test_add_dependency_input_nodes_mismatch_on_types_complex():
             nodes,
             param_name,
             f_sig.parameters[param_name].annotation,
-            customization_base.LifecycleAdapterSet(),
+            lifecycle_base.LifecycleAdapterSet(),
         )
 
 
@@ -210,7 +210,7 @@ def test_add_dependency_input_nodes_compatible_types():
         nodes,
         param_name,
         b_sig.parameters[param_name].annotation,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
 
     assert "a" in nodes
@@ -222,7 +222,7 @@ def test_add_dependency_input_nodes_compatible_types():
         nodes,
         param_name,
         c_sig.parameters[param_name].annotation,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
 
     # test that we shrink the type to the tighter type
@@ -234,7 +234,7 @@ def test_add_dependency_input_nodes_compatible_types():
         nodes,
         param_name,
         d_sig.parameters[param_name].annotation,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
 
 
@@ -265,7 +265,7 @@ def test_add_dependency_input_nodes_compatible_types_order_check():
         nodes,
         param_name,
         c_sig.parameters[param_name].annotation,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
 
     assert "a" in nodes
@@ -278,7 +278,7 @@ def test_add_dependency_input_nodes_compatible_types_order_check():
         nodes,
         param_name,
         b_sig.parameters[param_name].annotation,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
 
     # test that type didn't change
@@ -290,7 +290,7 @@ def test_add_dependency_input_nodes_compatible_types_order_check():
         nodes,
         param_name,
         d_sig.parameters[param_name].annotation,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
 
 
@@ -318,7 +318,7 @@ def test_typing_to_primitive_conversion():
         nodes,
         param_name,
         param_type,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
     assert nodes["A"] == func_node.dependencies[0]
     assert func_node.depended_on_by == []
@@ -348,7 +348,7 @@ def test_primitive_to_typing_conversion():
         nodes,
         param_name,
         param_type,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
     assert nodes["A2"] == func_node.dependencies[0]
     assert func_node.depended_on_by == []
@@ -376,7 +376,7 @@ def test_throwing_error_on_incompatible_types():
             nodes,
             param_name,
             param_type,
-            customization_base.LifecycleAdapterSet(),
+            lifecycle_base.LifecycleAdapterSet(),
         )
 
 
@@ -399,7 +399,7 @@ def test_add_dependency_user_nodes():
         nodes,
         param_name,
         param_type,
-        customization_base.LifecycleAdapterSet(),
+        lifecycle_base.LifecycleAdapterSet(),
     )
     # user node is created and added to nodes.
     assert nodes["b"] == func_node.dependencies[0]
@@ -1068,7 +1068,7 @@ def test_in_driver_function_definitions():
 def test_update_dependencies():
     nodes = create_testing_nodes()
     new_nodes = graph.update_dependencies(
-        nodes, customization_base.LifecycleAdapterSet(base.DefaultAdapter())
+        nodes, lifecycle_base.LifecycleAdapterSet(base.DefaultAdapter())
     )
     for node_name, node_ in new_nodes.items():
         assert node_.dependencies == nodes[node_name].dependencies

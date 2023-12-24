@@ -4,7 +4,9 @@ from typing import Any, Dict, List, Optional
 import pytest
 
 from hamilton import ad_hoc_utils, driver, node
-from hamilton.customization.base import (
+from hamilton.graph import FunctionGraph
+from hamilton.io.materialization import to
+from hamilton.lifecycle.base import (
     BaseDoNodeExecute,
     BasePostGraphConstruct,
     BasePostGraphExecute,
@@ -13,8 +15,6 @@ from hamilton.customization.base import (
     BasePreGraphExecute,
     BasePreNodeExecute,
 )
-from hamilton.graph import FunctionGraph
-from hamilton.io.materialization import to
 from hamilton.node import Node
 
 from .lifecycle_adapters_for_testing import (

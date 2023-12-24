@@ -14,11 +14,11 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, 
 
 import pandas as pd
 
-from hamilton import common, customization, htypes
-from hamilton.customization import base as customization_base
+from hamilton import common, htypes
 from hamilton.execution import executors, graph_functions, grouping, state
 from hamilton.io import materialization
 from hamilton.io.materialization import ExtractorFactory, MaterializerFactory
+from hamilton.lifecycle import base as lifecycle_base
 
 SLACK_ERROR_MESSAGE = (
     "-------------------------------------------------------------------\n"
@@ -143,7 +143,7 @@ class GraphExecutor(abc.ABC):
 class DefaultGraphExecutor(GraphExecutor):
     DEFAULT_TASK_NAME = "root"  # Not task-based, so we just assign a default name for a task
 
-    def __init__(self, adapter: Optional[customization_base.LifecycleAdapterSet] = None):
+    def __init__(self, adapter: Optional[lifecycle_base.LifecycleAdapterSet] = None):
         """Constructor for the default graph executor.
 
         :param adapter: Adapter to use for execution (optional).
@@ -193,7 +193,7 @@ class TaskBasedGraphExecutor(GraphExecutor):
         self,
         execution_manager: executors.ExecutionManager,
         grouping_strategy: grouping.GroupingStrategy,
-        adapter: customization_base.LifecycleAdapterSet,
+        adapter: lifecycle_base.LifecycleAdapterSet,
     ):
         """Executor for task-based execution. This enables grouping of nodes into tasks, as
         well as parallel execution/dynamic spawning of nodes.
@@ -281,36 +281,36 @@ class Driver:
     def normalize_adapter_input(
         adapter: Optional[
             Union[
-                customization_base.LifecycleAdapter,
-                List[customization_base.LifecycleAdapter],
-                customization_base.LifecycleAdapterSet,
+                lifecycle_base.LifecycleAdapter,
+                List[lifecycle_base.LifecycleAdapter],
+                lifecycle_base.LifecycleAdapterSet,
             ]
         ],
         use_legacy_adapter: bool = True,
-    ) -> customization_base.LifecycleAdapterSet:
+    ) -> lifecycle_base.LifecycleAdapterSet:
         """Normalizes the adapter argument in the driver to a list of adapters. Adds back the legacy adapter."""
         if adapter is None:
             adapter = []
-        if isinstance(adapter, customization_base.LifecycleAdapterSet):
+        if isinstance(adapter, lifecycle_base.LifecycleAdapterSet):
             return adapter
         if not isinstance(adapter, list):
             adapter = [adapter]
         # we have to have exactly one result builder
         contains_result_builder = False
         for adapter_impl in adapter:
-            if isinstance(adapter_impl, customization_base.BaseDoBuildResult):
+            if isinstance(adapter_impl, lifecycle_base.BaseDoBuildResult):
                 contains_result_builder = True
         if not contains_result_builder:
             if use_legacy_adapter:
                 adapter.append(base.PandasDataFrameResult())
-        return customization_base.LifecycleAdapterSet(*adapter)
+        return lifecycle_base.LifecycleAdapterSet(*adapter)
 
     def __init__(
         self,
         config: Dict[str, Any],
         *modules: ModuleType,
         adapter: Optional[
-            Union[customization.LifecycleAdapter, List[customization.LifecycleAdapter]]
+            Union[lifecycle_base.LifecycleAdapter, List[lifecycle_base.LifecycleAdapter]]
         ] = None,
         _graph_executor: GraphExecutor = None,
         _use_legacy_adapter: bool = True,
@@ -355,7 +355,7 @@ class Driver:
         error: Optional[str],
         modules: Tuple[ModuleType],
         config: Dict[str, Any],
-        adapter: customization_base.LifecycleAdapterSet,
+        adapter: lifecycle_base.LifecycleAdapterSet,
     ):
         """Captures constructor telemetry. Notes:
         (1) we want to do this in a way that does not break.
@@ -395,9 +395,9 @@ class Driver:
     def validate_inputs(
         fn_graph: graph.FunctionGraph,
         adapter: Union[
-            customization.LifecycleAdapter,
-            List[customization.LifecycleAdapter],
-            customization_base.LifecycleAdapterSet,
+            lifecycle_base.LifecycleAdapter,
+            List[lifecycle_base.LifecycleAdapter],
+            lifecycle_base.LifecycleAdapterSet,
         ],
         user_nodes: Collection[node.Node],
         inputs: typing.Optional[Dict[str, Any]] = None,
@@ -683,7 +683,7 @@ class Driver:
     @staticmethod
     def _visualize_execution_helper(
         fn_graph: graph.FunctionGraph,
-        adapter: customization_base.LifecycleAdapterSet,
+        adapter: lifecycle_base.LifecycleAdapterSet,
         final_vars: List[str],
         output_file_path: str,
         render_kwargs: dict,
@@ -1462,7 +1462,7 @@ class Builder:
 
         self.legacy_graph_adapter = None
         # Standard execution fields
-        self.adapters: List[customization.LifecycleAdapter] = []
+        self.adapters: List[lifecycle_base.LifecycleAdapter] = []
 
         # Dynamic execution fields
         self.execution_manager = None
@@ -1527,7 +1527,7 @@ class Builder:
         self.legacy_graph_adapter = adapter
         return self
 
-    def with_adapters(self, *adapters: customization.LifecycleAdapter) -> "Builder":
+    def with_adapters(self, *adapters: lifecycle_base.LifecycleAdapter) -> "Builder":
         """Sets the adapter to use.
 
         :param adapter: Adapter to use.
@@ -1624,7 +1624,7 @@ class Builder:
         graph_executor = TaskBasedGraphExecutor(
             execution_manager=execution_manager,
             grouping_strategy=grouping_strategy,
-            adapter=customization_base.LifecycleAdapterSet(*adapter),
+            adapter=lifecycle_base.LifecycleAdapterSet(*adapter),
         )
         return Driver(
             self.config,

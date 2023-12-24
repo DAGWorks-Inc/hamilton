@@ -27,13 +27,13 @@ from urllib import request
 
 try:
     from . import base
-    from .customization import base as customization_base
+    from .lifecycle import base as lifecycle_base
     from .version import VERSION
 except ImportError:
     from version import VERSION
 
     from hamilton import base
-    from hamilton.customization import base as customization_base
+    from hamilton.lifecycle import base as lifecycle_base
 
 logger = logging.getLogger(__name__)
 
@@ -434,7 +434,7 @@ def sanitize_error(exc_type, exc_value, exc_traceback) -> str:
         return "FAILED_TO_SANITIZE_ERROR"
 
 
-def get_all_adapters_names(adapter: customization_base.LifecycleAdapterSet) -> List[str]:
+def get_all_adapters_names(adapter: lifecycle_base.LifecycleAdapterSet) -> List[str]:
     adapters = adapter.adapters
     out = []
     for adapter in adapters:
@@ -442,7 +442,7 @@ def get_all_adapters_names(adapter: customization_base.LifecycleAdapterSet) -> L
     return out
 
 
-def get_adapter_name(adapter: customization_base.LifecycleAdapter) -> str:
+def get_adapter_name(adapter: lifecycle_base.LifecycleAdapter) -> str:
     """Get the class name of the `hamilton` adapter used.
 
     If we detect it's not a Hamilton one, we do not track it.
@@ -458,7 +458,7 @@ def get_adapter_name(adapter: customization_base.LifecycleAdapter) -> str:
     return adapter_name
 
 
-def get_result_builder_name(adapter: customization_base.LifecycleAdapterSet) -> str:
+def get_result_builder_name(adapter: lifecycle_base.LifecycleAdapterSet) -> str:
     """Get the class name of the `hamilton` result builder used.
 
     If we detect it's not a base one, we do not track it.

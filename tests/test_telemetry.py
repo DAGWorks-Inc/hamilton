@@ -8,8 +8,8 @@ from unittest import mock
 import pytest
 
 from hamilton import base, node, telemetry
-from hamilton.customization import base as customization_base
 from hamilton.experimental import h_async
+from hamilton.lifecycle import base as lifecycle_base
 
 
 @pytest.fixture
@@ -197,7 +197,7 @@ def test_get_adapter_name(adapter, expected):
 def test_get_result_builder_name(adapter, expected):
     """Tests getting the result builder name. This is largely backwards compatibility
     but still provides nice information as to the provided tooling the user leverages."""
-    actual = telemetry.get_result_builder_name(customization_base.LifecycleAdapterSet(adapter))
+    actual = telemetry.get_result_builder_name(lifecycle_base.LifecycleAdapterSet(adapter))
     assert actual == expected
 
 

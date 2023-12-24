@@ -12,14 +12,14 @@ import pandas as pd
 from pandas.core.indexes import extension as pd_extension
 
 try:
-    from . import customization, htypes, node
+    from . import htypes, lifecycle, node
 except ImportError:
     import node
 
 logger = logging.getLogger(__name__)
 
 
-class ResultMixin(customization.LegacyResultMixin):
+class ResultMixin(lifecycle.LegacyResultMixin):
     """Legacy result builder -- see lifecycle methods for more information."""
 
     pass
@@ -383,7 +383,7 @@ class NumpyMatrixResult(ResultMixin):
         return pd.DataFrame
 
 
-class HamiltonGraphAdapter(customization.GraphAdapter, abc.ABC):
+class HamiltonGraphAdapter(lifecycle.GraphAdapter, abc.ABC):
     """Legacy graph adapter -- see lifecycle methods for more information."""
 
     pass

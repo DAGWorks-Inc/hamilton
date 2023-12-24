@@ -12,12 +12,12 @@ from types import ModuleType
 from typing import Any, Callable, Collection, Dict, FrozenSet, List, Optional, Set, Tuple, Type
 
 from hamilton import base, node
-from hamilton.customization.base import LifecycleAdapterSet
 from hamilton.execution import graph_functions
 from hamilton.execution.graph_functions import combine_config_and_inputs, execute_subdag
 from hamilton.function_modifiers import base as fm_base
 from hamilton.graph_utils import find_functions
 from hamilton.htypes import get_type_as_string, types_match
+from hamilton.lifecycle.base import LifecycleAdapterSet
 from hamilton.node import Node
 
 logger = logging.getLogger(__name__)

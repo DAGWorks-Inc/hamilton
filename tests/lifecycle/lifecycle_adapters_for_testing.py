@@ -5,7 +5,8 @@ from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional
 
 from hamilton import node
-from hamilton.customization.base import (
+from hamilton.graph import FunctionGraph
+from hamilton.lifecycle.base import (
     BaseDoBuildResult,
     BaseDoNodeExecute,
     BaseDoValidateInput,
@@ -19,7 +20,6 @@ from hamilton.customization.base import (
     BasePreTaskExecute,
     LifecycleAdapterSet,
 )
-from hamilton.graph import FunctionGraph
 from hamilton.node import Node
 
 
