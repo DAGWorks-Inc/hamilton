@@ -1,13 +1,34 @@
 """A selection of default lifeycle hooks/methods that come with Hamilton. These carry no additional requirements"""
+import logging
+import pdb
 import pprint
 import time
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from hamilton.customization import NodeExecutionHook
+from hamilton.customization.api import NodeExecutionMethod
 
-NodeFilter = Callable[
-    [str, Dict[str, Any]], bool
-]  # filter fucntion for nodes, mapping node name and node tags to a boolean
+logger = logging.getLogger(__name__)
+
+NodeFilter = Union[
+    Callable[[str], Dict[str, Any]],
+    bool,  # filter function for nodes, mapping node name to a boolean
+    List[str],  # list of node names to run
+    str,  # node name to run
+    None,  # run all nodes
+]  # filter function for nodes, mapping node name and node tags to a boolean
+
+
+def should_run_node(node_name: str, node_tags: Dict[str, Any], node_filter: NodeFilter) -> bool:
+    if node_filter is None:
+        return True
+    if isinstance(node_filter, str):
+        return node_name == node_filter
+    if isinstance(node_filter, list):
+        return node_name in node_filter
+    if callable(node_filter):
+        return node_filter(node_name, node_tags)
+    raise ValueError(f"Invalid node filter: {node_filter}")
 
 
 class PrintLnHook(NodeExecutionHook):
@@ -42,7 +63,7 @@ class PrintLnHook(NodeExecutionHook):
         self,
         verbosity: int = 1,
         print_fn: Callable[[str], None] = print,
-        node_filter: Optional[NodeFilter] = None,
+        node_filter: NodeFilter = None,
     ):
         """Prints out information before/after node execution.
 
@@ -78,7 +99,7 @@ class PrintLnHook(NodeExecutionHook):
         :param task_id: ID of the task that the node is in, if any
         :param future_kwargs: Additional keyword arguments that may be passed to the hook yet are ignored for now
         """
-        if not self.node_filter(node_name, node_tags):
+        if not should_run_node(node_name, node_tags, self.node_filter):
             return
         node_unique_id = self._format_node_name(node_name, task_id)
         self.timer_dict[node_unique_id] = time.time()
@@ -110,7 +131,7 @@ class PrintLnHook(NodeExecutionHook):
         :param task_id: ID of the task that the node is in, if any
         :param future_kwargs: Additional keyword arguments that may be passed to the hook yet are ignored for now
         """
-        if not self.node_filter(node_name, node_tags):
+        if not should_run_node(node_name, node_tags, self.node_filter):
             return
         node_unique_id = self._format_node_name(node_name, task_id)
         time_delta = time.time() - self.timer_dict[node_unique_id]
@@ -123,3 +144,166 @@ class PrintLnHook(NodeExecutionHook):
                 message += f" Error: \n{pprint.pformat(error)}"
         self.print_fn(message)
         del self.timer_dict[node_name]
+
+
+class PDBDebugger(NodeExecutionHook, NodeExecutionMethod):
+    """Class to inject a PDB debugger into a node execution. This is still somewhat experimental as it is a debugging utility.
+    We reserve the right to change the API and the implementation of this class in the future."""
+
+    CONTEXT = dict()
+
+    def __init__(
+        self,
+        node_filter: NodeFilter,
+        before: bool = False,
+        during: bool = False,
+        after: bool = False,
+    ):
+        """Creates a PDB debugger. This has three possible modes:
+        1. Before -- places you in a function with (a) node information, and (b) inputs
+        2. During -- runs the node with pdb.run. Note this may not always work or give what you expect as
+            node functions are often wrapped in multiple levels of input modifications/whatnot. That said, it should give you something.
+            Also note that this is not (currently) compatible with graph adapters.
+        3. After -- places you in a function with (a) node information, (b) inputs, and (c) results
+
+
+        :param node_filter: A function that takes a node name and a node tags dict and returns a boolean. If the boolean is True, the node will be printed out.
+        :param before: Whether to place you in a PDB debugger before a node executes
+        :param during: Whether to place you in a PDB debugger during a node's execution
+        :param after: Whether to place you in a PDB debugger after a node executes
+        """
+        self.node_filter = node_filter
+        self.run_before = before
+        self.run_during = during
+        self.run_after = after
+
+    def run_to_execute_node(
+        self,
+        *,
+        node_name: str,
+        node_tags: Dict[str, Any],
+        node_callable: Any,
+        node_kwargs: Dict[str, Any],
+        task_id: Optional[str],
+        **future_kwargs: Any,
+    ) -> Any:
+        """Executes the node with a PDB debugger. This modifies the global PDBDebugger.CONTEXT variable to contain information about the node,
+        so you can access it while debugging.
+
+
+        :param node_name: Name of the node
+        :param node_tags: Tags of the node
+        :param node_callable: Callable function of the node
+        :param node_kwargs: Keyword arguments passed to the node
+        :param task_id: ID of the task that the node is in, if any
+        :param future_kwargs: Additional keyword arguments that may be passed to the hook yet are ignored for now
+        :return: Result of the node
+        """
+        if not should_run_node(node_name, node_tags, self.node_filter) or not self.run_during:
+            return node_callable(**node_kwargs)
+        PDBDebugger.CONTEXT = {
+            "node_name": node_name,
+            "node_tags": node_tags,
+            "node_callable": node_callable,
+            "node_kwargs": node_kwargs,
+            "task_id": task_id,
+            "future_kwargs": future_kwargs,
+        }
+        logging.warning(
+            (
+                f"Placing you in a PDB debugger for node {node_name}."
+                "\nYou can access additional node information via PDBDebugger.CONTEXT. Data is:"
+                f"\n - node_name: {PDBDebugger._truncate_repr(node_name)}"
+                f"\n - node_tags: {PDBDebugger._truncate_repr(node_tags)}"
+                f"\n - node_callable: {PDBDebugger._truncate_repr(node_callable)}"
+                f"\n - node_kwargs: {PDBDebugger._truncate_repr(', '.join(list(node_kwargs.keys())))}"
+                f"\n - task_id: {PDBDebugger._truncate_repr(task_id)}"
+                f"\n - future_kwargs: {PDBDebugger._truncate_repr(future_kwargs)}"
+            )
+        )
+        out = pdb.runcall(node_callable, **node_kwargs)
+        logging.info(f"Finished executing node {node_name}.")
+        return out
+
+    @staticmethod
+    def _truncate_repr(obj: Any, num_chars: int = 80) -> str:
+        """Truncates the repr of an object to 100 characters."""
+        if isinstance(obj, str):
+            return obj[:num_chars]
+        return repr(obj)[:num_chars]
+
+    def run_before_node_execution(
+        self,
+        *,
+        node_name: str,
+        node_tags: Dict[str, Any],
+        node_kwargs: Dict[str, Any],
+        node_return_type: type,
+        task_id: Optional[str],
+        **future_kwargs: Any,
+    ):
+        """Executes before a node executes. Does nothing, just runs pdb.set_trace()
+
+        :param node_name: Name of the node
+        :param node_tags: Tags of the node
+        :param node_kwargs: Keyword arguments passed to the node
+        :param node_return_type: Return type of the node
+        :param task_id: ID of the task that the node is in, if any
+        :param future_kwargs: Additional keyword arguments that may be passed to the hook yet are ignored for now
+        :return: Result of the node
+        """
+        if should_run_node(node_name, node_tags, self.node_filter) and self.run_before:
+            logging.warning(
+                (
+                    f"Placing you in a PDB debugger prior to execution of node: {node_name}."
+                    "\nYou can access additional node information via the following variables:"
+                    f"\n - node_name: {PDBDebugger._truncate_repr(node_name)}"
+                    f"\n - node_tags: {PDBDebugger._truncate_repr(node_tags)}"
+                    f"\n - node_kwargs: {PDBDebugger._truncate_repr(', '.join(list(node_kwargs.keys())))}"
+                    f"\n - node_return_type: {PDBDebugger._truncate_repr(node_return_type)}"
+                    f"\n - task_id: {PDBDebugger._truncate_repr(task_id)}"
+                )
+            )
+            pdb.set_trace()
+
+    def run_after_node_execution(
+        self,
+        *,
+        node_name: str,
+        node_tags: Dict[str, Any],
+        node_kwargs: Dict[str, Any],
+        node_return_type: type,
+        result: Any,
+        error: Optional[Exception],
+        success: bool,
+        task_id: Optional[str],
+        **future_kwargs: Any,
+    ):
+        """Executes after a node, whether or not is was successful. Does nothing, just runs pdb.set_trace().
+
+        :param node_name: Name of the node
+        :param node_tags:  Tags of the node
+        :param node_kwargs:  Keyword arguments passed to the node
+        :param node_return_type:  Return type of the node
+        :param result: Result of the node, None if there was an error
+        :param error: Error of the node, None if there was no error
+        :param success:  Whether the node ran successful or not
+        :param task_id: Task ID of the node, if any
+        :param future_kwargs: Additional keyword arguments that may be passed to the hook yet are ignored for now
+        """
+        if should_run_node(node_name, node_tags, self.node_filter) and self.run_after:
+            logging.warning(
+                (
+                    f"Placing you in a PDB debugger post execution of node: {node_name}."
+                    "\nYou can access additional node information via the following variables:"
+                    f"\n - node_name: {PDBDebugger._truncate_repr(node_name)}"
+                    f"\n - node_tags: {PDBDebugger._truncate_repr(node_tags)}"
+                    f"\n - node_kwargs: {PDBDebugger._truncate_repr(', '.join(list(node_kwargs.keys())))}"
+                    f"\n - node_return_type: {PDBDebugger._truncate_repr(node_return_type)}"
+                    f"\n - result: {PDBDebugger._truncate_repr(result)}"
+                    f"\n - error: {PDBDebugger._truncate_repr(error)}"
+                    f"\n - success: {PDBDebugger._truncate_repr(success)}"
+                    f"\n - task_id: {PDBDebugger._truncate_repr(task_id)}"
+                )
+            )
+            pdb.set_trace()

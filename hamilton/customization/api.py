@@ -302,6 +302,6 @@ class NodeExecutionMethod(BaseDoNodeExecute):
         :param node_kwargs:
         :param task_id:
         :param future_kwargs:
-        :return:
+        :return: The result of the node execution.
         """
->>>>>>> Stashed changes
+        pass
