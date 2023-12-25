@@ -113,7 +113,7 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
         out = execute_subdag(
             nodes=task.nodes,
             inputs=task.dynamic_inputs,
-            adapter=task.adapter,  # TODO -- wire through multiple graph adapters
+            adapter=task.adapter,
             overrides={**task.dynamic_inputs, **task.overrides},
             run_id=task.run_id,
             task_id=task.task_id,

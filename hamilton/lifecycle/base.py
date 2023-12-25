@@ -200,6 +200,15 @@ class BaseDoValidateInput(abc.ABC):
 class BaseDoValidateNode(abc.ABC):
     @abc.abstractmethod
     def do_validate_node(self, *, created_node: node.Node) -> bool:
+        """Validates a node. Note this is *not* integrated yet, so adding this in will be a No-op.
+        In fact, we will likely be changing the API for this to have an optional error message.
+        This is OK, as this is internal facing.
+
+        Furthermore, we'll be adding in a user-facing API that takes in the tags, name, module, etc...
+
+        :param created_node: Node that was created.
+        :return: Whether or not the node is valid.
+        """
         pass
 
 
@@ -567,6 +576,8 @@ class BaseDoBuildResult(abc.ABC):
         pass
 
 
+# This is the type of a lifecycle adapter -- these types utilize
+
 LifecycleAdapter = Union[
     BasePreDoAnythingHook,
     BaseDoCheckEdgeTypesMatch,
@@ -600,6 +611,10 @@ class LifecycleAdapterSet:
     """
 
     def __init__(self, *adapters: LifecycleAdapter):
+        """Initializes the adapter set.
+
+        :param adapters: Adapters to group together
+        """
         self._adapters = adapters
         self.sync_hooks, self.async_hooks = self._get_lifecycle_hooks()
         self.sync_methods, self.async_methods = self._get_lifecycle_methods()
@@ -642,8 +657,6 @@ class LifecycleAdapterSet:
             method for method, adapters in async_methods.items() if len(adapters) > 1
         ]
         if len(multiple_implementations_sync) > 0 or len(multiple_implementations_async) > 0:
-            # TODO -- add better validation for this...
-            # Extract out into a validation function to make it easier to handle
             raise ValueError(
                 f"Multiple adapters cannot (currently) implement the same lifecycle method. "
                 f"Sync methods: {multiple_implementations_sync}. "

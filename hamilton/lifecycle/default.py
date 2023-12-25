@@ -136,7 +136,7 @@ class PrintLnHook(NodeExecutionHook):
         node_unique_id = self._format_node_name(node_name, task_id)
         time_delta = time.time() - self.timer_dict[node_unique_id]
         time_delta_formatted = self._format_time_delta(time_delta)
-        message = f"Finished executing node: {node_unique_id} in {time_delta_formatted}. Status: {'Success' if success else 'Failure'}."
+        message = f"Finished debugging node: {node_unique_id} in {time_delta_formatted}. Status: {'Success' if success else 'Failure'}."
         if self.verbosity == 2:
             if success:
                 message += f" Result: \n{pprint.pformat(result)}\n"

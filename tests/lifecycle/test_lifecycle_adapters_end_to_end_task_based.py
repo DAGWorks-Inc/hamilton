@@ -85,7 +85,7 @@ def test_individual_pre_node_execute_hook_task_based():
     run_ids = {item.bound_kwargs["run_id"] for item in relevant_calls}
     (run_id,) = run_ids
     assert len(run_ids) == 1
-    assert len(run_id) > len("TODO -- add a run ID")  # I'd hope it has more entropy than this...
+    assert len(run_id) > 10  # Should be UUID(ish)...
 
 
 def test_individual_post_node_execute_hook_task_based():
