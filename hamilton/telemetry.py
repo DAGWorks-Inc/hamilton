@@ -435,6 +435,12 @@ def sanitize_error(exc_type, exc_value, exc_traceback) -> str:
 
 
 def get_all_adapters_names(adapter: lifecycle_base.LifecycleAdapterSet) -> List[str]:
+    """Gives a list of all adapter names in the LifecycleAdapterSet.
+    Simply a loop over the adapters it contains.
+
+    :param adapter: LifecycleAdapterSet object.
+    :return: list of adapter names.
+    """
     adapters = adapter.adapters
     out = []
     for adapter in adapters:
@@ -448,7 +454,7 @@ def get_adapter_name(adapter: lifecycle_base.LifecycleAdapter) -> str:
     If we detect it's not a Hamilton one, we do not track it.
 
     :param adapter: base.HamiltonGraphAdapter object.
-    :return: string modeul + class name of the adapter.
+    :return: string module + class name of the adapter.
     """
     # Check whether it's a hamilton based adapter
     if adapter.__module__.startswith("hamilton."):

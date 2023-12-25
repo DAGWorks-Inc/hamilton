@@ -89,7 +89,7 @@ class GraphAdapter(
 
         :param node_type: The type of the node.
         :param input_value: An actual value that we want to inspect matches our expectation.
-        :return:
+        :return: True if the input is valid, False otherwise.
         """
         pass
 
@@ -105,7 +105,7 @@ class GraphAdapter(
 
         :param node_type: The type of the node.
         :param input_type: The type of the input that would flow into the node.
-        :return:
+        :return: True if the types are equivalent, False otherwise.
         """
         pass
 
@@ -265,7 +265,9 @@ class EdgeConnectionHook(BaseDoCheckEdgeTypesMatch, BaseDoValidateInput, abc.ABC
 
 class NodeExecutionMethod(BaseDoNodeExecute):
     """API for executing a node. This takes in tags, callable, node name, and kwargs, and is
-    responsible for executing the node and returning the result. Note this is not (currently)"""
+    responsible for executing the node and returning the result. Note this is not (currently)
+    able to be layered together, although we may add that soon.
+    """
 
     def do_node_execute(
         self,
@@ -296,12 +298,12 @@ class NodeExecutionMethod(BaseDoNodeExecute):
     ) -> Any:
         """This method is responsible for executing the node and returning the result.
 
-        :param node_name:
-        :param node_tags:
-        :param node_callable:
-        :param node_kwargs:
-        :param task_id:
-        :param future_kwargs:
-        :return: The result of the node execution.
+        :param node_name: Name of the node.
+        :param node_tags: Tags of the node.
+        :param node_callable: Callable of the node.
+        :param node_kwargs: Keyword arguments to pass to the node.
+        :param task_id: The ID of the task, none if not in a task-based environment
+        :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
+        :return: The result of the node execution -- up to you to return this.
         """
         pass

@@ -8,7 +8,7 @@ from .api import (
 from .base import LifecycleAdapter
 from .default import PDBDebugger, PrintLnHook
 
-# All the public-facing types go here
+# All the following types are public facing
 __all__ = [
     "LifecycleAdapter",
     "LegacyResultMixin",

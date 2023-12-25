@@ -282,6 +282,14 @@ class Collect(Generator[V, None, None], ABC):
 
 
 def check_input_type(node_type: Type, input_value: Any) -> bool:
+    """Checks an input value against the declare input type. This is a utility function to be
+    used for checking types against values. Note we are looser here than in custom_subclass_check,
+    as runtime-typing is less specific.
+
+    :param node_type: Type of the node to check against.
+    :param input_value: Value to check.
+    :return: True if the input value is of the correct type, False otherwise.
+    """
     if node_type == Any:
         return True
     # In the case of dict[str, Any] (or equivalent) in python 3.9 +

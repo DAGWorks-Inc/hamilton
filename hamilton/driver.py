@@ -288,7 +288,15 @@ class Driver:
         ],
         use_legacy_adapter: bool = True,
     ) -> lifecycle_base.LifecycleAdapterSet:
-        """Normalizes the adapter argument in the driver to a list of adapters. Adds back the legacy adapter."""
+        """Normalizes the adapter argument in the driver to a list of adapters. Adds back the legacy adapter if needed.
+
+        Note that, in the past, hamilton requird a graph adapter. Now it is only required to be included in the legacy case
+        default behavior has been modified to handle anything a result builder did.
+
+        :param adapter: Adapter to include
+        :param use_legacy_adapter:  Whether to use the legacy adapter. Defaults to True.
+        :return: A lifecycle adapter set.
+        """
         if adapter is None:
             adapter = []
         if isinstance(adapter, lifecycle_base.LifecycleAdapterSet):
@@ -322,8 +330,12 @@ class Driver:
         :param modules: Python module objects you want to inspect for Hamilton Functions.
         :param adapter: Optional. A way to wire in another way of "executing" a hamilton graph.
             Defaults to using original Hamilton adapter which is single threaded in memory python.
-        :param graph_executor: This is injected by the builder -- if you want to set different graph
-            execution parameters, use the builder rather than instantiating this directly.
+        :param _graph_executor: Not public facing, do not use this parameter. This is injected by the builder.
+            If you need to tune execution, use the builder to do so.
+        :param _use_legacy_adapter: Not public facing, do not use this parameter.
+            This represents whether or not to use the legacy adapter. Defaults to True, as this should be
+            backwards compatible. In Hamilton 2.0.0, this will be removed.
+
         """
 
         self.driver_run_id = uuid.uuid4()
@@ -413,6 +425,10 @@ class Driver:
         :param inputs: the user inputs provided.
         :param nodes_set: the set of nodes to use for validation; Optional.
         """
+        # TODO -- determine whether or not we want to use the legacy adapter if nothing is here
+        # We shouldn't need to do this (normalize the inputs), as we have already, but the bigger issue
+        # is that we need to decide whether this method should be static or not
+        # For now, it is internal-facing, so we have the ability to make changes
         adapter = Driver.normalize_adapter_input(adapter)
         if inputs is None:
             inputs = {}
@@ -430,6 +446,8 @@ class Driver:
             else:
                 valid = all_inputs[user_node.name] is None
                 if adapter.does_method("do_validate_input", is_async=False):
+                    # For now this is an or-gate, as are the rest.
+                    # We may consider changing this/adding another method or type
                     valid |= adapter.call_lifecycle_method_sync(
                         "do_validate_input",
                         node_type=user_node.type,
@@ -548,12 +566,12 @@ class Driver:
         inputs: Dict[str, Any] = None,
         _fn_graph: graph.FunctionGraph = None,
     ) -> Dict[str, Any]:
-        """Raw execute function that does the meat of execute. This entrypoint for running the graph
-        will be deprecated in favor of using Base.DictResult(), which will be the default,
-        and already forms the default in the new builder pattern.
+        """Raw execute function that does the meat of execute.
 
-        It does not try to stitch anything together. Thus allowing wrapper executes around this to shape the output
-        of the data.
+        Don't use this entry point for execution directly. Always go through `.execute()`.
+        In case you are using `.raw_execute()` directly, please switch to `.execute()` using a
+        `base.DictResult()`. Note: `base.DictResult()` is the default return of execute if you are
+        using the `driver.Builder()` class to create a `Driver()` object.
 
         :param final_vars: Final variables to compute
         :param overrides: Overrides to run.
@@ -616,8 +634,6 @@ class Driver:
                     results=None,
                 )
             raise e
-
-        # TODO -- add error case
         return out
 
     @capture_function_usage
@@ -697,16 +713,16 @@ class Driver:
     ):
         """Helper function to visualize execution, using a passed-in function graph.
 
-        :param final_vars:
-        :param output_file_path:
-        :param render_kwargs:
-        :param inputs:
-        :param graphviz_kwargs:
-        :param show_legend:
-        :param orient:
-        :param hide_inputs:
-        :param deduplicate_inputs:
-        :return:
+        :param final_vars: The final variables to compute.
+        :param output_file_path: The path to save the graph to.
+        :param render_kwargs: The kwargs to pass to the graphviz render function.
+        :param inputs: The inputs to the DAG.
+        :param graphviz_kwargs: The kwargs to pass to the graphviz graph object.
+        :param show_legend: If True, add a legend to the visualization based on the DAG's nodes.
+        :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
+        :param hide_inputs: If True, no input nodes are displayed.
+        :param deduplicate_inputs: If True, remove duplicate input nodes.
+        :return: the graphviz object if you want to do more with it.
         """
         # TODO should determine if the visualization logic should live here or in the graph.py module
         nodes, user_nodes = fn_graph.get_upstream_nodes(final_vars, inputs, overrides)

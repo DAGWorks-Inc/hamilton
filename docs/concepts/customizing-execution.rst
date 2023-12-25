@@ -20,7 +20,7 @@ Customizing Execution
 #####################
 
 The following tools are all part of the lifecycle customization capability in Hamilton. This is a very powerful set of features,
-a few of which are presented below. See the reference for lifecycle customization for more information.
+a few of which are presented below. See the reference for :doc:`../reference/customizing-execution/index` for more information.
 
 You can mix/match lifecycle capabilities, although some may not be compatible. To do so, pass a variable number into the ``with_adapters(...)`` function
 of the ``driver.Builder``.

@@ -152,7 +152,6 @@ def execute_subdag(
                 if dependency.name in computed:
                     kwargs[dependency.name] = computed[dependency.name]
             try:
-                # TODO -- determine whether I want to check if they exist or not...
                 if adapter.does_hook("pre_node_execute", is_async=False):
                     adapter.call_all_lifecycle_hooks_sync(
                         "pre_node_execute",
@@ -161,7 +160,6 @@ def execute_subdag(
                         kwargs=kwargs,
                         task_id=task_id,
                     )
-                # TODO -- validate
                 if adapter.does_method("do_node_execute", is_async=False):
                     value = adapter.call_lifecycle_method_sync(
                         "do_node_execute",
