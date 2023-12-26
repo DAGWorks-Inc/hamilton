@@ -123,10 +123,11 @@ class GraphExecutor(abc.ABC):
         :param final_vars: Variables we want
         :param overrides: Overrides --- these short-circuit computation
         :param inputs: Inputs to the Graph.
-        :param run_id: Run ID for the DAG run.
         :param adapter: Adapter to use for execution (optional).
+        :param run_id: Run ID for the DAG run.
         :return: The output of the final variables, in dictionary form.
         """
+        pass
 
     @abc.abstractmethod
     def validate(self, nodes_to_execute: List[node.Node]):
