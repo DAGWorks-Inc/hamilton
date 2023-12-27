@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from hamilton import function_modifiers, node
+from hamilton.function_modifiers import base as fm_base
 
 
 def test_tags():
@@ -162,3 +163,32 @@ def test_tag_with_extract_target_sinks():
     assert node_map["a"].tags["target"] == "column"
     assert node_map["b"].tags["target"] == "column"
     assert node_map["data"].tags.get("target") is None
+
+
+def test_decorate_node_with_schema_output():
+    # quick test to decorate node with schemas
+    # this tests an internal implementation, so we will likely change
+    # in the future, but we'll want to keep the same behavior for now
+    @function_modifiers.schema.output(("foo", "int"), ("bar", "float"), ("baz", "str"))
+    def foo() -> pd.DataFrame:
+        return pd.DataFrame.from_records([{"foo": 1, "bar": 2.0, "baz": "3"}])
+
+    nodes = function_modifiers.base.resolve_nodes(foo, {})
+    node_map = {node_.name: node_ for node_ in nodes}
+    node_ = node_map["foo"]
+    assert (
+        node_.tags[function_modifiers.schema.INTERNAL_SCHEMA_OUTPUT_KEY]
+        == "foo=int,bar=float,baz=str"
+    )
+
+
+def test_decorate_node_with_schema_output_invalid_type():
+    # quick test to decorate node with schemas
+    # this tests an internal implementation, so we will likely change
+    # in the future, but we'll want to keep the same behavior for now
+    @function_modifiers.schema.output(("foo", "int"), ("bar", "float"), ("baz", "str"))
+    def foo() -> int:  # int has no columns/fields
+        return 10
+
+    with pytest.raises(fm_base.InvalidDecoratorException):
+        function_modifiers.base.resolve_nodes(foo, {})

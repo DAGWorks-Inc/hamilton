@@ -663,6 +663,7 @@ class Driver:
         orient: str = "LR",
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
+        show_schema: bool = True,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays the graph of all functions loaded!
 
@@ -681,6 +682,8 @@ class Driver:
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
+        :param show_schema: If True, display the schema of the DAG if
+            the nodes have schema data provided
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -693,6 +696,7 @@ class Driver:
                 orient=orient,
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
+                display_fields=show_schema,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -711,6 +715,7 @@ class Driver:
         orient: str = "LR",
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
+        show_schema: bool = True,
     ):
         """Helper function to visualize execution, using a passed-in function graph.
 
@@ -723,6 +728,7 @@ class Driver:
         :param orient: `LR` stands for "left to right". Accepted values are TB, LR, BT, RL.
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
+        :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :return: the graphviz object if you want to do more with it.
         """
         # TODO should determine if the visualization logic should live here or in the graph.py module
@@ -754,6 +760,7 @@ class Driver:
                 orient=orient,
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
+                display_fields=show_schema,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -771,6 +778,7 @@ class Driver:
         orient: str = "LR",
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
+        show_schema: bool = True,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes Execution.
 
@@ -800,6 +808,7 @@ class Driver:
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
+        :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -817,6 +826,7 @@ class Driver:
             orient=orient,
             hide_inputs=hide_inputs,
             deduplicate_inputs=deduplicate_inputs,
+            show_schema=show_schema,
         )
 
     @capture_function_usage
@@ -859,6 +869,7 @@ class Driver:
         orient: str = "LR",
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
+        show_schema: bool = True,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG starting from the passed in function name(s).
 
@@ -879,6 +890,7 @@ class Driver:
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
+        :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -903,6 +915,7 @@ class Driver:
                 orient=orient,
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
+                display_fields=show_schema,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -918,6 +931,7 @@ class Driver:
         orient: str = "LR",
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
+        show_schema: bool = True,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG going backwards from the passed in function name(s).
 
@@ -938,6 +952,7 @@ class Driver:
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
+        :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -957,6 +972,7 @@ class Driver:
                 orient=orient,
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
+                display_fields=show_schema,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1029,6 +1045,7 @@ class Driver:
         orient: str = "LR",
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
+        show_schema: bool = True,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes the path between two nodes.
 
@@ -1051,6 +1068,7 @@ class Driver:
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
+        :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :return: graphviz object.
         :raise ValueError: if the upstream or downstream node names are not found in the graph,
             or there is no path between them.
@@ -1108,6 +1126,7 @@ class Driver:
                 orient=orient,
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
+                display_fields=show_schema,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1367,6 +1386,7 @@ class Driver:
         orient: str = "LR",
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
+        show_schema: bool = True,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes materialization. This helps give you a sense of how materialization
         will impact the DAG.
@@ -1385,6 +1405,8 @@ class Driver:
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
+        :param show_schema: If True, show the schema of the materialized nodes
+            if nodes have schema metadata attached.
         :return: The graphviz graph, if you want to do something with it
         """
         if additional_vars is None:
@@ -1409,6 +1431,7 @@ class Driver:
             orient=orient,
             hide_inputs=hide_inputs,
             deduplicate_inputs=deduplicate_inputs,
+            show_schema=show_schema,
         )
 
     def validate_execution(

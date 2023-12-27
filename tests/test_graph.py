@@ -10,6 +10,7 @@ import hamilton.graph_utils
 import hamilton.htypes
 from hamilton import ad_hoc_utils, base, graph, node
 from hamilton.execution import graph_functions
+from hamilton.function_modifiers import schema
 from hamilton.lifecycle import base as lifecycle_base
 from hamilton.node import NodeType
 
@@ -774,7 +775,7 @@ def test_function_graph_display_orient(orient: str, tmp_path: pathlib.Path):
     assert f"rankdir={orient}" in dot
 
 
-@pytest.mark.parametrize("hide_inputs", [(True), (False)])
+@pytest.mark.parametrize("hide_inputs", [(True,), (False,)])
 def test_function_graph_display_inputs(hide_inputs: bool, tmp_path: pathlib.Path):
     dot_file_path = tmp_path / "dag.dot"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
@@ -805,6 +806,36 @@ def test_function_graph_display_without_saving():
     import graphviz
 
     assert isinstance(digraph, graphviz.Digraph)
+
+
+@pytest.mark.parametrize("display_fields", [(True,), (False,)])
+def test_function_graph_display_fields(display_fields: bool, tmp_path: pathlib.Path):
+    dot_file_path = tmp_path / "dag.dot"
+
+    @schema.output(("foo", "int"), ("bar", "float"), ("baz", "str"))
+    def df_with_schema() -> pd.DataFrame:
+        pass
+
+    mod = ad_hoc_utils.create_temporary_module(df_with_schema)
+    fg = graph.FunctionGraph.from_modules(mod, config={})
+
+    fg.display(
+        set(fg.get_nodes()),
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
+        display_fields=display_fields,
+    )
+    dot_lines = dot_file_path.open("r").readlines()
+    if display_fields:
+        assert any("foo" in line for line in dot_lines)
+        assert any("bar" in line for line in dot_lines)
+        assert any("baz" in line for line in dot_lines)
+        assert any("cluster" in line for line in dot_lines)
+    else:
+        assert not any("foo" in line for line in dot_lines)
+        assert not any("bar" in line for line in dot_lines)
+        assert not any("baz" in line for line in dot_lines)
+        assert not any("cluster" in line for line in dot_lines)
 
 
 def test_create_graphviz_graph():
