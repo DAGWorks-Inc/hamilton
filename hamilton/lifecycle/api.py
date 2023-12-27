@@ -1,6 +1,6 @@
 import abc
 from abc import ABC
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from hamilton import node
 from hamilton.lifecycle.base import (
@@ -8,9 +8,11 @@ from hamilton.lifecycle.base import (
     BaseDoCheckEdgeTypesMatch,
     BaseDoNodeExecute,
     BaseDoValidateInput,
+    BaseDoValidateNode,
     BasePostNodeExecute,
     BasePreNodeExecute,
 )
+from hamilton.node import DependencyType
 
 try:
     from typing import override
@@ -305,5 +307,55 @@ class NodeExecutionMethod(BaseDoNodeExecute):
         :param task_id: The ID of the task, none if not in a task-based environment
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         :return: The result of the node execution -- up to you to return this.
+        """
+        pass
+
+
+class NodeValidationMethod(BaseDoValidateNode):
+    def do_validate_node(self, *, created_node: node.Node) -> Tuple[bool, Optional[str]]:
+        return self.validate_node(
+            node_name=created_node.name,
+            node_module=created_node.tags.get("module", None),
+            node_tags=created_node.tags,
+            required_dependencies=[
+                item
+                for item, dep_type in created_node.input_types.items()
+                if dep_type == DependencyType.REQUIRED
+            ],
+            optional_dependencies=[
+                item
+                for item, dep_type in created_node.input_types.items()
+                if dep_type == DependencyType.OPTIONAL
+            ],
+            node_type=created_node.type,
+        )
+
+    def validate_node(
+        self,
+        *,
+        node_name: str,
+        node_module: Optional[str],
+        node_tags: Dict[str, str],
+        required_dependencies: List[str],
+        optional_dependencies: List[str],
+        node_type: Type,
+        **kwargs: Any,
+    ) -> Tuple[bool, Optional[str]]:
+        """Validate a node. You have access to tags, types, etc...
+        We also reserve the right to add future kwargs. This is after node creation,
+        during graph construction.
+
+        Note that this method allows you to raise an InvalidNodeException if you want to
+        stop the graph construction. This is useful if you want to do some validation
+        on tags, for instance.
+
+        :param node_name: Name of the node in question
+        :param node_module: Module of the function that defined the node, if we know it
+        :param node_tags: Tags of the node
+        :param required_dependencies: List of required dependencies for the node
+        :param optional_dependencies: List of optional dependencies for the node
+        :param node_type: Return type of the node
+        :param kwargs: Keyword arguments -- this is kept for future backwards compatibility.
+        :return: Whether or not the node is valid, and an optional error message
         """
         pass

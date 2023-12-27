@@ -199,7 +199,7 @@ class BaseDoValidateInput(abc.ABC):
 @lifecycle.base_method("do_validate_node")
 class BaseDoValidateNode(abc.ABC):
     @abc.abstractmethod
-    def do_validate_node(self, *, created_node: node.Node) -> bool:
+    def do_validate_node(self, *, created_node: node.Node) -> Tuple[bool, Optional[str]]:
         """Validates a node. Note this is *not* integrated yet, so adding this in will be a No-op.
         In fact, we will likely be changing the API for this to have an optional error message.
         This is OK, as this is internal facing.
@@ -207,7 +207,7 @@ class BaseDoValidateNode(abc.ABC):
         Furthermore, we'll be adding in a user-facing API that takes in the tags, name, module, etc...
 
         :param created_node: Node that was created.
-        :return: Whether or not the node is valid.
+        :return: Whether or not the node is valid, and, if it is not, an error message
         """
         pass
 
