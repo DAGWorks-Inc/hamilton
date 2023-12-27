@@ -7,11 +7,15 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, 
 
 import numpy as np
 import pandas as pd
-import pyspark.pandas as ps
-from pyspark.sql import Column, DataFrame, dataframe, types
-from pyspark.sql.functions import column, lit, pandas_udf, udf
 
-from hamilton import base, htypes, node
+try:
+    import pyspark.pandas as ps
+    from pyspark.sql import Column, DataFrame, dataframe, types
+    from pyspark.sql.functions import column, lit, pandas_udf, udf
+except ImportError:
+    raise NotImplementedError("Pyspark is not installed.")
+
+from hamilton import base, htypes, node, registry
 from hamilton.execution import graph_functions
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers import subdag
@@ -1199,3 +1203,15 @@ class with_columns(fm_base.NodeCreator):
 
     def validate(self, fn: Callable):
         _derive_first_dataframe_parameter_from_fn(fn)
+
+
+DATAFRAME_TYPE = DataFrame
+COLUMN_TYPE = Column
+
+
+def register_types():
+    """Function to register the types for this extension."""
+    registry.register_types("spark", DATAFRAME_TYPE, COLUMN_TYPE)
+
+
+register_types()
