@@ -106,3 +106,24 @@ def register_adapter(adapter: Any):
         LOADER_REGISTRY[adapter.name()].append(adapter)
     if adapter.can_save():
         SAVER_REGISTRY[adapter.name()].append(adapter)
+
+
+def get_registered_dataframe_types() -> Dict[str, Type]:
+    """Returns a dictionary of extension name -> dataframe type.
+
+    :return: the dictionary.
+    """
+    return {
+        extension: type_map[DATAFRAME_TYPE]
+        for extension, type_map in DF_TYPE_AND_COLUMN_TYPES.items()
+    }
+
+
+def get_registered_column_types() -> Dict[str, Type]:
+    """Returns a dictionary of extension name -> column type.
+
+    :return: the dictionary.
+    """
+    return {
+        extension: type_map[COLUMN_TYPE] for extension, type_map in DF_TYPE_AND_COLUMN_TYPES.items()
+    }
