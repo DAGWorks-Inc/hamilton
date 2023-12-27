@@ -29,5 +29,6 @@ For reference we list available decorators for Hamilton here. Note: use
    resolve
    save_to
    subdag
+   schema
    tag
    with_columns

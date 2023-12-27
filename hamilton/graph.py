@@ -15,6 +15,7 @@ from hamilton import base, node
 from hamilton.execution import graph_functions
 from hamilton.execution.graph_functions import combine_config_and_inputs, execute_subdag
 from hamilton.function_modifiers import base as fm_base
+from hamilton.function_modifiers.metadata import schema
 from hamilton.graph_utils import find_functions
 from hamilton.htypes import get_type_as_string, types_match
 from hamilton.lifecycle.base import LifecycleAdapterSet
@@ -189,6 +190,7 @@ def create_graphviz_graph(
     orient: str = "LR",
     hide_inputs: bool = False,
     deduplicate_inputs: bool = False,
+    display_fields: bool = True,
 ) -> "graphviz.Digraph":  # noqa: F821
     """Helper function to create a graphviz graph.
 
@@ -311,7 +313,7 @@ def create_graphviz_graph(
             modifier_style = dict(style="filled,diagonals")
         elif modifier == "materializer":
             modifier_style = dict(shape="cylinder")
-        elif modifier == "column":
+        elif modifier == "field":
             modifier_style = dict(fillcolor="#c8dae0", fontname="Courier")
         elif modifier == "cluster":
             modifier_style = dict(
@@ -359,7 +361,7 @@ def create_graphviz_graph(
             "input",
             "function",
             "cluster",
-            "column",
+            "field",
             "output",
             "materializer",
             "override",
@@ -444,13 +446,14 @@ def create_graphviz_graph(
 
         digraph.node(n.name, label=label, **node_style)
 
-        if n.tags.get("spark_schema"):
-            # When a node is tagged with spark_schema -> add a cluster with a node for each column
+        # only do field-level visualization if there's a schema specified and we want to display it
+        if n.tags.get(schema.INTERNAL_SCHEMA_OUTPUT_KEY) and display_fields:
+            # When a node has attached schema data -> add a cluster with a node for each field
             seen_node_types.add("cluster")
-            seen_node_types.add("column")
+            seen_node_types.add("field")
 
-            def _create_equal_length_cols(spark_schema_tag: str) -> list[str]:
-                cols = spark_schema_tag.split(",")
+            def _create_equal_length_cols(schema_tag: str) -> List[str]:
+                cols = schema_tag.split(",")
                 for i in range(len(cols)):
 
                     def _insert_space_after_colon(col: str) -> str:
@@ -472,8 +475,8 @@ def create_graphviz_graph(
                     "margin": "10",
                 }
             )
-            column_node_style = node_style.copy()
-            column_node_style.update(
+            field_node_style = node_style.copy()
+            field_node_style.update(
                 {
                     "fillcolor": "#c8dae0",
                     "fontname": "Courier",
@@ -482,9 +485,9 @@ def create_graphviz_graph(
             )
             with digraph.subgraph(name="cluster_" + n.name) as c:
                 c.attr(**cluster_node_style)
-                cols = _create_equal_length_cols(n.tags.get("spark_schema"))
+                cols = _create_equal_length_cols(n.tags.get(schema.INTERNAL_SCHEMA_OUTPUT_KEY))
                 for i in range(len(cols)):
-                    c.node(cols[i], **column_node_style)
+                    c.node(cols[i], **field_node_style)
                 c.node(n.name)
 
     # create edges
@@ -653,6 +656,7 @@ class FunctionGraph:
         orient: str = "LR",
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
+        display_fields: bool = True,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays & saves a dot file of the entire DAG structure constructed.
 
@@ -668,6 +672,7 @@ class FunctionGraph:
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
+        :param display_fields: If True, display fields in the graph if node has attached schema metadata
         :return: the graphviz graph object if it was created. None if not.
         """
         all_nodes = set()
@@ -690,6 +695,7 @@ class FunctionGraph:
             orient=orient,
             hide_inputs=hide_inputs,
             deduplicate_inputs=deduplicate_inputs,
+            display_fields=display_fields,
         )
 
     def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
@@ -733,6 +739,7 @@ class FunctionGraph:
         orient: str = "LR",
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
+        display_fields: bool = True,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
@@ -752,6 +759,8 @@ class FunctionGraph:
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
+        :param display_fields: If True, display fields in the graph if node has attached
+            schema metadata
         :return: the graphviz graph object if it was created. None if not.
         """
         # Check to see if optional dependencies have been installed.
@@ -777,6 +786,7 @@ class FunctionGraph:
             orient,
             hide_inputs,
             deduplicate_inputs,
+            display_fields=display_fields,
         )
         kwargs = {"view": True}
         if render_kwargs and isinstance(render_kwargs, dict):

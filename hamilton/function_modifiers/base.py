@@ -618,6 +618,16 @@ class NodeDecorator(NodeTransformer, abc.ABC):
         """
         super().__init__(target=target)
 
+    def validate_node(self, node_: node.Node):
+        """Validates that a node is valid for this decorator. This is
+        not the same as validation on the function, as this is done
+        during node-resolution.
+
+        :param node_: Node to validate
+        :raises InvalidDecoratorException: if the node is not valid for this decorator
+        """
+        pass
+
     def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
@@ -628,6 +638,7 @@ class NodeDecorator(NodeTransformer, abc.ABC):
         :param fn: Function we're decorating
         :return: The nodes produced by the transformation
         """
+        self.validate_node(node_)
         return [self.decorate_node(node_)]
 
     @classmethod

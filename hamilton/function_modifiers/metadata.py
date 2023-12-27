@@ -1,6 +1,6 @@
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional, Tuple
 
-from hamilton import node
+from hamilton import htypes, node, registry
 from hamilton.function_modifiers import base
 
 """Decorators that attach metadata to nodes"""
@@ -166,3 +166,95 @@ class tag_outputs(base.NodeDecorator):
         new_tags = node_.tags.copy()
         new_tags.update(self.tag_mapping.get(node_.name, {}))
         return tag(**new_tags).decorate_node(node_)
+
+
+# These represent a generic schema type -- E.G. one that will
+# be supported across the entire set of usable dataframe/dataset types
+# Eventually we'll be integrating mappings of these into the registry,
+# but for now this serves largely as a placeholder/documentation
+# GENERIC_SCHEMA_TYPES = (
+#     "int",
+#     "float",
+#     "str",
+#     "bool",
+#     "dict",
+#     "list",
+#     "object",
+#     "datetime",
+#     "date",
+# )
+
+
+class SchemaOutput(tag):
+    def __init__(self, *fields: Tuple[str, str], target_: Optional[str] = None):
+        """Initializes SchemaOutput. See docs for `@schema.output` for more details."""
+
+        tag_value = ",".join([f"{key}={value}" for key, value in fields])
+        super(SchemaOutput, self).__init__(
+            **{schema.INTERNAL_SCHEMA_OUTPUT_KEY: tag_value}, target_=target_
+        )
+
+    def validate_node(self, node_: node.Node):
+        """Validates that the node has a return type of a registered dataframe.
+
+        :param node_: Node to validate
+        :raises InvalidDecoratorException: if the node does not have a return type of a registered dataframe.
+        """
+        output_type = node_.type
+        available_types = registry.get_registered_dataframe_types()
+        for _, type_ in available_types.items():
+            if htypes.custom_subclass_check(output_type, type_):
+                return
+        raise base.InvalidDecoratorException(
+            f"Node {node_.name} has type {output_type} which is not a registered type for a dataset. "
+            f"Registered types are {available_types}. If you found this, either (a) ensure you have the "
+            f"right package installed, or (b) reach out to the team to figure out how to add yours."
+        )
+
+    @classmethod
+    def allows_multiple(cls) -> bool:
+        """Currently this only applies to a single output. If it is a set of nodes with multiple outputs,
+        it will apply to the "final" (sink) one. We can change this if there's need."""
+        return False
+
+    def validate(self, fn: Callable):
+        """Bypassed for now -- we have no function-level or class-level validations yet,
+        but this is done at `@tag`, which this inherits. We will be moving away from inheriting tag.
+        """
+        pass
+
+
+class schema:
+    """Container class for schema stuff. This is purely so we can have a nice API for it -- E.G. Schema.output"""
+
+    INTERNAL_SCHEMA_OUTPUT_KEY = "hamilton.internal.schema_output"
+
+    @staticmethod
+    def output(*fields: Tuple[str, str], target_: Optional[str] = None) -> SchemaOutput:
+        """Initializes a `@schema.output` decorator. This takes in a list of fields, which are tuples of the form
+        `(field_name, field_type)`. The field type must be one of the function_modifiers.SchemaTypes types.
+
+        :param target_: Target node to decorate -- if `None` it'll decorate all final nodes (E.G. sinks in the subdag),
+            otherwise it will decorate the specified node.
+        :param fields: List of fields to add to the schema. Each field is a tuple of the form `(field_name, field_type)`
+
+        This is implemented using tags, but that might change. Thus you should not
+        rely on the tags created by this decorator (which is why they are prefixed with `internal`).
+
+        To use this, you should decorate a node with `@schema.output`
+
+        Example usage:
+
+        .. code-block:: python
+
+           @schema.output(
+               ("a", "int"),
+               ("b", "float"),
+               ("c", "str")
+            )
+           def example_schema() -> Tuple[int, float, str]:
+               return pd.DataFrame.from_records({"a": [1], "b": [2.0], "c": ["3"]})
+
+        Then, when drawing the DAG, the schema will be displayed as sub-elements in the node for the DAG (if `display_schema` is selected).
+        """
+        return SchemaOutput(*fields, target_=target_)
