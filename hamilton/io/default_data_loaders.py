@@ -1,8 +1,10 @@
 import dataclasses
+import io
 import json
 import os
+import pathlib
 import pickle
-from typing import Any, Collection, Dict, Tuple, Type
+from typing import Any, Collection, Dict, Tuple, Type, Union
 
 from hamilton.io.data_adapters import DataLoader, DataSaver
 from hamilton.io.utils import get_file_metadata
@@ -78,6 +80,30 @@ class RawFileDataSaver(DataSaver):
         with open(self.path, "w", encoding=self.encoding) as f:
             f.write(data)
         return get_file_metadata(self.path)
+
+
+@dataclasses.dataclass
+class RawFileDataSaverBytes(DataSaver):
+    path: Union[pathlib.Path, str]
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [bytes, io.BytesIO]
+
+    @classmethod
+    def name(cls) -> str:
+        return "file"
+
+    def save_data(self, data: Union[bytes, io.BytesIO]) -> Dict[str, Any]:
+        if isinstance(data, io.BytesIO):
+            data_bytes = data.getvalue()  # Extract bytes from BytesIO
+        else:
+            data_bytes = data
+
+        with open(self.path, "wb") as file:
+            file.write(data_bytes)
+
+        return get_file_metadata(str(self.path))
 
 
 @dataclasses.dataclass
@@ -172,6 +198,7 @@ DATA_ADAPTERS = [
     LiteralValueDataLoader,
     RawFileDataLoader,
     RawFileDataSaver,
+    RawFileDataSaverBytes,
     PickleLoader,
     PickleSaver,
     EnvVarDataLoader,
