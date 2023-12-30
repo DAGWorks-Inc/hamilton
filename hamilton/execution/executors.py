@@ -2,7 +2,12 @@ import abc
 import dataclasses
 import functools
 import logging
-from concurrent.futures import Executor, Future, ProcessPoolExecutor, ThreadPoolExecutor
+
+try:
+    from concurrent.futures.process import ProcessPoolExecutor
+except ModuleNotFoundError:
+    ProcessPoolExecutor = None
+from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from typing import Any, Callable, Dict, List
 
 from hamilton import node
