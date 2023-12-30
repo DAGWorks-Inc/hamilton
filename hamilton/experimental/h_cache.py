@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import pickle
 from functools import singledispatch
 from typing import Any, Callable, Dict, Optional, Set, Type
 
@@ -59,6 +60,18 @@ def write_json(data: object, filepath: str, name: str) -> None:
 def read_json(data: object, filepath: str) -> Any:
     """Reads from a json file"""
     raise NotImplementedError(f"No json reader for type {type(data)} registered.")
+
+
+@singledispatch
+def write_pickle(data: Any, filepath: str, name: str) -> None:
+    """Writes data to a pickle file."""
+    raise NotImplementedError(f"No object writer for type {type(data)} registered.")
+
+
+@singledispatch
+def read_pickle(data: Any, filtepath: str) -> object:
+    """Reads from a pickle file"""
+    raise NotImplementedError(f"No object reader for type {type(data)} registered.")
 
 
 try:
@@ -154,6 +167,24 @@ def read_json_dict(data: dict, filepath: str) -> dict:
     """Reads a dictionary from a JSON file."""
     with open(filepath, "r", encoding="utf8") as file:
         return json.load(file)
+
+
+@write_pickle.register(object)
+def write_pickle_object(data: object, filepath: str, name: str) -> None:
+    if isinstance(data, object):
+        print(filepath)
+        with open(filepath, "wb") as file:
+            pickle.dump(data, file)
+    else:
+        raise ValueError(f"Expected an object, got {type(data)}")
+
+
+@read_pickle.register(object)
+def read_pickle_object(data: object, filepath: str) -> object:
+    """Reads a pickle file"""
+    print(filepath)
+    with open(filepath, "rb") as file:
+        return pickle.load(file)
 
 
 class CachingGraphAdapter(SimplePythonGraphAdapter):
@@ -284,6 +315,11 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
             self.writers["parquet"] = write_parquet
         if "parquet" not in self.readers:
             self.readers["parquet"] = read_parquet
+
+        if "pickle" not in self.writers:
+            self.writers["pickle"] = write_pickle
+        if "pickle" not in self.readers:
+            self.readers["pickle"] = read_pickle
 
     def _check_format(self, fmt):
         if fmt not in self.writers:

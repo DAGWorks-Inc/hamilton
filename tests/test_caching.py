@@ -34,6 +34,10 @@ def test_parquet(df, tmp_path):
     _read_write_df_test(df, tmp_path / "file.parquet", h_cache.read_parquet, h_cache.write_parquet)
 
 
+def test_pickle(df, tmp_path):
+    _read_write_df_test(df, tmp_path / "file.pkl", h_cache.read_pickle, h_cache.write_pickle)
+
+
 def test_json(tmp_path):
     data = {
         "a": 1,
@@ -64,11 +68,13 @@ def test_init_default_readers_writers(tmp_path):
         "json": h_cache.write_json,
         "feather": h_cache.write_feather,
         "parquet": h_cache.write_parquet,
+        "pickle": h_cache.write_pickle,
     }
     assert adapter.readers == {
         "json": h_cache.read_json,
         "feather": h_cache.read_feather,
         "parquet": h_cache.read_parquet,
+        "pickle": h_cache.read_pickle,
     }
 
 
