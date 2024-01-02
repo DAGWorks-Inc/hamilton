@@ -73,3 +73,15 @@ def register_data_loaders():
 COLUMN_FRIENDLY_DF_TYPE = False
 
 register_data_loaders()
+
+
+DATAFRAME_TYPE = ps.DataFrame
+COLUMN_TYPE = None
+
+
+def register_types():
+    """Function to register the types for this extension."""
+    registry.register_types("spark", DATAFRAME_TYPE, COLUMN_TYPE)
+
+
+register_types()

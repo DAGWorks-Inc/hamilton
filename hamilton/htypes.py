@@ -207,6 +207,8 @@ def _is_valid_series_type(candidate_type: Type[Type]) -> bool:
     :return: Whether it is a series (column) type that we have registered
     """
     for key, types in DF_TYPE_AND_COLUMN_TYPES.items():
+        if COLUMN_TYPE not in types:
+            continue
         if issubclass(candidate_type, types[COLUMN_TYPE]):
             return True
     return False

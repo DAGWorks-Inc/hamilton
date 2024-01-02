@@ -15,7 +15,7 @@ try:
 except ImportError:
     raise NotImplementedError("Pyspark is not installed.")
 
-from hamilton import base, htypes, node, registry
+from hamilton import base, htypes, node
 from hamilton.execution import graph_functions
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers import subdag
@@ -1203,15 +1203,3 @@ class with_columns(fm_base.NodeCreator):
 
     def validate(self, fn: Callable):
         _derive_first_dataframe_parameter_from_fn(fn)
-
-
-DATAFRAME_TYPE = DataFrame
-COLUMN_TYPE = Column
-
-
-def register_types():
-    """Function to register the types for this extension."""
-    registry.register_types("spark", DATAFRAME_TYPE, COLUMN_TYPE)
-
-
-register_types()
