@@ -78,7 +78,7 @@ def test_polars_feather(tmp_path: pathlib.Path) -> None:
     assert file_path.exists()
     assert metadata["file_metadata"]["path"] == file_path
     assert metadata["dataframe_metadata"]["column_names"] == ["animal", "points", "environment"]
-    assert metadata["dataframe_metadata"]["datatypes"] == ["Utf8", "Int64", "Utf8"]
+    assert metadata["dataframe_metadata"]["datatypes"] == ["String", "Int64", "String"]
 
 
 def test_polars_json(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
