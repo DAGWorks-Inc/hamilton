@@ -2,7 +2,7 @@ import collections
 import functools
 import importlib
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Dict, Optional, Type
 
 logger = logging.getLogger(__name__)
 
@@ -16,18 +16,20 @@ COLUMN_TYPE = "column_type"
 DATAFRAME_TYPE = "dataframe_type"
 
 
-def register_types(extension_name: str, dataframe_type: Type, column_type: Type):
-    """Registers the dataframe and column types for the extension.
+def register_types(extension_name: str, dataframe_type: Type, column_type: Optional[Type]):
+    """Registers the dataframe and column types for the extension. Note that column types are optional
+    as some extensions may not have a column type (E.G. spark). In this case, this is not included
 
     :param extension_name: name of the extension doing the registering.
     :param dataframe_type: the dataframe type to register.
     :param column_type: the column type to register
     """
     global DF_TYPE_AND_COLUMN_TYPES
-    DF_TYPE_AND_COLUMN_TYPES[extension_name] = {
-        DATAFRAME_TYPE: dataframe_type,
-        COLUMN_TYPE: column_type,
-    }
+    output = {}
+    output[DATAFRAME_TYPE] = dataframe_type
+    if column_type is not None:
+        output[COLUMN_TYPE] = column_type
+    DF_TYPE_AND_COLUMN_TYPES[extension_name] = output
 
 
 @functools.singledispatch
