@@ -121,7 +121,58 @@ def test_driver_variables_exposes_tags():
     assert tags["a"] == {"module": "tests.resources.tagging", "test": "a"}
     assert tags["b"] == {"module": "tests.resources.tagging", "test": "b_c"}
     assert tags["c"] == {"module": "tests.resources.tagging", "test": "b_c"}
-    assert tags["d"] == {"module": "tests.resources.tagging"}
+    assert tags["d"] == {"module": "tests.resources.tagging", "test_list": ["us", "uk"]}
+
+
+@pytest.mark.parametrize(
+    "filter,expected",
+    [
+        (None, {"a", "b_c", "b", "c", "d"}),  # no filter
+        ({}, {"a", "b_c", "b", "c", "d"}),  # empty filter
+        ({"test": "b_c"}, {"b", "c"}),
+        ({"test": None}, {"a", "b", "c"}),
+        ({"module": "tests.resources.tagging"}, {"a", "b_c", "b", "c", "d"}),
+        ({"test_list": "us"}, {"d"}),
+        ({"test_list": "uk"}, {"d"}),
+        ({"test_list": ["uk"]}, {"d"}),
+        ({"module": "tests.resources.tagging", "test": "b_c"}, {"b", "c"}),
+        ({"test_list": ["nz", "uk"]}, {"d"}),
+        ({"test_list": ["us", "uk"]}, {"d"}),
+        ({"test_list": ["uk", "us"]}, {"d"}),
+        ({"test": ["b_c"]}, {"b", "c"}),
+        ({"test": ["b_c", "foo"]}, {"b", "c"}),
+    ],
+    ids=[
+        "filter with None passed",
+        "filter with empty filter",
+        "filter by single tag with extract decorator",
+        "filter with None value",
+        "filter with specific value",
+        "filter tag with list values - value 1",
+        "filter tag with list values - value 2",
+        "filter tag with list values - query is single node list",
+        "filter with two filter clauses",
+        "filter with with list values not exact OR interpretation",
+        "filter with with list values exact",
+        "filter with with list values exact order invariant",
+        "filter with with list values edge case one item match",
+        "filter with with list values OR interpretation",
+    ],
+)
+def test_driver_variables_filters_tags(filter, expected):
+    dr = Driver({}, tests.resources.tagging)
+    actual = {var.name for var in dr.list_available_variables(tag_filter=filter)}
+    assert actual == expected
+
+
+def test_driver_variables_filters_tags_error():
+    dr = Driver({}, tests.resources.tagging)
+    with pytest.raises(ValueError):
+        # non string value is not allowed
+        dr.list_available_variables(tag_filter={"test": 1234})
+    with pytest.raises(ValueError):
+        # empty list shouldn't be allowed
+        dr.list_available_variables(tag_filter={"test": []})
 
 
 def test_driver_variables_external_input():

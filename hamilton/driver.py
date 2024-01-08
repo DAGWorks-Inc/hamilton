@@ -638,20 +638,57 @@ class Driver:
         return out
 
     @capture_function_usage
-    def list_available_variables(self) -> List[Variable]:
+    def list_available_variables(
+        self, *, tag_filter: Dict[str, Union[Optional[str], List[str]]] = None
+    ) -> List[Variable]:
         """Returns available variables, i.e. outputs.
 
-        These variables corresond 1:1 with nodes in the DAG, and contain the following information:
-        1. name: the name of the node
-        2. tags: the tags associated with this node
-        3. type: The type of data this node returns
-        4. is_external_input: Whether this node represents an external input (required from outside),
-        or not (has a function specifying its behavior).
+        These variables correspond 1:1 with nodes in the DAG, and contain the following information:
+
+            1. name: the name of the node
+            2. tags: the tags associated with this node
+            3. type: The type of data this node returns
+            4. is_external_input: Whether this node represents an external input (required from outside), \
+            or not (has a function specifying its behavior).
 
 
+        .. code-block:: python
+
+            # gets all
+            dr.list_available_variables()
+            # gets exact matching tag name and tag value
+            dr.list_available_variables({"TAG_NAME": "TAG_VALUE"})
+            # gets all matching tag name and at least one of the values in the list
+            dr.list_available_variables({"TAG_NAME": ["TAG_VALUE1", "TAG_VALUE2"]})
+            # gets all with matching tag name, irrespective of value
+            dr.list_available_variables({"TAG_NAME": None})
+            # AND query between the two tags (i.e. both need to match)
+            dr.list_available_variables({"TAG_NAME": "TAG_VALUE", "TAG_NAME2": "TAG_VALUE2"}
+
+        :param tag_filter: A dictionary of tags to filter by. Only nodes matching the tags and their values will
+            be returned. If the value for a tag is None, then we will return all nodes with that tag. If the value
+            is non-empty we will return all nodes with that tag and that value.
         :return: list of available variables (i.e. outputs).
         """
-        return [Variable.from_node(n) for n in self.graph.get_nodes()]
+        all_nodes = self.graph.get_nodes()
+        if tag_filter:
+            valid_filter_values = all(
+                map(
+                    lambda x: isinstance(x, str)
+                    or (isinstance(x, list) and len(x) != 0)
+                    or x is None,
+                    tag_filter.values(),
+                )
+            )
+            if not valid_filter_values:
+                raise ValueError("All tag query values must be a string or list of strings")
+            results = []
+            for n in all_nodes:
+                if node.matches_query(n.tags, tag_filter):
+                    results.append(Variable.from_node(n))
+        else:
+            results = [Variable.from_node(n) for n in all_nodes]
+        return results
 
     @capture_function_usage
     def display_all_functions(
