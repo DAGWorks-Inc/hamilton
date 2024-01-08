@@ -33,6 +33,6 @@ reference/disabling-telemetry.md
 GitHub <https://github.com/dagworks-inc/hamilton>
 tryhamilton.dev <https://www.tryhamilton.dev/>
 Dataflow Hub <https://hub.dagworks.io/docs/>
-Substack <https://blog.dagworks.io/>
+Blog <https://blog.dagworks.io/>
 Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>
 ```

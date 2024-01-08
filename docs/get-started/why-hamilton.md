@@ -23,7 +23,7 @@ Hamilton can be used within any python
 orchestration system in the following ways:
 
 1. _Hamilton DAGs can be called within orchestration system tasks._
-See the [Hamilton + Metaflow] example: https://github.com/outerbounds/hamilton-metaflow. The integration is generally trivial -- all you have to do
+See the [Hamilton + Metaflow example](https://github.com/outerbounds/hamilton-metaflow). The integration is generally trivial -- all you have to do
 is call out to the hamilton library within your task. If your orchestrator supports python, then you're good to go. Some pseudocode (if your orchestrator handles scripts like airflow):
 
     ```python

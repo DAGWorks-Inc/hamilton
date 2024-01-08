@@ -19,7 +19,7 @@ Here's a quick overview of benefits that Hamilton provides as compared to other 
 
 | Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | dbt | Dask |
 |-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:----:|
-| Python 3.7+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅   |
+| Python 3.8+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅   |
 | Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌   |
 | Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
 | Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |

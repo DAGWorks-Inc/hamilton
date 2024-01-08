@@ -18,9 +18,9 @@ The [tryhamilton.dev](https://tryhamilton.dev) website provides interactive tuto
 
 The [Hamilton Dataflow Hub](https://hub.dagworks.io/docs/) hosts user-created dataflows that are easy to download and reuse in your project.
 
-## 💡 Substack
+## 💡 Blog
 
-The [DAGWorks Substack](https://blog.dagworks.io/) publishes articles on problems Hamilton helps solve, reference architectures, and new features.
+The [DAGWorks Blog](https://blog.dagworks.io/) publishes articles on problems Hamilton helps solve, reference architectures, and new features.
 
 ## 👋 Slack
 The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) is the ideal place to ask questions, request features, and give feedback.
