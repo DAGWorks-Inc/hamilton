@@ -20,7 +20,7 @@ Customizing Execution
 #####################
 
 The following tools are all part of the lifecycle customization capability in Hamilton. This is a very powerful set of features,
-a few of which are presented below. See the reference for :doc:`../reference/customizing-execution/index` for more information.
+a few of which are presented below. See the reference for :doc:`../reference/graph-adapters/index` for more information.
 
 You can mix/match lifecycle capabilities, although some may not be compatible. To do so, pass a variable number into the ``with_adapters(...)`` function
 of the ``driver.Builder``.
@@ -72,7 +72,7 @@ that we already have the right abstraction and have not yet exposed it via docum
 
 If you want to tell Hamilton to return something else, we suggest starting with the ``lifecycle.ResultBuilder``
 and writing a simple class & function that implements the ``lifecycle.ResultBuilder`` interface and passing that into the driver as ``adapter=[result_builder]``.  See
-:doc:`../reference/customizing-execution/index` and
+:doc:`../reference/graph-adapters/index` and
 :doc:`../reference/result-builders/index` for options.
 
 Execution Hooks

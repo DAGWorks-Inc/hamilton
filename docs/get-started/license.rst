@@ -23,6 +23,6 @@ No user data or potentially sensitive information is or ever will be collected. 
   the name of the Driver function being invoked.
 
 
-Else see :doc:`/reference/miscellaneous/disabling-telemetry` for how to disable telemetry.
+Else see :doc:`/reference/disabling-telemetry` for how to disable telemetry.
 
 Otherwise we invite you to inspect telemetry.py for details.

@@ -1,5 +1,5 @@
 ====================
-Getting Started
+Get Started
 ====================
 
 Welcome to Hamilton's documentation!
@@ -18,14 +18,15 @@ It allows you to:
     its basic capabilities.
 
 
-Getting started with Hamilton locally
+Get started with Hamilton locally
 -------------------------------------
 The following section of the docs will teach you how to install Hamilton and get started with your own project.
 
 .. toctree::
 
-   install
-   write-first-dataflow
-   run-first-dataflow
-   hamilton-hub
-   next-steps
+    why-hamilton
+    install
+    your-first-dataflow
+    learning-resources
+    contributing
+    license

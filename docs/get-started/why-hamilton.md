@@ -1,12 +1,13 @@
-# Comparison to Other Frameworks
+# Why use Hamilton?
+## Comparison to Other Frameworks
 
 There are a lot of MLOps frameworks out there, especially in the pipeline space. This should help you figure out when to
 use Hamilton with another framework, or in place of a framework, or when to use another framework altogether.
 
 Let's go over some groups of "competitive" or "complimentary" products. For a basic overview,
-see the product matrix on the [homepage](main.md).
+see the product matrix on the [homepage](../main.md).
 
-## Orchestration Systems
+### Orchestration Systems
 Examples include:
 - [Airflow](https://airflow.apache.org/)
 - [Metaflow](https://github.com/Netflix/metaflow)
@@ -34,7 +35,7 @@ is call out to the hamilton library within your task. If your orchestrator suppo
     do_something_with(output)
     ```
 2. _Hamilton DAGs can be broken up to run as components within an orchestration system._
-With the ability to include [overrides](concepts/driver-capabilities.rst),
+With the ability to include [overrides](../concepts/driver-capabilities.rst),
 you can run the DAG on each task, overloading the outputs of the last task + any static inputs/configuration, and pass it into the next task. This is more
 of a manual/power-user feature. Some pseudocode:
 
@@ -57,7 +58,7 @@ Again this is in a script-based orchestrator (like airflow). This should be easy
 a more function-based orchestrator. For a flytekit-like orchestrator (that utilizes functions and stores data for you),
 you can just pass the function arguments in as overrides!
 
-## Feature Stores
+### Feature Stores
 
 Examples include:
 - [Hopsworks](https://www.hopsworks.ai/)
@@ -69,7 +70,7 @@ store, it provides a source of truth for the code that generated the features, a
 method. *So*, if your desire is just to be able to run the same code in different environments, and have an online/offline
 store of features, you can use hamilton both to save the features offline, and generate features online on the fly.
 
-See the [feature engineering example](how-tos/use-for-feature-engineering.rst) for more possibilities.
+See the [feature engineering example](../how-tos/use-for-feature-engineering.rst) for more possibilities.
 
 Note that in small cases, you probably don't need a true feature store -- recomputing derived features in an ETL
 and online can be very efficient, as long as you have some database to look features up (or have them passed in).
@@ -82,7 +83,7 @@ This field is actively developing, and we expect Hamilton to play a prominent ro
 work in the future.
 
 
-## Data Science Ecosystems/ML platforms
+### Data Science Ecosystems/ML platforms
 Examples include:
 - [Kedro](https://kedro.org/)
 - [MLflow](https://mlflow.org/)
@@ -110,7 +111,7 @@ model = dr.execute(["model"], ...)
 save_model_to_registry(model, ...) # With any extra metadata
 ```
 
-## Python Compute/parallelism Systems
+### Python Compute/parallelism Systems
 
 Examples include:
 - [pandas](https://pandas.pydata.org/)
@@ -124,6 +125,6 @@ Examples include:
 
 These all provide capabilities to either (a) express and execute computation over datasets in python or (b)
 parallelize it. Often both. Hamilton has a variety of integrations with these systems. The basics is that Hamilton
-can make use of these systems to execute the DAG using the [GraphAdapter](reference/customizing-execution/index.rst) abstraction.
+can make use of these systems to execute the DAG using the [GraphAdapter](../reference/graph-adapters/index.rst) abstraction and [Lifecycle Hooks](../reference/lifecycle-hooks/index.rst).
 
-Hamilton also has a variety of plugins that further integrate with these systems. See the [hamilton without pandas](how-tos/use-without-pandas.rst) example for more details.
+Hamilton also has a variety of plugins that further integrate with these systems. See the [hamilton without pandas](../how-tos/use-without-pandas.rst) example for more details.

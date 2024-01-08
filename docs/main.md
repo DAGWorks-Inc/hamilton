@@ -1,4 +1,4 @@
-# Welcome to Hamilton's documentation!
+# Welcome to Hamilton
 <div align="left">
     <a href="https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg" target="_blank"><img src="https://img.shields.io/badge/Join-Hamilton_Slack-brightgreen?logo=slack" alt="Hamilton Slack"/></a>
     <a href="https://twitter.com/hamilton_os" target="_blank"><img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Twitter"/></a>
@@ -33,4 +33,4 @@ Here's a quick overview of benefits that Hamilton provides as compared to other 
 
 
 # How can you get started?
-Hop on over to our [getting started guide](getting-started/index.rst)!
+Hop on over to our [getting started guide](get-started/index.rst)!

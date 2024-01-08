@@ -8,7 +8,7 @@ It's highly parameterizable, allowing you to customize:
 * The way the DAG is executed (how each node is executed), i.e. either locally, in parallel, or on a cluster!
 * How the results are materialized back to you -- e.g. a DataFrame, a dictionary, your custom object!
 
-To tune the above, pass in a Graph Adapter, a Result Builder, and/or anotehr lifecycle method -- see :doc:`../result-builders/index`, :doc:`../customizing-execution/index`.
+To tune the above, pass in a Graph Adapter, a Result Builder, and/or anotehr lifecycle method -- see :doc:`../result-builders/index`, :doc:`../graph-adapters/index`.
 
 Let's walk through how you might use the Hamilton Driver.
 
@@ -75,10 +75,13 @@ that particular node.
     output = ['output1', 'output2', ...]
     df = dr.execute(output, overrides={'intermediate_node': intermediate_value})
 
-Reference Documentation
-=======================
+
+Reference
+---------
+
 .. toctree::
    :maxdepth: 2
 
    Driver
    AsyncDriver
+   Custom
