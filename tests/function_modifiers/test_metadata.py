@@ -34,17 +34,24 @@ def test_tags_invalid_key(key):
     "key",
     [
         "bar.foo",
-        "foo",  # Invalid identifier
-        "foo.bar.baz",  # Invalid key, not a valid identifier
+        "foo",  # Valid
+        "foo.bar.baz",  # Valid key
     ],
 )
 def test_tags_valid_key(key):
     assert function_modifiers.tag._key_allowed(key)
 
 
-@pytest.mark.parametrize("value", [None, False, [], ["foo", "bar"]])
+@pytest.mark.parametrize(
+    "value", [None, False, [], ["foo", "bar", 1], [None], ["foo", "foo"], ["foo", ["bar"]]]
+)
 def test_tags_invalid_value(value):
     assert not function_modifiers.tag._value_allowed(value)
+
+
+@pytest.mark.parametrize("value", [["string value"], ["foo", "bar"]])
+def test_tags_valid_value(value):
+    assert function_modifiers.tag._value_allowed(value)
 
 
 def test_tag_outputs():
