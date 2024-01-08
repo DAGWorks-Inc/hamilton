@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from hamilton import htypes, node, registry
 from hamilton.function_modifiers import base
@@ -56,7 +56,7 @@ class tag(base.NodeDecorator):
         "module",
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 
-    def __init__(self, *, target_: base.TargetType = None, **tags: str):
+    def __init__(self, *, target_: base.TargetType = None, **tags: Union[str, List[str]]):
         """Constructor for adding tag annotations to a function.
 
         :param target\\_: Target nodes to decorate. This can be one of the following:
@@ -66,8 +66,9 @@ class tag(base.NodeDecorator):
             * **Ellipsis (...)**: tag *all* nodes outputted by this
             * **Collection[str]**: tag *only* the nodes with the specified names
             * **str**: tag *only* the node with the specified name
-        :param tags: the keys are always going to be strings, so the type annotation here means the values are strings.\
-            Implicitly this is `Dict[str, str]` but the PEP guideline is to only annotate it with `str`.
+        :param tags: the keys are always going to be strings, so the type annotation here means the values are strings \
+            or lists of values. Implicitly this is `Dict[str, Union[str, List[str]]]` but the PEP guideline is to only
+             annotate it with the value `Union[str, List[str]]`.
         """
         super(tag, self).__init__(target=target_)
         self.tags = tags
@@ -112,8 +113,15 @@ class tag(base.NodeDecorator):
         :param value: Value to validate
         :return: True if it is valid, False otherwise
         """
-        if not isinstance(value, str):
+        if not isinstance(value, str) and not isinstance(value, list):
             return False
+        elif isinstance(value, list):
+            if len(value) == 0:
+                return False  # disallow empty lists
+            if not all([isinstance(v, str) for v in value]):  # need values to be all strings
+                return False
+            if len(set(value)) != len(value):  # need values to be unique
+                return False
         return True
 
     def validate(self, fn: Callable):
@@ -125,6 +133,8 @@ class tag(base.NodeDecorator):
         bad_tags = set()
         for key, value in self.tags.items():
             if (not tag._key_allowed(key)) or (not tag._value_allowed(value)):
+                if isinstance(value, list):
+                    value = str(value)
                 bad_tags.add((key, value))
         if bad_tags:
             bad_tags_formatted = ",".join([f"{key}={value}" for key, value in bad_tags])
@@ -133,13 +143,14 @@ class tag(base.NodeDecorator):
                 "Tag keys can be split by ., to represent a hierarchy, "
                 "but each element of the hierarchy must be a valid python identifier. "
                 "Paths components also cannot be empty. "
-                "The value can be anything. Note that the following top-level prefixes are "
+                "The value can only be a string, or a list of strings. "
+                "Note that the following top-level prefixes are "
                 f"reserved as well: {self.RESERVED_TAG_NAMESPACES}"
             )
 
 
 class tag_outputs(base.NodeDecorator):
-    def __init__(self, **tag_mapping: Dict[str, str]):
+    def __init__(self, **tag_mapping: Dict[str, Union[str, List[str]]]):
         """Creates a tag_outputs decorator.
 
         Note that this currently does not validate whether the nodes are spelled correctly as it takes in a superset of\

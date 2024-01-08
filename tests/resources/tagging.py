@@ -12,5 +12,6 @@ def b_c(a: int) -> dict:
     return {"b": a, "c": str(a)}
 
 
+@tag(test_list=["us", "uk"])
 def d(a: int) -> int:
     return a
