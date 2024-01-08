@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
-from hamilton.node import DependencyType, Node
+from hamilton.node import DependencyType, Node, matches_query
 
 
 def test_node_from_fn_happy():
@@ -61,3 +61,46 @@ def test_node_handles_annotated():
     }
     assert node.input_types == expected
     assert node.type == Annotated[np.ndarray[Any, np.dtype[np.float64]], Literal["N"]]
+
+
+@pytest.mark.parametrize(
+    "tags, query, expected",
+    [
+        ({}, {"module": "tests.resources.tagging"}, False),
+        ({"module": "tests.resources.tagging"}, {}, True),
+        ({"module": "tests.resources.tagging"}, {"module": "tests.resources.tagging"}, True),
+        ({"module": "tests.resources.tagging"}, {"module": None}, True),
+        ({"module": "tests.resources.tagging"}, {"module": None, "tag2": "value"}, False),
+        (
+            {"module": "tests.resources.tagging"},
+            {"module": "tests.resources.tagging", "tag2": "value"},
+            False,
+        ),
+        ({"tag1": ["tag_value1"]}, {"tag1": "tag_value1"}, True),
+        ({"tag1": ["tag_value1"]}, {"tag1": ["tag_value1"]}, True),
+        ({"tag1": ["tag_value1"]}, {"tag1": ["tag_value1", "tag_value2"]}, True),
+        ({"tag1": "tag_value1"}, {"tag1": ["tag_value1", "tag_value2"]}, True),
+        ({"tag1": "tag_value1"}, {"tag1": ["tag_value3", "tag_value4"]}, False),
+        ({"tag1": ["tag_value1"]}, {"tag1": "tag_value2"}, False),
+        ({"tag1": "tag_value1"}, {"tag1": "tag_value2"}, False),
+        ({"tag1": ["tag_value1"]}, {"tag1": ["tag_value2"]}, False),
+    ],
+    ids=[
+        "no tags fail",
+        "no query pass",
+        "exact match pass",
+        "match tag key pass",
+        "missing extra tag fail",
+        "missing extra tag2 fail",
+        "list single match pass",
+        "list list match pass",
+        "list list match one of pass",
+        "single list match one of pass",
+        "single list fail",
+        "list single fail",
+        "single single fail",
+        "list list fail",
+    ],
+)
+def test_tags_match_query(tags: dict, query: dict, expected: bool):
+    assert matches_query(tags, query) == expected

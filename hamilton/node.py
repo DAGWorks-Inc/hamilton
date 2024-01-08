@@ -370,3 +370,36 @@ class Node(object):
             return __transform(self.callable(**kwargs), kwargs)
 
         return self.copy_with(callabl=new_callable, typ=__output_type)
+
+
+def matches_query(
+    tags: Dict[str, Union[str, List[str]]], query_dict: Dict[str, Optional[Union[str, List[str]]]]
+) -> bool:
+    """Check whether a set of node tags matches the query based on tags.
+
+    An empty dict of a query matches all tags.
+
+    :param tags: the tags of the node.
+    :param query_dict: of tag to value. If value is None, we just check that the tag exists.
+    :return: True if we have tags that match all tag queries, False otherwise.
+    """
+    # it's an AND clause between each tag and value in the query dict.
+    for tag, value in query_dict.items():
+        # if tag not in node we can return False immediately.
+        if tag not in tags:
+            return False
+        # if value is None -- we don't care about the value, just that the tag exists.
+        if value is None:
+            continue
+        node_tag_value = tags[tag]
+        if not isinstance(node_tag_value, list):
+            node_tag_value = [node_tag_value]
+        if not isinstance(value, list):
+            value = [value]
+        if set(value).intersection(set(node_tag_value)):
+            # if there is some overlap, we're good.
+            continue
+        else:
+            # else, return False.
+            return False
+    return True
