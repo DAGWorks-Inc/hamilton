@@ -1,6 +1,6 @@
-===========================
-All Purpose Result Builders
-===========================
+=======
+Generic
+=======
 
 Result builders help you augment what is returned by the driver's `execute()` function. Here are the generic ones.
 

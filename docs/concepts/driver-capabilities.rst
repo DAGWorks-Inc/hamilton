@@ -61,7 +61,7 @@ Let's go through some examples that show you how to write a Hamilton function th
 depending on configuration.
 
 **You have a DAG for region and business line**, where the rolling average for marketing spend is computed differently
-(see :doc:`../getting-started/index` for the motivating example). In this case, you'll define the DAG as follows:
+(see :doc:`../get-started/index` for the motivating example). In this case, you'll define the DAG as follows:
 
 .. code-block:: python
 

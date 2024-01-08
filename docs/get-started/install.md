@@ -1,11 +1,11 @@
 
 Installing hamilton is easy!
 
-# Installing
+# Install
 
 Hamilton is a lightweight framework with a variety of extensions/plugins. To get started, you'll need the following:
 
-- ``python >= 3.7``
+- ``python >= 3.8``
 - ``pip``
 
 For help with python/pip/managing virtual environments see the [python docs](https://docs.python.org/3/tutorial/venv.html/).

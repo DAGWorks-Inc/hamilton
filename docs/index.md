@@ -4,57 +4,35 @@
 
 ```{toctree}
 :hidden: True
+:caption: USER GUIDE
 
-getting-started/index
-```
-
-```{toctree}
-:hidden: True
-
+get-started/index
 concepts/index
-```
-
-```{toctree}
-:hidden: True
-
 how-tos/index
-```
-```{toctree}
-:hidden: True
-
-hamilton-v-x
-```
-
-```{toctree}
-:hidden: True
-
-further-reading
-talks-or-podcasts-or-blogs-or-papers
-hamilton-community
-license
-contributing
+integrations/index
 ```
 
 ```{toctree}
 :hidden: True
 :caption: REFERENCE
 
-reference/dataflows/index
 reference/decorators/index
 reference/drivers/index
-reference/io/index
-reference/customizing-execution/index
+reference/graph-adapters/index
+reference/lifecycle-hooks/index
 reference/result-builders/index
-reference/miscellaneous/index
-reference/api-extensions/index
-GitHub repository <https://github.com/dagworks-inc/hamilton>
+reference/io/index
+reference/dataflows/index
+reference/disabling-telemetry.md
 ```
-
-
 
 ```{toctree}
 :hidden: True
-:caption: Documentation TODOs
+:caption: EXTERNAL RESOURCES
 
-unorganized-docs/index
+GitHub <https://github.com/dagworks-inc/hamilton>
+tryhamilton.dev <https://www.tryhamilton.dev/>
+Dataflow Hub <https://hub.dagworks.io/docs/>
+Blog <https://blog.dagworks.io/>
+Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>
 ```

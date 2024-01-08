@@ -1,21 +1,15 @@
-======================
-Custom Result Builders
-======================
+=====================
+Custom ResuiltBuilder
+=====================
 
-How to build your own Result Builder
-
-Before starting
----------------
-
-We suggest reaching out on `slack <https://join.slack.com/t/hamilton-opensource/shared\_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`__ \
-or via a github issue, if you have a use case for a custom result builder. Knowing about your use case and talking \
-through it can help ensure we aren't duplicating effort, and we can help steer you in the right direction.
+If you have a use case for a custom ResuiltBuilder, tell us on `Slack <https://join.slack.com/t/hamilton-opensource/shared\_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_
+or via a `GitHub issues <https://github.com/DAGWorks-Inc/hamilton/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=>`__. Knowing about your use case and talking through help ensures we aren't duplicating effort, and that it'll be using part of the API we don't intend to change.
 
 What you need to do
 -------------------
 
 You need to implement a class that implements a single function - see \
-`github code <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L18-L28>`__:
+`GitHub <https://github.com/dagworks-inc/hamilton/blob/main/hamilton/base.py#L18-L28>`__:
 
 .. code-block:: python
 
@@ -26,7 +20,7 @@ You need to implement a class that implements a single function - see \
             """This function builds the result given the computed values."""
             pass
 
-E.g.
+For example:
 
 .. code-block:: python
 
@@ -44,7 +38,7 @@ How to use it
 -------------
 
 You would then have the option to pair that with a graph adapter that takes in a ResultMixin object. E.g. ``SimplePythonGraphAdapter``.
-See :doc:`../customizing-execution/index` for which ones take in a custom ResultMixin object.
+See :doc:`../graph-adapters/index` for which ones take in a custom ResultMixin object.
 
 You can pass the result builder or a graph adapters to the ``driver.Builder(result_builder).with_adapters(...)``
 function.
