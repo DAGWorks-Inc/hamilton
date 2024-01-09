@@ -21,6 +21,10 @@ class TaskState(enum.Enum):
     def is_terminal(task_state: "TaskState") -> bool:
         return task_state in [TaskState.SUCCESSFUL, TaskState.FAILED]
 
+    @staticmethod
+    def is_failure(task_state: "TaskState") -> bool:
+        return task_state in [TaskState.FAILED]
+
 
 # TODO -- determine a better set of states for the graph
 GraphState = TaskState

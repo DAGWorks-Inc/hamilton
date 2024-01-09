@@ -402,6 +402,8 @@ def run_graph_to_completion(
                 execution_state.update_task_state(task_name, state, result)
                 if TaskState.is_terminal(state):
                     del task_futures[task_name]
+                if TaskState.is_failure(state):
+                    raise RuntimeError(f"Task {task_name} failed to execute.")
         logger.info(f"Graph is done, graph state is {execution_state.get_graph_state()}")
     finally:
         execution_manager.finalize()
