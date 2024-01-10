@@ -7,7 +7,7 @@ from hamilton.io.data_adapters import DataSaver
 try:
     import mlflow
 except ImportError:
-    raise ImportError("Please install mlflow to use this plugin")
+    raise NotImplementedError("Please install mlflow to use this plugin")
 
 """
 While it can be valid to wrap the entire code within the start_run block,
