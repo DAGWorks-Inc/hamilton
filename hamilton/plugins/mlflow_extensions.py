@@ -33,6 +33,17 @@ class MLFLowSaver(DataSaver):
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
         return [object]
+        # we need an implementation for this. so return empty list.
+        # this is a simpler way to specify what types this adapter can handle.
+
+    # @classmethod
+    # def applies_to(cls, type_: Type[Type]) -> bool:
+    #     # This allows to override how we determine if a type is applicable.
+    #     str_type = type_.__module__
+    #     for model_type in ["sklearn", "pytorch", "tensorflow", "xgboost", "keras"]:
+    #         if str_type.startswith(model_type):
+    #             return True
+    #     return False
 
     @classmethod
     def name(cls) -> str:
@@ -44,6 +55,7 @@ class MLFLowSaver(DataSaver):
         with mlflow.start_run(run_name=self.run_name) as run:
             # Log the parameters used for the model fit
             # mlflow.log_params(data["params"])
+
             # Log the error metrics that were calculated
             # mlflow.log_metrics(data["metrics"])
 
@@ -51,9 +63,8 @@ class MLFLowSaver(DataSaver):
             ml_logger = getattr(mlflow, self.model_type)
             model_info = ml_logger.log_model(
                 model,
-                # data["trained_model"],
                 self.artifact_path,
-                # input_example=data["input_example"],
+                # input_example=data["input_example"],  # or signature
             )
         return {
             "model_info": model_info.__dict__,  # return some metadata
