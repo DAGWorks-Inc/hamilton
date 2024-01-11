@@ -936,7 +936,7 @@ class Driver:
         """Creates a visualization of the DAG going backwards from the passed in function name(s).
 
         Note: for any "node" visualized, we will also add its parents to the visualization as well, so
-        there could be more nodes visualized than strictly what is downstream of the passed in function name(s).
+        there could be more nodes visualized than strictly what is upstream of the passed in function name(s).
 
         :param node_names: names of function(s) that are starting points for traversing the graph.
         :param output_file_path: the full URI of path + file name to save the dot file to.
