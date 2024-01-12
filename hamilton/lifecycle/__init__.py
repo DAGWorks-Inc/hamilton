@@ -9,7 +9,9 @@ from .api import (  # noqa: F401
     StaticValidator,
 )
 from .base import LifecycleAdapter  # noqa: F401
-from .default import PDBDebugger, PrintLnHook  # noqa: F401
+from .default import PDBDebugger, PrintLn  # noqa: F401
+
+PrintLnHook = PrintLn  # for backwards compatibility -- this will be removed in 2.0
 
 try:
     from .conditional_tqdm import TQDMHook  # noqa: F401
@@ -28,7 +30,8 @@ __all__ = [
     "GraphAdapter",
     "NodeExecutionHook",
     "EdgeConnectionHook",
-    "PrintLnHook",
+    "PrintLn",
+    "PrintLnHook",  # for backwards compatibility this will be removed in 2.0
     "PDBDebugger",
     "GraphExecutionHook",
     "NodeExecutionMethod",
