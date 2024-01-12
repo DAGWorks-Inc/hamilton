@@ -258,7 +258,7 @@ class EdgeConnectionHook(BaseDoCheckEdgeTypesMatch, BaseDoValidateInput, abc.ABC
         :param node_type: Type of the node that is accepting the input.
         :param input_value: Value of the input
         :param kwargs: Keyword arguments -- this is kept for future backwards compatibility.
-        :return: Whether or not the input is valid for the node type.
+        :return: Whether the input is valid for the node type.
         """
         pass
 
@@ -307,3 +307,8 @@ class NodeExecutionMethod(BaseDoNodeExecute):
         :return: The result of the node execution -- up to you to return this.
         """
         pass
+
+
+# class DAGValidator(BasePostGraphConstruct)
+#     def post_graph_construct(self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]):
+#         pass

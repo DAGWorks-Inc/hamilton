@@ -14,6 +14,7 @@ from hamilton.lifecycle.base import (
     BasePreDoAnythingHook,
     BasePreGraphExecute,
     BasePreNodeExecute,
+    ValidationException,
 )
 from hamilton.node import Node
 
@@ -29,6 +30,8 @@ from .lifecycle_adapters_for_testing import (
     TrackingPreDoAnythingHook,
     TrackingPreGraphExecuteHook,
     TrackingPreNodeExecuteHook,
+    TrackingValidateGraphValidator,
+    TrackingValidateNodeValidator,
 )
 
 
@@ -413,3 +416,49 @@ def test_multiple_hooks_materialize():
     assert len(calls_by_name["post_graph_construct"]) == 2
     for hook_name in ["pre_node_execute", "post_node_execute"]:
         assert len(calls_by_name[hook_name]) == 3  # Each is executed 3 times
+
+
+def test_individual_validate_node_validator_valid():
+    validator_name = "validate_node"
+    validator = TrackingValidateNodeValidator(name=validator_name, valid=True, message=None)
+    _sample_driver(validator)  # Instantiating it just works
+    relevant_calls = [item for item in validator.calls if item.name == validator_name]
+    # TODO -- consider if we want to limit it to just the user-facing nodes
+    assert len(relevant_calls) == 6  # one for each node then one for both inputs...
+
+
+def test_individual_validate_node_validator_invalid():
+    validator_name = "validate_node"
+    validator = TrackingValidateNodeValidator(
+        name=validator_name, valid=False, message="test message"
+    )
+    with pytest.raises(ValidationException):  # it groups and then gets called from that
+        _sample_driver(validator)  # These are raised on instantiation
+    relevant_calls = [item for item in validator.calls if item.name == validator_name]
+    assert (
+        len(relevant_calls) == 6
+    )  # one for each node, we call everything and error out at the end
+    assert all(item.result[0] is False for item in relevant_calls)
+
+
+def test_individual_graph_validator_valid():
+    validator_name = "validate_graph"
+    validator = TrackingValidateGraphValidator(name=validator_name, valid=True, message=None)
+    _sample_driver(validator)  # Instantiating it just works
+    relevant_calls = [item for item in validator.calls if item.name == validator_name]
+    assert len(relevant_calls) == 1
+
+
+def test_individual_graph_validator_invalid():
+    validator_name = "validate_graph"
+    validator = TrackingValidateGraphValidator(
+        name=validator_name, valid=False, message="test message"
+    )
+    with pytest.raises(ValidationException):  # it groups and then gets called from that
+        _sample_driver(validator)  # These are raised on instantiation
+    relevant_calls = [item for item in validator.calls if item.name == validator_name]
+    assert (
+        len(relevant_calls) == 1
+    )  # one for each node, we call everything and error out at the end
+    (relevant_call,) = relevant_calls
+    assert relevant_call.result[0] is False

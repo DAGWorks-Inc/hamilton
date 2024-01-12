@@ -1,6 +1,7 @@
 import abc
 import functools
 import logging
+import operator
 import sys
 import time
 
@@ -314,6 +315,66 @@ class Driver:
                 adapter.append(base.PandasDataFrameResult())
         return lifecycle_base.LifecycleAdapterSet(*adapter)
 
+    @staticmethod
+    def _perform_graph_validations(
+        adapter: lifecycle_base.LifecycleAdapterSet,
+        graph: graph.FunctionGraph,
+        graph_modules: typing.Sequence[ModuleType],
+    ):
+        """Utility function to perform graph validations. Static so we're not stuck with local state
+
+        @param adapter: Adapter to use for validation.
+        @param graph: Graph to validate.
+        @param graph_modules: Modules to validate.
+        """
+
+        if adapter.does_validation("validate_node"):
+            node_validation_results = {}
+            for node_ in graph.nodes.values():
+                validation_results = [
+                    result.error
+                    for result in adapter.call_all_validators_sync(
+                        "validate_node",
+                        output_only_failures=True,  # just failures so we can just store messages
+                        created_node=node_,
+                    )
+                    if not result.success
+                ]
+                if len(validation_results) > 0:
+                    node_validation_results[node_.name] = validation_results
+            # if any have failed
+            if len(node_validation_results) > 0:
+                error_delimiter = "\n\t"  # expression fragments not allowed in f-strings
+                errors = [
+                    f"{node_name}: {error_delimiter.join([item for item in messages])}"
+                    for node_name, messages in sorted(
+                        node_validation_results.items(), key=operator.itemgetter(0)
+                    )
+                ]
+                errors.sort()
+                error_str = (
+                    f"Node validation failed! {len(errors)} errors encountered:\n  "
+                    + "\n  ".join(errors)
+                )
+                raise lifecycle_base.ValidationException(error_str)
+        if adapter.does_validation("validate_graph"):
+            validation_results = adapter.call_all_validators_sync(
+                "validate_graph",
+                output_only_failures=True,
+                graph=graph,
+                modules=graph_modules,
+                config=graph.config,
+            )
+            if validation_results:
+                error_delimiter = "\t"
+                errors = [result.error for result in validation_results]
+                errors.sort()
+                error_str = (
+                    f"Graph validation failed! {len(errors)} errors encountered:{error_delimiter}"
+                    + error_delimiter.join(errors)
+                )
+                raise lifecycle_base.ValidationException(error_str)
+
     def __init__(
         self,
         config: Dict[str, Any],
@@ -347,6 +408,7 @@ class Driver:
         self.graph_modules = modules
         try:
             self.graph = graph.FunctionGraph.from_modules(*modules, config=config, adapter=adapter)
+            Driver._perform_graph_validations(adapter, graph=self.graph, graph_modules=modules)
             if adapter.does_hook("post_graph_construct", is_async=False):
                 adapter.call_all_lifecycle_hooks_sync(
                     "post_graph_construct", graph=self.graph, modules=modules, config=config
@@ -1369,6 +1431,7 @@ class Driver:
             function_graph = materialization.modify_graph(
                 self.graph, materializer_factories, extractor_factories
             )
+            Driver._perform_graph_validations(self.adapter, function_graph, self.graph_modules)
             if self.adapter.does_hook("post_graph_construct", is_async=False):
                 self.adapter.call_all_lifecycle_hooks_sync(
                     "post_graph_construct",
