@@ -27,32 +27,55 @@ See api.py for implementations.
 import abc
 import asyncio
 import collections
+import dataclasses
 import inspect
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
-from hamilton import node
+from hamilton import htypes, node
 
 if TYPE_CHECKING:
     from hamilton.graph import FunctionGraph
 
 from hamilton.node import Node
 
+# All of this is internal APIs. We only have a few types of lifecycle steps, and they store
+# very little metadata, so we can afford to represent/track them individually. We may elect
+# to manage this in a more complete way, but this is fine for now
+
+# A set of registered hooks -- each one refers to a string
 REGISTERED_SYNC_HOOKS: Set[str] = set()
 REGISTERED_ASYNC_HOOKS: Set[str] = set()
+
+# A set of registered methods -- each one refers to a string, which is the name of the metho
 REGISTERED_SYNC_METHODS: Set[str] = set()
 REGISTERED_ASYNC_METHODS: Set[str] = set()
 
+# A set of registered validators -- these have attached Exception data to them
+# Note we do not curently have async validators -- see no need now
+REGISTERED_SYNC_VALIDATORS: Set[str] = set()
+
+# constants to refer to internally for hooks
 SYNC_HOOK = "hooks"
 ASYNC_HOOK = "async_hooks"
+
+# constants to refer to internally for methods
 SYNC_METHOD = "methods"
 ASYNC_METHOD = "async_methods"
 
+# constants to refer to internally for validators
+SYNC_VALIDATOR = "validators"
 
-# Method to make registering hooks easy -- this is just in the superclass,
-# and in the subclass it'll be automatically handled
-# Note that it might be simpler to place the abstract abc.abstractmethod
-# inside the decorator, but that would break IDEs/make development tougher.
+
+@dataclasses.dataclass
+class ValidationResult:
+    success: bool
+    error: Optional[str]
+    validator: object  # validator so we can make the error message more friendly
+
+
+class ValidationException(Exception):
+    pass
 
 
 class InvalidLifecycleAdapter(Exception):
@@ -61,7 +84,9 @@ class InvalidLifecycleAdapter(Exception):
     pass
 
 
-def validate_lifecycle_adapter_function(fn: Callable, returns_value: bool):
+def validate_lifecycle_adapter_function(
+    fn: Callable, returns_value: bool, return_type: Optional[Type] = None
+):
     """Validates that a function has arguments that are keyword-only,
     and either does or does not return a value, depending on the value of returns_value.
 
@@ -69,13 +94,22 @@ def validate_lifecycle_adapter_function(fn: Callable, returns_value: bool):
     :param returns_value: Whether the function should return a value or not
     """
     sig = inspect.signature(fn)
-    if returns_value and sig.return_annotation is inspect.Signature.empty:
-        raise InvalidLifecycleAdapter(
-            f"Lifecycle methods must return a value, but {fn} does not have a return annotation."
-        )
+    if returns_value:
+        if sig.return_annotation is inspect.Signature.empty:
+            raise InvalidLifecycleAdapter(
+                f"Lifecycle methods must return a value, but {fn} does not have a return annotation."
+            )
+        if return_type is not None and not htypes.custom_subclass_check(
+            sig.return_annotation, return_type
+        ):
+            raise InvalidLifecycleAdapter(
+                f"Lifecycle methods must return a value of type {return_type}, "
+                f"but {fn} has a return annotation of "
+                f"type {sig.return_annotation}."
+            )
     if not returns_value and sig.return_annotation is not inspect.Signature.empty:
         raise InvalidLifecycleAdapter(
-            f"Lifecycle hooks must not return a value, but {fn} has a return annotation."
+            f"Lifecycle hooks/validators must not return a value, but {fn} has a return annotation."
         )
     for param in sig.parameters.values():
         if param.kind != inspect.Parameter.KEYWORD_ONLY and param.name != "self":
@@ -107,13 +141,38 @@ def validate_method_fn(fn: Callable):
     validate_lifecycle_adapter_function(fn, returns_value=True)
 
 
+def validate_validator_fn(fn: Callable):
+    """Ensures that a function forms a registerable "validator". These are currently the same rules as "hooks".
+    While they should also raise an exception, that is not possible to express in the type annotation.
+
+    @param fn: Function to validate
+    :raises InvalidLifecycleAdapter: If the function is not a valid validator
+    """
+    if inspect.iscoroutinefunction(fn):
+        raise InvalidLifecycleAdapter(
+            f"Lifecycle validators must (so far) be synchronous, "
+            f"but {fn} is an async function. "
+        )
+    validate_lifecycle_adapter_function(fn, returns_value=True)
+
+
+# Container for fns to make registering hooks/methods easy -- this is just in the superclass,
+# and in the subclass it'll be looking up the MRO for the markings of this decroator.
+# We avoid using purely class extensions of the same base class, as that can make the
+# MRO confusing with multiple inheritance.
+
+
 class lifecycle:
     """Container class for decorators to register hooks/methods."""
 
     @classmethod
     def base_hook(cls, fn_name: str):
         """Hooks get called at distinct stages of Hamilton's execution.
-        These can be layered together, and potentially coupled to other hooks."""
+        These can be layered together, and potentially coupled to other hooks.
+
+        @param fn_name:
+        @return:
+        """
 
         def decorator(clazz):
             fn = getattr(clazz, fn_name, None)
@@ -137,9 +196,12 @@ class lifecycle:
 
     @classmethod
     def base_method(cls, fn_name: str):
-        """methods replace the default behavior of Hamilton at a given stage.
+        """Methods replace the default behavior of Hamilton at a given stage.
         Thus they can only be called once, and not layered. TODO -- determine
-        how to allow multiple/have precedence for custom behavior."""
+        how to allow multiple/have precedence for custom behavior.
+
+        @param fn_name: Name of the function in the class we're registering.
+        """
 
         def decorator(clazz):
             fn = getattr(clazz, fn_name, None)
@@ -157,6 +219,32 @@ class lifecycle:
             else:
                 setattr(clazz, SYNC_METHOD, fn_name)
                 REGISTERED_SYNC_METHODS.add(fn_name)
+            return clazz
+
+        return decorator
+
+    @classmethod
+    def base_validator(cls, fn_name: str):
+        """Validators have a similar conceptual relationship to hooks. They provide custom validation
+        logic, and multiple can be layered together. That said, they *also* expect you to raise an error
+        if there is an issue, and have no output.
+
+        @param fn_name: Name of the function in the class we're registering.
+        @param raises:  Type of the exception that the validator raises.
+        """
+
+        def decorator(clazz):
+            fn = getattr(clazz, fn_name, None)
+            if fn is None:
+                raise ValueError(
+                    f"Class {clazz} does not have a method {fn_name}, but is "
+                    f'decorated with @lifecycle.base_validator("{fn_name}"). The parameter '
+                    f"to @lifecycle.base_hook must be the name "
+                    f"of a method on the class."
+                )
+            validate_validator_fn(fn)
+            setattr(clazz, SYNC_VALIDATOR, fn_name)
+            REGISTERED_SYNC_VALIDATORS.add(fn_name)
             return clazz
 
         return decorator
@@ -196,20 +284,32 @@ class BaseDoValidateInput(abc.ABC):
         pass
 
 
-@lifecycle.base_method("do_validate_node")
-class BaseDoValidateNode(abc.ABC):
+@lifecycle.base_validator("validate_node")
+class BaseValidateNode(abc.ABC):
     @abc.abstractmethod
-    def do_validate_node(self, *, created_node: node.Node) -> bool:
-        """Validates a node. Note this is *not* integrated yet, so adding this in will be a No-op.
-        In fact, we will likely be changing the API for this to have an optional error message.
-        This is OK, as this is internal facing.
-
-        Furthermore, we'll be adding in a user-facing API that takes in the tags, name, module, etc...
+    def validate_node(self, *, created_node: node.Node) -> Tuple[bool, Optional[Exception]]:
+        """Validates a node. This will raise an InvalidNodeException
+        if the node is invalid.
 
         :param created_node: Node that was created.
-        :return: Whether or not the node is valid.
+        :raises InvalidNodeException: If the node is invalid.
         """
         pass
+
+
+@lifecycle.base_validator("validate_graph")
+class BaseValidateGraph(abc.ABC):
+    @abc.abstractmethod
+    def validate_graph(
+        self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+    ) -> Tuple[bool, Optional[Exception]]:
+        """Validates the graph. This will raise an InvalidNodeException
+
+        @param graph:
+        @param modules:
+        @param config:
+        @return:
+        """
 
 
 @lifecycle.base_hook("post_graph_construct")
@@ -582,7 +682,8 @@ LifecycleAdapter = Union[
     BasePreDoAnythingHook,
     BaseDoCheckEdgeTypesMatch,
     BaseDoValidateInput,
-    BaseDoValidateNode,
+    BaseValidateNode,
+    BaseValidateGraph,
     BasePostGraphConstruct,
     BasePostGraphConstructAsync,
     BasePreGraphExecute,
@@ -615,9 +716,21 @@ class LifecycleAdapterSet:
 
         :param adapters: Adapters to group together
         """
-        self._adapters = adapters
+        self._adapters = list(adapters)
         self.sync_hooks, self.async_hooks = self._get_lifecycle_hooks()
         self.sync_methods, self.async_methods = self._get_lifecycle_methods()
+        self.sync_validators = self._get_lifecycle_validators()
+
+    def _get_lifecycle_validators(
+        self,
+    ) -> Dict[str, List[LifecycleAdapter]]:
+        sync_validators = collections.defaultdict(set)
+        for adapter in self.adapters:
+            for cls in inspect.getmro(adapter.__class__):
+                sync_validator = getattr(cls, SYNC_VALIDATOR, None)
+                if sync_validator is not None:
+                    sync_validators[sync_validator].add(adapter)
+        return {validator: list(adapters) for validator, adapters in sync_validators.items()}
 
     def _get_lifecycle_hooks(
         self,
@@ -690,7 +803,7 @@ class LifecycleAdapterSet:
         return hook_name in self.async_hooks
 
     def does_method(self, method_name: str, is_async: bool) -> bool:
-        """Whether or not a method is implemented by any of the adapters in this group.
+        """Whether a method is implemented by any of the adapters in this group.
         If this method is not registered, this will raise a ValueError.
 
         :param method_name: Name of the method
@@ -710,6 +823,23 @@ class LifecycleAdapterSet:
         if not is_async:
             return method_name in self.sync_methods
         return method_name in self.async_methods
+
+    def does_validation(self, validator_name: str) -> bool:
+        """Whether a validator is implemented by any of the adapters in this group.
+
+        @param validator_name: Name of the validator
+        @param is_async: Whether you want the async version or not
+        @return: True if this adapter set does this validator, False otherwise
+        """
+        if validator_name not in REGISTERED_SYNC_VALIDATORS:
+            import pdb
+
+            pdb.set_trace()
+            raise ValueError(
+                f"Validator {validator_name} is not registered as a lifecycle validator. "
+                f"Registered validators are {REGISTERED_SYNC_VALIDATORS}"
+            )
+        return validator_name in self.sync_validators
 
     def call_all_lifecycle_hooks_sync(self, hook_name: str, **kwargs):
         """Calls all the lifecycle hooks in this group, by hook name (stage)
@@ -765,6 +895,22 @@ class LifecycleAdapterSet:
             )
         (adapter,) = self.async_methods[method_name]
         return await getattr(adapter, method_name)(**kwargs)
+
+    def call_all_validators_sync(
+        self, validator_name: str, output_only_failures: bool = True, **kwargs
+    ) -> List[ValidationResult]:
+        """Calls all the lifecycle validators in this group, by validator name (stage)
+
+        :param validator_name: Name of the validators to call
+        :param kwargs: Keyword arguments to pass into the validator
+        :param output_only_failures: Whether to output only failures
+        """
+        results = []
+        for adapter in self.sync_validators[validator_name]:
+            is_valid, message = getattr(adapter, validator_name)(**kwargs)
+            if not is_valid or not output_only_failures:
+                results.append(ValidationResult(success=is_valid, error=message, validator=adapter))
+        return results
 
     @property
     def adapters(self) -> List[LifecycleAdapter]:

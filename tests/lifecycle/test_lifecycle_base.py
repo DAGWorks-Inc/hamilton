@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional
+from types import ModuleType
+from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
 
@@ -11,14 +12,19 @@ from hamilton.lifecycle.base import (
     REGISTERED_ASYNC_METHODS,
     REGISTERED_SYNC_HOOKS,
     REGISTERED_SYNC_METHODS,
+    REGISTERED_SYNC_VALIDATORS,
     SYNC_HOOK,
     SYNC_METHOD,
+    SYNC_VALIDATOR,
     BaseDoNodeExecute,
     BaseDoValidateInput,
     BasePostGraphExecute,
     BasePreDoAnythingHook,
+    BaseValidateGraph,
+    BaseValidateNode,
     InvalidLifecycleAdapter,
     LifecycleAdapterSet,
+    ValidationResult,
     lifecycle,
     validate_lifecycle_adapter_function,
 )
@@ -134,6 +140,16 @@ def test_base_method_decorator_async():
     assert "async_method_for_testing" in REGISTERED_ASYNC_METHODS
 
 
+def test_base_validator_decorator():
+    @lifecycle.base_validator("sync_validator")
+    class TestValidatorSync:
+        def sync_validator(self) -> Tuple[bool, Optional[str]]:
+            return True, None
+
+    assert getattr(TestValidatorSync, SYNC_VALIDATOR) == "sync_validator"
+    assert "sync_validator" in REGISTERED_SYNC_VALIDATORS
+
+
 def test_lifecycle_adapter_set_with_multiple_hooks():
     class MockHook1(BasePreDoAnythingHook, ExtendToTrackCalls):
         def pre_do_anything(self):
@@ -151,7 +167,7 @@ def test_lifecycle_adapter_set_with_multiple_hooks():
             graph: FunctionGraph,
             success: bool,
             error: Optional[Exception],
-            results: Optional[Dict[str, Any]]
+            results: Optional[Dict[str, Any]],
         ):
             pass
 
@@ -185,7 +201,7 @@ def test_lifecycle_adapter_set_with_single_multi_hook():
             graph: "FunctionGraph",
             success: bool,
             error: Optional[Exception],
-            results: Optional[Dict[str, Any]]
+            results: Optional[Dict[str, Any]],
         ):
             pass
 
@@ -209,7 +225,7 @@ def test_lifecycle_adapter_set_with_multiple_methods():
             run_id: str,
             node_: node.Node,
             kwargs: Dict[str, Any],
-            task_id: Optional[str] = None
+            task_id: Optional[str] = None,
         ) -> Any:
             return 1
 
@@ -247,7 +263,7 @@ def test_lifecycle_adapter_set_with_single_multi_method():
             run_id: str,
             node_: node.Node,
             kwargs: Dict[str, Any],
-            task_id: Optional[str] = None
+            task_id: Optional[str] = None,
         ) -> Any:
             return 1
 
@@ -270,3 +286,66 @@ def test_lifecycle_adapter_set_with_single_multi_method():
     assert len(multi_hook.calls) == 1
     adapter_set.call_lifecycle_method_sync("do_validate_input", node_type=None, input_value=None)
     assert len(multi_hook.calls) == 2
+
+
+def test_lifecycle_adapter_set_with_multiple_validators():
+    null_adapter_set = LifecycleAdapterSet()
+    assert not null_adapter_set.does_validation("validate_node")
+    assert not null_adapter_set.does_validation("validate_graph")
+
+    class MockNodeValidator(BaseValidateNode, ExtendToTrackCalls):
+        def validate_node(self, *, created_node: node.Node):
+            return False, "Validating node"
+
+    class MockGraphValidator(BaseValidateGraph, ExtendToTrackCalls):
+        def validate_graph(
+            self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+        ) -> Tuple[bool, Optional[str]]:
+            return False, "Validating graph"
+
+    adapter_set = LifecycleAdapterSet(
+        node_validator := MockNodeValidator("mock_node_validator"),
+        graph_validator := MockGraphValidator("mock_graph_validator"),
+    )
+
+    assert adapter_set.does_validation("validate_node")
+    assert adapter_set.does_validation("validate_graph")
+    assert adapter_set.call_all_validators_sync("validate_node", created_node=None) == [
+        ValidationResult(success=False, error="Validating node", validator=node_validator)
+    ]
+
+    assert adapter_set.call_all_validators_sync(
+        "validate_graph", graph=None, modules=[], config={}
+    ) == [ValidationResult(success=False, error="Validating graph", validator=graph_validator)]
+    assert len(node_validator.calls) == 1
+    assert len(graph_validator.calls) == 1
+
+
+def test_lifecycle_adapter_set_with_single_multi_validator():
+    null_adapter_set = LifecycleAdapterSet()
+    assert not null_adapter_set.does_validation("validate_node")
+    assert not null_adapter_set.does_validation("validate_graph")
+
+    class MockMultiValidator(BaseValidateNode, BaseValidateGraph, ExtendToTrackCalls):
+        def validate_node(self, *, created_node: node.Node) -> Tuple[bool, Optional[str]]:
+            return False, "Validating node"
+
+        def validate_graph(
+            self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+        ) -> Tuple[bool, Optional[str]]:
+            return False, "Validating graph"
+
+    adapter_set = LifecycleAdapterSet(
+        multi_validator := MockMultiValidator("mock_multi_validator"),
+    )
+
+    assert adapter_set.does_validation("validate_node")
+    assert adapter_set.does_validation("validate_graph")
+    assert adapter_set.call_all_validators_sync("validate_node", created_node=None) == [
+        ValidationResult(success=False, error="Validating node", validator=multi_validator)
+    ]
+
+    assert adapter_set.call_all_validators_sync(
+        "validate_graph", graph=None, modules=[], config={}
+    ) == [ValidationResult(success=False, error="Validating graph", validator=multi_validator)]
+    assert len(multi_validator.calls) == 2

@@ -2,7 +2,7 @@ import dataclasses
 import functools
 import inspect
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from hamilton import node
 from hamilton.graph import FunctionGraph
@@ -18,6 +18,8 @@ from hamilton.lifecycle.base import (
     BasePreGraphExecute,
     BasePreNodeExecute,
     BasePreTaskExecute,
+    BaseValidateGraph,
+    BaseValidateNode,
     LifecycleAdapterSet,
 )
 from hamilton.node import Node
@@ -52,6 +54,7 @@ class ExtendToTrackCalls:
             **adapter_set.async_methods,
             **adapter_set.sync_hooks,
             **adapter_set.async_hooks,
+            **adapter_set.sync_validators,
         }.items():
             # We know there's just one in this case
             setattr(self, lifecycle_step, self._wrap_fn(getattr(self, lifecycle_step)))
@@ -191,3 +194,25 @@ class TrackingDoBuildResultMethod(ExtendToTrackCalls, BaseDoBuildResult):
 
     def do_build_result(self, outputs: Dict[str, Any]) -> Any:
         return self._result
+
+
+class TrackingValidateNodeValidator(ExtendToTrackCalls, BaseValidateNode):
+    def __init__(self, name: str, valid: bool, message: Optional[str]):
+        super().__init__(name)
+        self._valid = valid
+        self._message = message
+
+    def validate_node(self, *, created_node: node.Node) -> Tuple[bool, Optional[str]]:
+        return self._valid, self._message
+
+
+class TrackingValidateGraphValidator(ExtendToTrackCalls, BaseValidateGraph):
+    def __init__(self, name: str, valid: bool, message: Optional[str]):
+        super().__init__(name)
+        self._valid = valid
+        self._message = message
+
+    def validate_graph(
+        self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+    ) -> Tuple[bool, Optional[str]]:
+        return self._valid, self._message
