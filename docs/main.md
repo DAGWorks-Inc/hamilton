@@ -17,11 +17,25 @@ The ABC of Hamilton
 # Why should you use Hamilton?
 **Facilitate collaboration**. By focusing on functions, Hamilton avoids sprawling code hierarchy and generates flat dataflows. Well-scoped functions make it easier to add features, complete code reviews, debug pipeline failures, and hand-off projects. Visualizations can be generated directly from your code to better understand and document it.
 
-**Reduce development time**. Hamilton dataflows are reusable across projects and context (e.g., pipeline vs. web service). The benefits of developing robust and well-tested solutions are multiplied by reusability. Off-the-shelf dataflows and boilerplates are available on the Hamilton Hub.
+**Reduce development time**. Hamilton dataflows are reusable across projects and context (e.g., pipeline vs. web service). The benefits of developing robust and well-tested solutions are multiplied by reusability. Off-the-shelf dataflows are available on the [Hamilton Hub](https://hub.dagworks.io/)..
 
 **Own your platform**. Hamilton helps you integrate the frameworks and tools of your stack. Hamilton's features are easy to extend and customize to your needs. This flexibility enables self-serve designs and ultimately reduces the risks of vendor lock-in.
 
 **Scale your dataflow**. Hamilton separates transformation logic from execution, allowing you to seamlessly scale via remote execution (AWS, Modal, etc.) and specialized computation engines (Spark, Ray, duckdb etc.). Hamilton was battle tested under intensive enterprise data workloads.
+
+Here's a quick overview of benefits that Hamilton provides as compared to other tools:
+
+| Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | dbt | Dask |
+|-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:----:|
+| Execute a graph of data transformations   | ✅  |                   ✅                          |   ❌  | ✅  |  ✅   |
+| Can visualize lineage easily              | ✅  |                   ❌                          |   ❌  | ✅  |  ✅   |
+| Can model GenerativeAI/LLM based workflows| ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Is a feature store                        | ❌  |                   ❌                          |   ✅  | ❌  |  ❌   |
+| Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌   |
+| Is just a library                         | ✅  |                   ❌                          |   ❌  | ❌  |  ✅   |
+| Runs anywhere python runs                 | ✅  |                   ❌                          |   ❌  | ❌  |  ✅   |
+| Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
 
 # Architecture Overview
 
@@ -50,7 +64,7 @@ Multiple companies are doing cool stuff with Hamilton! Come chat with members of
 * **Ascena** - Feature engineering
 * **Adobe** - Prompt engineering research
 * **Axiom Cloud** - IoT data processing
-* **Oak Ridge & PNNL** - Nature project
+* **Oak Ridge & PNNL** - [Naturf project](https://github.com/IMMM-SFA/naturf/tree/feature/nodes)
 * **Habitat** - Time-series feature engineering
 * **UK Government Digital Service** - National feedback pipeline (processing & analysis)
 * **Railoify** - Orchestrate pandas code
