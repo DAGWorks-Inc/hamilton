@@ -5,32 +5,69 @@
     <a href="https://pepy.tech/project/sf-hamilton" target="_blank"><img src="https://pepy.tech/badge/sf-hamilton" alt="Total Downloads"/></a>
 </div>
 
+Hamilton is a general-purpose framework to write dataflows using regular Python functions. At the core, each function defines a transformation and its parameters indicates its dependencies. Hamilton automatically connects individual functions into a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG) that can be executed, visualized, optimized, and reported on.
 
-The general purpose micro-orchestration framework for creating dataflows from python functions! That is, your single tool to express things like data, ML, LLM pipelines/workflows, and even web request logic! [Please star it here!](https://github.com/dagworks-inc/hamilton).
+```{figure} ./_static/abc.png
+:scale: 50
+:align: center
 
-Hamilton is a novel paradigm for specifying a flow of delayed execution in python. It was originally built to simplify the creation of wide (1000+) column dataframes, but works on python objects of any type and dataflows of any complexity. Core to the design of Hamilton is a clear mapping of function name to components of the generated artifact, allowing you to quickly grok the relationship between the code you write and the data you produce. This paradigm makes modifications easy to build and track, ensures code is self-documenting, and makes it natural to unit test your data transformations. When connected together, these functions form a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG), which the Hamilton framework can execute, optimize, and report on.
-
+The ABC of Hamilton
+```
 
 # Why should you use Hamilton?
-Hamilton's design goal is to make it easier for teams to maintain code that expresses dataflows, a.k.a. pipelines, or workflows.
-You should use Hamilton if you want a structured and opinionated way to maintain these types of python code bases.
+**Facilitate collaboration**. By focusing on functions, Hamilton avoids sprawling code hierarchy and generates flat dataflows. Well-scoped functions make it easier to add features, complete code reviews, debug pipeline failures, and hand-off projects. Visualizations can be generated directly from your code to better understand and document it.
+
+**Reduce development time**. Hamilton dataflows are reusable across projects and context (e.g., pipeline vs. web service). The benefits of developing robust and well-tested solutions are multiplied by reusability. Off-the-shelf dataflows are available on the [Hamilton Hub](https://hub.dagworks.io/)..
+
+**Own your platform**. Hamilton helps you integrate the frameworks and tools of your stack. Hamilton's features are easy to extend and customize to your needs. This flexibility enables self-serve designs and ultimately reduces the risks of vendor lock-in.
+
+**Scale your dataflow**. Hamilton separates transformation logic from execution, allowing you to seamlessly scale via remote execution (AWS, Modal, etc.) and specialized computation engines (Spark, Ray, duckdb etc.). Hamilton was battle tested under intensive enterprise data workloads.
 
 Here's a quick overview of benefits that Hamilton provides as compared to other tools:
 
 | Feature                                   | Hamilton | Macro orchestration systems (e.g. Airflow) | Feast | dbt | Dask |
 |-------------------------------------------|:---:|:---------------------------------------------:|:-----:|:---:|:----:|
-| Python 3.8+                               | ✅  |                   ✅                          |   ✅  | ✅  |  ✅   |
-| Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌   |
-| Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
-| Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Execute a graph of data transformations   | ✅  |                   ✅                          |   ❌  | ✅  |  ✅   |
 | Can visualize lineage easily              | ✅  |                   ❌                          |   ❌  | ✅  |  ✅   |
+| Can model GenerativeAI/LLM based workflows| ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Is a feature store                        | ❌  |                   ❌                          |   ✅  | ❌  |  ❌   |
+| Helps you structure your code base        | ✅  |                   ❌                          |   ❌  | ✅  |  ❌   |
 | Is just a library                         | ✅  |                   ❌                          |   ❌  | ❌  |  ✅   |
 | Runs anywhere python runs                 | ✅  |                   ❌                          |   ❌  | ❌  |  ✅   |
-| Built for managing python transformations | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
-| Can model GenerativeAI/LLM based workflows | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
-| Replaces macro orchestration systems      | ❌  |                   ✅                          |   ❌  | ❌  |  ❌   |
-| Is a feature store                        | ❌  |                   ❌                          |   ✅  | ❌  |  ❌   |
+| Documentation friendly                    | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
+| Code is always unit testable              | ✅  |                   ❌                          |   ❌  | ❌  |  ❌   |
 
+# Architecture Overview
 
-# How can you get started?
-Hop on over to our [getting started guide](get-started/index.rst)!
+The following diagram gives a simplified overview of the main components of Hamilton.
+
+![](./_static/architecture_overview.png)
+
+**Functions & Module**. Transformations are regular Python functions organized into modules. Functions must be type-annotated, but hold no dependency with Hamilton and can be reused outside of it.
+
+**Driver & FunctionGraph**. The `Driver` will automatically assemble the `FunctionGraph` from the modules given. The `Driver` can be configured to modify and extend the execution behavior (e.g., remote execution, monitoring, webhooks, caching).
+
+**Visualization**. The `FunctionGraph` can be visualized without executing code. This coupling ensures visualizations always match the code from modules.
+
+**Execution**. When requesting variables, the `Driver` establishes an execution plan to only compute the required functions. Then, results are gathered and returned to the user.
+
+# Who is using Hamilton?
+![](./_static/hamilton_users.jpg)
+
+Multiple companies are doing cool stuff with Hamilton! Come chat with members of the community and the development team on [Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg):
+
+* **Stitch Fix** — Time series forecasting
+* **British cycling** — Telemetry analysis
+* **Joby** - Flight data processing
+* **Transfix** - Online featurization and prediction
+* **IBM** - Internal search and ML pipelines
+* **Ascena** - Feature engineering
+* **Adobe** - Prompt engineering research
+* **Axiom Cloud** - IoT data processing
+* **Oak Ridge & PNNL** - [Naturf project](https://github.com/IMMM-SFA/naturf/tree/feature/nodes)
+* **Habitat** - Time-series feature engineering
+* **UK Government Digital Service** - National feedback pipeline (processing & analysis)
+* **Railoify** - Orchestrate pandas code
+* **Lexis Nexis** - Feature processing and lineage
+* **Opendoor** - Manage PySpark pipelines
+* **KI** - Feature engineering
