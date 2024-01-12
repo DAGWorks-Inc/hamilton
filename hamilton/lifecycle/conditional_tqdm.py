@@ -6,13 +6,13 @@ from hamilton import graph, node
 from hamilton.lifecycle import base
 
 
-class TQDMHook(
+class TQDM(
     base.BasePreGraphExecute,
     base.BasePreNodeExecute,
     base.BasePostNodeExecute,
     base.BasePostGraphExecute,
 ):
-    """A hook that uses tqdm to show progress bars for the graph execution.
+    """An adapter that uses tqdm to show progress bars for the graph execution.
 
     Note: you need to have tqdm installed for this to work.
     If you don't have it installed, you can install it with `pip install tqdm`.
@@ -34,7 +34,7 @@ class TQDMHook(
     """
 
     def __init__(self, desc: str = "Graph execution", node_name_target_width: int = 30, **kwargs):
-        """Create a new TQDMHook.
+        """Create a new TQDM Adatper.
 
         :param desc: The description to show in the progress bar. E.g. DAG Name is a good choice.
         :param kwargs: Additional kwargs to pass to TQDM. See TQDM docs for more info.
@@ -99,7 +99,10 @@ class TQDMHook(
         results: Optional[Dict[str, Any]],
     ):
         name_part = "Execution Complete!"
-        padding = " " * (self.node_name_target_width - len(name_part))
+        if len(name_part) > self.node_name_target_width:
+            padding = ""
+        else:
+            padding = " " * (self.node_name_target_width - len(name_part))
         self.progress_bar.set_description_str(f"{self.desc} -> {name_part + padding}")
         self.progress_bar.set_postfix({})
         self.progress_bar.close()
