@@ -14,13 +14,13 @@ from .default import PDBDebugger, PrintLn  # noqa: F401
 PrintLnHook = PrintLn  # for backwards compatibility -- this will be removed in 2.0
 
 try:
-    from .conditional_tqdm import TQDMHook  # noqa: F401
+    from .conditional_tqdm import TQDM  # noqa: F401
 except ImportError:
-    TQDMHook = None
+    TQDM = None
 
 optional = []
-if TQDMHook is not None:
-    optional.append("TQDMHook")
+if TQDM is not None:
+    optional.append("TQDM")
 
 # All the following types are public facing
 __all__ = [
