@@ -31,7 +31,7 @@ def should_run_node(node_name: str, node_tags: Dict[str, Any], node_filter: Node
     raise ValueError(f"Invalid node filter: {node_filter}")
 
 
-class PrintLnHook(NodeExecutionHook):
+class PrintLn(NodeExecutionHook):
     """Basic hook to print out information before/after node execution."""
 
     NODE_TIME_STATE = "node_time"
@@ -74,7 +74,7 @@ class PrintLnHook(NodeExecutionHook):
         :param node_filter: A function that takes a node name and a node tags dict and returns a boolean. If the boolean is True, the node will be printed out.
             If False, it will not be printed out.
         """
-        PrintLnHook._validate_verbosity(verbosity)
+        PrintLn._validate_verbosity(verbosity)
         self.verbosity = verbosity
         self.print_fn = print_fn
         self.timer_dict = {}  # quick dict to track the time it took to execute a node
