@@ -2,13 +2,17 @@ import abc
 from abc import ABC
 from typing import Any, Dict, List, Optional, Type
 
-from hamilton import node
+from hamilton import graph_types, node
+from hamilton.graph import FunctionGraph
+from hamilton.graph_types import HamiltonGraph
 from hamilton.lifecycle.base import (
     BaseDoBuildResult,
     BaseDoCheckEdgeTypesMatch,
     BaseDoNodeExecute,
     BaseDoValidateInput,
+    BasePostGraphExecute,
     BasePostNodeExecute,
+    BasePreGraphExecute,
     BasePreNodeExecute,
 )
 
@@ -227,6 +231,79 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
         )
 
 
+class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
+    def post_graph_execute(
+        self,
+        *,
+        run_id: str,
+        graph: FunctionGraph,
+        success: bool,
+        error: Optional[Exception],
+        results: Optional[Dict[str, Any]],
+    ):
+        return self.run_after_graph_execution(
+            graph=HamiltonGraph.from_graph(graph), success=success, error=error, results=results
+        )
+
+    def pre_graph_execute(
+        self,
+        *,
+        run_id: str,
+        graph: FunctionGraph,
+        final_vars: List[str],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+    ):
+        return self.run_before_graph_execution(
+            graph=HamiltonGraph.from_graph(graph),
+            final_vars=final_vars,
+            inputs=inputs,
+            overrides=overrides,
+        )
+
+    @abc.abstractmethod
+    def run_before_graph_execution(
+        self,
+        *,
+        graph: graph_types.HamiltonGraph,
+        final_vars: List[str],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+        **future_kwargs: Any,
+    ):
+        """This is run prior to graph execution. This allows you to do anything you want before the graph executes,
+        knowing the basic information that was passed in.
+
+        @param graph: Graph that is being executed
+        @param outputs: Output variables of the graph
+        @param inputs: Input variables passed to the graph
+        @param overrides: Overrides passed to the graph
+        @param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
+        """
+        pass
+
+    @abc.abstractmethod
+    def run_after_graph_execution(
+        self,
+        *,
+        graph: graph_types.HamiltonGraph,
+        success: bool,
+        error: Optional[Exception],
+        results: Optional[Dict[str, Any]],
+        **future_kwargs: Any,
+    ):
+        """This is run after graph execution. This allows you to do anything you want after the graph executes,
+        knowing the results of the execution/any errors.
+
+        @param graph: Graph that is being executed
+        @param results: Results of the graph execution
+        @param error: Error that occurred, None if no error occurred
+        @param success: Whether the graph executed successfully
+        @param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
+        """
+        pass
+
+
 class EdgeConnectionHook(BaseDoCheckEdgeTypesMatch, BaseDoValidateInput, abc.ABC):
     def do_check_edge_types_match(self, *, type_from: type, type_to: type) -> bool:
         """Wraps the check_edge_types_match method, providing a bridge to an external-facing API. Do not override this!"""
@@ -307,8 +384,3 @@ class NodeExecutionMethod(BaseDoNodeExecute):
         :return: The result of the node execution -- up to you to return this.
         """
         pass
-
-
-# class DAGValidator(BasePostGraphConstruct)
-#     def post_graph_construct(self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]):
-#         pass
