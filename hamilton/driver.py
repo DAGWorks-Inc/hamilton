@@ -8,14 +8,13 @@ import time
 # required if we want to run this code stand alone.
 import typing
 import uuid
-from dataclasses import dataclass, field
 from datetime import datetime
 from types import ModuleType
 from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Union
 
 import pandas as pd
 
-from hamilton import common, htypes
+from hamilton import common, graph_types, htypes
 from hamilton.execution import executors, graph_functions, grouping, state
 from hamilton.io import materialization
 from hamilton.io.materialization import ExtractorFactory, MaterializerFactory
@@ -69,34 +68,9 @@ def capture_function_usage(call_fn: Callable) -> Callable:
     return wrapped_fn
 
 
-@dataclass
-class Variable:
-    """External facing API for hamilton. Having this as a dataclass allows us
-    to hide the internals of the system but expose what the user might need.
-    Furthermore, we can always add attributes and maintain backwards compatibility."""
-
-    name: str
-    type: typing.Type
-    tags: Dict[str, str] = field(default_factory=dict)
-    is_external_input: bool = field(default=False)
-    originating_functions: Optional[Tuple[Callable, ...]] = field(default=None)
-    documentation: Optional[str] = field(default=None)
-
-    @staticmethod
-    def from_node(n: node.Node) -> "Variable":
-        """Creates a Variable from a Node.
-
-        :param n: Node to create the Variable from.
-        :return: Variable created from the Node.
-        """
-        return Variable(
-            name=n.name,
-            type=n.type,
-            tags=n.tags,
-            is_external_input=n.user_defined,
-            originating_functions=n.originating_functions,
-            documentation=n.documentation,
-        )
+# This is kept in here for backwards compatibility
+# You will want to refer to graph_types.HamiltonNode
+Variable = graph_types.HamiltonNode
 
 
 class InvalidExecutorException(Exception):
