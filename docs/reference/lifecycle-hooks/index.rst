@@ -12,6 +12,10 @@ Reference
 .. toctree::
    lifecycle-customizations
    ResultBuilder
+   LegacyResultMixin
    GraphAdapter
    NodeExecutionHook
-   LegacyResultMixin
+   GraphExecutionHook
+   EdgeConnectionHook
+   NodeExecutionMethod
+   StaticValidator

@@ -429,27 +429,27 @@ class StaticValidator(BaseValidateGraph, BaseValidateNode):
     def run_to_validate_node(
         self, *, node: HamiltonNode, **future_kwargs
     ) -> Tuple[bool, Optional[str]]:
-        """Override this for Node Validations! Defaults to just returning valid.
+        """Override this to build custom node validations! Defaults to just returning that a node is valid so you don't have to implement it if you want to just implement a single method.
         Runs post node construction to validate a node. You have access to a bunch of metadata about the node, stored in the hamilton_node argument
 
         :param node: Node to validate
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
-        :return: A tuple of whether the node is valid and an error message in the case of failure. Return [True, None] for a valid node.
-        Otherwise, return a detailed error message -- this should have all context/debugging information, but does not need
-        to mention the node name (it will be aggregated with others).
+        :return: A tuple of whether the node is valid and an error
+            message in the case of failure. Return [True, None] for a valid node.Otherwise, return a detailed error message -- this should have all context/debugging information, but does not need to
+            mention the node name (it will be aggregated with others).
         """
         return True, None
 
     def run_to_validate_graph(
         self, graph: HamiltonGraph, **future_kwargs
     ) -> Tuple[bool, Optional[str]]:
-        """Override this for DAG validations! Default to just returning valid.
+        """Override this to build custom DAG validations! Default to just returning that the graph is valid, so you don't have to implement it if you want to just implement a single method.
         Runs post graph construction to validate a graph. You have access to a bunch of metadata about the graph, stored in the graph argument.
 
         :param graph: Graph to validate.
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         :return: A tuple of whether the graph is valid and an error message in the case of failure. Return [True, None] for a valid graph.
-        Otherwise, return a detailed error message -- this should have all context/debugging information.
+            Otherwise, return a detailed error message -- this should have all context/debugging information.
         """
         return True, None
 
