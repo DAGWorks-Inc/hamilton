@@ -6,7 +6,6 @@ from typing import Any, Generator, Optional, Tuple, Type, TypeVar
 
 import typing_inspect
 
-
 from hamilton.registry import COLUMN_TYPE, DF_TYPE_AND_COLUMN_TYPES
 
 BASE_ARGS_FOR_GENERICS = (typing.T,)
