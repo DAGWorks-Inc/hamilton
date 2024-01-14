@@ -11,15 +11,17 @@ import numpy as np
 import pandas as pd
 from pandas.core.indexes import extension as pd_extension
 
+from hamilton.lifecycle import api as lifecycle_api
+
 try:
-    from . import htypes, lifecycle, node
+    from . import htypes, node
 except ImportError:
     import node
 
 logger = logging.getLogger(__name__)
 
 
-class ResultMixin(lifecycle.LegacyResultMixin):
+class ResultMixin(lifecycle_api.LegacyResultMixin):
     """Legacy result builder -- see lifecycle methods for more information."""
 
     pass
@@ -383,7 +385,7 @@ class NumpyMatrixResult(ResultMixin):
         return pd.DataFrame
 
 
-class HamiltonGraphAdapter(lifecycle.GraphAdapter, abc.ABC):
+class HamiltonGraphAdapter(lifecycle_api.GraphAdapter, abc.ABC):
     """Legacy graph adapter -- see lifecycle methods for more information."""
 
     pass

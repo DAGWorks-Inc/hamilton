@@ -1,10 +1,22 @@
 import abc
 from abc import ABC
 from types import ModuleType
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 from hamilton import graph_types, node
-from hamilton.graph import FunctionGraph
+
+# This is only here for a type-hint
+# As python types aren't real (they're determined at runtime), we can't have circular import resolved
+# These are often necessary to handle typing -- as types don't have a perfect DAG of dependencies
+# In this case, we're breaking the following loop:
+#    -> lifecycle_api depends on graph_types and FunctionGraph
+#    -> graph_types depends on hamilton.base
+#    -> hamilton.base depends on lifecycle_api, as some interfaces for graph adapters live there
+# To really fix this we should move everything user-facing out of base, which is a pretty sloppy name for a package anyway
+# And put it where it belongs. For now we're OK with the TYPE_CHECKING hack
+if TYPE_CHECKING:
+    from hamilton.graph import FunctionGraph
+
 from hamilton.graph_types import HamiltonGraph, HamiltonNode
 from hamilton.lifecycle.base import (
     BaseDoBuildResult,
@@ -239,7 +251,7 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         self,
         *,
         run_id: str,
-        graph: FunctionGraph,
+        graph: "FunctionGraph",
         success: bool,
         error: Optional[Exception],
         results: Optional[Dict[str, Any]],
@@ -252,7 +264,7 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         self,
         *,
         run_id: str,
-        graph: FunctionGraph,
+        graph: "FunctionGraph",
         final_vars: List[str],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
