@@ -1,10 +1,11 @@
 import abc
 from abc import ABC
-from typing import Any, Dict, List, Optional, Type
+from types import ModuleType
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from hamilton import graph_types, node
 from hamilton.graph import FunctionGraph
-from hamilton.graph_types import HamiltonGraph
+from hamilton.graph_types import HamiltonGraph, HamiltonNode
 from hamilton.lifecycle.base import (
     BaseDoBuildResult,
     BaseDoCheckEdgeTypesMatch,
@@ -14,6 +15,8 @@ from hamilton.lifecycle.base import (
     BasePostNodeExecute,
     BasePreGraphExecute,
     BasePreNodeExecute,
+    BaseValidateGraph,
+    BaseValidateNode,
 )
 
 try:
@@ -384,3 +387,42 @@ class NodeExecutionMethod(BaseDoNodeExecute):
         :return: The result of the node execution -- up to you to return this.
         """
         pass
+
+
+class StaticValidator(BaseValidateGraph, BaseValidateNode):
+    """Performs static validation of the DAG. Note that this has the option to perform default validat"""
+
+    def run_to_validate_node(
+        self, *, node: HamiltonNode, **future_kwargs
+    ) -> Tuple[bool, Optional[str]]:
+        """Runs post node construction to validate a node. You have access to a bunch of metadata about the node, stored in the hamilton_node argument
+
+        :param node: Node to validate
+        :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
+        :return: A tuple of whether the node is valid and an error message in the case of failure. Return [True, None] for a valid node.
+        Otherwise, return a detailed error message -- this should have all context/debugging information, but does not need
+        to mention the node name (it will be aggregated with others).
+        """
+        return True, None
+
+    def run_to_validate_graph(
+        self, graph: HamiltonGraph, **future_kwargs
+    ) -> Tuple[bool, Optional[str]]:
+        """Runs post graph construction to validate a graph. You have access to a bunch of metadata about the graph, stored in the graph argument.
+
+        :param graph: Graph to validate.
+        :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
+        :return: A tuple of whether the graph is valid and an error message in the case of failure. Return [True, None] for a valid graph.
+        Otherwise, return a detailed error message -- this should have all context/debugging information.
+        """
+        return True, None
+
+    @override
+    def validate_node(self, *, created_node: node.Node) -> Tuple[bool, Optional[Exception]]:
+        return self.run_to_validate_node(node=HamiltonNode.from_node(created_node))
+
+    @override
+    def validate_graph(
+        self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+    ) -> Tuple[bool, Optional[Exception]]:
+        return self.run_to_validate_graph(graph=HamiltonGraph.from_graph(graph))
