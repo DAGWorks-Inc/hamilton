@@ -1,5 +1,6 @@
 import abc
 import functools
+import json
 import logging
 import operator
 import sys
@@ -16,6 +17,7 @@ import pandas as pd
 
 from hamilton import common, graph_types, htypes
 from hamilton.execution import executors, graph_functions, grouping, state
+from hamilton.graph_types import HamiltonNode
 from hamilton.io import materialization
 from hamilton.io.materialization import ExtractorFactory, MaterializerFactory
 from hamilton.lifecycle import base as lifecycle_base
@@ -897,6 +899,28 @@ class Driver:
             deduplicate_inputs=deduplicate_inputs,
             show_schema=show_schema,
         )
+
+    @capture_function_usage
+    def export_execution(
+        self,
+        final_vars: List[str],
+        inputs: Dict[str, Any] = None,
+        overrides: Dict[str, Any] = None,
+    ) -> str:
+        """Method to create JSON representation of the Graph.
+
+        :param final_vars: The final variables to compute.
+        :param inputs: Optional. The inputs to the DAG.
+        :param overrides: Optional. Overrides to the DAG.
+        :return: JSON string representation of the graph.
+        """
+        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs, overrides)
+        Driver.validate_inputs(self.graph, self.adapter, user_nodes, inputs, nodes)
+        all_nodes = nodes | user_nodes
+
+        hamilton_nodes = [HamiltonNode.from_node(n).as_dict() for n in all_nodes]
+        sorted_nodes = sorted(hamilton_nodes, key=lambda x: x["name"])
+        return json.dumps({"nodes": sorted_nodes})
 
     @capture_function_usage
     def has_cycles(
