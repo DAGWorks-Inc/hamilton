@@ -32,12 +32,16 @@ import inspect
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
-from hamilton import htypes, node
+from hamilton import htypes
 
+# We need this because of a (required) circular reference
+# Graph depends on lifecycle_base, as it uses the lifecycle hooks
+# lifecycle_base has elements that use type-hinting with the FunctionGraph object
+# This is OK -- in a *real* compiled language this wouldn't be an issue
+# (you'd have header types in C, and java should be smart enough). Given that we're using
+# python, which (our usage of) leans type-hinting trigger-happy, this will suffice.
 if TYPE_CHECKING:
-    from hamilton.graph import FunctionGraph
-
-from hamilton.node import Node
+    from hamilton import graph, node
 
 # All of this is internal APIs. We only have a few types of lifecycle steps, and they store
 # very little metadata, so we can afford to represent/track them individually. We may elect
@@ -287,7 +291,7 @@ class BaseDoValidateInput(abc.ABC):
 @lifecycle.base_validator("validate_node")
 class BaseValidateNode(abc.ABC):
     @abc.abstractmethod
-    def validate_node(self, *, created_node: node.Node) -> Tuple[bool, Optional[Exception]]:
+    def validate_node(self, *, created_node: "node.Node") -> Tuple[bool, Optional[Exception]]:
         """Validates a node. This will raise an InvalidNodeException
         if the node is invalid.
 
@@ -301,7 +305,7 @@ class BaseValidateNode(abc.ABC):
 class BaseValidateGraph(abc.ABC):
     @abc.abstractmethod
     def validate_graph(
-        self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+        self, *, graph: "graph.FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
     ) -> Tuple[bool, Optional[Exception]]:
         """Validates the graph. This will raise an InvalidNodeException
 
@@ -316,7 +320,7 @@ class BaseValidateGraph(abc.ABC):
 class BasePostGraphConstruct(abc.ABC):
     @abc.abstractmethod
     def post_graph_construct(
-        self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+        self, *, graph: "graph.FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
     ):
         """Hooks that is called after the graph is constructed.
 
@@ -331,7 +335,7 @@ class BasePostGraphConstruct(abc.ABC):
 class BasePostGraphConstructAsync(abc.ABC):
     @abc.abstractmethod
     async def post_graph_construct(
-        self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+        self, *, graph: "graph.FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
     ):
         """Asynchronous hook that is called after the graph is constructed.
 
@@ -349,7 +353,7 @@ class BasePreGraphExecute(abc.ABC):
         self,
         *,
         run_id: str,
-        graph: "FunctionGraph",
+        graph: "graph.FunctionGraph",
         final_vars: List[str],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
@@ -372,7 +376,7 @@ class BasePreGraphExecuteAsync(abc.ABC):
         self,
         *,
         run_id: str,
-        graph: "FunctionGraph",
+        graph: "graph.FunctionGraph",
         final_vars: List[str],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
@@ -396,7 +400,7 @@ class BasePreTaskExecute(abc.ABC):
         *,
         run_id: str,
         task_id: str,
-        nodes: List[node.Node],
+        nodes: List["node.Node"],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
     ):
@@ -420,7 +424,7 @@ class BasePreTaskExecuteAsync(abc.ABC):
         *,
         run_id: str,
         task_id: str,
-        nodes: List[node.Node],
+        nodes: List["node.Node"],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
     ):
@@ -440,7 +444,12 @@ class BasePreTaskExecuteAsync(abc.ABC):
 class BasePreNodeExecute(abc.ABC):
     @abc.abstractmethod
     def pre_node_execute(
-        self, *, run_id: str, node_: Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
+        self,
+        *,
+        run_id: str,
+        node_: "node.Node",
+        kwargs: Dict[str, Any],
+        task_id: Optional[str] = None,
     ):
         """Hook that is called immediately prior to node execution.
 
@@ -456,7 +465,12 @@ class BasePreNodeExecute(abc.ABC):
 class BasePreNodeExecuteAsync(abc.ABC):
     @abc.abstractmethod
     async def pre_node_execute(
-        self, *, run_id: str, node_: Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
+        self,
+        *,
+        run_id: str,
+        node_: "node.Node",
+        kwargs: Dict[str, Any],
+        task_id: Optional[str] = None,
     ):
         """Asynchronous hook that is called immediately prior to node execution.
 
@@ -475,7 +489,7 @@ class BaseDoNodeExecute(abc.ABC):
         self,
         *,
         run_id: str,
-        node_: node.Node,
+        node_: "node.Node",
         kwargs: Dict[str, Any],
         task_id: Optional[str] = None,
     ) -> Any:
@@ -497,7 +511,7 @@ class BaseDoNodeExecuteAsync(abc.ABC):
         self,
         *,
         run_id: str,
-        node_: node.Node,
+        node_: "node.Node",
         kwargs: Dict[str, Any],
         task_id: Optional[str] = None,
     ) -> Any:
@@ -519,7 +533,7 @@ class BasePostNodeExecute(abc.ABC):
         self,
         *,
         run_id: str,
-        node_: node.Node,
+        node_: "node.Node",
         kwargs: Dict[str, Any],
         success: bool,
         error: Optional[Exception],
@@ -546,7 +560,7 @@ class BasePostNodeExecuteAsync(abc.ABC):
         self,
         *,
         run_id: str,
-        node_: node.Node,
+        node_: "node.Node",
         kwargs: Dict[str, Any],
         success: bool,
         error: Optional[Exception],
@@ -574,7 +588,7 @@ class BasePostTaskExecute(abc.ABC):
         *,
         run_id: str,
         task_id: str,
-        nodes: List[node.Node],
+        nodes: List["node.Node"],
         results: Optional[Dict[str, Any]],
         success: bool,
         error: Exception,
@@ -600,7 +614,7 @@ class BasePostTaskExecuteAsync(abc.ABC):
         *,
         run_id: str,
         task_id: str,
-        nodes: List[node.Node],
+        nodes: List["node.Node"],
         results: Optional[Dict[str, Any]],
         success: bool,
         error: Exception,
@@ -625,7 +639,7 @@ class BasePostGraphExecute(abc.ABC):
         self,
         *,
         run_id: str,
-        graph: "FunctionGraph",
+        graph: "graph.FunctionGraph",
         success: bool,
         error: Optional[Exception],
         results: Optional[Dict[str, Any]],
@@ -648,7 +662,7 @@ class BasePostGraphExecuteAsync(abc.ABC):
         self,
         *,
         run_id: str,
-        graph: "FunctionGraph",
+        graph: "graph.FunctionGraph",
         success: bool,
         error: Optional[Exception],
         results: Optional[Dict[str, Any]],
