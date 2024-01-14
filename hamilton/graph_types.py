@@ -2,7 +2,7 @@
 import typing
 from dataclasses import dataclass, field
 
-from hamilton import graph, node
+from hamilton import graph, htypes, node
 
 
 @dataclass
@@ -48,6 +48,9 @@ class HamiltonNode:
             },
             _node=n,
         )
+
+    def __repr__(self):
+        return f"{self.name}: {htypes.get_type_as_string(self.type)}"
 
 
 @dataclass
