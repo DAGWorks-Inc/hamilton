@@ -1,7 +1,7 @@
 import abc
 from abc import ABC
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, final
 
 from hamilton import graph_types, node
 
@@ -53,6 +53,7 @@ class ResultBuilder(BaseDoBuildResult, abc.ABC):
         pass
 
     @override
+    @final
     def do_build_result(self, outputs: Dict[str, Any]) -> Any:
         """Implements the do_build_result method from the BaseDoBuildResult class.
         This is kept from the user as the public-facing API is build_result, allowing us to change the
@@ -129,16 +130,19 @@ class GraphAdapter(
         pass
 
     @override
+    @final
     def do_node_execute(
         self, run_id: str, node_: node.Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
     ) -> Any:
         return self.execute_node(node_, kwargs)
 
     @override
+    @final
     def do_validate_input(self, node_type: type, input_value: Any) -> bool:
         return self.check_input_type(node_type, input_value)
 
     @override
+    @final
     def do_check_edge_types_match(self, type_from: type, type_to: type) -> bool:
         return self.check_node_type_equivalence(type_to, type_from)
 
@@ -178,6 +182,8 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         """
 
+    @override
+    @final
     def pre_node_execute(
         self,
         *,
@@ -222,6 +228,8 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         """
 
+    @override
+    @final
     def post_node_execute(
         self,
         *,
@@ -247,6 +255,10 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
 
 
 class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
+    """Implement this to execute code before and after graph execution. This is useful for logging, etc..."""
+
+    @override
+    @final
     def post_graph_execute(
         self,
         *,
@@ -260,6 +272,8 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
             graph=HamiltonGraph.from_graph(graph), success=success, error=error, results=results
         )
 
+    @override
+    @final
     def pre_graph_execute(
         self,
         *,
@@ -320,6 +334,10 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
 
 
 class EdgeConnectionHook(BaseDoCheckEdgeTypesMatch, BaseDoValidateInput, abc.ABC):
+    """Implement this to customize edges that are allowed in the graph. You can do customizations around typing here."""
+
+    @override
+    @final
     def do_check_edge_types_match(self, *, type_from: type, type_to: type) -> bool:
         """Wraps the check_edge_types_match method, providing a bridge to an external-facing API. Do not override this!"""
         return self.check_edge_types_match(type_from, type_to)
@@ -337,6 +355,8 @@ class EdgeConnectionHook(BaseDoCheckEdgeTypesMatch, BaseDoValidateInput, abc.ABC
         """
         pass
 
+    @override
+    @final
     def do_validate_input(self, *, node_type: type, input_value: Any) -> bool:
         """Wraps the validate_input method, providing a bridge to an external-facing API. Do not override this!"""
         return self.validate_input(node_type=node_type, input_value=input_value)
@@ -361,6 +381,8 @@ class NodeExecutionMethod(BaseDoNodeExecute):
     able to be layered together, although we may add that soon.
     """
 
+    @override
+    @final
     def do_node_execute(
         self,
         *,
@@ -407,7 +429,8 @@ class StaticValidator(BaseValidateGraph, BaseValidateNode):
     def run_to_validate_node(
         self, *, node: HamiltonNode, **future_kwargs
     ) -> Tuple[bool, Optional[str]]:
-        """Runs post node construction to validate a node. You have access to a bunch of metadata about the node, stored in the hamilton_node argument
+        """Override this for Node Validations! Defaults to just returning valid.
+        Runs post node construction to validate a node. You have access to a bunch of metadata about the node, stored in the hamilton_node argument
 
         :param node: Node to validate
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
@@ -420,7 +443,8 @@ class StaticValidator(BaseValidateGraph, BaseValidateNode):
     def run_to_validate_graph(
         self, graph: HamiltonGraph, **future_kwargs
     ) -> Tuple[bool, Optional[str]]:
-        """Runs post graph construction to validate a graph. You have access to a bunch of metadata about the graph, stored in the graph argument.
+        """Override this for DAG validations! Default to just returning valid.
+        Runs post graph construction to validate a graph. You have access to a bunch of metadata about the graph, stored in the graph argument.
 
         :param graph: Graph to validate.
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
@@ -430,10 +454,12 @@ class StaticValidator(BaseValidateGraph, BaseValidateNode):
         return True, None
 
     @override
+    @final
     def validate_node(self, *, created_node: node.Node) -> Tuple[bool, Optional[Exception]]:
         return self.run_to_validate_node(node=HamiltonNode.from_node(created_node))
 
     @override
+    @final
     def validate_graph(
         self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
     ) -> Tuple[bool, Optional[Exception]]:
