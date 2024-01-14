@@ -11,14 +11,13 @@ from enum import Enum
 from types import ModuleType
 from typing import Any, Callable, Collection, Dict, FrozenSet, List, Optional, Set, Tuple, Type
 
-from hamilton import base, node
+import hamilton.lifecycle.base as lifecycle_base
+from hamilton import node
 from hamilton.execution import graph_functions
-from hamilton.execution.graph_functions import combine_config_and_inputs, execute_subdag
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers.metadata import schema
 from hamilton.graph_utils import find_functions
 from hamilton.htypes import get_type_as_string, types_match
-from hamilton.lifecycle.base import LifecycleAdapterSet
 from hamilton.node import Node
 
 logger = logging.getLogger(__name__)
@@ -39,7 +38,7 @@ def add_dependency(
     nodes: Dict[str, node.Node],
     param_name: str,
     param_type: Type,
-    adapter_group: LifecycleAdapterSet,
+    adapter: lifecycle_base.LifecycleAdapterSet,
 ):
     """Adds dependencies to the node objects.
 
@@ -52,12 +51,12 @@ def add_dependency(
     :param param_type: the type of the parameter.
     :param adapter: The adapter that adapts our node type checking based on the context.
     """
-    adapter_checks_types = adapter_group.does_method("do_check_edge_types_match", is_async=False)
+    adapter_checks_types = adapter.does_method("do_check_edge_types_match", is_async=False)
     if param_name in nodes:
         # validate types match
         required_node: Node = nodes[param_name]
         types_do_match = types_match(param_type, required_node.type)
-        types_do_match |= adapter_checks_types and adapter_group.call_lifecycle_method_sync(
+        types_do_match |= adapter_checks_types and adapter.call_lifecycle_method_sync(
             "do_check_edge_types_match", type_from=param_type, type_to=required_node.type
         )
         if not types_do_match and required_node.user_defined:
@@ -65,11 +64,8 @@ def add_dependency(
             # this could be the case when one is a union and the other is a subset of that union
             # which is fine for inputs. If they are not compatible, we raise an error.
             types_are_compatible = types_match(required_node.type, param_type)
-            types_are_compatible |= (
-                adapter_checks_types
-                and adapter_group.call_lifecycle_method_sync(
-                    "do_check_edge_types_match", type_from=param_type, type_to=required_node.type
-                )
+            types_are_compatible |= adapter_checks_types and adapter.call_lifecycle_method_sync(
+                "do_check_edge_types_match", type_from=param_type, type_to=required_node.type
             )
             if not types_are_compatible:
                 raise ValueError(
@@ -111,7 +107,7 @@ def add_dependency(
 
 def update_dependencies(
     nodes: Dict[str, node.Node],
-    adapter_group: LifecycleAdapterSet,
+    adapter: lifecycle_base.LifecycleAdapterSet,
     reset_dependencies: bool = True,
 ):
     """Adds dependencies to a dictionary of nodes. If in_place is False,
@@ -133,14 +129,14 @@ def update_dependencies(
         nodes = {k: v.copy(include_refs=False) for k, v in nodes.items()}
     for node_name, n in list(nodes.items()):
         for param_name, (param_type, _) in n.input_types.items():
-            add_dependency(n, node_name, nodes, param_name, param_type, adapter_group)
+            add_dependency(n, node_name, nodes, param_name, param_type, adapter)
     return nodes
 
 
 def create_function_graph(
     *modules: ModuleType,
     config: Dict[str, Any],
-    adapter: LifecycleAdapterSet = None,
+    adapter: lifecycle_base.LifecycleAdapterSet = None,
     fg: Optional["FunctionGraph"] = None,
 ) -> Dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
@@ -152,7 +148,7 @@ def create_function_graph(
     """
     if adapter is None:
         adapter = (
-            LifecycleAdapterSet()
+            lifecycle_base.LifecycleAdapterSet()
         )  # empty one -- not provided/necessary, we can run without it
     if fg is None:
         nodes = {}  # name -> Node
@@ -587,7 +583,7 @@ class FunctionGraph:
         self,
         nodes: Dict[str, Node],
         config: Dict[str, Any],
-        adapter: LifecycleAdapterSet = None,
+        adapter: lifecycle_base.LifecycleAdapterSet = None,
     ):
         """Initializes a function graph from specified nodes. See note on `from_modules` if you
         start getting an error here because you use an internal API.
@@ -597,7 +593,7 @@ class FunctionGraph:
         :param adapter: Group of adapters, to use for node resolution.
         """
         if adapter is None:
-            adapter = LifecycleAdapterSet(base.SimplePythonDataFrameGraphAdapter())
+            adapter = lifecycle_base.LifecycleAdapterSet()
 
         self._config = config
         self.nodes = nodes
@@ -607,7 +603,7 @@ class FunctionGraph:
     def from_modules(
         *modules: ModuleType,
         config: Dict[str, Any],
-        adapter: LifecycleAdapterSet = None,
+        adapter: lifecycle_base.LifecycleAdapterSet = None,
     ):
         """Initializes a function graph from the specified modules. Note that this was the old
         way we constructed FunctionGraph -- this is not a public-facing API, so we replaced it
@@ -936,8 +932,8 @@ class FunctionGraph:
             inputs = {}
         if run_id is None:
             run_id = str(uuid.uuid4())
-        inputs = combine_config_and_inputs(self.config, inputs)
-        return execute_subdag(
+        inputs = graph_functions.combine_config_and_inputs(self.config, inputs)
+        return graph_functions.execute_subdag(
             nodes=nodes,
             inputs=inputs,
             adapter=self.adapter,
