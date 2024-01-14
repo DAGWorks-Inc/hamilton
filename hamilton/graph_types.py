@@ -2,8 +2,13 @@
 import typing
 from dataclasses import dataclass, field
 
-from hamilton import graph, node
+from hamilton import node
 from hamilton.node import DependencyType
+
+# See note in lifecycle.api about type-checking/why we're doing this
+# We'll want to eventually move more out of base, but for now this is OK
+if typing.TYPE_CHECKING:
+    from hamilton import FunctionGraph
 
 
 @dataclass
@@ -60,7 +65,7 @@ class HamiltonGraph:
     nodes: typing.List[HamiltonNode]
 
     @staticmethod
-    def from_graph(fn_graph: graph.FunctionGraph) -> "HamiltonGraph":
+    def from_graph(fn_graph: "FunctionGraph") -> "HamiltonGraph":
         """Creates a HamiltonGraph from a FunctionGraph (Hamilton's internal representation).
 
         @param fn_graph: FunctionGraph to convert
