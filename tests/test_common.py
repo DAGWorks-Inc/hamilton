@@ -23,7 +23,12 @@ class Object:
             "A",
             None,
         ),
-        (driver.Variable("A", int), {"amodule"}, "A", None),
+        (
+            driver.Variable("A", int, {}, False, (), None, set(), set(), None),
+            {"amodule"},
+            "A",
+            None,
+        ),
         (
             Object(),
             {"amodule"},

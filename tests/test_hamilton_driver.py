@@ -443,12 +443,13 @@ def test_using_callables_to_execute(driver_factory):
 def test_create_final_vars():
     """Tests that the final vars are created correctly."""
     dr = Driver({"required": 1}, tests.resources.test_default_args)
+    D_node = dr.graph.nodes["D"]
     actual = dr._create_final_vars(
         [
             "C",
             tests.resources.test_default_args.B,
             tests.resources.test_default_args.A,
-            Variable("D", int, {}, False),
+            Variable.from_node(D_node),
         ]
     )
     expected = ["C", "B", "A", "D"]

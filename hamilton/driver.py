@@ -399,6 +399,7 @@ class Driver:
             # TODO -- update this to use the lifecycle methods
             self.capture_constructor_telemetry(error, modules, config, adapter)
 
+
     def capture_constructor_telemetry(
         self,
         error: Optional[str],
