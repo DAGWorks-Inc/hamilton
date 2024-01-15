@@ -268,6 +268,7 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         error: Optional[Exception],
         results: Optional[Dict[str, Any]],
     ):
+        """Just delegates to the interface method, passing in the right data."""
         return self.run_after_graph_execution(
             graph=HamiltonGraph.from_graph(graph), success=success, error=error, results=results
         )
@@ -283,6 +284,9 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
     ):
+        """Implementation of the pre_graph_execute hook. This just converts the inputs to
+        the format the user-facing hook is expecting -- performing a walk of the DAG to pass in
+        the set of nodes to execute. Delegates to the interface method."""
         all_nodes, user_defined_nodes = graph.get_upstream_nodes(final_vars, inputs, overrides)
         nodes_to_execute = set(all_nodes) - set(user_defined_nodes)
         return self.run_before_graph_execution(
@@ -330,11 +334,11 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         """This is run after graph execution. This allows you to do anything you want after the graph executes,
         knowing the results of the execution/any errors.
 
-        @param graph: Graph that is being executed
-        @param results: Results of the graph execution
-        @param error: Error that occurred, None if no error occurred
-        @param success: Whether the graph executed successfully
-        @param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
+        :param graph: Graph that is being executed
+        :param results: Results of the graph execution
+        :param error: Error that occurred, None if no error occurred
+        :param success: Whether the graph executed successfully
+        :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         """
         pass
 
@@ -430,7 +434,8 @@ class NodeExecutionMethod(BaseDoNodeExecute):
 
 
 class StaticValidator(BaseValidateGraph, BaseValidateNode):
-    """Performs static validation of the DAG. Note that this has the option to perform default validat"""
+    """Performs static validation of the DAG. Note that this has the option to perform default validation for each method --
+    this means that if you don't implement one of these it is OK."""
 
     def run_to_validate_node(
         self, *, node: HamiltonNode, **future_kwargs

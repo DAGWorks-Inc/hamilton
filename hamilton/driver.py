@@ -297,9 +297,9 @@ class Driver:
     ):
         """Utility function to perform graph validations. Static so we're not stuck with local state
 
-        @param adapter: Adapter to use for validation.
-        @param graph: Graph to validate.
-        @param graph_modules: Modules to validate.
+        :param adapter: Adapter to use for validation.
+        :param graph: Graph to validate.
+        :param graph_modules: Modules to validate.
         """
 
         if adapter.does_validation("validate_node"):
@@ -325,7 +325,6 @@ class Driver:
                         node_validation_results.items(), key=operator.itemgetter(0)
                     )
                 ]
-                errors.sort()
                 error_str = (
                     f"Node validation failed! {len(errors)} errors encountered:\n  "
                     + "\n  ".join(errors)
@@ -341,8 +340,7 @@ class Driver:
             )
             if validation_results:
                 error_delimiter = "\t"
-                errors = [result.error for result in validation_results]
-                errors.sort()
+                errors = sorted([result.error for result in validation_results])
                 error_str = (
                     f"Graph validation failed! {len(errors)} errors encountered:{error_delimiter}"
                     + error_delimiter.join(errors)
@@ -398,7 +396,6 @@ class Driver:
         finally:
             # TODO -- update this to use the lifecycle methods
             self.capture_constructor_telemetry(error, modules, config, adapter)
-
 
     def capture_constructor_telemetry(
         self,

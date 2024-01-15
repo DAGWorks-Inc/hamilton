@@ -43,9 +43,9 @@ from hamilton import htypes
 if TYPE_CHECKING:
     from hamilton import graph, node
 
-# All of this is internal APIs. We only have a few types of lifecycle steps, and they store
-# very little metadata, so we can afford to represent/track them individually. We may elect
-# to manage this in a more complete way, but this is fine for now
+# All of these are internal APIs. Specifically, structure required to manage a set of
+# hooks/methods/validators that we will likely expand. We store them in constants (rather than, say, a more complex single object)
+# as it is a clear, simple way to manage the metadata. This allows us to track the registered hooks/methods/validators.
 
 # A set of registered hooks -- each one refers to a string
 REGISTERED_SYNC_HOOKS: Set[str] = set()
@@ -149,7 +149,7 @@ def validate_validator_fn(fn: Callable):
     """Ensures that a function forms a registerable "validator". These are currently the same rules as "hooks".
     While they should also raise an exception, that is not possible to express in the type annotation.
 
-    @param fn: Function to validate
+    :param fn: Function to validate
     :raises InvalidLifecycleAdapter: If the function is not a valid validator
     """
     if inspect.iscoroutinefunction(fn):
@@ -160,22 +160,25 @@ def validate_validator_fn(fn: Callable):
     validate_lifecycle_adapter_function(fn, returns_value=True)
 
 
-# Container for fns to make registering hooks/methods easy -- this is just in the superclass,
-# and in the subclass it'll be looking up the MRO for the markings of this decroator.
-# We avoid using purely class extensions of the same base class, as that can make the
-# MRO confusing with multiple inheritance.
-
-
 class lifecycle:
-    """Container class for decorators to register hooks/methods."""
+    """Container class for decorators to register hooks/methods.
+    This is just a container so it looks clean (`@lifecycle.base_hook(...)`), but we could easily move it out.
+    What do these decorators do?
+      1. We decorate a class with a method/hook/validator call
+      2. This implies that there exists a function by that name
+      3. We validate that that function has an appropriate signature
+      4. We store this in the appropriate registry (see the constants above)
+    Then, when we want to perform a hook/method/validator, we can ask the AdapterLifecycleSet to do so.
+    It crawls up the MRO, looking to see which classes are in the registry, then elects which functions to run.
+    See LifecycleAdapterSet for more information.
+    """
 
     @classmethod
     def base_hook(cls, fn_name: str):
         """Hooks get called at distinct stages of Hamilton's execution.
         These can be layered together, and potentially coupled to other hooks.
 
-        @param fn_name:
-        @return:
+        :param fn_name: Name of the function that will reside in the class we're decorating
         """
 
         def decorator(clazz):
@@ -204,7 +207,7 @@ class lifecycle:
         Thus they can only be called once, and not layered. TODO -- determine
         how to allow multiple/have precedence for custom behavior.
 
-        @param fn_name: Name of the function in the class we're registering.
+        :param fn_name: Name of the function in the class we're registering.
         """
 
         def decorator(clazz):
@@ -229,12 +232,11 @@ class lifecycle:
 
     @classmethod
     def base_validator(cls, fn_name: str):
-        """Validators have a similar conceptual relationship to hooks. They provide custom validation
-        logic, and multiple can be layered together. That said, they *also* expect you to raise an error
-        if there is an issue, and have no output.
+        """Validators are hooks that return a validation result (tuple[success: bool, message: Optional[str]]).
+        They provide custom validation logic that runs statically (before the DAG), rather than dynamically (during the DAG run),
+        and multiple can be layered together.
 
-        @param fn_name: Name of the function in the class we're registering.
-        @param raises:  Type of the exception that the validator raises.
+        :param fn_name: Name of the function in the class we're registering.
         """
 
         def decorator(clazz):
@@ -306,13 +308,13 @@ class BaseValidateGraph(abc.ABC):
     @abc.abstractmethod
     def validate_graph(
         self, *, graph: "graph.FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
-    ) -> Tuple[bool, Optional[Exception]]:
+    ) -> Tuple[bool, Optional[str]]:
         """Validates the graph. This will raise an InvalidNodeException
 
-        @param graph:
-        @param modules:
-        @param config:
-        @return:
+        :param graph: Graph that has been constructed.
+        :param modules: Modules passed into the graph
+        :param config: Config passed into the graph
+        :return: A (is_valid, error_message) tuple
         """
 
 
@@ -841,14 +843,11 @@ class LifecycleAdapterSet:
     def does_validation(self, validator_name: str) -> bool:
         """Whether a validator is implemented by any of the adapters in this group.
 
-        @param validator_name: Name of the validator
-        @param is_async: Whether you want the async version or not
-        @return: True if this adapter set does this validator, False otherwise
+        :param validator_name: Name of the validator
+        :param is_async: Whether you want the async version or not
+        :return: True if this adapter set does this validator, False otherwise
         """
         if validator_name not in REGISTERED_SYNC_VALIDATORS:
-            import pdb
-
-            pdb.set_trace()
             raise ValueError(
                 f"Validator {validator_name} is not registered as a lifecycle validator. "
                 f"Registered validators are {REGISTERED_SYNC_VALIDATORS}"
