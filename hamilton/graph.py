@@ -577,6 +577,21 @@ def create_networkx_graph(
     return digraph
 
 
+def _validate_all_nodes(adapter: LifecycleAdapterSet, nodes: Dict[str, node.Node]):
+    invalid_nodes_with_errors = []
+    if adapter.does_method("do_validate_node", is_async=False):
+        for n in nodes.values():
+            is_valid, error = adapter.call_lifecycle_method_sync("do_validate_node", node=n)
+            if not is_valid:
+                invalid_nodes_with_errors.append((n, error))
+
+    if invalid_nodes_with_errors:
+        raise ValueError(
+            "The following nodes are invalid:\n"
+            + "\n".join([f"{n.name} : {error}" for n, error in invalid_nodes_with_errors])
+        )
+
+
 class FunctionGraph:
     """Note: this object should be considered private until stated otherwise.
 
@@ -598,6 +613,8 @@ class FunctionGraph:
         """
         if adapter is None:
             adapter = LifecycleAdapterSet(base.SimplePythonDataFrameGraphAdapter())
+
+        _validate_all_nodes(adapter, nodes)
 
         self._config = config
         self.nodes = nodes
