@@ -6,6 +6,7 @@ Notes:
   2. It therefore show cases how you can write something once and not only scale it, but port it
      to different frameworks with ease!
 """
+from hamilton.function_modifiers import style, tag
 
 
 def avg_3wk_spend(spend: pd.Series) -> pd.Series:
@@ -23,11 +24,13 @@ def spend_mean(spend: pd.Series) -> float:
     return spend.mean()
 
 
+@style(fillcolor="red")
 def spend_zero_mean(spend: pd.Series, spend_mean: float) -> pd.Series:
     """Shows function that takes a scalar. In this case to zero mean spend."""
     return spend - spend_mean
 
 
+@tag(some_key="some_value")
 def spend_std_dev(spend: pd.Series) -> float:
     """Function that computes the standard deviation of the spend column."""
     return spend.std()

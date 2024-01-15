@@ -266,7 +266,7 @@ class Driver:
     ) -> lifecycle_base.LifecycleAdapterSet:
         """Normalizes the adapter argument in the driver to a list of adapters. Adds back the legacy adapter if needed.
 
-        Note that, in the past, hamilton requird a graph adapter. Now it is only required to be included in the legacy case
+        Note that, in the past, hamilton required a graph adapter. Now it is only required to be included in the legacy case
         default behavior has been modified to handle anything a result builder did.
 
         :param adapter: Adapter to include
@@ -735,6 +735,7 @@ class Driver:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays the graph of all functions loaded!
 
@@ -768,6 +769,7 @@ class Driver:
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
+                custom_style_function=custom_style_function,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)

@@ -187,6 +187,7 @@ def create_graphviz_graph(
     hide_inputs: bool = False,
     deduplicate_inputs: bool = False,
     display_fields: bool = True,
+    custom_style_function: Callable = None,
 ) -> "graphviz.Digraph":  # noqa: F821
     """Helper function to create a graphviz graph.
 
@@ -204,6 +205,7 @@ def create_graphviz_graph(
     :param hide_inputs: If True, no input nodes are displayed.
     :param deduplicate_inputs: If True, remove duplicate input nodes.
         Can improve readability depending on the specifics of the DAG.
+    :param custom_style_function: A function that takes in node values and returns a dictionary of styles to apply to it.
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
     PATH_COLOR = "red"
@@ -440,6 +442,14 @@ def create_graphviz_graph(
                 # currently, only EXPAND and COLLECT use the `color` attribue
                 node_style["color"] = node_style.get("color", PATH_COLOR)
 
+        if custom_style_function:
+            custom_style = custom_style_function(n.name, n.type, n.tags, node_type)
+            node_style.update(**custom_style)
+        for tag_key, tag_value in n.tags.items():
+            if tag_key.startswith("style."):
+                style_attribute = tag_key.replace("style.", "")
+                node_style[style_attribute] = tag_value
+
         digraph.node(n.name, label=label, **node_style)
 
         # only do field-level visualization if there's a schema specified and we want to display it
@@ -656,6 +666,7 @@ class FunctionGraph:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         display_fields: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays & saves a dot file of the entire DAG structure constructed.
 
@@ -695,6 +706,7 @@ class FunctionGraph:
             hide_inputs=hide_inputs,
             deduplicate_inputs=deduplicate_inputs,
             display_fields=display_fields,
+            custom_style_function=custom_style_function,
         )
 
     def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
@@ -739,6 +751,7 @@ class FunctionGraph:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         display_fields: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
@@ -786,6 +799,7 @@ class FunctionGraph:
             hide_inputs,
             deduplicate_inputs,
             display_fields=display_fields,
+            custom_style_function=custom_style_function,
         )
         kwargs = {"view": True}
         if render_kwargs and isinstance(render_kwargs, dict):

@@ -1,6 +1,7 @@
 # import importlib
 import logging
 import sys
+from typing import Type
 
 import pandas as pd
 
@@ -29,8 +30,9 @@ output_columns = [
     my_functions.spend_zero_mean_unit_variance,  # could just pass "spend_zero_mean_unit_variance" here
 ]
 # let's create the dataframe!
-df = dr.execute(output_columns)
-print(df.to_string())
+# df = dr.execute(output_columns)
+# print(df.to_string())
+
 
 # To visualize do `pip install "sf-hamilton[visualization]"` if you want these to work
 dr.visualize_execution(output_columns, "./my_dag.dot", {"format": "png"})
@@ -41,4 +43,13 @@ dr.visualize_path_between(
     {"format": "png"},
     strict_path_visualization=False,
 )
-# dr.display_all_functions("./my_full_dag.dot", {"format": "png"})
+
+
+def custom_style(name: str, output_type: Type, tags: dict, node_type: str) -> dict:
+    print(name, output_type, tags, node_type)
+    if tags.get("some_key") == "some_value":
+        return {"fillcolor": "blue"}
+    return {}
+
+
+dr.display_all_functions("./my_full_dag.dot", {"format": "png"}, custom_style_function=custom_style)

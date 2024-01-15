@@ -71,6 +71,7 @@ model = macros.model
 tag = metadata.tag
 tag_outputs = metadata.tag_outputs
 schema = metadata.schema
+style = metadata.style
 
 # data quality + associated tags
 check_output = validation.check_output

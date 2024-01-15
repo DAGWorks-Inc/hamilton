@@ -269,3 +269,10 @@ class schema:
         Then, when drawing the DAG, the schema will be displayed as sub-elements in the node for the DAG (if `display_schema` is selected).
         """
         return SchemaOutput(*fields, target_=target_)
+
+
+class style(tag):
+    def __init__(self, *, target_: base.TargetType = None, **tags: Union[str, List[str]]):
+        """Initializes Style. See docs for `@style` for more details."""
+        namespaced_tags = {f"style.{key}": value for key, value in tags.items()}
+        super(style, self).__init__(target_=target_, **namespaced_tags)
