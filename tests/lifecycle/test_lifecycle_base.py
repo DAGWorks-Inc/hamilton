@@ -1,5 +1,5 @@
 from types import ModuleType
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 import pytest
 
@@ -49,17 +49,22 @@ def _valid_function_self_kwargs(self, *, a: int, b: int) -> int:
 
 
 @pytest.mark.parametrize(
-    "fn, returns_value",
+    "fn,returns_value,specified_return_value",
     [
-        (_valid_function_empty, False),
-        (_valid_function_returns_value, True),
-        (_valid_function_self, False),
-        (_valid_function_self_kwargs, True),
+        (_valid_function_empty, False, None),
+        (_valid_function_returns_value, True, None),
+        (_valid_function_returns_value, True, int),
+        (_valid_function_self, False, None),
+        (_valid_function_self_kwargs, True, None),
     ],
 )
-def test__validate_lifecycle_adapter_function_success(fn, returns_value: bool):
+def test_validate_lifecycle_adapter_function_success(
+    fn, returns_value: bool, specified_return_value: Optional[Type]
+):
     """Test that the lifecycle adapter function works as expected."""
-    validate_lifecycle_adapter_function(fn, returns_value=returns_value)
+    validate_lifecycle_adapter_function(
+        fn, returns_value=returns_value, return_type=specified_return_value
+    )
 
 
 def _function_with_positional_args(a, b):
