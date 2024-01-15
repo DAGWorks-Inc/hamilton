@@ -838,6 +838,40 @@ def test_function_graph_display_fields(display_fields: bool, tmp_path: pathlib.P
         assert not any("cluster" in line for line in dot_lines)
 
 
+def test_function_graph_display_fields_shared_schema(tmp_path: pathlib.Path):
+    # This ensures an edge case where they end up getting dropped if there are duplicates
+    dot_file_path = tmp_path / "dag.dot"
+
+    SCHEMA = (("foo", "int"), ("bar", "float"), ("baz", "str"))
+
+    @schema.output(*SCHEMA)
+    def df_1_with_schema() -> pd.DataFrame:
+        pass
+
+    @schema.output(*SCHEMA)
+    def df_2_with_schema() -> pd.DataFrame:
+        pass
+
+    mod = ad_hoc_utils.create_temporary_module(df_1_with_schema, df_2_with_schema)
+    fg = graph.FunctionGraph.from_modules(mod, config={})
+
+    fg.display(
+        set(fg.get_nodes()),
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
+        display_fields=True,
+    )
+    dot_lines = dot_file_path.open("r").readlines()
+
+    def _get_occurances(var: str):
+        return [item for item in dot_lines if var in item]
+
+    # We just need to make sure these show up twice
+    assert len(_get_occurances("foo=")) == 2
+    assert len(_get_occurances("bar=")) == 2
+    assert len(_get_occurances("baz=")) == 2
+
+
 def test_create_graphviz_graph():
     """Tests that we create a graphviz graph"""
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={})
