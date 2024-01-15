@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Collection, Dict, List, Optional
 
 import tqdm
 
@@ -31,7 +31,7 @@ class ProgressBar(
     """
 
     def __init__(self, desc: str = "Graph execution", max_node_name_width: int = 50, **kwargs):
-        """Create a new TQDM Adatper.
+        """Create a new Progress Bar adapter.
 
         :param desc: The description to show in the progress bar. E.g. DAG Name is a good choice.
         :param kwargs: Additional kwargs to pass to TQDM. See TQDM docs for more info.
@@ -64,12 +64,12 @@ class ProgressBar(
         final_vars: List[str],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
+        execution_path: Collection[str],
         **future_kwargs: Any,
     ):
-        nodes_to_execute = graph.get_execution_nodes(inputs, final_vars, overrides)
-        total_node_to_execute = len(nodes_to_execute)
+        total_node_to_execute = len(execution_path)
         max_node_name_length = min(
-            max([len(node.name) for node in nodes_to_execute]), self.max_node_name_width
+            max([len(node) for node in execution_path]), self.max_node_name_width
         )
         if self.node_name_target_width is None:
             self.node_name_target_width = max_node_name_length
