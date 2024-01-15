@@ -160,11 +160,11 @@ class PDBDebugger(NodeExecutionHook, NodeExecutionMethod):
         after: bool = False,
     ):
         """Creates a PDB debugger. This has three possible modes:
-        1. Before -- places you in a function with (a) node information, and (b) inputs
-        2. During -- runs the node with pdb.run. Note this may not always work or give what you expect as
-            node functions are often wrapped in multiple levels of input modifications/whatnot. That said, it should give you something.
-            Also note that this is not (currently) compatible with graph adapters.
-        3. After -- places you in a function with (a) node information, (b) inputs, and (c) results
+            1. Before -- places you in a function with (a) node information, and (b) inputs
+            2. During -- runs the node with pdb.run. Note this may not always work or give what you expect as
+                node functions are often wrapped in multiple levels of input modifications/whatnot. That said, it should give you something.
+                Also note that this is not (currently) compatible with graph adapters.
+            3. After -- places you in a function with (a) node information, (b) inputs, and (c) results
 
 
         :param node_filter: A function that takes a node name and a node tags dict and returns a boolean. If the boolean is True, the node will be printed out.
@@ -188,7 +188,7 @@ class PDBDebugger(NodeExecutionHook, NodeExecutionMethod):
         **future_kwargs: Any,
     ) -> Any:
         """Executes the node with a PDB debugger. This modifies the global PDBDebugger.CONTEXT variable to contain information about the node,
-        so you can access it while debugging.
+            so you can access it while debugging.
 
 
         :param node_name: Name of the node
