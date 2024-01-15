@@ -6,29 +6,28 @@ from hamilton import graph_types
 from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook
 
 
-class TQDM(
+class ProgressBar(
     GraphExecutionHook,
     NodeExecutionHook,
 ):
     """An adapter that uses tqdm to show progress bars for the graph execution.
 
     Note: you need to have tqdm installed for this to work.
-    If you don't have it installed, you can install it with `pip install tqdm`.
+    If you don't have it installed, you can install it with `pip install tqdm`
+    (or `pip install sf-hamilton[tqdm]` -- use quotes if you're using zsh).
 
     .. code-block:: python
 
-        from hamilton import lifecycle
+        from hamilton.plugins import h_tqdm
 
         dr = (
             driver.Builder()
             .with_config({})
             .with_modules(some_modules)
-            .with_adapters(lifecycle.TQDMHook(desc="DAG-NAME"))
+            .with_adapters(h_tqdm.ProgressBar(desc="DAG-NAME"))
             .build()
         )
         # and then when you call .execute() or .materialize() you'll get a progress bar!
-
-
     """
 
     def __init__(self, desc: str = "Graph execution", max_node_name_width: int = 50, **kwargs):

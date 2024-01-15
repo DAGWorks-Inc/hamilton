@@ -13,15 +13,6 @@ from .default import PDBDebugger, PrintLn  # noqa: F401
 
 PrintLnHook = PrintLn  # for backwards compatibility -- this will be removed in 2.0
 
-try:
-    from .conditional_tqdm import TQDM  # noqa: F401
-except ImportError:
-    TQDM = None
-
-optional = []
-if TQDM is not None:
-    optional.append("TQDM")
-
 # All the following types are public facing
 __all__ = [
     "LifecycleAdapter",
@@ -36,4 +27,4 @@ __all__ = [
     "GraphExecutionHook",
     "NodeExecutionMethod",
     "StaticValidator",
-] + optional
+]
