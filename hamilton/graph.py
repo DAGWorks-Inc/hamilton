@@ -487,7 +487,10 @@ def create_graphviz_graph(
                 c.attr(**cluster_node_style)
                 cols = _create_equal_length_cols(n.tags.get(schema.INTERNAL_SCHEMA_OUTPUT_KEY))
                 for i in range(len(cols)):
-                    c.node(cols[i], **field_node_style)
+                    # We may want to change the name. We have a different name than label,
+                    # as it crowds out the global namespace
+                    # For now, however, this should be unique
+                    c.node(n.name + ":" + cols[i], **field_node_style, label=cols[i])
                 c.node(n.name)
 
     # create edges
