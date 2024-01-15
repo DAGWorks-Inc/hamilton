@@ -25,4 +25,5 @@ sphinx # unpinned because myst-parser doesn't break anymore
 sphinx-autobuild
 sphinx-rtd-theme # read the docs pins
 sphinx-sitemap
+tqdm
 xgboost
