@@ -2,7 +2,15 @@
 import typing
 from dataclasses import dataclass
 
-from hamilton import graph, htypes, node
+from hamilton import htypes, node
+
+# This is a little ugly -- its just required for graph build, and works
+# This indicates a larger smell though -- we need to have the right level of
+# hierarchy to ensure we don't have to deal with this.
+# The larger problem is that we have a few interfaces that are referred to by
+# The core system (in defaults), and we have not managed to disentangle it yet.
+if typing.TYPE_CHECKING:
+    from hamilton import graph
 
 
 @dataclass
