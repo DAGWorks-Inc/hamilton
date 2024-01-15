@@ -82,6 +82,7 @@ setup(
         ],  # I'm sure they'll add support soon,
         # but for now its not compatible
         "pandera": ["pandera"],
+        "tqdm": ["tqdm"],
     },
     # Relevant project URLs
     project_urls={  # Optional
