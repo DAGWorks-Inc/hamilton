@@ -1,7 +1,7 @@
 import abc
 from abc import ABC
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, final
+from typing import TYPE_CHECKING, Any, Collection, Dict, List, Optional, Tuple, Type, final
 
 from hamilton import graph_types, node
 
@@ -283,11 +283,14 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
     ):
+        all_nodes, user_defined_nodes = graph.get_upstream_nodes(final_vars, inputs, overrides)
+        nodes_to_execute = set(all_nodes) - set(user_defined_nodes)
         return self.run_before_graph_execution(
             graph=HamiltonGraph.from_graph(graph),
             final_vars=final_vars,
             inputs=inputs,
             overrides=overrides,
+            execution_path=[item.name for item in nodes_to_execute],
         )
 
     @abc.abstractmethod
@@ -298,16 +301,19 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         final_vars: List[str],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
+        execution_path: Collection[str],
         **future_kwargs: Any,
     ):
         """This is run prior to graph execution. This allows you to do anything you want before the graph executes,
         knowing the basic information that was passed in.
 
-        @param graph: Graph that is being executed
-        @param outputs: Output variables of the graph
-        @param inputs: Input variables passed to the graph
-        @param overrides: Overrides passed to the graph
-        @param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
+        :param graph: Graph that is being executed
+        :param final_vars: Output variables of the graph
+        :param inputs: Input variables passed to the graph
+        :param overrides: Overrides passed to the graph
+        :param execution_path: Collection of nodes that will be executed --
+            these are just the nodes (not input nodes) that will be run during the course of execution.
+        :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         """
         pass
 
