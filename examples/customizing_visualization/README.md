@@ -21,7 +21,7 @@ def custom_style(*, node: graph_types.HamiltonNode, node_class: str) -> Tuple[di
     :return: a triple of (style, node_class, legend_name) where
         style is a dictionary of style attributes,
         node_class is the base class style you want to use - we recommend using what's passed in,
-        legend_name is what to put in the legend for the provided style.
+        legend_name is what to put in the legend for the provided style. Return None if you don't want to add a legend entry.
     """
     if node.tags.get("some_key") == "some_value":
         return {"fillcolor": "blue"}, node_class, "some_key"
@@ -36,7 +36,7 @@ Note:
 
     * style is a dictionary of style attributes,
     * node_class is the base class style you want to use - we recommend using what's passed in,
-    * legend_name is what to put in the legend for the provided style.
+    * legend_name is what to put in the legend for the provided style. Pass back None if you don't want to add a legend entry.
 
 3. The style values need to be valid graphviz node style attributes. See [here](https://graphviz.org/doc/info/attrs.html) for more details.
 4. For the execution focused visualizations, your custom styles will be applied before the modifiers for outputs and overrides is applied.

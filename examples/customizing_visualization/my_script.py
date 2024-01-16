@@ -40,7 +40,7 @@ def custom_style(
     :return: a triple of (style, node_class, legend_name) where
         style is a dictionary of style attributes,
         node_class is the base class style you want to use - we recommend using what's passed in,
-        legend_name is what to put in the legend for the provided style.
+        legend_name is what to put in the legend for the provided style. Return None if you don't want to add a legend entry.
     """
     if node.tags.get("some_key") == "some_value":
         return {"fillcolor": "blue"}, node_class, "some_key"
