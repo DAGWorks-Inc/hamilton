@@ -5,6 +5,7 @@ It should only house the graph & things required to create and traverse one.
 
 Note: one should largely consider the code in this module to be "private".
 """
+import inspect
 import logging
 import uuid
 from enum import Enum
@@ -12,7 +13,7 @@ from types import ModuleType
 from typing import Any, Callable, Collection, Dict, FrozenSet, List, Optional, Set, Tuple, Type
 
 import hamilton.lifecycle.base as lifecycle_base
-from hamilton import node
+from hamilton import graph_types, node
 from hamilton.execution import graph_functions
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers.metadata import schema
@@ -176,6 +177,18 @@ def create_function_graph(
     return nodes
 
 
+def check_keyword_args_only(func: Callable) -> bool:
+    """Checks if a function only takes keyword arguments."""
+    sig = inspect.signature(func)
+    for param in sig.parameters.values():
+        if param.default == inspect.Parameter.empty and param.kind not in [
+            inspect.Parameter.KEYWORD_ONLY,
+            inspect.Parameter.VAR_KEYWORD,
+        ]:
+            return False
+    return True
+
+
 def create_graphviz_graph(
     nodes: Set[node.Node],
     comment: str,
@@ -211,6 +224,17 @@ def create_graphviz_graph(
     PATH_COLOR = "red"
 
     import graphviz
+
+    if custom_style_function is not None:
+        if not check_keyword_args_only(custom_style_function):
+            raise ValueError(
+                "custom_style_function must only take keyword arguments"
+                " `node` and `node_class`. E.g. Signature should resemble:\n"
+                "def custom_style(*,  # <--- key part is this * \n"
+                "     node: graph_types.HamiltonNode, \n"
+                "     node_class: str\n"
+                ") -> Tuple[dict, Optional[str], Optional[str]]:"
+            )
 
     def _get_node_label(
         n: node.Node,
@@ -341,7 +365,9 @@ def create_graphviz_graph(
 
         return edge_style
 
-    def _get_legend(node_types: Set[str]):
+    def _get_legend(
+        node_types: Set[str], extra_legend_nodes: Dict[Tuple[str, str], Dict[str, str]]
+    ):
         """Create a visualization legend as a graphviz subgraph. The legend includes the
         node types and modifiers presente in the visualization.
         """
@@ -373,6 +399,11 @@ def create_graphviz_graph(
             node_style.update(**modifier_style)
             legend_subgraph.node(name=node_type, **node_style)
 
+        for (base_class, node_name), legend_style in extra_legend_nodes.items():
+            base_style = _get_node_style(base_class)
+            base_style.update(**legend_style)
+            legend_subgraph.node(name=node_name, **base_style)
+
         return legend_subgraph
 
     # handle default values in nested dict
@@ -393,18 +424,17 @@ def create_graphviz_graph(
         else:
             digraph_attr[g_key] = g_value
     digraph = graphviz.Digraph(**digraph_attr)
-
+    extra_legend_nodes = {}
     # create nodes
     seen_node_types = set()
     for n in nodes:
         label = _get_node_label(n)
         node_type = _get_node_type(n)
-        seen_node_types.add(node_type)
         if node_type == "input":
+            seen_node_types.add(node_type)
             continue
 
         node_style = _get_node_style(node_type)
-
         # prefer having the conditions explicit for now since they rely on
         # heterogeneous VisualizationNodeModifiers and node.Node.node_role.
         # Otherwise, it's difficult to manage seen nodes and the legend.
@@ -425,6 +455,18 @@ def create_graphviz_graph(
             node_style.update(**modifier_style)
             seen_node_types.add("materializer")
 
+        # apply custom styles before node modifiers
+        seen_node_type = None
+        if custom_style_function:
+            custom_style, base_type, legend_name = custom_style_function(
+                node=graph_types.HamiltonNode.from_node(n), node_class=node_type
+            )
+            if legend_name:
+                extra_legend_nodes[(base_type, legend_name)] = custom_style
+                seen_node_type = legend_name
+            node_style.update(**custom_style)
+
+        # right now you can't override node modifier styles
         if node_modifiers.get(n.name):
             modifiers = node_modifiers[n.name]
             if VisualizationNodeModifiers.IS_OUTPUT in modifiers:
@@ -442,9 +484,6 @@ def create_graphviz_graph(
                 # currently, only EXPAND and COLLECT use the `color` attribue
                 node_style["color"] = node_style.get("color", PATH_COLOR)
 
-        if custom_style_function:
-            custom_style = custom_style_function(n.name, n.type, n.tags, node_type)
-            node_style.update(**custom_style)
         for tag_key, tag_value in n.tags.items():
             if tag_key.startswith("style."):
                 style_attribute = tag_key.replace("style.", "")
@@ -498,7 +537,8 @@ def create_graphviz_graph(
                     # For now, however, this should be unique
                     c.node(n.name + ":" + cols[i], **field_node_style, label=cols[i])
                 c.node(n.name)
-
+        if seen_node_type is None:
+            seen_node_types.add(node_type)
     # create edges
     input_sets = dict()
     for n in nodes:
@@ -555,7 +595,7 @@ def create_graphviz_graph(
             digraph.edge(input_node_name, n.name)
 
     if show_legend:
-        digraph.subgraph(_get_legend(seen_node_types))
+        digraph.subgraph(_get_legend(seen_node_types, extra_legend_nodes))
     return digraph
 
 

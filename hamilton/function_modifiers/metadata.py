@@ -272,7 +272,29 @@ class schema:
 
 
 class style(tag):
+    """Use this to decorate a function with specific styles.
+
+    Note: you can't manipulate the legend by using @style.
+    """
+
     def __init__(self, *, target_: base.TargetType = None, **tags: Union[str, List[str]]):
         """Initializes Style. See docs for `@style` for more details."""
         namespaced_tags = {f"style.{key}": value for key, value in tags.items()}
         super(style, self).__init__(target_=target_, **namespaced_tags)
+
+
+class style_outputs(tag_outputs):
+    """Use this to decorate a function with some extract_* decorator and map
+    the outputs to specific styles.
+
+    Note: you can't manipulate the legend by using @style_outputs.
+    """
+
+    def __init__(self, **tag_mapping: Dict[str, Union[str, List[str]]]):
+        """Initializes Style. See docs for `@style_outputs` for more details."""
+        namespaced_tag_mapping = {}
+        for target_key, target_value in tag_mapping.items():
+            namespaced_tag_mapping[target_key] = {
+                f"style.{key}": value for key, value in target_value.items()
+            }
+        super(style_outputs, self).__init__(**namespaced_tag_mapping)
