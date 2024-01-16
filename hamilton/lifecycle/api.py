@@ -170,6 +170,7 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
         node_kwargs: Dict[str, Any],
         node_return_type: type,
         task_id: Optional[str],
+        run_id: str,
         **future_kwargs: Any,
     ):
         """Hook that is executed prior to node execution.
@@ -179,8 +180,10 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
         :param node_kwargs: Keyword arguments to pass to the node
         :param node_return_type: Return type of the node
         :param task_id: The ID of the task, none if not in a task-based environment
+        :param run_id: Run ID (unique in process scope) of the current run. Use this to track state.
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         """
+        pass
 
     @override
     @final
@@ -199,6 +202,7 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
             node_kwargs=kwargs,
             node_return_type=node_.type,
             task_id=task_id,
+            run_id=run_id,
         )
 
     @abc.abstractmethod
@@ -213,6 +217,7 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
         error: Optional[Exception],
         success: bool,
         task_id: Optional[str],
+        run_id: str,
         **future_kwargs: Any,
     ):
         """Hook that is executed post node execution.
@@ -225,8 +230,10 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
         :param error: Error that occurred, None if no error occurred
         :param success: Whether the node executed successfully
         :param task_id: The ID of the task, none if not in a task-based environment
+        :param run_id: Run ID (unique in process scope) of the current run. Use this to track state.
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         """
+        pass
 
     @override
     @final
@@ -251,6 +258,7 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
             error=error,
             task_id=task_id,
             success=success,
+            run_id=run_id,
         )
 
 
@@ -270,7 +278,11 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
     ):
         """Just delegates to the interface method, passing in the right data."""
         return self.run_after_graph_execution(
-            graph=HamiltonGraph.from_graph(graph), success=success, error=error, results=results
+            graph=HamiltonGraph.from_graph(graph),
+            success=success,
+            error=error,
+            results=results,
+            run_id=run_id,
         )
 
     @override
@@ -295,6 +307,7 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
             inputs=inputs,
             overrides=overrides,
             execution_path=[item.name for item in nodes_to_execute],
+            run_id=run_id,
         )
 
     @abc.abstractmethod
@@ -306,6 +319,7 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
         execution_path: Collection[str],
+        run_id: str,
         **future_kwargs: Any,
     ):
         """This is run prior to graph execution. This allows you to do anything you want before the graph executes,
@@ -317,6 +331,7 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         :param overrides: Overrides passed to the graph
         :param execution_path: Collection of nodes that will be executed --
             these are just the nodes (not input nodes) that will be run during the course of execution.
+        :param run_id: Run ID (unique in process scope) of the current run. Use this to track state.
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         """
         pass
@@ -329,6 +344,7 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         success: bool,
         error: Optional[Exception],
         results: Optional[Dict[str, Any]],
+        run_id: str,
         **future_kwargs: Any,
     ):
         """This is run after graph execution. This allows you to do anything you want after the graph executes,
@@ -338,6 +354,7 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         :param results: Results of the graph execution
         :param error: Error that occurred, None if no error occurred
         :param success: Whether the graph executed successfully
+        :param run_id: Run ID (unique in process scope) of the current run. Use this to track state.
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         """
         pass

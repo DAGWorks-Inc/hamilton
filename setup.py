@@ -83,6 +83,7 @@ setup(
         # but for now its not compatible
         "pandera": ["pandera"],
         "tqdm": ["tqdm"],
+        "datadog": ["ddtrace"],
     },
     # Relevant project URLs
     project_urls={  # Optional
