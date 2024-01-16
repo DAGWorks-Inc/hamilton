@@ -26,3 +26,12 @@ def job_df(base_df: pd.DataFrame, selected_job: str) -> pd.DataFrame:
 
 def job_hist(job_df: pd.DataFrame) -> Figure:
     return px.histogram(job_df["balance"])
+
+
+if __name__ == "__main__":
+    import logic
+
+    from hamilton import driver
+
+    dr = driver.Builder().with_modules(logic).build()
+    dr.display_all_functions("dag", render_kwargs=dict(view=False, format="png"))
