@@ -751,19 +751,21 @@ class LifecycleAdapterSet:
     def _get_lifecycle_hooks(
         self,
     ) -> Tuple[Dict[str, List[LifecycleAdapter]], Dict[str, List[LifecycleAdapter]]]:
-        sync_hooks = collections.defaultdict(set)
-        async_hooks = collections.defaultdict(set)
+        sync_hooks = collections.defaultdict(list)
+        async_hooks = collections.defaultdict(list)
         for adapter in self.adapters:
             for cls in inspect.getmro(adapter.__class__):
                 sync_hook = getattr(cls, SYNC_HOOK, None)
                 if sync_hook is not None:
-                    sync_hooks[sync_hook].add(adapter)
+                    if adapter not in sync_hooks[sync_hook]:
+                        sync_hooks[sync_hook].append(adapter)
                 async_hook = getattr(cls, ASYNC_HOOK, None)
                 if async_hook is not None:
-                    async_hooks[async_hook].add(adapter)
+                    if adapter not in async_hooks[async_hook]:
+                        async_hooks[async_hook].append(adapter)
         return (
-            {hook: list(adapters) for hook, adapters in sync_hooks.items()},
-            {hook: list(adapters) for hook, adapters in async_hooks.items()},
+            {hook: adapters for hook, adapters in sync_hooks.items()},
+            {hook: adapters for hook, adapters in async_hooks.items()},
         )
 
     def _get_lifecycle_methods(
