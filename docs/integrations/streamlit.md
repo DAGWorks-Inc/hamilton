@@ -1,6 +1,6 @@
 # Streamlit
 
-Streamlit is an open-source Python library to create web applications with minimal effort. It's an effective solution to create simple dashboards, interactive data visualizations, and proof-of-concepts for data science, machine learning, and LLM applications. On this page, you'll learn how Hamilton can help you:
+[Streamlit](https://streamlit.io/) is an open-source Python library to create web applications with minimal effort. It's an effective solution to create simple dashboards, interactive data visualizations, and proof-of-concepts for data science, machine learning, and LLM applications. On this page, you'll learn how Hamilton can help you:
 - Write cleaner Streamlit applications
 - Reduce friction transition between proof-of-concept and production
 - Improve Streamlit performance
@@ -75,8 +75,10 @@ if __name__ == "__main__":
 ## Hamilton + Streamlit
 Adding Hamilton to your Streamlit application can provide a better separation between the dataflow and the UI logic. They pair nicely together because Hamilton is also stateless. Once defined, each call to `Driver.execute()` is independent. Therefore, on each Streamlit rerun, you use `Driver.execute()` to complete computations. Using Hamilton this way allows you to write your dataflow into Python modules and outside of the Streamlit.
 
-### Demo
-In this demo, we will build a simple financial dashboard based on the Kaggle [Bank Marketing Dataset](https://www.kaggle.com/datasets/janiobachmann/bank-marketing-dataset).
+### Example
+In this example, we will build a simple financial dashboard based on the Kaggle [Bank Marketing Dataset](https://www.kaggle.com/datasets/janiobachmann/bank-marketing-dataset).
+
+> The full code can be found on [GitHub](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/streamlit)
 
 First, Hamilton transformations are defined in the module `logic.py`. This includes downloading the data from the web, getting unique values for `job`, conducting groupby aggregates, and creating `plotly` figures.
 ```python
