@@ -641,35 +641,33 @@ class Driver:
                 inputs=inputs,
                 overrides=overrides,
             )
+        results = None
+        error = None
+        success = False
         try:
-            out = self.graph_executor.execute(
+            results = self.graph_executor.execute(
                 function_graph,
                 final_vars,
                 overrides if overrides is not None else {},
                 inputs if inputs is not None else {},
                 run_id,
             )
-            if self.adapter.does_hook("post_graph_execute", is_async=False):
-                self.adapter.call_all_lifecycle_hooks_sync(
-                    "post_graph_execute",
-                    run_id=run_id,
-                    graph=function_graph,
-                    success=True,
-                    error=None,
-                    results=out,
-                )
+            success = True
         except Exception as e:
+            error = e
+            success = False
+            raise e
+        finally:
             if self.adapter.does_hook("post_graph_execute", is_async=False):
                 self.adapter.call_all_lifecycle_hooks_sync(
                     "post_graph_execute",
                     run_id=run_id,
                     graph=function_graph,
-                    success=False,
-                    error=e,
-                    results=None,
+                    success=success,
+                    error=error,
+                    results=results,
                 )
-            raise e
-        return out
+        return results
 
     @capture_function_usage
     def list_available_variables(
