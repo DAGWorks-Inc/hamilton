@@ -25,8 +25,10 @@ from hamilton.lifecycle.base import (
     BaseDoValidateInput,
     BasePostGraphExecute,
     BasePostNodeExecute,
+    BasePostTaskExecute,
     BasePreGraphExecute,
     BasePreNodeExecute,
+    BasePreTaskExecute,
     BaseValidateGraph,
     BaseValidateNode,
 )
@@ -356,6 +358,96 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         :param success: Whether the graph executed successfully
         :param run_id: Run ID (unique in process scope) of the current run. Use this to track state.
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
+        """
+        pass
+
+
+class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
+    """Implement this to run something after task execution. Tasks are tols used to group nodes.
+    Note that this is currently run *inside* the task, although we do not guarantee where it will be run
+    (it could easily move to outside the task)."""
+
+    def pre_task_execute(
+        self,
+        *,
+        run_id: str,
+        task_id: str,
+        nodes: List["node.Node"],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+    ):
+        self.run_before_task_execution(
+            run_id=run_id,
+            task_id=task_id,
+            nodes=[HamiltonNode.from_node(n) for n in nodes],
+            inputs=inputs,
+            overrides=overrides,
+        )
+
+    def post_task_execute(
+        self,
+        *,
+        run_id: str,
+        task_id: str,
+        nodes: List["node.Node"],
+        results: Optional[Dict[str, Any]],
+        success: bool,
+        error: Exception,
+    ):
+        self.run_after_task_execution(
+            run_id=run_id,
+            task_id=task_id,
+            nodes=[HamiltonNode.from_node(n) for n in nodes],
+            results=results,
+            success=success,
+            error=error,
+        )
+
+    @abc.abstractmethod
+    def run_before_task_execution(
+        self,
+        *,
+        task_id: str,
+        run_id: str,
+        nodes: List[HamiltonNode],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+        **future_kwargs,
+    ):
+        """Implement this to run something after task execution. Tasks are tols used to group nodes.
+        Note that this is currently run *inside* the task, although we do not guarantee where it will be run
+        (it could easily move to outside the task).
+
+        :param task_id: ID of the task we're launching.
+        :param run_id: ID of the run this is under.
+        :param nodes: Nodes that are part of this task
+        :param inputs: Inputs to the task
+        :param overrides: Overrides passed to the task
+        :param future_kwargs: Reserved for backwards compatibility.
+        """
+        pass
+
+    @abc.abstractmethod
+    def run_after_task_execution(
+        self,
+        *,
+        task_id: str,
+        run_id: str,
+        nodes: List[HamiltonNode],
+        results: Optional[Dict[str, Any]],
+        success: bool,
+        error: Exception,
+        **future_kwargs,
+    ):
+        """Implement this to run something after task execution. See note in run_before_task_execution.
+
+        :param task_id: ID of the task that was just executed
+        :param run_id: ID of the run this was under.
+        :param nodes: Nodes that were part of this task
+        :param results: Results of the task, per-node
+        :param success: Whether the task was successful
+        :param error: The error the task threw, if any
+        :param future_kwargs: Reserved for backwards compatibility.
         """
         pass
 
