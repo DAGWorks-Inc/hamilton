@@ -145,12 +145,15 @@ def execute_subdag(
                         f"{node_.name} was expected to be passed in but was not."
                     )
                 return
-            value = inputs[node_.name]
+            result = inputs[node_.name]
         else:
             kwargs = {}  # construct signature
             for dependency in node_.dependencies:
                 if dependency.name in computed:
                     kwargs[dependency.name] = computed[dependency.name]
+            error = None
+            result = None
+            success = True
             try:
                 if adapter.does_hook("pre_node_execute", is_async=False):
                     adapter.call_all_lifecycle_hooks_sync(
@@ -161,7 +164,7 @@ def execute_subdag(
                         task_id=task_id,
                     )
                 if adapter.does_method("do_node_execute", is_async=False):
-                    value = adapter.call_lifecycle_method_sync(
+                    result = adapter.call_lifecycle_method_sync(
                         "do_node_execute",
                         run_id=run_id,
                         node_=node_,
@@ -169,33 +172,13 @@ def execute_subdag(
                         task_id=task_id,
                     )
                 else:
-                    value = node_(**kwargs)
-                if adapter.does_hook("post_node_execute", is_async=False):
-                    adapter.call_all_lifecycle_hooks_sync(
-                        "post_node_execute",
-                        run_id=run_id,
-                        node_=node_,
-                        kwargs=kwargs,
-                        success=True,
-                        error=None,
-                        result=value,
-                        task_id=task_id,
-                    )
+                    result = node_(**kwargs)
             except Exception as e:
+                success = False
+                error = e
                 # This code is coupled to how @config resolution works. Ideally it shouldn't be,
                 # so when @config resolvers are changed to return Nodes, then fn.__name__ should
                 # just work.
-                if adapter.does_hook("post_node_execute", is_async=False):
-                    adapter.call_all_lifecycle_hooks_sync(
-                        "post_node_execute",
-                        run_id=run_id,
-                        node_=node_,
-                        kwargs=kwargs,
-                        success=False,
-                        error=e,
-                        result=None,
-                        task_id=task_id,
-                    )
                 original_func_name = "unknown"
                 if node_.originating_functions:
                     if hasattr(node_.originating_functions[0], "__original_name__"):
@@ -219,7 +202,20 @@ def execute_subdag(
                 border = "*" * 80
                 logger.exception("\n" + border + "\n" + message + "\n" + border)
                 raise
-        computed[node_.name] = value
+            finally:
+                if adapter.does_hook("post_node_execute", is_async=False):
+                    adapter.call_all_lifecycle_hooks_sync(
+                        "post_node_execute",
+                        run_id=run_id,
+                        node_=node_,
+                        kwargs=kwargs,
+                        success=success,
+                        error=error,
+                        result=result,
+                        task_id=task_id,
+                    )
+
+        computed[node_.name] = result
         # > pruning the graph
         # This doesn't narrow it down to the entire space of the graph
         # E.G. if something is not needed by this current execution due to
