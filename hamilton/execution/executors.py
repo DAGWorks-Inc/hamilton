@@ -109,8 +109,11 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
             inputs=task.dynamic_inputs,
             overrides=task.overrides,
         )
+    error = None
+    success = True
+    results = None
     try:
-        out = execute_subdag(
+        results = execute_subdag(
             nodes=task.nodes,
             inputs=task.dynamic_inputs,
             adapter=task.adapter,
@@ -118,37 +121,31 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
             run_id=task.run_id,
             task_id=task.task_id,
         )
-        if task.adapter.does_hook("post_task_execute", is_async=False):
-            task.adapter.call_all_lifecycle_hooks_sync(
-                "post_task_execute",
-                run_id=task.run_id,
-                task_id=task.task_id,
-                nodes=task.nodes,
-                results=out,
-                success=True,
-                error=None,
-            )
     except Exception as e:
-        if task.adapter.does_hook("post_task_execute", is_async=False):
-            task.adapter.call_all_lifecycle_hooks_sync(
-                "post_task_execute",
-                run_id=task.run_id,
-                task_id=task.task_id,
-                nodes=task.nodes,
-                results=None,
-                success=False,
-                error=e,
-            )
+        logger.exception(task.task_id)
+        error = e
+        success = False
         logger.exception(
             f"Exception executing task {task.task_id}, with nodes: {[item.name for item in task.nodes]}"
         )
         raise e
+    finally:
+        if task.adapter.does_hook("post_task_execute", is_async=False):
+            task.adapter.call_all_lifecycle_hooks_sync(
+                "post_task_execute",
+                run_id=task.run_id,
+                task_id=task.task_id,
+                nodes=task.nodes,
+                results=results,
+                success=success,
+                error=error,
+            )
     # This selection is for GC
     # We also need to get the override values
     # This way if its overridden we can ensure it gets passed to the right one
     final_retval = {
         key: value
-        for key, value in out.items()
+        for key, value in results.items()
         if key in task.outputs_to_compute or key in task.overrides
     }
     return final_retval
