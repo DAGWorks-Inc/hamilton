@@ -43,14 +43,14 @@ class HamiltonNode:
             originating_functions=n.originating_functions,
             documentation=n.documentation,
             required_dependencies={
-                item.name
-                for item in n.dependencies
-                if not n.input_types[item.name][1] == node.DependencyType.REQUIRED
+                dep
+                for dep, (type_, dep_type) in n.input_types.items()
+                if dep_type == node.DependencyType.REQUIRED
             },
             optional_dependencies={
-                item.name
-                for item in n.dependencies
-                if n.input_types[item.name][1] == node.DependencyType.OPTIONAL
+                dep
+                for dep, (type_, dep_type) in n.input_types.items()
+                if dep_type == node.DependencyType.OPTIONAL
             },
         )
 
