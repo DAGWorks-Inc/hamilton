@@ -14,8 +14,8 @@ html_theme_options = {
     "source_repository": "https://github.com/dagworks-inc/hamilton",
     "source_branch": "main",
     "source_directory": "docs/",
-    "announcement": "📢 Announcing  "
-    + '<a target="_blank" href="https://hub.dagworks.io">hub.dagworks.io</a>. Get started with Hamilton quicker! 📢',
+    "announcement": "📢 Announcing the "
+    + '<a target="_blank" href="https://www.meetup.com/global-hamilton-open-source-user-group-meetup/">Hamilton Meetup Group</a>. Sign up to attend events! 📢',
     "light_css_variables": {
         "color-announcement-background": "#ffba00",
         "color-announcement-text": "#091E42",
