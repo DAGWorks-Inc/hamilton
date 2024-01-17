@@ -34,6 +34,10 @@ The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/z
     * [Recording](https://global2023.pydata.org/cfp/talk/3REDA9/)
     * [Slides](https://github.com/skrawcz/talks/files/13666479/Bridging.Classic.ML.Pipelines.with.the.World.of.LLMs.1.pdf)
 
+* 2023-11 &nbsp;&nbsp; Hamilton: Natively bringing software engineering best practices to python data transformations. Scale by the Bay.
+    * [Recording](https://www.youtube.com/watch?v=gK4-6X0h7PU)
+    * [Slides](https://github.com/skrawcz/talks/files/13969784/Scale.By.The.Bay.-.Hamilton_.Natively.bringing.SWE.best.practices.to.python.data.transformations.pdf
+
 * 2023-09 &nbsp;&nbsp; Hamilton: Natively bringing software engineering best practices to python data transformations. Bay Area Python Interest Group (BAYPIGgies)
     * [Recording](https://www.meetup.com/baypiggies/events/296283989/)
     * [Slides](https://github.com/skrawcz/talks/files/12785978/BayPIGgies_.Hamilton.Talk.pdf)
