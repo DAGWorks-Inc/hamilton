@@ -7,6 +7,7 @@ This section showcases how Hamilton integrates with popular frameworks.
 .. toctree::
 <<<<<<< HEAD
     fastapi
+    streamlit
 =======
     streamlit
 >>>>>>> origin/main
