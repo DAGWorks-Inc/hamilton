@@ -2,6 +2,7 @@
 import logging
 import pdb
 import pprint
+import random
 import time
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -307,3 +308,33 @@ class PDBDebugger(NodeExecutionHook, NodeExecutionMethod):
                 )
             )
             pdb.set_trace()
+
+
+def wait_random(mean: float, stddev: float):
+    sleep_time = random.gauss(mu=mean, sigma=stddev)
+    if sleep_time < 0:
+        sleep_time = 0
+    time.sleep(sleep_time)
+
+
+class SlowDownYouMoveTooFast(NodeExecutionHook):
+    """This hook makes your DAG run slower. Just pass in a negative value for the sleep time to make it go faster...
+    In all seriousness though, there is absolutely no (good) reason to use this hook. Its dumb, and just for testing.
+    """
+
+    def __init__(self, sleep_time_mean: float, sleep_time_std: float):
+        """In all seriousness, don't use this
+
+        :param sleep_time_mean: Mean of sleep time
+        :param sleep_time_std: Stddev of sleep time
+        """
+        self.sleep_time_mean = sleep_time_mean
+        self.sleep_time_std = sleep_time_std
+
+    def run_before_node_execution(self, **future_kwargs: Any):
+        """Waits for a fixed set of time before node execution"""
+        wait_random(self.sleep_time_mean, self.sleep_time_std)
+
+    def run_after_node_execution(self, **future_kwargs: Any):
+        """Does nothing"""
+        pass

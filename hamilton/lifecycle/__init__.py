@@ -7,9 +7,10 @@ from .api import (  # noqa: F401
     NodeExecutionMethod,
     ResultBuilder,
     StaticValidator,
+    TaskExecutionHook,
 )
 from .base import LifecycleAdapter  # noqa: F401
-from .default import PDBDebugger, PrintLn  # noqa: F401
+from .default import PDBDebugger, PrintLn, SlowDownYouMoveTooFast  # noqa: F401
 
 PrintLnHook = PrintLn  # for backwards compatibility -- this will be removed in 2.0
 
@@ -27,4 +28,5 @@ __all__ = [
     "GraphExecutionHook",
     "NodeExecutionMethod",
     "StaticValidator",
+    "TaskExecutionHook",
 ]
