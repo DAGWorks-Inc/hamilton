@@ -58,8 +58,8 @@ class DDOGTracer(
 
     @staticmethod
     def _serialize_span_dict(span_dict: Dict[str, Span]):
-        """Serializes to a readable format. We're not propogating links, but that's fine (for now).
-        We have to do this as passing spans back and forth
+        """Serializes to a readable format. We're not propogating span links (see note above on causal links),
+        but that's fine (for now). We have to do this as passing spans back and forth is frowned upon.
 
         :param span_dict: A key -> span dictionary
         :return: The serialized representation.
@@ -178,7 +178,9 @@ class DDOGTracer(
                             "link.name": f"{input_node}_to_{node_name}",
                         },
                     )
-        new_span.set_tags(DDOGTracer._sanitize_tags(tags=node_tags))
+        tags = node_tags.copy()
+        tags["hamilton.node_name"] = node_name
+        new_span.set_tags(DDOGTracer._sanitize_tags(tags=tags))
         self.node_span_cache[run_id][(task_id, node_name)] = new_span
 
     def run_after_node_execution(
