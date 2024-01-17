@@ -36,7 +36,7 @@ FastAPI already does a great job at automating API documentation by integrating 
 
 
 ## Hamilton + FastAPI
-Adding Hamilton to your FastAPI server can provide a better separation between the dataflow and the API endpoints. Each endpoint can use `Driver.execute()` to request variables and wrap results into an HTTP response. Then, data transformations and interactions with resources (e.g., database, web service) are defined into standalone Python modules and decoupled from the server code.
+Adding Hamilton to your FastAPI server can provide a better separation between the dataflow and the API endpoints. Each endpoint can use `Driver.execute()` to request variables and wrap results into an HTTP response. Then, data transformations and interactions with resources (e.g., database, web service) are curated into standalone Python modules and decoupled from the server code.
 
 Since Hamilton dataflows will run the same way inside or outside FastAPI, you can write simpler unit tests for Hamilton functions without defining a mock server and client. Additionnally, visualizations for the defined Hamilton dataflows can be added to the FastAPI [Swagger UI documentation](https://fastapi.tiangolo.com/features/#automatic-docs). They will remain in sync with the API behavior because they are generated from the code.
 
