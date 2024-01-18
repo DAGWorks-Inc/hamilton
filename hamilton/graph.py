@@ -6,6 +6,7 @@ It should only house the graph & things required to create and traverse one.
 Note: one should largely consider the code in this module to be "private".
 """
 import logging
+import pathlib
 import uuid
 from enum import Enum
 from types import ModuleType
@@ -787,8 +788,14 @@ class FunctionGraph:
             deduplicate_inputs,
             display_fields=display_fields,
         )
-        kwargs = {"view": True}
-        if render_kwargs and isinstance(render_kwargs, dict):
+        kwargs = {"view": False, "format": "png"}  # default format = png
+        if output_file_path:  # infer format from path
+            if suffix := pathlib.Path(output_file_path).suffix:
+                inferred_format = suffix.partition(".")[-1]
+                kwargs.update(format=inferred_format)
+                # remove suffix if exist because dot.render() will append the format
+                output_file_path = str(pathlib.Path(output_file_path).stem)
+        if render_kwargs and isinstance(render_kwargs, dict):  # accept explicit format
             kwargs.update(render_kwargs)
         if output_file_path:
             dot.render(output_file_path, **kwargs)
