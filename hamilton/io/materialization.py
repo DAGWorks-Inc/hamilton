@@ -26,7 +26,7 @@ class materialization_meta__(type):
         clsobj.__annotations__ = {}
         return clsobj
 
-    def __getattr__(cls, item: str) -> "MaterializerFactory":
+    def __getattr__(cls, item: str) -> "_MaterializerFactoryProtocol":
         """This *just* exists to provide a more helpful error message. If you try to access
         a property that doesn't exist, we'll raise an error that tells you what properties
         are available/where to learn more."""
@@ -69,7 +69,7 @@ class extractor_meta__(type):
         clsobj.__annotations__ = {}
         return clsobj
 
-    def __getattr__(cls, item: str) -> "MaterializerFactory":
+    def __getattr__(cls, item: str) -> "_ExtractorFactoryProtocol":
         """This *just* exists to provide a more helpful error message. If you try to access
         a property that doesn't exist, we'll raise an error that tells you what properties
         are available/where to learn more."""
