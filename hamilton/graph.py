@@ -743,8 +743,13 @@ class FunctionGraph:
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
+        The output file format is determined through the following steps, each one overwriting the previous one:
+        1. if `output_file_path` has no file extension, a PNG file is generated (e.g., `/path/to/file -> /path/to/file.png`)
+        2. if `output_file_path` has a file extension, graphviz will use the specified format (e.g., `/path/to/file.svg -> /path/to/file.svg`))
+        3. if a format value is specified for `render_kwargs={"format": "pdf"}`, it overrides any other inputs (e.g., /path/to/file.svg -> /path/to/file.pdf)
+
         :param nodes: the set of nodes that need to be computed.
-        :param output_file_path: the path where we want to store the `dot` file + pdf picture. Pass in None to not save.
+        :param output_file_path: the path where we want to store the `dot` file + png picture. Pass in None to not save.
         :param render_kwargs: kwargs to be passed to the render function to visualize.
         :param graphviz_kwargs: kwargs to be passed to the graphviz graph object to configure it.
             e.g. dict(graph_attr={'ratio': '1'}) will set the aspect ratio to be equal of the produced image.
@@ -790,7 +795,8 @@ class FunctionGraph:
         )
         kwargs = {"view": False, "format": "png"}  # default format = png
         if output_file_path:  # infer format from path
-            if suffix := pathlib.Path(output_file_path).suffix:
+            suffix = pathlib.Path(output_file_path).suffix
+            if suffix != "":
                 inferred_format = suffix.partition(".")[-1]
                 kwargs.update(format=inferred_format)
                 # remove suffix if exist because dot.render() will append the format
