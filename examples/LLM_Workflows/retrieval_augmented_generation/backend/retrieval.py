@@ -1,4 +1,5 @@
 import openai
+import litellm
 import weaviate
 from ingestion import _get_embeddings__openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
@@ -105,7 +106,7 @@ def chunk_without_summary(chunks_without_summary: list[dict]) -> Parallelizable[
 @retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
 def _summarize_text__openai(prompt: str, summarize_model_name: str) -> str:
     """Use OpenAI chat API to ask a model to summarize content contained in a prompt"""
-    response = openai.ChatCompletion.create(
+    response = litellm.completion(
         model=summarize_model_name, messages=[{"role": "user", "content": prompt}], temperature=0
     )
     return response["choices"][0]["message"]["content"]

@@ -8,6 +8,7 @@ import sys
 
 import functions
 import openai
+import litellm
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from termcolor import colored
 
@@ -86,7 +87,7 @@ def chat_completion_request(messages, openai_gpt_model: str, functions=None, tem
     if functions:
         kwargs["functions"] = functions
     try:
-        response = openai.ChatCompletion.create(**kwargs)
+        response = litellm.completion(**kwargs)
         return response
     except Exception as e:
         logger.error("Unable to generate ChatCompletion response")
