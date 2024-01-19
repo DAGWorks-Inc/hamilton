@@ -12,6 +12,11 @@ try:
 except ImportError:
     raise NotImplementedError("Pandas is not installed.")
 
+try:
+    import pandas_gbq
+except ImportError:
+    raise NotImplementedError("pandas_gbq is not installed.")
+
 from typing import Literal
 
 try:
@@ -1410,6 +1415,133 @@ class PandasORCWriter(DataSaver):
         return "orc"
 
 
+@dataclasses.dataclass
+class PandasGBQReader(DataLoader):
+    """Class for loading data from Google BigQuery with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_gbq.html.
+
+    This class requires the pandas-gbq package. See https://pandas-gbq.readthedocs.io.
+
+    See the 'How to authenticate with Google BigQuery' guide for authentication instructions below.
+    https://pandas-gbq.readthedocs.io/en/latest/howto/authentication.html.
+    """
+
+    query_or_table: str
+    # kwargs
+    auth_local_webserver: bool = True
+    col_order: Optional[List[str]] = None
+    configuration: Optional[Dict[str, Any]] = None
+    credentials = None
+    dialect: Optional[str] = None
+    index_col: Optional[str] = None
+    location: Optional[str] = None
+    max_results: Optional[int] = None
+    progress_bar_type: Optional[str] = None
+    project_id: Optional[str] = None
+    reauth: bool = False
+    use_bqstorage_api: Optional[bool] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        kwargs = {}
+        if self.auth_local_webserver is not None:
+            kwargs["auth_local_webserver"] = self.auth_local_webserver
+        if self.col_order is not None:
+            kwargs["col_order"] = self.col_order
+        if self.configuration is not None:
+            kwargs["configuration"] = self.configuration
+        if self.credentials is not None:
+            kwargs["credentials"] = self.credentials
+        if self.dialect is not None:
+            kwargs["dialect"] = self.dialect
+        if self.index_col is not None:
+            kwargs["index_col"] = self.index_col
+        if self.location is not None:
+            kwargs["location"] = self.location
+        if self.max_results is not None:
+            kwargs["max_results"] = self.max_results
+        if self.progress_bar_type is not None:
+            kwargs["progress_bar_type"] = self.progress_bar_type
+        if self.project_id is not None:
+            kwargs["project_id"] = self.project_id
+        if self.reauth is not None:
+            kwargs["reauth"] = self.reauth
+        if self.use_bqstorage_api is not None:
+            kwargs["use_bqstorage_api"] = self.use_bqstorage_api
+        return kwargs
+
+    def load_data(self, type: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pandas_gbq.read_gbq(self.query_or_table, **self._get_loading_kwargs())
+        metadata = utils.get_df_metadata(df)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "gbq"
+
+
+@dataclasses.dataclass
+class PandasGBQWriter(DataSaver):
+    """Class specifically to handle saving a Pandas DataFrame to a Google BigQuery table.
+    Should map to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_gbq.html.
+
+    This class requires the pandas-gbq package. See https://pandas-gbq.readthedocs.io.
+
+    See the 'How to authenticate with Google BigQuery' guide for authentication instructions below.
+    https://pandas-gbq.readthedocs.io/en/latest/howto/authentication.html.
+    """
+
+    destination_table: str
+    # kwargs
+    auth_local_webserver: bool = True
+    chunksize: Optional[int] = None
+    credentials = None
+    if_exists: str = "fail"
+    location: Optional[str] = None
+    progress_bar: bool = True
+    project_id: Optional[str] = None
+    reauth: bool = False
+    table_schema: Optional[List[Dict[str, str]]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.project_id is not None:
+            kwargs["project_id"] = self.project_id
+        if self.chunksize is not None:
+            kwargs["chunksize"] = self.chunksize
+        if self.reauth is not None:
+            kwargs["reauth"] = self.reauth
+        if self.if_exists is not None:
+            kwargs["if_exists"] = self.if_exists
+        if self.auth_local_webserver is not None:
+            kwargs["auth_local_webserver"] = self.auth_local_webserver
+        if self.table_schema is not None:
+            kwargs["table_schema"] = self.table_schema
+        if self.location is not None:
+            kwargs["location"] = self.location
+        if self.progress_bar is not None:
+            kwargs["progress_bar"] = self.progress_bar
+        if self.credentials is not None:
+            kwargs["credentials"] = self.credentials
+
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_gbq(self.destination_table, **self._get_saving_kwargs())
+        return utils.get_df_metadata(data)  # get df metadata since to_gbq returns nothing
+
+    @classmethod
+    def name(cls) -> str:
+        return "gbq"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -1433,6 +1565,8 @@ def register_data_loaders():
         PandasFeatherWriter,
         PandasORCWriter,
         PandasORCReader,
+        PandasGBQWriter,
+        PandasGBQReader,
     ]:
         registry.register_adapter(loader)
 
