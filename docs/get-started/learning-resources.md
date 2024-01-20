@@ -26,32 +26,29 @@ The [DAGWorks Blog](https://blog.dagworks.io/) publishes articles on problems Ha
 The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) is the ideal place to ask questions, request features, and give feedback.
 
 ## 📣 Talks
-* 2023-12 &nbsp;&nbsp; Why you should build your GenAI/LLM apps using Hamilton. AICamp End of Year in SF
-    * [Recording](https://www.aicamp.ai/event/eventdetails/W2023121217)
+* 2023-12 &nbsp;&nbsp; Why you should build your GenAI/LLM apps using Hamilton. [AICamp End of Year in SF](https://www.aicamp.ai/event/eventdetails/W2023121217)
+    * [Recording](https://youtu.be/IwWixrjhkZU?si=DVa72Zr4iD-hibS5&t=7602)
     * [Slides](https://github.com/skrawcz/talks/files/13666470/Why.you.should.build.your.GenAI_LLM.apps.using.Hamilton.pdf)
 
-* 2023-12 &nbsp;&nbsp; Bridging Classic ML Pipelines with the World of LLMs. PyData Global
-    * [Recording](https://global2023.pydata.org/cfp/talk/3REDA9/)
+* 2023-12 &nbsp;&nbsp; Bridging Classic ML Pipelines with the World of LLMs. [PyData Global](https://global2023.pydata.org/cfp/talk/3REDA9/)
     * [Slides](https://github.com/skrawcz/talks/files/13666479/Bridging.Classic.ML.Pipelines.with.the.World.of.LLMs.1.pdf)
 
-* 2023-11 &nbsp;&nbsp; Hamilton: Natively bringing software engineering best practices to python data transformations. Scale by the Bay.
+* 2023-11 &nbsp;&nbsp; Hamilton: Natively bringing software engineering best practices to python data transformations. [Scale by the Bay](https://www.scale.bythebay.io/).
     * [Recording](https://www.youtube.com/watch?v=gK4-6X0h7PU)
     * [Slides](https://github.com/skrawcz/talks/files/13969784/Scale.By.The.Bay.-.Hamilton_.Natively.bringing.SWE.best.practices.to.python.data.transformations.pdf)
 
-* 2023-09 &nbsp;&nbsp; Hamilton: Natively bringing software engineering best practices to python data transformations. Bay Area Python Interest Group (BAYPIGgies)
-    * [Recording](https://www.meetup.com/baypiggies/events/296283989/)
+* 2023-09 &nbsp;&nbsp; Hamilton: Natively bringing software engineering best practices to python data transformations. [Bay Area Python Interest Group (BAYPIGgies)](https://www.meetup.com/baypiggies/events/296283989/)
     * [Slides](https://github.com/skrawcz/talks/files/12785978/BayPIGgies_.Hamilton.Talk.pdf)
 
 
-* 2023-08 &nbsp;&nbsp; dbt + Hamilton: Enabling you to maintain complex Python within dbt models. MDSFest'23
-    * [Recording](https://www.mdsfest.com/)
+* 2023-08 &nbsp;&nbsp; dbt + Hamilton: Enabling you to maintain complex Python within dbt models. [MDSFest'23](https://www.mdsfest.com/)
+    * [Recording](https://www.youtube.com/watch?v=ZM-kM8DqlaQ&list=PLdVpUmZrh0QpDi07ENp3FD5aTFuTTtWnP)
     * [Slides](https://github.com/skrawcz/talks/files/12431755/dbt.%2B.Hamilton_.Enabling.you.to.maintain.complex.python.within.dbt.models.pdf)
 
 * 2023-06 &nbsp;&nbsp; Hamilton: an OS tool to add to your LLM App toolbelt. LLM Avalanche.
     * [Slides](https://github.com/skrawcz/talks/files/11899349/Hamilton_.an.OS.tool.to.add.to.your.LLM.App.toolbelt.pdf)
 
-* 2023-06 &nbsp;&nbsp; Feature Engineering with Hamilton: Portability & Lineage. Budapest ML Forum June 2023
-    * [Recording](https://budapestml.hu/2023/en/)
+* 2023-06 &nbsp;&nbsp; Feature Engineering with Hamilton: Portability & Lineage. [Budapest ML Forum June 2023](https://budapestml.hu/2023/en/)
     * [Slides](https://github.com/skrawcz/talks/files/11690901/Stefan_Krawczyk_BudapestTalkJune2023_FeatureEngineeringwith.Hamilton_Portability.Lineage.pdf)
 
 * 2023-06 &nbsp;&nbsp; British Cycling Data Platform in Python. Manchester PyData Meetup
@@ -103,6 +100,24 @@ The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/z
 
 ## 📰 External Blogs
 
+* 2024-01 &nbsp;&nbsp; [Customizing Hamilton’s Execution with the new Lifecycle API](https://blog.dagworks.io/p/customizing-hamiltons-execution-with)
+* 2024-01 &nbsp;&nbsp; [How well-structured should your data code be?](https://blog.dagworks.io/p/how-well-structured-should-your-data)
+* 2024-01 &nbsp;&nbsp; [From Dev to Prod: a ML Pipeline Reference Post](https://blog.dagworks.io/p/from-dev-to-prod-a-ml-pipeline-reference)
+* 2023-12 &nbsp;&nbsp; [Winning over hearts and minds at work: ADKAR my favorite change management approach](https://blog.dagworks.io/p/winning-hearts-and-minds-at-work)
+* 2023-11 &nbsp;&nbsp; [🚀 We’re launching the Hamilton Dataflow Hub!](https://blog.dagworks.io/p/were-launching-the-hamilton-dataflow)
+* 2023-10 &nbsp;&nbsp; [Separate data I/O from transformation -- your future self will thank you.](https://blog.dagworks.io/p/separate-data-io-from-transformation)
+* 2023-09 &nbsp;&nbsp; [Retrieval augmented generation (RAG) with Streamlit, FastAPI, Weaviate, and Hamilton!](https://blog.dagworks.io/p/retrieval-augmented-generation-reference-arch)
+* 2023-09 &nbsp;&nbsp; [LLMOps: Production prompt engineering patterns with Hamilton](https://blog.dagworks.io/p/llmops-production-prompt-engineering)
+* 2023-09 &nbsp;&nbsp; [Feature Engineering with Hamilton](https://blog.dagworks.io/p/feature-engineering-with-hamilton)
+* 2023-08 &nbsp;&nbsp; [Expressing PySpark Transformations Declaratively with Hamilton](https://blog.dagworks.io/p/expressing-pyspark-transformations)
+* 2023-08 &nbsp;&nbsp; [Containerized PDF Summarizer with FastAPI and Hamilton](https://blog.dagworks.io/p/containerized-pdf-summarizer-with)
+* 2023-08 &nbsp;&nbsp; [Dynamic DAGs: Counting Stars with Hamilton](https://blog.dagworks.io/p/counting-stars-with-hamilton)
+* 2023-08 &nbsp;&nbsp; [Featurization: Integrating Hamilton with Feast](https://blog.dagworks.io/p/featurization-integrating-hamilton)
+* 2023-07 &nbsp;&nbsp; [Simplify Prefect Workflow Creation and Maintenance with Hamilton](https://blog.dagworks.io/p/simplify-prefect-workflow-creation)
+* 2023-07 &nbsp;&nbsp; [Building a maintainable and modular LLM application stack with Hamilton](https://blog.dagworks.io/p/building-a-maintainable-and-modular)
+* 2023-06 &nbsp;&nbsp; [Simplify Airflow DAG Creation and Maintenance with Hamilton](https://blog.dagworks.io/p/supercharge-your-airflow-dag-with)
+* 2023-05 &nbsp;&nbsp; [Lineage + Hamilton in 10 minutes](https://blog.dagworks.io/p/lineage-hamilton-in-10-minutes-c2b8a944e2e6)
+* 2022-11 &nbsp;&nbsp; [Hamilton + DBT in 5 minutes](https://blog.dagworks.io/p/hamilton-dbt-in-5-minutes-62e4cb63f08f)
 * 2022-07 &nbsp;&nbsp; [Tidy production pandas with Hamilton](https://towardsdatascience.com/tidy-production-pandas-with-hamilton-3b759a2bf562)
 * 2022-06 &nbsp;&nbsp; [Developing Scalable Feature Engineering DAGs with Metaflow & Hamilton](https://outerbounds.com/blog/developing-scalable-feature-engineering-dags)
 * 2022-05 &nbsp;&nbsp; [Hamilton backstory and intro post on TDS](https://towardsdatascience.com/functions-dags-introducing-hamilton-a-microframework-for-dataframe-generation-more-8e34b84efc1d)
@@ -110,6 +125,7 @@ The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/z
 * 2022-05 &nbsp;&nbsp; [Iterating with Hamilton in a Notebook](https://towardsdatascience.com/how-to-use-hamilton-with-pandas-in-5-minutes-89f63e5af8f5)
 
 ## 🎙 Podcasts
+* 2023-06 &nbsp;&nbsp; [Exploring the Intersection of DAGs, ML Code, and Complex Code Bases: An Elegant Solution Unveiled with Stefan Krawczyk of DAGWorks](https://datastackshow.com/podcast/exploring-the-intersection-of-dags-ml-code-and-complex-code-bases-an-elegant-solution-unveiled-with-stefan-krawczyk-of-dagworks/)
 * 2022-08 &nbsp;&nbsp; [S01 E08 - MLOps Week 8: The MLOps Mindset with Stefan Krawczyk](https://rss.com/podcasts/mlops-weekly/571949/)
 * 2022-04 &nbsp;&nbsp; [MLOps dla 100 data scientistów](https://nieliniowy.pl/mlops-dla-100-data-scientistow-stefan-krawczyk-stitch-fix/) (in Polish)
 * 2021-09 &nbsp;&nbsp; [Aggressively Helpful Platform teams](https://www.youtube.com/watch?v=az8lXG9v4uo)
