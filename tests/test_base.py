@@ -119,7 +119,13 @@ class _Foo:
             pd.DataFrame({"a": pd.Series([1, 2, 3]), "b": pd.Series([4, 4, 4])}),
         ),
         (
-            {"a": {"foo": 1, "bar": 2}, "b": 4},
+            {
+                "a": {
+                    "bar": 2,
+                    "foo": 1,
+                },
+                "b": 4,
+            },
             pd.DataFrame({"a": pd.Series([2, 1]), "b": pd.Series([4, 4])}).rename(
                 index=lambda i: ["bar", "foo"][i]
             ),
