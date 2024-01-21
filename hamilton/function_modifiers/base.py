@@ -434,7 +434,7 @@ class NodeTransformer(SubDAGModifier):
         """Target determines to which node(s) this applies. This represents selection from a subDAG.
         For the options, consider at the following graph:
         A -> B -> C
-             \_> D -> E
+             \\_> D -> E
 
         1. If it is `None`, it defaults to the "old" behavior. That is, is applies to all "final" DAG
         nodes. In the subdag. That is, all nodes with out-degree zero/sinks. In the case

@@ -535,7 +535,7 @@ class parameterized_subdag(base.NodeCreator):
 
             Furthermore, note the following:
 
-            1. The parameterizations passed to the constructor are \*\*kwargs, so you are not
+            1. The parameterizations passed to the constructor are \\*\\*kwargs, so you are not
             allowed to name these `load_from`, `inputs`, or `config`. That's a good thing, as these
             are not good names for variables anyway.
 
