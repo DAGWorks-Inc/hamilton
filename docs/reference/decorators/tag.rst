@@ -21,7 +21,7 @@ For instance:
 
 **How do I query by tags?**
 
-The [`list_available_variables()`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.list_available_variables) driver method accepts in a tag query, enabling search over the tags for specific matches.
+The `list_available_variables <../../drivers/Driver/#hamilton.driver.Driver.list_available_variables>`_ method accepts in a tag query, enabling search over the tags for specific matches.
 
 ----
 
