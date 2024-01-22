@@ -686,7 +686,7 @@ def test_function_graph_has_cycles_false():
 
 def test_function_graph_display(tmp_path: pathlib.Path):
     """Tests that display saves a file"""
-    dot_file_path = tmp_path / "dag.dot"
+    dot_file_path = tmp_path / "dag"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
     node_modifiers = {"B": {graph.VisualizationNodeModifiers.IS_OUTPUT}}
     all_nodes = set()
@@ -733,7 +733,7 @@ def test_function_graph_display(tmp_path: pathlib.Path):
 
 
 def test_function_graph_display_no_dot_output(tmp_path: pathlib.Path):
-    dot_file_path = tmp_path / "dag.dot"
+    dot_file_path = tmp_path / "dag"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
 
     fg.display(set(fg.get_nodes()), output_file_path=None)
@@ -743,7 +743,7 @@ def test_function_graph_display_no_dot_output(tmp_path: pathlib.Path):
 
 @pytest.mark.parametrize("show_legend", [(True), (False)])
 def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path):
-    dot_file_path = tmp_path / "dag.dot"
+    dot_file_path = tmp_path / "dag"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
 
     fg.display(
@@ -760,7 +760,7 @@ def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path
 
 @pytest.mark.parametrize("orient", [("LR"), ("TB"), ("RL"), ("BT")])
 def test_function_graph_display_orient(orient: str, tmp_path: pathlib.Path):
-    dot_file_path = tmp_path / "dag.dot"
+    dot_file_path = tmp_path / "dag"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
 
     fg.display(
@@ -777,7 +777,7 @@ def test_function_graph_display_orient(orient: str, tmp_path: pathlib.Path):
 
 @pytest.mark.parametrize("hide_inputs", [(True,), (False,)])
 def test_function_graph_display_inputs(hide_inputs: bool, tmp_path: pathlib.Path):
-    dot_file_path = tmp_path / "dag.dot"
+    dot_file_path = tmp_path / "dag"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
 
     fg.display(
@@ -810,7 +810,7 @@ def test_function_graph_display_without_saving():
 
 @pytest.mark.parametrize("display_fields", [(True,), (False,)])
 def test_function_graph_display_fields(display_fields: bool, tmp_path: pathlib.Path):
-    dot_file_path = tmp_path / "dag.dot"
+    dot_file_path = tmp_path / "dag"
 
     @schema.output(("foo", "int"), ("bar", "float"), ("baz", "str"))
     def df_with_schema() -> pd.DataFrame:
@@ -840,7 +840,7 @@ def test_function_graph_display_fields(display_fields: bool, tmp_path: pathlib.P
 
 def test_function_graph_display_fields_shared_schema(tmp_path: pathlib.Path):
     # This ensures an edge case where they end up getting dropped if there are duplicates
-    dot_file_path = tmp_path / "dag.dot"
+    dot_file_path = tmp_path / "dag"
 
     SCHEMA = (("foo", "int"), ("bar", "float"), ("baz", "str"))
 
