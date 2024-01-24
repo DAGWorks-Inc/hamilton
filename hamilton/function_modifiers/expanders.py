@@ -663,7 +663,11 @@ class extract_columns(base.SingleNodeNodeTransformer):
                     column_to_extract: str = column, **kwargs
                 ) -> Any:  # avoiding problems with closures
                     df = kwargs[node_.name]
-                    if column_to_extract not in df:
+                    if hasattr(df, "column_names"):
+                        clause = column_to_extract not in df.column_names
+                    else:
+                        clause = column_to_extract not in df
+                    if clause:
                         raise base.InvalidDecoratorException(
                             f"No such column: {column_to_extract} produced by {node_.name}. "
                             f"It only produced {str(df.columns)}"
