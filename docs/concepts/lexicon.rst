@@ -17,7 +17,7 @@ Before we dive into the concepts, let's clarify the terminology we'll be using:
        naturally represented by nodes and edges) and can be represented visually.
    * - Transform Function, or simply Function
      - A python function used to represent a Hamilton transform -- it can compile to one (in the standard case) or \
-       many (with the use of decorators) transforms. See :doc:`hamilton-function-structure` for more details.
+       many (with the use of decorators) transforms. See :doc:`node` for more details.
    * - Transform
      - A step in the dataflow DAG representing a computation -- usually 1:1 with functions but decorators break that \
        pattern -- in which case multiple transforms trace back to a single function.

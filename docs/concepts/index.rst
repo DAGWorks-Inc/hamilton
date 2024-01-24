@@ -9,7 +9,7 @@ concepts that makes Hamilton unique and powerful.
 .. toctree::
 
    lexicon
-   hamilton-function-structure
+   node
    driver-capabilities
    customizing-execution
    decorators-overview
