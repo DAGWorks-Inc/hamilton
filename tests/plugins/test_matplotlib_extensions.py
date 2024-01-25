@@ -4,6 +4,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pytest
 
+from hamilton.io.utils import FILE_METADATA
 from hamilton.plugins.matplotlib_extensions import MatplotlibWriter
 
 
@@ -27,4 +28,4 @@ def test_plotly_static_writer(figure: matplotlib.figure.Figure, tmp_path: pathli
     metadata = writer.save_data(figure)
 
     assert file_path.exists()
-    assert metadata["path"] == file_path
+    assert metadata[FILE_METADATA]["path"] == file_path

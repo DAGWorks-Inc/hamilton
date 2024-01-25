@@ -3,6 +3,7 @@ import pathlib
 import plotly.graph_objects as go
 import pytest
 
+from hamilton.io.utils import FILE_METADATA
 from hamilton.plugins.plotly_extensions import PlotlyInteractiveWriter, PlotlyStaticWriter
 
 
@@ -18,7 +19,7 @@ def test_plotly_static_writer(figure: go.Figure, tmp_path: pathlib.Path) -> None
     metadata = writer.save_data(figure)
 
     assert file_path.exists()
-    assert metadata["path"] == file_path
+    assert metadata[FILE_METADATA]["path"] == file_path
 
 
 def test_plotly_interactive_writer(figure: go.Figure, tmp_path: pathlib.Path) -> None:
@@ -28,4 +29,4 @@ def test_plotly_interactive_writer(figure: go.Figure, tmp_path: pathlib.Path) ->
     metadata = writer.save_data(figure)
 
     assert file_path.exists()
-    assert metadata["path"] == file_path
+    assert metadata[FILE_METADATA]["path"] == file_path

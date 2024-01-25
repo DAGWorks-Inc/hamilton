@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
+from hamilton.io.utils import FILE_METADATA
 from hamilton.plugins.sklearn_plot_extensions import SklearnPlotSaver
 
 if hasattr(metrics, "PredictionErrorDisplay"):
@@ -191,7 +192,7 @@ def test_cm_plot_saver(
     metadata = writer.save_data(confusion_matrix_display)
 
     assert plot_path.exists()
-    assert metadata["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == plot_path
 
 
 def test_det_curve_display(
@@ -203,7 +204,7 @@ def test_det_curve_display(
     metadata = writer.save_data(det_curve_display)
 
     assert plot_path.exists()
-    assert metadata["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == plot_path
 
 
 def test_precision_recall_display(
@@ -215,7 +216,7 @@ def test_precision_recall_display(
     metadata = writer.save_data(precision_recall_display)
 
     assert plot_path.exists()
-    assert metadata["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == plot_path
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
@@ -228,7 +229,7 @@ def test_prediction_error_display(
     metadata = writer.save_data(prediction_error_display)
 
     assert plot_path.exists()
-    assert metadata["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == plot_path
 
 
 def test_roc_curve_display(
@@ -240,7 +241,7 @@ def test_roc_curve_display(
     metadata = writer.save_data(roc_curve_display)
 
     assert plot_path.exists()
-    assert metadata["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == plot_path
 
 
 def test_calibration_display(
@@ -252,7 +253,7 @@ def test_calibration_display(
     metadata = writer.save_data(calibration_display)
 
     assert plot_path.exists()
-    assert metadata["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == plot_path
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
@@ -265,7 +266,7 @@ def test_decision_boundary_display(
     metadata = writer.save_data(decision_boundary_display)
 
     assert plot_path.exists()
-    assert metadata["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == plot_path
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
@@ -278,7 +279,7 @@ def test_partial_dependence_display(
     metadata = writer.save_data(partial_dependence_display)
 
     assert plot_path.exists()
-    assert metadata["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == plot_path
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
@@ -291,7 +292,7 @@ def test_learning_curve_display(
     metadata = writer.save_data(learning_curve_display)
 
     assert plot_path.exists()
-    assert metadata["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == plot_path
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
@@ -304,4 +305,4 @@ def test_validation_curve_display(
     metadata = writer.save_data(validation_curve_display)
 
     assert plot_path.exists()
-    assert metadata["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == plot_path
