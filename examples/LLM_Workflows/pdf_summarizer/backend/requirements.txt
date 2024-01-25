@@ -1,3 +1,4 @@
+dagworks-sdk>=0.3.2 # DAGWorks Tracker
 fastapi
 openai
 pydantic
@@ -8,4 +9,3 @@ tenacity
 tiktoken
 tqdm
 uvicorn
-# dagworks-sdk>=0.0.14 # uncomment to use DAGWorks driver.

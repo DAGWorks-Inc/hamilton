@@ -21,26 +21,26 @@ async_dr = h_async.AsyncDriver(
     summarization,  # python module containing function logic
     result_builder=base.DictResult(),
 )
-# sync driver for use with regular functions
-sync_dr = driver.Driver(
-    driver_config,
-    summarization,  # python module containing function logic
-    adapter=base.SimplePythonGraphAdapter(base.DictResult()),
-)
 
 # Uncomment this to get started with DAGWorks - see docs.dagworks.io for more info.
 # import os
-# from dagworks import driver as dw_driver
-# sync_dr = dw_driver.Driver(
-#     driver_config,
-#     summarization,  # python module containing function logic
-#     adapter=base.SimplePythonGraphAdapter(base.DictResult()),
-#     project_id=YOUR_PROJECT_ID,
+# from dagworks import adapters
+# tracker = adapters.DAGWorksTracker(
+#     project_id=66,
 #     api_key=os.environ["DAGWORKS_API_KEY"],
-#     username="YOUR_EMAIL",
+#     username="YOUR@EMAIL",
 #     dag_name="pdf_summarizer",
 #     tags={"env": "local", "origin": "fastAPI"}
 # )
+
+# sync driver for use with regular functions
+sync_dr = (
+    driver.Builder()
+    .with_config(driver_config)
+    .with_modules(summarization)  # python module containing function logic
+    # .with_adapters(tracker)  # uncomment this to get started with DAGWorks
+    .build()
+)
 
 
 class SummarizeResponse(pydantic.BaseModel):
