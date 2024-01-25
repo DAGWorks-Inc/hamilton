@@ -5,6 +5,7 @@ A set of best-practices to help you get the most out of Hamilton quickly and eas
 
 .. toctree::
 
+   function-naming
    migrating-to-hamilton
    code-organization
    function-modifiers
