@@ -3,6 +3,7 @@ import pathlib
 import numpy as np
 import pytest
 
+from hamilton.io.utils import FILE_METADATA
 from hamilton.plugins.numpy_extensions import NumpyNpyReader, NumpyNpyWriter
 
 
@@ -18,7 +19,7 @@ def test_numpy_file_writer(array: np.ndarray, tmp_path: pathlib.Path) -> None:
     metadata = writer.save_data(array)
 
     assert file_path.exists()
-    assert metadata["path"] == file_path
+    assert metadata[FILE_METADATA]["path"] == file_path
 
 
 def test_numpy_file_reader(array: np.ndarray, tmp_path: pathlib.Path) -> None:

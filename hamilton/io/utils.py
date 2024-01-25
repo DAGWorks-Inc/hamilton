@@ -22,10 +22,12 @@ def get_file_metadata(path: str) -> Dict[str, Any]:
     - the current time
     """
     return {
-        "size": os.path.getsize(path),
-        "path": path,
-        "last_modified": os.path.getmtime(path),
-        "timestamp": datetime.now().utcnow().timestamp(),
+        FILE_METADATA: {
+            "size": os.path.getsize(path),
+            "path": path,
+            "last_modified": os.path.getmtime(path),
+            "timestamp": datetime.now().utcnow().timestamp(),
+        }
     }
 
 
@@ -42,10 +44,12 @@ def get_dataframe_metadata(df: pd.DataFrame) -> Dict[str, Any]:
     - the data types
     """
     return {
-        "rows": len(df),
-        "columns": len(df.columns),
-        "column_names": list(df.columns),
-        "datatypes": [str(t) for t in list(df.dtypes)],  # for serialization purposes
+        DATAFRAME_METADATA: {
+            "rows": len(df),
+            "columns": len(df.columns),
+            "column_names": list(df.columns),
+            "datatypes": [str(t) for t in list(df.dtypes)],  # for serialization purposes
+        }
     }
 
 
@@ -67,7 +71,7 @@ def get_file_and_dataframe_metadata(path: str, df: pd.DataFrame) -> Dict[str, An
         - the column names
         - the data types
     """
-    return {FILE_METADATA: get_file_metadata(path), DATAFRAME_METADATA: get_dataframe_metadata(df)}
+    return {**get_file_metadata(path), **get_dataframe_metadata(df)}
 
 
 def get_sql_metadata(query_or_table: str, results: Union[int, pd.DataFrame]) -> Dict[str, Any]:
@@ -91,8 +95,10 @@ def get_sql_metadata(query_or_table: str, results: Union[int, pd.DataFrame]) -> 
     else:
         rows = None
     return {
-        "rows": rows,
-        "query": query,
-        "table_name": table_name,
-        "timestamp": datetime.now().utcnow().timestamp(),
+        SQL_METADATA: {
+            "rows": rows,
+            "query": query,
+            "table_name": table_name,
+            "timestamp": datetime.now().utcnow().timestamp(),
+        }
     }

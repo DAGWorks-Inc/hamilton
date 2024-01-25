@@ -733,11 +733,7 @@ class PandasSqlReader(DataLoader):
         df = pd.read_sql(self.query_or_table, self.db_connection, **self._get_loading_kwargs())
         sql_metadata = utils.get_sql_metadata(self.query_or_table, df)
         df_metadata = utils.get_dataframe_metadata(df)
-        metadata = {
-            utils.SQL_METADATA: sql_metadata,
-            utils.DATAFRAME_METADATA: df_metadata,
-        }
-        return df, metadata
+        return df, {**sql_metadata, **df_metadata}
 
     @classmethod
     def name(cls) -> str:
@@ -793,11 +789,7 @@ class PandasSqlWriter(DataSaver):
         results = data.to_sql(self.table_name, self.db_connection, **self._get_saving_kwargs())
         sql_metadata = utils.get_sql_metadata(self.table_name, results)
         df_metadata = utils.get_dataframe_metadata(data)
-        metadata = {
-            utils.SQL_METADATA: sql_metadata,
-            utils.DATAFRAME_METADATA: df_metadata,
-        }
-        return metadata
+        return {**sql_metadata, **df_metadata}
 
     @classmethod
     def name(cls) -> str:

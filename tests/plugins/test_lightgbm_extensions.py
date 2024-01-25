@@ -5,6 +5,7 @@ import lightgbm
 import numpy as np
 import pytest
 
+from hamilton.io.utils import FILE_METADATA
 from hamilton.plugins.lightgbm_extensions import LightGBMFileReader, LightGBMFileWriter
 
 
@@ -40,7 +41,7 @@ def test_lightgbm_file_writer(
     metadata = writer.save_data(fitted_lightgbm)
 
     assert model_path.exists()
-    assert metadata["path"] == model_path
+    assert metadata[FILE_METADATA]["path"] == model_path
 
 
 @pytest.mark.parametrize(
