@@ -17,7 +17,7 @@ def custom_style(
     :param node_class: class used to style the default visualization
     :return: a triple of (style, node_class, legend_name) where
         style: dictionary of graphviz attributes https://graphviz.org/docs/nodes/,
-        node_class: class used to style the default visualization - we recommend keeping it by passing `None`
+        node_class: class used to style the default visualization - what you provide will be applied on top. If you don't want it, pass back None.
         legend_name: text to display in the legend. Return `None` for no legend entry.
     """
     if node.tags.get("some_key") == "some_value":

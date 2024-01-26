@@ -756,7 +756,7 @@ class Driver:
             Can improve readability depending on the specifics of the DAG.
         :param show_schema: If True, display the schema of the DAG if
             the nodes have schema data provided
-        :param custom_style_function: Optional. Custom style function.
+        :param custom_style_function: Optional. Custom style function. See example in repository for example use.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
