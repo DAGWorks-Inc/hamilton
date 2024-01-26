@@ -741,6 +741,78 @@ def test_function_graph_display_no_dot_output(tmp_path: pathlib.Path):
     assert not dot_file_path.exists()
 
 
+def test_function_graph_display_custom_style_node():
+    def _styling_function(*, node, node_class):
+        return dict(fill_color="aquamarine"), None, "legend_key"
+
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+
+    digraph = fg.display(
+        set(fg.get_nodes()),
+        output_file_path=None,
+        custom_style_function=_styling_function,
+    )
+
+    key_found = False
+    for line in digraph.body:  # list of lines of a dot file
+        if ("A" in line) and ("aquamarine" in line):
+            key_found = True
+            break
+
+    assert key_found
+
+
+def test_function_graph_display_custom_style_legend():
+    def _styling_function(*, node, node_class):
+        return dict(fill_color="aquamarine"), None, "legend_key"
+
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+
+    digraph = fg.display(
+        set(fg.get_nodes()),
+        output_file_path=None,
+        custom_style_function=_styling_function,
+    )
+
+    key_found = False
+    for line in digraph.body:  # list of lines of a dot file
+        if ("legend_key" in line) and ("aquamarine" in line):
+            key_found = True
+            break
+
+    assert key_found
+
+
+def test_function_graph_display_custom_style_tag():
+    def _styling_function(*, node, node_class):
+        if node.tags.get("some_key"):
+            style = dict(fill_color="aquamarine"), None, "legend_key"
+        else:
+            style = dict(), None, None
+        return style
+
+    nodes = create_testing_nodes()
+    nodes["A"].tags["some_key"] = "some_value"
+    fg = graph.FunctionGraph(nodes, config={"b": 1, "c": 2})
+
+    digraph = fg.display(
+        set(fg.get_nodes()),
+        output_file_path=None,
+        custom_style_function=_styling_function,
+    )
+
+    # check that style is only applied to tagged nodes
+    tag_found = False
+    not_tag_found = False
+    for line in digraph.body:  # list of lines of a dot file
+        if ("A" in line) and ("aquamarine" in line):
+            tag_found = True
+        elif ("B" in line) and ("aquamarine" not in line):
+            not_tag_found = True
+
+    assert tag_found and not_tag_found
+
+
 @pytest.mark.parametrize("show_legend", [(True), (False)])
 def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path):
     dot_file_path = tmp_path / "dag"

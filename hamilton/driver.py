@@ -268,7 +268,7 @@ class Driver:
     ) -> lifecycle_base.LifecycleAdapterSet:
         """Normalizes the adapter argument in the driver to a list of adapters. Adds back the legacy adapter if needed.
 
-        Note that, in the past, hamilton requird a graph adapter. Now it is only required to be included in the legacy case
+        Note that, in the past, hamilton required a graph adapter. Now it is only required to be included in the legacy case
         default behavior has been modified to handle anything a result builder did.
 
         :param adapter: Adapter to include
@@ -735,6 +735,7 @@ class Driver:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays the graph of all functions loaded!
 
@@ -755,6 +756,7 @@ class Driver:
             Can improve readability depending on the specifics of the DAG.
         :param show_schema: If True, display the schema of the DAG if
             the nodes have schema data provided
+        :param custom_style_function: Optional. Custom style function. See example in repository for example use.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -768,6 +770,7 @@ class Driver:
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
+                custom_style_function=custom_style_function,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -787,6 +790,7 @@ class Driver:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
+        custom_style_function: Callable = None,
     ):
         """Helper function to visualize execution, using a passed-in function graph.
 
@@ -800,6 +804,7 @@ class Driver:
         :param hide_inputs: If True, no input nodes are displayed.
         :param deduplicate_inputs: If True, remove duplicate input nodes.
         :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
+        :param custom_style_function: Optional. Custom style function.
         :return: the graphviz object if you want to do more with it.
         """
         # TODO should determine if the visualization logic should live here or in the graph.py module
@@ -832,6 +837,7 @@ class Driver:
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
+                custom_style_function=custom_style_function,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -850,6 +856,7 @@ class Driver:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes Execution.
 
@@ -880,6 +887,7 @@ class Driver:
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
         :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
+        :param custom_style_function: Optional. Custom style function.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -898,6 +906,7 @@ class Driver:
             hide_inputs=hide_inputs,
             deduplicate_inputs=deduplicate_inputs,
             show_schema=show_schema,
+            custom_style_function=custom_style_function,
         )
 
     @capture_function_usage
@@ -963,6 +972,7 @@ class Driver:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG starting from the passed in function name(s).
 
@@ -984,6 +994,7 @@ class Driver:
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
         :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
+        :param custom_style_function: Optional. Custom style function.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -1009,6 +1020,7 @@ class Driver:
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
+                custom_style_function=custom_style_function,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1025,6 +1037,7 @@ class Driver:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG going backwards from the passed in function name(s).
 
@@ -1046,6 +1059,7 @@ class Driver:
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
         :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
+        :param custom_style_function: Optional. Custom style function.
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -1066,6 +1080,7 @@ class Driver:
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
+                custom_style_function=custom_style_function,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1139,6 +1154,7 @@ class Driver:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes the path between two nodes.
 
@@ -1163,6 +1179,7 @@ class Driver:
             Can improve readability depending on the specifics of the DAG.
         :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :return: graphviz object.
+        :param custom_style_function: Optional. Custom style function.
         :raise ValueError: if the upstream or downstream node names are not found in the graph,
             or there is no path between them.
         """
@@ -1220,6 +1237,7 @@ class Driver:
                 hide_inputs=hide_inputs,
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
+                custom_style_function=custom_style_function,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1481,6 +1499,7 @@ class Driver:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes materialization. This helps give you a sense of how materialization
         will impact the DAG.
@@ -1501,6 +1520,7 @@ class Driver:
             Can improve readability depending on the specifics of the DAG.
         :param show_schema: If True, show the schema of the materialized nodes
             if nodes have schema metadata attached.
+        :param custom_style_function: Optional. Custom style function.
         :return: The graphviz graph, if you want to do something with it
         """
         if additional_vars is None:
@@ -1526,6 +1546,7 @@ class Driver:
             hide_inputs=hide_inputs,
             deduplicate_inputs=deduplicate_inputs,
             show_schema=show_schema,
+            custom_style_function=custom_style_function,
         )
 
     def validate_execution(
