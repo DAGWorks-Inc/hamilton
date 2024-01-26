@@ -11,7 +11,7 @@ import typing
 import uuid
 from datetime import datetime
 from types import ModuleType
-from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Collection, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 import pandas as pd
 
@@ -504,7 +504,7 @@ class Driver:
 
     def execute(
         self,
-        final_vars: List[Union[str, Callable, Variable]],
+        final_vars: Sequence[Union[str, Callable, Variable]],
         overrides: Dict[str, Any] = None,
         display_graph: bool = False,
         inputs: Dict[str, Any] = None,
