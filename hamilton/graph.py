@@ -536,8 +536,8 @@ def create_graphviz_graph(
                     c.node(n.name + ":" + cols[i], **field_node_style, label=cols[i])
                 c.node(n.name)
 
-            if seen_node_type is None:
-                seen_node_types.add(node_type)
+        if seen_node_type is None:
+            seen_node_types.add(node_type)
 
     # create edges
     input_sets = dict()
