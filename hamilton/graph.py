@@ -5,6 +5,7 @@ It should only house the graph & things required to create and traverse one.
 
 Note: one should largely consider the code in this module to be "private".
 """
+import inspect
 import logging
 import pathlib
 import uuid
@@ -13,7 +14,7 @@ from types import ModuleType
 from typing import Any, Callable, Collection, Dict, FrozenSet, List, Optional, Set, Tuple, Type
 
 import hamilton.lifecycle.base as lifecycle_base
-from hamilton import node
+from hamilton import graph_types, node
 from hamilton.execution import graph_functions
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers.metadata import schema
@@ -177,6 +178,18 @@ def create_function_graph(
     return nodes
 
 
+def _check_keyword_args_only(func: Callable) -> bool:
+    """Checks if a function only takes keyword arguments."""
+    sig = inspect.signature(func)
+    for param in sig.parameters.values():
+        if param.default == inspect.Parameter.empty and param.kind not in [
+            inspect.Parameter.KEYWORD_ONLY,
+            inspect.Parameter.VAR_KEYWORD,
+        ]:
+            return False
+    return True
+
+
 def create_graphviz_graph(
     nodes: Set[node.Node],
     comment: str,
@@ -188,6 +201,7 @@ def create_graphviz_graph(
     hide_inputs: bool = False,
     deduplicate_inputs: bool = False,
     display_fields: bool = True,
+    custom_style_function: Callable = None,
 ) -> "graphviz.Digraph":  # noqa: F821
     """Helper function to create a graphviz graph.
 
@@ -205,11 +219,23 @@ def create_graphviz_graph(
     :param hide_inputs: If True, no input nodes are displayed.
     :param deduplicate_inputs: If True, remove duplicate input nodes.
         Can improve readability depending on the specifics of the DAG.
+    :param custom_style_function: A function that takes in node values and returns a dictionary of styles to apply to it.
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
     PATH_COLOR = "red"
 
     import graphviz
+
+    if custom_style_function is not None:
+        if not _check_keyword_args_only(custom_style_function):
+            raise ValueError(
+                "custom_style_function must only take keyword arguments"
+                " `node` and `node_class`. E.g. Signature should resemble:\n"
+                "def custom_style(*,  # <--- key part is this * \n"
+                "     node: graph_types.HamiltonNode, \n"
+                "     node_class: str\n"
+                ") -> Tuple[dict, Optional[str], Optional[str]]:"
+            )
 
     def _get_node_label(
         n: node.Node,
@@ -340,7 +366,9 @@ def create_graphviz_graph(
 
         return edge_style
 
-    def _get_legend(node_types: Set[str]):
+    def _get_legend(
+        node_types: Set[str], extra_legend_nodes: Dict[Tuple[str, str], Dict[str, str]]
+    ):
         """Create a visualization legend as a graphviz subgraph. The legend includes the
         node types and modifiers presente in the visualization.
         """
@@ -372,6 +400,11 @@ def create_graphviz_graph(
             node_style.update(**modifier_style)
             legend_subgraph.node(name=node_type, **node_style)
 
+        for (base_class, node_name), legend_style in extra_legend_nodes.items():
+            base_style = _get_node_style(base_class)
+            base_style.update(**legend_style)
+            legend_subgraph.node(name=node_name, **base_style)
+
         return legend_subgraph
 
     # handle default values in nested dict
@@ -391,15 +424,17 @@ def create_graphviz_graph(
             digraph_attr[g_key].update(**g_value)
         else:
             digraph_attr[g_key] = g_value
+
     digraph = graphviz.Digraph(**digraph_attr)
+    extra_legend_nodes = {}
 
     # create nodes
     seen_node_types = set()
     for n in nodes:
         label = _get_node_label(n)
         node_type = _get_node_type(n)
-        seen_node_types.add(node_type)
         if node_type == "input":
+            seen_node_types.add(node_type)
             continue
 
         node_style = _get_node_style(node_type)
@@ -423,6 +458,17 @@ def create_graphviz_graph(
             modifier_style = _get_function_modifier_style("materializer")
             node_style.update(**modifier_style)
             seen_node_types.add("materializer")
+
+        # apply custom styles before node modifiers
+        seen_node_type = None
+        if custom_style_function:
+            custom_style, base_type, legend_name = custom_style_function(
+                node=graph_types.HamiltonNode.from_node(n), node_class=node_type
+            )
+            if legend_name:
+                extra_legend_nodes[(base_type, legend_name)] = custom_style
+                seen_node_type = legend_name
+            node_style.update(**custom_style)
 
         if node_modifiers.get(n.name):
             modifiers = node_modifiers[n.name]
@@ -490,6 +536,9 @@ def create_graphviz_graph(
                     c.node(n.name + ":" + cols[i], **field_node_style, label=cols[i])
                 c.node(n.name)
 
+            if seen_node_type is None:
+                seen_node_types.add(node_type)
+
     # create edges
     input_sets = dict()
     for n in nodes:
@@ -546,7 +595,8 @@ def create_graphviz_graph(
             digraph.edge(input_node_name, n.name)
 
     if show_legend:
-        digraph.subgraph(_get_legend(seen_node_types))
+        digraph.subgraph(_get_legend(seen_node_types, extra_legend_nodes))
+
     return digraph
 
 
@@ -657,6 +707,7 @@ class FunctionGraph:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         display_fields: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays & saves a dot file of the entire DAG structure constructed.
 
@@ -673,6 +724,7 @@ class FunctionGraph:
         :param deduplicate_inputs: If True, remove duplicate input nodes.
             Can improve readability depending on the specifics of the DAG.
         :param display_fields: If True, display fields in the graph if node has attached schema metadata
+        :param custom_style_function: Optional. Custom style function.
         :return: the graphviz graph object if it was created. None if not.
         """
         all_nodes = set()
@@ -696,6 +748,7 @@ class FunctionGraph:
             hide_inputs=hide_inputs,
             deduplicate_inputs=deduplicate_inputs,
             display_fields=display_fields,
+            custom_style_function=custom_style_function,
         )
 
     def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
@@ -740,6 +793,7 @@ class FunctionGraph:
         hide_inputs: bool = False,
         deduplicate_inputs: bool = False,
         display_fields: bool = True,
+        custom_style_function: Callable = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
@@ -766,6 +820,7 @@ class FunctionGraph:
             Can improve readability depending on the specifics of the DAG.
         :param display_fields: If True, display fields in the graph if node has attached
             schema metadata
+        :param custom_style_function: Optional. Custom style function.
         :return: the graphviz graph object if it was created. None if not.
         """
         # Check to see if optional dependencies have been installed.
@@ -792,6 +847,7 @@ class FunctionGraph:
             hide_inputs,
             deduplicate_inputs,
             display_fields=display_fields,
+            custom_style_function=custom_style_function,
         )
         kwargs = {"view": False, "format": "png"}  # default format = png
         if output_file_path:  # infer format from path
