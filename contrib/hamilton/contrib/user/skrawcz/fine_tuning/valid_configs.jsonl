@@ -1,0 +1,2 @@
+{"description": "Base case of finetuning a base LLM", "name": "default", "config": {"start":  "base"}}
+{"description": "Case you've already finetuned and want to run evals on it.", "name": "presaved", "config": {"start":  "presaved"}}
