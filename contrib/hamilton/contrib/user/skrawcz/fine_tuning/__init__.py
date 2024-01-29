@@ -100,7 +100,12 @@ def tokenized_inputs(
     hold_out_set: Dataset,
     tokenizer: PreTrainedTokenizerBase,
 ) -> DatasetType:
-    """Tokenizes the inputs from all the datasets and creates a single data set with them."""
+    """Tokenizes the inputs from all the datasets and creates a single data set with them.
+
+    This is different from the tokenized_train, tokenized_validation, and tokenized_hold_out functions in that it
+    this does not do any padding or max_lengthing of things. It feeds into that because we can then
+    compute some aggregate values for the entire corpus.
+    """
     return concatenate_datasets([train_set, validation_set, hold_out_set]).map(
         lambda x: tokenizer(x["input_text"], truncation=True),
         batched=True,
@@ -124,7 +129,12 @@ def tokenized_targets(
     hold_out_set: Dataset,
     tokenizer: PreTrainedTokenizerBase,
 ) -> DatasetType:
-    """Tokenizes the outputs, i.e. target responses, from all the datasets and creates a single data set with them."""
+    """Tokenizes the outputs, i.e. target responses, from all the datasets and creates a single data set with them.
+
+    This is different from the tokenized_train, tokenized_validation, and tokenized_hold_out functions in that it
+    this does not do any padding or max_lengthing of things. It feeds into that because we can then
+    compute some aggregate values for the entire corpus.
+    """
     return concatenate_datasets([train_set, validation_set, hold_out_set]).map(
         lambda x: tokenizer(x["output_text"], truncation=True),
         batched=True,
