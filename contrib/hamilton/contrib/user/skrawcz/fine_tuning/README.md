@@ -1,14 +1,16 @@
 # Purpose of this module
 This module shows you how to fine-tune an LLM model. This code is inspired by this [fine-tuning code](https://github.com/dagster-io/dagster_llm_finetune/tree/main).
 
-Specifically the code here, from an approach standpoint, shows Supervised Fine-Tuning (SFT) for dialogue. This approach instructs the model to be more
+Specifically the code here, shows Supervised Fine-Tuning (SFT) for dialogue. This approach instructs the model to be more
 useful to directly respond to a question, rather than optimizing over an entire dialogue. SFT is the most common type of fine-tuning,
-as the other two options: Pre-training for Completion, and RLHF, required more to work. Pre-training requires more computational power,
+as the other two options, Pre-training for Completion, and RLHF, required more to work. Pre-training requires more computational power,
 while RLHF requires higher-quality dialogue data.
 
 This code should work on a regular CPU (in a docker container), which will allow you to test out the code locally without
 any additional setup. This specific approach this code uses is [LoRA](https://arxiv.org/abs/2106.09685) (low-rank adaptation of large language models), which
 means that only a subset of the LLM's parameters are tweaked and prevents over-fitting.
+
+Note: if you have issues running this on MacOS, reach out, we might be able to help.
 
 ## What is fine-tuning?
 Fine-tuning is when a pre-trained model, in this context a foundational model, is customized using additional data to
@@ -28,7 +30,7 @@ It shows a basic process of:
 
 a. Loading data and tokenizing it and setting up some tokenization parameters.
 
-b. Splitting data into training, validation, and inference sets.
+b. Splitting data into training, validation, and hold out sets.
 
 c. Fine-tuning the model using LoRA.
 
@@ -63,14 +65,12 @@ You would then pass in as _inputs_ to execution `"data_path"=PATH_TO_THIS_FILE` 
 that the transformers library supports for `AutoModelForSeq2SeqLM` models.
 - Run the code.
 
-Because there's no configuration that changes the shape of the DAG, you can run the code like this:
-
 ```python
 # instantiate the driver with this module however you want
 result = dr.execute(
     [ # some suggested outputs
         "save_best_models",
-        "inference_set_predictions",
+        "hold_out_set_predictions",
         "training_and_validation_set_metrics",
         "finetuned_model_on_validation_set",
     ],
@@ -122,7 +122,7 @@ docker run YOUR_IMAGE_NAME
  - `{"start":  "presaved"}` Use this if you want to load an already fine-tuned model and then just eval it.
 
 # Limitations
-The code here cannot guarantee groundbreaking performance for your specific use case,
+The code here will likely not solve all your LLM troubles,
 but it can show you how to fine-tune an LLM using parameter-efficient techniques such as LoRA.
 
 This code is currently set up to work with dataset and transformer libraries. It could be modified to work with other libraries.

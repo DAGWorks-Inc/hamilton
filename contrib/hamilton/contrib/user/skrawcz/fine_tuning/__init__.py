@@ -37,7 +37,7 @@ from hamilton.function_modifiers import extract_fields
 from hamilton.function_modifiers.configuration import config
 
 
-@extract_fields({"train_set": Dataset, "validation_set": Dataset, "inference_set": Dataset})
+@extract_fields({"train_set": Dataset, "validation_set": Dataset, "hold_out_set": Dataset})
 def raw_dataset(
     data_path: str,
     random_state: int = 42,
@@ -78,7 +78,7 @@ def raw_dataset(
     return {
         "train_set": dataset_train,
         "validation_set": dataset_validation,
-        "inference_set": dataset_inference,
+        "hold_out_set": dataset_inference,
     }
 
 
@@ -87,7 +87,7 @@ def tokenizer(
 ) -> PreTrainedTokenizerBase:
     """The tokenizer we're going to use to tokenize text.
 
-    :param model_id:
+    :param model_id: the model id that corresponds to what huggingface knows about.
     :return: the tokenizer to use.
     """
     tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -97,11 +97,11 @@ def tokenizer(
 def tokenized_inputs(
     train_set: Dataset,
     validation_set: Dataset,
-    inference_set: Dataset,
+    hold_out_set: Dataset,
     tokenizer: PreTrainedTokenizerBase,
 ) -> DatasetType:
-    """Tokenizes"""
-    return concatenate_datasets([train_set, validation_set, inference_set]).map(
+    """Tokenizes the inputs from all the datasets and creates a single data set with them."""
+    return concatenate_datasets([train_set, validation_set, hold_out_set]).map(
         lambda x: tokenizer(x["input_text"], truncation=True),
         batched=True,
         remove_columns=["input_text", "output_text"],
@@ -121,10 +121,11 @@ def max_source_lengths(input_lengths: list[int]) -> int:
 def tokenized_targets(
     train_set: Dataset,
     validation_set: Dataset,
-    inference_set: Dataset,
+    hold_out_set: Dataset,
     tokenizer: PreTrainedTokenizerBase,
 ) -> DatasetType:
-    return concatenate_datasets([train_set, validation_set, inference_set]).map(
+    """Tokenizes the outputs, i.e. target responses, from all the datasets and creates a single data set with them."""
+    return concatenate_datasets([train_set, validation_set, hold_out_set]).map(
         lambda x: tokenizer(x["output_text"], truncation=True),
         batched=True,
         remove_columns=["input_text", "output_text"],
@@ -215,14 +216,14 @@ def tokenized_validation(
     )
 
 
-def tokenized_inference(
-    inference_set: Dataset,
+def tokenized_hold_out(
+    hold_out_set: Dataset,
     max_source_lengths: int,
     max_target_lengths: int,
     tokenizer: PreTrainedTokenizerBase,
 ) -> Dataset:
     """Tokenizes the inference set."""
-    return inference_set.map(
+    return hold_out_set.map(
         partial(
             _preprocess_function,
             max_source_lengths=max_source_lengths,
@@ -237,15 +238,16 @@ def tokenized_inference(
 def saved_datasets(
     tokenized_train: Dataset,
     tokenized_validation: Dataset,
-    tokenized_inference: Dataset,
+    tokenized_hold_out: Dataset,
 ) -> dict:
+    """Function to save tokenized datasets using the datasets library."""
     tokenized_train.save_to_disk("data/train")
     tokenized_validation.save_to_disk("data/validation")
-    tokenized_inference.save_to_disk("data/inference")
+    tokenized_hold_out.save_to_disk("data/inference")
     return {
         "tokenized_train": "data/train",
         "tokenized_validation": "data/validation",
-        "tokenized_inference": "data/inference",
+        "tokenized_hold_out": "data/inference",
     }
 
 
@@ -338,14 +340,18 @@ def training_args(
     gradient_accumulation_steps: int = 1,
     num_train_epochs: int = 2,
 ) -> Seq2SeqTrainingArguments:
-    """The arguments to use for fine-tuning.
+    """Constructs the arguments to use for fine-tuning.
 
-    :param peft_model_id:
-    :param per_device_eval_batch_size:
-    :param per_device_train_batch_size:
-    :param gradient_accumulation_steps:
-    :param num_train_epochs:
-    :return: Seq2SeqTrainingArguments
+    :param peft_model_id: The ID we're running everything under here.
+    :param per_device_eval_batch_size: The batch size for evaluation. This is the number of samples that will be fed to
+        the model at once during evaluation.
+    :param per_device_train_batch_size: The batch size for training. This is the number of samples that will be fed to
+        the model at once during training.
+    :param gradient_accumulation_steps: The number of steps to accumulate gradients before performing an optimization
+        step. This can be useful when training on multiple GPUs to effectively increase the batch size.
+    :param num_train_epochs: The number of epochs to train the model. An epoch is one pass through the entire training
+        dataset.
+    :return: Seq2SeqTrainingArguments object, the arguments for training such as batch size, learning rate, etc.
     """
     training_args = Seq2SeqTrainingArguments(
         do_train=True,
@@ -374,14 +380,16 @@ def trainer(
     tokenized_train: Dataset,
     tokenized_validation: Dataset,
 ) -> Seq2SeqTrainer:
-    """The trainer we'll use for fine-tuning.
+    """Constructs a Seq2SeqTrainer for fine-tuning.
 
-    :param base_model:
-    :param training_args:
-    :param data_collator:
-    :param tokenized_train:
-    :param tokenized_test:
-    :return: Seq2SeqTrainer
+    :param base_model: torch.nn.Module object, the base model to be fine-tuned.
+    :param training_args: Seq2SeqTrainingArguments object, the arguments for training such as batch size, learning rate,
+        etc.
+    :param data_collator: DataCollatorForSeq2Seq object, the data collator that will be used to form batches for
+        training.
+    :param tokenized_train: Dataset object, the training set that has been tokenized.
+    :param tokenized_validation: Dataset object, the validation set that has been tokenized.
+    :return: Seq2SeqTrainer object, the trainer that will be used for fine-tuning.
     """
     trainer = Seq2SeqTrainer(
         model=base_model,
@@ -407,7 +415,7 @@ def fitted_and_evaluated_trainer(trainer: Seq2SeqTrainer, device: torch.device) 
 
     :param trainer: the trainer to use.
     :param device: device to place the device on to.
-    :return:
+    :return: dictionary with the trainer, the evaluation metrics, and the fine-tuned model.
     """
     trainer.train()
     eval_metrics = trainer.evaluate()
@@ -472,12 +480,15 @@ def metric() -> evaluate.EvaluationModule:
 def _evaluate_peft_model(sample, model, tokenizer, device, max_target_length=512) -> tuple:
     """Helper function to evaluate the model on a sample.
 
-    :param sample:
-    :param model:
-    :param tokenizer:
-    :param device:
-    :param max_target_length:
-    :return: the prediction, and the ground truth label.
+    :param sample: The sample on which the model is to be evaluated. This is typically a single instance from the
+        dataset.
+    :param model: The model to be used for evaluation. This is typically the fine-tuned model.
+    :param tokenizer: The tokenizer that was used during the preprocessing of the data.
+        This will be used to decode the model's predictions from token ids back to text.
+    :param device: The device where the computations will be performed. This is typically a CPU or a specific GPU.
+    :param max_target_length: The maximum length of the target sequence. If the predicted sequence is longer than this,
+        it will be truncated to this length.
+    :return: A tuple containing the prediction and the ground truth label.
     """
     # generate summary
     # outputs = model.generate(
@@ -508,14 +519,29 @@ def finetuned_model_on_validation_set(
     tokenizer: PreTrainedTokenizerBase,
     device: torch.device,
 ) -> dict[str, list]:
-    """Evaluates our fine-tuned model on the validation set.
+    """
+    Evaluates the fine-tuned model on the validation set.
 
-    If you run this on a large model this can take a while.
-    :param tokenized_validation:
-    :param finetuned_model:
-    :param tokenizer:
-    :param device:
-    :return:
+    This function iterates over the validation set and generates predictions for each sample.
+    The predictions and the ground truth labels are then returned as a dictionary.
+
+    Note: If you run this on a large model this can take a while.
+
+    :param tokenized_validation: Dataset object, the validation set that has been tokenized.
+        This is the data that the model has seen during training and will be used for testing the model's performance.
+
+    :param finetuned_model: torch.nn.Module object, the fine-tuned model that will be used to generate predictions
+        on the validation set. This model has been trained on the training set.
+
+    :param tokenizer: PreTrainedTokenizerBase object, the tokenizer that was used during the preprocessing
+        of the data. This will be used to decode the model's predictions from token ids back to text.
+
+    :param device: torch.device object, the device where the computations will be performed.
+        This is typically a CPU or a specific GPU.
+
+    :return: Dictionary containing two lists - 'validation_predictions' and 'validation_references'.
+        'validation_predictions' is a list of model predictions for each sample in the validation set.
+        'validation_references' is a list of ground truth labels for each sample in the validation set.
     """
     predictions, references = [], []
     with torch.inference_mode():
@@ -540,6 +566,14 @@ def validation_set_metrics(
     validation_references: list,
     metric: evaluate.EvaluationModule,
 ) -> dict:
+    """Computes the Rouge metric on the validation set.
+
+    :param validation_predictions: List of model predictions for each sample in the validation set.
+    :param validation_references: List of ground truth labels for each sample in the validation set.
+    :param metric: EvaluationModule object, the metric used to evaluate the model's performance.
+        In this case, it's Rouge.
+    :return: Dictionary containing the Rouge scores for the model's performance on the validation set.
+    """
     rogue = metric.compute(
         predictions=validation_predictions,
         references=validation_references,
@@ -561,24 +595,29 @@ def training_and_validation_set_metrics(
     return {**fit_trainer_eval_metrics, **validation_set_metrics}
 
 
-def inference_set_predictions(
-    tokenized_inference: Dataset,
+def hold_out_set_predictions(
+    tokenized_hold_out: Dataset,
     finetuned_model: torch.nn.Module,
     tokenizer: PreTrainedTokenizerBase,
     device: torch.device,
 ) -> list[tuple[str, str]]:
     """Runs model on the inference set.
 
-    :param tokenized_inference:
-    :param finetuned_model:
-    :param tokenizer:
-    :param device:
+    :param tokenized_hold_out: Dataset object, the hold-out set that has been tokenized.This is the data that the
+    model has not seen during training or validation and will be used for testing the model's performance.
+    :param finetuned_model: torch.nn.Module object, the fine-tuned model that will be used to generate predictions
+    on the hold-out set.
+    This model has been trained on the training set and validated on the validation set.
+    :param tokenizer: PreTrainedTokenizerBase object, the tokenizer that was used during the preprocessing
+    of the data. This will be used to decode the model's predictions from token ids back to text.
+    :param device: torch.device object, the device where the computations will be performed.
+    This is typically a CPU or a specific GPU.
     :return: generate responses for the inference set
     """
     predictions = []
     questions = []
     with torch.inference_mode():
-        for sample in tokenized_inference.with_format("torch", device=device):
+        for sample in tokenized_hold_out.with_format("torch", device=device):
             max_target_length = 512
             outputs = finetuned_model.generate(
                 input_ids=sample["input_ids"].unsqueeze(0).cpu(),
@@ -636,7 +675,7 @@ if __name__ == "__main__":
     result = dr.execute(
         [
             "save_best_models",
-            "inference_set_predictions",
+            "hold_out_set_predictions",
             "training_and_validation_set_metrics",
             "finetuned_model_on_validation_set",
         ],
