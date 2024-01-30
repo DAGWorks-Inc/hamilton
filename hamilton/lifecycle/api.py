@@ -23,6 +23,7 @@ from hamilton.lifecycle.base import (
     BaseDoCheckEdgeTypesMatch,
     BaseDoNodeExecute,
     BaseDoValidateInput,
+    BasePostGraphConstruct,
     BasePostGraphExecute,
     BasePostNodeExecute,
     BasePostTaskExecute,
@@ -584,3 +585,30 @@ class StaticValidator(BaseValidateGraph, BaseValidateNode):
         self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
     ) -> Tuple[bool, Optional[Exception]]:
         return self.run_to_validate_graph(graph=HamiltonGraph.from_graph(graph))
+
+
+class GraphConstructionHook(BasePostGraphConstruct, abc.ABC):
+    """Hook that is run after graph construction. This allows you to register/capture info on the graph.
+    Note that, in the case of materialization, this may be called multiple times (once when we create the graph,
+    once when we materialize). Currently information into that is not exposed to the user, but we will be adding that in future
+    iterations.
+    """
+
+    def post_graph_construct(
+        self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+    ):
+        self.run_after_graph_construction(graph=HamiltonGraph.from_graph(graph), config=config)
+
+    @abc.abstractmethod
+    def run_after_graph_construction(
+        self, *, graph: HamiltonGraph, config: Dict[str, Any], **future_kwargs: Any
+    ):
+        """Hook that is run post graph construction. This allows you to register/capture info on the graph.
+        A common pattern is to store something in your object's state here so that you can use it later
+        (E.G. compute a hash on the graph)
+
+        :param graph: Graph that was constructed
+        :param config: Configuration used to construct the graph
+        :param future_kwargs: Reserved for backwards compatibility.
+        """
+        pass

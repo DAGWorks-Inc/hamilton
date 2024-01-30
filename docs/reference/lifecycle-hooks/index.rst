@@ -23,6 +23,7 @@ looking forward.
    EdgeConnectionHook
    NodeExecutionMethod
    StaticValidator
+   GraphConstructionHook
 
 
 Available Adapters
