@@ -20,7 +20,7 @@ more responses that are more contextually relevant to your use case.
 ## FLAN LLM
 This example is based on using [Google's Fine-tuned LAnguage Net (FLAN) models hosted on HuggingFace](https://huggingface.co/docs/transformers/model_doc/flan-t5).
 The larger the model, the longer it will take to fine-tune, and the more memory you'll need for it. The code
-here by default (which you can easily change) is set up to run on docker using the smallest FLAN model.
+here was validated to run on docker using the smallest FLAN model ("model_id": "google/flan-t5-small") on a Mac that's a few years old.
 
 ## What type of functionality is in this module?
 
@@ -59,22 +59,23 @@ e.g. you should be able to do `json.load(f)` and it would return a list of dicti
 ]
 ```
 
-You would then pass in as _inputs_ to execution `"data_path"=PATH_TO_THIS_FILE` as well as `"input_text_key"="question"` and `"output_text_key"="reply"`.
+You would then pass in as _inputs_ to execution `"data_path":PATH_TO_THIS_FILE` as well as `"input_text_key":"question"` and `"output_text_key":"reply"`.
 - Instantiate the driver. Use `{"start": "base"}` as configuration to run with to use a raw base LLM to finetune.
-- Pick your LLM. `model_id_tokenizer="google/mt5-small"` is the default, but you can change it to any of the models
+- Pick your LLM. `"model_id":"google/mt5-small"` is what we recommend to start, but you can change it to any of the models
 that the transformers library supports for `AutoModelForSeq2SeqLM` models.
 - Run the code.
 
 ```python
 # instantiate the driver with this module however you want
 result = dr.execute(
-    [ # some suggested outputs
+    [ # some suggested outputs -- see the visualization/code to understand what these are
         "save_best_models",
         "hold_out_set_predictions",
         "training_and_validation_set_metrics",
         "finetuned_model_on_validation_set",
     ],
     inputs={
+        "model_id": "google/flan-t5-small", # the base model you want to fine-tune
         "data_path": "example-support-dataset.json", # the path to your dataset
         "input_text_key": "question",  # the key in the json object that has the input text
         "output_text_key": "gpt4_replies_target", # the key in the json object that has the target output text
