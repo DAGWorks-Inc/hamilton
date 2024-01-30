@@ -11,6 +11,8 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# change this to your data set if you want to load
+# it into the container
 COPY example-support-dataset.json .
 
 COPY . .
