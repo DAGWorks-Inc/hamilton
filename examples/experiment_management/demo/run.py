@@ -1,40 +1,42 @@
 import analysis
-from experiment_hook import ExperimentTracker
+from hamilton_experiments.hook import ExperimentTracker
 
 from hamilton import driver
 from hamilton.io.materialization import to
-
-CACHE_PATH = "/home/tjean/projects/dagworks/hamilton/examples/experiment_management/repository"
-EXPERIMENT_PATH = "./experiments"
+from hamilton.plugins import pandas_extensions  # noqa: F401
 
 
 def main():
     config = dict(
-        model="boosting",
+        model="linear",
         preprocess="pca",
+    )
+
+    tracker_hook = ExperimentTracker(
+        experiment_name="hello-world",
+        base_directory="./experiments",
     )
 
     dr = (
         driver.Builder()
         .with_modules(analysis)
         .with_config(config)
-        .with_adapter(
-            ExperimentTracker(
-                cache_path=CACHE_PATH,  # must be an absolute path; should assert in hook __init__()
-                run_dir=EXPERIMENT_PATH,  # accepts a relative path
-            )
-        )
+        .with_adapters(tracker_hook)
         .build()
     )
 
-    inputs = dict(favorite_int=9)
-    overrides = dict()
+    inputs = dict(n_splits=4)
 
     materializers = [
         to.pickle(
             id="trained_model__pickle",
             dependencies=["trained_model"],
             path="./trained_model.pickle",
+        ),
+        to.parquet(
+            id="X_df__parquet",
+            dependencies=["X_df"],
+            path="./X_df.parquet",
         ),
         to.pickle(
             id="out_of_sample_performance__pickle",
@@ -46,16 +48,11 @@ def main():
     dr.visualize_materialization(
         *materializers,
         inputs=inputs,
-        overrides=overrides,
-        output_file_path="dag",
-        render_kwargs=dict(format="png", view=False),
+        output_file_path=f"{tracker_hook.run_directory}/dag",
+        render_kwargs=dict(view=False, format="png"),
     )
 
-    dr.materialize(
-        *materializers,
-        inputs=inputs,
-        overrides=overrides,
-    )
+    dr.materialize(*materializers, inputs=inputs)
 
 
 if __name__ == "__main__":

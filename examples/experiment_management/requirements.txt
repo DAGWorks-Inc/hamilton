@@ -1,7 +1,0 @@
-fastapi
-fastui
-pandas
-pydantic
-python-multipart
-scikit-learn
-sf-hamilton[visualization]
