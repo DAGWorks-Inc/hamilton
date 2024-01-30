@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hamilton-experiments"
+version = "0.0.1"
+dependencies = [
+    "python-multipart",
+    "fastui",
+    "fastapi",
+    "sf-hamilton[visualization]",
+    "pydantic",
+    "pandas",
+    "uvicorn",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["hamilton_experiments/"]

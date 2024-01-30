@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, clone
 from sklearn.datasets import load_diabetes
 from sklearn.decomposition import PCA
@@ -11,7 +12,7 @@ from hamilton.function_modifiers import config, extract_fields
 
 
 @extract_fields(dict(X_raw=np.ndarray, y=np.ndarray))
-def load_data(favorite_int: int) -> dict:
+def load_data() -> dict:
     X_raw, y = load_diabetes(return_X_y=True)
     return dict(X_raw=X_raw, y=y)
 
@@ -76,3 +77,7 @@ def trained_model(
 ) -> BaseEstimator:
     base_model.fit(X, y)
     return base_model
+
+
+def X_df(X: np.ndarray) -> pd.DataFrame:
+    return pd.DataFrame(X)
