@@ -1,0 +1,13 @@
+absl-py
+datasets
+evaluate
+numpy
+pandas
+peft
+rouge-score
+scikit-learn
+sf-hamilton
+torch
+tqdm
+transformers
+# dagworks-sdk -- use if you want to track your runs with DAGWorks

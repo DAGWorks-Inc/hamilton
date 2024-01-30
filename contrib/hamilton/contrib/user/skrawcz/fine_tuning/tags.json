@@ -1,0 +1,7 @@
+{
+  "schema": "1.0",
+  "use_case_tags": ["fine-tuning", "torch", "tokenization", "nlp"],
+  "secondary_tags": {
+    "machine-learning-library": "pytorch"
+  }
+}
