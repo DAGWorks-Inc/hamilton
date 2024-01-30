@@ -31,8 +31,7 @@ The `ExperimentTracker` hook can be added to your Hamilton Driver definition to 
 
 1. Create the `ExperimentTracker` hook object:
     - `experiment_name`: name to organize related runs. Is used to create directories and displayed in the UI
-    - `metadata_cache_path`: path where a small metadata cache will be created to store run metadata
-    - `base_run_directory`: path under which subdirectories will be created to store artifacts
+    - `base_directory`: path where the metadata cache and subdirectories to store artifacts will be created 
 2. Create the Hamilton Driver and pass the `ExperimentTracker` to `with_adapters()` method
 3. Define materializers for each artifacts you care about. The UI provides rich support for `parquet`, `csv`, and `json`.
     - ⚠ Make sure to use relative paths (ones that don't start with `/`) for artifacts to be stored in run directories.
