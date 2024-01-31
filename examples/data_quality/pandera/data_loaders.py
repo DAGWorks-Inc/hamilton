@@ -9,6 +9,7 @@ Note:
     (2) instead of @config.when* we could instead move these functions into specific independent modules, and then in
     the driver choose which one to use for the DAG. For the purposes of this example, we decided one file is simpler.
 """
+
 from typing import List
 
 import pandas as pd

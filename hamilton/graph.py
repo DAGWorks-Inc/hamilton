@@ -5,6 +5,7 @@ It should only house the graph & things required to create and traverse one.
 
 Note: one should largely consider the code in this module to be "private".
 """
+
 import inspect
 import logging
 import pathlib
@@ -59,7 +60,9 @@ def add_dependency(
         required_node: Node = nodes[param_name]
         types_do_match = types_match(param_type, required_node.type)
         types_do_match |= adapter_checks_types and adapter.call_lifecycle_method_sync(
-            "do_check_edge_types_match", type_from=param_type, type_to=required_node.type
+            "do_check_edge_types_match",
+            type_from=param_type,
+            type_to=required_node.type,
         )
         if not types_do_match and required_node.user_defined:
             # check the case that two input type expectations are compatible, e.g. is one a subset of the other
@@ -67,7 +70,9 @@ def add_dependency(
             # which is fine for inputs. If they are not compatible, we raise an error.
             types_are_compatible = types_match(required_node.type, param_type)
             types_are_compatible |= adapter_checks_types and adapter.call_lifecycle_method_sync(
-                "do_check_edge_types_match", type_from=param_type, type_to=required_node.type
+                "do_check_edge_types_match",
+                type_from=param_type,
+                type_to=required_node.type,
             )
             if not types_are_compatible:
                 raise ValueError(

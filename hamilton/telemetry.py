@@ -14,6 +14,7 @@ To disable sending telemetry there are three ways:
   or:
   export HAMILTON_TELEMETRY_ENABLED=false
 """
+
 import configparser
 import json
 import logging
@@ -263,7 +264,9 @@ def create_driver_function_invocation_event(function_name: str) -> dict:
     return event
 
 
-def create_dataflow_function_invocation_event_json(canonical_function_name: str) -> dict:
+def create_dataflow_function_invocation_event_json(
+    canonical_function_name: str,
+) -> dict:
     """Function that creates JSON to track dataflow module function calls.
 
     :param canonical_function_name: the name of the function in the dataflow module.

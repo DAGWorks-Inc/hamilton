@@ -65,9 +65,9 @@ class PlotlyInteractiveWriter(DataSaver):
     path: Union[str, pathlib.Path, IO]
     config: Optional[Dict] = None
     auto_play: bool = True
-    include_plotlyjs: Union[
-        bool, str
-    ] = True  # or "cdn", "directory", "require", "False", "other string .js"
+    include_plotlyjs: Union[bool, str] = (
+        True  # or "cdn", "directory", "require", "False", "other string .js"
+    )
     include_mathjax: Union[bool, str] = False  # "cdn", "string .js"
     post_script: Union[str, List[str], None] = None
     full_html: bool = True

@@ -1,4 +1,5 @@
 """A selection of default lifeycle hooks/methods that come with Hamilton. These carry no additional requirements"""
+
 import logging
 import pdb
 import pprint
@@ -149,7 +150,8 @@ class PrintLn(NodeExecutionHook):
 
 class PDBDebugger(NodeExecutionHook, NodeExecutionMethod):
     """Class to inject a PDB debugger into a node execution. This is still somewhat experimental as it is a debugging utility.
-    We reserve the right to change the API and the implementation of this class in the future."""
+    We reserve the right to change the API and the implementation of this class in the future.
+    """
 
     CONTEXT = dict()
 

@@ -1,4 +1,5 @@
 """Module for external-facing graph constructs. These help the user navigate/manage the graph as needed."""
+
 import inspect
 import typing
 from dataclasses import dataclass
@@ -35,12 +36,14 @@ class HamiltonNode:
         return {
             "name": self.name,
             "tags": self.tags,
-            "output_type": get_type_as_string(self.type) if get_type_as_string(self.type) else "",
+            "output_type": (get_type_as_string(self.type) if get_type_as_string(self.type) else ""),
             "required_dependencies": sorted(self.required_dependencies),
             "optional_dependencies": sorted(self.optional_dependencies),
-            "source": inspect.getsource(self.originating_functions[0])
-            if self.originating_functions
-            else None,
+            "source": (
+                inspect.getsource(self.originating_functions[0])
+                if self.originating_functions
+                else None
+            ),
             "documentation": self.documentation,
         }
 

@@ -2,6 +2,7 @@
 Module that contains code to house state for an agent. The dialog
 right now is hardcoded at the bottom of this file.
 """
+
 import json
 import logging
 import sys

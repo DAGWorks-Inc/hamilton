@@ -97,7 +97,8 @@ class parameterize(base.NodeExpander):
     def __init__(
         self,
         **parametrization: Union[
-            Dict[str, ParametrizedDependency], Tuple[Dict[str, ParametrizedDependency], str]
+            Dict[str, ParametrizedDependency],
+            Tuple[Dict[str, ParametrizedDependency], str],
         ],
     ):
         """Decorator to use to create many functions.
@@ -147,7 +148,10 @@ class parameterize(base.NodeExpander):
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         nodes = []
-        for output_node, parametrization_with_optional_docstring in self.parameterization.items():
+        for (
+            output_node,
+            parametrization_with_optional_docstring,
+        ) in self.parameterization.items():
             if output_node == parameterize.PLACEHOLDER_PARAM_NAME:
                 output_node = node_.name
             if isinstance(
@@ -227,12 +231,15 @@ class parameterize(base.NodeExpander):
                 return node_.callable(*args, **new_kwargs)
 
             new_input_types = {}
-            grouped_dependencies = {**grouped_list_dependencies, **grouped_dict_dependencies}
+            grouped_dependencies = {
+                **grouped_list_dependencies,
+                **grouped_dict_dependencies,
+            }
             for param, val in node_.input_types.items():
                 if param in upstream_dependencies:
-                    new_input_types[
-                        upstream_dependencies[param].source
-                    ] = val  # We replace with the upstream_dependencies
+                    new_input_types[upstream_dependencies[param].source] = (
+                        val  # We replace with the upstream_dependencies
+                    )
                 elif param in grouped_dependencies:
                     # These are the components of the individual sequence
                     # E.G. if the parameter is List[int], the individual type is just int
@@ -250,11 +257,14 @@ class parameterize(base.NodeExpander):
                         if dep.get_dependency_type() == ParametrizedDependencySource.UPSTREAM:
                             # TODO -- think through what happens if we have optional pieces...
                             # I think that we shouldn't allow it...
-                            new_input_types[dep.source] = (sequence_component_type, val[1])
+                            new_input_types[dep.source] = (
+                                sequence_component_type,
+                                val[1],
+                            )
                 elif param not in literal_dependencies:
-                    new_input_types[
-                        param
-                    ] = val  # We just use the standard one, nothing is getting replaced
+                    new_input_types[param] = (
+                        val  # We just use the standard one, nothing is getting replaced
+                    )
             nodes.append(
                 node_.copy_with(
                     name=output_node,
@@ -264,7 +274,7 @@ class parameterize(base.NodeExpander):
                         **{parameter: val.value for parameter, val in literal_dependencies.items()},
                     ),
                     input_types=new_input_types,
-                    include_refs=False  # Include refs is here as this is earlier than compile time
+                    include_refs=False,  # Include refs is here as this is earlier than compile time
                     # TODO -- figure out why this isn't getting replaced later...
                 )
             )

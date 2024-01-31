@@ -24,6 +24,7 @@ externally.
 To build an implementation of a hook/method, all you have to do is extend any number of classes.
 See api.py for implementations.
 """
+
 import abc
 import asyncio
 import collections
@@ -307,7 +308,11 @@ class BaseValidateNode(abc.ABC):
 class BaseValidateGraph(abc.ABC):
     @abc.abstractmethod
     def validate_graph(
-        self, *, graph: "graph.FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+        self,
+        *,
+        graph: "graph.FunctionGraph",
+        modules: List[ModuleType],
+        config: Dict[str, Any],
     ) -> Tuple[bool, Optional[str]]:
         """Validates the graph. This will raise an InvalidNodeException
 
@@ -322,7 +327,11 @@ class BaseValidateGraph(abc.ABC):
 class BasePostGraphConstruct(abc.ABC):
     @abc.abstractmethod
     def post_graph_construct(
-        self, *, graph: "graph.FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+        self,
+        *,
+        graph: "graph.FunctionGraph",
+        modules: List[ModuleType],
+        config: Dict[str, Any],
     ):
         """Hooks that is called after the graph is constructed.
 
@@ -337,7 +346,11 @@ class BasePostGraphConstruct(abc.ABC):
 class BasePostGraphConstructAsync(abc.ABC):
     @abc.abstractmethod
     async def post_graph_construct(
-        self, *, graph: "graph.FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+        self,
+        *,
+        graph: "graph.FunctionGraph",
+        modules: List[ModuleType],
+        config: Dict[str, Any],
     ):
         """Asynchronous hook that is called after the graph is constructed.
 

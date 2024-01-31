@@ -1,6 +1,7 @@
 """
 Module for functions with genercis to test graph things with.
 """
+
 from typing import Dict, List, Mapping, Tuple
 
 

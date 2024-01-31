@@ -155,7 +155,8 @@ class ExtractorFactory:
 
 class MaterializerFactory:
     """Basic factory for creating materializers. Note that this should only ever be instantiated
-    through `to.<name>`, which conducts polymorphic lookup to find the appropriate materializer."""
+    through `to.<name>`, which conducts polymorphic lookup to find the appropriate materializer.
+    """
 
     def __init__(
         self,
@@ -193,7 +194,11 @@ class MaterializerFactory:
         """
         final_vars = common.convert_output_values(self.dependencies, module_set)
         return MaterializerFactory(
-            self.id, self.savers, self.result_builder, final_vars, **self.data_saver_kwargs
+            self.id,
+            self.savers,
+            self.result_builder,
+            final_vars,
+            **self.data_saver_kwargs,
         )
 
     def _resolve_dependencies(self, fn_graph: graph.FunctionGraph) -> List[node.Node]:
@@ -241,9 +246,9 @@ class MaterializerFactory:
                 doc_string=f"Builds the result for {self.id} materializer",
                 callabl=join_function,
                 input_types={dep.name: dep.type for dep in node_dependencies},
-                originating_functions=None
-                if self.result_builder is None
-                else [self.result_builder.build_result],
+                originating_functions=(
+                    None if self.result_builder is None else [self.result_builder.build_result]
+                ),
             )
             out.append(join_node)
             save_dep = join_node
@@ -268,13 +273,13 @@ class _MaterializerFactoryProtocol(Protocol):
         combine: lifecycle.ResultBuilder = None,
         **kwargs: Union[str, SingleDependency],
     ) -> MaterializerFactory:
-        ...
+        pass
 
 
 @typing.runtime_checkable
 class _ExtractorFactoryProtocol(Protocol):
     def __call__(self, target: str, **kwargs: Union[str, SingleDependency]) -> ExtractorFactory:
-        ...
+        pass
 
 
 def partial_materializer(data_savers: List[Type[DataSaver]]) -> _MaterializerFactoryProtocol:
@@ -297,7 +302,9 @@ def partial_materializer(data_savers: List[Type[DataSaver]]) -> _MaterializerFac
     return create_materializer_factory
 
 
-def partial_extractor(data_loaders: List[Type[DataLoader]]) -> _ExtractorFactoryProtocol:
+def partial_extractor(
+    data_loaders: List[Type[DataLoader]],
+) -> _ExtractorFactoryProtocol:
     """Creates a partial materializer, with the specified data savers."""
 
     def create_extractor_factory(

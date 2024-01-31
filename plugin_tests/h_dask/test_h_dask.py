@@ -105,7 +105,10 @@ dd_test_cases = [
     ),
     # dataframe_and_series
     (
-        {"a": pd.Series([1, 2, 3]), "b": pd.DataFrame({"b": [1, 2, 3], "c": [1, 1, 1]})},
+        {
+            "a": pd.Series([1, 2, 3]),
+            "b": pd.DataFrame({"b": [1, 2, 3], "c": [1, 1, 1]}),
+        },
         pd.DataFrame({"a": [1, 2, 3], "b.b": [1, 2, 3], "b.c": [1, 1, 1]}),
     ),
     # multiple_series_and_scalar

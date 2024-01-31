@@ -193,8 +193,8 @@ def modify_and_import(module_name, package, modification_func):
 def test_smoke_screen_module(driver_factory, future_import_annotations):
     # Monkeypatch the env
     # This tells the smoke screen module whether to use the future import
-    modification_func = (
-        lambda source: "\n".join(["from __future__ import annotations"] + source.splitlines())
+    modification_func = lambda source: (  # noqa: E731
+        "\n".join(["from __future__ import annotations"] + source.splitlines())
         if future_import_annotations
         else source
     )

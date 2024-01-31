@@ -129,7 +129,9 @@ class DataInRangeValidatorPrimitives(base.BaseDefaultValidator):
         else:
             message = f"Data point {data} does not fall within acceptable range: ({min_}, {max_})"
         return base.ValidationResult(
-            passes=passes, message=message, diagnostics={"range": self.range, "value": data}
+            passes=passes,
+            message=message,
+            diagnostics={"range": self.range, "value": data},
         )
 
     @classmethod
@@ -300,7 +302,10 @@ class DataTypeValidatorPrimitives(base.BaseDefaultValidator):
             passes=passes,
             message=f"Requires data type: {self.datatype}. "
             f"Got data type: {type(data)}. This {'is' if passes else 'is not'} a match.",
-            diagnostics={"required_data_type": self.datatype, "actual_data_type": type(data)},
+            diagnostics={
+                "required_data_type": self.datatype,
+                "actual_data_type": type(data),
+            },
         )
 
     @classmethod
@@ -328,7 +333,10 @@ class MaxStandardDevValidatorPandasSeries(base.BaseDefaultValidator):
             message=f"Max allowable standard dev is: {self.max_standard_dev}. "
             f"Dataset stddev is : {standard_dev}. "
             f"This {'passes' if passes else 'does not pass'}.",
-            diagnostics={"standard_dev": standard_dev, "max_standard_dev": self.max_standard_dev},
+            diagnostics={
+                "standard_dev": standard_dev,
+                "max_standard_dev": self.max_standard_dev,
+            },
         )
 
     @classmethod
@@ -356,7 +364,10 @@ class MeanInRangeValidatorPandasSeries(base.BaseDefaultValidator):
             passes=passes,
             message=f"Dataset has mean: {dataset_mean}. This {'is ' if passes else 'is not '} "
             f"in the required range: [{self.mean_in_range[0]}, {self.mean_in_range[1]}].",
-            diagnostics={"dataset_mean": dataset_mean, "mean_in_range": self.mean_in_range},
+            diagnostics={
+                "dataset_mean": dataset_mean,
+                "mean_in_range": self.mean_in_range,
+            },
         )
 
     @classmethod
@@ -385,9 +396,9 @@ class AllowNoneValidator(base.BaseDefaultValidator):
                 passes = False
         return base.ValidationResult(
             passes=passes,
-            message=f"Data is not allowed to be None, got {data}"
-            if not passes
-            else "Data is not None",
+            message=(
+                f"Data is not allowed to be None, got {data}" if not passes else "Data is not None"
+            ),
             diagnostics={},  # Nothing necessary here...
         )
 

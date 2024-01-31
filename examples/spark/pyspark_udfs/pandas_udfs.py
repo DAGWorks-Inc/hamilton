@@ -16,6 +16,7 @@ over vanilla UDFs.
 5. You can have non-pandas_udf functions in the same file, and will be run as row based UDFs.
 
 """
+
 import pandas as pd
 
 from hamilton.htypes import column

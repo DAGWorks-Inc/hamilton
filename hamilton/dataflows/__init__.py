@@ -4,6 +4,7 @@ dataflows.
 
 TODO: expect this to have a CLI interface in the future.
 """
+
 import functools
 import importlib
 import json
@@ -188,7 +189,13 @@ def pull_module(dataflow: str, user: str = None, version: str = "latest", overwr
         logger.info(f"pulling official dataflow {dataflow} with version {version}")
         local_file_path = OFFICIAL_PATH.format(commit_ish=version, dataflow=dataflow)
 
-    h_files = ["__init__.py", "requirements.txt", "README.md", "valid_configs.jsonl", "tags.json"]
+    h_files = [
+        "__init__.py",
+        "requirements.txt",
+        "README.md",
+        "valid_configs.jsonl",
+        "tags.json",
+    ]
 
     if os.path.exists(local_file_path) and not overwrite:
         raise ValueError(
@@ -484,7 +491,10 @@ def are_py_dependencies_satisfied(dataflow, user=None, version="latest"):
             greater_than = line.find(">")
             version_marker = min(equals, less_than, greater_than)
             if version_marker > 0:
-                package_name, required_version = line[:version_marker], line[version_marker + 1 :]
+                package_name, required_version = (
+                    line[:version_marker],
+                    line[version_marker + 1 :],
+                )
             else:
                 package_name = line
                 required_version = None
@@ -602,7 +612,10 @@ def find(query: str, version: str = None, user: str = None):
 
 @_track_function_call
 def copy(
-    dataflow: ModuleType, destination_path: str, overwrite: bool = False, renamed_module: str = None
+    dataflow: ModuleType,
+    destination_path: str,
+    overwrite: bool = False,
+    renamed_module: str = None,
 ):
     """Copies a dataflow module to the passed in path.
 

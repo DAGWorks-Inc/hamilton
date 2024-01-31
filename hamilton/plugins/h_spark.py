@@ -885,7 +885,10 @@ class require_columns(fm_base.NodeTransformer):
             if key != transformation_target and key not in dependent_columns_from_dataframe
         }
         # Thus we put that linear dependency in
-        new_input_types[linear_df_dependency_name] = (DataFrame, node.DependencyType.REQUIRED)
+        new_input_types[linear_df_dependency_name] = (
+            DataFrame,
+            node.DependencyType.REQUIRED,
+        )
         # Then we go through all "logical" dependencies -- columns we want to add to make lineage
         # look nice
         for item in dependent_columns_from_upstream:
@@ -1191,7 +1194,9 @@ class with_columns(fm_base.NodeCreator):
                 self.select if self.select is not None else [item.name for item in output_nodes]
             )
             select_node = with_columns.create_selector_node(
-                upstream_name=current_dataframe_node, columns=select_columns, node_name="_select"
+                upstream_name=current_dataframe_node,
+                columns=select_columns,
+                node_name="_select",
             )
             output_nodes.append(select_node)
             current_dataframe_node = select_node.name
