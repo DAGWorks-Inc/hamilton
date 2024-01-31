@@ -25,7 +25,9 @@ def test_ray_graph_adapter(init):
         "spend": pd.Series([10, 10, 20, 40, 40, 50]),
     }
     dr = driver.Driver(
-        initial_columns, example_module, adapter=h_ray.RayGraphAdapter(base.PandasDataFrameResult())
+        initial_columns,
+        example_module,
+        adapter=h_ray.RayGraphAdapter(base.PandasDataFrameResult()),
     )
     output_columns = [
         "spend",
@@ -47,7 +49,9 @@ def test_ray_graph_adapter(init):
 def test_smoke_screen_module(init):
     config = {"region": "US"}
     dr = driver.Driver(
-        config, smoke_screen_module, adapter=h_ray.RayGraphAdapter(base.PandasDataFrameResult())
+        config,
+        smoke_screen_module,
+        adapter=h_ray.RayGraphAdapter(base.PandasDataFrameResult()),
     )
     output_columns = [
         "raw_acquisition_cost",

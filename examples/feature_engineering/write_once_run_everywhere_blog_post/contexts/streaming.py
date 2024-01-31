@@ -7,6 +7,7 @@ From the `write_once_run_everywhere_blog_post` directory:
 
 This will print out predictions as they are computed.
 """
+
 import datetime
 import logging
 import pathlib
@@ -46,7 +47,8 @@ def hamilton_predict(payload: dict):
     for int_key in ["client_id", "budget", "age"]:
         payload[int_key] = int(float(payload[int_key]))
     series_out = dr.execute(
-        ["predictions"], inputs={"survey_event": payload, "execution_time": datetime.datetime.now()}
+        ["predictions"],
+        inputs={"survey_event": payload, "execution_time": datetime.datetime.now()},
     )["predictions"]
     return {"prediction": series_out.values[0], "client_id": payload["client_id"]}
 

@@ -13,6 +13,7 @@ In real-life practice you would probably do the following:
 * In real life, data is generally not normally distributed. There are tests for such non-normal data like the
   Wilcoxon test.
 """
+
 import typing
 from functools import partial
 
@@ -199,7 +200,10 @@ def after_lock(
 
 
 def before_lock(
-    aqi_array: np.ndarray, datetime_index: np.ndarray, after_lock: np.ndarray, before_lock_date: str
+    aqi_array: np.ndarray,
+    datetime_index: np.ndarray,
+    after_lock: np.ndarray,
+    before_lock_date: str,
 ) -> np.ndarray:
     """Grab period before lock down."""
     return aqi_array[np.where(datetime_index <= np.datetime64(before_lock_date))][

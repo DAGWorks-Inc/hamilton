@@ -107,18 +107,22 @@ class AdapterInfo:
             key=loader.name(),
             class_name=loader.__name__,
             class_path=loader.__module__,
-            load_params=[
-                Param(name=p.name, type=get_class_repr(p.type), default=get_default(p))
-                for p in dataclasses.fields(loader)
-            ]
-            if issubclass(loader, hamilton.io.data_adapters.DataLoader)
-            else None,
-            save_params=[
-                Param(name=p.name, type=get_class_repr(p.type), default=get_default(p))
-                for p in dataclasses.fields(loader)
-            ]
-            if issubclass(loader, hamilton.io.data_adapters.DataSaver)
-            else None,
+            load_params=(
+                [
+                    Param(name=p.name, type=get_class_repr(p.type), default=get_default(p))
+                    for p in dataclasses.fields(loader)
+                ]
+                if issubclass(loader, hamilton.io.data_adapters.DataLoader)
+                else None
+            ),
+            save_params=(
+                [
+                    Param(name=p.name, type=get_class_repr(p.type), default=get_default(p))
+                    for p in dataclasses.fields(loader)
+                ]
+                if issubclass(loader, hamilton.io.data_adapters.DataSaver)
+                else None
+            ),
             applicable_types=[get_class_repr(t) for t in loader.applicable_types()],
             file_=inspect.getfile(loader),
             line_nos=get_lines_for_class(loader),

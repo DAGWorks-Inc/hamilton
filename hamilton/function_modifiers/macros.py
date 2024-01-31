@@ -150,7 +150,9 @@ class does(base.NodeCreator):
 
     @staticmethod
     def ensure_function_signature_compatible(
-        og_function: Callable, replacing_function: Callable, argument_mapping: Dict[str, str]
+        og_function: Callable,
+        replacing_function: Callable,
+        argument_mapping: Dict[str, str],
     ):
         """Ensures that a function signature is compatible with the replacing function, given the argument mapping
 
@@ -175,7 +177,9 @@ class does(base.NodeCreator):
                 f"The following parameters for {og_function.__name__} are not keyword-friendly: {invalid_fn_parameters}"
             )
         if not does.test_function_signatures_compatible(
-            inspect.signature(og_function), inspect.signature(replacing_function), argument_mapping
+            inspect.signature(og_function),
+            inspect.signature(replacing_function),
+            argument_mapping,
         ):
             raise base.InvalidDecoratorException(
                 f"The following function signatures are not compatible for use with @does: "
@@ -241,7 +245,10 @@ def get_default_tags(fn: Callable) -> Dict[str, str]:
 )
 class dynamic_transform(base.NodeCreator):
     def __init__(
-        self, transform_cls: Type[models.BaseModel], config_param: str, **extra_transform_params
+        self,
+        transform_cls: Type[models.BaseModel],
+        config_param: str,
+        **extra_transform_params,
     ):
         """Constructs a model. Takes in a model_cls, which has to have a parameter."""
         self.transform_cls = transform_cls
@@ -432,9 +439,11 @@ class Applicable:
             fn=self.fn,
             _resolvers=self.resolvers,
             _name=name if name is not None else self.name,
-            _namespace=None
-            if namespace is None
-            else (namespace if namespace is not ... else self.namespace),
+            _namespace=(
+                None
+                if namespace is None
+                else (namespace if namespace is not ... else self.namespace)
+            ),
             args=self.args,
             kwargs=self.kwargs,
         )
@@ -473,7 +482,10 @@ class Applicable:
             item
             for item in inspect.signature(self.fn).parameters.values()
             if item.kind
-            not in {inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY}
+            not in {
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+            }
         ]
         if len(invalid_args) > 0:
             raise base.InvalidDecoratorException(
@@ -519,9 +531,7 @@ class Applicable:
         return (
             (default_namespace,)
             if self.namespace is ...
-            else (self.namespace,)
-            if self.namespace is not None
-            else ()
+            else (self.namespace,) if self.namespace is not None else ()
         )
 
     def bind_function_args(
@@ -730,7 +740,11 @@ class pipe(base.NodeInjector):
     """
 
     def __init__(
-        self, *transforms: Applicable, namespace: NamespaceType = ..., collapse=False, _chain=False
+        self,
+        *transforms: Applicable,
+        namespace: NamespaceType = ...,
+        collapse=False,
+        _chain=False,
     ):
         """Instantiates a `@pipe` decorator.
 

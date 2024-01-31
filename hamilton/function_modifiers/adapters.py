@@ -147,7 +147,8 @@ class LoadFromDecorator(NodeInjector):
     def _select_param_to_inject(self, params: List[str], fn: Callable) -> str:
         """Chooses a parameter to inject, given the parameters available. If self.inject is None
         (meaning we inject the only parameter), then that's the one. If it is not None, then
-        we need to ensure it is one of the available parameters, in which case we choose it."""
+        we need to ensure it is one of the available parameters, in which case we choose it.
+        """
         if self.inject is None:
             if len(params) == 1:
                 return params[0]
@@ -229,9 +230,9 @@ class LoadFromDecorator(NodeInjector):
                 "hamilton.data_loader.classname": f"{loader_cls.__qualname__}",
                 "hamilton.data_loader.node": inject_parameter,
             },
-            namespace=(namespace, "load_data")
-            if namespace
-            else ("load_data",),  # We want no namespace in this case
+            namespace=(
+                (namespace, "load_data") if namespace else ("load_data",)
+            ),  # We want no namespace in this case
         )
 
         # the filter node is the node that takes the data from the data source, filters out
@@ -257,7 +258,7 @@ class LoadFromDecorator(NodeInjector):
             # In reality we will likely be changing the API -- using the logging construct so we don't have
             # to have this weird DAG shape. For now, this solves the problem, and this is an internal component of the API
             # so we're good to go
-            namespace=(namespace, "select_data") if namespace else (),  # We want no namespace
+            namespace=((namespace, "select_data") if namespace else ()),  # We want no namespace
         )
         return [loader_node, filter_node]
 

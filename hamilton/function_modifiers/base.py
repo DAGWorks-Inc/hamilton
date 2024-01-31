@@ -354,7 +354,8 @@ class NodeInjector(SubDAGModifier, abc.ABC):
 
 class NodeExpander(SubDAGModifier):
     """Expands a node into multiple nodes. This is a special case of the SubDAGModifier,
-    which allows modification of some portion of the DAG. This just modifies a single node."""
+    which allows modification of some portion of the DAG. This just modifies a single node.
+    """
 
     EXPAND_NODES = "expand_nodes"
 
@@ -708,9 +709,9 @@ def resolve_config(
     config_optional_with_global_defaults_applied = (
         config_optional_with_defaults.copy() if config_optional_with_defaults is not None else {}
     )
-    config_optional_with_global_defaults_applied[
-        settings.ENABLE_POWER_USER_MODE
-    ] = config_optional_with_global_defaults_applied.get(settings.ENABLE_POWER_USER_MODE, False)
+    config_optional_with_global_defaults_applied[settings.ENABLE_POWER_USER_MODE] = (
+        config_optional_with_global_defaults_applied.get(settings.ENABLE_POWER_USER_MODE, False)
+    )
     missing_keys = (
         set(config_required)
         - set(config.keys())

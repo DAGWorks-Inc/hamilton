@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ----------------------------------------------------------------------------------------------
 """
+
 import logging
 import os
 import pickle  # for saving the embeddings cache
@@ -42,7 +43,9 @@ with contrib.catch_import_errors(__name__, __file__, logger):
     import plotly.express as px  # for plots
     import plotly.graph_objs as go  # for plot object type
     import requests
-    from sklearn.model_selection import train_test_split  # for splitting train & test data
+    from sklearn.model_selection import (
+        train_test_split,
+    )  # for splitting train & test data
     import torch  # for matrix optimization
     from tenacity import retry, stop_after_attempt, wait_random_exponential
 
@@ -243,8 +246,14 @@ def test_df_negatives(base_test_df: pd.DataFrame) -> pd.DataFrame:
 
 
 @parameterize(
-    train_df={"base_df": source("base_train_df"), "df_negatives": source("train_df_negatives")},
-    test_df={"base_df": source("base_test_df"), "df_negatives": source("test_df_negatives")},
+    train_df={
+        "base_df": source("base_train_df"),
+        "df_negatives": source("train_df_negatives"),
+    },
+    test_df={
+        "base_df": source("base_test_df"),
+        "df_negatives": source("test_df_negatives"),
+    },
 )
 def construct_df(
     base_df: pd.DataFrame,
@@ -631,7 +640,9 @@ def optimize_matrix(
 @inject(
     optimization_result_matrices=group(*[source(k) for k in optimization_parameterization.keys()])
 )
-def optimization_results(optimization_result_matrices: List[pd.DataFrame]) -> pd.DataFrame:
+def optimization_results(
+    optimization_result_matrices: List[pd.DataFrame],
+) -> pd.DataFrame:
     """Combine optimization results into one dataframe."""
     return pd.concat(optimization_result_matrices)
 
@@ -685,7 +696,9 @@ def customized_embeddings_dataframe(
     return embedded_data_set
 
 
-def customized_dataset_histogram(customized_embeddings_dataframe: pd.DataFrame) -> go.Figure:
+def customized_dataset_histogram(
+    customized_embeddings_dataframe: pd.DataFrame,
+) -> go.Figure:
     """Plot histogram of cosine similarities for the new customized embeddings.
 
     The graphs show how much the overlap there is between the distribution of cosine similarities for similar and

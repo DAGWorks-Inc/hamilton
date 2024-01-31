@@ -2,6 +2,7 @@
 It should only import hamilton.node, numpy, pandas.
 It cannot import hamilton.graph, or hamilton.driver.
 """
+
 import abc
 import collections
 import logging

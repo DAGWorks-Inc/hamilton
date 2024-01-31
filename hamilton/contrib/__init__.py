@@ -2,6 +2,7 @@
 
 It will get clobbered when sf-hamilton-contrib is installed, which is good.
 """
+
 import logging
 from contextlib import contextmanager
 

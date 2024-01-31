@@ -21,6 +21,7 @@ Note this will also have a simple API to work with:
     neutral_net_acquisition_cost
     optimistic_net_acquisition_cost
 """
+
 from typing import Dict
 
 import numpy as np

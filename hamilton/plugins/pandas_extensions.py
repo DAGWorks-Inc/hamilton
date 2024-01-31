@@ -136,7 +136,8 @@ class PandasCSVReader(DataLoader):
     comment: Optional[str] = None
     encoding: str = "utf-8"
     encoding_errors: Union[
-        Literal["strict", "ignore", "replace", "backslashreplace", "surrogateescape"], str
+        Literal["strict", "ignore", "replace", "backslashreplace", "surrogateescape"],
+        str,
     ] = "strict"
     dialect: Optional[Union[str, csv.Dialect]] = None
     on_bad_lines: Union[Literal["error", "warn", "skip"], Callable] = "error"
@@ -446,9 +447,9 @@ class PandasPickleReader(DataLoader):
     """
 
     filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader] = None
-    path: Union[
-        str, Path, BytesIO, BufferedReader
-    ] = None  # alias for `filepath_or_buffer` to keep reading/writing args symmetric.
+    path: Union[str, Path, BytesIO, BufferedReader] = (
+        None  # alias for `filepath_or_buffer` to keep reading/writing args symmetric.
+    )
     # kwargs:
     compression: Union[str, Dict[str, Any], None] = "infer"
     storage_options: Optional[Dict[str, Any]] = None
@@ -732,7 +733,10 @@ class PandasSqlReader(DataLoader):
         df = pd.read_sql(self.query_or_table, self.db_connection, **self._get_loading_kwargs())
         sql_metadata = utils.get_sql_metadata(self.query_or_table, df)
         df_metadata = utils.get_dataframe_metadata(df)
-        metadata = {utils.SQL_METADATA: sql_metadata, utils.DATAFRAME_METADATA: df_metadata}
+        metadata = {
+            utils.SQL_METADATA: sql_metadata,
+            utils.DATAFRAME_METADATA: df_metadata,
+        }
         return df, metadata
 
     @classmethod
@@ -789,7 +793,10 @@ class PandasSqlWriter(DataSaver):
         results = data.to_sql(self.table_name, self.db_connection, **self._get_saving_kwargs())
         sql_metadata = utils.get_sql_metadata(self.table_name, results)
         df_metadata = utils.get_dataframe_metadata(data)
-        metadata = {utils.SQL_METADATA: sql_metadata, utils.DATAFRAME_METADATA: df_metadata}
+        metadata = {
+            utils.SQL_METADATA: sql_metadata,
+            utils.DATAFRAME_METADATA: df_metadata,
+        }
         return metadata
 
     @classmethod

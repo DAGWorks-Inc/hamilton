@@ -36,11 +36,13 @@ class PanderaDataFrameValidator(base.BaseDefaultValidator):
                 result.compute()
         except pa.errors.SchemaErrors as e:
             return base.ValidationResult(
-                passes=False, message=str(e), diagnostics={"schema_errors": e.schema_errors}
+                passes=False,
+                message=str(e),
+                diagnostics={"schema_errors": e.schema_errors},
             )
         return base.ValidationResult(
             passes=True,
-            message=f"Data passes pandera check for schema {str(self.schema)}"
+            message=f"Data passes pandera check for schema {str(self.schema)}",
             # TDOO -- add diagnostics data with serialized the schema
         )
 
@@ -80,11 +82,13 @@ class PanderaSeriesSchemaValidator(base.BaseDefaultValidator):
                 result.compute()
         except pa.errors.SchemaErrors as e:
             return base.ValidationResult(
-                passes=False, message=str(e), diagnostics={"schema_errors": e.schema_errors}
+                passes=False,
+                message=str(e),
+                diagnostics={"schema_errors": e.schema_errors},
             )
         return base.ValidationResult(
             passes=True,
-            message=f"Data passes pandera check for schema {str(self.schema)}"
+            message=f"Data passes pandera check for schema {str(self.schema)}",
             # TDOO -- add diagnostics data with serialized the schema
         )
 

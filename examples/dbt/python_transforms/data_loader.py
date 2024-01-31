@@ -1,6 +1,7 @@
 """
 This module contains our data loading functions.
 """
+
 from typing import List
 
 import pandas as pd

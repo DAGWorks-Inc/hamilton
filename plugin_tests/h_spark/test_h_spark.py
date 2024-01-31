@@ -47,7 +47,9 @@ def test_koalas_spark_graph_adapter(spark_session):
         initial_columns,
         example_module,
         adapter=h_spark.SparkKoalasGraphAdapter(
-            spark_session, result_builder=base.PandasDataFrameResult(), spine_column="spend"
+            spark_session,
+            result_builder=base.PandasDataFrameResult(),
+            spine_column="spend",
         ),
     )
     output_columns = [
@@ -79,7 +81,9 @@ def test_smoke_screen_module(spark_session):
         config,
         smoke_screen_module,
         adapter=h_spark.SparkKoalasGraphAdapter(
-            spark_session, result_builder=base.PandasDataFrameResult(), spine_column="weeks"
+            spark_session,
+            result_builder=base.PandasDataFrameResult(),
+            spine_column="weeks",
         ),
     )
     output_columns = [
@@ -110,7 +114,12 @@ def test_smoke_screen_module(spark_session):
         (lambda df: ({"a": df}, (df, {}))),
         (lambda df: ({"a": df, "b": 1}, (df, {"b": 1}))),
     ],
-    ids=["no_kwargs", "one_plain_kwarg", "one_df_kwarg", "one_df_kwarg_and_one_plain_kwarg"],
+    ids=[
+        "no_kwargs",
+        "one_plain_kwarg",
+        "one_df_kwarg",
+        "one_df_kwarg_and_one_plain_kwarg",
+    ],
 )
 def test__inspect_kwargs(input_and_expected_fn, spark_session):
     """A unit test for inspect_kwargs."""
@@ -230,7 +239,11 @@ def test__lambda_udf_plain_func(spark_session):
     base_spark_df = spark_session.createDataFrame(pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}))
     node_ = node.Node.from_fn(base_func)
     new_df = h_spark._lambda_udf(base_spark_df, node_, {})
-    assert new_df.collect() == [Row(a=1, b=4, test=5), Row(a=2, b=5, test=7), Row(a=3, b=6, test=9)]
+    assert new_df.collect() == [
+        Row(a=1, b=4, test=5),
+        Row(a=2, b=5, test=7),
+        Row(a=3, b=6, test=9),
+    ]
 
 
 def test__lambda_udf_pandas_func(spark_session):
@@ -243,7 +256,11 @@ def test__lambda_udf_pandas_func(spark_session):
     node_ = node.Node.from_fn(base_func)
 
     new_df = h_spark._lambda_udf(base_spark_df, node_, {})
-    assert new_df.collect() == [Row(a=1, b=4, test=5), Row(a=2, b=5, test=7), Row(a=3, b=6, test=9)]
+    assert new_df.collect() == [
+        Row(a=1, b=4, test=5),
+        Row(a=2, b=5, test=7),
+        Row(a=3, b=6, test=9),
+    ]
 
 
 def test__lambda_udf_pandas_func_error(spark_session):
@@ -348,11 +365,13 @@ def test_get_spark_type_numpy_types(return_type, expected_spark_type):
 
 # 4. Unsupported types
 @pytest.mark.parametrize(
-    "unsupported_return_type", [dict, set, tuple]  # Add other unsupported types as needed
+    "unsupported_return_type",
+    [dict, set, tuple],  # Add other unsupported types as needed
 )
 def test_get_spark_type_unsupported(unsupported_return_type):
     with pytest.raises(
-        ValueError, match=f"Currently unsupported return type {unsupported_return_type}."
+        ValueError,
+        match=f"Currently unsupported return type {unsupported_return_type}.",
     ):
         h_spark.get_spark_type(unsupported_return_type)
 
@@ -470,19 +489,19 @@ def test_base_spark_executor_end_to_end_multiple_with_columns(spark_session):
 
 
 def _only_pyspark_dataframe_parameter(foo: DataFrame) -> DataFrame:
-    ...
+    pass
 
 
 def _no_pyspark_dataframe_parameter(foo: int) -> int:
-    ...
+    pass
 
 
 def _one_pyspark_dataframe_parameter(foo: DataFrame, bar: int) -> DataFrame:
-    ...
+    pass
 
 
 def _two_pyspark_dataframe_parameters(foo: DataFrame, bar: int, baz: DataFrame) -> DataFrame:
-    ...
+    pass
 
 
 @pytest.mark.parametrize(
@@ -603,7 +622,11 @@ def test_with_columns_generate_nodes_select_mode_select():
 
     nodes = dec.generate_nodes(df_as_pandas, {})
     nodes_by_names = {n.name: n for n in nodes}
-    assert set(nodes_by_names.keys()) == {"df_as_pandas.c", "df_as_pandas", "df_as_pandas._select"}
+    assert set(nodes_by_names.keys()) == {
+        "df_as_pandas.c",
+        "df_as_pandas",
+        "df_as_pandas._select",
+    }
 
 
 def test_with_columns_generate_nodes_specify_namespace():
@@ -640,7 +663,10 @@ def test__format_standard_udf():
 
 def test_sparkify_node():
     def foo(
-        a_from_upstream: pd.Series, b_from_upstream: pd.Series, c_from_df: pd.Series, d_fixed: int
+        a_from_upstream: pd.Series,
+        b_from_upstream: pd.Series,
+        c_from_df: pd.Series,
+        d_fixed: int,
     ) -> htypes.column[pd.Series, int]:
         return a_from_upstream + b_from_upstream + c_from_df + d_fixed
 
@@ -679,7 +705,10 @@ def test_pyspark_mixed_pandas_udfs_end_to_end():
     #     inputs={"spark_session": spark_session},
     # )
     results = dr.execute(
-        ["processed_df_as_pandas_dataframe_with_injected_dataframe", "processed_df_as_pandas"],
+        [
+            "processed_df_as_pandas_dataframe_with_injected_dataframe",
+            "processed_df_as_pandas",
+        ],
         inputs={"spark_session": spark_session},
     )
     processed_df_as_pandas = results["processed_df_as_pandas"]
@@ -774,7 +803,11 @@ def test_create_selector_node(spark_session):
     selector_node = h_spark.with_columns.create_selector_node("foo", ["a", "b"], "select")
     assert selector_node.name == "select"
     pandas_df = pd.DataFrame(
-        {"a": [10, 10, 20, 40, 40, 50], "b": [1, 10, 50, 100, 200, 400], "c": [1, 2, 3, 4, 5, 6]}
+        {
+            "a": [10, 10, 20, 40, 40, 50],
+            "b": [1, 10, 50, 100, 200, 400],
+            "c": [1, 2, 3, 4, 5, 6],
+        }
     )
     df = spark_session.createDataFrame(pandas_df)
     transformed = selector_node(foo=df).toPandas()

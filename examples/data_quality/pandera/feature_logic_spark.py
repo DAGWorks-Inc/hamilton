@@ -8,6 +8,7 @@ This module is practically identical to `pandera/feature_logic.py` except for th
 2. The data type checks on the output of functions are different. E.g. float vs np.float64. Execution on spark
    results in different data types.
 """
+
 import numpy as np
 import pandas as pd
 import pandera as pa

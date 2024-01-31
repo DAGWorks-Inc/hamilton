@@ -2,6 +2,7 @@
 
 It mirrors the code that was presented for the Lineage + Hamilton in 10 minutes blog post.
 """
+
 import pprint
 
 import data_loading

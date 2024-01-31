@@ -1,6 +1,7 @@
 """
 Module for dummy functions to test graph things with.
 """
+
 # we import this to check we don't pull in this function when parsing this module.
 from tests.resources import only_import_me
 

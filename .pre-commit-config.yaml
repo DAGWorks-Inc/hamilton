@@ -3,10 +3,10 @@
 # Then install the hooks within the repo:
 #   $ cd /PATH/TO/REPO
 #   $ pre-commit install
-
+exclude: '^docs/code-comparisons/'  # skip the code comparisons directory
 repos:
 -   repo: https://github.com/ambv/black
-    rev: 23.11.0
+    rev: 24.1.1
     hooks:
     - id: black
       args: [--line-length=100, --exclude=docs/*]
@@ -22,15 +22,15 @@ repos:
     -   id: check-ast
 # isort python package import sorting
 -   repo: https://github.com/pycqa/isort
-    rev: '5.12.0'
+    rev: '5.13.2'
     hooks:
     -   id: isort
         args: ["--profile", "black",
                "--line-length=100",
-               "--extend-skip=docs/*/*/*.py",
+               "--skip=docs/",
                "--known-local-folder",
                "tests", "-p", "hamilton"]
 -   repo: https://github.com/pycqa/flake8
-    rev: 6.1.0
+    rev: 7.0.0
     hooks:
     - id: flake8

@@ -1,6 +1,7 @@
 """
 This is a module that contains our "model fitting and related" transforms.
 """
+
 import pickle
 from typing import Dict
 
@@ -43,7 +44,9 @@ def train_test_split(
 
 @config.when(model_to_use="create_new")
 def fit_model__create_new(
-    model_classifier: base.ClassifierMixin, train_set: pd.DataFrame, target_column_name: str
+    model_classifier: base.ClassifierMixin,
+    train_set: pd.DataFrame,
+    target_column_name: str,
 ) -> base.ClassifierMixin:
     """Fits a new model.
 

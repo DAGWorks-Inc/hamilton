@@ -26,7 +26,10 @@ class NumpyNpyWriter(DataSaver):
 
     def save_data(self, data: np.ndarray) -> Dict[str, Any]:
         np.save(
-            file=self.path, arr=data, allow_pickle=self.allow_pickle, fix_imports=self.fix_imports
+            file=self.path,
+            arr=data,
+            allow_pickle=self.allow_pickle,
+            fix_imports=self.fix_imports,
         )
         return utils.get_file_metadata(self.path)
 

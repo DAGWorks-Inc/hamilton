@@ -9,6 +9,7 @@ encode your expectations about the output of your functions and catch bugs early
 Note (2): we can tag the `aggregation` features with whatever key value pair makes sense
 for us to discern/identify that we should not compute these features in an online setting.
 """
+
 import pandas as pd
 import pandera as pa
 
