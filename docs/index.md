@@ -10,6 +10,7 @@ get-started/index
 concepts/index
 how-tos/index
 integrations/index
+code-comparisons/index
 ```
 
 ```{toctree}
