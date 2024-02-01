@@ -791,6 +791,7 @@ class Driver:
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
         custom_style_function: Callable = None,
+        bypass_validation: bool = False,
     ):
         """Helper function to visualize execution, using a passed-in function graph.
 
@@ -809,7 +810,8 @@ class Driver:
         """
         # TODO should determine if the visualization logic should live here or in the graph.py module
         nodes, user_nodes = fn_graph.get_upstream_nodes(final_vars, inputs, overrides)
-        Driver.validate_inputs(fn_graph, adapter, user_nodes, inputs, nodes)
+        if not bypass_validation:
+            Driver.validate_inputs(fn_graph, adapter, user_nodes, inputs, nodes)
         node_modifiers = {fv: {graph.VisualizationNodeModifiers.IS_OUTPUT} for fv in final_vars}
         for user_node in user_nodes:
             if user_node.name not in node_modifiers:
@@ -857,6 +859,7 @@ class Driver:
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
         custom_style_function: Callable = None,
+        bypass_validation: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes Execution.
 
@@ -907,6 +910,7 @@ class Driver:
             deduplicate_inputs=deduplicate_inputs,
             show_schema=show_schema,
             custom_style_function=custom_style_function,
+            bypass_validation=bypass_validation,
         )
 
     @capture_function_usage
@@ -1500,6 +1504,7 @@ class Driver:
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
         custom_style_function: Callable = None,
+        bypass_validation: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes materialization. This helps give you a sense of how materialization
         will impact the DAG.
@@ -1521,6 +1526,7 @@ class Driver:
         :param show_schema: If True, show the schema of the materialized nodes
             if nodes have schema metadata attached.
         :param custom_style_function: Optional. Custom style function.
+        :param bypass_validation: If True, bypass validation. Optional.
         :return: The graphviz graph, if you want to do something with it
         """
         if additional_vars is None:
@@ -1547,6 +1553,7 @@ class Driver:
             deduplicate_inputs=deduplicate_inputs,
             show_schema=show_schema,
             custom_style_function=custom_style_function,
+            bypass_validation=bypass_validation,
         )
 
     def validate_execution(
