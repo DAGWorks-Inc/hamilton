@@ -11,6 +11,25 @@ someone having to host and manage a proper vector store.
 
 ## Example Usage
 
+### Inputs
+These are the defined inputs.
+
+ - *input_texts*: A list of strings. Each string will be encoded into a vector and stored in the vector store.
+ - *question*: A string. This is the question you want to ask the LLM, and vector store which will provide context.
+ - *top_k*: An integer. This is the number of vectors to retrieve from the vector store. Defaults to 5.
+
+### Overrides
+With Hamilton you can easily override a function and provide a value for it. For example if you're
+iterating you might just want to override these two values before modifying the functions:
+
+ - *context*: if you want to skip going to the vector store and provide the context directly, you can do so by providing this override.
+ - *rag_prompt*: if you want to provide the prompt to pass to the LLM, pass it in as an override.
+
+### Execution
+You can ask to get back any result of an intermediate function by providing the function name in the `execute` call.
+Here we just ask for the final result, but if you wanted to, you could ask for outputs of any of the functions, which
+you can then introspect or log for debugging/evaluation purposes. Note if you want more platform integrations,
+you can add adapters that will do this automatically for you, e.g. like we have the `PrintLn` adapter here.
 ```python
 # import the module
 from hamilton import driver
