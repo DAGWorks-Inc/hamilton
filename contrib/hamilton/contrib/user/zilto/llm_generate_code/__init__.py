@@ -14,7 +14,7 @@ with contrib.catch_import_errors(__name__, __file__, logger):
 
 
 def llm_client(api_key: Optional[str] = None) -> openai.OpenAI:
-    """Create an OpenAI client"""
+    """Create an OpenAI client."""
     if api_key is None:
         api_key = os.environ.get("OPENAI_API_KEY")
 
@@ -22,6 +22,10 @@ def llm_client(api_key: Optional[str] = None) -> openai.OpenAI:
 
 
 def prompt_template_to_generate_code() -> str:
+    """Prompt template to generate code.
+
+    It must include the fields `code_language` and `query`.
+    """
     return """Write some {code_language} code to solve the user's problem.
 
 Return only python code in Markdown format, e.g.:
@@ -40,6 +44,7 @@ user problem
 def prompt_to_generate_code(
     prompt_template_to_generate_code: str, query: str, code_language: str = "python"
 ) -> str:
+    """Fill the prompt template with the code language and the user query."""
     return prompt_template_to_generate_code.format(
         query=query,
         code_language=code_language,
@@ -47,6 +52,7 @@ def prompt_to_generate_code(
 
 
 def response_generated_code(llm_client: openai.OpenAI, prompt_to_generate_code: str) -> str:
+    """Call the OpenAI API completion endpoint with the prompt to generate code."""
     response = llm_client.completions.create(
         model="gpt-3.5-turbo-instruct",
         prompt=prompt_to_generate_code,
@@ -54,22 +60,31 @@ def response_generated_code(llm_client: openai.OpenAI, prompt_to_generate_code: 
     return response.choices[0].text
 
 
-def generated_code(response_generated_code: str) -> str:
-    _, _, lower_part = response_generated_code.partition("```python")
+def parsed_generated_code(response_generated_code: str, code_language: str = "python") -> str:
+    """Retrieve the code section from the generated text."""
+    _, _, lower_part = response_generated_code.partition(f"```{code_language}")
     code_part, _, _ = lower_part.partition("```")
     return code_part
 
 
-def code_prepared_for_execution(generated_code: str, code_language: str = "python") -> str:
+def code_prepared_for_execution(parsed_generated_code: str, code_language: str = "python") -> str:
+    """If code is Python, append to it statements prepare it to be run in a subprocess.
+
+    We collect all local variables in a directory and filter out Python builtins to keep
+    only the variables from the generated code. print() is used to send string data from
+    the subprocess back to the parent proceess via its `stdout`.
+    """
+
     if code_language != "python":
         raise ValueError("Can only execute the generated code if `code_language` = 'python'")
 
-    code_to_get_vars = """
-excluded_vars = { 'excluded_vars', '__builtins__', '__annotations__'} | set(dir(__builtins__))
-local_vars = {k:v for k,v in locals().items() if k not in excluded_vars}
-print(local_vars)
-"""
-    return generated_code + code_to_get_vars
+    code_to_get_vars = (
+        "excluded_vars = { 'excluded_vars', '__builtins__', '__annotations__'} | set(dir(__builtins__))\n"
+        "local_vars = {k:v for k,v in locals().items() if k not in excluded_vars}\n"
+        "print(local_vars)"
+    )
+
+    return parsed_generated_code + code_to_get_vars
 
 
 @extract_fields(
@@ -78,7 +93,12 @@ print(local_vars)
         execution_error=str,
     )
 )
-def execute_output(code_prepared_for_execution: str) -> dict:
+def executed_output(code_prepared_for_execution: str) -> dict:
+    """Execute the generated Python code + appended utilities in a subprocess.
+
+    The output and errors from the code are collected as strings. Executing
+    the code in a subprocess provides isolation, but isn't a security guarantee.
+    """
     process = subprocess.Popen(
         ["python", "-c", code_prepared_for_execution],
         stdout=subprocess.PIPE,
