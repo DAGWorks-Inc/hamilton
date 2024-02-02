@@ -1,4 +1,5 @@
 import logging
+import pprint
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 from hamilton import node
@@ -93,6 +94,29 @@ def combine_config_and_inputs(config: Dict[str, Any], inputs: Dict[str, Any]) ->
             f"mutually disjoint. {duplicated_inputs} "
         )
     return {**config, **inputs}
+
+
+def create_input_string(kwargs: dict) -> str:
+    """THis is a utility function to create a string representation of the inputs to a function.
+
+    This is useful for debugging, as it can be printed out to see what the inputs were.
+
+    :param kwargs: The inputs to the function that errored.
+    :return: The string representation of the inputs, truncated appropriately.
+    """
+    pp = pprint.PrettyPrinter(width=80)
+    inputs = {}
+    for k, v in kwargs.items():
+        item_repr = repr(v)
+        if len(item_repr) > 50:
+            item_repr = item_repr[:50] + "..."
+        else:
+            item_repr = v
+        inputs[k] = item_repr
+    input_string = pp.pformat(inputs)
+    if len(input_string) > 1000:
+        input_string = input_string[:80] + "..."
+    return input_string
 
 
 def execute_subdag(
@@ -194,10 +218,7 @@ def execute_subdag(
                 message = f"> {node_.name} [{module}.{original_func_name}()] encountered an error"
                 padding = " " * (80 - len(message) - 1)
                 message += padding + "<"
-                import pprint
-
-                pp = pprint.PrettyPrinter(width=80)
-                input_string = pp.pformat(kwargs)
+                input_string = create_input_string(kwargs)
                 message += "\n> Node inputs:\n" + input_string
                 border = "*" * 80
                 logger.exception("\n" + border + "\n" + message + "\n" + border)

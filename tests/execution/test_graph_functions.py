@@ -3,7 +3,11 @@ from typing import Callable, Dict, List, Union
 import pytest
 
 from hamilton import node
-from hamilton.execution.graph_functions import nodes_between, topologically_sort_nodes
+from hamilton.execution.graph_functions import (
+    create_input_string,
+    nodes_between,
+    topologically_sort_nodes,
+)
 
 
 def _create_dummy_dag(
@@ -135,3 +139,71 @@ def test_find_nodes_between(dag_repr, expected_nodes_in_between, start_node, end
     found_node, in_between = nodes_between(nodes[end_node], _is(start_node))
     assert found_node.name == start_node
     assert set(in_between) == {nodes[item] for item in expected_nodes_in_between}
+
+
+def test_create_input_string_with_short_values():
+    """Tests that create_input_string works correctly with short values"""
+    kwargs = {"arg1": 1, "arg2": "short string", "arg3": 3.14}
+    result = create_input_string(kwargs)
+    assert result == "{'arg1': 1, 'arg2': 'short string', 'arg3': 3.14}"
+
+
+def test_create_input_string_with_long_values():
+    """Tests that create_input_string truncates long values"""
+    kwargs = {"arg1": "a" * 51, "arg2": "b" * 52, "arg3": "c" * 53}
+    result = create_input_string(kwargs)
+    assert result == (
+        "{'arg1': \"'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...\",\n"
+        " 'arg2': \"'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...\",\n"
+        " 'arg3': \"'ccccccccccccccccccccccccccccccccccccccccccccccccc...\"}"
+    )
+
+
+def test_create_input_string_with_empty_dict():
+    """Tests that create_input_string works correctly with an empty dictionary"""
+    kwargs = {}
+    result = create_input_string(kwargs)
+    assert result == "{}"
+
+
+def test_create_input_string_with_large_number_of_args():
+    """Tests that create_input_string truncates the output if there are too many arguments"""
+    kwargs = {f"arg{i}": i for i in range(100)}
+    result = create_input_string(kwargs)
+    assert result.startswith("{")
+    assert result.endswith("...")
+    assert len(result) == 83
+
+
+def test_create_input_string_with_dataframes():
+    """Tests that create_input_string works correctly with pandas dataframes"""
+    import pandas as pd
+
+    kwargs = {
+        "arg1": pd.DataFrame({"a": [1, 2, 3] * 10, "b": [4, 5, 6] * 10}),
+        "arg2": "short string",
+        "arg3": 3.14,
+    }
+    result = create_input_string(kwargs)
+    assert result == (
+        "{'arg1': '    a  b\\n0   1  4\\n1   2  5\\n2   3  6\\n3   1  4\\n4   2...',\n"
+        " 'arg2': 'short string',\n"
+        " 'arg3': 3.14}"
+    )
+
+
+def test_create_input_string_with_custom_object():
+    """Tests that create_input_string works correctly with custom objects"""
+
+    class CustomObject:
+        def __init__(self, a, b):
+            self.a = a
+            self.b = b
+
+    kwargs = {"arg1": CustomObject(1, 2), "arg2": "short string", "arg3": 3.14}
+    result = create_input_string(kwargs)
+    assert result == (
+        "{'arg1': '<tests.execution.test_graph_functions.test_create_...',\n"
+        " 'arg2': 'short string',\n"
+        " 'arg3': 3.14}"
+    )
