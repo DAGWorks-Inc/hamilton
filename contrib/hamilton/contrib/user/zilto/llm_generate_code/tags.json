@@ -1,0 +1,5 @@
+{
+  "schema": "1.0",
+  "use_case_tags": ["LLM", "OpenAI", "code generation"],
+  "secondary_tags": {}
+}
