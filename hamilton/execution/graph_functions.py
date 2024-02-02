@@ -97,7 +97,7 @@ def combine_config_and_inputs(config: Dict[str, Any], inputs: Dict[str, Any]) ->
 
 
 def create_input_string(kwargs: dict) -> str:
-    """THis is a utility function to create a string representation of the inputs to a function.
+    """This is a utility function to create a string representation of the inputs to a function.
 
     This is useful for debugging, as it can be printed out to see what the inputs were.
 
@@ -115,7 +115,7 @@ def create_input_string(kwargs: dict) -> str:
         inputs[k] = item_repr
     input_string = pp.pformat(inputs)
     if len(input_string) > 1000:
-        input_string = input_string[:80] + "..."
+        input_string = input_string[:1000] + "..."
     return input_string
 
 

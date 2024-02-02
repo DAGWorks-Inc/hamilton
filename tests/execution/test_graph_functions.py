@@ -168,11 +168,11 @@ def test_create_input_string_with_empty_dict():
 
 def test_create_input_string_with_large_number_of_args():
     """Tests that create_input_string truncates the output if there are too many arguments"""
-    kwargs = {f"arg{i}": i for i in range(100)}
+    kwargs = {f"arg{i}": i for i in range(1000)}
     result = create_input_string(kwargs)
     assert result.startswith("{")
     assert result.endswith("...")
-    assert len(result) == 83
+    assert len(result) == 1003
 
 
 def test_create_input_string_with_dataframes():
