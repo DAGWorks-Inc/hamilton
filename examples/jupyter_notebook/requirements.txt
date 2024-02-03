@@ -1,0 +1,5 @@
+jupyter
+numpy
+pandas
+scikit-learn
+sf-hamilton[visualization]
