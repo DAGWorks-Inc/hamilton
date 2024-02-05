@@ -1,4 +1,5 @@
 import inspect
+import os
 import pathlib
 import uuid
 from itertools import permutations
@@ -815,7 +816,7 @@ def test_function_graph_display_custom_style_tag():
 
 @pytest.mark.parametrize("show_legend", [(True), (False)])
 def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path):
-    dot_file_path = tmp_path / "dag"
+    dot_file_path = tmp_path / "dag.png"
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
 
     fg.display(
@@ -824,7 +825,8 @@ def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path
         render_kwargs={"view": False},
         show_legend=show_legend,
     )
-    dot = dot_file_path.open("r").read()
+    dot_file = pathlib.Path(os.path.splitext(str(dot_file_path))[0])
+    dot = dot_file.open("r").read()
 
     found_legend = "cluster__legend" in dot
     assert found_legend is show_legend
