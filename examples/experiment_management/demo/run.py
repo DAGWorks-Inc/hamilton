@@ -8,12 +8,12 @@ from hamilton.plugins import matplotlib_extensions, pandas_extensions  # noqa: F
 
 def main():
     config = dict(
-        model="linear",
-        preprocess="pca",
+        model="boosting",
+        preprocess="none",
     )
 
     tracker_hook = ExperimentTracker(
-        experiment_name="hello-world",
+        experiment_name="forecast",
         base_directory="./experiments",
     )
 
