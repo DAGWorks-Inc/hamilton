@@ -308,6 +308,7 @@ def artifact_tabs(run: RunMetadata) -> list[AnyComponent]:
     links = []
     for i, m in enumerate(run.materialized):
         artifact_name = "-".join(m.source_nodes)
+        artifact_name, _, _ = artifact_name.partition("__")
         links.append(
             c.Link(
                 components=[c.Text(text=artifact_name)],
