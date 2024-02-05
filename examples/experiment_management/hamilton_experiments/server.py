@@ -40,6 +40,7 @@ def convert_graph_hash_to_version(runs):
 
 
 def get_runs(metadata_cache_path: str) -> list[RunMetadata]:
+    """Create RunMetadata objects for all runs JSON found in cache"""
     cache = JsonCache(cache_path=metadata_cache_path)
     runs = [RunMetadata.model_validate_json(cache.read(run_id)) for run_id in cache.keys()]
     runs = convert_graph_hash_to_version(runs)
@@ -47,15 +48,18 @@ def get_runs(metadata_cache_path: str) -> list[RunMetadata]:
     return runs
 
 
+# environment variables are the most convenient approach
+# to configure FastAPI application
 base_directory = os.getenv("HAMILTON_EXPERIMENTS_PATH", "")
 
-# Swagger UI /docs are currently bugged for FastUI
+# disable Swagger UI /docs because they are currently bugged for FastUI
 app = FastAPI(docs_url=None, redoc_url=None)
 app.mount("/experiments", StaticFiles(directory=base_directory), name="experiments")
 runs = get_runs(base_directory)
 
 
 def base_page(*components: AnyComponent) -> list[AnyComponent]:
+    """Template applied to all pages. Includes: title, navigation, and footer"""
     return [
         c.PageTitle(text="📝 Hamilton Experiment Manager"),
         c.Navbar(
@@ -78,16 +82,20 @@ def base_page(*components: AnyComponent) -> list[AnyComponent]:
 
 @functools.cache
 def run_lookup():
+    """Cache a mapping of {run_id: run} to query runs"""
     return {run.run_id: run for run in runs}
 
 
 @app.get("/api/filter/{field}", response_model=SelectSearchResponse)
 async def search_filter(field: str) -> SelectSearchResponse:
+    """Get all the unique values for a RunMetadata field to populate menus"""
     options = {str(getattr(run, field)): getattr(run, field) for run in runs}
     return SelectSearchResponse(options=[{"label": v, "value": v} for v in options])
 
 
 class RunFilter(BaseModel):
+    """Filter the runs_overview() page using `experiment` and `graph_version`"""
+
     experiment: str = Field(
         json_schema_extra={
             "search_url": "/api/filter/experiment",
@@ -107,6 +115,8 @@ def runs_overview(
     experiment: str | None = None,
     graph_version: int | None = None,
 ) -> list[AnyComponent]:
+    """RunOverview page with filters for the table"""
+
     # refresh cache to display new runs
     runs = get_runs(os.getenv("HAMILTON_EXPERIMENTS_PATH", ""))
 
@@ -146,6 +156,7 @@ def runs_overview(
 
 
 def run_tabs(run_id) -> list[AnyComponent]:
+    """Create Metadata and Artifacts tabs for individual Run pages"""
     return [
         c.LinkList(
             links=[
@@ -168,6 +179,7 @@ def run_tabs(run_id) -> list[AnyComponent]:
 
 @app.get("/api/run/{run_id}/", response_model=FastUI, response_model_exclude_none=True)
 def run_metadata(run_id: str) -> list[AnyComponent]:
+    """Individual Run > Metadata"""
     run = run_lookup()[run_id]
 
     return base_page(
@@ -204,10 +216,12 @@ def run_metadata(run_id: str) -> list[AnyComponent]:
 
 @functools.cache
 def create_table_model(**kwargs):
+    """Cache the creation of a Pydantic model from a DataFrame row"""
     return model_from_values("Table", specs=kwargs)
 
 
 def dataframe_to_table(df: pd.DataFrame, **kwargs) -> AnyComponent:
+    """Populate a FastUI table with pagination from a pandas DataFrame"""
     df = df.reset_index()
     Table = create_table_model(**{str(k): v for k, v in df.iloc[0].to_dict().items()})
 
@@ -215,6 +229,7 @@ def dataframe_to_table(df: pd.DataFrame, **kwargs) -> AnyComponent:
     page_size = df.shape[0] if df.shape[0] < 20 else 20
     page_df = df.iloc[(page - 1) * page_size : page * page_size]
 
+    # create a Pydantic objects for each row
     data = [
         Table.model_validate({str(k): v for k, v in row.items()})
         for row in page_df.to_dict(orient="index").values()
@@ -231,6 +246,13 @@ def dataframe_to_table(df: pd.DataFrame, **kwargs) -> AnyComponent:
 
 
 def artifact_components(materializer: NodeMaterializer, **kwargs) -> list[AnyComponent]:
+    """Create a FastUI component for an artifact based on the materializer type
+
+    Instead of mapping Python type -> component, the materializer/file type -> component
+    has a much lower and manageable cardinality
+    """
+    artifact_path = materializer.path.replace(base_directory, "/experiments")
+
     if materializer.sink == "json":
         with open(materializer.path, "r") as f:
             data = json.load(f)
@@ -243,6 +265,29 @@ def artifact_components(materializer: NodeMaterializer, **kwargs) -> list[AnyCom
     elif materializer.sink == "csv":
         data = pd.read_csv(materializer.path)
         components = dataframe_to_table(data, **kwargs)
+
+    elif materializer.sink in ["plt", "plotly"]:
+        try:
+            components = [
+                c.Image(
+                    src=artifact_path,
+                    width="100%",
+                    height="auto",
+                    loading="lazy",
+                    referrer_policy="no-referrer",
+                )
+            ]
+        # TODO refactor to each default else case
+        except Exception:
+            components = [
+                c.Json(
+                    value={
+                        k: v
+                        for k, v in dict(materializer).items()
+                        if k in ["path", "sink", "data_saver"]
+                    }
+                )
+            ]
 
     else:
         components = [
@@ -259,6 +304,7 @@ def artifact_components(materializer: NodeMaterializer, **kwargs) -> list[AnyCom
 
 
 def artifact_tabs(run: RunMetadata) -> list[AnyComponent]:
+    """Create a tab for each artifact"""
     links = []
     for i, m in enumerate(run.materialized):
         artifact_name = "-".join(m.source_nodes)
@@ -284,6 +330,7 @@ def artifact_tabs(run: RunMetadata) -> list[AnyComponent]:
 
 @app.get("/api/artifacts/{run_id}", response_model=FastUI, response_model_exclude_none=True)
 def run_artifacts(run_id: str, artifact_id: int = 0, page: int | None = None) -> list[AnyComponent]:
+    """Individual Run > Artifact"""
     run = run_lookup()[run_id]
 
     return base_page(
@@ -296,6 +343,7 @@ def run_artifacts(run_id: str, artifact_id: int = 0, page: int | None = None) ->
 
 @app.get("/api/")
 def landing_page() -> RedirectResponse:
+    """Landing page redirects to the Run overview page"""
     return RedirectResponse(url="/api/runs")
 
 

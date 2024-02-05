@@ -1,5 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.figure import Figure
 from sklearn.base import BaseEstimator, clone
 from sklearn.datasets import load_diabetes
 from sklearn.decomposition import PCA
@@ -48,13 +50,20 @@ def base_model__boosting() -> BaseEstimator:
     return HistGradientBoostingRegressor()
 
 
-def out_of_sample_performance(
+@extract_fields(
+    dict(
+        y_pred=np.ndarray,
+        cv_scores=list,
+    )
+)
+def cross_validation(
     X: np.ndarray,
     y: np.ndarray,
     base_model: BaseEstimator,
     splits: list[tuple],
-) -> list:
-    out_of_sample_performance = []
+) -> dict:
+    cv_scores = []
+    all_pred = np.zeros(y.shape[0])
     for train_idx, eval_idx in splits:
         model = clone(base_model)
 
@@ -64,10 +73,12 @@ def out_of_sample_performance(
         model.fit(X_train, y_train)
 
         y_eval_pred = model.predict(X_eval)
-        oos_score = mean_squared_error(y_eval, y_eval_pred)
-        out_of_sample_performance.append(oos_score)
+        all_pred[eval_idx] = y_eval_pred
 
-    return out_of_sample_performance
+        cv_score = mean_squared_error(y_eval, y_eval_pred)
+        cv_scores.append(cv_score)
+
+    return dict(y_pred=all_pred, cv_scores=cv_scores)
 
 
 def trained_model(
@@ -79,5 +90,14 @@ def trained_model(
     return base_model
 
 
-def X_df(X: np.ndarray) -> pd.DataFrame:
-    return pd.DataFrame(X)
+def prediction_df(y: np.ndarray, y_pred: np.ndarray) -> pd.DataFrame:
+    return pd.DataFrame.from_dict(dict(y_true=y, y_pred=y_pred), orient="columns")
+
+
+def prediction_plot(y: np.ndarray, y_pred: np.ndarray) -> Figure:
+    fig, ax = plt.subplots()
+    ax.scatter(y, y_pred)
+    ax.set_xlabel("True")
+    ax.set_ylabel("Predicted")
+
+    return fig

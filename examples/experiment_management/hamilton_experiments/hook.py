@@ -15,6 +15,7 @@ from hamilton import graph_types, lifecycle
 
 
 def validate_string_input(user_input):
+    """Validate the experiment name will make a valid directory name"""
     allowed = set(string.ascii_letters + string.digits + "_" + "-")
     for char in user_input:
         if char not in allowed:
@@ -30,6 +31,11 @@ def _get_default_input(node) -> Any:
 
 
 def json_encoder(obj: Any):
+    """convert non JSON-serializable objects to a serializable format
+
+    set[T] -> list[T]
+    else -> dict[type: str, byte_hash: str]
+    """
     if isinstance(obj, set):
         serialized = list(obj)
     else:
@@ -43,6 +49,7 @@ def json_encoder(obj: Any):
 
 
 def graph_hash(graph: graph_types.HamiltonGraph) -> str:
+    """Create a single hash (str) from the bytecode of all sorted functions"""
     nodes_data = []
     for node in graph.nodes:
         source_code = ""
@@ -85,6 +92,8 @@ class NodeMaterializer:
 
 @dataclass
 class RunMetadata:
+    """Metadata about an Hamilton to store in cache"""
+
     experiment: str
     run_id: str
     run_dir: str
@@ -124,6 +133,7 @@ class ExperimentTracker(
         self.materializers: list[NodeMaterializer] = list()
 
     def post_graph_construct(self, *, config: dict[str, Any], **kwargs):
+        """Store the Driver config before creating the graph"""
         self.config = config
 
     def run_before_graph_execution(
@@ -134,14 +144,14 @@ class ExperimentTracker(
         overrides: Dict[str, Any],
         **kwargs,
     ):
-        if overrides:
-            self.overrides = [NodeOverride(name=k, value=v) for k, v in overrides.items()]
-
+        """Store execution metadata: graph hash, inputs, overrides"""
         self.graph_hash = graph_hash(graph)
+
         for node in graph.nodes:
             if node.tags.get("module"):
                 self.modules.add(node.tags["module"])
 
+            # filter out config nodes
             elif node.is_external_input and node.originating_functions:
                 self.inputs.append(
                     NodeInput(
@@ -151,13 +161,20 @@ class ExperimentTracker(
                     )
                 )
 
+        if overrides:
+            self.overrides = [NodeOverride(name=k, value=v) for k, v in overrides.items()]
+
     def run_before_node_execution(self, *args, node_tags: dict, **kwargs):
+        """Move to run directory before executing materializer"""
         if node_tags.get("hamilton.data_saver") is True:
             os.chdir(self.run_directory)  # before materialization
 
     def run_after_node_execution(
         self, *, node_tags: dict, node_kwargs: dict, result: Any, **kwargs
     ):
+        """Move back to init directory after executing materializer.
+        Then, save materialization metadata
+        """
         if node_tags.get("hamilton.data_saver") is True:
             if node_tags.get("hamilton.data_saver.sink") == "parquet":
                 path = result["file_metadata"]["path"]
@@ -175,6 +192,7 @@ class ExperimentTracker(
             os.chdir(self.init_directory)  # after materialization
 
     def run_after_graph_execution(self, *, success: bool, **kwargs):
+        """Encode run metadata as JSON and store in cache"""
         run_data = dict(
             experiment=self.experiment_name,
             run_id=self.run_id,

@@ -1,9 +1,9 @@
 import analysis
 from hamilton_experiments.hook import ExperimentTracker
 
-from hamilton import driver
+from hamilton import base, driver
 from hamilton.io.materialization import to
-from hamilton.plugins import pandas_extensions  # noqa: F401
+from hamilton.plugins import matplotlib_extensions, pandas_extensions  # noqa: F401
 
 
 def main():
@@ -25,7 +25,7 @@ def main():
         .build()
     )
 
-    inputs = dict(n_splits=4)
+    inputs = dict(n_splits=3)
 
     materializers = [
         to.pickle(
@@ -34,14 +34,20 @@ def main():
             path="./trained_model.pickle",
         ),
         to.parquet(
-            id="X_df__parquet",
-            dependencies=["X_df"],
-            path="./X_df.parquet",
+            id="prediction_df__parquet",
+            dependencies=["prediction_df"],
+            path="./prediction_df.parquet",
         ),
-        to.pickle(
-            id="out_of_sample_performance__pickle",
-            dependencies=["out_of_sample_performance"],
-            path="./out_of_sample_performance.pickle",
+        to.json(
+            id="cv_scores__json",
+            dependencies=["cv_scores"],
+            combine=base.DictResult(),
+            path="./cv_scores.json",
+        ),
+        to.plt(
+            id="prediction_plot__png",
+            dependencies=["prediction_plot"],
+            path="./prediction_plot.png",
         ),
     ]
 
