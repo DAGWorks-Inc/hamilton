@@ -2,6 +2,10 @@
 
 Add a hook to your Hamilton Driver to log runs and visualize artifacts and metadata! The server is built using FastAPI + FastUI allowing to easily integrate the server within your app or extend the UI.
 
+<p align="center">
+    <img src="./docs/showcase.gif" height=600, width=auto/>
+</p>
+
 ## Features
 - 📝 Track run metadata (config, inputs, code version, etc.)
 - 📦 Generate directories to store your run artifacts
