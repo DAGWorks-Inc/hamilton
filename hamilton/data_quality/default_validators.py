@@ -407,6 +407,73 @@ class AllowNoneValidator(base.BaseDefaultValidator):
         return "allow_none"
 
 
+class StrContainsValidator(base.BaseDefaultValidator):
+    def __init__(self, contains: Union[str, List[str]], importance: str):
+        super(StrContainsValidator, self).__init__(importance)
+        if isinstance(contains, str):
+            self.contains = [contains]
+        else:
+            self.contains = contains
+
+    @classmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return datatype == str
+
+    def description(self) -> str:
+        return f"Validates that a string contains [{self.contains}] within it."
+
+    def validate(self, data: str) -> base.ValidationResult:
+        passes = all([c in data for c in self.contains])
+        return base.ValidationResult(
+            passes=passes,
+            message=(f"String did not contain {self.contains}" if not passes else "All good."),
+            diagnostics=(
+                {"contains": self.contains, "data": data if len(data) < 100 else data[:100]}
+                if not passes
+                else {}
+            ),
+        )
+
+    @classmethod
+    def arg(cls) -> str:
+        return "contains"
+
+
+class StrDoesNotContainValidator(base.BaseDefaultValidator):
+    def __init__(self, does_not_contain: Union[str, List[str]], importance: str):
+        super(StrDoesNotContainValidator, self).__init__(importance)
+        if isinstance(does_not_contain, str):
+            self.does_not_contain = [does_not_contain]
+        else:
+            self.does_not_contain = does_not_contain
+
+    @classmethod
+    def applies_to(cls, datatype: Type[Type]) -> bool:
+        return datatype == str
+
+    def description(self) -> str:
+        return f"Validates that a string does not contain [{self.does_not_contain}] within it."
+
+    def validate(self, data: str) -> base.ValidationResult:
+        passes = all([c not in data for c in self.does_not_contain])
+        return base.ValidationResult(
+            passes=passes,
+            message=(f"String did contain {self.does_not_contain}" if not passes else "All good."),
+            diagnostics=(
+                {
+                    "does_not_contain": self.does_not_contain,
+                    "data": data if len(data) < 100 else data[:100],
+                }
+                if not passes
+                else {}
+            ),
+        )
+
+    @classmethod
+    def arg(cls) -> str:
+        return "does_not_contain"
+
+
 AVAILABLE_DEFAULT_VALIDATORS = [
     AllowNaNsValidatorPandasSeries,
     DataInRangeValidatorPandasSeries,
@@ -419,6 +486,8 @@ AVAILABLE_DEFAULT_VALIDATORS = [
     MaxStandardDevValidatorPandasSeries,
     MeanInRangeValidatorPandasSeries,
     AllowNoneValidator,
+    StrContainsValidator,
+    StrDoesNotContainValidator,
 ]
 
 
