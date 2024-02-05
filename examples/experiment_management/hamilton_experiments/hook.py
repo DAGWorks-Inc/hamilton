@@ -112,7 +112,7 @@ class ExperimentTracker(
     lifecycle.GraphExecutionHook,
     lifecycle.base.BasePostGraphConstruct,
 ):
-    def __init__(self, experiment_name: str, base_directory: str):
+    def __init__(self, experiment_name: str, base_directory: str = "./experiments"):
         validate_string_input(experiment_name)
 
         self.experiment_name = experiment_name

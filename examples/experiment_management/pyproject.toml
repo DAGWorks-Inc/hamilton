@@ -15,5 +15,8 @@ dependencies = [
     "uvicorn",
 ]
 
+[project.scripts]
+hexperiments = "hamilton_experiments.__main__:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["hamilton_experiments/"]
