@@ -222,6 +222,14 @@ def test_resolve_default_validators_error(output_type, kwargs, importance):
         (default_validators.AllowNoneValidator, False, 1, True),
         (default_validators.AllowNoneValidator, True, None, True),
         (default_validators.AllowNoneValidator, True, 1, True),
+        (default_validators.StrContainsValidator, "o b", "foo bar baz", True),
+        (default_validators.StrContainsValidator, "oof", "foo bar baz", False),
+        (default_validators.StrContainsValidator, ["o b", "baz"], "foo bar baz", True),
+        (default_validators.StrContainsValidator, ["oof", "bar"], "foo bar baz", False),
+        (default_validators.StrDoesNotContainValidator, "o b", "foo bar baz", False),
+        (default_validators.StrDoesNotContainValidator, "oof", "foo bar baz", True),
+        (default_validators.StrDoesNotContainValidator, ["o b", "boo"], "foo bar baz", False),
+        (default_validators.StrDoesNotContainValidator, ["oof", "boo"], "foo bar baz", True),
     ],
 )
 def test_default_data_validators(
