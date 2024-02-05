@@ -1,0 +1,7 @@
+{
+  "schema": "1.0",
+  "use_case_tags": ["LLM", "openai", "eval", "RAG", "retrieval augmented generation", "testing"],
+  "secondary_tags": {
+    "language": "English"
+  }
+}
