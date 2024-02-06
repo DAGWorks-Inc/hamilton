@@ -1,0 +1,5 @@
+matplotlib
+numpy
+pandas
+scikit-learn
+sf-hamilton[experiments]
