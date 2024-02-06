@@ -1,6 +1,7 @@
 from .api import (  # noqa: F401
     EdgeConnectionHook,
     GraphAdapter,
+    GraphConstructionHook,
     GraphExecutionHook,
     LegacyResultMixin,
     NodeExecutionHook,
@@ -25,6 +26,7 @@ __all__ = [
     "PrintLn",
     "PrintLnHook",  # for backwards compatibility this will be removed in 2.0
     "PDBDebugger",
+    "GraphConstructionHook",
     "GraphExecutionHook",
     "NodeExecutionMethod",
     "StaticValidator",
