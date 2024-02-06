@@ -13,9 +13,14 @@ from fastui import prebuilt_html
 from fastui.components.display import DisplayLookup, DisplayMode
 from fastui.events import GoToEvent
 from fastui.forms import SelectSearchResponse
-from hamilton_experiments.cache import JsonCache
-from hamilton_experiments.data_model import NodeMaterializer, RunMetadata, model_from_values
 from pydantic import BaseModel, Field
+
+from hamilton.plugins.h_experiments.cache import JsonCache
+from hamilton.plugins.h_experiments.data_model import (
+    NodeMaterializer,
+    RunMetadata,
+    model_from_values,
+)
 
 
 def convert_graph_hash_to_version(runs):

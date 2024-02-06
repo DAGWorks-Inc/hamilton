@@ -9,9 +9,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from hamilton_experiments.cache import JsonCache
-
 from hamilton import graph_types, lifecycle
+from hamilton.plugins.h_experiments.cache import JsonCache
 
 
 def validate_string_input(user_input):

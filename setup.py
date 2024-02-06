@@ -84,6 +84,16 @@ setup(
         "pandera": ["pandera"],
         "tqdm": ["tqdm"],
         "datadog": ["ddtrace"],
+        "experiments": [
+            "fastapi",
+            "fastui",
+            "uvicorn",
+        ],
+    },
+    entry_points={
+        "console_scripts": [
+            "h_experiments = hamilton.plugins.h_experiments.__main__:main",
+        ]
     },
     # Relevant project URLs
     project_urls={  # Optional
