@@ -109,7 +109,7 @@ class RunMetadata:
 class ExperimentTracker(
     lifecycle.NodeExecutionHook,
     lifecycle.GraphExecutionHook,
-    lifecycle.base.BasePostGraphConstruct,
+    lifecycle.GraphConstructionHook,
 ):
     def __init__(self, experiment_name: str, base_directory: str = "./experiments"):
         validate_string_input(experiment_name)
@@ -131,7 +131,7 @@ class ExperimentTracker(
         self.overrides: list[NodeOverride] = list()
         self.materializers: list[NodeMaterializer] = list()
 
-    def post_graph_construct(self, *, config: dict[str, Any], **kwargs):
+    def run_after_graph_construction(self, *, config: dict[str, Any], **kwargs):
         """Store the Driver config before creating the graph"""
         self.config = config
 
