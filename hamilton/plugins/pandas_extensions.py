@@ -1409,6 +1409,119 @@ class PandasORCWriter(DataSaver):
         return "orc"
 
 
+@dataclasses.dataclass
+class PandasExcelReader(DataLoader):
+    """Class for reading Excel files and output a pandas DataFrame.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_excel.html
+    """
+
+    path: Union[str, Path, BytesIO, BufferedReader] = None
+    # kwargs:
+    # inspect.get_type_hints doesn't work with type aliases,
+    # which are used in pandas.read_excel.
+    # So we have to list all the arguments in plain code.
+    sheet_name: Union[str, int, List[Union[int, str]], None] = 0
+    header: Union[int, Sequence[int], None] = 0
+    names: Optional[Sequence] = None
+    index_col: Union[int, str, Sequence[int], None] = None
+    usecols: Union[int, str, Sequence[int], Sequence[str], Callable[[str], bool], None] = None
+    dtype: Union[Dtype, dict[Hashable, Dtype], None] = None
+    engine: Optional[Literal["xlrd", "openpyxl", "odf", "pyxlsb", "calamine"]] = None
+    converters: Union[Dict[str, Callable], Dict[int, Callable], None] = None
+    true_values: Optional[Iterable[Hashable]] = None
+    false_values: Optional[Iterable[Hashable]] = None
+    skiprows: Union[Sequence[int], int, Callable[[int], object], None] = None
+    nrows: Optional[int] = None
+    na_values = None  # in pandas.read_excel there are not type hints for na_values
+    keep_default_na: bool = True
+    na_filter: bool = True
+    verbose: bool = False
+    parse_dates: Union[List[Union[int, str]], Dict[str, List[Union[int, str]]], bool] = False
+    # date_parser: Optional[Callable]  # date_parser is deprecated since pandas=2.0.0
+    date_format: Union[Dict[Hashable, str], str, None] = None
+    thousands: Optional[str] = None
+    decimal: str = "."
+    comment: Optional[str] = None
+    skipfooter: int = 0
+    storage_options: Optional[Dict[str, Any]] = None
+    dtype_backend: Literal["pyarrow", "numpy_nullable"] = "numpy_nullable"
+    engine_kwargs: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        # Returns type for which data loader is available
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        # Puts kwargs in a dict
+        kwargs = dataclasses.asdict(self)
+
+        # path corresponds to 'io' argument of pandas.read_excel,
+        # but we send it separately
+        del kwargs["path"]
+
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the excel file
+        df = pd.read_excel(self.path, **self._get_loading_kwargs())
+        metadata = utils.get_file_and_dataframe_metadata(self.path, df)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "excel"
+
+
+@dataclasses.dataclass
+class PandasExcelWriter(DataSaver):
+    """Class that handles saving Excel files with pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_excel.html
+    """
+
+    path: Union[str, Path, BytesIO]
+    # kwargs:
+    # inspect.get_type_hints doesn't work with type aliases,
+    # which are used in pandas.DataFrame.to_excel.
+    # So we have to list all the arguments in plain code
+    sheet_name: str = "Sheet1"
+    na_rep: str = ""
+    float_format: Optional[str] = None
+    columns: Optional[Sequence[Hashable]] = None
+    header: Union[Sequence[Hashable], bool] = True
+    index: bool = True
+    index_label: Optional[IndexLabel] = None
+    startrow: int = 0
+    startcol: int = 0
+    engine: Optional[Literal["openpyxl", "xlsxwriter"]] = None
+    merge_cells: bool = True
+    inf_rep: str = "inf"
+    freeze_panes: Optional[Tuple[int, int]] = None
+    storage_options: Optional[Dict[str, Any]] = None
+    engine_kwargs: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self) -> Dict[str, Any]:
+        # Puts kwargs in a dict
+        kwargs = dataclasses.asdict(self)
+
+        # path corresponds to 'excel_writer' argument of pandas.DataFrame.to_excel,
+        # but we send it separately
+        del kwargs["path"]
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.to_excel(self.path, **self._get_saving_kwargs())
+        return utils.get_file_and_dataframe_metadata(self.path, data)
+
+    @classmethod
+    def name(cls) -> str:
+        return "excel"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -1432,6 +1545,8 @@ def register_data_loaders():
         PandasFeatherWriter,
         PandasORCWriter,
         PandasORCReader,
+        PandasExcelWriter,
+        PandasExcelReader,
     ]:
         registry.register_adapter(loader)
 

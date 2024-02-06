@@ -4,13 +4,11 @@ import sys
 
 import pandas as pd
 
-from hamilton import base, driver
-from hamilton.io.materialization import to
-
-# Add the hamilton module to your path - optinal before hamilton import
+# Add the hamilton module to your path - optional before hamilton import
 # project_dir = "### ADD PATH HERE ###"
 # sys.path.append(project_dir)
-
+from hamilton import base, driver
+from hamilton.io.materialization import to
 
 logging.basicConfig(stream=sys.stdout)
 initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
@@ -108,6 +106,12 @@ materializers = [
         path="./df.orc",
         combine=df_builder,
     ),
+    to.excel(
+        dependencies=output_columns,
+        id="df_to_excel",
+        path="./df.xlsx",
+        combine=df_builder,
+    ),
 ]
 # Visualize what is happening
 dr.visualize_materialization(
@@ -131,6 +135,7 @@ materialization_results, additional_outputs = dr.materialize(
         "df_to_parquet_build_result",
         "df_to_csv_build_result",
         "df_to_orc_build_result",
+        "df_to_excel_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
@@ -145,5 +150,6 @@ print(additional_outputs["df_to_feather_build_result"])
 print(additional_outputs["df_to_parquet_build_result"])
 print(additional_outputs["df_to_csv_build_result"])
 print(additional_outputs["df_to_orc_build_result"])
+print(additional_outputs["df_to_excel_build_result"])
 
 conn.close()

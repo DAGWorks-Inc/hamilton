@@ -11,6 +11,8 @@ from sqlalchemy import create_engine
 from hamilton.plugins.pandas_extensions import (
     PandasCSVReader,
     PandasCSVWriter,
+    PandasExcelReader,
+    PandasExcelWriter,
     PandasFeatherReader,
     PandasFeatherWriter,
     PandasHtmlReader,
@@ -239,6 +241,34 @@ def test_pandas_orc_reader(tmp_path: pathlib.Path) -> None:
     df, metadata = reader.load_data(pd.DataFrame)
 
     assert PandasORCReader.applicable_types() == [pd.DataFrame]
+    assert df.loc[0, "firstName"] == "John"
+    assert df.shape == (3, 5)
+    assert metadata["dataframe_metadata"]["column_names"] == [
+        "firstName",
+        "lastName",
+        "age",
+        "department",
+        "email",
+    ]
+
+
+def test_pandas_excel_writer(tmp_path: pathlib.Path) -> None:
+    file_path = tmp_path / "test.xlsx"
+    writer = PandasExcelWriter(path=file_path)
+    metadata = writer.save_data(pd.DataFrame(data={"col1": [1, 2], "col2": [4, 3]}))
+
+    assert PandasExcelWriter.applicable_types() == [pd.DataFrame]
+    assert file_path.exists()
+    assert metadata["file_metadata"]["path"] == file_path
+    assert metadata["dataframe_metadata"]["column_names"] == ["col1", "col2"]
+
+
+def test_pandas_excel_reader(tmp_path: pathlib.Path) -> None:
+    path_to_test = "tests/resources/data/test_load_from_data.xlsx"
+    reader = PandasExcelReader(path=path_to_test, sheet_name="test_load_from_data_sheet")
+    df, metadata = reader.load_data(pd.DataFrame)
+
+    assert PandasExcelReader.applicable_types() == [pd.DataFrame]
     assert df.loc[0, "firstName"] == "John"
     assert df.shape == (3, 5)
     assert metadata["dataframe_metadata"]["column_names"] == [
