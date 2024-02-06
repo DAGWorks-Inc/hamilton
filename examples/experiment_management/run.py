@@ -1,9 +1,8 @@
 import analysis
-from hamilton_experiments.hook import ExperimentTracker
 
 from hamilton import base, driver
 from hamilton.io.materialization import to
-from hamilton.plugins import matplotlib_extensions, pandas_extensions  # noqa: F401
+from hamilton.plugins import h_experiments, matplotlib_extensions, pandas_extensions  # noqa: F401
 
 
 def main():
@@ -12,7 +11,7 @@ def main():
         preprocess="none",
     )
 
-    tracker_hook = ExperimentTracker(
+    tracker_hook = h_experiments.ExperimentTracker(
         experiment_name="forecast",
         base_directory="./experiments",
     )

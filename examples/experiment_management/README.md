@@ -3,7 +3,7 @@
 Add a hook to your Hamilton Driver to log runs and visualize artifacts and metadata! The server is built using FastAPI + FastUI allowing to easily integrate the server within your app or extend the UI.
 
 <p align="center">
-    <img src="./docs/showcase.gif" height=600, width=auto/>
+    <img src="./showcase.gif" height=600, width=auto/>
 </p>
 
 ## Features
@@ -12,16 +12,7 @@ Add a hook to your Hamilton Driver to log runs and visualize artifacts and metad
 - 📡 Launch a local server to view and explore your experiments
 
 ## Installation
-1. Find where Hamilton is installed using `pip show sf-hamilton`. Find the location entry:
-    ```
-    Name: sf-hamilton
-    Version: 1.46.0
-    ...
-    Location: /home/username/.cache/pypoetry/virtualenvs/venv-Mv6TfRMQ-py3.10/lib/python3.10/site-packages
-    ```
-2. Go to the installation location with `cd /home/username/.cache/pypoetry/virtualenvs/venv-Mv6TfRMQ-py3.10/lib/python3.10/site-packages`
-3. Go further down the directories using `cd examples/experiment_management`
-4. Install the Hamilton Experiment Manager with `pip install -e .` (this install local files already bundled with Hamilton)
+Use `pip install sf-hamilton[experiments]` to install both the hook and the server with their dependencies
 
 ## How to use the ExperimentTracker hook
 The `ExperimentTracker` hook can be added to your Hamilton Driver definition to automatically log metadata about the run and materialized results.
@@ -38,13 +29,13 @@ The `ExperimentTracker` hook can be added to your Hamilton Driver definition to 
 ### Example
 ```python
 from hamilton import driver
-from hamilton_experiments.hook import ExperimentTracker
+from hamilton.plugins import h_experiments
 
 import my_functions  # <- your Hamilton module
 
 
 # 1. create the hook
-tracker_hook = ExperimentTracker(
+tracker_hook = h_experiments.ExperimentTracker(
     experiment_name="hello-world",
     base_directory="/path/to/experiments",
 )
@@ -83,15 +74,12 @@ dr.visualize_materialization(
 )
 ```
 
-## How to use the ExperimentServer
-The ExperimentServer is a local FastAPI server that reads the run metadata cache and mounts the `base_directory` to view and explore results. The frontend uses FastUI to create a React interface from Python.
-
-This server is starting point that one could extend to meets it specialized requirements or integrate in their own web app.
-
+## How to use the experiment server
+The experiment server is a local FastAPI server that reads the run metadata cache and mounts the `base_directory` to view and explore results. The frontend uses FastUI to create a React interface from Python.
 
 ### Start the FastAPI server
 ```
-hexperiments
+h_experiments
 ```
 
 You should see in the terminal:
@@ -103,13 +91,22 @@ INFO:     Uvicorn running on http://127.0.0.1:8123 (Press CTRL+C to quit)
 ```
 ### Set the experiments directory
 ```
-hexperiments $/path/to/base_directory
+h_experiments $/path/to/base_directory
 ```
 
 You can use an absolute or relative path. Default is `./experiments`
 
 ### Set host and port
 ```
-hexperiments --host $HOST --port $PORT
+h_experiments --host $HOST --port $PORT
 ```
 Defaults are `127.0.0.1` and `8123`
+
+## What's next?
+Let us know how you find the experiment manager and features you'd like to see! This project is still early/experimental and there are several interesting avenues:
+- Materialize artifacts to cloud storage
+- User interface to view node-level code diffs
+- Performance profiling of runs
+- User interface to launch runs
+
+Given this is a FastAPI server, you can easily extend it yourself and mount it as a subroute for your own application!

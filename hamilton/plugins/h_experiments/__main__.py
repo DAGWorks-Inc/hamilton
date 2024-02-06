@@ -4,7 +4,14 @@ from pathlib import Path
 
 
 def main():
-    import uvicorn
+    try:
+        import fastapi  # noqa: F401
+        import fastui  # noqa: F401
+        import uvicorn
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError(
+            "Some dependencies are missing. Make sure to `pip install sf-hamilton[experiments]`"
+        )
 
     parser = argparse.ArgumentParser(prog="hamilton-experiments")
     parser.description = "Hamilton Experiment Server launcher"
@@ -28,7 +35,7 @@ def main():
     # set environment variable that FastAPI will use
     os.environ["HAMILTON_EXPERIMENTS_PATH"] = str(Path(args.path).resolve())
 
-    uvicorn.run("hamilton_experiments.server:app", host=args.host, port=args.port)
+    uvicorn.run("hamilton.plugins.h_experiments.server:app", host=args.host, port=args.port)
 
 
 if __name__ == "__main__":
