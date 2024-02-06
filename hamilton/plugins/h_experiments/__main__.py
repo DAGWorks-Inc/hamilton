@@ -2,6 +2,8 @@ import argparse
 import os
 from pathlib import Path
 
+from hamilton.plugins.h_experiments.cache import JsonCache
+
 
 def main():
     try:
@@ -29,8 +31,10 @@ def main():
 
     args = parser.parse_args()
 
-    if Path(args.path, "json_cache.dat").exists() is False:
-        raise ValueError(f"Server failed to launch. No metadata cache found at {args.path}")
+    try:
+        JsonCache(args.path)
+    except Exception as e:
+        raise ValueError(f"Server failed to launch. No metadata cache found at {args.path}") from e
 
     # set environment variable that FastAPI will use
     os.environ["HAMILTON_EXPERIMENTS_PATH"] = str(Path(args.path).resolve())

@@ -26,7 +26,20 @@ The `ExperimentTracker` hook can be added to your Hamilton Driver definition to 
 4. Call `dr.materialize()` to launch run for which metadata and artifacts will be tracked.
 5. (Optional) Use `dr.visualize_materialization()` to visualize the dataflow and set `output_file_path` with the run directory `tracker_hook.run_directory`
 
-### Example
+### Running the example
+
+To run in the example directory, do the following:
+
+```bash
+cd examples/experiment_management
+pip install -r requirements.txt # or use your favorite env manager
+python run.py
+h_experiments # initialize/run the server
+```
+
+Then navigate to `http://localhost:8123` to view the experiment manager! Then you'll want to integrate it into your own workflow.
+
+### Integrating your own
 ```python
 from hamilton import driver
 from hamilton.plugins import h_experiments

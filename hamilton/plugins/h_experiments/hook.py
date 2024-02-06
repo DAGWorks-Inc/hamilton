@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import inspect
 import json
+import logging
 import os
 import string
 import uuid
@@ -11,6 +12,8 @@ from typing import Any, Dict, Optional
 
 from hamilton import graph_types, lifecycle
 from hamilton.plugins.h_experiments.cache import JsonCache
+
+logger = logging.getLogger(__name__)
 
 
 def validate_string_input(user_input):
@@ -169,17 +172,21 @@ class ExperimentTracker(
             os.chdir(self.run_directory)  # before materialization
 
     def run_after_node_execution(
-        self, *, node_tags: dict, node_kwargs: dict, result: Any, **kwargs
+        self, *, node_name: str, node_tags: dict, node_kwargs: dict, result: Any, **kwargs
     ):
         """Move back to init directory after executing materializer.
         Then, save materialization metadata
         """
         if node_tags.get("hamilton.data_saver") is True:
-            if node_tags.get("hamilton.data_saver.sink") == "parquet":
+            if "path" in result:
+                path = result["path"]
+            elif "file_metadata" in result:
                 path = result["file_metadata"]["path"]
             else:
-                path = result["path"]
-
+                logger.warning(
+                    f"Materialization result from node={node_name} has no recordable path: {result}. Materializer must have either "
+                    f"'path' or 'file_metadata' keys."
+                )
             self.materializers.append(
                 NodeMaterializer(
                     source_nodes=list(node_kwargs.keys()),
