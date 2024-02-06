@@ -28,17 +28,17 @@ def main():
 
     materializers = [
         to.pickle(
-            id="trained_model__pickle",
+            id="trained_model_pickle",
             dependencies=["trained_model"],
             path="./trained_model.pickle",
         ),
         to.parquet(
-            id="prediction_df__parquet",
+            id="prediction_df_parquet",
             dependencies=["prediction_df"],
             path="./prediction_df.parquet",
         ),
         to.json(
-            id="cv_scores__json",
+            id="cv_scores_json",
             dependencies=["cv_scores"],
             combine=base.DictResult(),
             path="./cv_scores.json",

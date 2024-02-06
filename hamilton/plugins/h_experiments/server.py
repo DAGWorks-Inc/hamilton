@@ -49,7 +49,7 @@ def get_runs(metadata_cache_path: str) -> list[RunMetadata]:
     cache = JsonCache(cache_path=metadata_cache_path)
     runs = [RunMetadata.model_validate_json(cache.read(run_id)) for run_id in cache.keys()]
     runs = convert_graph_hash_to_version(runs)
-    runs = sorted(runs, key=lambda run: run.date_completed)
+    runs = sorted(runs, key=lambda run: run.date_completed, reverse=True)
     return runs
 
 
