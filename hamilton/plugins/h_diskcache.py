@@ -3,7 +3,7 @@ import inspect
 import logging
 from typing import Any, Callable, Dict, List
 
-from hamilton import driver, lifecycle
+from hamilton import driver, lifecycle, node
 
 import diskcache
 
@@ -15,55 +15,63 @@ def _kb_to_mb(kb: int) -> float:
     return kb / (1024**2)
 
 # TODO add this generic implementation to graph_types
-def hash_implementation(node_callable: Callable) -> str:
+# TODO maybe the hash should only depend on the function body?
+def hash_callable(node_callable: Callable) -> str:
     """Create a single hash (str) from the bytecode of all sorted functions"""
     source_code = inspect.getsource(node_callable)
     return hashlib.sha256(source_code.encode()).hexdigest()
 
 
-def evict_previous_implementations(dr: driver.Driver) -> dict:
+def evict_all_except(nodes_to_keep: Dict[str, node.Node], cache: diskcache.Cache) -> int:
+    """Evicts all nodes and node version except those passed.
+    Remaining nodes may have multiple entries for different input values 
+    """
+    nodes_history: Dict[str, List[str]] = cache.get(key=CacheHook.nodes_history_key)  # type: ignore
+   
+    new_nodes_history = dict()
+    eviction_counter = 0
+    for node_name, history in nodes_history.items():
+        if len(history) < 1:
+            continue
+        
+        if node_name in nodes_to_keep.keys():
+            node_to_keep = nodes_to_keep[node_name]
+            hash_to_keep = hash_callable(node_to_keep.callable)
+            history.remove(hash_to_keep)
+            new_nodes_history[node_name] = [hash_to_keep]
+        
+        for hash_to_evict in history:
+            cache.evict(tag=f"{node_name}.{hash_to_evict}")
+            eviction_counter += 1
+            
+    cache.set(key=CacheHook.nodes_history_key, value=new_nodes_history)
+    return eviction_counter
+
+
+def evict_all_except_driver(dr: driver.Driver) -> dict:
+    """Wrap the utility `evict_all_except` to receive a driver.Driver object"""
     cache_hooks = [adapter for adapter in dr.adapter.adapters 
                    if isinstance(adapter, CacheHook)]
     
     if len(cache_hooks) == 0:
-        raise AssertionError("No `h_diskcache.CacheHook` defined for this Driver")
+        raise AssertionError("0 `h_diskcache.CacheHook` defined for this Driver")
     elif len(cache_hooks) > 1:
-        raise AssertionError("More than 1 `h_diskcache.CacheHook` defined for this Driver")
+        raise AssertionError(">1 `h_diskcache.CacheHook` defined for this Driver")
     
     cache: diskcache.Cache = cache_hooks[0].cache
-    
     volume_before = cache.volume()
-    
-    nodes_history: Dict[str, List[str]] = cache.get(key=CacheHook.nodes_history_key)  # type: ignore
-    if nodes_history is None:
-        return dict(
-            current_volume=volume_before,
-            n_nodes_evicted=0,
-            memory_cleared_mb=0,
-        )
-    
-    nodes = dr.graph.nodes.values()
-    
-    evicted_node_counter = 0
-    for n in nodes:
-        node_history = nodes_history.get(n.name, [])
-        if n.callable is None:
-            continue
-        
-        current_hash = hash_implementation(n.callable)
-        node_hashes_to_evict = set(node_history).difference(set(current_hash))
-        
-        for hash_to_evict in node_hashes_to_evict:
-            cache_tag = f"{n.name}.{hash_to_evict}"
-            cache.evict(tag=cache_tag)
-            evicted_node_counter += 1
-    
+    eviction_counter = evict_all_except(nodes_to_keep=dr.graph.nodes, cache=cache)
     volume_after = cache.volume()
+    volume_difference = volume_before - volume_after
+    
+    logger.info(f"Evicted: {_kb_to_mb(volume_difference):.2f} MB")
+    logger.debug(f"Evicted {eviction_counter} entries")
+    logger.debug(f"Cache size after: {_kb_to_mb(volume_after):.2f} MB")
 
     return dict(
-        current_volume=_kb_to_mb(volume_after),
-        n_nodes_evicted=evicted_node_counter,
-        memory_cleared_mb=_kb_to_mb(volume_before - volume_after),
+        evicted_size_mb=_kb_to_mb(volume_difference),
+        eviction_counter=eviction_counter,
+        size_after=_kb_to_mb(volume_after),
     )
 
 
@@ -90,7 +98,7 @@ class CacheHook(
         node_kwargs: Dict[str, Any],
         **kwargs
     ):
-        node_hash = hash_implementation(node_callable)
+        node_hash = hash_callable(node_callable)
         self.used_nodes_hash[node_name] = node_hash
         cache_key = (node_hash, *node_kwargs.values())
         
@@ -120,4 +128,3 @@ class CacheHook(
     def run_before_graph_execution(self, *args, **kwargs): ...
 
     def run_before_node_execution(self, *args, **kwargs): ...
-
