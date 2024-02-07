@@ -1,9 +1,7 @@
-import hashlib
-import inspect
 import logging
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Union
 
-from hamilton import driver, lifecycle, node
+from hamilton import driver, graph_utils, graph_types, lifecycle, node
 
 import diskcache
 
@@ -13,13 +11,6 @@ logger = logging.getLogger(__name__)
 
 def _kb_to_mb(kb: int) -> float:
     return kb / (1024**2)
-
-# TODO add this generic implementation to graph_types
-# TODO maybe the hash should only depend on the function body?
-def hash_callable(node_callable: Callable) -> str:
-    """Create a single hash (str) from the bytecode of all sorted functions"""
-    source_code = inspect.getsource(node_callable)
-    return hashlib.sha256(source_code.encode()).hexdigest()
 
 
 def evict_all_except(nodes_to_keep: Dict[str, node.Node], cache: diskcache.Cache) -> int:
@@ -36,7 +27,7 @@ def evict_all_except(nodes_to_keep: Dict[str, node.Node], cache: diskcache.Cache
         
         if node_name in nodes_to_keep.keys():
             node_to_keep = nodes_to_keep[node_name]
-            hash_to_keep = hash_callable(node_to_keep.callable)
+            hash_to_keep = graph_utils.hash_callable(node_to_keep.callable)
             history.remove(hash_to_keep)
             new_nodes_history[node_name] = [hash_to_keep]
         
@@ -82,13 +73,26 @@ class CacheHook(
 ):
     nodes_history_key: str = "_nodes_history"
     
-    def __init__(self, cache_path: str = ".", **cache_settings):
+    def __init__(
+        self,
+        cache_vars: Union[List[str], None] = None,
+        cache_path: str = ".",
+        **cache_settings
+    ):
+        self.cache_vars = cache_vars if cache_vars else []
         self.cache_path = cache_path
         self.cache = diskcache.Cache(directory=cache_path, **cache_settings)
         self.nodes_history: Dict[str, List[str]] = self.cache.get(
             key=CacheHook.nodes_history_key,default=dict()
         )  # type: ignore
         self.used_nodes_hash: Dict[str, str] = dict()
+        
+    def run_before_graph_execution(
+        self, *, graph: graph_types.HamiltonGraph, **kwargs
+    ):
+        """Set cache_vars to all nodes if not specified"""
+        if self.cache_vars == []:
+            self.cache_vars = [n.name for n in graph.nodes]
 
     def run_to_execute_node(
         self,
@@ -98,7 +102,11 @@ class CacheHook(
         node_kwargs: Dict[str, Any],
         **kwargs
     ):
-        node_hash = hash_callable(node_callable)
+        """Create hash key then use cached value if exist"""
+        if node_name not in self.cache_vars:
+            return node_callable(**node_kwargs)
+        
+        node_hash = graph_utils.hash_callable(node_callable)
         self.used_nodes_hash[node_name] = node_hash
         cache_key = (node_hash, *node_kwargs.values())
         
@@ -114,6 +122,9 @@ class CacheHook(
     def run_after_node_execution(
         self, *, node_name: str, node_kwargs: dict, result: Any, **kwargs
     ):
+        if node_name not in self.cache_vars:
+            return
+        
         node_hash = self.used_nodes_hash[node_name]
         cache_key = (node_hash, *node_kwargs.values())
         cache_tag = f"{node_name}.{node_hash}"
@@ -124,7 +135,5 @@ class CacheHook(
         self.cache.set(key=CacheHook.nodes_history_key, value=self.nodes_history)
         logger.info(f"Cache size: {_kb_to_mb(self.cache.volume()):.2f} MB")
         self.cache.close()
-        
-    def run_before_graph_execution(self, *args, **kwargs): ...
 
     def run_before_node_execution(self, *args, **kwargs): ...

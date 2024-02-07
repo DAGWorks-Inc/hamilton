@@ -46,23 +46,7 @@ def node_a_docstring():
         return external_input % 7
     
     return _callable_to_node(A)
-
-
-def test_different_hash_function_body(node_a: node.Node, node_a_body: node.Node):
-    """Gives different hash for different function body"""
-    assert (
-        h_diskcache.hash_callable(node_a.callable)
-        != h_diskcache.hash_callable(node_a_body.callable)
-    )
-    
-
-def test_different_hash_docstring(node_a: node.Node, node_a_docstring: node.Node):
-    """Gives different hash for different docstring"""
-    assert (
-        h_diskcache.hash_callable(node_a.callable)
-        != h_diskcache.hash_callable(node_a_docstring.callable)
-    )
-    
+  
 
 def test_set_result(hook: h_diskcache.CacheHook, node_a: node.Node):
     """Hook sets value and assert value in cache"""
@@ -71,6 +55,7 @@ def test_set_result(hook: h_diskcache.CacheHook, node_a: node.Node):
     cache_key = (node_hash, *node_kwargs.values())
     result = 2
 
+    hook.cache_vars = [node_a.name]
     # used_nodes_hash would be set by run_to_execute() hook
     hook.used_nodes_hash[node_a.name] = node_hash
     hook.run_after_node_execution(
@@ -90,6 +75,7 @@ def test_get_result(hook: h_diskcache.CacheHook, node_a: node.Node):
     result = 2
     cache_key = (node_hash, *node_kwargs.values())
 
+    hook.cache_vars = [node_a.name]
     # run_after_node_execution() would set cache
     hook.cache.set(key=cache_key, value=result)
     hook.cache.stats(enable=True, reset=True)
@@ -102,7 +88,7 @@ def test_get_result(hook: h_diskcache.CacheHook, node_a: node.Node):
     # 1 hit, 0 miss
     assert hook.cache.stats() == (1, 0)
     
-    
+
 def test_append_nodes_history(
     hook: h_diskcache.CacheHook,
     node_a: node.Node,
@@ -113,6 +99,7 @@ def test_append_nodes_history(
     """
     node_name = "A"
     node_kwargs = dict(external_input=7)
+    hook.cache_vars = [node_a.name]
     
     # node version 1
     hook.used_nodes_hash[node_name] = h_diskcache.hash_callable(node_a.callable)
