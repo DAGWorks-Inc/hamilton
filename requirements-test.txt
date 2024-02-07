@@ -16,3 +16,4 @@ scikit-learn
 sqlalchemy==1.4.49; python_version == '3.7.*'
 sqlalchemy; python_version >= '3.8'
 xgboost
+diskcache
