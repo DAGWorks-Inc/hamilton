@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Dict, List, Union
 
 from hamilton import driver, graph_utils, graph_types, lifecycle, node
 
