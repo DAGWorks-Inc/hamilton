@@ -1421,16 +1421,16 @@ class PandasExcelReader(DataLoader):
     # which are used in pandas.read_excel.
     # So we have to list all the arguments in plain code.
     sheet_name: Union[str, int, List[Union[int, str]], None] = 0
-    header: Union[int, Sequence[int], None] = 0
+    header: Union[int, Sequence, None] = 0
     names: Optional[Sequence] = None
-    index_col: Union[int, str, Sequence[int], None] = None
-    usecols: Union[int, str, Sequence[int], Sequence[str], Callable[[str], bool], None] = None
-    dtype: Union[Dtype, dict[Hashable, Dtype], None] = None
+    index_col: Union[int, str, Sequence, None] = None
+    usecols: Union[int, str, Sequence, Sequence, Callable[[str], bool], None] = None
+    dtype: Union[Dtype, Dict[Hashable, Dtype], None] = None
     engine: Optional[Literal["xlrd", "openpyxl", "odf", "pyxlsb", "calamine"]] = None
     converters: Union[Dict[str, Callable], Dict[int, Callable], None] = None
-    true_values: Optional[Iterable[Hashable]] = None
-    false_values: Optional[Iterable[Hashable]] = None
-    skiprows: Union[Sequence[int], int, Callable[[int], object], None] = None
+    true_values: Optional[Iterable] = None
+    false_values: Optional[Iterable] = None
+    skiprows: Union[Sequence, int, Callable[[int], object], None] = None
     nrows: Optional[int] = None
     na_values = None  # in pandas.read_excel there are not type hints for na_values
     keep_default_na: bool = True
@@ -1460,6 +1460,11 @@ class PandasExcelReader(DataLoader):
         # but we send it separately
         del kwargs["path"]
 
+        # engine_kwargs appeared only in pandas >= 2.1
+        # For compatibility with pandas 2.0 we remove engine_kwargs from kwargs if it's empty.
+        if kwargs["engine_kwargs"] is None:
+            del kwargs["engine_kwargs"]
+
         return kwargs
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
@@ -1487,8 +1492,8 @@ class PandasExcelWriter(DataSaver):
     sheet_name: str = "Sheet1"
     na_rep: str = ""
     float_format: Optional[str] = None
-    columns: Optional[Sequence[Hashable]] = None
-    header: Union[Sequence[Hashable], bool] = True
+    columns: Optional[Sequence] = None
+    header: Union[Sequence, bool] = True
     index: bool = True
     index_label: Optional[IndexLabel] = None
     startrow: int = 0
@@ -1511,6 +1516,12 @@ class PandasExcelWriter(DataSaver):
         # path corresponds to 'excel_writer' argument of pandas.DataFrame.to_excel,
         # but we send it separately
         del kwargs["path"]
+
+        # engine_kwargs appeared only in pandas >= 2.1
+        # For compatibility with pandas 2.0 we remove engine_kwargs from kwargs if it's empty.
+        if kwargs["engine_kwargs"] is None:
+            del kwargs["engine_kwargs"]
+
         return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
