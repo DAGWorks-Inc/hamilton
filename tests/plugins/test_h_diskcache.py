@@ -3,7 +3,7 @@ import pathlib
 
 import pytest
 
-from hamilton import driver, node, ad_hoc_utils
+from hamilton import ad_hoc_utils, driver, node
 from hamilton.plugins import h_diskcache
 
 
@@ -23,30 +23,33 @@ def hook(tmp_path: pathlib.Path):
 @pytest.fixture()
 def node_a():
     """Default function implementation"""
+
     def A(external_input: int) -> int:
         return external_input % 7
-    
+
     return _callable_to_node(A)
-    
-    
+
+
 @pytest.fixture()
 def node_a_body():
     """The function A() has modulo 5 instead of 7"""
+
     def A(external_input: int) -> int:
         return external_input % 5
-    
+
     return _callable_to_node(A)
-    
-    
+
+
 @pytest.fixture()
 def node_a_docstring():
     """The function A() has a docstring"""
+
     def A(external_input: int) -> int:
         """This one has a docstring"""
         return external_input % 7
-    
+
     return _callable_to_node(A)
-  
+
 
 def test_set_result(hook: h_diskcache.CacheHook, node_a: node.Node):
     """Hook sets value and assert value in cache"""
@@ -63,11 +66,11 @@ def test_set_result(hook: h_diskcache.CacheHook, node_a: node.Node):
         node_kwargs=node_kwargs,
         result=result,
     )
-    
+
     # run_to_execute_node() hook would get cache
     assert hook.cache.get(key=cache_key) == result
-    
-    
+
+
 def test_get_result(hook: h_diskcache.CacheHook, node_a: node.Node):
     """Hooks get value and assert cache hit"""
     node_hash = h_diskcache.hash_callable(node_a.callable)
@@ -84,10 +87,10 @@ def test_get_result(hook: h_diskcache.CacheHook, node_a: node.Node):
         node_kwargs=node_kwargs,
         node_callable=node_a.callable,
     )
-    
+
     # 1 hit, 0 miss
     assert hook.cache.stats() == (1, 0)
-    
+
 
 def test_append_nodes_history(
     hook: h_diskcache.CacheHook,
@@ -100,7 +103,7 @@ def test_append_nodes_history(
     node_name = "A"
     node_kwargs = dict(external_input=7)
     hook.cache_vars = [node_a.name]
-    
+
     # node version 1
     hook.used_nodes_hash[node_name] = h_diskcache.hash_callable(node_a.callable)
     hook.run_to_execute_node(
@@ -108,10 +111,10 @@ def test_append_nodes_history(
         node_kwargs=node_kwargs,
         node_callable=node_a.callable,
     )
-    
+
     # check history
     assert len(hook.nodes_history.get(node_name, [])) == 1
-    
+
     # node version 2
     hook.used_nodes_hash[node_name] = h_diskcache.hash_callable(node_a_body.callable)
     hook.run_to_execute_node(
@@ -119,19 +122,19 @@ def test_append_nodes_history(
         node_kwargs=node_kwargs,
         node_callable=node_a_body.callable,
     )
-    
+
     assert len(hook.nodes_history.get(node_name, [])) == 2
-    
-    
+
+
 def test_commit_nodes_history(hook: h_diskcache.CacheHook):
     """Commit node history to cache"""
     hook.nodes_history = dict(A=["hash_1", "hash_2"])
-    
+
     hook.run_after_graph_execution()
-    
+
     assert hook.cache.get(h_diskcache.CacheHook.nodes_history_key) == hook.nodes_history
-    
-    
+
+
 def test_evict_all_except(
     hook: h_diskcache.CacheHook,
     node_a: node.Node,
@@ -141,13 +144,13 @@ def test_evict_all_except(
     node_a_hash = h_diskcache.hash_callable(node_a.callable)
     node_a_body_hash = h_diskcache.hash_callable(node_a_body.callable)
     hook.cache[h_diskcache.CacheHook.nodes_history_key] = dict(A=[node_a_hash, node_a_body_hash])
-    
+
     eviction_counter = h_diskcache.evict_all_except(nodes_to_keep=dict(A=node_a), cache=hook.cache)
 
     assert eviction_counter == 1
     assert hook.cache[h_diskcache.CacheHook.nodes_history_key] == dict(A=[node_a_hash])
-    
-    
+
+
 def test_evict_from_driver(
     hook: h_diskcache.CacheHook,
     node_a: node.Node,
@@ -159,8 +162,8 @@ def test_evict_from_driver(
     hook.cache[h_diskcache.CacheHook.nodes_history_key] = dict(A=[node_a_hash, node_a_body_hash])
     module = ad_hoc_utils.create_temporary_module(node_a.callable)
     dr = driver.Builder().with_modules(module).with_adapters(hook).build()
-    
+
     output = h_diskcache.evict_all_except_driver(dr)
-    
+
     assert output["eviction_counter"] == 1
     assert hook.cache[h_diskcache.CacheHook.nodes_history_key] == dict(A=[node_a_hash])

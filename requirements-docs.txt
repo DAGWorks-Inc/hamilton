@@ -3,6 +3,7 @@ alabaster>=0.7,<0.8,!=0.7.5  # read the docs pins
 commonmark==0.9.1 # read the docs pins
 dask[distributed]
 ddtrace
+diskcache
 # furo -- install from main for now until the next release is out:
 git+https://github.com/pradyunsg/furo@main
 gitpython # Required for parsing git info for generation of data-adapter docs
@@ -28,4 +29,3 @@ sphinx-rtd-theme # read the docs pins
 sphinx-sitemap
 tqdm
 xgboost
-diskcache
