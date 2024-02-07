@@ -3,7 +3,7 @@ import pathlib
 
 import pytest
 
-from hamilton import ad_hoc_utils, driver, node, graph_utils
+from hamilton import ad_hoc_utils, driver, graph_utils, node
 from hamilton.plugins import h_diskcache
 
 
