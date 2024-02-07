@@ -3,7 +3,7 @@ import pathlib
 
 import pytest
 
-from hamilton import ad_hoc_utils, driver, node
+from hamilton import ad_hoc_utils, driver, node, graph_utils
 from hamilton.plugins import h_diskcache
 
 
@@ -53,7 +53,7 @@ def node_a_docstring():
 
 def test_set_result(hook: h_diskcache.CacheHook, node_a: node.Node):
     """Hook sets value and assert value in cache"""
-    node_hash = h_diskcache.hash_callable(node_a.callable)
+    node_hash = graph_utils.hash_callable(node_a.callable)
     node_kwargs = dict(external_input=7)
     cache_key = (node_hash, *node_kwargs.values())
     result = 2
@@ -73,7 +73,7 @@ def test_set_result(hook: h_diskcache.CacheHook, node_a: node.Node):
 
 def test_get_result(hook: h_diskcache.CacheHook, node_a: node.Node):
     """Hooks get value and assert cache hit"""
-    node_hash = h_diskcache.hash_callable(node_a.callable)
+    node_hash = graph_utils.hash_callable(node_a.callable)
     node_kwargs = dict(external_input=7)
     result = 2
     cache_key = (node_hash, *node_kwargs.values())
@@ -105,7 +105,7 @@ def test_append_nodes_history(
     hook.cache_vars = [node_a.name]
 
     # node version 1
-    hook.used_nodes_hash[node_name] = h_diskcache.hash_callable(node_a.callable)
+    hook.used_nodes_hash[node_name] = graph_utils.hash_callable(node_a.callable)
     hook.run_to_execute_node(
         node_name=node_name,
         node_kwargs=node_kwargs,
@@ -116,7 +116,7 @@ def test_append_nodes_history(
     assert len(hook.nodes_history.get(node_name, [])) == 1
 
     # node version 2
-    hook.used_nodes_hash[node_name] = h_diskcache.hash_callable(node_a_body.callable)
+    hook.used_nodes_hash[node_name] = graph_utils.hash_callable(node_a_body.callable)
     hook.run_to_execute_node(
         node_name=node_name,
         node_kwargs=node_kwargs,
@@ -141,8 +141,8 @@ def test_evict_all_except(
     node_a_body: node.Node,
 ):
     """Check utility function to evict all except passed nodes"""
-    node_a_hash = h_diskcache.hash_callable(node_a.callable)
-    node_a_body_hash = h_diskcache.hash_callable(node_a_body.callable)
+    node_a_hash = graph_utils.hash_callable(node_a.callable)
+    node_a_body_hash = graph_utils.hash_callable(node_a_body.callable)
     hook.cache[h_diskcache.CacheHook.nodes_history_key] = dict(A=[node_a_hash, node_a_body_hash])
 
     eviction_counter = h_diskcache.evict_all_except(nodes_to_keep=dict(A=node_a), cache=hook.cache)
@@ -157,8 +157,8 @@ def test_evict_from_driver(
     node_a_body: node.Node,
 ):
     """Check utility function to evict all except driver"""
-    node_a_hash = h_diskcache.hash_callable(node_a.callable)
-    node_a_body_hash = h_diskcache.hash_callable(node_a_body.callable)
+    node_a_hash = graph_utils.hash_callable(node_a.callable)
+    node_a_body_hash = graph_utils.hash_callable(node_a_body.callable)
     hook.cache[h_diskcache.CacheHook.nodes_history_key] = dict(A=[node_a_hash, node_a_body_hash])
     module = ad_hoc_utils.create_temporary_module(node_a.callable)
     dr = driver.Builder().with_modules(module).with_adapters(hook).build()
