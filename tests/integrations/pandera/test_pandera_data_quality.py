@@ -1,5 +1,3 @@
-import sys
-
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
@@ -102,7 +100,6 @@ def test_basic_pandera_decorator_series_passes():
     assert validation_result.passes
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.9 or higher")
 def test_pandera_decorator_creates_correct_validator():
     class OutputSchema(pa.DataFrameModel):
         year: pa.typing.pandas.Series[int] = pa.Field(gt=2000, coerce=True)
@@ -136,7 +133,6 @@ def test_pandera_decorator_creates_correct_validator():
     assert not result_failed.passes
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.9 or higher")
 def test_pandera_decorator_fails_without_annotation():
     def foo() -> pd.DataFrame:
         return pd.DataFrame(
