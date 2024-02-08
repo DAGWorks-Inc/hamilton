@@ -1,6 +1,9 @@
 import os
+import time
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, Union
+from urllib import parse
 
 import pandas as pd
 
@@ -9,7 +12,7 @@ SQL_METADATA = "sql_metadata"
 FILE_METADATA = "file_metadata"
 
 
-def get_file_metadata(path: str) -> Dict[str, Any]:
+def get_file_metadata(path: Union[str, Path]) -> Dict[str, Any]:
     """Gives metadata from loading a file.
 
     Note: we reserve the right to change this schema. So if you're using this come
@@ -21,12 +24,28 @@ def get_file_metadata(path: str) -> Dict[str, Any]:
     - the last modified time
     - the current time
     """
+    if isinstance(path, Path):
+        path = str(path)
+    parsed = parse.urlparse(path)
+    size = None
+    scheme = parsed.scheme
+    last_modified = time.time()
+    timestamp = datetime.now().utcnow().timestamp()
+    notes = f"File metadata is unsupported for scheme: {scheme} or path: {path} does not exist."
+
+    if parsed.scheme == "" and os.path.exists(path):
+        size = os.path.getsize(path)
+        last_modified = os.path.getmtime(path)
+        notes = ""
+
     return {
         FILE_METADATA: {
-            "size": os.path.getsize(path),
+            "size": size,
             "path": path,
-            "last_modified": os.path.getmtime(path),
-            "timestamp": datetime.now().utcnow().timestamp(),
+            "last_modified": last_modified,
+            "timestamp": timestamp,
+            "scheme": scheme,
+            "notes": notes,
         }
     }
 

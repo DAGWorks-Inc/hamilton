@@ -41,7 +41,7 @@ def test_lightgbm_file_writer(
     metadata = writer.save_data(fitted_lightgbm)
 
     assert model_path.exists()
-    assert metadata[FILE_METADATA]["path"] == model_path
+    assert metadata[FILE_METADATA]["path"] == str(model_path)
 
 
 @pytest.mark.parametrize(

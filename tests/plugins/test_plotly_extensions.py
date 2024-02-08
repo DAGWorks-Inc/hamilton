@@ -19,7 +19,7 @@ def test_plotly_static_writer(figure: go.Figure, tmp_path: pathlib.Path) -> None
     metadata = writer.save_data(figure)
 
     assert file_path.exists()
-    assert metadata[FILE_METADATA]["path"] == file_path
+    assert metadata[FILE_METADATA]["path"] == str(file_path)
 
 
 def test_plotly_interactive_writer(figure: go.Figure, tmp_path: pathlib.Path) -> None:
@@ -29,4 +29,4 @@ def test_plotly_interactive_writer(figure: go.Figure, tmp_path: pathlib.Path) ->
     metadata = writer.save_data(figure)
 
     assert file_path.exists()
-    assert metadata[FILE_METADATA]["path"] == file_path
+    assert metadata[FILE_METADATA]["path"] == str(file_path)

@@ -1,6 +1,5 @@
 import pathlib
 import sqlite3
-import sys
 from typing import Union
 
 import pandas as pd
@@ -103,11 +102,9 @@ def test_pandas_sql(df: pd.DataFrame, conn: Union[str, sqlite3.Connection]) -> N
     assert kwargs2["coerce_float"] is True
     assert df.equals(df2)
 
-    if sys.version_info >= (3, 8):
-        # py37 pandas 1.3.5 doesn't return rows inserted
-        assert metadata1["sql_metadata"]["rows"] == 1
-        assert metadata2["sql_metadata"]["rows"] == 1
-        assert metadata1["dataframe_metadata"]["datatypes"] == ["object"]
+    assert metadata1["sql_metadata"]["rows"] == 1
+    assert metadata2["sql_metadata"]["rows"] == 1
+    assert metadata1["dataframe_metadata"]["datatypes"] == ["object"]
 
     if hasattr(conn, "close"):
         conn.close()
@@ -129,7 +126,7 @@ def test_pandas_xml_writer(tmp_path: pathlib.Path) -> None:
 
     assert PandasXmlWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
-    assert metadata["file_metadata"]["path"] == file_path
+    assert metadata["file_metadata"]["path"] == str(file_path)
     assert metadata["dataframe_metadata"]["column_names"] == ["foo"]
 
 
@@ -149,7 +146,7 @@ def test_pandas_html_writer(tmp_path: pathlib.Path) -> None:
 
     assert PandasHtmlWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
-    assert metadata["file_metadata"]["path"] == file_path
+    assert metadata["file_metadata"]["path"] == str(file_path)
     assert metadata["dataframe_metadata"]["column_names"] == ["col1", "col2"]
 
 
@@ -169,7 +166,7 @@ def test_pandas_stata_writer(tmp_path: pathlib.Path) -> None:
 
     assert PandasStataWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
-    assert metadata["file_metadata"]["path"] == file_path
+    assert metadata["file_metadata"]["path"] == str(file_path)
     assert metadata["dataframe_metadata"]["column_names"] == ["col1", "col2"]
 
 
@@ -189,7 +186,7 @@ def test_pandas_feather_writer(tmp_path: pathlib.Path) -> None:
 
     assert PandasStataWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
-    assert metadata["file_metadata"]["path"] == file_path
+    assert metadata["file_metadata"]["path"] == str(file_path)
     assert metadata["dataframe_metadata"]["column_names"] == ["col1", "col2"]
 
 
@@ -217,11 +214,10 @@ def test_pandas_csv_writer(tmp_path: pathlib.Path) -> None:
 
     assert PandasCSVWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
-    assert metadata["file_metadata"]["path"] == file_path
+    assert metadata["file_metadata"]["path"] == str(file_path)
     assert metadata["dataframe_metadata"]["column_names"] == ["col1", "col2"]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
 def test_pandas_orc_writer(tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "test.orc"
     writer = PandasORCWriter(path=file_path)
@@ -229,7 +225,7 @@ def test_pandas_orc_writer(tmp_path: pathlib.Path) -> None:
 
     assert PandasORCWriter.applicable_types() == [pd.DataFrame]
     assert file_path.exists()
-    assert metadata["file_metadata"]["path"] == file_path
+    assert metadata["file_metadata"]["path"] == str(file_path)
     assert metadata["dataframe_metadata"]["column_names"] == ["col1", "col2"]
 
 
