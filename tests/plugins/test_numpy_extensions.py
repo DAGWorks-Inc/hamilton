@@ -19,7 +19,7 @@ def test_numpy_file_writer(array: np.ndarray, tmp_path: pathlib.Path) -> None:
     metadata = writer.save_data(array)
 
     assert file_path.exists()
-    assert metadata[FILE_METADATA]["path"] == file_path
+    assert metadata[FILE_METADATA]["path"] == str(file_path)
 
 
 def test_numpy_file_reader(array: np.ndarray, tmp_path: pathlib.Path) -> None:

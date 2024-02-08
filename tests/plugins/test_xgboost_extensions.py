@@ -31,7 +31,7 @@ def test_xgboost_model_json_writer(
     metadata = writer.save_data(fitted_xgboost_model)
 
     assert model_path.exists()
-    assert metadata[FILE_METADATA]["path"] == model_path
+    assert metadata[FILE_METADATA]["path"] == str(model_path)
 
 
 def test_xgboost_model_json_reader(
@@ -56,7 +56,7 @@ def test_xgboost_booster_json_writer(
     metadata = writer.save_data(fitted_xgboost_booster)
 
     assert booster_path.exists()
-    assert metadata[FILE_METADATA]["path"] == booster_path
+    assert metadata[FILE_METADATA]["path"] == str(booster_path)
 
 
 def test_xgboost_booster_json_reader(

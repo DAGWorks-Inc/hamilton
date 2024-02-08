@@ -28,4 +28,4 @@ def test_plotly_static_writer(figure: matplotlib.figure.Figure, tmp_path: pathli
     metadata = writer.save_data(figure)
 
     assert file_path.exists()
-    assert metadata[FILE_METADATA]["path"] == file_path
+    assert metadata[FILE_METADATA]["path"] == str(file_path)

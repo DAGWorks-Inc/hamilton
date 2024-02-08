@@ -1,5 +1,4 @@
 import pathlib
-import sys
 from typing import Type
 
 import numpy as np
@@ -192,7 +191,7 @@ def test_cm_plot_saver(
     metadata = writer.save_data(confusion_matrix_display)
 
     assert plot_path.exists()
-    assert metadata[FILE_METADATA]["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == str(plot_path)
 
 
 def test_det_curve_display(
@@ -204,7 +203,7 @@ def test_det_curve_display(
     metadata = writer.save_data(det_curve_display)
 
     assert plot_path.exists()
-    assert metadata[FILE_METADATA]["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == str(plot_path)
 
 
 def test_precision_recall_display(
@@ -216,10 +215,9 @@ def test_precision_recall_display(
     metadata = writer.save_data(precision_recall_display)
 
     assert plot_path.exists()
-    assert metadata[FILE_METADATA]["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == str(plot_path)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
 def test_prediction_error_display(
     prediction_error_display: PredictionErrorDisplay, tmp_path: pathlib.Path
 ) -> None:
@@ -229,7 +227,7 @@ def test_prediction_error_display(
     metadata = writer.save_data(prediction_error_display)
 
     assert plot_path.exists()
-    assert metadata[FILE_METADATA]["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == str(plot_path)
 
 
 def test_roc_curve_display(
@@ -241,7 +239,7 @@ def test_roc_curve_display(
     metadata = writer.save_data(roc_curve_display)
 
     assert plot_path.exists()
-    assert metadata[FILE_METADATA]["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == str(plot_path)
 
 
 def test_calibration_display(
@@ -253,10 +251,9 @@ def test_calibration_display(
     metadata = writer.save_data(calibration_display)
 
     assert plot_path.exists()
-    assert metadata[FILE_METADATA]["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == str(plot_path)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
 def test_decision_boundary_display(
     decision_boundary_display: DecisionBoundaryDisplay, tmp_path: pathlib.Path
 ) -> None:
@@ -266,10 +263,9 @@ def test_decision_boundary_display(
     metadata = writer.save_data(decision_boundary_display)
 
     assert plot_path.exists()
-    assert metadata[FILE_METADATA]["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == str(plot_path)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
 def test_partial_dependence_display(
     partial_dependence_display: PartialDependenceDisplay, tmp_path: pathlib.Path
 ) -> None:
@@ -279,10 +275,9 @@ def test_partial_dependence_display(
     metadata = writer.save_data(partial_dependence_display)
 
     assert plot_path.exists()
-    assert metadata[FILE_METADATA]["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == str(plot_path)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
 def test_learning_curve_display(
     learning_curve_display: LearningCurveDisplay, tmp_path: pathlib.Path
 ) -> None:
@@ -292,10 +287,9 @@ def test_learning_curve_display(
     metadata = writer.save_data(learning_curve_display)
 
     assert plot_path.exists()
-    assert metadata[FILE_METADATA]["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == str(plot_path)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
 def test_validation_curve_display(
     validation_curve_display: ValidationCurveDisplay, tmp_path: pathlib.Path
 ) -> None:
@@ -305,4 +299,4 @@ def test_validation_curve_display(
     metadata = writer.save_data(validation_curve_display)
 
     assert plot_path.exists()
-    assert metadata[FILE_METADATA]["path"] == plot_path
+    assert metadata[FILE_METADATA]["path"] == str(plot_path)
