@@ -162,8 +162,8 @@ Next step
 ---------
 Now, you know the basics of authoring and executing Hamilton dataflows! We encourage you to:
 
-- Write some code with our `interactive tutorials <https://www.tryhamilton.dev/intro>_`
-- Kickstart your project with `community dataflows <https://hub.dagworks.io/docs/>_`
+- Write some code with our `interactive tutorials <https://www.tryhamilton.dev/intro>`_
+- Kickstart your project with `community dataflows <https://hub.dagworks.io/docs/>`_
 
 The next Concepts page cover notions to write more expressive and powerful code. If you feel stuck or constrained with the basics, it's probably a good time to visit them. They include:
 
