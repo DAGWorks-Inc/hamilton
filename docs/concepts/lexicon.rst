@@ -25,11 +25,11 @@ Before we dive into the concepts, let's clarify the terminology we'll be using:
      - Synonymous with Transform. A node in the DAG is equivalent to a transform step in the DAG.
    * - Hamilton Driver
      - A specific class written to enable execution of the DAG with certain parameters. This will be your main \
-       interface with your Hamilton code. See :doc:`driver-capabilities` for more detail.
+       interface with your Hamilton code. See :doc:`driver` for more detail.
    * - "*driver*" script/code
      - Code that you write to tell Hamilton what the DAG is, what outputs you want, and where the inputs come from.
    * - Config
-     - Data that dictates the way the DAG is constructed. See :doc:`driver-capabilities` for more details.
+     - Data that dictates the way the DAG is constructed. See :doc:`driver` for more details.
    * - Decorators
      - A python function that modifies another python function in some way. Used in Hamilton to compile functions to \
        sets of transforms. See :doc:`decorators-overview` for more detail.

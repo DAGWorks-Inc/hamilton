@@ -10,7 +10,7 @@ concepts that makes Hamilton unique and powerful.
 
    lexicon
    node
-   driver-capabilities
+   driver
    customizing-execution
    decorators-overview
    best-practices/index

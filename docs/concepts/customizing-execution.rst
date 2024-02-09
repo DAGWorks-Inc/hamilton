@@ -163,3 +163,34 @@ Note that we currently have the following caveats:
 1. No nested `Parallelizable[]`/`Collect[]` blocks -- we only allow one level of parallelization
 2. Serialization for `Multiprocessing` is suboptimal -- we currently use the default `pickle` serializer, which breaks with certain cases. Ray, Dask, etc... all work well, and we plan to add support for joblib + cloudpickle serialization.
 3. `Collect[]` input types are limited to one per function -- this is another caveat that we intend to get rid of, but for now you'll want to concat/put into one function before collecting.
+
+
+
+Materializing DAG Nodes
+#######################
+
+The driver comes with the ability to materialize DAG nodes -- this adds side-effects into the DAG to save the data it produces to various places.
+These are fully customizable, and utilize the same set of constructs as :doc:`/reference/decorators/save_to/`.
+
+It can be used to save data to a file, external data store, or a database -- its a flexible construct that comes with a few built-in options,
+but is highly pluggable.
+
+In the following case, we are joining `foo` and `bar` into a dataframe, then saving it to a CSV file:
+
+.. code-block:: python
+
+     from hamilton import driver, base
+     from hamilton.io.materialize import to
+     dr = driver.Driver(my_module, {})
+     # foo, bar are pd.Series
+     metadata, result = dr.materialize(
+         to.csv(
+             path="./output.csv",
+             id="foo_bar_csv",
+             dependencies=["foo", "bar"],
+             combine=base.PandasDataFrameResult()
+         ),
+         additional_vars=["foo", "bar"]
+     )
+
+For more information, see `materialize` in the :doc:`driver </reference/drivers/Driver>`.
