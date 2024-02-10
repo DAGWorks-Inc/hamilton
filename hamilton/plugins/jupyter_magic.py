@@ -5,11 +5,12 @@ Usage:
    > # To load it
    > %load_ext hamilton.plugins.jupyter_magic
 
-   > %%with_functions -m MODULE_NAME
+   > %%cell_to_module -m MODULE_NAME
    > def my_hamilton_funcs(): ...
 
 """
 
+import json
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -97,7 +98,7 @@ def find_all_hamilton_drivers_using_this_module(shell, module_name: str) -> list
     return impacted_drivers
 
 
-def rebuild_drivers(shell, module_name: str, module_object: ModuleType) -> dict:
+def rebuild_drivers(shell, module_name: str, module_object: ModuleType, verbosity: int = 1) -> dict:
     impacted_drivers = find_all_hamilton_drivers_using_this_module(shell, module_name)
     drivers_rebuilt = {}
     for var_name, dr in impacted_drivers:
@@ -121,9 +122,13 @@ def rebuild_drivers(shell, module_name: str, module_object: ModuleType) -> dict:
             )
             drivers_rebuilt[var_name] = dr
 
-            print(f"Rebuilt {var_name} with module {module_name}, using config {_config}")
+            if verbosity > 0:
+                print(
+                    f"Rebuilt {var_name} with module {module_name}, using it's config of {_config}"
+                )
         else:
-            print(f"Driver {var_name} has an adapter passed, skipping rebuild.")
+            if verbosity > 0:
+                print(f"Driver {var_name} has an adapter passed, skipping rebuild.")
 
     return drivers_rebuilt
 
@@ -134,19 +139,42 @@ class HamiltonMagics(Magics):
 
     @magic_arguments()  # needed on top to enable parsing
     @argument("-m", "--module_name", help="Optional module name.")  # keyword / optional arg
+    @argument("-c", "--config", help="JSON config")  # keyword / optional arg
+    @argument(
+        "-r", "--rebuild-drivers", action="store_true", help="Flag to rebuild drivers"
+    )  # Flag / optional arg
+    @argument(
+        "-d", "--display", action="store_true", help="Flag to visualize dataflow."
+    )  # Flag / optional arg
+    @argument(
+        "-v", "--verbosity", type=int, default=1, help="0 to hide. 1 is normal, default"
+    )  # keyword / optional arg
     @cell_magic
-    def with_functions(self, line, cell):
+    def cell_to_module(self, line, cell):
         """Execute the cell and dynamically create a Python module from its content.
-        A Hamilton Driver is automatically instantiated with that module for variable `dr`.
+        A Hamilton Driver is automatically instantiated with that module for variable `{MODULE_NAME}_dr`.
         """
         # shell.ex() is equivalent to exec(), but in the user namespace (i.e. notbook context).
         # This allows imports and functions defined in the magic cell %%with_functions to be
         # directly accessed from the notebook
         self.shell.ex(cell)
 
-        args = parse_argstring(self.with_functions, line)  # specify how to parse by passing method
+        args = parse_argstring(self.cell_to_module, line)  # specify how to parse by passing method
         module_name = "jupyter_module" if args.module_name is None else args.module_name
 
+        display_config = {}
+        if args.config:
+            try:
+                if args.config.startswith("'") or args.config.startswith('"'):
+                    # strip quotes if present
+                    args.config = args.config[1:-1]
+                display_config = json.loads(args.config)
+            except json.JSONDecodeError:
+                print("Failed to parse config as JSON. Please ensure it's a valid JSON string.")
+                print(args.config)
+
+        # should_rebuild_drivers = True if args.rebuild_drivers is not None else False
+        # should_display = True if args.view is not None else False
         module_object = create_module(cell, module_name)
 
         # shell.push() assign a variable in the notebook. The dictionary keys are variable name
@@ -154,15 +182,19 @@ class HamiltonMagics(Magics):
 
         # shell.user_ns is a dictionary of all variables in the notebook
         # rebuild drivers that use this module
-        rebuilt_drivers = rebuild_drivers(self.shell, module_name, module_object)
-        self.shell.user_ns.update(rebuilt_drivers)
+        if args.rebuild_drivers:
+            rebuilt_drivers = rebuild_drivers(
+                self.shell, module_name, module_object, verbosity=args.verbosity
+            )
+            self.shell.user_ns.update(rebuilt_drivers)
 
         # create a driver to display things for every cell with %%with_functions
-        dr = driver.Builder().with_modules(module_object).build()
+        dr = driver.Builder().with_modules(module_object).with_config(display_config).build()
         self.shell.push({f"{module_name}_dr": dr})
-        # return will go to the output cell. To display multiple elements, use
-        # IPython.display.display(print("hello"), dr.display_all_functions(), ...)
-        return dr.display_all_functions()
+        if args.display:
+            # return will go to the output cell. To display multiple elements, use
+            # IPython.display.display(print("hello"), dr.display_all_functions(), ...)
+            return dr.display_all_functions()
 
     @line_magic
     def insert_module(self, line):
@@ -175,7 +207,7 @@ class HamiltonMagics(Magics):
 
         module_path = Path(line)
         # insert our custom %%with_functions magic at the top of the cell
-        header = f"%%with_functions -m {module_path.stem}\n\n"
+        header = f"%%cell_to_module -m {module_path.stem}\n\n"
         module_source = module_path.read_text()
 
         # insert source code as text in the next cell
