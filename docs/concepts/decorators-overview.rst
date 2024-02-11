@@ -77,7 +77,7 @@ write the following:
 
     from hamilton.function_modifiers import extract_columns
 
-    @extract_columns(['tv_spend', 'radio_spend', 'billboard_spend'])
+    @extract_columns('tv_spend', 'radio_spend', 'billboard_spend')
     def marketing_spend_df() -> pd.DataFrame:
         return load_all_marketing_spend_from_external_source()
 
