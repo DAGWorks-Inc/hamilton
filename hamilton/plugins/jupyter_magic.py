@@ -206,8 +206,6 @@ class HamiltonMagics(Magics):
                 print("Failed to parse config as JSON. Please ensure it's a valid JSON string.")
                 print(args.config)
 
-        # should_rebuild_drivers = True if args.rebuild_drivers is not None else False
-        # should_display = True if args.view is not None else False
         module_object = create_module(cell, module_name)
 
         # shell.push() assign a variable in the notebook. The dictionary keys are variable name
