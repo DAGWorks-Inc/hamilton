@@ -8,6 +8,10 @@ Usage:
    > %%cell_to_module -m MODULE_NAME
    > def my_hamilton_funcs(): ...
 
+If you are developing on this module you'll then want to use:
+
+    > %reload_ext hamilton.plugins.jupyter_magic
+
 """
 
 import json
@@ -83,7 +87,12 @@ def insert_cell_with_content():
 
 
 def find_all_hamilton_drivers_using_this_module(shell, module_name: str) -> list:
-    """Find all Hamilton drivers in the notebook that use the module `module_name`"""
+    """Find all Hamilton drivers in the notebook that use the module `module_name`.
+
+    :param shell: the ipython shell object
+    :param module_name: the module name to search for
+    :return: the list of (driver variable name, drivers) that use the module
+    """
     driver_instances = {
         var_name: shell.user_ns[var_name]
         for var_name in shell.user_ns
@@ -99,11 +108,22 @@ def find_all_hamilton_drivers_using_this_module(shell, module_name: str) -> list
 
 
 def rebuild_drivers(shell, module_name: str, module_object: ModuleType, verbosity: int = 1) -> dict:
+    """Function to rebuild drivers that use the module `module_name` with the new module `module_object`.
+
+    This finds the drivers and rebuilds them if it knows how. It will skip rebuilding if the driver has an adapter.
+
+    :param shell:
+    :param module_name:
+    :param module_object:
+    :param verbosity:
+    :return:
+    """
     impacted_drivers = find_all_hamilton_drivers_using_this_module(shell, module_name)
     drivers_rebuilt = {}
     for var_name, dr in impacted_drivers:
         modules_to_use = [mod for mod in dr.graph_modules if mod.__name__ != module_name]
         modules_to_use.append(module_object)
+        # TODO: make this more robust by providing some better APIs.
         if (
             dr.adapter
             and hasattr(dr.adapter, "_adapters")
@@ -112,6 +132,7 @@ def rebuild_drivers(shell, module_name: str, module_object: ModuleType, verbosit
                 or isinstance(dr.adapter._adapters[0], lifecycle.base.LifecycleAdapterSet)
             )
         ):
+            # TODO: make this more robust with a better API
             _config = dr.graph._config
             dr = (
                 driver.Builder()
@@ -138,7 +159,9 @@ class HamiltonMagics(Magics):
     """Magics to facilitate Hamilton development in Jupyter notebooks"""
 
     @magic_arguments()  # needed on top to enable parsing
-    @argument("-m", "--module_name", help="Optional module name.")  # keyword / optional arg
+    @argument(
+        "-m", "--module_name", help="Module name to provide. Default is jupyter_module."
+    )  # keyword / optional arg
     @argument("-c", "--config", help="JSON config")  # keyword / optional arg
     @argument(
         "-r", "--rebuild-drivers", action="store_true", help="Flag to rebuild drivers"
@@ -153,9 +176,19 @@ class HamiltonMagics(Magics):
     def cell_to_module(self, line, cell):
         """Execute the cell and dynamically create a Python module from its content.
         A Hamilton Driver is automatically instantiated with that module for variable `{MODULE_NAME}_dr`.
+
+        > %%cell_to_module -m MODULE_NAME --display --rebuild-drivers
         """
-        # shell.ex() is equivalent to exec(), but in the user namespace (i.e. notbook context).
-        # This allows imports and functions defined in the magic cell %%with_functions to be
+        if "--help" in line.split():
+            print("Help for %%cell_to_module magic:")
+            print("  -m, --module_name: Module name to provide. Default is jupyter_module.")
+            print("  -c, --config: JSON config string.")
+            print("  -r, --rebuild-drivers: Flag to rebuild drivers.")
+            print("  -d, --display: Flag to visualize dataflow.")
+            print("  -v, --verbosity: of standard output. 0 to hide. 1 is normal, default.")
+            return  # Exit early
+        # shell.ex() is equivalent to exec(), but in the user namespace (i.e. notebook context).
+        # This allows imports and functions defined in the magic cell %%cell_to_module to be
         # directly accessed from the notebook
         self.shell.ex(cell)
 
@@ -199,7 +232,10 @@ class HamiltonMagics(Magics):
     @line_magic
     def insert_module(self, line):
         """Insert in the next cell the source code from the module (.py)
-        at the path specified by `line`
+        at the path specified by `line`.
+
+        This is useful if you have an existing Hamilton module and want to pull in the contents
+        for further development in the notebook.
         """
 
         # JavaScript magic to generate a new cell
