@@ -162,7 +162,9 @@ class HamiltonMagics(Magics):
     @argument(
         "-m", "--module_name", help="Module name to provide. Default is jupyter_module."
     )  # keyword / optional arg
-    @argument("-c", "--config", help="JSON config")  # keyword / optional arg
+    @argument(
+        "-c", "--config", help="JSON config, or variable name containing config to use."
+    )  # keyword / optional arg
     @argument(
         "-r", "--rebuild-drivers", action="store_true", help="Flag to rebuild drivers"
     )  # Flag / optional arg
@@ -182,7 +184,7 @@ class HamiltonMagics(Magics):
         if "--help" in line.split():
             print("Help for %%cell_to_module magic:")
             print("  -m, --module_name: Module name to provide. Default is jupyter_module.")
-            print("  -c, --config: JSON config string.")
+            print("  -c, --config: JSON config string, or variable name containing config to use.")
             print("  -r, --rebuild-drivers: Flag to rebuild drivers.")
             print("  -d, --display: Flag to visualize dataflow.")
             print("  -v, --verbosity: of standard output. 0 to hide. 1 is normal, default.")
@@ -197,14 +199,17 @@ class HamiltonMagics(Magics):
 
         display_config = {}
         if args.config:
-            try:
-                if args.config.startswith("'") or args.config.startswith('"'):
-                    # strip quotes if present
-                    args.config = args.config[1:-1]
-                display_config = json.loads(args.config)
-            except json.JSONDecodeError:
-                print("Failed to parse config as JSON. Please ensure it's a valid JSON string.")
-                print(args.config)
+            if args.config in self.shell.user_ns:
+                display_config = self.shell.user_ns[args.config]
+            else:
+                try:
+                    if args.config.startswith("'") or args.config.startswith('"'):
+                        # strip quotes if present
+                        args.config = args.config[1:-1]
+                    display_config = json.loads(args.config)
+                except json.JSONDecodeError:
+                    print("Failed to parse config as JSON. Please ensure it's a valid JSON string:")
+                    print(args.config)
 
         module_object = create_module(cell, module_name)
 

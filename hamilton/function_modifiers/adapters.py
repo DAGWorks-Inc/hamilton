@@ -483,8 +483,7 @@ class save_to__meta__(type):
                 "If you've gotten to this point, you either (1) spelled the "
                 "loader name wrong, (2) are trying to use a saver that does"
                 "not exist (yet). For a list of available savers, see "
-                "https://hamilton.readthedocs.io/reference/io/available-data-adapters/#data"
-                "-loaders "
+                "https://hamilton.dagworks.io/en/latest/reference/io/available-data-adapters/"
             ) from e
 
 
