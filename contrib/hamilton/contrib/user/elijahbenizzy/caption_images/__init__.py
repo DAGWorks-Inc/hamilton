@@ -3,8 +3,6 @@ import datetime
 import logging
 from typing import IO, Any, Dict, List, Optional, Union
 
-import boto3
-
 from hamilton.function_modifiers import config
 
 logger = logging.getLogger(__name__)
@@ -15,6 +13,7 @@ from hamilton import contrib
 
 with contrib.catch_import_errors(__name__, __file__, logger):
     # non-hamilton imports go here
+    import boto3
     import openai
 
 
