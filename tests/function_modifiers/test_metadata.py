@@ -74,6 +74,28 @@ def test_tag_outputs():
     assert node_map["b"].tags["tag_b_gets"] == "tag_value_b_gets"
 
 
+def test_tag_outputs_tags_all():
+    @function_modifiers.extract_columns("a", "b")
+    def dummy_tagged_function() -> pd.DataFrame:
+        """dummy doc"""
+        return pd.DataFrame.from_records({"a": [1], "b": [2]})
+
+    annotation = function_modifiers.tag_outputs(
+        a={"tag_a_gets": "tag_value_a_gets"},
+        b={"tag_b_gets": "tag_value_b_gets"},
+        dummy_tagged_function={"tag_fn_gets": "tag_value_fn_gets"},
+    )
+    nodes = annotation.transform_dag(
+        function_modifiers.base.resolve_nodes(dummy_tagged_function, {}),
+        config={},
+        fn=dummy_tagged_function,
+    )
+    node_map = {node_.name: node_ for node_ in nodes}
+    assert node_map["a"].tags["tag_a_gets"] == "tag_value_a_gets"
+    assert node_map["b"].tags["tag_b_gets"] == "tag_value_b_gets"
+    assert node_map["dummy_tagged_function"].tags["tag_fn_gets"] == "tag_value_fn_gets"
+
+
 def test_tag_outputs_and_tag_together():
     """Tests that tag_outputs and tag work together"""
 

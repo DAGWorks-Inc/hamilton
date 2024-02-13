@@ -169,11 +169,13 @@ class tag_outputs(base.NodeDecorator):
                return pd.DataFrame.from_records({"a": [1], "b": [2]})
 
         """
-        super(base.NodeDecorator, self).__init__(target=None)
+        super(base.NodeDecorator, self).__init__(target=...)
         self.tag_mapping = tag_mapping
 
     def decorate_node(self, node_: node.Node) -> node.Node:
         """Decorates all final nodes with the specified tags."""
+        if node_.name not in self.tag_mapping:
+            return node_  # in this case we have no desire to update tags
         new_tags = node_.tags.copy()
         new_tags.update(self.tag_mapping.get(node_.name, {}))
         return tag(**new_tags).decorate_node(node_)
