@@ -8,6 +8,7 @@ lz4
 matplotlib
 networkx
 openpyxl  # for excel data loader
+pandera
 plotly
 polars
 pyarrow
