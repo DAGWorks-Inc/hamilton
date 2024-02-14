@@ -11,6 +11,8 @@ concepts that makes Hamilton unique and powerful.
    lexicon
    node
    driver
-   customizing-execution
-   decorators-overview
+   materialization
+   function-modifiers
+   builder
+   parallel-task
    best-practices/index

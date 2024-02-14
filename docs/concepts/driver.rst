@@ -167,6 +167,7 @@ Now, you know the basics of authoring and executing Hamilton dataflows! We encou
 
 The next Concepts page cover notions to write more expressive and powerful code. If you feel stuck or constrained with the basics, it's probably a good time to visit them. They include:
 
-- Function decorators for expressive dataflows
-- Customizing Driver execution
-- Loading data and storing results
+- Driver ()
+- Materialization: integrate Hamilton in your data infrastructure
+- Function decorators: write expressive dataflows without repeating code
+- Lifecycle hooks: customize Driver execution
