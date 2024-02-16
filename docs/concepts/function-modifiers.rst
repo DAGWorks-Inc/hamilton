@@ -70,9 +70,11 @@ This section from the page :doc:`node` details how a Python function maps to a H
 
 .. _tag-decorators:
 
-Add metadata to node
---------------------
+Add metadata to a node
+----------------------
 
+@tag
+~~~~~~~~
 The ``@tag`` decorator **doesn't modify the function/node**. It attaches metadata to the node that Hamilton and you can use. It can help tag nodes by ownership, data source, version, infrastructure, and anything else.
 
 For example, this tags the associated data product and the sensitivity of the data.
@@ -109,10 +111,34 @@ Tags are also accessible to the visualization styling feature, allowing you to h
 .. image:: ./_function-modifiers/custom_viz.png
     :height: 250px
 
+@schema
+~~~~~~~
+
+The ``@schema`` function modifiers provides lightweight way to add type metadata for dataframes. It works by specifying a specifying tuples of ``(field_name, field_type)`` with types as strings.
+
+.. code-block:: python
+
+    from hamilton.function_modifiers import schema
+
+    @schema.output(
+        ("a", "int"),
+        ("b", "float"),
+        ("c", "str")
+    )
+    def clean_df(raw_df: pd.DataFrame) -> pd.DataFrame:
+        return pd.DataFrame.from_records(
+            {"a": [1], "b": [2.0], "c": ["3"]}
+        )
+
+.. image:: ./_function-modifiers/schema.png
+
+
 Validate node output
 --------------------
 
-The ``@check_output`` and ``@schema`` function modifiers are applied on the **node output / function return** and therefore don't directly affect node behavior. Decorators separate data validation from the function body where the core logic is. Your function readability is improved, and it becomes easier to reuse and maintain standardized checks across multiple functions.
+The ``@check_output`` function modifiers are applied on the **node output / function return** and therefore don't directly affect node behavior. Decorators separate data validation from the function body where the core logic is. Your function readability is improved, and it becomes easier to reuse and maintain standardized checks across multiple functions.
+
+Note, in the future ``@schema`` might also have validation capabilities, but for now, it's only for metadata.
 
 @check_output
 ~~~~~~~~~~~~~
@@ -146,27 +172,6 @@ pandera support
 
 Hamilton has a pandera plugin for data validation that you can install with ``pip install sf-hamilton[pandera]``. Then, you can pass pandera schemas (DataFrame or Series) to ``@check_output(schema=...)``.
 
-
-@schema
-~~~~~~~
-
-The ``@schema`` function modifiers provides lightweight type validation for dataframes. It works by specifying a specifying tuples of ``(field_name, field_type)`` with types as strings.
-
-.. code-block:: python
-
-    from hamilton.function_modifiers import schema
-
-    @schema.output(
-        ("a", "int"),
-        ("b", "float"),
-        ("c", "str")
-    )
-    def clean_df(raw_df: pd.DataFrame) -> pd.DataFrame:
-        return pd.DataFrame.from_records(
-            {"a": [1], "b": [2.0], "c": ["3"]}
-        )
-
-.. image:: ./_function-modifiers/schema.png
 
 Split node output into *n* nodes
 --------------------------------
@@ -405,6 +410,7 @@ You will need to use the ``inject_`` keyword when you load multiple files into a
 The ``@save_to`` decorator works very similarly to ``@load_from``. In this case, ``path=...`` specifies where the data will be saved, and an ``output_name_`` is required to be able to request the node from ``Driver.execute()``. Here again, ``source()`` can be used.
 
 .. code-block:: python
+
     # functions.py
     @save_to.json(path=source("metrics_path"), output_name_="metrics_to_json")
     def eval_metric(x: np.ndarray, y: np.ndarray) -> dict:
