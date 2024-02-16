@@ -28,13 +28,13 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
 
 def hash_source_code(source: Union[str, Callable], strip: bool = False) -> str:
     """Hashes the source code of a function (str).
-    
+
     If strip, try to remove docs and comments from source code string. Since
     they don't impact function behavior, they shouldn't influence the hash.
     """
     if isinstance(source, Callable):
         source = inspect.getsource(source)
-    
+
     source = source.strip()
 
     if strip:
@@ -50,15 +50,15 @@ def hash_source_code(source: Union[str, Callable], strip: bool = False) -> str:
 
 def remove_docs_and_comments(source: str) -> str:
     """Remove the docs and comments from a source code string.
-    
+
     1. Parsing then unparsing the AST of the source code will
-    create a code object and convert it back to a string. In the 
+    create a code object and convert it back to a string. In the
     process, comments are stripped.
-    
-    2. walk the AST to check if first element after `def` is a 
+
+    2. walk the AST to check if first element after `def` is a
     docstring. If so, edit AST to skip the docstring
-    
-    NOTE. The ast parsing will fail if `source` has syntax errors. For the 
+
+    NOTE. The ast parsing will fail if `source` has syntax errors. For the
     majority of cases this is caught upstream (e.g., by calling `import`).
     The foreseeable edge case is if `source` is the result of `inspect.getsource`
     on a nested function, method, or callable where `def` isn't at column 0.
@@ -69,18 +69,17 @@ def remove_docs_and_comments(source: str) -> str:
     for node in ast.walk(parsed):
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
-        
+
         if not len(node.body):
             continue
-        
+
         # check if 1st node is a docstring
         if not isinstance(node.body[0], ast.Expr):
             continue
-        
-        if not hasattr(node.body[0], 'value') or \
-           not isinstance(node.body[0].value, ast.Str):
+
+        if not hasattr(node.body[0], "value") or not isinstance(node.body[0].value, ast.Str):
             continue
-        
+
         # skip docstring
         node.body = node.body[1:]
 

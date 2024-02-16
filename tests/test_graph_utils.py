@@ -1,5 +1,4 @@
 import textwrap
-from typing import Callable
 
 import pytest
 
@@ -41,8 +40,8 @@ def func_a_docstring():
         return external_input % 7
     '''
     )
-    
-    
+
+
 @pytest.fixture()
 def func_a_multiline():
     """The function A() has a docstring"""
@@ -50,7 +49,7 @@ def func_a_multiline():
     return textwrap.dedent(
         '''
     def A(external_input: int) -> int:
-        """This one has 
+        """This one has
         a multiline
         docstring
         """
@@ -64,31 +63,30 @@ def func_a_comment():
     """The function A() has a comment"""
 
     return textwrap.dedent(
-        '''
+        """
     def A(external_input: int) -> int:
         return external_input % 7  # a comment
-    '''
+    """
     )
-    
+
 
 def test_remove_docstring(func_a: str, func_a_docstring: str):
-    func_a_no_whitespace = func_a.strip() 
+    func_a_no_whitespace = func_a.strip()
     stripped = graph_utils.remove_docs_and_comments(func_a_docstring)
     assert func_a_no_whitespace == stripped
-    
-    
+
+
 def test_remove_multiline(func_a: str, func_a_multiline: str):
-    func_a_no_whitespace = func_a.strip() 
+    func_a_no_whitespace = func_a.strip()
     stripped = graph_utils.remove_docs_and_comments(func_a_multiline)
     assert func_a_no_whitespace == stripped
-    
-    
+
+
 def test_remove_comment(func_a: str, func_a_comment: str):
-    func_a_no_whitespace = func_a.strip() 
+    func_a_no_whitespace = func_a.strip()
     stripped = graph_utils.remove_docs_and_comments(func_a_comment)
     assert func_a_no_whitespace == stripped
-    
-    
+
 
 @pytest.mark.parametrize("strip", [True, False])
 def test_different_hash_function_body(func_a: str, func_a_body: str, strip: bool):
@@ -107,9 +105,7 @@ def test_different_hash_docstring(func_a: str, func_a_docstring: str, strip: boo
 
 
 @pytest.mark.parametrize("strip", [True, False])
-def test_different_hash_multiline_docstring(
-    func_a: str, func_a_multiline: str, strip: bool
-):
+def test_different_hash_multiline_docstring(func_a: str, func_a_multiline: str, strip: bool):
     """Same hash if strip multiline docstring, else different hash"""
     func_a_hash = graph_utils.hash_source_code(func_a, strip=strip)
     func_a_multiline_hash = graph_utils.hash_source_code(func_a_multiline, strip=strip)
