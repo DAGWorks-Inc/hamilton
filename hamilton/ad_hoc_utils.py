@@ -1,5 +1,6 @@
 """A suite of tools for ad-hoc use"""
 
+import linecache
 import sys
 import types
 import uuid
@@ -57,3 +58,20 @@ def create_temporary_module(*functions: Callable, module_name: str = None) -> Mo
         setattr(module, fn_name, fn)
     sys.modules[module_name] = module
     return module
+
+
+def module_from_source(source) -> ModuleType:
+    """Create a temporary module from source code"""
+    module_name = _generate_unique_temp_module_name()
+    module_object = ModuleType(module_name)
+    code_object = compile(source, module_name, "exec")
+    sys.modules[module_name] = module_object
+    exec(code_object, module_object.__dict__)
+    
+    linecache.cache[module_name] = (
+        len(source.splitlines()),
+        None,
+        source.splitlines(True),
+        module_name
+    )
+    return module_object
