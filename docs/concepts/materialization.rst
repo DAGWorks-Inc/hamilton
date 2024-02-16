@@ -2,7 +2,7 @@
 Materialization
 ===============
 
-So far, we executed our dataflow using the ``Driver.execute()`` method, which can receive an ``inputs`` dictionary and returns a ``results`` dictionary (by default). However, you can also execute code with ``Driver.materialize()`` to directly read from / write to external data sources (file, database, cloud data store).
+So far, we executed our dataflow using the ``Driver.execute()`` method, which can receive an ``inputs`` dictionary and return a ``results`` dictionary (by default). However, you can also execute code with ``Driver.materialize()`` to directly read from / write to external data sources (file, database, cloud data store).
 
 On this page, you'll learn:
 
@@ -36,7 +36,7 @@ The first two options use ``Driver.execute()`` and the latter ``Driver.materiali
    |    :width: 500px                             |    :width: 500px                              |    :width: 500px                                       |
    +----------------------------------------------+-----------------------------------------------+--------------------------------------------------------+
 
-As explained previously, ``Driver.execute()`` walks the graph to compute the list of nodes you requested by name. For ``Driver.materialize()``, you give it a list of data savers (``from_``) and data loaders (``to``). Each one will add a to the dataflow before execution.
+As explained previously, ``Driver.execute()`` walks the graph to compute the list of nodes you requested by name. For ``Driver.materialize()``, you give it a list of data savers (``from_``) and data loaders (``to``). Each one will add a node to the dataflow before execution.
 
 .. note::
 
@@ -61,7 +61,7 @@ Benefits
 Limitations
 
 - need to write a unique function for each loaded parquet file and saved model. Code duplication could be reduced by using utility functions ``_load_parquet()`` 
-- data location is hardcoded and hard to change. Could override ``raw_df`` in the ``.execute()`` call.
+- data location is hard coded and difficult to change. Could override ``raw_df`` in the ``.execute()`` call.
 
 Driver context
 ~~~~~~~~~~~~~~
@@ -70,18 +70,18 @@ This approach loads and saves data outside the dataflow and uses ``Driver.execut
 
 Benefits
 
-- Flexibility for Driver user to change data location
-- Less dataflow functions to define and maintain.
+- Flexibility for Driver users to change data location
+- Fewer dataflow functions to define and maintain.
 
 Limitations
 
 - Adds complexity to the Driver code (e.g., ``run.py``).
 - Lose the Hamilton benefits of having data loading and saving part of the dataflow (visualize, lifecycle hook, etc.)
-- If data loading/saving needs flexibility, adopt approach the **nodes / dataflow context** approach with ``@config`` for alternative implementations (#TODO link to func modifiers). 
+- If data loading/saving needs flexibility, adopt approach the **nodes/dataflow context** approach with ``@config`` for alternative implementations (see :ref:`config-decorators`). 
 
 .. note:: 
     
-    Notice that the **Driver context** approach is equivalent to the **nodes / dataflow context** if you add to this Driver a separate Python module with the functions ``raw_df()`` and ``save_model()``
+    Notice that the **Driver context** approach is equivalent to the **nodes/dataflow context** if you add to this Driver a separate Python module with the functions ``raw_df()`` and ``save_model()``
 
 Materialization
 ~~~~~~~~~~~~~~~
@@ -97,20 +97,20 @@ Unique benefits
 
 Benefits
 
-- Flexibility for Driver user to change data location
+- Flexibility for Driver users to change data location
 - Less dataflow functions to define and maintain
 - All operations are part of the dataflow
 
 Limitations
 
-- Writing a custom DataSaver or DataLoader requires more efforts than adding a function to the dataflow.
+- Writing a custom DataSaver or DataLoader requires more effort than adding a function to the dataflow.
 - Adds complexity to the Driver (e.g., ``run.py``).
 
 
 DataLoader and DataSaver
 ------------------------
 
-In Hamilton, ``DataLoader`` and ``DataSaver`` are classes that defined how to load or save a particular data format. Calling ``Driver.materialize(DataLoader(), DataSaver())`` adds nodes to the dataflow (see visualizations above).
+In Hamilton, ``DataLoader`` and ``DataSaver`` are classes that define how to load or save a particular data format. Calling ``Driver.materialize(DataLoader(), DataSaver())`` adds nodes to the dataflow (see visualizations above).
 
 Here are simplified snippets for saving and loading an XGBoost model to JSON.
 
@@ -126,4 +126,4 @@ To define your own DataSaver and DataLoader, the Hamilton `XGBoost extension <ht
 ``@load_from`` and ``@save_to``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Also, the data loaders and savers power the ``@load_from`` and ``@save_to`` :doc:`function_modifiers`
+Also, the data loaders and savers power the ``@load_from`` and ``@save_to`` :ref:`loader-saver-decorators`
