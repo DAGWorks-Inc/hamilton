@@ -29,6 +29,8 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
 def hash_source_code(source: Union[str, Callable], strip: bool = False) -> str:
     """Hashes the source code of a function (str).
 
+    The `strip` parameter requires Python 3.9
+
     If strip, try to remove docs and comments from source code string. Since
     they don't impact function behavior, they shouldn't influence the hash.
     """
@@ -50,6 +52,8 @@ def hash_source_code(source: Union[str, Callable], strip: bool = False) -> str:
 
 def remove_docs_and_comments(source: str) -> str:
     """Remove the docs and comments from a source code string.
+
+    The use of `ast.unparse()` requires Python 3.9
 
     1. Parsing then unparsing the AST of the source code will
     create a code object and convert it back to a string. In the
