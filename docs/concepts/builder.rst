@@ -18,7 +18,7 @@ On this page, how to configure your Driver with the ``driver.Builder()``. There 
             .build()
         )
 
-    The order of Builder statements doesn't matter as long as ``.build()`` is last. 
+    The order of Builder statements doesn't matter as long as ``.build()`` is last.
 
 
 with_modules()

@@ -28,7 +28,7 @@ For this page, let's pretend we defined the following module ``my_dataflow.py``:
 Define the Driver
 -----------------
 
-First, you need to create a ``driver.Driver`` object. This is possible through the ``driver.Builder()`` object to which you give Python modules and other configurations, and call ``.build()`` to create the Driver. 
+First, you need to create a ``driver.Driver`` object. This is possible through the ``driver.Builder()`` object to which you give Python modules and other configurations, and call ``.build()`` to create the Driver.
 
 The most basic Driver looks like this:
 
@@ -74,7 +74,7 @@ The following requests the node ``C`` and visualizes the execution path:
 
     # run.py
     from hamilton import driver
-    import my_dataflow 
+    import my_dataflow
 
     dr = driver.Builder().with_modules(my_dataflow).build()
     dr.visualize_execution(["C"], "execute_c.png")
@@ -100,7 +100,7 @@ With a Python module
 
 One approach is to define the dataflow and the Driver in the same file (e.g., ``my_dataflow.py``). Then, you can execute it as a script with ``python my_dataflow.py`` to rebuild the Driver and visualize your dataflow. This ensures your dataflow definition remains valid as you make changes.
 
-For example: 
+For example:
 
 .. code-block:: python
 
@@ -117,7 +117,7 @@ For example:
         # __main__ refers to the file itself
         # and yes, a file can import itself as a module!
         import __main__
-        
+
         dr = driver.Builder().with_modules(__main__).build()
         dr.display_all_functions("dag.png")
         dr.execute(["C"])
@@ -127,7 +127,7 @@ With a Jupyter notebook
 
 Another approach is to define the dataflow in a module (e.g., ``my_dataflow.py``) and reload the Driver in a Jupyter notebook. This allows for a more interactive experience when you want to inspect the results of functions as you're developing.
 
-By default, Python only imports a module once and subsequent ``import`` statements don't reload the module. We use ``importlib.reload`` to reload ``my_dataflow`` before rebuilding the Driver. 
+By default, Python only imports a module once and subsequent ``import`` statements don't reload the module. We use ``importlib.reload`` to reload ``my_dataflow`` before rebuilding the Driver.
 
 .. code-block:: python
 
@@ -140,7 +140,7 @@ By default, Python only imports a module once and subsequent ``import`` statemen
     # %%cell 2
     # this will reload an already imported module
     importlib.reload(my_dataflow)
-    
+
     # rebuild the `Driver` with the reloaded module and execute again
     dr = driver.Builder().with_modules(my_dataflow).build()
     dr.display_all_functions("dag.png")

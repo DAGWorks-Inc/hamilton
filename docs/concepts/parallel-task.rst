@@ -74,4 +74,3 @@ Note that we currently have the following caveats:
 1. No nested `Parallelizable[]`/`Collect[]` blocks -- we only allow one level of parallelization
 2. Serialization for `Multiprocessing` is suboptimal -- we currently use the default `pickle` serializer, which breaks with certain cases. Ray, Dask, etc... all work well, and we plan to add support for joblib + cloudpickle serialization.
 3. `Collect[]` input types are limited to one per function -- this is another caveat that we intend to get rid of, but for now you'll want to concat/put into one function before collecting.
-

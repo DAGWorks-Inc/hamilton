@@ -65,8 +65,8 @@ Visualizing exactly which nodes were executed is more helpful than viewing the f
 You should produce the visualization before executing the dataflow. Otherwise, the figure won't be generated if the execution fails first.
 
 .. code-block:: python
-    
-    # pull variables to ensure .execute() and 
+
+    # pull variables to ensure .execute() and
     # .visualize_execution() receive the same
     # arguments
     final_vars = ["A", "C", "E"]
@@ -105,7 +105,7 @@ An equivalent method is available if you're using materialization.
         materializer,
         additional_vars=additional_vars,
         inputs=inputs,
-        overrides=dict(B=36.1), 
+        overrides=dict(B=36.1),
         output_file_path="dag.png"
     )
     dr.materialize(
@@ -175,7 +175,7 @@ We won't provide visual examples here, but you try them yourself in your browser
 Apply custom style
 ~~~~~~~~~~~~~~~~~~
 
-By default, each node is labeled with name and type, and stylized (shape, color, outline, etc.). By passing a function to the parameter ``custom_style_function``, you can customize the node style based on its attributes. This pairs nicely with the ``@tag`` function modifier (learn more :ref:`tag-decorators`) 
+By default, each node is labeled with name and type, and stylized (shape, color, outline, etc.). By passing a function to the parameter ``custom_style_function``, you can customize the node style based on its attributes. This pairs nicely with the ``@tag`` function modifier (learn more :ref:`tag-decorators`)
 
 To define your own style:
 
@@ -217,4 +217,3 @@ This `online graphviz editor <https://edotor.net/>`_ can help you get started!
 
 
 See the `full code example <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/styling_visualization>`_ for more details.
-

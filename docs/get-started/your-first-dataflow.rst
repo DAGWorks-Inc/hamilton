@@ -62,7 +62,7 @@ Let's give these functions a spin!
 Run your dataflow
 -----------------
 
-To actually run the dataflow, we'll need to write :doc:`a driver <../concepts/driver-capabilities>`. Create a\
+To actually run the dataflow, we'll need to write :doc:`a driver <../concepts/driver>`. Create a\
 ``my_script.py`` with the following contents:
 
 .. code-block:: python

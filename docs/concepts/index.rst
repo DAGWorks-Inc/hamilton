@@ -8,7 +8,7 @@ concepts that makes Hamilton unique and powerful.
 
 .. toctree::
 
-   lexicon
+   glossary
    node
    driver
    visualization

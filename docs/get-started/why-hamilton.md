@@ -39,7 +39,7 @@ is call out to the hamilton library within your task. If your orchestrator suppo
     do_something_with(output)
     ```
 2. _Hamilton DAGs can be broken up to run as components within an orchestration system._
-With the ability to include [overrides](../concepts/driver-capabilities.rst),
+With the ability to include [overrides](../concepts/driver.rst),
 you can run the DAG on each task, overloading the outputs of the last task + any static inputs/configuration, and pass it into the next task. This is more
 of a manual/power-user feature. Some pseudocode:
 

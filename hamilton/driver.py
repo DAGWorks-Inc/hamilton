@@ -1420,9 +1420,9 @@ class Driver:
         are dynamically computed with the DAG, rather than statically included from the beginning.
 
         This is customizable through a few APIs:
-            1. Custom data savers ( :doc:`/concepts/decorators-overview`)
+            1. Custom data savers ( :doc:`/concepts/function-modifiers`)
             2. Custom result builders
-            3. Custom data loaders ( :doc:`/concepts/decorators-overview`)
+            3. Custom data loaders ( :doc:`/concepts/function-modifiers`)
 
         If you find yourself writing these, please consider contributing back! We would love
         to round out the set of available materialization tools.

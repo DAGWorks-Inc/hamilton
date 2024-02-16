@@ -2,11 +2,11 @@
 Function modifiers (Advanced)
 =============================
 
-.. warning:: 
+.. warning::
 
-    This page is a work in progress. Refer to the API reference for more documentation and please ask a public question on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_ if you need help! 
+    This page is a work in progress. Refer to the API reference for more documentation and please ask a public question on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_ if you need help!
 
-The page :doc:`function_modifiers` details how to use decorators to write expressive dataflows. The e presented function modifiers are highly expressive and should be sufficient in the large majority of cases.
+The page :doc:`function-modifiers` details how to use decorators to write expressive dataflows. The e presented function modifiers are highly expressive and should be sufficient in the large majority of cases.
 
 Nonetheless, there exists higher level abstractions for power users that *may* be useful for integrations with your existing platform. If you want to use complex machinery instead of writing 1 additional function, comeback when it's your 10th manually addition 🛠
 

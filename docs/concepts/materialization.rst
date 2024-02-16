@@ -45,7 +45,7 @@ As explained previously, ``Driver.execute()`` walks the graph to compute the lis
 Why use materialization
 -----------------------
 
-Let's compare the benefits of the 3 different approaches 
+Let's compare the benefits of the 3 different approaches
 
 Nodes / dataflow context
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,7 +60,7 @@ Benefits
 
 Limitations
 
-- need to write a unique function for each loaded parquet file and saved model. Code duplication could be reduced by using utility functions ``_load_parquet()`` 
+- need to write a unique function for each loaded parquet file and saved model. Code duplication could be reduced by using utility functions ``_load_parquet()``
 - data location is hard coded and difficult to change. Could override ``raw_df`` in the ``.execute()`` call.
 
 Driver context
@@ -77,10 +77,10 @@ Limitations
 
 - Adds complexity to the Driver code (e.g., ``run.py``).
 - Lose the Hamilton benefits of having data loading and saving part of the dataflow (visualize, lifecycle hook, etc.)
-- If data loading/saving needs flexibility, adopt approach the **nodes/dataflow context** approach with ``@config`` for alternative implementations (see :ref:`config-decorators`). 
+- If data loading/saving needs flexibility, adopt approach the **nodes/dataflow context** approach with ``@config`` for alternative implementations (see :ref:`config-decorators`).
 
-.. note:: 
-    
+.. note::
+
     Notice that the **Driver context** approach is equivalent to the **nodes/dataflow context** if you add to this Driver a separate Python module with the functions ``raw_df()`` and ``save_model()``
 
 Materialization

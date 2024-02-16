@@ -1,6 +1,8 @@
 import dataclasses
+
 from hamilton.io import utils
 from hamilton.io.data_adapters import DataSaver
+
 
 @dataclasses.dataclass
 class XGBoostJsonWriter(DataSaver):
@@ -10,9 +12,7 @@ class XGBoostJsonWriter(DataSaver):
     def applicable_types(cls) -> Collection[Type]:
         return [xgboost.XGBModel]
 
-    def save_data(
-        self, data: xgboost.XGBModel
-    ) -> Dict[str, Any]:
+    def save_data(self, data: xgboost.XGBModel) -> Dict[str, Any]:
         # uses the XGBoost library
         data.save_model(self.path)
         return utils.get_file_metadata(self.path)
