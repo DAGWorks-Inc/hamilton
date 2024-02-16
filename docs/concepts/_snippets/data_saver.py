@@ -1,4 +1,8 @@
 import dataclasses
+from os import PathLike
+from typing import Any, Collection, Dict, Type, Union
+
+import xgboost
 
 from hamilton.io import utils
 from hamilton.io.data_adapters import DataSaver
