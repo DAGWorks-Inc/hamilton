@@ -26,12 +26,6 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
     return [f for f in inspect.getmembers(function_module, predicate=valid_fn)]
 
 
-def hash_callable(node_callable: Callable) -> str:
-    """Create a single hash (str) from the bytecode of all sorted functions"""
-    source = inspect.getsource(node_callable)
-    return hashlib.sha256(source.encode()).hexdigest()
-
-
 def hash_source_code(source: str | Callable, strip: bool = False) -> str:
     """Create a single hash (str) from the bytecode of a function"""
     if isinstance(source, Callable):
