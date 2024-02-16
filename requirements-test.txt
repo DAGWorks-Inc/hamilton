@@ -1,4 +1,5 @@
 dask
+diskcache
 fsspec
 graphviz
 kaleido

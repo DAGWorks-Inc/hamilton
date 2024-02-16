@@ -77,3 +77,25 @@ def test_create_temporary_module_breaks_helper():
 
     with pytest.raises(ValueError):
         ad_hoc_utils.create_temporary_module(bar, foo, _baz)
+
+
+def test_inspect_module_from_source():
+    source = '''
+def bar(baz: int) -> int:
+    """dummy function"""
+    return baz + 1
+
+def foo(bar: int) -> int:
+    """dummy function"""
+    return bar + 1
+
+def _baz(bar: int) -> int:
+    """dummy function, not to be included"""
+    return bar + 1
+'''
+    module = ad_hoc_utils.module_from_source(source)
+
+    try:
+        inspect.getsource(module.bar)
+    except OSError as e:
+        assert False, f"module improperly added to linecache. {e}"

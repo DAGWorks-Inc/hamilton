@@ -89,6 +89,7 @@ setup(
             "fastui",
             "uvicorn",
         ],
+        "diskcache": ["diskcache"],
     },
     entry_points={
         "console_scripts": [
