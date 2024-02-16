@@ -68,6 +68,8 @@ This section from the page :doc:`node` details how a Python function maps to a H
      - Implementation of the node
 
 
+.. _tag-decorators:
+
 Add metadata to node
 --------------------
 

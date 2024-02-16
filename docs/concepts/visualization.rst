@@ -166,25 +166,27 @@ Filter nodes to the necessary path:
 Configure your visualization
 ----------------------------
 
-All of the above visualization functions share parameters to customize the visualization (e.g., hide legend, hide inputs). The API reference for `Driver.display_all_functions() <https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.display_all_functions>`_ should be applicable to all other visualizations.
+All of the above visualization functions share parameters to customize the visualization (e.g., hide legend, hide inputs). The API reference for `Driver.display_all_functions() <https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.display_all_functions>`_ should apply to all other visualizations.
 
 We won't provide visual examples here, but you try them yourself in your browser on tryhamilton.dev (#TODO add tutorial)
+
+.. _custom-visualization-style:
 
 Apply custom style
 ~~~~~~~~~~~~~~~~~~
 
-By default, each node is labelled with name and type, and stylized (shape, color, outline, etc.). By passing a function to the parameter ``custom_style_function``, you can customize the node style based on its attributes. This pairs nicely with ``@tag`` #TODO add link
+By default, each node is labeled with name and type, and stylized (shape, color, outline, etc.). By passing a function to the parameter ``custom_style_function``, you can customize the node style based on its attributes. This pairs nicely with the ``@tag`` function modifier (learn more :ref:`tag-decorators`) 
 
 To define your own style:
 
-1. The function must used only keyword arguments, taking in ``node`` and ``node_class``.
+1. The function must use only keyword arguments, taking in ``node`` and ``node_class``.
 2. It needs to return a tuple ``(style, node_class, legend_name)`` where:
     - ``style``: dictionary of valid graphviz node style attributes.
-    - ``node_class``: class used to style the default visualization - we recommend return the input ``node_class``
+    - ``node_class``: class used to style the default visualization - we recommend returning the input ``node_class``
     - ``legend_name``: text to display in the legend. Return ``None`` for no legend entry.
-3. For the execution-focused visualizations, your custom styles is applied before the modifiers for outputs and overrides are applied.
+3. For the execution-focused visualizations, your custom styles are applied before the modifiers for outputs and overrides are applied.
 
-If you need more customization, we suggest getting the graphviz object back, and then modifying it yourself.
+If you need more customization, we suggest getting the graphviz object back and then modifying it yourself.
 
 This `online graphviz editor <https://edotor.net/>`_ can help you get started!
 
