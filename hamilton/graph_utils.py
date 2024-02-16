@@ -34,6 +34,8 @@ def hash_source_code(source: Union[str, Callable], strip: bool = False) -> str:
     """
     if isinstance(source, Callable):
         source = inspect.getsource(source)
+    
+    source = source.strip()
 
     if strip:
         try:
