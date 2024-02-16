@@ -2,13 +2,13 @@
 Builder
 #######
 
-The :doc:`driver` page covered the basics to build the Driver, visualize the dataflow, and execute the dataflow. We learned how to create the dataflow by passing a Python module to ``Builder().with_modules()``.
+The :doc:`driver` page covered the basics of building the Driver, visualizing the dataflow, and executing the dataflow. We learned how to create the dataflow by passing a Python module to ``Builder().with_modules()``.
 
-On this page, you'll learn how the ``driver.Builder()`` enables you to configure your Driver. Advanced concepts are mentioned briefly, but know that each has its own page with further explanations.
+On this page, how to configure your Driver with the ``driver.Builder()``. There will be mentions of advanced concepts, which are further explained on their respective page.
 
 .. note::
 
-    As your Builder code grows complex, definining it over multiple lines can improve readability. This is possible by using parentheses after the assignment ``=``
+    As your Builder code grows complex, defining it over multiple lines can improve readability. This is possible by using parentheses after the assignment ``=``
 
     .. code-block:: python
 
@@ -18,15 +18,13 @@ On this page, you'll learn how the ``driver.Builder()`` enables you to configure
             .build()
         )
 
-.. note::
-
     The order of Builder statements doesn't matter as long as ``.build()`` is last. 
 
 
 with_modules()
 --------------
 
-This passes dataflow modules to the Driver. It can accept multiple modules at once after they'll be assembled into a single dataflow.
+This passes dataflow modules to the Driver. When passing multiple modules, the Driver assembles them into a single dataflow.
 
 .. code-block:: python
 
@@ -79,7 +77,7 @@ It encourages organizing code into logical modules (e.g., feature processing, mo
 with_config()
 -------------
 
-This is directly related to the ``@config`` function decorator (see **#TODO add link**) and doesn't have any effect in its absence. By passing a dictionary to ``with_config()``, you configure which functions will be used to create the dataflow. You can't change the config after the Driver is created. Instead, you need to rebuild the Driver with the new config values.
+This is directly related to the ``@config`` function decorator (see :ref:`config-decorators`) and doesn't have any effect in its absence. By passing a dictionary to ``with_config()``, you configure which functions will be used to create the dataflow. You can't change the config after the Driver is created. Instead, you need to rebuild the Driver with the new config values.
 
 .. code-block:: python
 
@@ -116,7 +114,7 @@ This is directly related to the ``@config`` function decorator (see **#TODO add 
 with_adapters()
 ---------------
 
-This allows to add multiple Lifecycle hooks (**#TODO add link**) to the Driver. This is a very flexible abstraction to develop custom plugins to do logging, telemetry, alerts, and more. The following adds a hook to launch debugger when reaching the node ``"B"``:
+This allows to add multiple Lifecycle hooks  to the Driver. This is a very flexible abstraction to develop custom plugins to do logging, telemetry, alerts, and more. The following adds a hook to launch debugger when reaching the node ``"B"``:
 
 .. code-block:: python
 
@@ -132,12 +130,12 @@ This allows to add multiple Lifecycle hooks (**#TODO add link**) to the Driver. 
         .build()
     )
 
-Other hooks are available to output a progress bar in terminal, do experiment tracking for your Hamilton runs, cache results to disk, send logs to DataDog, and more!
+Other hooks are available to output a progress bar in the terminal, do experiment tracking for your Hamilton runs, cache results to disk, send logs to DataDog, and more!
 
 enable_dynamic_execution()
 --------------------------
 
-This directly relates to the Builder ``with_local_executor()`` and ``with_remote_executor()`` and the ``Parallelizable/Collect`` functions (see **#TODO link**). For the Driver to be able to parse them, you need to set ``allow_experimental_mode=True`` like the following:
+This directly relates to the Builder ``with_local_executor()`` and ``with_remote_executor()`` and the ``Parallelizable/Collect`` functions (see :doc:`parallel-task`). For the Driver to be able to parse them, you need to set ``allow_experimental_mode=True`` like the following:
 
 .. code-block:: python
 
