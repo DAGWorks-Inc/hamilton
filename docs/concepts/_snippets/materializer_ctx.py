@@ -19,7 +19,7 @@ if __name__ == "__main__":
     from hamilton.io.materialization import from_, to
 
     # this registers DataSaver and DataLoader objects
-    from hamilton.plugins import pandas_extensions, xgboost_extensions
+    from hamilton.plugins import pandas_extensions, xgboost_extensions  # noqa: F401
 
     dr = driver.Builder().with_modules(__main__).build()
 
