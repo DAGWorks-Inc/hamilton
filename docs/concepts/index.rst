@@ -11,8 +11,10 @@ concepts that makes Hamilton unique and powerful.
    lexicon
    node
    driver
+   visualization
    materialization
    function-modifiers
    builder
+   function-modifiers-advanced
    parallel-task
    best-practices/index
