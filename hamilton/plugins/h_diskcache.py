@@ -8,7 +8,7 @@ from hamilton import driver, graph_types, graph_utils, lifecycle, node
 logger = logging.getLogger(__name__)
 
 
-def _kb_to_mb(kb: int) -> float:
+def _bytes_to_mb(kb: int) -> float:
     return kb / (1024**2)
 
 
@@ -53,14 +53,14 @@ def evict_all_except_driver(dr: driver.Driver) -> dict:
     volume_after = cache.volume()
     volume_difference = volume_before - volume_after
 
-    logger.info(f"Evicted: {_kb_to_mb(volume_difference):.2f} MB")
+    logger.info(f"Evicted: {_bytes_to_mb(volume_difference):.2f} MB")
     logger.debug(f"Evicted {eviction_counter} entries")
-    logger.debug(f"Cache size after: {_kb_to_mb(volume_after):.2f} MB")
+    logger.debug(f"Cache size after: {_bytes_to_mb(volume_after):.2f} MB")
 
     return dict(
-        evicted_size_mb=_kb_to_mb(volume_difference),
+        evicted_size_mb=_bytes_to_mb(volume_difference),
         eviction_counter=eviction_counter,
-        size_after=_kb_to_mb(volume_after),
+        size_after=_bytes_to_mb(volume_after),
     )
 
 
@@ -119,7 +119,7 @@ class CacheHook(
 
     def run_after_graph_execution(self, *args, **kwargs):
         self.cache.set(key=CacheHook.nodes_history_key, value=self.nodes_history)
-        logger.info(f"Cache size: {_kb_to_mb(self.cache.volume()):.2f} MB")
+        logger.info(f"Cache size: {_bytes_to_mb(self.cache.volume()):.2f} MB")
         self.cache.close()
 
     def run_before_node_execution(self, *args, **kwargs):
