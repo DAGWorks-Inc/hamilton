@@ -2,7 +2,7 @@
 Driver
 ======
 
-Once you defined your dataflow in a Python module, you will need to create Hamilton Driver to execute it. This page details the Driver basics, which include:
+Once you defined your dataflow in a Python module, you will need to create a Hamilton Driver to execute it. This page details the Driver basics, which include:
 
 1. Defining the Driver
 2. Visualizing the dataflow
@@ -44,7 +44,7 @@ The most basic Driver looks like this:
 
 The ``.build()`` method will fail if the definition found in ``my_dataflow`` is invalid (e.g., type mismatch, missing annotations) allowing to fix issues and iterate quickly.
 
-The ``Driver`` is defined in the context you intend to run, separetely from your dataflow module. It can be in a script, notebook, server, web app, or anywhere else Python can run. As a convention, most Hamilton example code example use a script named ``run.py``.
+The ``Driver`` is defined in the context you intend to run, separately from your dataflow module. It can be in a script, notebook, server, web app, or anywhere else Python can run. As a convention, most Hamilton code examples use a script named ``run.py``.
 
 Visualize the dataflow
 ----------------------
@@ -61,7 +61,7 @@ Once you successfully created your Driver, you can visualize the entire dataflow
     dr.display_all_functions("dag.png")  # outputs a file dag.png
     dr.display_all_functions()  # to view directly in a notebook
 
-The dataflow visualization is useful for documenting your project and quickly make sense of what it does. There are several several other visualization features, such a highlighting the path between two nodes, that we'll discuss later.
+The dataflow visualization is useful for documenting your project and quickly making sense of what it does (see :doc:`visualization`).
 
 Execute the dataflow
 --------------------
@@ -125,7 +125,7 @@ For example:
 With a Jupyter notebook
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Another approach is to define the dataflow in a module (e.g., ``my_dataflow.py``) and reload the Driver in a Jupyter notebook. This allows for a more interactive experience when you want to inspect results of functions as you're developing.
+Another approach is to define the dataflow in a module (e.g., ``my_dataflow.py``) and reload the Driver in a Jupyter notebook. This allows for a more interactive experience when you want to inspect the results of functions as you're developing.
 
 By default, Python only imports a module once and subsequent ``import`` statements don't reload the module. We use ``importlib.reload`` to reload ``my_dataflow`` before rebuilding the Driver. 
 
@@ -165,9 +165,8 @@ Now, you know the basics of authoring and executing Hamilton dataflows! We encou
 - Write some code with our `interactive tutorials <https://www.tryhamilton.dev/intro>`_
 - Kickstart your project with `community dataflows <https://hub.dagworks.io/docs/>`_
 
-The next Concepts page cover notions to write more expressive and powerful code. If you feel stuck or constrained with the basics, it's probably a good time to visit them. They include:
+The next Concepts page covers notions to write more expressive and powerful code. If you feel stuck or constrained with the basics, it's probably a good time to visit them. They include:
 
-- Driver ()
-- Materialization: integrate Hamilton in your data infrastructure
-- Function decorators: write expressive dataflows without repeating code
-- Lifecycle hooks: customize Driver execution
+- Materialization: interact with external data source
+- Function modifiers: write expressive dataflows without repeating code
+- Builder: how to customize your Driver
