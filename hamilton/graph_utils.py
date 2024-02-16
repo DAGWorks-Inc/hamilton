@@ -2,7 +2,7 @@ import ast
 import hashlib
 import inspect
 from types import ModuleType
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Union
 
 
 def is_submodule(child: ModuleType, parent: ModuleType):
@@ -26,7 +26,7 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
     return [f for f in inspect.getmembers(function_module, predicate=valid_fn)]
 
 
-def hash_source_code(source: str | Callable, strip: bool = False) -> str:
+def hash_source_code(source: Union[str, Callable], strip: bool = False) -> str:
     """Create a single hash (str) from the bytecode of a function"""
     if isinstance(source, Callable):
         source = inspect.getsource(source)
