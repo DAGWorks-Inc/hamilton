@@ -94,7 +94,7 @@ def _baz(bar: int) -> int:
     return bar + 1
 '''
     module = ad_hoc_utils.module_from_source(source)
-    
+
     try:
         inspect.getsource(module.bar)
     except OSError as e:

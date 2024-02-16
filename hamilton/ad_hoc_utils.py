@@ -67,11 +67,11 @@ def module_from_source(source) -> ModuleType:
     code_object = compile(source, module_name, "exec")
     sys.modules[module_name] = module_object
     exec(code_object, module_object.__dict__)
-    
+
     linecache.cache[module_name] = (
         len(source.splitlines()),
         None,
         source.splitlines(True),
-        module_name
+        module_name,
     )
     return module_object
