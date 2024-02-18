@@ -8,9 +8,13 @@ concepts that makes Hamilton unique and powerful.
 
 .. toctree::
 
-   lexicon
+   glossary
    node
-   driver-capabilities
-   customizing-execution
-   decorators-overview
+   driver
+   visualization
+   materialization
+   function-modifiers
+   builder
+   function-modifiers-advanced
+   parallel-task
    best-practices/index

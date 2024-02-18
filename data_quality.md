@@ -10,7 +10,7 @@ from hamilton.function_modifiers import check_output
 
 @check_output(
     data_type=np.int64,
-    data_in_range=(0,100),
+    range=(0,100),
     importance="warn",
 )
 def some_int_data_between_0_and_100() -> pd.Series:

@@ -265,7 +265,7 @@ class schema:
                ("b", "float"),
                ("c", "str")
             )
-           def example_schema() -> Tuple[int, float, str]:
+           def example_schema() -> pd.DataFrame:
                return pd.DataFrame.from_records({"a": [1], "b": [2.0], "c": ["3"]})
 
         Then, when drawing the DAG, the schema will be displayed as sub-elements in the node for the DAG (if `display_schema` is selected).
