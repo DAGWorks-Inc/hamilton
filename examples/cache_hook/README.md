@@ -1,5 +1,9 @@
 # Cache hook
-This hook uses the [diskcache](https://grantjenks.com/docs/diskcache/tutorial.html) to cache node execution on disk. The cache key is a tuple of the function's `(source code, input a, ..., input n)`.
+This hook uses the [diskcache](https://grantjenks.com/docs/diskcache/tutorial.html) to cache node execution on disk. The cache key is a tuple of the function's
+`(source code, input a, ..., input n)`. This means, a function will only be executed once for a given set of inputs,
+and source code hash. The cache is stored in a directory of your choice, and it can be shared across different runs of your
+code. That way as you develop, if the inputs and the code haven't changed, the function will not be executed again and
+instead the result will be retrieved from the cache.
 
 > 💡 This can be a great tool for developing inside a Jupyter notebook or other interactive environments.
 
@@ -8,9 +12,13 @@ Disk cache has great features to:
 - set automated eviction policy once maximum size is reached
 - allow custom `Disk` implementations to change the serialization protocol (e.g., pickle, JSON)
 
-> ⚠ The default `Disk` serializes objects using the `pickle` module. Changing Python or library versions could break your cache (both keys and values). Learn more about [caveats](https://grantjenks.com/docs/diskcache/tutorial.html#caveats).
+> ⚠ The default `Disk` serializes objects using the `pickle` module. Changing Python or library versions could break your
+> cache (both keys and values). Learn more about [caveats](https://grantjenks.com/docs/diskcache/tutorial.html#caveats).
 
-> ❓ To store artifacts robustly, please use Hamilton materializers or the [CachingGraphAdapter](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/caching_nodes) instead. The `CachingGraphAdapter` stores tagged nodes directly on the file system using common formats (JSON, CSV, Parquet, etc.). However, it isn't aware of your function version and requires you to manually manage your disk space.
+> ❓ To store artifacts robustly, please use Hamilton materializers or the
+> [CachingGraphAdapter](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/caching_nodes) instead.
+> The `CachingGraphAdapter` stores tagged nodes directly on the file system using common formats (JSON, CSV, Parquet, etc.).
+> However, it isn't aware of your function version and requires you to manually manage your disk space.
 
 
 # How to use it
@@ -42,7 +50,8 @@ logger.addHandler(logging.StreamHandler())
 - DEBUG will return inputs for each node and specify if the value is `from cache` or `executed`
 
 ## Clear cache
-The utility function `h_diskcache.evict_except_driver` allows you to clear cached values for all nodes except those in the passed driver. This is an efficient tool to clear old artifacts as your project evolves.
+The utility function `h_diskcache.evict_all_except_driver` allows you to clear cached values for all nodes except those in the passed driver.
+This is an efficient tool to clear old artifacts as your project evolves.
 
 ```python
 from hamilton import driver
@@ -55,7 +64,7 @@ dr = (
     .with_adapters(h_diskcache.CacheHook())
     .build()
 )
-h_diskcache_evict_except_driver(dr)
+h_diskcache.evict_all_except_driver(dr)
 ```
 
 ## Cache settings
