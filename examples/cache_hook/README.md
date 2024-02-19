@@ -33,7 +33,7 @@ import functions
 dr = (
     driver.Builder()
     .with_modules(functions)
-    .with_adapters(h_diskcache.CacheHook())
+    .with_adapters(h_diskcache.DiskCacheAdapter())
     .build()
 )
 ```
@@ -61,7 +61,7 @@ import functions
 dr = (
     driver.Builder()
     .with_modules(functions)
-    .with_adapters(h_diskcache.CacheHook())
+    .with_adapters(h_diskcache.DiskCacheAdapter())
     .build()
 )
 h_diskcache.evict_all_except_driver(dr)

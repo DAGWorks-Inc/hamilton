@@ -17,7 +17,7 @@ def _callable_to_node(callable) -> node.Node:
 
 @pytest.fixture()
 def hook(tmp_path: pathlib.Path):
-    return h_diskcache.CacheHook(cache_path=str(tmp_path.resolve()))
+    return h_diskcache.DiskCacheAdapter(cache_path=str(tmp_path.resolve()))
 
 
 @pytest.fixture()
@@ -51,7 +51,7 @@ def node_a_docstring():
     return _callable_to_node(A)
 
 
-def test_set_result(hook: h_diskcache.CacheHook, node_a: node.Node):
+def test_set_result(hook: h_diskcache.DiskCacheAdapter, node_a: node.Node):
     """Hook sets value and assert value in cache"""
     node_hash = graph_utils.hash_source_code(node_a.callable, strip=True)
     node_kwargs = dict(external_input=7)
@@ -71,7 +71,7 @@ def test_set_result(hook: h_diskcache.CacheHook, node_a: node.Node):
     assert hook.cache.get(key=cache_key) == result
 
 
-def test_get_result(hook: h_diskcache.CacheHook, node_a: node.Node):
+def test_get_result(hook: h_diskcache.DiskCacheAdapter, node_a: node.Node):
     """Hooks get value and assert cache hit"""
     node_hash = graph_utils.hash_source_code(node_a.callable, strip=True)
     node_kwargs = dict(external_input=7)
@@ -93,7 +93,7 @@ def test_get_result(hook: h_diskcache.CacheHook, node_a: node.Node):
 
 
 def test_append_nodes_history(
-    hook: h_diskcache.CacheHook,
+    hook: h_diskcache.DiskCacheAdapter,
     node_a: node.Node,
     node_a_body: node.Node,
 ):
@@ -126,44 +126,48 @@ def test_append_nodes_history(
     assert len(hook.nodes_history.get(node_name, [])) == 2
 
 
-def test_commit_nodes_history(hook: h_diskcache.CacheHook):
+def test_commit_nodes_history(hook: h_diskcache.DiskCacheAdapter):
     """Commit node history to cache"""
     hook.nodes_history = dict(A=["hash_1", "hash_2"])
 
     hook.run_after_graph_execution()
 
-    assert hook.cache.get(h_diskcache.CacheHook.nodes_history_key) == hook.nodes_history
+    assert hook.cache.get(h_diskcache.DiskCacheAdapter.nodes_history_key) == hook.nodes_history
 
 
 def test_evict_all_except(
-    hook: h_diskcache.CacheHook,
+    hook: h_diskcache.DiskCacheAdapter,
     node_a: node.Node,
     node_a_body: node.Node,
 ):
     """Check utility function to evict all except passed nodes"""
     node_a_hash = graph_utils.hash_source_code(node_a.callable, strip=True)
     node_a_body_hash = graph_utils.hash_source_code(node_a_body.callable, strip=True)
-    hook.cache[h_diskcache.CacheHook.nodes_history_key] = dict(A=[node_a_hash, node_a_body_hash])
+    hook.cache[h_diskcache.DiskCacheAdapter.nodes_history_key] = dict(
+        A=[node_a_hash, node_a_body_hash]
+    )
 
     eviction_counter = h_diskcache.evict_all_except(nodes_to_keep=dict(A=node_a), cache=hook.cache)
 
     assert eviction_counter == 1
-    assert hook.cache[h_diskcache.CacheHook.nodes_history_key] == dict(A=[node_a_hash])
+    assert hook.cache[h_diskcache.DiskCacheAdapter.nodes_history_key] == dict(A=[node_a_hash])
 
 
 def test_evict_from_driver(
-    hook: h_diskcache.CacheHook,
+    hook: h_diskcache.DiskCacheAdapter,
     node_a: node.Node,
     node_a_body: node.Node,
 ):
     """Check utility function to evict all except driver"""
     node_a_hash = graph_utils.hash_source_code(node_a.callable, strip=True)
     node_a_body_hash = graph_utils.hash_source_code(node_a_body.callable, strip=True)
-    hook.cache[h_diskcache.CacheHook.nodes_history_key] = dict(A=[node_a_hash, node_a_body_hash])
+    hook.cache[h_diskcache.DiskCacheAdapter.nodes_history_key] = dict(
+        A=[node_a_hash, node_a_body_hash]
+    )
     module = ad_hoc_utils.create_temporary_module(node_a.callable)
     dr = driver.Builder().with_modules(module).with_adapters(hook).build()
 
     output = h_diskcache.evict_all_except_driver(dr)
 
     assert output["eviction_counter"] == 1
-    assert hook.cache[h_diskcache.CacheHook.nodes_history_key] == dict(A=[node_a_hash])
+    assert hook.cache[h_diskcache.DiskCacheAdapter.nodes_history_key] == dict(A=[node_a_hash])

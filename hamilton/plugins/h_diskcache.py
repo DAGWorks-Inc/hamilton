@@ -16,7 +16,7 @@ def evict_all_except(nodes_to_keep: Dict[str, node.Node], cache: diskcache.Cache
     """Evicts all nodes and node version except those passed.
     Remaining nodes may have multiple entries for different input values
     """
-    nodes_history: Dict[str, List[str]] = cache.get(key=CacheHook.nodes_history_key)  # type: ignore
+    nodes_history: Dict[str, List[str]] = cache.get(key=DiskCacheAdapter.nodes_history_key)  # type: ignore
 
     new_nodes_history = dict()
     eviction_counter = 0
@@ -34,13 +34,15 @@ def evict_all_except(nodes_to_keep: Dict[str, node.Node], cache: diskcache.Cache
             cache.evict(tag=f"{node_name}.{hash_to_evict}")
             eviction_counter += 1
 
-    cache.set(key=CacheHook.nodes_history_key, value=new_nodes_history)
+    cache.set(key=DiskCacheAdapter.nodes_history_key, value=new_nodes_history)
     return eviction_counter
 
 
 def evict_all_except_driver(dr: driver.Driver) -> dict:
     """Wrap the utility `evict_all_except` to receive a driver.Driver object"""
-    cache_hooks = [adapter for adapter in dr.adapter.adapters if isinstance(adapter, CacheHook)]
+    cache_hooks = [
+        adapter for adapter in dr.adapter.adapters if isinstance(adapter, DiskCacheAdapter)
+    ]
 
     if len(cache_hooks) == 0:
         raise AssertionError("0 `h_diskcache.CacheHook` defined for this Driver")
@@ -67,7 +69,7 @@ def evict_all_except_driver(dr: driver.Driver) -> dict:
 MAX_KWARGS_REPR_LENGTH = 200
 
 
-class CacheHook(
+class DiskCacheAdapter(
     lifecycle.NodeExecutionHook,
     lifecycle.GraphExecutionHook,
     lifecycle.NodeExecutionMethod,
@@ -81,7 +83,7 @@ class CacheHook(
         self.cache_path = cache_path
         self.cache = diskcache.Cache(directory=cache_path, **cache_settings)
         self.nodes_history: Dict[str, List[str]] = self.cache.get(
-            key=CacheHook.nodes_history_key, default=dict()
+            key=DiskCacheAdapter.nodes_history_key, default=dict()
         )  # type: ignore
         self.used_nodes_hash: Dict[str, str] = dict()
 
@@ -129,7 +131,7 @@ class CacheHook(
         self.cache.add(key=cache_key, value=result, tag=cache_tag)
 
     def run_after_graph_execution(self, *args, **kwargs):
-        self.cache.set(key=CacheHook.nodes_history_key, value=self.nodes_history)
+        self.cache.set(key=DiskCacheAdapter.nodes_history_key, value=self.nodes_history)
         logger.info(f"Cache size: {_bytes_to_mb(self.cache.volume()):.2f} MB")
         self.cache.close()
 
