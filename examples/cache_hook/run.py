@@ -7,7 +7,14 @@ from hamilton.plugins import h_diskcache
 
 
 def main():
-    dr = driver.Builder().with_modules(functions).with_adapters(h_diskcache.CacheHook()).build()
+    dr = (
+        driver.Builder()
+        .with_modules(functions)
+        .with_adapters(h_diskcache.DiskCacheAdapter())
+        .build()
+    )
+    results = dr.execute(["C"], inputs=dict(external=10))
+    print(results)
     results = dr.execute(["C"], inputs=dict(external=10))
     print(results)
 
