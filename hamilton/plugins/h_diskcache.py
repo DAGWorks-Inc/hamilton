@@ -64,6 +64,9 @@ def evict_all_except_driver(dr: driver.Driver) -> dict:
     )
 
 
+MAX_KWARGS_REPR_LENGTH = 200
+
+
 class CacheHook(
     lifecycle.NodeExecutionHook,
     lifecycle.GraphExecutionHook,
@@ -100,10 +103,18 @@ class CacheHook(
 
         from_cache = self.cache.get(key=cache_key, default=None)
         if from_cache is not None:
-            logger.debug(f"{node_name} {node_kwargs}: from cache")
+            if logger.isEnabledFor(logging.DEBUG):
+                node_kwargs_string = repr(node_kwargs)
+                if len(node_kwargs_string) > MAX_KWARGS_REPR_LENGTH:  # limit size of log
+                    node_kwargs_string = node_kwargs_string[0:MAX_KWARGS_REPR_LENGTH] + "..."
+                logger.debug(f"{node_name} {node_kwargs_string}: from cache")
             return from_cache
 
-        logger.debug(f"{node_name} {node_kwargs}: executed")
+        if logger.isEnabledFor(logging.DEBUG):
+            node_kwargs_string = repr(node_kwargs)
+            if len(node_kwargs_string) > MAX_KWARGS_REPR_LENGTH:  # limit size of log
+                node_kwargs_string = node_kwargs_string[0:MAX_KWARGS_REPR_LENGTH] + "..."
+            logger.debug(f"{node_name} {node_kwargs_string}: executed")
         self.nodes_history[node_name] = self.nodes_history.get(node_name, []) + [node_hash]
         return node_callable(**node_kwargs)
 
