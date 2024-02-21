@@ -24,8 +24,8 @@ class VaexDataFrameResult(base.ResultMixin):
     .. code-block:: python
 
         from hamilton import base, driver
-        from hamilton.plugins import vaex_extensions
-        vaex_builder = vaex_extensions.VaexDataFrameResult()
+        from hamilton.plugins import h_vaex, vaex_extensions
+        vaex_builder = h_vaex.VaexDataFrameResult()
         adapter = base.SimplePythonGraphAdapter(vaex_builder)
         dr =  driver.Driver(config, *modules, adapter=adapter)
         df = dr.execute([...], inputs=...)  # returns vaex dataframe
