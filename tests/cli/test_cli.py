@@ -28,7 +28,7 @@ def test_cli_view_default(tmp_path: pathlib.Path):
     # output_file_path = tmp_path / "dag.png"  # default file name
 
     result = runner.invoke(cli, inputs)
-    
+
     assert result.exit_code == 0
     message = json.loads(result.stdout)
     assert message["success"] is True
