@@ -4,7 +4,7 @@ import logging
 import sys
 from pathlib import Path
 from pprint import pprint
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 if sys.version_info < (3, 9):
     from typing_extensions import Annotated
@@ -56,7 +56,7 @@ def main(
 def build(
     ctx: typer.Context,
     modules: Annotated[
-        list[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
+        List[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
     ],
 ):
     """Build dataflow with MODULES"""
@@ -88,7 +88,7 @@ def build(
 def diff(
     ctx: typer.Context,
     modules: Annotated[
-        list[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
+        List[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
     ],
     git_reference: str = "HEAD",
     view: bool = False,
@@ -132,7 +132,7 @@ def diff(
 def version(
     ctx: typer.Context,
     modules: Annotated[
-        list[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
+        List[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
     ],
 ):
     """Version NODES and DATAFLOW from dataflow with MODULES"""
@@ -169,7 +169,7 @@ def version(
 def view(
     ctx: typer.Context,
     modules: Annotated[
-        list[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
+        List[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
     ],
     output_file_path: Annotated[
         Path,
