@@ -42,6 +42,8 @@ def main(
     """Hamilton CLI"""
     state.verbose = verbose
     state.json_out = json_out
+    logger.debug(f"verbose set to {verbose}")
+    logger.debug(f"json_out set to {json_out}")
 
 
 @cli.command()
@@ -54,11 +56,13 @@ def build(
     """Build dataflow with MODULES"""
     try:
         config = dict()
+        logger.debug("calling commands.build()")
         state.dr = commands.build(modules=modules, config=config)
     except Exception as e:
         response = Response(
             command="build", success=False, message={"error": str(type(e)), "details": str(e)}
         )
+        logger.error(f"`hamilton build` failed: {dataclasses.asdict(response)}")
         print(json.dumps(dataclasses.asdict(response)))
         raise typer.Exit(code=1)
 
@@ -66,6 +70,7 @@ def build(
         command="build", success=True, message={"modules": [p.stem for p in modules]}
     )
 
+    logger.debug(f"`hamilton build` succeeded: {dataclasses.asdict(response)}")
     if (ctx.info_name == "build") or state.verbose:
         if state.json_out is True:
             print(json.dumps(dataclasses.asdict(response)))
@@ -87,6 +92,7 @@ def diff(
         ctx.invoke(version, ctx=ctx, modules=modules)
 
     try:
+        logger.debug("calling commands.diff()")
         diff = commands.diff(
             dr=state.dr,
             modules=modules,
@@ -98,6 +104,7 @@ def diff(
         response = Response(
             command="diff", success=False, message={"error": str(type(e)), "details": str(e)}
         )
+        logger.error(f"`hamilton diff` failed: {dataclasses.asdict(response)}")
         print(json.dumps(dataclasses.asdict(response)))
         raise typer.Exit(code=1)
 
@@ -107,6 +114,7 @@ def diff(
         message=diff,
     )
 
+    logger.debug(f"`hamilton diff` succeeded: {dataclasses.asdict(response)}")
     if (ctx.info_name == "diff") or state.verbose:
         if state.json_out is True:
             print(json.dumps(dataclasses.asdict(response)))
@@ -126,11 +134,13 @@ def version(
         ctx.invoke(build, ctx=ctx, modules=modules)
 
     try:
+        logger.debug("calling commands.version()")
         dataflow_version = commands.version(state.dr)
     except Exception as e:
         response = Response(
             command="version", success=False, message={"error": str(type(e)), "details": str(e)}
         )
+        logger.error(f"`hamilton version` failed: {dataclasses.asdict(response)}")
         print(json.dumps(dataclasses.asdict(response)))
         raise typer.Exit(code=1)
 
@@ -139,6 +149,8 @@ def version(
         success=True,
         message=dataflow_version,
     )
+    
+    logger.debug(f"`hamilton version` succeeded: {dataclasses.asdict(response)}")
     if (ctx.info_name == "version") or state.verbose:
         if state.json_out is True:
             json_str = json.dumps(dataclasses.asdict(response))
@@ -171,15 +183,19 @@ def view(
         ctx.invoke(build, ctx=ctx, modules=modules)
 
     try:
+        logger.debug("calling commands.view()")
         commands.view(dr=state.dr, output_file_path=output_file_path)
     except Exception as e:
         response = Response(
             command="view", success=False, message={"error": str(type(e)), "details": str(e)}
         )
+        logger.error(f"`hamilton view` failed: {dataclasses.asdict(response)}")
         print(json.dumps(dataclasses.asdict(response)))
         raise typer.Exit(code=1)
 
     response = Response(command="view", success=True, message={"path": str(output_file_path)})
+    
+    logger.debug(f"`hamilton view` succeeded: {dataclasses.asdict(response)}")
     if (ctx.info_name == "view") or state.verbose:
         if state.json_out is True:
             print(json.dumps(dataclasses.asdict(response)))
