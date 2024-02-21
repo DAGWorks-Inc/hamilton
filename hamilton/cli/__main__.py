@@ -42,6 +42,10 @@ cli = typer.Typer(rich_markup_mode="rich")
 state = CliState()
 
 
+# TODO add `validate` command to call `Driver.validate()`
+# TODO add `experiments` for `hamilton.plugins.h_experiments`
+# TODO add `dataflows` submenu to manage locally installed dataflows
+# TODO add `init` to load project template
 # entrypoint for `hamilton` without command
 @cli.callback()
 def main(
@@ -101,6 +105,8 @@ def build(
             pprint(response.message)
 
 
+# TODO add option to output diff of nodes and diff of functions
+# since the function diff is what's useful for code reviews / debugging 
 @cli.command()
 def diff(
     ctx: typer.Context,
