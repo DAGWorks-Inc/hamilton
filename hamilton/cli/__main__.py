@@ -1,10 +1,11 @@
+import dataclasses
+import json
 import logging
 from pathlib import Path
 from pprint import pprint
 from typing import Annotated, Any, Optional
 
 import typer
-from pydantic import BaseModel
 
 from hamilton import driver
 from hamilton.cli import commands
@@ -12,7 +13,8 @@ from hamilton.cli import commands
 logger = logging.getLogger(__name__)
 
 
-class Response(BaseModel):
+@dataclasses.dataclass
+class Response:
     command: str
     success: bool
     message: Any
@@ -57,7 +59,7 @@ def build(
         response = Response(
             command="build", success=False, message={"error": str(type(e)), "details": str(e)}
         )
-        print(response.model_dump_json())
+        print(json.dumps(dataclasses.asdict(response)))
         raise typer.Exit(code=1)
 
     response = Response(
@@ -66,7 +68,7 @@ def build(
 
     if (ctx.info_name == "build") or state.verbose:
         if state.json_out is True:
-            print(response.model_dump_json())
+            print(json.dumps(dataclasses.asdict(response)))
         else:
             pprint(response.message)
 
@@ -96,7 +98,7 @@ def diff(
         response = Response(
             command="diff", success=False, message={"error": str(type(e)), "details": str(e)}
         )
-        print(response.model_dump_json())
+        print(json.dumps(dataclasses.asdict(response)))
         raise typer.Exit(code=1)
 
     response = Response(
@@ -107,7 +109,7 @@ def diff(
 
     if (ctx.info_name == "diff") or state.verbose:
         if state.json_out is True:
-            print(response.model_dump_json())
+            print(json.dumps(dataclasses.asdict(response)))
         else:
             pprint(response.message)
 
@@ -129,7 +131,7 @@ def version(
         response = Response(
             command="version", success=False, message={"error": str(type(e)), "details": str(e)}
         )
-        print(response.model_dump_json())
+        print(json.dumps(dataclasses.asdict(response)))
         raise typer.Exit(code=1)
 
     response = Response(
@@ -139,7 +141,8 @@ def version(
     )
     if (ctx.info_name == "version") or state.verbose:
         if state.json_out is True:
-            print(response.model_dump_json())
+            json_str = json.dumps(dataclasses.asdict(response))
+            print(json_str)
         else:
             pprint(response.message)
 
@@ -173,13 +176,13 @@ def view(
         response = Response(
             command="view", success=False, message={"error": str(type(e)), "details": str(e)}
         )
-        print(response.model_dump_json())
+        print(json.dumps(dataclasses.asdict(response)))
         raise typer.Exit(code=1)
 
-    response = Response(command="view", success=True, message={"path": output_file_path})
+    response = Response(command="view", success=True, message={"path": str(output_file_path)})
     if (ctx.info_name == "view") or state.verbose:
         if state.json_out is True:
-            print(response.model_dump_json())
+            print(json.dumps(dataclasses.asdict(response)))
         else:
             pprint(response.message)
 

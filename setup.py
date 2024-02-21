@@ -90,6 +90,7 @@ setup(
             "uvicorn",
         ],
         "diskcache": ["diskcache"],
+        "cli": ["typer"],
     },
     entry_points={
         "console_scripts": [
