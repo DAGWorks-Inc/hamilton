@@ -1,2 +1,1 @@
 sf-hamilton[cli]
-watchdog
