@@ -1,10 +1,15 @@
 import dataclasses
 import json
 import logging
-import typing_extensions
+import sys
 from pathlib import Path
 from pprint import pprint
-from typing import Annotated, Any, Optional
+from typing import Any, Optional
+
+if sys.version_info < (3, 9):
+    from typing_extensions import Annotated
+else:
+    from typing import Annotated
 
 import typer
 
@@ -150,7 +155,7 @@ def version(
         success=True,
         message=dataflow_version,
     )
-    
+
     logger.debug(f"`hamilton version` succeeded: {dataclasses.asdict(response)}")
     if (ctx.info_name == "version") or state.verbose:
         if state.json_out is True:
@@ -195,7 +200,7 @@ def view(
         raise typer.Exit(code=1)
 
     response = Response(command="view", success=True, message={"path": str(output_file_path)})
-    
+
     logger.debug(f"`hamilton view` succeeded: {dataclasses.asdict(response)}")
     if (ctx.info_name == "view") or state.verbose:
         if state.json_out is True:
