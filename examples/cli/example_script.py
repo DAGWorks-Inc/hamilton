@@ -8,7 +8,7 @@ def main():
     result = subprocess.run(
         ["hamilton", "--verbose", "--json-out", "version", "./module_v1.py"],
         stdout=subprocess.PIPE,
-        text=True
+        text=True,
     )
 
     # `--json-out` outputs the result as JSON string on a single line
@@ -23,4 +23,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-        

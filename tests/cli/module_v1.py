@@ -22,20 +22,20 @@ def customers_orders_df(customers_df: pd.DataFrame, orders_df: pd.DataFrame) -> 
     return _df
 
 
-def orders_per_customer(customers_orders_df: pd.DataFrame) -> pd.Series:
+def orders_per_distributor(customers_orders_df: pd.DataFrame) -> pd.Series:
     """Compute the number of orders per customer.
     Outputs series indexed by customer_id."""
-    return customers_orders_df.groupby("customer_id").size().rename("orders_per_customer")
+    return customers_orders_df.groupby("customer_id").size().rename("orders_per_distributor")
 
 
 def average_order_by_customer(amount: pd.Series) -> pd.Series:
     """Compute the average order amount per customer.
     Outputs series indexed by customer_id."""
-    return amount.groupby("customer_id").mean().rename("average_order_by_customer")
+    return (amount.groupby("customer_id").mean().rename("average_order_by_customer")) + 1
 
 
 def customer_summary_table(
-    orders_per_customer: pd.Series, average_order_by_customer: pd.Series
+    orders_per_distributor: pd.Series, average_order_by_customer: pd.Series
 ) -> pd.DataFrame:
     """Our customer summary table definition."""
-    return pd.concat([orders_per_customer, average_order_by_customer], axis=1)
+    return pd.concat([orders_per_distributor, average_order_by_customer], axis=1)

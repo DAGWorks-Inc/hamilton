@@ -11,10 +11,10 @@ if sys.version_info < (3, 9):
     from typing_extensions import Annotated
 else:
     from typing import Annotated
-   
+
 import typer
 
-# silence UserWarning: 'PYARROW_IGNORE_TIMEZONE' 
+# silence UserWarning: 'PYARROW_IGNORE_TIMEZONE'
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)
     from hamilton import driver
@@ -50,16 +50,18 @@ state = CliState()
 @cli.callback()
 def main(
     verbose: Annotated[
-        bool, 
+        bool,
         typer.Option(
-            help="Output all intermediary commands", rich_help_panel="Output format",
-        )
+            help="Output all intermediary commands",
+            rich_help_panel="Output format",
+        ),
     ] = False,
     json_out: Annotated[
-        bool, 
+        bool,
         typer.Option(
-            help="Output JSON for programmatic use (e.g., CI)", rich_help_panel="Output format",
-        )
+            help="Output JSON for programmatic use (e.g., CI)",
+            rich_help_panel="Output format",
+        ),
     ] = False,
 ):
     """Hamilton CLI"""
@@ -73,11 +75,14 @@ def main(
 def build(
     ctx: typer.Context,
     modules: Annotated[
-        List[Path], 
+        List[Path],
         typer.Argument(
             help="Paths to Hamilton modules",
-            exists=True, dir_okay=False, readable=True, resolve_path=True,
-        )
+            exists=True,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+        ),
     ],
 ):
     """Build a single Driver with MODULES"""
@@ -106,22 +111,25 @@ def build(
 
 
 # TODO add option to output diff of nodes and diff of functions
-# since the function diff is what's useful for code reviews / debugging 
+# since the function diff is what's useful for code reviews / debugging
 @cli.command()
 def diff(
     ctx: typer.Context,
     modules: Annotated[
-        List[Path], 
+        List[Path],
         typer.Argument(
             help="Paths to Hamilton modules",
-            exists=True, dir_okay=False, readable=True, resolve_path=True
-        )
+            exists=True,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+        ),
     ],
     git_reference: Annotated[
         str,
         typer.Option(
             help="[link=https://git-scm.com/book/en/v2/Git-Internals-Git-References]git reference[/link] to compare to"
-        )
+        ),
     ] = "HEAD",
     view: Annotated[
         bool,
@@ -129,7 +137,7 @@ def diff(
             "--view",
             "-v",
             help="Generate a dataflow diff visualization",
-        )
+        ),
     ] = False,
     output_file_path: Annotated[
         Path,
@@ -187,8 +195,11 @@ def version(
         List[Path],
         typer.Argument(
             help="Paths to Hamilton modules",
-            exists=True, dir_okay=False, readable=True, resolve_path=True
-        )
+            exists=True,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+        ),
     ],
 ):
     """Version NODES and DATAFLOW from dataflow with MODULES"""
@@ -228,8 +239,11 @@ def view(
         List[Path],
         typer.Argument(
             help="Paths to Hamilton modules",
-            exists=True, dir_okay=False, readable=True, resolve_path=True
-        )
+            exists=True,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+        ),
     ],
     output_file_path: Annotated[
         Path,
