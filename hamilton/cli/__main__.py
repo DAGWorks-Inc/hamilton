@@ -2,6 +2,7 @@ import dataclasses
 import json
 import logging
 import sys
+import warnings
 from pathlib import Path
 from pprint import pprint
 from typing import Any, List, Optional
@@ -10,10 +11,14 @@ if sys.version_info < (3, 9):
     from typing_extensions import Annotated
 else:
     from typing import Annotated
-
+   
 import typer
 
-from hamilton import driver
+# silence UserWarning: 'PYARROW_IGNORE_TIMEZONE' 
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)
+    from hamilton import driver
+
 from hamilton.cli import commands
 
 logger = logging.getLogger(__name__)
@@ -33,16 +38,24 @@ class CliState:
     dataflow_version: Optional[dict] = None
 
 
-cli = typer.Typer()
+cli = typer.Typer(rich_markup_mode="rich")
 state = CliState()
 
 
 # entrypoint for `hamilton` without command
 @cli.callback()
 def main(
-    verbose: Annotated[bool, typer.Option(help="Output all intermediary commands")] = False,
+    verbose: Annotated[
+        bool, 
+        typer.Option(
+            help="Output all intermediary commands", rich_help_panel="Output format",
+        )
+    ] = False,
     json_out: Annotated[
-        bool, typer.Option(help="Output JSON for programmatic use (e.g., CI)")
+        bool, 
+        typer.Option(
+            help="Output JSON for programmatic use (e.g., CI)", rich_help_panel="Output format",
+        )
     ] = False,
 ):
     """Hamilton CLI"""
@@ -56,10 +69,14 @@ def main(
 def build(
     ctx: typer.Context,
     modules: Annotated[
-        List[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
+        List[Path], 
+        typer.Argument(
+            help="Paths to Hamilton modules",
+            exists=True, dir_okay=False, readable=True, resolve_path=True,
+        )
     ],
 ):
-    """Build dataflow with MODULES"""
+    """Build a single Driver with MODULES"""
     try:
         config = dict()
         logger.debug("calling commands.build()")
@@ -88,10 +105,38 @@ def build(
 def diff(
     ctx: typer.Context,
     modules: Annotated[
-        List[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
+        List[Path], 
+        typer.Argument(
+            help="Paths to Hamilton modules",
+            exists=True, dir_okay=False, readable=True, resolve_path=True
+        )
     ],
-    git_reference: str = "HEAD",
-    view: bool = False,
+    git_reference: Annotated[
+        str,
+        typer.Option(
+            help="[link=https://git-scm.com/book/en/v2/Git-Internals-Git-References]git reference[/link] to compare to"
+        )
+    ] = "HEAD",
+    view: Annotated[
+        bool,
+        typer.Option(
+            "--view",
+            "-v",
+            help="Generate a dataflow diff visualization",
+        )
+    ] = False,
+    output_file_path: Annotated[
+        Path,
+        typer.Option(
+            "--output",
+            "-o",
+            help="File path of visualization",
+            exists=False,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+        ),
+    ] = "diff.png",
 ):
     """Diff between the current MODULES and their specified GIT_REFERENCE"""
     if state.dr is None:
@@ -104,6 +149,7 @@ def diff(
             modules=modules,
             git_reference=git_reference,
             view=view,
+            output_file_path=output_file_path,
             config=None,
         )
     except Exception as e:
@@ -132,7 +178,11 @@ def diff(
 def version(
     ctx: typer.Context,
     modules: Annotated[
-        List[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
+        List[Path],
+        typer.Argument(
+            help="Paths to Hamilton modules",
+            exists=True, dir_okay=False, readable=True, resolve_path=True
+        )
     ],
 ):
     """Version NODES and DATAFLOW from dataflow with MODULES"""
@@ -169,19 +219,24 @@ def version(
 def view(
     ctx: typer.Context,
     modules: Annotated[
-        List[Path], typer.Argument(exists=True, dir_okay=False, readable=True, resolve_path=True)
+        List[Path],
+        typer.Argument(
+            help="Paths to Hamilton modules",
+            exists=True, dir_okay=False, readable=True, resolve_path=True
+        )
     ],
     output_file_path: Annotated[
         Path,
         typer.Option(
             "--output",
             "-o",
+            help="File path of visualization",
             exists=False,
             dir_okay=False,
             readable=True,
             resolve_path=True,
         ),
-    ] = "./dag.png",  # TODO fix default value and relative path
+    ] = "./dag.png",
 ):
     """Build and visualize dataflow with MODULES"""
     if state.dr is None:

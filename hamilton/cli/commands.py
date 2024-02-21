@@ -22,6 +22,7 @@ def diff(
     modules: List[Path],
     git_reference: Optional[str] = "HEAD",
     view: bool = False,
+    output_file_path: Path = Path("./diff.png"),
     config: Optional[dict] = None,
 ) -> dict:
     config = config if config else {}
@@ -46,8 +47,15 @@ def diff(
 
     if view:
         # v1 and v2 mustc match the dr1 and dr2 of `diff_versions`
-        figure = logic.visualize_diff(dr1=reference_dr, dr2=dr, **diff)
-        figure.render("diff", format="png")
+        dot = logic.visualize_diff(dr1=reference_dr, dr2=dr, **diff)
+        
+        # simplified logic from hamilton.graph.display()
+        output_format = "png"
+        if output_file_path:  # infer format from path
+            if output_file_path.suffix != "":
+                output_format = output_file_path.suffix.partition(".")[-1]
+        
+        dot.render(output_file_path.with_suffix(""), format=output_format)
 
     return diff
 
