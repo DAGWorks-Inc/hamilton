@@ -16,9 +16,9 @@ def test_cli_build_success():
     inputs = ["--json-out", "build", module_path]
 
     result = runner.invoke(cli, inputs)
-    message = json.loads(result.stdout)
 
     assert result.exit_code == 0
+    message = json.loads(result.stdout)
     assert message["success"] is True
 
 
@@ -28,9 +28,9 @@ def test_cli_view_default(tmp_path: pathlib.Path):
     # output_file_path = tmp_path / "dag.png"  # default file name
 
     result = runner.invoke(cli, inputs)
-    message = json.loads(result.stdout)
-
+    
     assert result.exit_code == 0
+    message = json.loads(result.stdout)
     assert message["success"] is True
     # TODO difficult to assert the output file path from test
     # assert output_file_path.exists()
@@ -59,7 +59,7 @@ def test_cli_version():
     inputs = ["--json-out", "version", module_path]
 
     result = runner.invoke(cli, inputs)
-    message = json.loads(result.stdout)
 
     assert result.exit_code == 0
+    message = json.loads(result.stdout)
     assert message["success"] is True
