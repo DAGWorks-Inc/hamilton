@@ -135,7 +135,7 @@ class does(base.NodeCreator):
         dummy_param_values = {
             key: SENTINEL_ARG_VALUE
             for key, param_spec in fn_signature.parameters.items()
-            if param_spec.default != inspect.Parameter.empty
+            if param_spec.default is not inspect.Parameter.empty
         }
         # Then we update with the dummy values. Again, replacing doesn't matter (we'll be mimicking it later)
         dummy_param_values.update({key: SENTINEL_ARG_VALUE for key in fn_signature.parameters})
@@ -214,7 +214,7 @@ class does(base.NodeCreator):
             final_kwarg_values = {
                 key: param_spec.default
                 for key, param_spec in inspect.signature(fn).parameters.items()
-                if param_spec.default != inspect.Parameter.empty
+                if param_spec.default is not inspect.Parameter.empty
             }
             final_kwarg_values.update(kwargs)
             final_kwarg_values = does.map_kwargs(final_kwarg_values, self.argument_mapping)
