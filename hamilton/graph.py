@@ -187,7 +187,7 @@ def _check_keyword_args_only(func: Callable) -> bool:
     """Checks if a function only takes keyword arguments."""
     sig = inspect.signature(func)
     for param in sig.parameters.values():
-        if param.default == inspect.Parameter.empty and param.kind not in [
+        if param.default is inspect.Parameter.empty and param.kind not in [
             inspect.Parameter.KEYWORD_ONLY,
             inspect.Parameter.VAR_KEYWORD,
         ]:

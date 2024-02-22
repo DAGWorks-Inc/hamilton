@@ -1,3 +1,4 @@
+import inspect
 import sys
 from typing import Any, Literal, TypeVar
 
@@ -104,3 +105,15 @@ def test_node_handles_annotated():
 )
 def test_tags_match_query(tags: dict, query: dict, expected: bool):
     assert matches_query(tags, query) == expected
+
+
+def test_from_parameter_default_override_equals():
+    class BrokenEquals:
+        def __eq__(self, other):
+            raise ValueError("I'm broken")
+
+    def foo(b: BrokenEquals = BrokenEquals()):
+        pass
+
+    param = DependencyType.from_parameter(inspect.signature(foo).parameters["b"])
+    assert param == DependencyType.OPTIONAL

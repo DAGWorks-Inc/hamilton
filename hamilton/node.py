@@ -36,7 +36,7 @@ class DependencyType(Enum):
 
     @staticmethod
     def from_parameter(param: inspect.Parameter):
-        if param.default == inspect.Parameter.empty:
+        if param.default is inspect.Parameter.empty:
             return DependencyType.REQUIRED
         return DependencyType.OPTIONAL
 
