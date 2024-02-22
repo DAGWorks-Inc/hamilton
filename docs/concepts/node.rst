@@ -110,7 +110,7 @@ Dataflow
 
 From a collection of nodes, Hamilton automatically assembles the dataflow. For each node, it creates edges between itself and its dependencies, resulting in a `dataflow <https://en.wikipedia.org/wiki/Dataflow_programming>`_ (or a `graph <https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)>`_ in more mathematical terms).
 
-From the user perspective, you give Hamilton a Python module containing your functions, and it will generate your dataflow! This is a key difference with popular orchestration / pipeline / workflow frameworks (Airflow, Kedro, Prefect, VertexAI, SageMaker, etc.)
+From the user perspective, you give Hamilton a Python module containing your functions and it will generate your dataflow! This is a key difference with popular orchestration / pipeline / workflow frameworks (Airflow, Kedro, Prefect, VertexAI, SageMaker, etc.)
 
 How other frameworks build graphs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

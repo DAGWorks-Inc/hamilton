@@ -93,7 +93,7 @@ The Driver automatically determines the minimum required path to compute request
 Development tips
 ----------------
 
-With Hamilton, development time is mostly spent writing functions for your dataflow in a Python module. Rebuilding the Driver and visualizing your dataflow as you make changes helps iterative development. Find below two ways to useful development workflows.
+With Hamilton, development time is mostly spent writing functions for your dataflow in a Python module. Rebuilding the Driver and visualizing your dataflow as you make changes helps iterative development. Find below two useful development workflows.
 
 With a Python module
 ~~~~~~~~~~~~~~~~~~~~
@@ -127,7 +127,7 @@ With a Jupyter notebook
 
 Another approach is to define the dataflow in a module (e.g., ``my_dataflow.py``) and reload the Driver in a Jupyter notebook. This allows for a more interactive experience when you want to inspect the results of functions as you're developing.
 
-By default, Python only imports a module once and subsequent ``import`` statements don't reload the module. We use reload our imported module with ``importlib.reload(my_dataflow)`` and rebuild the Driver as we make changes to our dataflow.
+By default, Python only imports a module once and subsequent ``import`` statements don't reload the module. We reload our imported module with ``importlib.reload(my_dataflow)`` and rebuild the Driver as we make changes to our dataflow.
 
 .. code-block:: python
 
@@ -155,7 +155,7 @@ Learn other Jupyter development tips on the page :doc:`../how-tos/use-in-jupyter
 Recap
 -----
 - The Driver automatically assembles a dataflow from Python modules
-- The Driver visualize the dataflow created from your code
+- The Driver visualizes the dataflow created from your code
 - Functions are executed by requesting nodes to driver ``.execute()``
 
 Next step

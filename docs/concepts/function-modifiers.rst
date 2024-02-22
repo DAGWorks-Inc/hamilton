@@ -4,7 +4,7 @@ Function modifiers
 
 In :doc:`node`, we discussed how to write Python functions to define Hamilton nodes and dataflow. In the basic case, each function defines one node.
 
-Yet, it's common to need nodes with similar purposes, but different dependencies such as preprocessing a training and an evaluation dataset. In that case, using a **function modifier** can help create both nodes from a single Hamilton function!
+Yet, it's common to need nodes with similar purposes but different dependencies, such as preprocessing training and evaluation datasets. In that case, using a **function modifier** can help create both nodes from a single Hamilton function!
 
 On this page, you'll learn:
 
@@ -241,7 +241,7 @@ Define one function, create *n* nodes
 
 The family of ``@parameterize`` function modifiers allows the creation of multiple nodes with the same **node implementation / function body** (and therefore output type), but different **node inputs**.
 
-This has many applications, such producing the same performance plot for multiple models or computing groupby aggregates along different dimensions.
+This has many applications, such as producing the same performance plot for multiple models or computing groupby aggregates along different dimensions.
 
 @parameterize
 ~~~~~~~~~~~~~
