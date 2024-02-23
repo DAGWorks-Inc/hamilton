@@ -28,14 +28,13 @@ def test_map_nodes_to_origins():
     }
 
     dr = driver.Builder().with_modules(module_v1).build()
-    graph = graph_types.HamiltonGraph.from_graph(dr.graph)
-    node_to_origin = logic.map_nodes_to_functions(graph)
+    node_to_origin = logic.map_nodes_to_functions(dr)
 
     assert node_to_origin == expected_mapping
 
 
 def test_diff_versions():
-    v1_versions = {
+    reference_versions = {
         "average_order_by_customer": "b58a6",
         "customer_summary_table": "6bf52",
         "customers_df": "480be",
@@ -43,7 +42,7 @@ def test_diff_versions():
         "orders_df": "58e65",
         "orders_per_customer": "6af6d",
     }
-    v2_versions = {
+    current_versions = {
         "average_order_by_customer": "5296f",
         "customer_summary_table": "6bf52",
         "customers_df": "480be",
@@ -52,22 +51,28 @@ def test_diff_versions():
         "orders_per_distributor": "6d64l",
     }
 
-    diff = logic.diff_versions(v1_versions, v2_versions)
+    diff = logic.diff_versions(
+        current_map=current_versions,
+        reference_map=reference_versions,
+    )
 
-    assert diff["v1_only"] == ["orders_per_customer"]
-    assert diff["v2_only"] == ["orders_per_distributor"]
+    assert diff["reference_only"] == ["orders_per_customer"]
+    assert diff["current_only"] == ["orders_per_distributor"]
     assert diff["edit"] == ["average_order_by_customer"]
 
 
 def test_diff_node_versions():
-    dr1 = driver.Builder().with_modules(module_v1).build()
-    dr2 = driver.Builder().with_modules(module_v2).build()
+    current_dr = driver.Builder().with_modules(module_v2).build()
+    reference_dr = driver.Builder().with_modules(module_v1).build()
 
-    nodes_v1 = logic.hash_hamilton_nodes(dr1)
-    nodes_v2 = logic.hash_hamilton_nodes(dr2)
+    current_nodes = logic.hash_hamilton_nodes(current_dr)
+    reference_nodes = logic.hash_hamilton_nodes(reference_dr)
 
-    diff = logic.diff_versions(nodes_v1, nodes_v2)
+    diff = logic.diff_versions(
+        current_map=current_nodes,
+        reference_map=reference_nodes,
+    )
 
-    assert diff["v1_only"] == ["orders_per_customer"]
-    assert diff["v2_only"] == ["orders_per_distributor"]
+    assert diff["reference_only"] == ["orders_per_customer"]
+    assert diff["current_only"] == ["orders_per_distributor"]
     assert diff["edit"] == ["average_order_by_customer", "customer_summary_table"]

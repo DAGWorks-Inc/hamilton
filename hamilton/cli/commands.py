@@ -18,7 +18,7 @@ def build(modules: List[Path], config: Optional[dict] = None):
 
 
 def diff(
-    dr: driver.Driver,
+    current_dr: driver.Driver,
     modules: List[Path],
     git_reference: Optional[str] = "HEAD",
     view: bool = False,
@@ -27,7 +27,8 @@ def diff(
 ) -> dict:
     config = config if config else {}
 
-    original_version = logic.hash_hamilton_nodes(dr)
+    current_version = logic.hash_hamilton_nodes(current_dr)
+    current_node_to_func = logic.map_nodes_to_functions(current_dr)
 
     reference_modules = logic.load_modules_from_git(modules, git_reference)
     reference_dr = (
@@ -38,16 +39,30 @@ def diff(
         .build()
     )
     reference_version = logic.hash_hamilton_nodes(reference_dr)
+    reference_node_to_func = logic.map_nodes_to_functions(reference_dr)
 
-    # v1 and v2 mustc match the dr1 and dr2 of `visualize_diff`
-    diff = logic.diff_versions(
-        mapping_v1=reference_version,
-        mapping_v2=original_version,
+    nodes_diff = logic.diff_versions(
+        reference_map=reference_version,
+        current_map=current_version,
     )
-
+    
+    full_diff = dict()
+    for status, node_names in nodes_diff.items():
+        full_diff[status] = dict()
+        for node_name in node_names:
+            if current_node_to_func.get(node_name):
+                func_name = current_node_to_func.get(node_name)
+            else:
+                func_name = reference_node_to_func.get(node_name)
+            
+            full_diff[status][node_name] = func_name
+            
     if view:
-        # v1 and v2 mustc match the dr1 and dr2 of `diff_versions`
-        dot = logic.visualize_diff(dr1=reference_dr, dr2=dr, **diff)
+        dot = logic.visualize_diff(
+            current_dr=current_dr,
+            reference_dr=reference_dr,
+            **nodes_diff
+        )
 
         # simplified logic from hamilton.graph.display()
         output_format = "png"
@@ -57,7 +72,7 @@ def diff(
 
         dot.render(output_file_path.with_suffix(""), format=output_format)
 
-    return diff
+    return full_diff
 
 
 def version(dr: driver.Driver) -> dict:

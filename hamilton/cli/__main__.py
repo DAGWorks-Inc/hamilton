@@ -159,7 +159,7 @@ def diff(
     try:
         logger.debug("calling commands.diff()")
         diff = commands.diff(
-            dr=state.dr,
+            current_dr=state.dr,
             modules=modules,
             git_reference=git_reference,
             view=view,

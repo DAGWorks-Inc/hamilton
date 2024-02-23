@@ -72,8 +72,10 @@ def hash_hamilton_nodes(dr: driver.Driver) -> Dict[str, str]:
     return nodes_version
 
 
-def map_nodes_to_functions(graph: graph_types.HamiltonGraph) -> Dict[str, str]:
+def map_nodes_to_functions(dr: driver.Driver) -> Dict[str, str]:
     """Get a mapping from node name to Hamilton function name"""
+    graph = graph_types.HamiltonGraph.from_graph(dr.graph)
+    
     node_to_function = dict()
     for n in graph.nodes:
         node_callable = n.originating_functions[0]
@@ -152,46 +154,46 @@ def diff_nodes_against_functions(
     )
 
 
-def diff_versions(mapping_v1: Dict[str, str], mapping_v2: Dict[str, str]) -> dict:
+def diff_versions(current_map: Dict[str, str], reference_map: Dict[str, str]) -> dict:
     """Generic diff of two {name: hash} mappings (can be node or origin name)
 
     :mapping_v1: mapping from node (or function) name to its function hash
     :mapping_v2: mapping from node (or function) name to its function hash
     """
-    v1_only, v2_only, edit = [], [], []
+    current_only, reference_only, edit = [], [], []
 
-    for node_name, v1 in mapping_v1.items():
-        v2 = mapping_v2.get(node_name)
+    for node_name, v1 in current_map.items():
+        v2 = reference_map.get(node_name)
         if v2 is None:
-            v1_only.append(node_name)
+            current_only.append(node_name)
             continue
 
         if v1 != v2:
             edit.append(node_name)
 
-    for node_name, v2 in mapping_v2.items():
-        v1 = mapping_v1.get(node_name)
+    for node_name, v2 in reference_map.items():
+        v1 = current_map.get(node_name)
         if v1 is None:
-            v2_only.append(node_name)
+            reference_only.append(node_name)
             continue
 
-    return dict(v1_only=v1_only, v2_only=v2_only, edit=edit)
+    return dict(current_only=current_only, reference_only=reference_only, edit=edit)
 
 
 def _custom_diff_style(
     *,
     node,
     node_class,
-    v1_only: List[str],
-    v2_only: List[str],
+    current_only: List[str],
+    reference_only: List[str],
     edit: List[str],
 ):
     """Custom visualization style for the diff of 2 dataflows"""
-    if node.name in v2_only:
-        style = ({"fillcolor": "greenyellow"}, node_class, "Added")
+    if node.name in current_only:
+        style = ({"fillcolor": "greenyellow"}, node_class, "Current only")
 
-    elif node.name in v1_only:
-        style = ({"fillcolor": "tomato1"}, node_class, "Deleted")
+    elif node.name in reference_only:
+        style = ({"fillcolor": "tomato1"}, node_class, "Reference only")
 
     elif node.name in edit:
         style = ({"fillcolor": "yellow2"}, node_class, "Edited")
@@ -203,22 +205,22 @@ def _custom_diff_style(
 
 
 def visualize_diff(
-    dr1: driver.Driver,
-    dr2: driver.Driver,
-    v1_only: List[str],
-    v2_only: List[str],
+    current_dr: driver.Driver,
+    reference_dr: driver.Driver,
+    current_only: List[str],
+    reference_only: List[str],
     edit: List[str],
 ):
     """Visualize the diff of 2 dataflows.
 
     Uses the union of sets of nodes from driver 1 and driver 2.
     """
-    all_nodes = set(dr1.graph.get_nodes()).union(set(dr2.graph.get_nodes()))
+    all_nodes = set(reference_dr.graph.get_nodes()).union(set(current_dr.graph.get_nodes()))
 
     diff_style = functools.partial(
         _custom_diff_style,
-        v1_only=v1_only,
-        v2_only=v2_only,
+        current_only=current_only,
+        reference_only=reference_only,
         edit=edit,
     )
 
