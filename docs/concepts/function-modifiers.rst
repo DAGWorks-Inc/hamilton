@@ -4,7 +4,7 @@ Function modifiers
 
 In :doc:`node`, we discussed how to write Python functions to define Hamilton nodes and dataflow. In the basic case, each function defines one node.
 
-Yet, it's common to need nodes serving similar purposes, such as "preprocess training set" and "preprocess evaluation set". In that case, use a **function modifier** to create both nodes from a single Hamilton function!
+Yet, it's common to need nodes with similar purposes but different dependencies, such as preprocessing training and evaluation datasets. In that case, using a **function modifier** can help create both nodes from a single Hamilton function!
 
 On this page, you'll learn:
 
@@ -58,7 +58,7 @@ This section from the page :doc:`node` details how a Python function maps to a H
      - Function name and return type annotation
      - Node name and type
    * - 2
-     - Parameter(s) name and type annotation
+     - Parameter names and type annotations
      - Node dependencies
    * - 3
      - Docstring
@@ -75,7 +75,7 @@ Add metadata to a node
 
 @tag
 ~~~~~~~~
-The ``@tag`` decorator **doesn't modify the function/node**. It attaches metadata to the node that Hamilton and you can use. It can help tag nodes by ownership, data source, version, infrastructure, and anything else.
+The ``@tag`` decorator **doesn't modify the function/node**. It attaches metadata to the node that can be used by Hamilton and you. It can help tag nodes by ownership, data source, version, infrastructure, and anything else.
 
 For example, this tags the associated data product and the sensitivity of the data.
 
@@ -92,7 +92,7 @@ For example, this tags the associated data product and the sensitivity of the da
 Query node by tag
 ~~~~~~~~~~~~~~~~~
 
-Once you built your Driver, you can use ``Driver.list_available_variables()`` and then filter them by tag. The following gets all the nodes for which ``data_product="final"`` and passes them to ``driver.execute()``
+Once you built your Driver, you can get all nodes with ``Driver.list_available_variables()`` and then filter them by tag. The following gets all the nodes for which ``data_product="final"`` and passes them to ``driver.execute()``
 
 .. code-block:: python
 
@@ -106,7 +106,7 @@ Once you built your Driver, you can use ``Driver.list_available_variables()`` an
 Customize visualization by tag
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Tags are also accessible to the visualization styling feature, allowing you to highlight important nodes for your documentation (e.g., by infrastructure, ownership). See :ref:`custom-visualization-style` for details.
+Tags are also accessible to the visualization styling feature, allowing you to highlight important nodes for your documentation. See :ref:`custom-visualization-style` for details.
 
 .. image:: ./_function-modifiers/custom_viz.png
     :height: 250px
@@ -114,7 +114,7 @@ Tags are also accessible to the visualization styling feature, allowing you to h
 @schema
 ~~~~~~~
 
-The ``@schema`` function modifiers provides lightweight way to add type metadata for dataframes. It works by specifying a specifying tuples of ``(field_name, field_type)`` with types as strings.
+The ``@schema`` function modifiers provides a lightweight way to add type metadata to dataframes. It works by specifying tuples of ``(field_name, field_type)`` with types as strings.
 
 .. code-block:: python
 
@@ -136,16 +136,18 @@ The ``@schema`` function modifiers provides lightweight way to add type metadata
 Validate node output
 --------------------
 
-The ``@check_output`` function modifiers are applied on the **node output / function return** and therefore don't directly affect node behavior. Decorators separate data validation from the function body where the core logic is. Your function readability is improved, and it becomes easier to reuse and maintain standardized checks across multiple functions.
+The ``@check_output`` function modifiers are applied on the **node output / function return** and therefore don't directly affect node behavior. Decorators separate data validation from the function body where the core logic is. It improves function readability, and it helps reusing and maintaining standardized checks across multiple functions.
 
-Note, in the future ``@schema`` might also have validation capabilities, but for now, it's only for metadata.
+.. note::
+
+    In the future, validatation capabailities may be added to ``@schema``. For now, it's only added metadata.
 
 @check_output
 ~~~~~~~~~~~~~
 
 The ``@check_output`` implements many data checks for Python objects and DataFrame/Series including data type, min/max/between, count, fraction of null/nan values, and allow null/nan. Failed checks are either logged (``importance="warn"``) or make the dataflow fail (``importance="fail"``).
 
-The next snippet checks if the returned Series is of type ``np.int32``, which is non-nullable and within the range 0-100, and logs the failed checks. We could manually review instances where things failed.
+The next snippet checks if the returned Series is of type ``np.int32``, which is non-nullable, and if its within the range 0-100, and logs failed checks. This allows us to manually review instances where data validation failed.
 
 .. code-block:: python
 
@@ -170,22 +172,22 @@ The next snippet checks if the returned Series is of type ``np.int32``, which is
 pandera support
 ~~~~~~~~~~~~~~~
 
-Hamilton has a pandera plugin for data validation that you can install with ``pip install sf-hamilton[pandera]``. Then, you can pass pandera schemas (DataFrame or Series) to ``@check_output(schema=...)``.
+Hamilton has a pandera plugin for data validation that you can install with ``pip install sf-hamilton[pandera]``. Then, you can pass a pandera schema (for DataFrame or Series) to ``@check_output(schema=...)``.
 
 
 Split node output into *n* nodes
 --------------------------------
 
-Sometimes, your node outputs multiple values that you would like to name and make accessible to other nodes. These function modifiers act on the **node output / function return**.
+Sometimes, your node outputs multiple values that you would like to name and make available to other nodes. These function modifiers act on the **node output / function return**.
 
 .. note::
 
-    You can use ``@tag_output``, which works just like ``@tag`` to add metadata to  extracted nodes.
+    To add metadata to extracted nodes, use ``@tag_output``, which works just like ``@tag``.
 
 @extract_fields
 ~~~~~~~~~~~~~~~
 
-A good example is splitting a dataset into train, validation, and split. We will use ``@extract_fields``. You need to specify in a dictionary the ``field_name: field_type`` of each field.
+A good example is splitting a dataset into train, validation, and test splits. We will use ``@extract_fields``, which requires specifying in a dictionary the ``field_name: field_type`` of each field.
 
 .. code-block:: python
 
@@ -209,7 +211,7 @@ A good example is splitting a dataset into train, validation, and split. We will
     :height: 250px
 
 
-Now, ``X_train``, ``X_validation``, and ``X_test`` are available node names to query and execute. But, you can also query ``dataset_splits`` to get all of them in a dictionary!
+Now, ``X_train``, ``X_validation``, and ``X_test`` are available to other nodes, and they can be queried by ``.execute()``. But, since ``dataset_splits`` is its own node, you can query it to get all splits in a dictionary!
 
 @extract_columns
 ~~~~~~~~~~~~~~~~
@@ -239,14 +241,14 @@ Define one function, create *n* nodes
 
 The family of ``@parameterize`` function modifiers allows the creation of multiple nodes with the same **node implementation / function body** (and therefore output type), but different **node inputs**.
 
-This has many applications, including producing a performance plot for multiple models or computing aggregates using several groupby.
+This has many applications, such as producing the same performance plot for multiple models or computing groupby aggregates along different dimensions.
 
 @parameterize
 ~~~~~~~~~~~~~
 
-You need to specify the generated **node name**, a dictionary for inputs, and optionally a docstring. For the inputs, can pass values as constant with ``value()`` or get it from the dataflow by passing a node name to ``source()`` These notions are tricky at first, but let's look at an example.
+You need to specify the generated **node name**, a dictionary of dependencies, and optionally a docstring. For the dependencies, you can pass constants with ``value()`` or get them from the dataflow by passing a node name to ``source()``. These notions are tricky at first, but let's look at an example:
 
-In this example, we create 3 nodes: ``revenue_by_age``, ``revenue_by_country``, ``revenue_by_occupation``. For each, we get the dataframe ``df`` from the dataflow using ``source()`` and specify a different ``groupby_col`` with ``value()``. Also, the docstring uses ``{groupby_col}`` to have the value inserted.
+We create 3 nodes: ``revenue_by_age``, ``revenue_by_country``, ``revenue_by_occupation``. For each, we get the dataframe ``df`` from the dataflow using ``source()`` and specify a different ``groupby_col`` with ``value()``. Also, the docstring uses ``{groupby_col}`` to have the value inserted.
 
 .. code-block:: python
 
@@ -266,19 +268,19 @@ In this example, we create 3 nodes: ``revenue_by_age``, ``revenue_by_country``, 
 
 .. image:: ./_function-modifiers/parameterize.png
 
-- The above example mixes constant ``value()`` and dataflow ``source()`` parameters and is indeed verbose. If you need only one type, you can use ``@parameterize_values`` or ``@parameterize_sources`` for a simplified syntax.
-- If you need to extract columns from the output of generated nodes, use ``@parameterize_extract_columns``
+- The above example mixes constant ``value()`` and dataflow ``source()`` dependencies. The syntax is indeed verbose. Simplified syntaxes are available through ``@parameterize_values`` and ``@parameterize_sources`` if you only need one type of dependency.
+- If you need to extract columns from the output of a generated node, use ``@parameterize_extract_columns``
 
 .. _config-decorators:
 
 Select functions to include
 ---------------------------
 
-The family of ``@config`` decorators doesn't modify the function. Rather, it tells the Driver which functions from the module (and therefore nodes) to include in the dataflow. This helps projects that need to run in different contexts (e.g., locally vs orchestrator) or need to test different implementations of a node (e.g., ML experiments, code migration, A/B testing).
+The family of ``@config`` decorators doesn't modify the function. Rather, it tells the Driver which functions from the module (and therefore nodes) to include in the dataflow. This helps projects that need to run in different contexts (e.g., locally vs orchestrator) or need to swap different implementations of a node (e.g., ML experiments, code migration, A/B testing).
 
 .. note::
 
-    At first, there can be confusion between ``@config`` and the ``inputs`` and ``overrides`` of the Driver's ``.execute()`` and ``.materialize()`` methods. In common language, people might refer to the ``.execute(inputs=..., overrides=...)`` as a configuration. However, they both affect the values passing through the dataflow **once the Driver is built** while ``@config`` determines **how the driver is built**.
+    At first, there can be confusion between ``@config`` and the ``inputs`` and ``overrides`` of the Driver's ``.execute()`` and ``.materialize()`` methods. In common language, people might refer to the ``.execute(inputs=..., overrides=...)`` as a configuration. However, these two affect the values passing through the dataflow **once the Driver is built** while ``@config`` determines **how the Driver is built**.
 
 @config
 ~~~~~~~

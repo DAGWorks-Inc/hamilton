@@ -10,14 +10,14 @@ Functions
 Hamilton requires you to write your code using functions. To get started, you simply need to:
 
 - `Annotate the type <https://docs.python.org/3/library/typing.html>`_ of the function parameters and return value.
-- Specify the function's dependency with the parameters' name.
+- Specify the function dependencies with the parameter names.
 - Store your code in Python modules (``.py`` files).
 
-Since your code doesn't depend on special "Hamilton code", it can be reused any other way you want!
+Since your code doesn't depend on special "Hamilton code", you can reuse it however you want!
 
 Specifying dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~
-In Hamilton, you define dependencies by matching parameter names with the names of other functions. Below, the function name and return type ``A() -> int``match the parameter ``A: int`` found in functions ``B()`` and ``C()``.
+In Hamilton, you define dependencies by matching parameter names with the names of other functions. Below, the function name and return type ``A() -> int`` match the parameter ``A: int`` found in functions ``B()`` and ``C()``.
 
 .. code-block:: python
 
@@ -70,7 +70,7 @@ Unlike the common practice of including meaningful verbs in function names (e.g.
 Nodes
 -----
 
-A node is a single "step" in a dataflow. Hamilton users write Python `functions` that Hamilton converts into `nodes`. They never directly create nodes.
+A node is a single "operation" or "step" in a dataflow. Hamilton users write Python `functions` that Hamilton converts into `nodes`. User never directly create nodes.
 
 
 Anatomy of a node
@@ -93,7 +93,7 @@ The following figure and table detail how a Python function maps to a Hamilton n
      - Function name and return type annotation
      - Node name and type
    * - 2
-     - Parameter(s) name and type annotation
+     - Parameter names and type annotations
      - Node dependencies
    * - 3
      - Docstring
@@ -103,26 +103,26 @@ The following figure and table detail how a Python function maps to a Hamilton n
      - Implementation of the node
 
 
-Since functions almost always map 1-to-1 to nodes, the two terms are used interchangeably. However, there are exceptions that we'll discuss later in this guide.
+Since functions almost always map to nodes 1-to-1, the two terms are often used interchangeably. However, there are exceptions that we'll discuss later in this guide.
 
 Dataflow
 --------
 
 From a collection of nodes, Hamilton automatically assembles the dataflow. For each node, it creates edges between itself and its dependencies, resulting in a `dataflow <https://en.wikipedia.org/wiki/Dataflow_programming>`_ (or a `graph <https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)>`_ in more mathematical terms).
 
-From the user perspective, you just have to give Hamilton a Python module containing your functions for it to generate your dataflow! This is a key difference with popular orchestration / pipeline / workflow frameworks (Airflow, Kedro, Prefect, VertexAI, SageMaker, etc.)
+From the user perspective, you give Hamilton a Python module containing your functions and it will generate your dataflow! This is a key difference with popular orchestration / pipeline / workflow frameworks (Airflow, Kedro, Prefect, VertexAI, SageMaker, etc.)
 
 How other frameworks build graphs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In most frameworks, you first define steps / tasks / components. Then, you need to create your dataflow by explicitly specifying the relationship between each node.
+In most frameworks, you first define nodes / steps / tasks / components. Then, you need to create your dataflow by explicitly specifying the relationship between each node.
 
 Readability
 ^^^^^^^^^^^
-In that case, the code for ``step A`` doesn't tell you how it relates ``step B`` or the broader dataflow. Hamilton solves this problem by tying functions, nodes, and dataflow definitions in a single place. The ratio of reading to writing code can be as high as `10:1 <https://www.goodreads.com/quotes/835238-indeed-the-ratio-of-time-spent-reading-versus-writing-is>`_, especially for complex dataflows, so optimizing for readability is very high-value.
+In that case, the code for ``step A`` doesn't tell you how it relates ``step B`` or the broader dataflow. Hamilton solves this problem by tying functions, nodes, and dataflow definitions in a single place. The ratio of reading to writing code can be as high as `10:1 <https://www.goodreads.com/quotes/835238-indeed-the-ratio-of-time-spent-reading-versus-writing-is>`_, especially for complex dataflows, so optimizing for readability is high-value.
 
 Maintainability
 ^^^^^^^^^^^^^^^
-Typically, editing a dataflow (new feature, debugging, etc.) alters both what a **node** does and how the **dataflow** is structured. Consequently, changes to ``step A`` require you to manually ensure consistent edits to the definition of dataflows, which is likely in another file. In enterprise settings, it can become difficult to discover and track every location ``step A`` is used (potentially 10s or 100s of pipelines), increasing the likelihood of breaking changes. Hamilton avoids entirely this problem because changes to the node definitions, and thus the dataflow, will propagate to all places this code is used. This greatly improves maintainability and development speed by facilitating code changes.
+Typically, editing a dataflow (new feature, debugging, etc.) alters both what a **node** does and how the **dataflow** is structured. Consequently, changes to ``step A`` require you to manually ensure consistent edits to the definition of dataflows, which is likely in another file. In enterprise settings, it can become difficult to discover and track every location where ``step A`` is used (potentially 10s or 100s of pipelines), increasing the likelihood of breaking changes. Hamilton avoids this problem entirely because changes to the node definitions, and thus the dataflow, will propagate to all places the code is used. This greatly improves maintainability and development speed by facilitating code changes.
 
 Recap
 --------

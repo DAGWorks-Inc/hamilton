@@ -2,15 +2,15 @@
 Visualization
 =============
 
-After assembling the dataflow, the Driver can display it in several ways. Hamilton dataflow visualizations are great for documentation because they are directly derived from the code.
+After assembling the dataflow, several visualization features become available to the Driver. Hamilton dataflow visualizations are great for documentation because they are directly derived from the code.
 
 On this page, you'll learn:
 
 - the available visualization functions
 - how to answer lineage questions
-- how to apply a custom style
+- how to apply a custom style to your visualization
 
-For this page, we'll assume to have the following dataflow and Driver:
+For this page, we'll assume we have the following dataflow and Driver:
 
 .. code-block:: python
 
@@ -124,13 +124,11 @@ Learn more about :doc:`materialization`.
 View node dependencies
 ----------------------
 
-Representing data pipelines, ML experiments, or LLM applications as a dataflow helps reason about the dependencies between operations. The Hamilton Driver has the following utilities to select and return a list of nodes:
+Representing data pipelines, ML experiments, or LLM applications as a dataflow helps reason about the dependencies between operations. The Hamilton Driver has the following utilities to select and return a list of nodes (to learn more :doc:`../how-tos/use-hamilton-for-lineage`):
 
 - ``.what_is_upstream_of(*node_names: str)``
 - ``.what_is_downstream_of(*node_names: str)``
-- ``.what_is_the_path_between(upstream_node_name: str, down_stream_node_name: str)``
-
-See our user guide on :doc:`../how-tos/use-hamilton-for-lineage` to learn more.
+- ``.what_is_the_path_between(upstream_node_name: str, downstream_node_name: str)``
 
 These functions are wrapped into their visualization counterparts:
 
@@ -143,7 +141,7 @@ Display ancestors of ``B``:
 .. image:: _visualization/upstream.png
     :height: 200px
 
-Display descendants of ``D`` and its immediate parents, which is only ``A``.
+Display descendants of ``D`` and its immediate parents (``A`` only).
 
 .. code-block:: python
 
@@ -166,9 +164,7 @@ Filter nodes to the necessary path:
 Configure your visualization
 ----------------------------
 
-All of the above visualization functions share parameters to customize the visualization (e.g., hide legend, hide inputs). The API reference for `Driver.display_all_functions() <https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.display_all_functions>`_ should apply to all other visualizations.
-
-We won't provide visual examples here, but you try them yourself in your browser on tryhamilton.dev (#TODO add tutorial)
+All of the above visualization functions share parameters to customize the visualization (e.g., hide legend, hide inputs). Learn more by reviewing the API reference for `Driver.display_all_functions() <https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/#hamilton.driver.Driver.display_all_functions>`_; parameters should apply to all other visualizations.
 
 .. _custom-visualization-style:
 
@@ -177,16 +173,16 @@ Apply custom style
 
 By default, each node is labeled with name and type, and stylized (shape, color, outline, etc.). By passing a function to the parameter ``custom_style_function``, you can customize the node style based on its attributes. This pairs nicely with the ``@tag`` function modifier (learn more :ref:`tag-decorators`)
 
-To define your own style:
+Your own custom style function must:
 
-1. The function must use only keyword arguments, taking in ``node`` and ``node_class``.
-2. It needs to return a tuple ``(style, node_class, legend_name)`` where:
+1. Use only keyword arguments, taking in ``node`` and ``node_class``.
+2. Return a tuple ``(style, node_class, legend_name)`` where:
     - ``style``: dictionary of valid graphviz node style attributes.
     - ``node_class``: class used to style the default visualization - we recommend returning the input ``node_class``
     - ``legend_name``: text to display in the legend. Return ``None`` for no legend entry.
 3. For the execution-focused visualizations, your custom styles are applied before the modifiers for outputs and overrides are applied.
 
-If you need more customization, we suggest getting the graphviz object back and then modifying it yourself.
+If you need more customization, we suggest getting the graphviz object produced, and modifying it directly.
 
 This `online graphviz editor <https://edotor.net/>`_ can help you get started!
 
