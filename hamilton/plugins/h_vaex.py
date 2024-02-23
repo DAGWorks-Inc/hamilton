@@ -24,7 +24,7 @@ class VaexDataFrameResult(base.ResultMixin):
     .. code-block:: python
 
         from hamilton import base, driver
-        from hamilton.plugins import h_vaex, vaex_extensions
+        from hamilton.plugins import h_vaex
         vaex_builder = h_vaex.VaexDataFrameResult()
         adapter = base.SimplePythonGraphAdapter(vaex_builder)
         dr =  driver.Driver(config, *modules, adapter=adapter)
@@ -76,6 +76,8 @@ class VaexDataFrameResult(base.ResultMixin):
                 message = f"VaexDataFrameResult doesn't support {value_type}"
                 raise NotImplementedError(message)
 
+        df = None
+
         if arrays:
 
             # Check if all arrays have correct and identical shapes.
@@ -102,7 +104,8 @@ class VaexDataFrameResult(base.ResultMixin):
             # so we construct Vaex DataFrame with one row consisting of scalars.
             df = vaex.from_arrays(**{name: np.array([value]) for name, value in scalars.items()})
 
-        dfs.append(df)
+        if df:
+            dfs.append(df)
 
         return vaex.concat(dfs)
 

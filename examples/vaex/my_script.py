@@ -2,7 +2,7 @@ import logging
 import sys
 
 from hamilton import base, driver
-from hamilton.plugins import h_vaex, vaex_extensions  # noqa F401
+from hamilton.plugins import h_vaex
 
 logging.basicConfig(stream=sys.stdout)
 
