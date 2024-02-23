@@ -147,7 +147,7 @@ The ``@check_output`` function modifiers are applied on the **node output / func
 
 The ``@check_output`` implements many data checks for Python objects and DataFrame/Series including data type, min/max/between, count, fraction of null/nan values, and allow null/nan. Failed checks are either logged (``importance="warn"``) or make the dataflow fail (``importance="fail"``).
 
-The next snippet checks if the returned Series is of type ``np.int32``, which is non-nullable, and if its within the range 0-100, and logs failed checks. This would allows us to manually review instances where data validation failed.
+The next snippet checks if the returned Series is of type ``np.int32``, which is non-nullable, and if its within the range 0-100, and logs failed checks. This allows us to manually review instances where data validation failed.
 
 .. code-block:: python
 
