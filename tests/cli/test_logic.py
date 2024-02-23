@@ -3,7 +3,7 @@ from pathlib import Path
 from hamilton import driver, graph_types
 from hamilton.cli import logic
 
-from tests.cli import module_v1, module_v2
+from tests.cli.resources import module_v1, module_v2
 
 
 def test_git_directory_exists():
