@@ -19,7 +19,7 @@ def get_column_vaex(df: vaex.dataframe.DataFrame, column_name: str) -> vaex.expr
 
 
 @registry.fill_with_scalar.register(vaex.dataframe.DataFrame)
-def fill_with_scalar_polars(
+def fill_with_scalar_vaex(
     df: vaex.dataframe.DataFrame, column_name: str, scalar_value: Any
 ) -> vaex.dataframe.DataFrame:
     df[column_name] = np.full((df.shape[0],), scalar_value)
