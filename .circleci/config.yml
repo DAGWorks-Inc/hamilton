@@ -98,6 +98,12 @@ workflows:
       - test:
           requires:
             - check_for_changes
+          name: vaex-py39
+          python-version: '3.9'
+          task: vaex
+      - test:
+          requires:
+            - check_for_changes
           name: spark-py39
           python-version: '3.9'
           task: pyspark

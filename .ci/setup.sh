@@ -35,6 +35,15 @@ if [[ ${TASK} == "pyspark" ]]; then
     fi
 fi
 
+if [[ ${TASK} == "vaex" ]]; then
+    if [[ ${OPERATING_SYSTEM} == "Linux" ]]; then
+        sudo apt-get install \
+            --no-install-recommends \
+            --yes \
+                libpcre3-dev cargo
+    fi
+fi
+
 echo "----- python version -----"
 python --version
 

@@ -33,6 +33,7 @@ if not registry.INITIALIZED:
         "xgboost",
         "lightgbm",
         "sklearn_plot",
+        "vaex",
     ]
     for plugin_module in plugins_modules:
         try:

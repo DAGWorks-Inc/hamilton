@@ -84,6 +84,10 @@ setup(
         "pandera": ["pandera"],
         "tqdm": ["tqdm"],
         "datadog": ["ddtrace"],
+        "vaex": [
+            "pydantic<2.0",  # because of https://github.com/vaexio/vaex/issues/2384
+            "vaex",
+        ],
         "experiments": [
             "fastapi",
             "fastui",

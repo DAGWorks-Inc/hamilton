@@ -45,6 +45,12 @@ if [[ ${TASK} == "pyspark" ]]; then
     exit 0
 fi
 
+if [[ ${TASK} == "vaex" ]]; then
+    pip install -e '.[vaex]'
+    pytest plugin_tests/h_vaex
+    exit 0
+fi
+
 if [[ ${TASK} == "tests" ]]; then
     pip install .
     pytest \
