@@ -94,10 +94,12 @@ setup(
             "uvicorn",
         ],
         "diskcache": ["diskcache"],
+        "cli": ["typer"],
     },
     entry_points={
         "console_scripts": [
             "h_experiments = hamilton.plugins.h_experiments.__main__:main",
+            "hamilton = hamilton.cli.__main__:cli",
         ]
     },
     # Relevant project URLs
