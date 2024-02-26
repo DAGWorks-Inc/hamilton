@@ -45,7 +45,7 @@ def diff(
         reference_map=reference_version,
         current_map=current_version,
     )
-    
+
     full_diff = dict()
     for status, node_names in nodes_diff.items():
         full_diff[status] = dict()
@@ -54,15 +54,11 @@ def diff(
                 func_name = current_node_to_func.get(node_name)
             else:
                 func_name = reference_node_to_func.get(node_name)
-            
+
             full_diff[status][node_name] = func_name
-            
+
     if view:
-        dot = logic.visualize_diff(
-            current_dr=current_dr,
-            reference_dr=reference_dr,
-            **nodes_diff
-        )
+        dot = logic.visualize_diff(current_dr=current_dr, reference_dr=reference_dr, **nodes_diff)
 
         # simplified logic from hamilton.graph.display()
         output_format = "png"

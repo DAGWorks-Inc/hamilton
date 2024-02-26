@@ -4,7 +4,6 @@ from watchdog.events import FileModifiedEvent
 from watchdog.observers import Observer
 from watchdog.tricks import ShellCommandTrick
 
-
 if __name__ == "__main__":
     cmd = sys.argv[1:]
 

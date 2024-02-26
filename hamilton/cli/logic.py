@@ -75,7 +75,7 @@ def hash_hamilton_nodes(dr: driver.Driver) -> Dict[str, str]:
 def map_nodes_to_functions(dr: driver.Driver) -> Dict[str, str]:
     """Get a mapping from node name to Hamilton function name"""
     graph = graph_types.HamiltonGraph.from_graph(dr.graph)
-    
+
     node_to_function = dict()
     for n in graph.nodes:
         node_callable = n.originating_functions[0]
