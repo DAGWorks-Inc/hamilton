@@ -33,7 +33,7 @@ class Response:
 
 class CliState:
     verbose: Optional[bool] = None
-    json_out: Optional[bool] = (None,)
+    json_out: Optional[bool] = None
     dr: Optional[driver.Driver] = None
     dataflow_version: Optional[dict] = None
 
