@@ -19,6 +19,7 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)
     from hamilton import driver
 
+from hamilton import telemetry
 from hamilton.cli import commands
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,7 @@ state = CliState()
 # entrypoint for `hamilton` without command
 @cli.callback()
 def main(
+    ctx: typer.Context,
     verbose: Annotated[
         bool,
         typer.Option(
@@ -65,6 +67,8 @@ def main(
     ] = False,
 ):
     """Hamilton CLI"""
+    if telemetry.is_telemetry_enabled():
+        telemetry.create_and_send_cli_event(ctx.invoked_subcommand)
     state.verbose = verbose
     state.json_out = json_out
     logger.debug(f"verbose set to {verbose}")
