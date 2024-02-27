@@ -48,6 +48,8 @@ DRIVER_FUNCTION = "os_hamilton_driver_function_call"
 DATAFLOW_FUNCTION = "os_hamilton_dataflow_function_call"
 DATAFLOW_DOWNLOAD = "os_hamilton_dataflow_download_call"
 DATAFLOW_IMPORT = "os_hamilton_dataflow_import_call"
+CLI_COMMAND = "os_hamilton_cli_command"
+EXPERIMENT_SERVER = "os_hamilton_experiment_server"
 TIMEOUT = 2
 MAX_COUNT_SESSION = 1000
 
@@ -496,3 +498,38 @@ def get_result_builder_name(adapter: lifecycle_base.LifecycleAdapterSet) -> str:
     else:
         result_builder_name = "custom_builder"
     return result_builder_name
+
+
+def create_and_send_cli_event(command: str):
+    """Function that creates JSON and sends to track CLI usage.
+
+    :param command: the CLI command run.
+    """
+    event = {
+        "api_key": API_KEY,
+        "event": CLI_COMMAND,
+        "properties": {},
+    }
+    event["properties"].update(BASE_PROPERTIES)
+
+    payload = {
+        "command": command,
+    }
+    event["properties"].update(payload)
+    send_event_json(event)
+
+
+def create_and_send_expt_server_event(step: str):
+    """Function that creates JSON and sends to track experiment server usage."""
+    event = {
+        "api_key": API_KEY,
+        "event": EXPERIMENT_SERVER,
+        "properties": {},
+    }
+    event["properties"].update(BASE_PROPERTIES)
+    if step in ["startup", "shutdown"]:
+        payload = {
+            "step": step,
+        }
+        event["properties"].update(payload)
+    send_event_json(event)
