@@ -43,7 +43,7 @@ def data_split(
     feature_set: ir.Table,
     n_splits: int = 3,
 ) -> Parallelizable[tuple]:
-    ids = feature_set.rowid().to_pandas()
+    ids = feature_set.id.to_pandas()
     folds = KFold(n_splits=n_splits)
     for train_idx, val_idx in folds.split(ids):
         yield train_idx.tolist(), val_idx.tolist()
@@ -64,8 +64,8 @@ def prepare_data(
 ) -> dict:
     train_idx, val_idx = data_split
     
-    train = feature_set.filter(ibis._.rowid().isin(train_idx))
-    test = feature_set.filter(ibis._.rowid().isin(val_idx))
+    train = feature_set.filter(ibis._.id.isin(train_idx))
+    test = feature_set.filter(ibis._.id.isin(val_idx))
     
     transform = preprocessing_recipe.fit(train, outcomes=[label])
     
@@ -115,8 +115,8 @@ def cross_validation_fold_collection(
     return list(cross_validation_fold)
 
 
-def prediction_df(cross_validation_fold_collection: list) -> pd.DataFrame:
-    return #pd.DataFrame.from_dict(dict(y_true=y, y_pred=y_pred), orient="columns")
+# def prediction_df(cross_validation_fold_collection: list) -> pd.DataFrame:
+#     return #pd.DataFrame.from_dict(dict(y_true=y, y_pred=y_pred), orient="columns")
 
 
 def store_predictions(prediction_df: pd.DataFrame) -> bool:
@@ -137,3 +137,38 @@ def full_model(
     
     base_model.fit(X, y)
     return base_model
+
+
+if __name__ == "__main__":
+    from hamilton import driver
+    import model_training
+    import table_dataflow
+    
+    dr = (
+        driver.Builder()
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .with_modules(model_training, table_dataflow)
+        .with_config(dict(model="linear"))
+        .build()
+    )
+    
+    inputs=dict(
+        raw_data_path="../data_quality/simple/Absenteeism_at_work.csv",
+        feature_selection=[
+            "id", 
+            "has_children", "has_pet", "is_summer_brazil",
+            "service_time", "seasons", "disciplinary_failure",
+            "absenteeism_time_in_hours",
+        ],
+        condition=ibis.ifelse(ibis._.has_pet == 1, True, False),
+        label="absenteeism_time_in_hours"
+    )
+    
+    final_vars = ["cross_validation_fold_collection"]
+    
+    res = dr.execute(final_vars, inputs=inputs)
+    
+    # df = res["feature_set"].to_pandas()
+    print(res)
+    breakpoint()
+    print()

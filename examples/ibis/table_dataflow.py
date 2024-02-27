@@ -57,7 +57,6 @@ def feature_table(raw_table: ir.Table) -> ir.Table:
         has_children=(ibis.ifelse(_.son > 0, 1, 0)),
         has_pet=ibis.ifelse(_.pet > 0, 1, 0),
         is_summer_brazil=_.month_of_absence.isin([1, 2, 12]).cast(int),
-        age_normalized=(_.age - _.age.mean()) / _.age.std(),
     )
     
     
@@ -84,7 +83,7 @@ if __name__ == "__main__":
     inputs=dict(
         raw_data_path="../data_quality/simple/Absenteeism_at_work.csv",
         feature_selection=[
-            "id", "has_children", "has_pet", "is_summer_brazil", "age_normalized",
+            "id", "has_children", "has_pet", "is_summer_brazil",
             "service_time", "seasons", "disciplinary_failure", "absenteeism_time_in_hours",
         ],
         condition=ibis.ifelse(_.has_pet == 1, True, False)

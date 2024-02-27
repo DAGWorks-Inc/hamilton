@@ -25,7 +25,7 @@ from hamilton.plugins import ibis_extensions
 
 RAW_COLUMNS = [
     'id', 'reason_for_absence', 'month_of_absence', 'day_of_the_week',
-    'age', 'disciplinary_failure', 'son', "seasons",
+    'age', 'disciplinary_failure', 'son', "seasons", "service_time",
     'pet', 'absenteeism_time_in_hours'
 ]
 
@@ -58,13 +58,8 @@ def age_mean(age: ir.Column) -> ir.Scalar:
     return age.mean()
 
 
-# depends on a column and a scalar
-def age_normalized(age: ir.Column, age_mean: ir.Scalar) -> ir.Column:
-    """Zero mean unit variance value of age"""
-    return ((age - age_mean) / age.std())
-
-
 def feature_table(
+    raw_data: ir.Table,
     id: ir.Column,
     service_time: ir.Column,
     disciplinary_failure: ir.Column,
@@ -72,18 +67,16 @@ def feature_table(
     has_children: ir.Column,
     has_pet: ir.Column,
     is_summer_brazil: ir.Column,
-    age_normalized: ir.Column,
     absenteeism_time_in_hours: ir.Column,
 ) -> ir.Table:
-    return ibis.table().mutate(
-        id=id,
+    t = id.as_table()
+    return t.mutate(
         seasons=seasons,
         service_time=service_time,
         disciplinary_failure=disciplinary_failure,
         has_children=has_children,
         has_pet=has_pet,
         is_summer_brazil=is_summer_brazil,
-        age_normalized=age_normalized,
         absenteeism_time_in_hours=absenteeism_time_in_hours,
     )
     
@@ -93,11 +86,7 @@ def feature_set(
     feature_selection: list[str],
     condition: Optional[ibis.common.deferred.Deferred] = None,
 ) -> ir.Table:
-    """Select columns based on list of columns
-    
-    NOTE trying to select a column that doesn't exist won't
-    throw an exception
-    """
+    """Select columns based on list of columns"""
     return feature_table[feature_selection].filter(condition)
 
 
@@ -109,8 +98,10 @@ if __name__ == "__main__":
     inputs=dict(
         raw_data_path="../data_quality/simple/Absenteeism_at_work.csv",
         feature_selection=[
-            "id", "has_children", "has_pet", "is_summer_brazil", "age_normalized",
+            "id", 
+            "has_children", "has_pet", "is_summer_brazil",
             "service_time", "seasons", "disciplinary_failure",
+            "absenteeism_time_in_hours",
         ],
         condition=ibis.ifelse(_.has_pet == 1, True, False)
     )
