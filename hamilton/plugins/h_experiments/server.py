@@ -2,6 +2,7 @@ import functools
 import itertools
 import json
 import os
+from typing import Union
 
 import pandas as pd
 from fastapi import FastAPI
@@ -117,8 +118,8 @@ class RunFilter(BaseModel):
 
 @app.get("/api/runs", response_model=FastUI, response_model_exclude_none=True)
 def runs_overview(
-    experiment: str | None = None,
-    graph_version: int | None = None,
+    experiment: Union[str, None] = None,
+    graph_version: Union[int, None] = None,
 ) -> list[AnyComponent]:
     """RunOverview page with filters for the table"""
 
@@ -335,7 +336,9 @@ def artifact_tabs(run: RunMetadata) -> list[AnyComponent]:
 
 
 @app.get("/api/artifacts/{run_id}", response_model=FastUI, response_model_exclude_none=True)
-def run_artifacts(run_id: str, artifact_id: int = 0, page: int | None = None) -> list[AnyComponent]:
+def run_artifacts(
+    run_id: str, artifact_id: int = 0, page: Union[int, None] = None
+) -> list[AnyComponent]:
     """Individual Run > Artifact"""
     run = run_lookup()[run_id]
 
