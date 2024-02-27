@@ -42,6 +42,6 @@ if re.match(r"^sf-hamilton-(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$", current_t
 else:
     version = "latest"
 language = "en"
-html_baseurl = f"https://hamilton.dagworks.io/{language}/{version}/"
+html_baseurl = "https://hamilton.dagworks.io/"
 html_extra_path = ["robots.txt"]
 # ---
