@@ -186,7 +186,7 @@ def backend_connection__duckdb(
     return ibis.duckdb.connect(connection_string)
 
 @config.when(backend="bigquery")
-def insert_results__bigquery(
+def backend_connection__bigquery(
     project_id: str,
     dataset_id: str,
 ) -> ibis.backends.BaseBackend:
