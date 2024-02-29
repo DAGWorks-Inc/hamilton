@@ -19,7 +19,7 @@ import ibis
 raw_data_path = ...
 feature_selection = [
     "id", "has_children", "has_pet", "is_summer_brazil",
-    "service_time", "seasons", "disciplinary_failure", 
+    "service_time", "seasons", "disciplinary_failure",
     "absenteeism_time_in_hours",
 ],
 
@@ -44,13 +44,13 @@ feature_df = feature_set.to_pandas()
 Ibis has an SQL-like syntax and supports chaining operations, allowing for powerful queries in a few lines of code. Conversely, there's a risk of sprawling complexity as expressions as statements are appended, making them harder to test and debug. Preventing this issue requires a lot of upfront discipline and refactoring.
 
 ### 2. Promote development code to production
-Ibis alleviates a major pain point by enabling data transformations to work across backends. However, moving from dev to prod still requires some code changes such as changing backend connectors, swapping unsupported operators, adding some orchestration and logging execution. This is outside the scope of the Ibis project and is expected to be enabled by other means. 
+Ibis alleviates a major pain point by enabling data transformations to work across backends. However, moving from dev to prod still requires some code changes such as changing backend connectors, swapping unsupported operators, adding some orchestration and logging execution. This is outside the scope of the Ibis project and is expected to be enabled by other means.
 
 ## Hamilton + Ibis
 Hamilton was initially developed to structure pandas code into modular pieces. This helps managing large feature catalogs and has been adopted [by multiple organizations](../../main.md#who-is-using-hamilton) for feature engineering. This directly translate to organizing Ibis code. In addition to the usual benefits of Hamilton such as facilitating feature reusability, code reviews, and documentation, modular code is especially beneficial for Ibis because:
 
 - Well-scoped functions with type annotations and docstring help migrate to Ibis and onboard new Ibis users.
-- Unit testing and data validation becomes more important when working across backends since the [operation coverage varies](https://ibis-project.org/support_matrix) and bugs may arise. 
+- Unit testing and data validation becomes more important when working across backends since the [operation coverage varies](https://ibis-project.org/support_matrix) and bugs may arise.
 
 As an example, we'll refactor the above code to use Hamilton. Note that Ibis expression types are subclasses of `ibis.expr.types` which we import as `ir`.
 
@@ -152,7 +152,7 @@ def feature_set(
 ```
 ![ibis + hamilton column-level](ibis_column.png)
 
-> 💡 If your code is already structured with Hamilton, migrating from pandas to Ibis should be easy!  
+> 💡 If your code is already structured with Hamilton, migrating from pandas to Ibis should be easy!
 
 ### Orchestration
 
