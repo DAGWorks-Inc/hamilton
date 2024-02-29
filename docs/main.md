@@ -51,6 +51,7 @@ The following diagram gives a simplified overview of the main components of Hami
 
 **Execution**. When requesting variables, the `Driver` establishes an execution plan to only compute the required functions. Then, results are gathered and returned to the user.
 
+(who-is-using-hamilton)=
 # Who is using Hamilton?
 ![](./_static/hamilton_users.jpg)
 
