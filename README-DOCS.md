@@ -11,7 +11,7 @@ pip install -r requirements-docs.txt
 ```
 and then one of the following to build and view the documents:
 ```bash
-sphinx-build -b dirhtml -a docs /tmp/mydocs
+sphinx-build -b dirhtml -W -E -T -a docs /tmp/mydocs
 python -m http.server --directory /tmp/mydocs
 ```
 or for auto rebuilding do:
