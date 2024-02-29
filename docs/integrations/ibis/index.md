@@ -47,7 +47,7 @@ Ibis has an SQL-like syntax and supports chaining operations, allowing for power
 Ibis alleviates a major pain point by enabling data transformations to work across backends. However, moving from dev to prod still requires some code changes such as changing backend connectors, swapping unsupported operators, adding some orchestration and logging execution. This is outside the scope of the Ibis project and is expected to be enabled by other means.
 
 ## Hamilton + Ibis
-Hamilton was initially developed to structure pandas code into modular pieces. This helps managing large feature catalogs and has been adopted [by multiple organizations](#hamilton-users) for feature engineering. This directly translate to organizing Ibis code. In addition to the usual benefits of Hamilton such as facilitating feature reusability, code reviews, and documentation, modular code is especially beneficial for Ibis because:
+Hamilton was initially developed to structure pandas code into modular pieces. This helps managing large feature catalogs and has been adopted by multiple organizations for feature engineering. This directly translate to organizing Ibis code. In addition to the usual benefits of Hamilton such as facilitating feature reusability, code reviews, and documentation, modular code is especially beneficial for Ibis because:
 
 - Well-scoped functions with type annotations and docstring help migrate to Ibis and onboard new Ibis users.
 - Unit testing and data validation becomes more important when working across backends since the [operation coverage varies](https://ibis-project.org/support_matrix) and bugs may arise.
