@@ -1,6 +1,11 @@
 import pandas as pd
 
-from hamilton.function_modifiers import extract_columns
+from hamilton.function_modifiers import extract_columns, config
+
+
+@config.when(config_exists="true")
+def config_when() -> None:
+    return
 
 
 def customers_df(customers_path: str = "customers.csv") -> pd.DataFrame:

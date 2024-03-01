@@ -5,14 +5,14 @@ from hamilton import ad_hoc_utils, driver
 from hamilton.cli import logic
 
 
-def build(modules: List[Path], config: Optional[dict] = None):
-    config = config if config else {}
+def build(modules: List[Path], config: Path):#Optional[dict] = None):
+    cfg = logic.load_config(config)   #config if config else {}
     module_objects = [ad_hoc_utils.module_from_source(p.read_text()) for p in modules]
     return (
         driver.Builder()
         .enable_dynamic_execution(allow_experimental_mode=True)
         .with_modules(*module_objects)
-        .with_config(config)
+        .with_config(cfg)
         .build()
     )
 

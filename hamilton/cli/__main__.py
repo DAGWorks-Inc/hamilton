@@ -2,10 +2,11 @@ import dataclasses
 import json
 import logging
 import sys
+import textwrap
 import warnings
 from pathlib import Path
 from pprint import pprint
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 if sys.version_info < (3, 9):
     from typing_extensions import Annotated
@@ -36,7 +37,6 @@ class CliState:
     verbose: Optional[bool] = None
     json_out: Optional[bool] = None
     dr: Optional[driver.Driver] = None
-    dataflow_version: Optional[dict] = None
 
 
 cli = typer.Typer(rich_markup_mode="rich")
@@ -88,10 +88,21 @@ def build(
             resolve_path=True,
         ),
     ],
+    config: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--config",
+            "-c",
+            help="Driver config from [.json, .ini, .py]",
+            exists=False,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+        ),
+    ] = None,
 ):
     """Build a single Driver with MODULES"""
     try:
-        config = dict()
         logger.debug("calling commands.build()")
         state.dr = commands.build(modules=modules, config=config)
     except Exception as e:
@@ -249,6 +260,18 @@ def view(
             resolve_path=True,
         ),
     ],
+    config: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--config",
+            "-c",
+            help="Driver config from [.json, .ini, .py]",
+            exists=False,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+        ),
+    ] = None,
     output_file_path: Annotated[
         Path,
         typer.Option(
@@ -265,7 +288,7 @@ def view(
     """Build and visualize dataflow with MODULES"""
     if state.dr is None:
         # TODO add config
-        ctx.invoke(build, ctx=ctx, modules=modules)
+        ctx.invoke(build, ctx=ctx, modules=modules, config=config)
 
     try:
         logger.debug("calling commands.view()")
