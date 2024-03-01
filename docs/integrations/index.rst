@@ -6,6 +6,7 @@ This section showcases how Hamilton integrates with popular frameworks.
 
 .. toctree::
     fastapi
+    ibis/index
     streamlit
     Airflow <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/airflow>
     Dask <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/dask>
