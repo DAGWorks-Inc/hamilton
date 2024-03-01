@@ -46,7 +46,7 @@ def data_split(
     ids = feature_set.id.to_pandas()
     folds = KFold(n_splits=n_splits)
     for train_idx, val_idx in folds.split(ids):
-        yield train_idx.tolist(), val_idx.tolist()
+        yield train_idx, val_idx
 
 
 @extract_fields(dict(
@@ -54,7 +54,6 @@ def data_split(
     X_val=np.ndarray,
     y_train=np.ndarray,
     y_val=np.ndarray,
-    fitted_recipe=ibisml.RecipeTransform,
 ))
 def prepare_data(
     feature_set: ir.Table,
@@ -64,25 +63,25 @@ def prepare_data(
 ) -> dict:
     train_idx, val_idx = data_split
     
-    train = feature_set.filter(ibis._.id.isin(train_idx))
-    test = feature_set.filter(ibis._.id.isin(val_idx))
+    train_set = feature_set#.filter(ibis._.id.isin(train_idx))
+    val_set = feature_set#.filter(ibis._.id.isin(val_idx))
     
-    transform = preprocessing_recipe.fit(train, outcomes=[label])
+    transform = preprocessing_recipe.fit(train_set, outcomes=[label])
     
-    df_train = transform(train).to_pandas()
-    X_train = df_train[transform.features]
-    y_train = df_train[transform.outcomes]
+    train = transform(train_set)
+    df_train = train.to_pandas()
+    X_train = df_train[train.features]
+    y_train = df_train[train.outcomes]
     
-    df_test = transform(test).to_pandas()
-    X_test = df_test[transform.features]
-    y_test = df_test[transform.outcomes]
+    df_test = transform(val_set).to_pandas()
+    X_val = df_test[train.features]
+    y_val = df_test[train.outcomes]
     
     return dict(
         X_train=X_train,
         y_train=y_train,
-        X_test=X_test,
-        y_test=y_test,
-        fitted_recipe=transform,
+        X_val=X_val,
+        y_val=y_val,
     )
 
   
@@ -100,47 +99,65 @@ def cross_validation_fold(
     model.fit(X_train, y_train)
     
     y_val_pred = model.predict(X_val)
-    metric = mean_squared_error(y_val, y_val_pred)
+    score = mean_squared_error(y_val, y_val_pred)
 
     return dict(
-        val_idx=val_idx,
-        y_val_pred=y_val_pred,
-        metric=metric
+        id=val_idx,
+        y_true=y_val,
+        y_pred=y_val_pred,
+        score=score
+    )
+
+@extract_fields(dict(
+    cross_validation_scores=list[float],
+    cross_validation_preds=list[dict],
+))
+def cross_validation_fold_collection(cross_validation_fold: Collect[dict]) -> dict:
+    scores, preds = [], []
+    for fold in cross_validation_fold:
+        scores.append(fold.pop("score"))
+        preds.append(fold)
+    return dict(
+        cross_validation_scores=scores,
+        cross_validation_preds=preds,
     )
 
 
-def cross_validation_fold_collection(
-    cross_validation_fold: Collect[dict]
-) -> list[dict]:
-    return list(cross_validation_fold)
+def prediction_table(cross_validation_preds: list[dict]) -> ir.Table:
+    return ibis.memtable(cross_validation_preds)
 
 
-# def prediction_df(cross_validation_fold_collection: list) -> pd.DataFrame:
-#     return #pd.DataFrame.from_dict(dict(y_true=y, y_pred=y_pred), orient="columns")
-
-
-def store_predictions(prediction_df: pd.DataFrame) -> bool:
+def store_predictions(prediction_table: ir.Table) -> bool:
     return True
 
 
-def full_model(
+@extract_fields(dict(
+    full_model=BaseEstimator,
+    fitted_recipe=ibisml.RecipeTransform,
+))
+def train_full_model(
     feature_set: ir.Table,
     label: str,
     preprocessing_recipe: ibisml.Recipe,
     base_model: BaseEstimator,
-) -> BaseEstimator:
+) -> dict:
     transform = preprocessing_recipe.fit(feature_set, outcomes=[label])
     
-    df = transform(feature_set).to_pandas()
-    X = df[transform.features]
-    y = df[transform.outcomes]
+    data = transform(feature_set)
+    df = data.to_pandas()
+    X = df[data.features]
+    y = df[data.outcomes]
     
     base_model.fit(X, y)
-    return base_model
+    return dict(
+        full_model=base_model,
+        fitted_recipe=transform,
+    )
 
 
 if __name__ == "__main__":
     from hamilton import driver
+    from hamilton.execution.executors import SynchronousLocalTaskExecutor
     import model_training
     import table_dataflow
     
@@ -148,6 +165,7 @@ if __name__ == "__main__":
         driver.Builder()
         .enable_dynamic_execution(allow_experimental_mode=True)
         .with_modules(model_training, table_dataflow)
+        .with_remote_executor(SynchronousLocalTaskExecutor())
         .with_config(dict(model="linear"))
         .build()
     )
@@ -163,12 +181,16 @@ if __name__ == "__main__":
         condition=ibis.ifelse(ibis._.has_pet == 1, True, False),
         label="absenteeism_time_in_hours"
     )
-    
-    final_vars = ["cross_validation_fold_collection"]
+    dr.visualize_execution(
+        final_vars=["cross_validation_scores", "cross_validation_preds", "full_model", "fitted_recipe"],
+        output_file_path="cross_validation.png",
+        inputs=inputs,
+    )
+    final_vars = ["cross_validation_scores"]
     
     res = dr.execute(final_vars, inputs=inputs)
     
     # df = res["feature_set"].to_pandas()
-    print(res)
+    print(res["cross_validation_scores"])#.to_pandas())
     breakpoint()
     print()

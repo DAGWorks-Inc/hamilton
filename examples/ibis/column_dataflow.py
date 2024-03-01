@@ -1,92 +1,59 @@
-"""Basic usage of Hamilton + Ibis with column level lineage
-
-This approach uses Hamilton functions to define column level expressions for better lineage.
-A join step with `.mutate()` is required to assemble columns into a single table. The code 
-is not much more verbose than the "table approach" and it provides better documentation and
-modularity. Again, you can execute expressions in Hamilton functions
-or after they are returned by the Driver.
-
-Key Ibis concepts:
-- expressions aren't executed until explicitly calling `.to_pandas()` or equivalent.
-- use `ibis.expr.types as ir` to type annotate your functions
-- `ibis._` or `from ibis import _` can be used in expression to refer to the current table
-- .mutate(col1=, col2=, ...) allows to assign new column or overwrite existing one 
-"""
 from typing import Optional
 
-
 import ibis
-from ibis import _
 import ibis.expr.types as ir
-
 from hamilton.function_modifiers import extract_columns
 from hamilton.plugins import ibis_extensions
 
+# extract specific columns from the table
+@extract_columns("son", "pet", "month_of_absence")
+def raw_table(raw_data_path: str) -> ir.Table:
+    """Load the CSV found at `raw_data_path` into a Table expression
+    and format columns to snakecase
+    """
+    return (
+        ibis.read_csv(sources=raw_data_path, table_name="absenteism")
+        .rename("snake_case")
+    )
 
-RAW_COLUMNS = [
-    'id', 'reason_for_absence', 'month_of_absence', 'day_of_the_week',
-    'age', 'disciplinary_failure', 'son', "seasons", "service_time",
-    'pet', 'absenteeism_time_in_hours'
-]
-
-
-@extract_columns(*RAW_COLUMNS)
-def raw_data(raw_data_path: str) -> ir.Table:
-    """Load CSV into Table expression and rename columns to snakecase"""
-    return ibis.read_csv(sources=raw_data_path, table_name="absenteism").rename("snake_case")
-
-
-def has_children(son: ir.Column) -> ir.Column:
-    """Single variable that says whether someone has any children or not."""
-    return ibis.ifelse(son > 0, 1, 0).cast(bool)
-
-
-def has_pet(pet: ir.Column) -> ir.Column:
-    """Single variable that says whether someone has any pets or not."""
-    return ibis.ifelse(pet > 0, 1, 0).cast(bool)
-
+# accesses a single column from `raw_table`
+def has_children(son: ir.Column) -> ir.BooleanColumn:
+    """True if someone has any children"""
+    return ibis.ifelse(son > 0, True, False)
 
 # narrows the return type from `ir.Column` to `ir.BooleanColumn`
+def has_pet(pet: ir.Column) -> ir.BooleanColumn:
+    """True if someone has any pets"""
+    return ibis.ifelse(pet > 0, True, False).cast(bool)
+
+# typing and docstring provides business context to features
 def is_summer_brazil(month_of_absence: ir.Column) -> ir.BooleanColumn:
-    """Boolean if it is summer in Brazil this month"""
+    """True if it is summer in Brazil during this month
+
+    People in the northern hemisphere are likely to take vacations
+    to warm places when it's cold locally
+    """
     return month_of_absence.isin([1, 2, 12])
 
-
-# returns a scalar, not a ir.Column
-def age_mean(age: ir.Column) -> ir.Scalar:
-    """Average of age"""
-    return age.mean()
-
-
 def feature_table(
-    raw_data: ir.Table,
-    id: ir.Column,
-    service_time: ir.Column,
-    disciplinary_failure: ir.Column,
-    seasons: ir.Column,
-    has_children: ir.Column,
-    has_pet: ir.Column,
-    is_summer_brazil: ir.Column,
-    absenteeism_time_in_hours: ir.Column,
+    raw_table: ir.Table,
+    has_children: ir.BooleanColumn,
+    has_pet: ir.BooleanColumn,
+    is_summer_brazil: ir.BooleanColumn,
 ) -> ir.Table:
-    t = id.as_table()
-    return t.mutate(
-        seasons=seasons,
-        service_time=service_time,
-        disciplinary_failure=disciplinary_failure,
+    """Join computed features to the `raw_data` table"""
+    return raw_table.mutate(
         has_children=has_children,
         has_pet=has_pet,
         is_summer_brazil=is_summer_brazil,
-        absenteeism_time_in_hours=absenteeism_time_in_hours,
     )
-    
 
 def feature_set(
     feature_table: ir.Table,
     feature_selection: list[str],
     condition: Optional[ibis.common.deferred.Deferred] = None,
 ) -> ir.Table:
-    """Select columns based on list of columns"""
+    """Select feature columns and filter rows"""
     return feature_table[feature_selection].filter(condition)
 
 
@@ -103,12 +70,10 @@ if __name__ == "__main__":
             "service_time", "seasons", "disciplinary_failure",
             "absenteeism_time_in_hours",
         ],
-        condition=ibis.ifelse(_.has_pet == 1, True, False)
+        condition=ibis.ifelse(ibis._.has_pet == 1, True, False)
     )
     
-    final_vars = ["feature_set"]
-    
-    res = dr.execute(final_vars, inputs=inputs)
+    res = dr.execute(["feature_set"], inputs=inputs)
     
     df = res["feature_set"].to_pandas()
     print(df.head())
