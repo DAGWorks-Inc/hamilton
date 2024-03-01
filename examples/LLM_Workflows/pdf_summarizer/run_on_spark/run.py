@@ -19,7 +19,7 @@ def my_spark_job(spark: SparkSession, openai_gpt_model: str, content_type: str, 
     # replace this with SQL or however you'd get the data you need in.
     pandas_df = pd.DataFrame(
         # TODO: update this to point to a PDF or two.
-        {"pdf_source": ["a/path/to/a/PDF/CDMS2022-hamilton-paper.pdf"]}
+        {"pdf_source": ["CDMS_HAMILTON_PAPER.pdf"]}
     )
     df = spark.createDataFrame(pandas_df)
     # get the modules that contain the UDFs
@@ -27,7 +27,14 @@ def my_spark_job(spark: SparkSession, openai_gpt_model: str, content_type: str, 
     driver_config = dict(file_type="pdf")
     # create the Hamilton driver
     adapter = h_spark.PySparkUDFGraphAdapter()
-    dr = driver.Driver(driver_config, *modules, adapter=adapter)  # can pass in multiple modules
+
+    dr = (
+        driver.Builder()
+        .with_config(driver_config)
+        .with_modules(*modules)  # can pass in multiple modules
+        .with_adapters(adapter)
+        .build()
+    )
     # create inputs to the UDFs - this needs to be column_name -> spark dataframe.
     execute_inputs = {col: df for col in df.columns}
     # add in any other scalar inputs/values/objects needed by the UDFs
@@ -46,7 +53,11 @@ def my_spark_job(spark: SparkSession, openai_gpt_model: str, content_type: str, 
     ]
     # visualize execution of what is going to be appended
     dr.visualize_execution(
-        cols_to_append, "./spark_summarization.dot", {"format": "png"}, inputs=execute_inputs
+        cols_to_append,
+        "./spark_summarization.dot",
+        {"format": "png"},
+        inputs=execute_inputs,
+        deduplicate_inputs=True,
     )
     # tell Hamilton to tell Spark what to do
     df = dr.execute(cols_to_append, inputs=execute_inputs)
@@ -67,7 +78,8 @@ if __name__ == "__main__":
     # run the job
     _df = my_spark_job(spark, "gpt-3.5-turbo-0613", "Scientific article", "Can you ELI5 the paper?")
     # show the dataframe & thus make spark compute something
+    _df.cache()
     _df.show()
     # you can also save the dataframe as a json file, parquet, etc.
-    # _df.write.json("processed_pdfs")
+    _df.write.json("processed_pdfs")
     spark.stop()
