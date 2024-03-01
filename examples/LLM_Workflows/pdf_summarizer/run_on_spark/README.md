@@ -5,7 +5,7 @@ folder, on Spark. This is useful if you want to run the same dataflow on a large
 or have to run it on a cluster. Importantly this means you don't have to rewrite your
 code, or have to change where/how you develop!
 
-![Summarization dataflow](spark_summarization.dot.png)
+![Summarization dataflow](spark_summarization.png)
 
 # File organization
  - `summarization.py` this should be a carbon copy of the one in the backend folder.

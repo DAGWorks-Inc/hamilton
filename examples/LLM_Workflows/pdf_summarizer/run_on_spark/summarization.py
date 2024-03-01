@@ -3,6 +3,8 @@ import tempfile
 from typing import Generator, Union
 
 import openai
+
+client = openai.OpenAI()
 import tiktoken
 from PyPDF2 import PdfReader
 from tenacity import retry, stop_after_attempt, wait_random_exponential
@@ -98,10 +100,10 @@ def _summarize_chunk(content: str, template_prompt: str, openai_gpt_model: str) 
     """
     # NEED export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
     prompt = template_prompt + content
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model=openai_gpt_model, messages=[{"role": "user", "content": prompt}], temperature=0
     )
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
 
 
 def summarized_chunks(
@@ -155,7 +157,7 @@ def summarized_text(
     :param openai_gpt_model: which openai gpt model to use.
     :return: the string response from the openai API.
     """
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model=openai_gpt_model,
         messages=[
             {
@@ -165,7 +167,7 @@ def summarized_text(
         ],
         temperature=0,
     )
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
 
 
 if __name__ == "__main__":
