@@ -168,7 +168,7 @@ If your code is already structured with Hamilton, migrating from pandas to Ibis 
 ### Orchestrate Ibis anywhere
 Hamilton is ideal orchestrate for Ibis because it has the lightest footprint and will run anywhere Python does (script, notebook, FastAPI, pyodide, etc.) In fact, the Hamilton library only has 4 dependencies. You don't need "framework code" to get started, just plain Python functions. When moving to production, Hamilton has all the necessary features to complement Ibis such as swapping components, configurations, and lifecycle hooks for logging, alerting, and telemetry.
 
-A simple usage pattern of Hamilton + Ibis is to use the [`@config.when` function modifier](../../concepts/function-modifiers.rst). In the following example, we have alternative implementations for the backend connection, which will be used for computing and storing results. When running your code, specify in your config `backend="duckdb"` or `backend="bigquer"` to swap between the two.
+A simple usage pattern of Hamilton + Ibis is to use the [`@config.when` function modifier](../../concepts/function-modifiers.rst). In the following example, we have alternative implementations for the backend connection, which will be used for computing and storing results. When running your code, specify in your config `backend="duckdb"` or `backend="bigquery"` to swap between the two.
 
 ```python
 # ibis_dataflow.py
@@ -205,7 +205,7 @@ def insert_results(
 ):
     """Execute expression and insert results"""
     backend_connection.insert(
-        table_name=table_name,
+        table_name=table_name,P
         obj=result_table
     )
 ```
@@ -218,12 +218,16 @@ A potential architecture for Ibis + Hamilton would be running CRON jobs on GitHu
 Leveraging DuckDB as the default backend, Hamilton users migrating to Ibis should immediately find performance improvements both for local dev and production. In addition, the portability of Ibis has the potential to greatly reduce development time.
 
 ### Atomic data transformation documentation
-Hamilton can directly produce dataflow visualization from code, helping with project documentation. Ibis pushes this one step further by providing a detailed view of the query plan and schemas. See this Ibis visualization for the column-level Hamilton dataflow defined above. It includes all renaming, type casting, and transformations steps. (Please open the image in a new tab and zoom in 🔎)
+Hamilton can directly produce a dataflow visualization from code, helping with project documentation. Ibis pushes this one step further by providing a detailed view of the query plan and schemas. See this Ibis visualization for the column-level Hamilton dataflow defined above. It includes all renaming, type casting, and transformations steps (Please open the image in a new tab and zoom in 🔎).
 
 ![ibis_full_viz](ibis_plan.png)
 
 ### Working across rows with user-defined functions (UDFs)
-Hamilton and most backends are designed to work primarily on tables and columns, but sometimes you'd like to operate over a row (think of `pd.DataFrame.apply()`). However, pivoting tables is costly and manually iterating over rows to collect values and create a new column is quickly inconvenient. With [using user-defined functions (UDFs)](https://ibis-project.org/reference/scalar-udfs), Ibis makes it to execute arbitrary Python code on rows directly on the backend.
+Hamilton and most backends are designed to work primarily on tables and columns, but sometimes you'd like to operate over a row (think of `pd.DataFrame.apply()`). However, pivoting tables is costly and manually iterating over rows to collect values and create a new column is quickly inconvenient. With [using scalar user-defined functions (UDFs)](https://ibis-project.org/reference/scalar-udfs), Ibis makes it to execute arbitrary Python code on rows directly on the backend.
+
+``` {note}
+Using `@ibis.udf.scalar.python` creates a non-vectorized function that iterates row-by-row. See [the docs](https://ibis-project.org/reference/scalar-udfs) to use backend-specific UDFs with `@ibis.udf.scalar.builtin` and create vectorized scalar UDFs.
+```
 
 For instance, you could [embed rows of a text column using an LLM API](https://ibis-project.org/posts/duckdb-for-rag/) without leaving the datawarehouse.
 
@@ -269,7 +273,7 @@ def summaries(documents: ir.Table, prompt_template: str) -> ir.Table
     )
 ```
 
-[](ibis_udf.png)
+![](ibis_udf.png)
 
 ##  Ibis + Hamilton - a natural pairing
 - **What works in dev works in prod**: Ibis and Hamilton allows you to write and structure code data transformations portable across backends for small and big data alike. The two being lightweight libraries, installing dependencies on remote workers is fast and you're unlikely to ever encounter dependency conflicts.
