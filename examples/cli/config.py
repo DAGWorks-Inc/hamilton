@@ -1,3 +1,1 @@
-HAMILTON_CONFIG = dict(
-    config_exists=True
-)
+HAMILTON_CONFIG = dict(config_exists=True)

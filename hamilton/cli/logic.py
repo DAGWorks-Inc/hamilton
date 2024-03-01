@@ -4,12 +4,13 @@ from typing import Dict, List, Union
 
 from hamilton import driver
 
-
 V = "HENLO"
+
 
 def get_git_base_directory() -> str:
     """Get the base path of the current git directory"""
     import subprocess
+
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
@@ -30,6 +31,7 @@ def get_git_base_directory() -> str:
 def get_git_reference(git_relative_path: Union[str, Path], git_reference: str) -> str:
     """Get the source code from the specified file and git reference"""
     import subprocess
+
     try:
         result = subprocess.run(
             ["git", "show", f"{git_reference}:{git_relative_path}"],
@@ -53,7 +55,7 @@ def get_git_reference(git_relative_path: Union[str, Path], git_reference: str) -
 def version_hamilton_functions(module: ModuleType) -> Dict[str, str]:
     """Hash the source code of Hamilton functions from a module"""
     from hamilton import graph_utils
-    
+
     origins_version: Dict[str, str] = dict()
 
     for origin_name, _ in graph_utils.find_functions(module):
@@ -65,8 +67,8 @@ def version_hamilton_functions(module: ModuleType) -> Dict[str, str]:
 
 def hash_hamilton_nodes(dr: driver.Driver) -> Dict[str, str]:
     """Hash the source code of Hamilton functions from nodes in a Driver"""
-    from hamilton import graph_utils, graph_types
-    
+    from hamilton import graph_types, graph_utils
+
     graph = graph_types.HamiltonGraph.from_graph(dr.graph)
 
     nodes_version = dict()
@@ -74,7 +76,7 @@ def hash_hamilton_nodes(dr: driver.Driver) -> Dict[str, str]:
         # is None for config nodes
         if n.originating_functions is None:
             continue
-        
+
         node_origin = n.originating_functions[0]
         origin_hash = graph_utils.hash_source_code(node_origin, strip=True)
         nodes_version[n.name] = origin_hash
@@ -85,7 +87,7 @@ def hash_hamilton_nodes(dr: driver.Driver) -> Dict[str, str]:
 def map_nodes_to_functions(dr: driver.Driver) -> Dict[str, str]:
     """Get a mapping from node name to Hamilton function name"""
     from hamilton import graph_types
-    
+
     graph = graph_types.HamiltonGraph.from_graph(dr.graph)
 
     node_to_function = dict()
@@ -93,7 +95,7 @@ def map_nodes_to_functions(dr: driver.Driver) -> Dict[str, str]:
         # is None for config nodes
         if n.originating_functions is None:
             continue
-        
+
         node_callable = n.originating_functions[0]
         node_to_function[n.name] = node_callable.__name__
 
@@ -103,6 +105,7 @@ def map_nodes_to_functions(dr: driver.Driver) -> Dict[str, str]:
 def hash_dataflow(nodes_version: Dict[str, str]) -> str:
     """Create a dataflow hash from the hashes of its nodes"""
     import hashlib
+
     sorted_nodes = sorted(nodes_version.values())
     return hashlib.sha256(str(sorted_nodes).encode()).hexdigest()
 
@@ -112,7 +115,7 @@ def load_modules_from_git(
 ) -> List[ModuleType]:
     """Dynamically import modules for a git reference"""
     from hamilton import ad_hoc_utils
-    
+
     git_base_dir = Path(get_git_base_directory())
 
     modules = []
@@ -235,8 +238,9 @@ def visualize_diff(
     Uses the union of sets of nodes from driver 1 and driver 2.
     """
     import functools
+
     from hamilton import graph
-    
+
     all_nodes = set(reference_dr.graph.get_nodes()).union(set(current_dr.graph.get_nodes()))
 
     diff_style = functools.partial(
@@ -259,7 +263,7 @@ def visualize_diff(
 def load_config(file_path: Path) -> dict:
     if not file_path.exists():
         raise FileNotFoundError(f"`{file_path}` doesn't exist.")
-    
+
     extension = file_path.suffix
     if extension == ".json":
         config = _read_json_config(file_path)
@@ -276,31 +280,33 @@ def load_config(file_path: Path) -> dict:
 def _read_json_config(file_path: Path) -> dict:
     """"""
     import json
+
     return json.load(file_path.open())
 
 
 def _read_py_config(file_path: Path) -> dict:
     import importlib
-    
+
     spec = importlib.util.spec_from_file_location("cli_config", file_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    
+
     config = getattr(module, "HAMILTON_CONFIG")
     if config is None:
         raise KeyError(f"{file_path} has no `HAMILTON_CONFIG` variable.")
-    
+
     if not isinstance(config, dict):
         raise TypeError(f"`HAMILTON_CONFIG` variable is of type {type(config)} instead of `dict`")
-    
+
     return config
 
 
 def _read_ini_config(file_path: Path) -> dict:
     import configparser
+
     config = configparser.ConfigParser()
     config.read(file_path)
     if "HAMILTON_CONFIG" not in config.sections():
         raise KeyError(f"{file_path} has no `HAMILTON_CONFIG` section.")
-    
-    return {k:v for k, v in config["HAMILTON_CONFIG"].items()}
+
+    return {k: v for k, v in config["HAMILTON_CONFIG"].items()}

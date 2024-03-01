@@ -1,6 +1,6 @@
 import pandas as pd
 
-from hamilton.function_modifiers import extract_columns, config
+from hamilton.function_modifiers import config, extract_columns
 
 
 @config.when(config_exists="true")

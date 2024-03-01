@@ -2,11 +2,10 @@ import dataclasses
 import json
 import logging
 import sys
-import textwrap
 import warnings
 from pathlib import Path
 from pprint import pprint
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 if sys.version_info < (3, 9):
     from typing_extensions import Annotated
