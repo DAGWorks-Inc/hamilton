@@ -125,8 +125,6 @@ def build(
             pprint(response.message)
 
 
-# TODO add option to output diff of nodes and diff of functions
-# since the function diff is what's useful for code reviews / debugging
 @cli.command()
 def diff(
     ctx: typer.Context,
@@ -140,6 +138,18 @@ def diff(
             resolve_path=True,
         ),
     ],
+    config: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--config",
+            "-c",
+            help="Driver config from [.json, .ini, .py]",
+            exists=False,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+        ),
+    ] = None,
     git_reference: Annotated[
         str,
         typer.Option(
@@ -169,7 +179,7 @@ def diff(
 ):
     """Diff between the current MODULES and their specified GIT_REFERENCE"""
     if state.dr is None:
-        ctx.invoke(version, ctx=ctx, modules=modules)
+        ctx.invoke(version, ctx=ctx, modules=modules, config=config)
 
     try:
         logger.debug("calling commands.diff()")
@@ -179,7 +189,7 @@ def diff(
             git_reference=git_reference,
             view=view,
             output_file_path=output_file_path,
-            config=None,
+            config=config,
         )
     except Exception as e:
         response = Response(
@@ -216,10 +226,22 @@ def version(
             resolve_path=True,
         ),
     ],
+    config: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--config",
+            "-c",
+            help="Driver config from [.json, .ini, .py]",
+            exists=False,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+        ),
+    ] = None,
 ):
     """Version NODES and DATAFLOW from dataflow with MODULES"""
     if state.dr is None:
-        ctx.invoke(build, ctx=ctx, modules=modules)
+        ctx.invoke(build, ctx=ctx, modules=modules, config=config)
 
     try:
         logger.debug("calling commands.version()")

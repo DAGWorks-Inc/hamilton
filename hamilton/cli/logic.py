@@ -71,6 +71,10 @@ def hash_hamilton_nodes(dr: driver.Driver) -> Dict[str, str]:
 
     nodes_version = dict()
     for n in graph.nodes:
+        # is None for config nodes
+        if n.originating_functions is None:
+            continue
+        
         node_origin = n.originating_functions[0]
         origin_hash = graph_utils.hash_source_code(node_origin, strip=True)
         nodes_version[n.name] = origin_hash
@@ -86,6 +90,10 @@ def map_nodes_to_functions(dr: driver.Driver) -> Dict[str, str]:
 
     node_to_function = dict()
     for n in graph.nodes:
+        # is None for config nodes
+        if n.originating_functions is None:
+            continue
+        
         node_callable = n.originating_functions[0]
         node_to_function[n.name] = node_callable.__name__
 
@@ -248,11 +256,10 @@ def visualize_diff(
     )
 
 
-def load_config(file_path: Union[Path, str]) -> dict:
-    if not Path(file_path).exists():
+def load_config(file_path: Path) -> dict:
+    if not file_path.exists():
         raise FileNotFoundError(f"`{file_path}` doesn't exist.")
     
-    file_path = Path(file_path)  
     extension = file_path.suffix
     if extension == ".json":
         config = _read_json_config(file_path)

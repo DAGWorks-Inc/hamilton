@@ -5,8 +5,8 @@ from hamilton import ad_hoc_utils, driver
 from hamilton.cli import logic
 
 
-def build(modules: List[Path], config: Path):#Optional[dict] = None):
-    cfg = logic.load_config(config)   #config if config else {}
+def build(modules: List[Path], config: Optional[Path] = None):
+    cfg = logic.load_config(config) if config else {}
     module_objects = [ad_hoc_utils.module_from_source(p.read_text()) for p in modules]
     return (
         driver.Builder()
@@ -23,9 +23,9 @@ def diff(
     git_reference: Optional[str] = "HEAD",
     view: bool = False,
     output_file_path: Path = Path("./diff.png"),
-    config: Optional[dict] = None,
+    config: Optional[Path] = None,
 ) -> dict:
-    config = config if config else {}
+    cfg = logic.load_config(config) if config else {}
 
     current_version = logic.hash_hamilton_nodes(current_dr)
     current_node_to_func = logic.map_nodes_to_functions(current_dr)
@@ -35,7 +35,7 @@ def diff(
         driver.Builder()
         .enable_dynamic_execution(allow_experimental_mode=True)
         .with_modules(*reference_modules)
-        .with_config(config)
+        .with_config(cfg)
         .build()
     )
     reference_version = logic.hash_hamilton_nodes(reference_dr)
