@@ -298,6 +298,7 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
         writers: Optional[Dict[str, Callable[[Any, str, str], None]]] = None,
         readers: Optional[Dict[str, Callable[[Any, str], Any]]] = None,
         read_kwargs: Optional[Dict[str, Any]] = None,
+        read_after_write: bool = False,
         **kwargs,
     ):
         """Constructs the adapter.
@@ -318,7 +319,7 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
         self.readers = readers or {}
 
         self.read_kwargs = read_kwargs or {}
-
+        self.read_after_write = read_after_write
         self._init_default_readers_writers()
 
     def _init_default_readers_writers(self):
@@ -385,6 +386,10 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
                     cache_format,
                 )
                 self._write_cache(cache_format, result, filepath, node.name)
+                if self.read_after_write:
+                    # this could be useful for delayed execution type things as a means to reset
+                    # that they have set internally
+                    result = self._read_cache(cache_format, result, filepath)
                 self.computed_nodes.add(node.name)
                 return result
             empty_expected_type = self._get_empty_expected_type(node.type)
