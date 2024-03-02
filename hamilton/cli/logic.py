@@ -263,8 +263,8 @@ def visualize_diff(
     )
 
 
-#TODO refactor ContextLoader to a class
-#TODO support loading from pyproject.toml
+# TODO refactor ContextLoader to a class
+# TODO support loading from pyproject.toml
 def load_context(file_path: Path) -> dict:
     if not file_path.exists():
         raise FileNotFoundError(f"`{file_path}` doesn't exist.")
@@ -276,7 +276,7 @@ def load_context(file_path: Path) -> dict:
         context = _read_py_context(file_path)
     else:
         raise ValueError(f"Received extension `{extension}` is unsupported.")
-    
+
     context = _validate_context(context)
     return context
 
@@ -284,25 +284,25 @@ def load_context(file_path: Path) -> dict:
 def _validate_context(context: dict) -> dict:
     if context[CONFIG_HEADER] is None:
         context[CONFIG_HEADER] = {}
-    
+
     if context[FINAL_VARS_HEADER] is None:
         context[FINAL_VARS_HEADER] = []
-        
+
     if context[INPUTS_HEADER] is None:
         context[INPUTS_HEADER] = {}
-    
+
     if context[OVERRIDES_HEADER] is None:
         context[OVERRIDES_HEADER] = {}
-        
+
     return context
 
 
 def _read_json_context(file_path: Path) -> dict:
     """"""
     import json
-    
+
     data = json.load(file_path.open())
-    
+
     context = {}
     for k in [
         CONFIG_HEADER,
@@ -311,7 +311,7 @@ def _read_json_context(file_path: Path) -> dict:
         OVERRIDES_HEADER,
     ]:
         context[k] = data.get(k, None)
-            
+
     return context
 
 
@@ -330,5 +330,5 @@ def _read_py_context(file_path: Path) -> dict:
         OVERRIDES_HEADER,
     ]:
         context[k] = getattr(module, k, None)
-    
+
     return context

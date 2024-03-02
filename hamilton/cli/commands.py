@@ -8,10 +8,10 @@ from hamilton.cli import logic
 def build(modules: List[Path], context_path: Optional[Path] = None):
     """Build a Hamilton driver from the passed modules, and
     load the Driver config from the context file.
-    
+
     Dynamic execution is enabled by default to support dataflow
     using Parallelizable/Collect. This only matters if we are to
-    execute code.    
+    execute code.
     """
     context = logic.load_context(context_path) if context_path else {}
     module_objects = [ad_hoc_utils.module_from_source(p.read_text()) for p in modules]
@@ -32,7 +32,7 @@ def diff(
     output_file_path: Path = Path("./diff.png"),
     context_path: Optional[Path] = None,
 ) -> dict:
-    """Get the diff of """
+    """Get the diff of"""
     context = logic.load_context(context_path) if context_path else {}
 
     current_version = logic.hash_hamilton_nodes(current_dr)
@@ -91,9 +91,9 @@ def validate(dr: driver.Driver, context_path: Path) -> dict:
         )
     except ValueError as e:
         raise e
-    
+
     return context
-    
+
 
 def version(dr: driver.Driver) -> dict:
     """Get the node and dataflow versions from the instantiated Driver"""

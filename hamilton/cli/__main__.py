@@ -119,9 +119,7 @@ def _try_command(cmd: Callable, **cmd_kwargs) -> Any:
         result = cmd(**cmd_kwargs)
     except Exception as e:
         response = Response(
-            command=cmd_name,
-            success=False,
-            message={"error": str(type(e)), "details": str(e)}
+            command=cmd_name, success=False, message={"error": str(type(e)), "details": str(e)}
         )
         logger.error(dataclasses.asdict(response))
         raise typer.Exit(code=1)
@@ -152,7 +150,7 @@ def build(
             command="build",
             success=True,
             message={"modules": [p.stem for p in modules]},
-        )
+        ),
     )
 
 
@@ -196,7 +194,7 @@ def diff(
             command="diff",
             success=True,
             message=diff,
-        )
+        ),
     )
 
 
@@ -217,7 +215,7 @@ def validate(
             command="validate",
             success=True,
             message=validated_context,
-        )
+        ),
     )
 
 
@@ -238,7 +236,7 @@ def version(
             command="version",
             success=True,
             message=dataflow_version,
-        )
+        ),
     )
 
 
@@ -252,15 +250,11 @@ def view(
     """Build and visualize dataflow with MODULES"""
     if state.dr is None:
         ctx.invoke(build, ctx=ctx, modules=modules, context_path=context_path)
-        
+
     _try_command(cmd=commands.view, dr=state.dr, output_file_path=output_file_path)
     _response_handler(
         ctx=ctx,
-        response=Response(
-            command="view",
-            success=True,
-            message={"path": str(output_file_path)}
-        )
+        response=Response(command="view", success=True, message={"path": str(output_file_path)}),
     )
 
 
