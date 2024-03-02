@@ -1,17 +1,29 @@
 # PDF Summarizer on Spark
 
 Here we show how you can run the same Hamilton dataflow, that we defined in the backend
-folder, on Spark. This is useful if you want to run the same dataflow on a larger dataset,
-or have to run it on a cluster. Importantly this means you don't have to rewrite your
-code, or have to change where/how you develop!
+folder, on Spark (using two approaches). This is useful if you want to run the same dataflow
+on a larger dataset, or have to run it on a cluster. Importantly this means you don't have
+to rewrite your code, or have to change where/how you develop!
 
 ![Summarization dataflow](spark_summarization.png)
 
 # File organization
  - `summarization.py` this should be a carbon copy of the one in the backend folder.
- - `run.py` this contains the code to create a spark job and run the summarization code.
+ - `run_with_columns.py` this contains the code to create a spark job and run the summarization code, but
+using the `@with_columns` syntax. This is a more ergonomic way to write a full spark job with Hamilton.
+ - `run.py` this contains the code to create a spark job and run the summarization code as UDFs.
 
-# How this works
+# How `run_with_columns.py` works
+We take the dataflow defined by `summarization.py` and execute it as a bunch
+of row based UDFs on spark. The magic to do this happens in the `@with_columns` decorator.
+
+This approach allows you to put your entire pyspark workflow into Hamilton in an ergonomic way.
+You can request any intermediate outputs of summarization.py as columns in the dataframe.
+This is great for debugging and understanding your dataflow.
+
+![with_columns](spark_with_columns_summarization.png)
+
+# How `run.py` works
 We take the dataflow defined by `summarization.py` and execute it as a bunch
 of row based UDFs on spark. The magic to do this happens in the Hamilton PySparkUDFGraphAdapter.
 
@@ -20,7 +32,18 @@ that contains a column that maps to the required input. Which in this example
 is `pdf_source`. You can request whatever intermediate outputs as columns, which
 in this example we do with `["raw_text", "chunked_text", "summarized_text"]`.
 
-## Running the code
+![udfs](spark_with_columns_summarization.png)
+
+## Running `run_with_columns.py`
+
+1. Make sure you have the right dependencies installed. You can do this by running
+`pip install -r requirements.txt`.
+2. You can then run the code with the single PDF that is provided, else add more paths to
+PDF files in `spark_pdf_pipeline.py`.
+3. Then you can run the code with `python run_with_columns.py`. Be sure to have your OPENAI_API_KEY in the
+environment.
+
+## Running `run.py`
 
 1. Make sure you have the right dependencies installed. You can do this by running
 `pip install -r requirements.txt`.
