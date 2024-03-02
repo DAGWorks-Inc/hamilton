@@ -396,7 +396,7 @@ def _lambda_udf(df: DataFrame, node_: node.Node, actual_kwargs: Dict[str, Any]) 
         raise ValueError(
             f"Currently unsupported function for {node_.name} with function signature:\n{node_.input_types}."
         )
-    elif all(pandas_annotation.values()):
+    elif all(pandas_annotation.values()) and len(pandas_annotation.values()) > 0:
         hamilton_udf = _fabricate_spark_function(node_, params_to_bind, params_from_df, True)
         # pull from annotation here instead of tag.
         base_type, type_args = htypes.get_type_information(node_.type)
@@ -944,6 +944,7 @@ class with_columns(fm_base.NodeCreator):
         select: List[str] = None,
         namespace: str = None,
         mode: str = "append",
+        config_required: List[str] = None,
     ):
         """Initializes a with_columns decorator for spark. This allows you to efficiently run
          groups of map operations on a dataframe, represented as pandas/primitives UDFs. This
@@ -1002,7 +1003,7 @@ class with_columns(fm_base.NodeCreator):
 
         :param load_from: The functions that will be used to generate the group of map operations.
         :param select: Columns to select from the transformation. If this is left blank it will
-            keep all columns in the subdag.
+            add all possible columns from the subdag to the dataframe.
         :param columns_to_pass: The initial schema of the dataframe. This is used to determine which
             upstream inputs should be taken from the dataframe, and which shouldn't. Note that, if this is
             left empty (and external_inputs is as well), we will assume that all dependencies come
@@ -1014,11 +1015,12 @@ class with_columns(fm_base.NodeCreator):
             and so this can be reused. If its left out, there will be no namespace (in which case you'll want
             to be careful about repeating it/reusing the nodes in other parts of the DAG.)
         :param mode: The mode of the operation. This can be either "append" or "select".
-            If it is "append", it will keep all columns in the dataframe. If it is "select",
+            If it is "append", it will keep all original columns in the dataframe. If it is "select",
             it will only keep the columns in the dataframe from the `select` parameter. Note that,
-            if the `select` parameter is left blank, it will keep all columns in the dataframe
-            that are in the subdag (as that is the behavior of the `select` parameter. This
-            defaults to `append`
+            if the `select` parameter is left blank, it will add all columns in the dataframe
+            that are in the subdag. This defaults to `append`.
+        :param config_required: the list of config keys that are required to resolve any functions. Pass in None\
+            if you want the functions/modules to have access to all possible config.
         """
         self.subdag_functions = subdag.collect_functions(load_from)
         self.select = select
@@ -1043,6 +1045,7 @@ class with_columns(fm_base.NodeCreator):
         self.namespace = namespace
         self.upstream_dependency = dataframe
         self.mode = mode
+        self.config_required = config_required
 
     @staticmethod
     def _prep_nodes(initial_nodes: List[node.Node]) -> List[node.Node]:
@@ -1068,17 +1071,39 @@ class with_columns(fm_base.NodeCreator):
         upstream_name: str, columns: List[str], node_name: str = "select"
     ) -> node.Node:
         """Creates a selector node. The sole job of this is to select just the specified columns.
-        Note this is a utility function that's only called
+        Note this is a utility function that's only called here.
 
         :param upstream_name: Name of the upstream dataframe node
         :param columns: Columns to select
-        :param node_namespace: Namespace of the node
         :param node_name: Name of the node to create
         :return:
         """
 
         def new_callable(**kwargs) -> DataFrame:
             return kwargs[upstream_name].select(*columns)
+
+        return node.Node(
+            name=node_name,
+            typ=DataFrame,
+            callabl=new_callable,
+            input_types={upstream_name: DataFrame},
+        )
+
+    @staticmethod
+    def create_drop_node(
+        upstream_name: str, columns: List[str], node_name: str = "select"
+    ) -> node.Node:
+        """Creates a drop node. The sole job of this is to drop just the specified columns.
+        Note this is a utility function that's only called here.
+
+        :param upstream_name: Name of the upstream dataframe node
+        :param columns: Columns to drop
+        :param node_name: Name of the node to create
+        :return:
+        """
+
+        def new_callable(**kwargs) -> DataFrame:
+            return kwargs[upstream_name].drop(*columns)
 
         return node.Node(
             name=node_name,
@@ -1121,6 +1146,9 @@ class with_columns(fm_base.NodeCreator):
                     f"Instead, we found: {upstream_dependency}."
                 )
 
+    def required_config(self) -> List[str]:
+        return self.config_required
+
     def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> List[node.Node]:
         """Generates nodes in the with_columns groups. This does the following:
 
@@ -1154,6 +1182,7 @@ class with_columns(fm_base.NodeCreator):
         columns_passed_in_from_dataframe = (
             set(self.initial_schema) if self.initial_schema is not None else []
         )
+        drop_list = []
         # Or from the dataframe passed in...
         for node_ in sorted_initial_nodes:
             # dependent columns are broken into two sets:
@@ -1185,17 +1214,33 @@ class with_columns(fm_base.NodeCreator):
                     dependent_columns_in_mapgroup,
                     dependent_columns_in_dataframe,
                 )
+            if self.select is not None and sparkified.name not in self.select:
+                # we need to create a drop list because we don't want to drop
+                # original columns from the DF by accident.
+                drop_list.append(sparkified.name)
             output_nodes.append(sparkified)
             current_dataframe_node = sparkified.name
         # We get the final node, which is the function we're using
         # and reassign inputs to be the dataframe
         if self.mode == "select":
+            # this selects over the original DF and the additions
             select_columns = (
                 self.select if self.select is not None else [item.name for item in output_nodes]
             )
             select_node = with_columns.create_selector_node(
                 upstream_name=current_dataframe_node,
                 columns=select_columns,
+                node_name="_select",
+            )
+            output_nodes.append(select_node)
+            current_dataframe_node = select_node.name
+        elif self.select is not None and len(drop_list) > 0:
+            # since it's in append mode, we only want to append what's in the select
+            # but we don't know what the original schema is, so we instead drop
+            # things from the DF to achieve the same result
+            select_node = with_columns.create_drop_node(
+                upstream_name=current_dataframe_node,
+                columns=drop_list,
                 node_name="_select",
             )
             output_nodes.append(select_node)

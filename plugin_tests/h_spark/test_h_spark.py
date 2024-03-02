@@ -20,6 +20,7 @@ from .resources.spark import (
     spark_dag_multiple_with_columns,
     spark_dag_pyspark_udfs,
 )
+from tests.resources.spark import a_dag
 
 
 @pytest.fixture(scope="module")
@@ -605,6 +606,27 @@ def test_with_columns_generate_nodes_select():
     nodes = dec.generate_nodes(df_as_pandas, {})
     nodes_by_names = {n.name: n for n in nodes}
     assert set(nodes_by_names.keys()) == {"df_as_pandas.c", "df_as_pandas"}
+
+
+def test_with_columns_generate_nodes_select_append_mode():
+    dec = h_spark.with_columns(
+        a_dag,
+        columns_to_pass=["input"],
+        select=["c"],
+    )
+
+    def df_as_pandas(df: DataFrame) -> pd.DataFrame:
+        return df.toPandas()
+
+    nodes = dec.generate_nodes(df_as_pandas, {})
+    nodes_by_names = {n.name: n for n in nodes}
+    assert set(nodes_by_names.keys()) == {
+        "df_as_pandas",
+        "df_as_pandas._select",
+        "df_as_pandas.a",
+        "df_as_pandas.b",
+        "df_as_pandas.c",
+    }
 
 
 def test_with_columns_generate_nodes_select_mode_select():
