@@ -4,7 +4,10 @@ from typing import Dict, List, Union
 
 from hamilton import driver
 
-V = "HENLO"
+CONFIG_HEADER = "HAMILTON_CONFIG"
+FINAL_VARS_HEADER = "HAMILTON_FINAL_VARS"
+INPUTS_HEADER = "HAMILTON_INPUTS"
+OVERRIDES_HEADER = "HAMILTON_OVERRIDES"
 
 
 def get_git_base_directory() -> str:
@@ -260,53 +263,72 @@ def visualize_diff(
     )
 
 
-def load_config(file_path: Path) -> dict:
+#TODO refactor ContextLoader to a class
+#TODO support loading from pyproject.toml
+def load_context(file_path: Path) -> dict:
     if not file_path.exists():
         raise FileNotFoundError(f"`{file_path}` doesn't exist.")
 
     extension = file_path.suffix
     if extension == ".json":
-        config = _read_json_config(file_path)
+        context = _read_json_context(file_path)
     elif extension == ".py":
-        config = _read_py_config(file_path)
-    elif extension == ".ini":
-        config = _read_ini_config(file_path)
+        context = _read_py_context(file_path)
     else:
         raise ValueError(f"Received extension `{extension}` is unsupported.")
+    
+    context = _validate_context(context)
+    return context
 
-    return config
+
+def _validate_context(context: dict) -> dict:
+    if context[CONFIG_HEADER] is None:
+        context[CONFIG_HEADER] = {}
+    
+    if context[FINAL_VARS_HEADER] is None:
+        context[FINAL_VARS_HEADER] = []
+        
+    if context[INPUTS_HEADER] is None:
+        context[INPUTS_HEADER] = {}
+    
+    if context[OVERRIDES_HEADER] is None:
+        context[OVERRIDES_HEADER] = {}
+        
+    return context
 
 
-def _read_json_config(file_path: Path) -> dict:
+def _read_json_context(file_path: Path) -> dict:
     """"""
     import json
+    
+    data = json.load(file_path.open())
+    
+    context = {}
+    for k in [
+        CONFIG_HEADER,
+        FINAL_VARS_HEADER,
+        INPUTS_HEADER,
+        OVERRIDES_HEADER,
+    ]:
+        context[k] = data.get(k, None)
+            
+    return context
 
-    return json.load(file_path.open())
 
-
-def _read_py_config(file_path: Path) -> dict:
+def _read_py_context(file_path: Path) -> dict:
     import importlib
 
     spec = importlib.util.spec_from_file_location("cli_config", file_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
-    config = getattr(module, "HAMILTON_CONFIG")
-    if config is None:
-        raise KeyError(f"{file_path} has no `HAMILTON_CONFIG` variable.")
-
-    if not isinstance(config, dict):
-        raise TypeError(f"`HAMILTON_CONFIG` variable is of type {type(config)} instead of `dict`")
-
-    return config
-
-
-def _read_ini_config(file_path: Path) -> dict:
-    import configparser
-
-    config = configparser.ConfigParser()
-    config.read(file_path)
-    if "HAMILTON_CONFIG" not in config.sections():
-        raise KeyError(f"{file_path} has no `HAMILTON_CONFIG` section.")
-
-    return {k: v for k, v in config["HAMILTON_CONFIG"].items()}
+    context = {}
+    for k in [
+        CONFIG_HEADER,
+        FINAL_VARS_HEADER,
+        INPUTS_HEADER,
+        OVERRIDES_HEADER,
+    ]:
+        context[k] = getattr(module, k, None)
+    
+    return context
