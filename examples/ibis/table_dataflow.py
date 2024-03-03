@@ -24,17 +24,20 @@ def feature_table(raw_table: ir.Table) -> ir.Table:
         is_summer_brazil=ibis._.month_of_absence.isin([1, 2, 12]),
     )
 
+
 @check_output(
-    schema=ibis.schema({
-        'has_children': "int",
-        'has_pet': "bool",
-        'is_summer_brazil': "bool",
-        'service_time': "int",
-        'seasons': "int",
-        'disciplinary_failure': "int",
-        'absenteeism_time_in_hours': "int",
-    }),
-    importance="fail"
+    schema=ibis.schema(
+        {
+            "has_children": "int",
+            "has_pet": "bool",
+            "is_summer_brazil": "bool",
+            "service_time": "int",
+            "seasons": "int",
+            "disciplinary_failure": "int",
+            "absenteeism_time_in_hours": "int",
+        }
+    ),
+    importance="fail",
 )
 def feature_set(
     feature_table: ir.Table,

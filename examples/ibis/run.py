@@ -74,7 +74,7 @@ if __name__ == "__main__":
     from hamilton import driver
     from hamilton.execution.executors import SynchronousLocalTaskExecutor
     from hamilton.plugins.h_tqdm import ProgressBar
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--level", choices=["column", "table"])
     parser.add_argument("--model", choices=["linear", "random_forest", "boosting"])
