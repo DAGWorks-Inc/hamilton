@@ -29,9 +29,7 @@ register_types()
 
 class SchemaValidatorIbis(base.DataValidator):
     def __init__(self, schema: ibis.expr.schema.Schema, importance: str):
-        """
-        `schema` is an ordered mapping.
-        """
+        """`schema` is an ordered mapping"""
         super(SchemaValidatorIbis, self).__init__(importance)
         self.schema = schema
 
@@ -51,8 +49,12 @@ class SchemaValidatorIbis(base.DataValidator):
 
     def validate(self, data: ir.Table) -> base.ValidationResult:
         passes = data.schema().equals(self.schema)
-        message = ""
-        diagnostics = {}
+        if passes:
+            message = "Data passes Ibis schema check"
+            diagnostics = {"schema": self.schema.fields}
+        else:
+            message = "Data failed Ibis schema check"
+            diagnostics = {"schema": self.schema.fields}
         return base.ValidationResult(
             passes=passes,
             message=message,

@@ -1,10 +1,3 @@
-import argparse
-
-from hamilton import driver
-from hamilton.execution.executors import SynchronousLocalTaskExecutor
-from hamilton.plugins.h_tqdm import ProgressBar
-
-
 def view_expression(expression, **kwargs):
     """View an Ibis expression
 
@@ -76,6 +69,12 @@ def main(level: str, model: str):
 
 
 if __name__ == "__main__":
+    import argparse
+
+    from hamilton import driver
+    from hamilton.execution.executors import SynchronousLocalTaskExecutor
+    from hamilton.plugins.h_tqdm import ProgressBar
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--level", choices=["column", "table"])
     parser.add_argument("--model", choices=["linear", "random_forest", "boosting"])

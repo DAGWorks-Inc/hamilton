@@ -14,11 +14,6 @@ def raw_table(raw_data_path: str) -> ir.Table:
     return ibis.read_csv(sources=raw_data_path, table_name="absenteism").rename("snake_case")
 
 
-# @check_output(
-#     schema=ibis.schema(
-#         [("has_children", "int"), ("has_pet", "bool")]
-#     )
-# )
 def feature_table(raw_table: ir.Table) -> ir.Table:
     """Add to `raw_table` the feature columns `has_children`
     `has_pet`, and `is_summer_brazil`
@@ -29,7 +24,18 @@ def feature_table(raw_table: ir.Table) -> ir.Table:
         is_summer_brazil=ibis._.month_of_absence.isin([1, 2, 12]),
     )
 
-
+@check_output(
+    schema=ibis.schema({
+        'has_children': "int",
+        'has_pet': "bool",
+        'is_summer_brazil': "bool",
+        'service_time': "int",
+        'seasons': "int",
+        'disciplinary_failure': "int",
+        'absenteeism_time_in_hours': "int",
+    }),
+    importance="fail"
+)
 def feature_set(
     feature_table: ir.Table,
     feature_selection: list[str],
