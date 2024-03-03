@@ -48,7 +48,7 @@ with_columns makes some assumptions:
 
 
 @h_spark.with_columns(
-    doc_pipeline,
+    *doc_pipeline.spark_safe,
     select=["article_text", "chunked_text"],
     columns_to_pass=["url"],
 )
@@ -62,49 +62,17 @@ def chunked_url_text(urls_from_sitemap: ps.DataFrame) -> ps.DataFrame:
 
 
 if __name__ == "__main__":
-    from langchain import text_splitter
-
-    # from langchain_core import documents
-    # these two functions are here because we can't
-    # use them with doc_pipeline due to with_column constraints.
-    # so need to pass them in as inputs.
-    def html_chunker() -> text_splitter.HTMLHeaderTextSplitter:
-        """Return HTML chunker object.
-
-        :return:
-        """
-        headers_to_split_on = [
-            ("h1", "Header 1"),
-            ("h2", "Header 2"),
-            ("h3", "Header 3"),
-        ]
-        return text_splitter.HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
-
-    def text_chunker(
-        chunk_size: int = 256, chunk_overlap: int = 32
-    ) -> text_splitter.RecursiveCharacterTextSplitter:
-        """Returns the text chunker object.
-
-        :param chunk_size:
-        :param chunk_overlap:
-        :return:
-        """
-        return text_splitter.RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size, chunk_overlap=chunk_overlap
-        )
 
     import spark_pipeline
 
     from hamilton import driver
 
-    dr = driver.Builder().with_modules(spark_pipeline).with_config({}).build()
+    dr = driver.Builder().with_modules(doc_pipeline, spark_pipeline).with_config({}).build()
     dr.display_all_functions("pipeline.png")
     result = dr.execute(
         ["chunked_url_text"],
         inputs={
             "app_name": "chunking_spark_job",
-            "html_chunker": html_chunker(),
-            "text_chunker": text_chunker(),
         },
     )
     print(result["chunked_url_text"].show())

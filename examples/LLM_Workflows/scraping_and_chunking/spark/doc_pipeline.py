@@ -27,31 +27,31 @@ def article_text(url: str, article_regex: str) -> str:
     return text
 
 
-# def html_chunker() -> text_splitter.HTMLHeaderTextSplitter:
-#     """Return HTML chunker object.
-#
-#     :return:
-#     """
-#     headers_to_split_on = [
-#         ("h1", "Header 1"),
-#         ("h2", "Header 2"),
-#         ("h3", "Header 3"),
-#     ]
-#     return text_splitter.HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
-#
-#
-# def text_chunker(
-#     chunk_size: int = 256, chunk_overlap: int = 32
-# ) -> text_splitter.RecursiveCharacterTextSplitter:
-#     """Returns the text chunker object.
-#
-#     :param chunk_size:
-#     :param chunk_overlap:
-#     :return:
-#     """
-#     return text_splitter.RecursiveCharacterTextSplitter(
-#         chunk_size=chunk_size, chunk_overlap=chunk_overlap
-#     )
+def html_chunker() -> text_splitter.HTMLHeaderTextSplitter:
+    """Return HTML chunker object.
+
+    :return:
+    """
+    headers_to_split_on = [
+        ("h1", "Header 1"),
+        ("h2", "Header 2"),
+        ("h3", "Header 3"),
+    ]
+    return text_splitter.HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+
+
+def text_chunker(
+    chunk_size: int = 256, chunk_overlap: int = 32
+) -> text_splitter.RecursiveCharacterTextSplitter:
+    """Returns the text chunker object.
+
+    :param chunk_size:
+    :param chunk_overlap:
+    :return:
+    """
+    return text_splitter.RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap
+    )
 
 
 def chunked_text(
@@ -72,3 +72,10 @@ def chunked_text(
     splits = text_chunker.split_documents(header_splits)
     # TODO: make this a struct field compatible structure
     return [json.dumps(s.to_json()) for s in splits]
+
+
+spark_safe = [
+    article_regex,
+    article_text,
+    chunked_text,
+]
