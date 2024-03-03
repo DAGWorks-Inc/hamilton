@@ -51,7 +51,7 @@ DATAFLOW_IMPORT = "os_hamilton_dataflow_import_call"
 CLI_COMMAND = "os_hamilton_cli_command"
 EXPERIMENT_SERVER = "os_hamilton_experiment_server"
 TIMEOUT = 2
-MAX_COUNT_SESSION = 1000
+MAX_COUNT_SESSION = 100  # max number of events collected per python process
 
 DEFAULT_CONFIG_LOCATION = os.path.expanduser("~/.hamilton.conf")
 
