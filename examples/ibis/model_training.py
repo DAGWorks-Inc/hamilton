@@ -170,4 +170,3 @@ def train_full_model(
         full_model=base_model,
         fitted_recipe=transform,
     )
-    
