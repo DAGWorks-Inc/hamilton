@@ -14,14 +14,6 @@ DATAFRAME_TYPE = ir.Table
 COLUMN_TYPE = ir.Column
 
 
-def view_expression(expression: ir.Expr, **kwargs):
-    import ibis.expr.visualize as viz
-
-    dot = viz.to_graph(expression)
-    dot.render(**kwargs)
-    return dot
-
-
 @registry.get_column.register(ir.Table)
 def get_column_ibis(df: ir.Table, column_name: str) -> ir.Column:
     return df[column_name]

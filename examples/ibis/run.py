@@ -5,6 +5,19 @@ from hamilton.execution.executors import SynchronousLocalTaskExecutor
 from hamilton.plugins.h_tqdm import ProgressBar
 
 
+def view_expression(expression, **kwargs):
+    """View an Ibis expression
+
+    see graphviz reference for `.render()` kwargs
+    ref: https://graphviz.readthedocs.io/en/stable/api.html#graphviz.Graph.render
+    """
+    import ibis.expr.visualize as viz
+
+    dot = viz.to_graph(expression)
+    dot.render(**kwargs)
+    return dot
+
+
 def main(level: str, model: str):
     dataflow_components = []
     config = {}
@@ -56,8 +69,8 @@ def main(level: str, model: str):
         final_vars=final_vars, inputs=inputs, output_file_path="cross_validation.png"
     )
 
-    # get `feature_set` from dataflow with given `inputs`
     res = dr.execute(final_vars, inputs=inputs)
+    view_expression(res["feature_set"], filename="ibis_feature_set", format="png")
 
     print(res.keys())
 
