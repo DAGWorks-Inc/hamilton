@@ -37,33 +37,3 @@ def feature_set(
 ) -> ir.Table:
     """Select feature columns and filter rows"""
     return feature_table[feature_selection].filter(condition)
-
-
-if __name__ == "__main__":
-    import __main__
-
-    from hamilton import driver
-
-    dr = driver.Builder().with_modules(__main__).build()
-
-    inputs = dict(
-        raw_data_path="../data_quality/simple/Absenteeism_at_work.csv",
-        feature_selection=[
-            "id",
-            "has_children",
-            "has_pet",
-            "is_summer_brazil",
-            "service_time",
-            "seasons",
-            "disciplinary_failure",
-            "absenteeism_time_in_hours",
-        ],
-        condition=ibis.ifelse(ibis._.has_pet == 1, True, False),
-    )
-    dr.display_all_functions("schema.png", show_schema=True)
-
-    res = dr.execute(["feature_set"], inputs=inputs)
-    breakpoint()
-    df = res["feature_set"].to_pandas()
-    print(df.head())
-    print(df.shape)

@@ -14,22 +14,29 @@ from hamilton.htypes import Collect, Parallelizable
 
 @config.when(model="linear")
 def base_model__linear() -> BaseEstimator:
+    """Use Linear regression"""
     return LinearRegression()
 
 
 @config.when(model="random_forest")
 def base_model__random_forest() -> BaseEstimator:
+    "Use Random forest regression"
     return RandomForestRegressor()
 
 
 @config.when(model="boosting")
 def base_model__boosting() -> BaseEstimator:
+    "Use gradient boosting reression"
     return HistGradientBoostingRegressor()
 
 
 def preprocessing_recipe() -> ibisml.Recipe:
+    """Recipe to preprocess data for fitting and inference.
+    We drop the temporary `idx` column generated to
+    create cross validation splits
+    """
     return ibisml.Recipe(
-        ibisml.Drop(["id"]),
+        ibisml.Drop(["idx"]),
         ibisml.ImputeMean(ibisml.numeric()),
         ibisml.ScaleStandard(ibisml.numeric()),
         ibisml.OneHotEncode(ibisml.nominal()),
@@ -40,9 +47,10 @@ def data_split(
     feature_set: ir.Table,
     n_splits: int = 3,
 ) -> Parallelizable[tuple]:
-    ids = feature_set.id.to_pandas()
+    """Generate indices to create train/validation splits n times"""
     folds = KFold(n_splits=n_splits)
-    for train_idx, val_idx in folds.split(ids):
+    idx = list(range(feature_set.count().execute()))
+    for train_idx, val_idx in folds.split(idx):
         yield train_idx, val_idx
 
 
@@ -60,10 +68,12 @@ def prepare_data(
     data_split: tuple,
     preprocessing_recipe: ibisml.Recipe,
 ) -> dict:
+    """Split data and apply preprocessing recipe"""
     train_idx, val_idx = data_split
-
-    train_set = feature_set  # .filter(ibis._.id.isin(train_idx))
-    val_set = feature_set  # .filter(ibis._.id.isin(val_idx))
+    # add temporary idx column for train/val splits
+    feature_set = feature_set.mutate(idx=ibis.row_number())
+    train_set = feature_set.filter(ibis._.idx.isin(train_idx))
+    val_set = feature_set.filter(ibis._.idx.isin(val_idx))
 
     transform = preprocessing_recipe.fit(train_set, outcomes=[label])
 
@@ -92,6 +102,7 @@ def cross_validation_fold(
     base_model: BaseEstimator,
     data_split: tuple,
 ) -> dict:
+    """Train model and make predictions on validation"""
     train_idx, val_idx = data_split
     model = clone(base_model)
 
@@ -110,6 +121,8 @@ def cross_validation_fold(
     )
 )
 def cross_validation_fold_collection(cross_validation_fold: Collect[dict]) -> dict:
+    """Collect results from cross validation folds; separate predictions and
+    performance scores into two variables"""
     scores, preds = [], []
     for fold in cross_validation_fold:
         scores.append(fold.pop("score"))
@@ -121,10 +134,14 @@ def cross_validation_fold_collection(cross_validation_fold: Collect[dict]) -> di
 
 
 def prediction_table(cross_validation_preds: list[dict]) -> ir.Table:
+    """Create a table with cross validation predictions for future reference"""
     return ibis.memtable(cross_validation_preds)
 
 
 def store_predictions(prediction_table: ir.Table) -> bool:
+    """Store the cross validation predictions table somewhere
+    Currently only returns True.
+    """
     return True
 
 
@@ -140,6 +157,7 @@ def train_full_model(
     preprocessing_recipe: ibisml.Recipe,
     base_model: BaseEstimator,
 ) -> dict:
+    """Train a model on the full dataset to use for inference."""
     transform = preprocessing_recipe.fit(feature_set, outcomes=[label])
 
     data = transform(feature_set)
@@ -152,54 +170,4 @@ def train_full_model(
         full_model=base_model,
         fitted_recipe=transform,
     )
-
-
-if __name__ == "__main__":
-    import model_training
-    import table_dataflow
-
-    from hamilton import driver
-    from hamilton.execution.executors import SynchronousLocalTaskExecutor
-
-    dr = (
-        driver.Builder()
-        .enable_dynamic_execution(allow_experimental_mode=True)
-        .with_modules(model_training, table_dataflow)
-        .with_remote_executor(SynchronousLocalTaskExecutor())
-        .with_config(dict(model="linear"))
-        .build()
-    )
-
-    inputs = dict(
-        raw_data_path="../data_quality/simple/Absenteeism_at_work.csv",
-        feature_selection=[
-            "id",
-            "has_children",
-            "has_pet",
-            "is_summer_brazil",
-            "service_time",
-            "seasons",
-            "disciplinary_failure",
-            "absenteeism_time_in_hours",
-        ],
-        condition=ibis.ifelse(ibis._.has_pet == 1, True, False),
-        label="absenteeism_time_in_hours",
-    )
-    dr.visualize_execution(
-        final_vars=[
-            "cross_validation_scores",
-            "cross_validation_preds",
-            "full_model",
-            "fitted_recipe",
-        ],
-        output_file_path="cross_validation.png",
-        inputs=inputs,
-    )
-    final_vars = ["cross_validation_scores"]
-
-    res = dr.execute(final_vars, inputs=inputs)
-
-    # df = res["feature_set"].to_pandas()
-    print(res["cross_validation_scores"])  # .to_pandas())
-    breakpoint()
-    print()
+    
