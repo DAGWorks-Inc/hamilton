@@ -100,13 +100,13 @@ EXPECTED_JSON = {
 
 def test_export_execution():
     dr = driver.Builder().with_modules(no_parallel).build()
-    graph = graph_types.HamiltonGraph.from_graph(dr.graph)  
-    
+    graph = graph_types.HamiltonGraph.from_graph(dr.graph)
+
     # can't hard code HamiltonNode.version because it depends on Python version
     for n in graph.nodes:
         for json_n in EXPECTED_JSON["nodes"]:
             if json_n["name"] == n.name:
                 json_n["version"] = n.version
-    
+
     json_str = dr.export_execution(["final"])
     assert json_str == json.dumps(EXPECTED_JSON)
