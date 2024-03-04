@@ -28,14 +28,20 @@ def sitemap_text(sitemap_url: str = "https://hamilton.dagworks.io/en/latest/site
     return sitemap.text
 
 
-def urls_from_sitemap(sitemap_text: str, spark_session: ps.SparkSession) -> ps.DataFrame:
+def urls_from_sitemap(
+    sitemap_text: str, spark_session: ps.SparkSession, num_partitions: int = 4
+) -> ps.DataFrame:
     """Takes in a sitemap.xml file contents and creates a df of all the URLs in the file.
 
     :param sitemap_text: the contents of a sitemap.xml file
     :return: df of URLs
     """
     urls = re.findall(r"<loc>(.*?)</loc>", sitemap_text)
-    df = spark_session.createDataFrame(urls, "string").toDF("url")
+    df = (
+        spark_session.createDataFrame(urls, "string")
+        .toDF("url")
+        .repartition(numPartitions=num_partitions)
+    )
     return df
 
 
@@ -71,8 +77,6 @@ if __name__ == "__main__":
     dr.display_all_functions("pipeline.png")
     result = dr.execute(
         ["chunked_url_text"],
-        inputs={
-            "app_name": "chunking_spark_job",
-        },
+        inputs={"app_name": "chunking_spark_job", "num_partitions": 4},
     )
     print(result["chunked_url_text"].show())
