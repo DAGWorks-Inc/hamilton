@@ -442,6 +442,29 @@ def test_base_spark_executor_end_to_end_with_mode_select(spark_session):
     pd.testing.assert_frame_equal(df, expected_df, check_names=False, check_dtype=False)
 
 
+def test_base_spark_executor_end_to_end_with_select_decorator(spark_session):
+    # copy of the test above -- they should be the same
+    dr = (
+        driver.Builder()
+        .with_modules(basic_spark_dag)
+        .with_adapter(base.SimplePythonGraphAdapter(base.DictResult()))
+        .with_config({"mode": "select_decorator"})
+        .build()
+    )
+    # dr.visualize_execution(
+    #     ["processed_df_as_pandas"], "./out", {}, inputs={"spark_session": spark_session}
+    # )
+    df = dr.execute(["processed_df_as_pandas"], inputs={"spark_session": spark_session})[
+        "processed_df_as_pandas"
+    ]
+    expected_data = {
+        "a_times_key": [2, 10, 24, 44, 70],
+        "a_plus_b_plus_c": [10.5, 20.0, 29.5, 39.0, 48.5],
+    }
+    expected_df = pd.DataFrame(expected_data)
+    pd.testing.assert_frame_equal(df, expected_df, check_names=False, check_dtype=False)
+
+
 def test_base_spark_executor_end_to_end_external_dependencies(spark_session):
     # TODO -- make this simpler to call, and not require all these constructs
     dr = (

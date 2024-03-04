@@ -56,7 +56,7 @@ def df_1(spark_session: ps.SparkSession) -> ps.DataFrame:
     select=["a_times_key", "b_times_key", "a_plus_b_plus_c"],
     columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
 )
-@config.when_not(mode="select")
+@config.when_not_in(mode=["select", "select_decorator"])
 def processed_df_as_pandas__append(df_1: ps.DataFrame) -> pd.DataFrame:
     return df_1.select("a_times_key", "b_times_key", "a_plus_b_plus_c").toPandas()
 
@@ -74,5 +74,21 @@ def processed_df_as_pandas__append(df_1: ps.DataFrame) -> pd.DataFrame:
 )
 @config.when(mode="select")
 def processed_df_as_pandas__select(df_1: ps.DataFrame) -> pd.DataFrame:
+    # This should have two columns
+    return df_1.toPandas()
+
+
+@h_spark.select(
+    a,
+    b,
+    c,
+    a_times_key,
+    b_times_key,
+    a_plus_b_plus_c,
+    columns_to_pass=["a_raw", "b_raw", "c_raw", "key"],
+    output_cols=["a_times_key", "a_plus_b_plus_c"],
+)
+@config.when(mode="select_decorator")
+def processed_df_as_pandas__select_decorator(df_1: ps.DataFrame) -> pd.DataFrame:
     # This should have two columns
     return df_1.toPandas()
