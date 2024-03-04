@@ -96,13 +96,8 @@ EXPECTED_JSON = {
     ],
 }
 
-from hamilton import graph_types
-
 
 def test_export_execution():
     dr = driver.Builder().with_modules(no_parallel).build()
-    g = graph_types.HamiltonGraph.from_graph(dr.graph)
-    for n in g.nodes:
-        print(n.name, n.version)
     json_str = dr.export_execution(["final"])
     assert json_str == json.dumps(EXPECTED_JSON)
