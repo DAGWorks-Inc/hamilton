@@ -1,5 +1,6 @@
 """Module for external-facing graph constructs. These help the user navigate/manage the graph as needed."""
-
+import ast
+import hashlib
 import inspect
 import typing
 from dataclasses import dataclass
@@ -14,6 +15,70 @@ from hamilton.htypes import get_type_as_string
 # The core system (in defaults), and we have not managed to disentangle it yet.
 if typing.TYPE_CHECKING:
     from hamilton import graph
+    
+
+def _remove_docs_and_comments(source: str) -> str:
+    """Remove the docs and comments from a source code string.
+
+    The use of `ast.unparse()` requires Python 3.9
+
+    1. Parsing then unparsing the AST of the source code will
+    create a code object and convert it back to a string. In the
+    process, comments are stripped.
+
+    2. walk the AST to check if first element after `def` is a
+    docstring. If so, edit AST to skip the docstring
+
+    NOTE. The ast parsing will fail if `source` has syntax errors. For the
+    majority of cases this is caught upstream (e.g., by calling `import`).
+    The foreseeable edge case is if `source` is the result of `inspect.getsource`
+    on a nested function, method, or callable where `def` isn't at column 0.
+    Standard usage of Hamilton requires users to define functions/nodes at the top
+    level of a module, and therefore no issues should arise.
+    """
+    parsed = ast.parse(source)
+    for node in ast.walk(parsed):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+
+        if not len(node.body):
+            continue
+
+        # check if 1st node is a docstring
+        if not isinstance(node.body[0], ast.Expr):
+            continue
+
+        if not hasattr(node.body[0], "value") or not isinstance(node.body[0].value, ast.Str):
+            continue
+
+        # skip docstring
+        node.body = node.body[1:]
+
+    return ast.unparse(parsed)    
+    
+    
+def hash_source_code(source: typing.Union[str, typing.Callable], strip: bool = False) -> str:
+    """Hashes the source code of a function (str).
+
+    The `strip` parameter requires Python 3.9
+
+    If strip, try to remove docs and comments from source code string. Since
+    they don't impact function behavior, they shouldn't influence the hash.
+    """
+    if isinstance(source, typing.Callable):
+        source = inspect.getsource(source)
+
+    source = source.strip()
+
+    if strip:
+        try:
+            # could fail if source is indented code.
+            # see `remove_docs_and_comments` docstring for details.
+            source = _remove_docs_and_comments(source)
+        except Exception:
+            pass
+
+    return hashlib.sha256(source.encode()).hexdigest()
 
 
 @dataclass
@@ -45,6 +110,7 @@ class HamiltonNode:
                 else None
             ),
             "documentation": self.documentation,
+            "version": self.version,
         }
 
     @staticmethod
@@ -73,6 +139,15 @@ class HamiltonNode:
             },
         )
 
+    @property
+    def version(self) -> str:
+        """Generate a hash of the node originating function source code.
+        
+        The option `strip=True` means docstring and comments are ignored 
+        when hashing the function. 
+        """
+        return hash_source_code(self.originating_functions[0], strip=True)
+    
     def __repr__(self):
         return f"{self.name}: {htypes.get_type_as_string(self.type)}"
 
@@ -101,3 +176,14 @@ class HamiltonGraph:
         return HamiltonGraph(
             nodes=[HamiltonNode.from_node(n) for n in fn_graph.nodes.values()],
         )
+    
+    @property
+    def version(self) -> str:
+        """Generate a hash of the dataflow based on the collection of node hashes.
+        
+        Node hashes are in a sorted list, then concatenated as a string before hashing.
+        To find differences between dataflows, you need to inspect the node level.
+        """
+        sorted_node_versions = sorted([n.version for n in self.nodes])
+        return hashlib.sha256(str(sorted_node_versions).encode()).hexdigest()
+        
