@@ -26,7 +26,7 @@ def get_git_base_directory() -> str:
             return result.stdout.strip()
         else:
             print("Error:", result.stderr.strip())
-            raise ValueError(f"{result.stderr.strip()}")
+            raise OSError(f"{result.stderr.strip()}")
     except FileNotFoundError:
         raise FileNotFoundError("Git command not found. Please make sure Git is installed.")
 
