@@ -1,9 +1,10 @@
 import inspect
-import json  
+import json
 import sys
 import textwrap
 
 import pytest
+
 from hamilton import graph_types, node
 
 from tests import nodes as test_nodes
@@ -115,14 +116,16 @@ def test_create_hamilton_node():
 def test_json_serializable_dict():
     for name, obj in inspect.getmembers(test_nodes):
         if inspect.isfunction(obj) and not name.startswith("_"):
-            n = node.Node.from_fn(obj).copy_with(  # The following simulate the graph's creation of a node
+            n = node.Node.from_fn(
+                obj
+            ).copy_with(  # The following simulate the graph's creation of a node
                 originating_functions=(obj,)
             )
             hamilton_node = graph_types.HamiltonNode.from_node(n)
 
             # Check that json.dumps works on all nodes
             json.dumps(hamilton_node.as_dict())
-            
+
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="requires Python 3.9 or higher")
 def test_remove_docstring(func_a: str, func_a_docstring: str):
@@ -179,4 +182,3 @@ def test_different_hash_comment(func_a: str, func_a_comment: str, strip: bool):
     func_a_hash = graph_types.hash_source_code(func_a, strip=strip)
     func_a_comment = graph_types.hash_source_code(func_a_comment, strip=strip)
     assert (func_a_hash == func_a_comment) is (True if strip else False)
-

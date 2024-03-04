@@ -97,6 +97,8 @@ EXPECTED_JSON = {
 }
 
 from hamilton import graph_types
+
+
 def test_export_execution():
     dr = driver.Builder().with_modules(no_parallel).build()
     g = graph_types.HamiltonGraph.from_graph(dr.graph)
