@@ -24,7 +24,10 @@ def sitemap_text(sitemap_url: str = "https://hamilton.dagworks.io/en/latest/site
     :param sitemap_url: the URL of sitemap.xml file
     :return:
     """
-    sitemap = requests.get(sitemap_url)
+    try:
+        sitemap = requests.get(sitemap_url)
+    except Exception as e:
+        raise RuntimeError(f"Failed to fetch sitemap from {sitemap_url}. Original error: {str(e)}")
     return sitemap.text
 
 

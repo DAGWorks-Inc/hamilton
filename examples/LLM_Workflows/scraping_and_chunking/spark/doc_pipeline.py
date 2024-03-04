@@ -19,7 +19,10 @@ def article_text(url: str, article_regex: str) -> str:
     :param article_regex: the regext to use to get the contents out of.
     :return: sub-portion of the HTML
     """
-    html = requests.get(url)
+    try:
+        html = requests.get(url)
+    except requests.exceptions.RequestException:
+        raise Exception(f"Failed to get URL: {url}")
     article = re.findall(article_regex, html.text, re.DOTALL)
     if not article:
         raise ValueError(f"No article found in {url}")
