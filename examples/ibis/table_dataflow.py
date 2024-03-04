@@ -28,7 +28,7 @@ def feature_table(raw_table: ir.Table) -> ir.Table:
 @check_output(
     schema=ibis.schema(
         {
-            "has_children": "int",
+            "has_children": "bool",
             "has_pet": "bool",
             "is_summer_brazil": "bool",
             "service_time": "int",
