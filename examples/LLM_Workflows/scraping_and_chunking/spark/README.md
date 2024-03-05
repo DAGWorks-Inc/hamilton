@@ -24,6 +24,11 @@ Otherwise:
 python spark_pipeline.py
 ```
 
+This is what it'll run:
+![pipeline](pipeline.png)
+As you can see it'll linearize the process of adding UDFs in the right order to the dataframe based
+on the DAG we defined in `doc_pipeline.py`.
+
 # Changes to run on PySpark
 Here's why we need to make some minor adjustments to the code.
 
