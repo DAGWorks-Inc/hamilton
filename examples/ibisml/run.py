@@ -1,6 +1,6 @@
 from hamilton import driver
-from hamilton.plugins.h_tqdm import ProgressBar
 from hamilton.execution.executors import SynchronousLocalTaskExecutor
+from hamilton.plugins.h_tqdm import ProgressBar
 
 
 def view_expression(expression, **kwargs):
@@ -16,33 +16,17 @@ def view_expression(expression, **kwargs):
     return dot
 
 
-def main(level: str, model: str):
-    dataflow_components = []
-    config = {}
-    final_vars = ["feature_set"]
+def main(model: str):
+    import model_training
+    import table_dataflow
 
-    if level == "column":
-        import column_dataflow
-
-        dataflow_components.append(column_dataflow)
-    elif level == "table":
-        import table_dataflow
-
-        dataflow_components.append(table_dataflow)
-    else:
-        raise ValueError("`level` must be in ['column', 'table']")
-
-    if model:
-        import model_training
-
-        dataflow_components.append(model_training)
-        config["model"] = model
-        final_vars.extend(["full_model", "fitted_recipe", "cross_validation_scores"])
+    config = {"model": model}
+    final_vars = ["full_model", "fitted_recipe", "cross_validation_scores"]
 
     # build the Driver from modules
     dr = (
         driver.Builder()
-        .with_modules(*dataflow_components)
+        .with_modules(table_dataflow, model_training)
         .with_config(config)
         .with_adapters(ProgressBar())
         .enable_dynamic_execution(allow_experimental_mode=True)
@@ -68,7 +52,6 @@ def main(level: str, model: str):
     )
 
     res = dr.execute(final_vars, inputs=inputs)
-    view_expression(res["feature_set"], filename="ibis_feature_set", format="png")
 
     print("Dataflow result keys: ", list(res.keys()))
 
@@ -77,8 +60,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--level", choices=["column", "table"])
     parser.add_argument("--model", choices=["linear", "random_forest", "boosting"])
     args = parser.parse_args()
 
-    main(level=args.level, model=args.model)
+    main(model=args.model)
