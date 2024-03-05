@@ -1,3 +1,5 @@
 ibis-framework[duckdb,examples]
+ibisml
+scikit-learn
 sf-hamilton[visualization]
 tdqm

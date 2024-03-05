@@ -50,8 +50,11 @@ def data_split(
     """Generate indices to create train/validation splits n times"""
     folds = KFold(n_splits=n_splits)
     idx = list(range(feature_set.count().execute()))
+    feature_set = feature_set.mutate(idx=ibis.row_number())
     for train_idx, val_idx in folds.split(idx):
-        yield train_idx, val_idx
+        train_set = feature_set.filter(ibis._.idx.isin(train_idx))
+        val_set = feature_set.filter(ibis._.idx.isin(val_idx))
+        yield train_set, val_set
 
 
 @extract_fields(
@@ -69,12 +72,8 @@ def prepare_data(
     preprocessing_recipe: ibisml.Recipe,
 ) -> dict:
     """Split data and apply preprocessing recipe"""
-    train_idx, val_idx = data_split
+    train_set, val_set = data_split
     # add temporary idx column for train/val splits
-    feature_set = feature_set.mutate(idx=ibis.row_number())
-    train_set = feature_set.filter(ibis._.idx.isin(train_idx))
-    val_set = feature_set.filter(ibis._.idx.isin(val_idx))
-
     transform = preprocessing_recipe.fit(train_set, outcomes=[label])
 
     train = transform(train_set)
@@ -103,7 +102,6 @@ def cross_validation_fold(
     data_split: tuple,
 ) -> dict:
     """Train model and make predictions on validation"""
-    train_idx, val_idx = data_split
     model = clone(base_model)
 
     model.fit(X_train, y_train)
@@ -111,7 +109,7 @@ def cross_validation_fold(
     y_val_pred = model.predict(X_val)
     score = mean_squared_error(y_val, y_val_pred)
 
-    return dict(id=val_idx, y_true=y_val, y_pred=y_val_pred, score=score)
+    return dict(y_true=y_val, y_pred=y_val_pred, score=score)
 
 
 @extract_fields(
