@@ -3,9 +3,6 @@ from typing import Optional
 import ibis
 import ibis.expr.types as ir
 
-from hamilton.function_modifiers import check_output  # noqa: F401
-from hamilton.plugins import ibis_extensions  # noqa: F401
-
 
 def raw_table(raw_data_path: str) -> ir.Table:
     """Load CSV from `raw_data_path` into a Table expression
