@@ -76,7 +76,11 @@ if __name__ == "__main__":
     from hamilton import driver
 
     dr = driver.Builder().with_modules(doc_pipeline, spark_pipeline).with_config({}).build()
-    dr.display_all_functions("pipeline.png")
+    dr.visualize_execution(
+        ["chunked_url_text"],
+        output_file_path="pipeline.png",
+        inputs={"app_name": "chunking_spark_job", "num_partitions": 4},
+    )
     result = dr.execute(
         ["chunked_url_text"],
         inputs={"app_name": "chunking_spark_job", "num_partitions": 4},
