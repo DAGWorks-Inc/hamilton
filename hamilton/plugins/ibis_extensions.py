@@ -26,7 +26,7 @@ def register_types():
 
 @registry.fill_with_scalar.register(ir.Table)
 def fill_with_scalar_ibis(df: ir.Table, column_name: str, scalar_value: Any) -> ir.Table:
-    raise NotImplementedError
+    raise NotImplementedError("As of Hamilton version 1.5.1, default values for Ibis columns aren't supported. This feature is actively being developed")
 
 
 register_types()
