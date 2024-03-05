@@ -1,10 +1,16 @@
+"""
+This module is a modified version to enable it to be used in a spark job.
+
+Notably at the end we create a module level variable that contains a list of functions that are spark safe.
+This is used by the `@h_spark.with_columns` decorator to tell it which functions define the subdag
+and use the dataframe that the function declares a dependency upon.
+"""
+
 import json
 import re
 
 import requests
 from langchain import text_splitter
-
-# from langchain_core import documents
 
 
 def article_regex() -> str:
@@ -77,6 +83,8 @@ def chunked_text(
     return [json.dumps(s.to_json()) for s in splits]
 
 
+# this is a helper variable that we use to tell `@h_spark.with_columns` decorator which functions we want
+# it to create the subdag with that will take in and operate over the dataframe depended on.
 spark_safe = [
     article_regex,
     article_text,
