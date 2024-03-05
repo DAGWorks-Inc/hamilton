@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Any, Type
 
 from hamilton import registry
 
@@ -22,6 +22,13 @@ def get_column_ibis(df: ir.Table, column_name: str) -> ir.Column:
 def register_types():
     """Function to register the types for this extension."""
     registry.register_types("ibis", DATAFRAME_TYPE, COLUMN_TYPE)
+
+
+@registry.fill_with_scalar.register(ir.Table)
+def fill_with_scalar_ibis(df: ir.Table, column_name: str, scalar_value: Any) -> ir.Table:
+    raise NotImplementedError(
+        "As of Hamilton version 1.5.1, filling Ibis columns with scalars isn't supported. This feature is actively being developed"
+    )
 
 
 register_types()
