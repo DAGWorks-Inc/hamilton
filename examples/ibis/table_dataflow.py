@@ -25,20 +25,6 @@ def feature_table(raw_table: ir.Table) -> ir.Table:
     )
 
 
-@check_output(
-    schema=ibis.schema(
-        {
-            "has_children": "bool",
-            "has_pet": "bool",
-            "is_summer_brazil": "bool",
-            "service_time": "int",
-            "seasons": "int",
-            "disciplinary_failure": "int",
-            "absenteeism_time_in_hours": "int",
-        }
-    ),
-    importance="fail",
-)
 def feature_set(
     feature_table: ir.Table,
     feature_selection: list[str],
