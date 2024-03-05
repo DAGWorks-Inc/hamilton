@@ -79,11 +79,11 @@ def prepare_data(
     train = transform(train_set)
     df_train = train.to_pandas()
     X_train = df_train[train.features]
-    y_train = df_train[train.outcomes]
+    y_train = df_train[train.outcomes].to_numpy().reshape(-1)
 
     df_test = transform(val_set).to_pandas()
     X_val = df_test[train.features]
-    y_val = df_test[train.outcomes]
+    y_val = df_test[train.outcomes].to_numpy().reshape(-1)
 
     return dict(
         X_train=X_train,
@@ -161,7 +161,7 @@ def train_full_model(
     data = transform(feature_set)
     df = data.to_pandas()
     X = df[data.features]
-    y = df[data.outcomes]
+    y = df[data.outcomes].to_numpy().reshape(-1)
 
     base_model.fit(X, y)
     return dict(
