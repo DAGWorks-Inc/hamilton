@@ -48,14 +48,9 @@ def urls_from_sitemap(
     return df
 
 
-"""
-with_columns makes some assumptions:
-(a) that all functions in the with_columns subdag take in the dataframe
-(b) that all intermediate functions in the subdag need to become columns in the dataframe
-(c) it doesn't allow you to wire through inputs to the subdag
-"""
-
-
+# with_columns makes some assumptions:
+# (a) that all functions in the with_columns subdag take in some part of the dataframe
+# (b) that all intermediate functions in the with_columns subdag need to become columns in the dataframe
 @h_spark.with_columns(
     *doc_pipeline.spark_safe,
     select=["article_text", "chunked_text"],
@@ -63,6 +58,10 @@ with_columns makes some assumptions:
 )
 def chunked_url_text(urls_from_sitemap: ps.DataFrame) -> ps.DataFrame:
     """Creates dataframe with chunked text from URLs appended as columns.
+
+    I.e. `urls_from_sitemap` declares the dependency, and then
+    `with_columns` runs and appends columns to it, and then the
+    internal part of this function is called.
 
     :param urls_from_sitemap:
     :return:

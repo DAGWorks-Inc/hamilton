@@ -41,9 +41,16 @@ def urls_from_sitemap(sitemap_text: str) -> list[str]:
 def url(urls_from_sitemap: list[str], max_urls: int = 1000) -> Parallelizable[str]:
     """
     Takes in a list of URLs for parallel processing.
+
+    Note: this could be in a separate module, but it's here for simplicity.
     """
     for url in urls_from_sitemap[0:max_urls]:
         yield url
+
+
+# --- Start Parallel Code ---
+# The following code is parallelized, once for each url.
+# This code could be in a separate module, but it's here for simplicity.
 
 
 def article_regex() -> str:
@@ -115,6 +122,8 @@ def chunked_text(
 def url_result(url: str, article_text: str, chunked_text: list[documents.Document]) -> dict:
     """Function to aggregate what we want to return from parallel processing.
 
+    Note: this function is where you could cache the results to a datastore.
+
     :param url:
     :param article_text:
     :param chunked_text:
@@ -123,20 +132,27 @@ def url_result(url: str, article_text: str, chunked_text: list[documents.Documen
     return {"url": url, "article_text": article_text, "chunks": chunked_text}
 
 
+# --- END Parallel Code ---
+
+
 def collect_chunked_url_text(url_result: Collect[dict]) -> list:
-    """Function to collect the results from parallel processing."""
+    """Function to collect the results from parallel processing.
+    Note: All results for `url_result` are pulled into memory here.
+    So, if you have a lot of results, you may want to write them to a datastore and pass pointers.
+    """
     return list(url_result)
 
 
 if __name__ == "__main__":
-    import pipeline
+    # code here for quickly testing the build of the code here.
+    import doc_pipeline
 
     from hamilton import driver
     from hamilton.execution import executors
 
     dr = (
         driver.Builder()
-        .with_modules(pipeline)
+        .with_modules(doc_pipeline)
         .enable_dynamic_execution(allow_experimental_mode=True)
         .with_config({})
         .with_local_executor(executors.SynchronousLocalTaskExecutor())
@@ -144,8 +160,3 @@ if __name__ == "__main__":
         .build()
     )
     dr.display_all_functions("pipeline.png")
-    result = dr.execute(["collect_chunked_url_text"])
-    import pprint
-
-    for chunk in result["collect_chunked_url_text"]:
-        pprint.pprint(type(chunk["chunks"][0]))
