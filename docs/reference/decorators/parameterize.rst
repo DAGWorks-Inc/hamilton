@@ -43,7 +43,7 @@ documentation. If you don't, it will use the parameterized docstring.
 
 **Reference Documentation**
 
-Classes to help with @parameterize:
+Classes to help with @parameterize (also can be used with :doc:`@inject <inject>`):
 
 .. autoclass:: hamilton.function_modifiers.ParameterizedExtract
 
