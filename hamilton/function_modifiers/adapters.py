@@ -656,7 +656,7 @@ class save_to(metaclass=save_to__meta__):
     If you needs savers, you should also look into `.materialize` on the driver -- it's a clean way to do this in a more
     ad-hoc/decoupled manner.
 
-    If you want to layer savers, you'll have to use the target_ parameter, which tells the saver which node to use.
+    If you want to layer savers, you'll have to use the target\\_ parameter, which tells the saver which node to use.
 
     .. code-block:: python
 
