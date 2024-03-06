@@ -7,7 +7,7 @@ import pytest
 
 from hamilton import ad_hoc_utils, base, driver, graph, node
 from hamilton.function_modifiers import base as fm_base
-from hamilton.function_modifiers import save_to, source, value
+from hamilton.function_modifiers import extract_fields, save_to, source, value
 from hamilton.function_modifiers.adapters import (
     LoadFromDecorator,
     SaveToDecorator,
@@ -17,6 +17,7 @@ from hamilton.function_modifiers.adapters import (
 )
 from hamilton.function_modifiers.base import DefaultNodeCreator
 from hamilton.io.data_adapters import DataLoader, DataSaver
+from hamilton.io.default_data_loaders import JSONDataSaver
 from hamilton.registry import LOADER_REGISTRY
 
 
@@ -485,7 +486,7 @@ class MarkingSaver(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [int]
+        return [int, dict]
 
     @classmethod
     def name(cls) -> str:
@@ -521,6 +522,24 @@ def test_save_to_decorator():
     # Check that the markers are updated, ensuring that the save_fn is called
     assert marking_set_2 == {1}
     assert marking_set == {1}
+
+
+def test_save_to_decorator_with_target():
+    @extract_fields({"a": int, "b": int})
+    def fn() -> dict:
+        return {"a": 1, "b": 2}
+
+    decorator = SaveToDecorator(
+        [JSONDataSaver],
+        output_name_="save_fn",
+        path=value("unused"),
+        target_="fn",  # save the original
+    )
+    node_ = node.Node.from_fn(fn)
+    nodes = {n.name: n for n in decorator.transform_node(node_, {}, fn)}
+    saver_node = nodes["save_fn"]
+    # We just want to make sure it gets the right input
+    assert list(saver_node.input_types) == ["fn"]
 
 
 @dataclasses.dataclass
