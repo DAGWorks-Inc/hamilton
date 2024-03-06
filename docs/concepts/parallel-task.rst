@@ -74,3 +74,23 @@ Note that we currently have the following caveats:
 1. No nested `Parallelizable[]`/`Collect[]` blocks -- we only allow one level of parallelization
 2. Serialization for `Multiprocessing` is suboptimal -- we currently use the default `pickle` serializer, which breaks with certain cases. Ray, Dask, etc... all work well, and we plan to add support for joblib + cloudpickle serialization.
 3. `Collect[]` input types are limited to one per function -- this is another caveat that we intend to get rid of, but for now you'll want to concat/put into one function before collecting.
+
+Known Caveats
+^^^^^^^^^^^^^
+If you're familiar with multi-processing then these caveats will be familiar to you. If not, then you should be aware of the following:
+
+**Serialization**:
+
+Challenge:
+
+* Objects are by default pickled and sent to the remote executor, and then unpickled.
+* This can be slow, and can break with certain types of objects, e.g. OpenAI Client, DB Client, etc.
+
+Solution:
+
+* Make sure that your objects are serializable.
+* If you're using a library that doesn't support serialization, then one option is to have Hamilton instantiate
+  the object in each parallel block. You can do this by making the code depend on something within the parallel block.
+* Another option is write a customer wrapper function that uses `__set_state__` and `__get_state__` to serialize and deserialize the object.
+* See [this issue](https://github.com/DAGWorks-Inc/hamilton/issues/743) for details and possible features to make
+  this simpler to deal with.
