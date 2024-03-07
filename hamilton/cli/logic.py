@@ -1,15 +1,19 @@
-import functools
-import hashlib
-import subprocess
 from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Union
 
-from hamilton import ad_hoc_utils, driver, graph, graph_types, graph_utils
+from hamilton import driver
+
+CONFIG_HEADER = "HAMILTON_CONFIG"
+FINAL_VARS_HEADER = "HAMILTON_FINAL_VARS"
+INPUTS_HEADER = "HAMILTON_INPUTS"
+OVERRIDES_HEADER = "HAMILTON_OVERRIDES"
 
 
 def get_git_base_directory() -> str:
     """Get the base path of the current git directory"""
+    import subprocess
+
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
@@ -22,12 +26,15 @@ def get_git_base_directory() -> str:
             return result.stdout.strip()
         else:
             print("Error:", result.stderr.strip())
+            raise OSError(f"{result.stderr.strip()}")
     except FileNotFoundError:
         raise FileNotFoundError("Git command not found. Please make sure Git is installed.")
 
 
 def get_git_reference(git_relative_path: Union[str, Path], git_reference: str) -> str:
     """Get the source code from the specified file and git reference"""
+    import subprocess
+
     try:
         result = subprocess.run(
             ["git", "show", f"{git_reference}:{git_relative_path}"],
@@ -50,6 +57,8 @@ def get_git_reference(git_relative_path: Union[str, Path], git_reference: str) -
 
 def version_hamilton_functions(module: ModuleType) -> Dict[str, str]:
     """Hash the source code of Hamilton functions from a module"""
+    from hamilton import graph_utils
+
     origins_version: Dict[str, str] = dict()
 
     for origin_name, _ in graph_utils.find_functions(module):
@@ -61,10 +70,16 @@ def version_hamilton_functions(module: ModuleType) -> Dict[str, str]:
 
 def hash_hamilton_nodes(dr: driver.Driver) -> Dict[str, str]:
     """Hash the source code of Hamilton functions from nodes in a Driver"""
+    from hamilton import graph_types, graph_utils
+
     graph = graph_types.HamiltonGraph.from_graph(dr.graph)
 
     nodes_version = dict()
     for n in graph.nodes:
+        # is None for config nodes
+        if n.originating_functions is None:
+            continue
+
         node_origin = n.originating_functions[0]
         origin_hash = graph_utils.hash_source_code(node_origin, strip=True)
         nodes_version[n.name] = origin_hash
@@ -74,10 +89,16 @@ def hash_hamilton_nodes(dr: driver.Driver) -> Dict[str, str]:
 
 def map_nodes_to_functions(dr: driver.Driver) -> Dict[str, str]:
     """Get a mapping from node name to Hamilton function name"""
+    from hamilton import graph_types
+
     graph = graph_types.HamiltonGraph.from_graph(dr.graph)
 
     node_to_function = dict()
     for n in graph.nodes:
+        # is None for config nodes
+        if n.originating_functions is None:
+            continue
+
         node_callable = n.originating_functions[0]
         node_to_function[n.name] = node_callable.__name__
 
@@ -86,6 +107,8 @@ def map_nodes_to_functions(dr: driver.Driver) -> Dict[str, str]:
 
 def hash_dataflow(nodes_version: Dict[str, str]) -> str:
     """Create a dataflow hash from the hashes of its nodes"""
+    import hashlib
+
     sorted_nodes = sorted(nodes_version.values())
     return hashlib.sha256(str(sorted_nodes).encode()).hexdigest()
 
@@ -94,6 +117,8 @@ def load_modules_from_git(
     module_paths: List[Path], git_reference: str = "HEAD"
 ) -> List[ModuleType]:
     """Dynamically import modules for a git reference"""
+    from hamilton import ad_hoc_utils
+
     git_base_dir = Path(get_git_base_directory())
 
     modules = []
@@ -215,6 +240,10 @@ def visualize_diff(
 
     Uses the union of sets of nodes from driver 1 and driver 2.
     """
+    import functools
+
+    from hamilton import graph
+
     all_nodes = set(reference_dr.graph.get_nodes()).union(set(current_dr.graph.get_nodes()))
 
     diff_style = functools.partial(
@@ -232,3 +261,74 @@ def visualize_diff(
         node_modifiers=dict(),
         strictly_display_only_nodes_passed_in=True,
     )
+
+
+# TODO refactor ContextLoader to a class
+# TODO support loading from pyproject.toml
+def load_context(file_path: Path) -> dict:
+    if not file_path.exists():
+        raise FileNotFoundError(f"`{file_path}` doesn't exist.")
+
+    extension = file_path.suffix
+    if extension == ".json":
+        context = _read_json_context(file_path)
+    elif extension == ".py":
+        context = _read_py_context(file_path)
+    else:
+        raise ValueError(f"Received extension `{extension}` is unsupported.")
+
+    context = _validate_context(context)
+    return context
+
+
+def _validate_context(context: dict) -> dict:
+    if context[CONFIG_HEADER] is None:
+        context[CONFIG_HEADER] = {}
+
+    if context[FINAL_VARS_HEADER] is None:
+        context[FINAL_VARS_HEADER] = []
+
+    if context[INPUTS_HEADER] is None:
+        context[INPUTS_HEADER] = {}
+
+    if context[OVERRIDES_HEADER] is None:
+        context[OVERRIDES_HEADER] = {}
+
+    return context
+
+
+def _read_json_context(file_path: Path) -> dict:
+    """"""
+    import json
+
+    data = json.load(file_path.open())
+
+    context = {}
+    for k in [
+        CONFIG_HEADER,
+        FINAL_VARS_HEADER,
+        INPUTS_HEADER,
+        OVERRIDES_HEADER,
+    ]:
+        context[k] = data.get(k, None)
+
+    return context
+
+
+def _read_py_context(file_path: Path) -> dict:
+    import importlib
+
+    spec = importlib.util.spec_from_file_location("cli_config", file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    context = {}
+    for k in [
+        CONFIG_HEADER,
+        FINAL_VARS_HEADER,
+        INPUTS_HEADER,
+        OVERRIDES_HEADER,
+    ]:
+        context[k] = getattr(module, k, None)
+
+    return context
