@@ -3,6 +3,7 @@ import subprocess
 
 from hamilton.execution.executors import DefaultExecutionManager, TaskExecutor
 from hamilton.execution.grouping import TaskImplementation
+from hamilton.function_modifiers import tag
 
 
 class CMDLineExecutionManager(DefaultExecutionManager):
@@ -54,4 +55,5 @@ def cmdline_decorator(func):
     if inspect.isgeneratorfunction(func):
         # get the return type and set it as the return type of the wrapper
         wrapper.__annotations__["return"] = inspect.signature(func).return_annotation[2]
+    wrapper = tag(cmdline="yes")(wrapper)
     return wrapper
