@@ -1,6 +1,6 @@
 {
     "HAMILTON_CONFIG": {
-        "config_exists": "true"
+        "holiday": "halloween"
     },
-    "HAMILTON_FINAL_VARS": ["config_when", "customer_summary_table"]
+    "HAMILTON_FINAL_VARS": ["customers_df", "customer_summary_table"]
 }

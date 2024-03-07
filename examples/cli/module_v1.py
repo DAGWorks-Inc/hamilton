@@ -3,12 +3,14 @@ import pandas as pd
 from hamilton.function_modifiers import config, extract_columns
 
 
-@config.when(config_exists="true")
-def config_when() -> None:
-    return
+@config.when(holiday="halloween")
+def customers_df__halloween() -> pd.DataFrame:
+    """Example of using @config.when function modifier"""
+    return pd.read_csv("/path/to/halloween/customers.csv")
 
 
-def customers_df(customers_path: str = "customers.csv") -> pd.DataFrame:
+@config.when_not(holiday="halloween")
+def customers_df__default(customers_path: str = "customers.csv") -> pd.DataFrame:
     """Load the customer dataset."""
     return pd.read_csv(customers_path)
 
