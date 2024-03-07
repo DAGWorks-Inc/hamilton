@@ -13,12 +13,27 @@ Test the installation with
 
 # Features
 
-Currently 4 commands:
-
+## Commands
 - `build`: creates a Hamilton `Driver` from specified modules. It"s useful to validate the dataflow definition
+- `validate`: calls `Driver.validate_execution()` for a set of `inputs` and `overrides` passed through the `--context` option.
 - `view`: calls `dr.display_all_functions()` on the built `Driver`
 - `version`: generates node hashes based on their source code, and a dataflow hash from the collection of node hashes.
 - `diff`: get a diff of added/deleted/edited nodes between the current version of Python modules and another git reference (`default=HEAD`, i.e., the last commited version). You can get a visualization of the diffs
+
+## Options
+- all commands receive `MODULES` which is a list of path to Python modules to assembled as a single dataflow
+- all commands receive `--context` (`-ctx`), which is a file (`.py` or `.json`) that include top-level headers (see `config.py` and `config.json` in this repo for example):
+    - `HAMILTON_CONFIG`: `typing.Mapping` passed to `driver.Builder.with_config()`
+    - `HAMILTON_FINAL_VARS`: `typing.Sequence` passed to `driver.validate_execution(final_vars=...)`
+    - `HAMILTON_INPUTS`: `typing.Mapping` passed to `driver.validate_execution(inputs=...)`
+    - `HAMILTON_OVERRIDES`: `typing.Mapping` passed to `driver.validate_execution(overrides=...)`
+- Using a `.py` context file provides more flexibility than `.json` to define inputs and overrides objects.
+- all commands receive a `--name` (`-n`), which is used to name the output file (when the command produces a file). If `None`, a file name will be derived from the `MODULES` argument.
+- When using a command that generates a file:
+    - passing a file path: will output the file with this name at this location
+    - passing a directory: will output the file with the `--name` value (either explicit or default derived from `MODULES`) at this location
+    - passing a file path with the name `default`: will output the file with the name replaced by `--name` value at this location. This is useful when you need to specify a type via filename. For example, `hamilton view -o /path/to/default.pdf my_dataflow.py` will create the file `/path/to/my_dataflow.pdf`. (This behavior may change)
+
 
 See [DOCS.md](./DOCS.md) for the full references
 
