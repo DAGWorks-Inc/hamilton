@@ -36,6 +36,7 @@ class CliState:
     verbose: Optional[bool] = None
     json_out: Optional[bool] = None
     dr: Optional[driver.Driver] = None
+    name: Optional[str] = None
 
 
 cli = typer.Typer(rich_markup_mode="rich")
@@ -51,6 +52,11 @@ MODULES_ANNOTATIONS = Annotated[
         readable=True,
         resolve_path=True,
     ),
+]
+
+NAME_ANNOTATIONS = Annotated[
+    Optional[str],
+    typer.Option("--name", "-n", help="Name of the dataflow. Default: Derived from MODULES."),
 ]
 
 CONTEXT_ANNOTATIONS = Annotated[
@@ -140,10 +146,17 @@ def _response_handler(ctx: typer.Context, response: Response) -> None:
 def build(
     ctx: typer.Context,
     modules: MODULES_ANNOTATIONS,
+    name: NAME_ANNOTATIONS = None,
     context_path: CONTEXT_ANNOTATIONS = None,
 ):
     """Build a single Driver with MODULES"""
     state.dr = _try_command(cmd=commands.build, modules=modules, context_path=context_path)
+
+    if name:
+        state.name = name
+    else:
+        state.name = "_".join([str(Path(m).stem) for m in modules])[:40]
+
     _response_handler(
         ctx=ctx,
         response=Response(
@@ -158,6 +171,7 @@ def build(
 def diff(
     ctx: typer.Context,
     modules: MODULES_ANNOTATIONS,
+    name: NAME_ANNOTATIONS = None,
     context_path: CONTEXT_ANNOTATIONS = None,
     output_file_path: VIZ_OUTPUT_ANNOTATIONS = Path("diff.png"),
     git_reference: Annotated[
@@ -177,7 +191,11 @@ def diff(
 ):
     """Diff between the current MODULES and their specified GIT_REFERENCE"""
     if state.dr is None:
-        ctx.invoke(version, ctx=ctx, modules=modules, context_path=context_path)
+        ctx.invoke(version, ctx=ctx, modules=modules, name=name, context_path=context_path)
+
+    # default value isn't set to None to let Typer properly resolve the path
+    # then, we change the file name
+    output_file_path = output_file_path.with_stem("diff_" + state.name)
 
     diff = _try_command(
         cmd=commands.diff,
@@ -203,10 +221,11 @@ def validate(
     ctx: typer.Context,
     modules: MODULES_ANNOTATIONS,
     context_path: CONTEXT_ANNOTATIONS,
+    name: NAME_ANNOTATIONS = None,
 ):
     """Validate DATAFLOW execution for the given CONTEXT"""
     if state.dr is None:
-        ctx.invoke(build, ctx=ctx, modules=modules, context_path=context_path)
+        ctx.invoke(build, ctx=ctx, modules=modules, name=name, context_path=context_path)
 
     validated_context = _try_command(commands.validate, dr=state.dr, context_path=context_path)
     _response_handler(
@@ -223,11 +242,12 @@ def validate(
 def version(
     ctx: typer.Context,
     modules: MODULES_ANNOTATIONS,
+    name: NAME_ANNOTATIONS = None,
     context_path: CONTEXT_ANNOTATIONS = None,
 ):
     """Version NODES and DATAFLOW from dataflow with MODULES"""
     if state.dr is None:
-        ctx.invoke(build, ctx=ctx, modules=modules, context_path=context_path)
+        ctx.invoke(build, ctx=ctx, modules=modules, name=name, context_path=context_path)
 
     dataflow_version = _try_command(cmd=commands.version, dr=state.dr)
     _response_handler(
@@ -244,12 +264,17 @@ def version(
 def view(
     ctx: typer.Context,
     modules: MODULES_ANNOTATIONS,
+    name: NAME_ANNOTATIONS = None,
     context_path: CONTEXT_ANNOTATIONS = None,
     output_file_path: VIZ_OUTPUT_ANNOTATIONS = Path("dag.png"),
 ):
     """Build and visualize dataflow with MODULES"""
     if state.dr is None:
-        ctx.invoke(build, ctx=ctx, modules=modules, context_path=context_path)
+        ctx.invoke(build, ctx=ctx, modules=modules, name=name, context_path=context_path)
+
+    # default value isn't set to None to let Typer properly resolve the path
+    # then, we change the file name
+    output_file_path = output_file_path.with_stem("dag_" + state.name)
 
     _try_command(cmd=commands.view, dr=state.dr, output_file_path=output_file_path)
     _response_handler(
