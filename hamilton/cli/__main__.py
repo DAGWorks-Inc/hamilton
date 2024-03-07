@@ -77,10 +77,9 @@ VIZ_OUTPUT_ANNOTATIONS = Annotated[
     typer.Option(
         "--output",
         "-o",
-        help="Output path of visualization",
-        exists=False,
-        dir_okay=False,
-        readable=True,
+        help="Output path of visualization. If path is a directory, use NAME for file name.",
+        dir_okay=True,
+        writable=True,
         resolve_path=True,
     ),
 ]
@@ -173,7 +172,7 @@ def diff(
     modules: MODULES_ANNOTATIONS,
     name: NAME_ANNOTATIONS = None,
     context_path: CONTEXT_ANNOTATIONS = None,
-    output_file_path: VIZ_OUTPUT_ANNOTATIONS = Path("diff.png"),
+    output_file_path: VIZ_OUTPUT_ANNOTATIONS = Path("./"),
     git_reference: Annotated[
         str,
         typer.Option(
@@ -195,7 +194,9 @@ def diff(
 
     # default value isn't set to None to let Typer properly resolve the path
     # then, we change the file name
-    output_file_path = output_file_path.with_stem("diff_" + state.name)
+    if output_file_path.is_dir():
+        output_file_path.mkdir(parents=True, exist_ok=True)
+        output_file_path = output_file_path.joinpath(f"diff_{state.name}.png")
 
     diff = _try_command(
         cmd=commands.diff,
@@ -266,15 +267,15 @@ def view(
     modules: MODULES_ANNOTATIONS,
     name: NAME_ANNOTATIONS = None,
     context_path: CONTEXT_ANNOTATIONS = None,
-    output_file_path: VIZ_OUTPUT_ANNOTATIONS = Path("dag.png"),
+    output_file_path: VIZ_OUTPUT_ANNOTATIONS = Path("./"),
 ):
     """Build and visualize dataflow with MODULES"""
     if state.dr is None:
         ctx.invoke(build, ctx=ctx, modules=modules, name=name, context_path=context_path)
 
-    # default value isn't set to None to let Typer properly resolve the path
-    # then, we change the file name
-    output_file_path = output_file_path.with_stem("dag_" + state.name)
+    if output_file_path.is_dir():
+        output_file_path.mkdir(parents=True, exist_ok=True)
+        output_file_path = output_file_path.joinpath(f"dag_{state.name}.png")
 
     _try_command(cmd=commands.view, dr=state.dr, output_file_path=output_file_path)
     _response_handler(
