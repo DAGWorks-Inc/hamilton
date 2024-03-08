@@ -115,12 +115,6 @@ class DataLoader(AdapterCommon, abc.ABC):
     """Base class for data loaders. Data loaders are used to load data from a data source.
     Note that they are inherently polymorphic -- they declare what type(s) they can load to,
     and may choose to load differently depending on the type they are loading to.
-
-    Note that this is not yet a public-facing API -- the current set of data loaders will
-    be managed by the library, and the user will not be able to create their own.
-
-    We intend to change this and provide an extensible user-facing API,
-    but if you subclass this, beware! It might change.
     """
 
     @abc.abstractmethod
@@ -162,12 +156,6 @@ class DataSaver(AdapterCommon, abc.ABC):
     """Base class for data savers. Data savers are used to save data to a data source.
     Note that they are inherently polymorphic -- they declare what type(s) they can save from,
     and may choose to save differently depending on the type they are saving from.
-
-    Note that this is not yet a public-facing API -- the current set of data savers will
-    be managed by the library, and the user will not be able to create their own.
-
-    We intend to change this and provide an extensible user-facing API,
-    but if you subclass this, beware! It might change.
     """
 
     @abc.abstractmethod
