@@ -15,8 +15,6 @@ You can verify the installation with
 hamilton --help
 ```
 
-# Reference
-
 ## `hamilton` (global)
 
 **Options**:
