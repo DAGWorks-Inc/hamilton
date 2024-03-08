@@ -1,15 +1,18 @@
 """A selection of default lifeycle hooks/methods that come with Hamilton. These carry no additional requirements"""
 
+import hashlib
 import logging
 import pdb
+import pickle
 import pprint
 import random
+import shelve
 import time
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from hamilton import htypes
-from hamilton.lifecycle import NodeExecutionHook
-from hamilton.lifecycle.api import NodeExecutionMethod
+from hamilton import graph_utils
+from hamilton.graph_types import HamiltonGraph
+from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook, NodeExecutionMethod
 
 logger = logging.getLogger(__name__)
 
@@ -311,6 +314,71 @@ class PDBDebugger(NodeExecutionHook, NodeExecutionMethod):
                 )
             )
             pdb.set_trace()
+
+
+class CacheAdapter(NodeExecutionHook, NodeExecutionMethod, GraphExecutionHook):
+    nodes_history_key: str = "_nodes_history"
+
+    def __init__(
+        self, cache_vars: Union[List[str], None] = None, cache_path: str = "./hamilton-cache"
+    ):
+        self.cache_vars = cache_vars if cache_vars else []
+        self.cache_path = cache_path
+        self.cache = shelve.open(self.cache_path)
+        self.nodes_history: Dict[str, List[str]] = self.cache.get(
+            key=CacheAdapter.nodes_history_key, default=dict()
+        )
+        self.used_nodes_hash: Dict[str, str] = dict()
+
+    def run_before_graph_execution(self, *, graph: HamiltonGraph, **kwargs):
+        if self.cache_vars == []:
+            self.cache_vars = [n.name for n in graph.nodes]
+
+    def run_to_execute_node(
+        self, *, node_name: str, node_callable: Any, node_kwargs: Dict[str, Any], **kwargs
+    ):
+        if node_name not in self.cache_vars:
+            return node_callable(**node_kwargs)
+
+        # TODO remove hash_source_code after versioning PR
+        node_hash = graph_utils.hash_source_code(node_callable, strip=True)
+        self.used_nodes_hash[node_name] = node_hash
+        cache_key = CacheAdapter.create_key(node_hash, node_kwargs)
+
+        from_cache = self.cache.get(cache_key, None)
+        if from_cache is not None:
+            return from_cache
+
+        self.nodes_history[node_name] = self.nodes_history.get(node_name, []) + [node_hash]
+        return node_callable(**node_kwargs)
+
+    def run_after_node_execution(
+        self, *, node_name: str, node_kwargs: Dict[str, Any], result: Any, **kwargs
+    ):
+        if node_name not in self.cache_vars:
+            return
+
+        node_hash = self.used_nodes_hash[node_name]
+        cache_key = CacheAdapter.create_key(node_hash, node_kwargs)
+        self.cache[cache_key] = result
+
+    def run_after_graph_execution(self, *args, **kwargs):
+        self.cache[CacheAdapter.nodes_history_key] = self.nodes_history
+        self.cache.close()
+
+    def run_before_node_execution(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def create_key(node_hash: str, node_inputs: Dict[str, Any]) -> str:
+        """Pickle objects into bytes then get their hash value"""
+        digest = hashlib.sha256()
+        digest.update(node_hash.encode())
+
+        for ins in node_inputs.values():
+            digest.update(pickle.dumps(ins))
+
+        return digest.hexdigest()
 
 
 def wait_random(mean: float, stddev: float):
