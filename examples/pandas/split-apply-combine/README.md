@@ -27,7 +27,7 @@ The following rules applies to **Income**:
 - 120k to 150k: Tax rate is 25 %
 - over 150k: Tax rate is 28 %
 
-The following rules applies to the **number of childre**n when the **income is under 100k**:
+The following rules applies to the **number of children** when the **income is under 100k**:
 
 - 0 child: Tax credit 0 %
 - 1 child: Tax credit 2 %
