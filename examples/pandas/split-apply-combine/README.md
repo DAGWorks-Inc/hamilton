@@ -51,6 +51,15 @@ The following data needs to be processed:
 | Toney    | 43642  | 3        |
 | Ramiro   | 117850 | 2        |  
 
+## Running the example
+
+You can run the example doing:
+
+```bash
+# cd examples/pandas/split-apply-combine/ 
+python my_script.py
+```
+
 The expected result is :
 
 | Name     | Income | Children | Tax Rate | Tax Credit | Tax   | Tax Formula                            |
@@ -66,6 +75,6 @@ The expected result is :
 | Toney    | 43642  | 3        | 15 %     | 6 %        | 6154  | (43642 * 0.15) - (43642 * 0.15) * 0.06 |
 | Ramiro   | 117850 | 2        | 22 %     |            | 25927 | (117850 * 0.22)                        |
 
-The DAG should be like:
+The DAG generate should look like:
 
 ![my_full_dag.png](my_full_dag.png)
