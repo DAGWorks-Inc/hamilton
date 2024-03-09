@@ -5,29 +5,7 @@ import pandas
 import pandas as pd
 from pandas import DataFrame, Series
 
-from hamilton.function_modifiers import pipe, step, extract_fields, extract_columns, inject, source
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Tax Rate & Credit rules
-# ----------------------------------------------------------------------------------------------------------------------
-
-tax_rates_rules = {
-    "Income < 50000": 0.15,  # < 50k: Tax rate is 15 %
-    "Income > 50000 and Income < 70000": 0.18,  # 50k to 70k: Tax rate is 18 %
-    "Income > 70000 and Income < 100000": 0.2,  # 70k to 100k: Tax rate is 20 %
-    "Income > 100000 and Income < 120000": 0.22,  # 100k to 120k: Tax rate is 22 %
-    "Income > 120000 and Income < 150000": 0.25,  # 120k to 150k: Tax rate is 25 %
-    "Income > 150000": 0.28,  # over 150k: Tax rate is 28 %
-}
-
-tax_credits_rules = {
-    "Children == 0": 0,  # 0 child: Tax credit 0 %
-    "Children == 1": 0.02,  # 1 child: Tax credit 2 %
-    "Children == 2": 0.04,  # 2 children: Tax credit 4 %
-    "Children == 3": 0.06,  # 3 children: Tax credit 6 %
-    "Children == 4": 0.08,  # 4 children: Tax credit 8 %
-    "Children > 4": 0.1,  # over 4 children: Tax credit 10 %
-}
+from hamilton.function_modifiers import pipe, step, extract_fields, extract_columns, inject, source, value
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -78,21 +56,29 @@ def _tax_credit(df: DataFrame, tax_credits: Dict[str, float]) -> DataFrame:
     {"under_100k": DataFrame, "over_100k": DataFrame}
 )
 # Step 1: DataFrame is split in 2 DataFrames
-def split_dataframe(input: DataFrame) -> Dict[str, DataFrame]:
+def split_dataframe(input: DataFrame, tax_rates: Dict[str, float], tax_credits: Dict[str, float]) -> Dict[
+    str, DataFrame]:
     """
     That function takes the DataFrame in input and split it in 2 DataFrames:
       - under_100k: Rows where 'Income' is under 100k
       - over_100k: Rows where 'Income' is over 100k
+
+    :param input: the DataFrame to process
+    :param tax_rates: The Tax Rates rules
+    :param tax_credits: The Tax Credits rules
+    :return: the Dict of DataFrames
     """
     return {
         "under_100k": input.query('Income < 100000'),
         "over_100k": input.query('Income >= 100000'),
+        "tax_rates": tax_rates,
+        "tax_credits": tax_credits,
     }
 
 
 @pipe(
-    step(_tax_rate, tax_rates=tax_rates_rules),  # apply the _tax_rate step
-    step(_tax_credit, tax_credits=tax_credits_rules),  # apply the _tax_credit step
+    step(_tax_rate, tax_rates=source("tax_rates")),  # apply the _tax_rate step
+    step(_tax_credit, tax_credits=source("tax_credits")),  # apply the _tax_credit step
 )
 # Step 2: DataFrame for Income under 100k applies a tax calculation pipeline
 def under_100k_tax(under_100k: DataFrame) -> DataFrame:
@@ -105,7 +91,7 @@ def under_100k_tax(under_100k: DataFrame) -> DataFrame:
 
 
 @pipe(
-    step(_tax_rate, tax_rates=tax_rates_rules),  # apply the _tax_rate step
+    step(_tax_rate, tax_rates=source("tax_rates")),  # apply the _tax_rate step
 )
 # Step 2: DataFrame for Income over 100k applies a tax calculation pipeline
 def over_100k_tax(over_100k: DataFrame) -> DataFrame:

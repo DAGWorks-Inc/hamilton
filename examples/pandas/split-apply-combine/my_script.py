@@ -17,6 +17,9 @@ def read_table(table: str, delimiter="|") -> DataFrame:
     return df
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+# The Data to process
+# ----------------------------------------------------------------------------------------------------------------------
 input = read_table(
     """
     | Name     | Income | Children |
@@ -33,10 +36,34 @@ input = read_table(
     """
 )
 
+# ----------------------------------------------------------------------------------------------------------------------
+# Tax Rate & Credit rules
+# ----------------------------------------------------------------------------------------------------------------------
+tax_rates = {
+    "Income < 50000": 0.15,  # < 50k: Tax rate is 15 %
+    "Income > 50000 and Income < 70000": 0.18,  # 50k to 70k: Tax rate is 18 %
+    "Income > 70000 and Income < 100000": 0.2,  # 70k to 100k: Tax rate is 20 %
+    "Income > 100000 and Income < 120000": 0.22,  # 100k to 120k: Tax rate is 22 %
+    "Income > 120000 and Income < 150000": 0.25,  # 120k to 150k: Tax rate is 25 %
+    "Income > 150000": 0.28,  # over 150k: Tax rate is 28 %
+}
+
+tax_credits = {
+    "Children == 0": 0,  # 0 child: Tax credit 0 %
+    "Children == 1": 0.02,  # 1 child: Tax credit 2 %
+    "Children == 2": 0.04,  # 2 children: Tax credit 4 %
+    "Children == 3": 0.06,  # 3 children: Tax credit 6 %
+    "Children == 4": 0.08,  # 4 children: Tax credit 8 %
+    "Children > 4": 0.1,  # over 4 children: Tax credit 10 %
+}
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Run the Tax Calculator
+# ----------------------------------------------------------------------------------------------------------------------
 
 # Visualize the DAG
 TaxCalculator.visualize()
 
 # Calculate the taxes
-output = TaxCalculator.calculate(input)
+output = TaxCalculator.calculate(input, tax_rates, tax_credits)
 print(output.to_string())
