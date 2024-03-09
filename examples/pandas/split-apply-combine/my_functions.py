@@ -66,7 +66,7 @@ def split_dataframe(input: DataFrame, tax_rates: Dict[str, float], tax_credits: 
     :param input: the DataFrame to process
     :param tax_rates: The Tax Rates rules
     :param tax_credits: The Tax Credits rules
-    :return: the Dict of DataFrames
+    :return: a Dict with the DataFrames and the Tax Rates & Credit rules
     """
     return {
         "under_100k": input.query('Income < 100000'),
