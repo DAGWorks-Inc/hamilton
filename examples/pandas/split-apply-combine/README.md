@@ -65,3 +65,7 @@ The expected result is :
 | Carlos   | 65535  | 0        | 18 %     | 0 %        | 11796 | (65535 * 0.18) - (65535 * 0.18) * 0.0  |
 | Toney    | 43642  | 3        | 15 %     | 6 %        | 6154  | (43642 * 0.15) - (43642 * 0.15) * 0.06 |
 | Ramiro   | 117850 | 2        | 22 %     |            | 25927 | (117850 * 0.22)                        |
+
+The DAG should be like:
+
+![my_full_dag.png](my_full_dag.png)
