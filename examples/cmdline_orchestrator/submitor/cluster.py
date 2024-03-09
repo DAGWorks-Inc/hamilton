@@ -2,7 +2,9 @@ from .submitor import Submitor
 from .slurm import Slurm
 
 class Cluster:
-
+    """
+    A class to manage different cluster submitors.
+    """
     def __init__(self, ):
         
         self._cluster:dict[str, Submitor] = {}

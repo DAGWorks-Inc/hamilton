@@ -2,7 +2,9 @@ from .adapter import LocalAdapter, RemoteAdapter
 
 
 class Submitor:
-
+    """
+    Base class for submitors.
+    """
     def __init__(self, name:str, is_remote:bool = False):
         self.name = name
         self.script_name = "submit.sh"
