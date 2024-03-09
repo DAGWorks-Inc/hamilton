@@ -169,7 +169,7 @@ def tax(tax_formula: Series) -> Series:
 # Step 6 (final): DataFrame and Series computed are combined
 def final_tax_dataframe(combined_dataframe: DataFrame, tax_formula: Series, tax: Series) -> DataFrame:
     """
-    That function combine the DataFrames
+    That function combine the DataFrame and the 'Tax' and 'Tax Formula' series
     """
     df = combined_dataframe.copy(deep=True)
 
