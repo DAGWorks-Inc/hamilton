@@ -15,7 +15,7 @@ For this example, we want to **split** a DataFrame in 2 DataFrames, then for eac
 
 ## Example
 
-The example consists of calculate the tax of individuals or families based on their income and the number of children
+The example consists of calculating the tax of individuals or families based on their income and the number of children
 they have.
 
 The following rules applies to **Income**:
