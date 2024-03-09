@@ -1,48 +1,42 @@
 // Dependency Graph
 digraph {
 	graph [compound=true concentrate=true rankdir=LR ranksep=0.4]
-	Income [label=<<b>Income</b><br /><br /><i>Series</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	combine_dataframe [label=<<b>combine_dataframe</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	over_100k [label=<<b>over_100k</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	"over_100k_tax.with_tax_rate" [label=<<b>over_100k_tax.with_tax_rate</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	under_100k_tax [label=<<b>under_100k_tax</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
 	"under_100k_tax.with_tax_rate" [label=<<b>under_100k_tax.with_tax_rate</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	"Tax Credit" [label=<<b>Tax Credit</b><br /><br /><i>Series</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	under_100k [label=<<b>under_100k</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	tax_rate [label=<<b>tax_rate</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	tax_credit [label=<<b>tax_credit</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	tax [label=<<b>tax</b><br /><br /><i>Series</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	"Tax Rate" [label=<<b>Tax Rate</b><br /><br /><i>Series</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	over_100k_tax [label=<<b>over_100k_tax</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	end [label=<<b>end</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
+	"over_100k_tax.with_tax_rate" [label=<<b>over_100k_tax.with_tax_rate</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
 	"under_100k_tax.with_tax_credit" [label=<<b>under_100k_tax.with_tax_credit</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
+	"Tax Credit" [label=<<b>Tax Credit</b><br /><br /><i>Series</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
+	over_100k_tax [label=<<b>over_100k_tax</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
+	combined_dataframe [label=<<b>combined_dataframe</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
+	over_100k [label=<<b>over_100k</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
 	tax_formula [label=<<b>tax_formula</b><br /><br /><i>Series</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
+	"Tax Rate" [label=<<b>Tax Rate</b><br /><br /><i>Series</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
+	final_tax_dataframe [label=<<b>final_tax_dataframe</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
+	Income [label=<<b>Income</b><br /><br /><i>Series</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
 	split_dataframe [label=<<b>split_dataframe</b><br /><br /><i>Dict</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
-	combine_dataframe -> Income
-	under_100k_tax -> combine_dataframe
-	over_100k_tax -> combine_dataframe
-	split_dataframe -> over_100k
-	over_100k -> "over_100k_tax.with_tax_rate"
-	"under_100k_tax.with_tax_credit" -> under_100k_tax
+	tax [label=<<b>tax</b><br /><br /><i>Series</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
+	under_100k_tax [label=<<b>under_100k_tax</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
+	under_100k [label=<<b>under_100k</b><br /><br /><i>DataFrame</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]
 	under_100k -> "under_100k_tax.with_tax_rate"
-	combine_dataframe -> "Tax Credit"
-	split_dataframe -> under_100k
-	_tax_rate_inputs [label=<<table border="0"><tr><td>tax_rates</td><td>Dict</td></tr><tr><td>df</td><td>DataFrame</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style=dashed]
-	_tax_rate_inputs -> tax_rate
-	_tax_credit_inputs [label=<<table border="0"><tr><td>tax_credits</td><td>Dict</td></tr><tr><td>df</td><td>DataFrame</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style=dashed]
-	_tax_credit_inputs -> tax_credit
-	tax_formula -> tax
-	combine_dataframe -> "Tax Rate"
-	"over_100k_tax.with_tax_rate" -> over_100k_tax
-	combine_dataframe -> end
-	tax_formula -> end
-	tax -> end
+	over_100k -> "over_100k_tax.with_tax_rate"
 	"under_100k_tax.with_tax_rate" -> "under_100k_tax.with_tax_credit"
+	combined_dataframe -> "Tax Credit"
+	"over_100k_tax.with_tax_rate" -> over_100k_tax
+	under_100k_tax -> combined_dataframe
+	over_100k_tax -> combined_dataframe
+	split_dataframe -> over_100k
 	Income -> tax_formula
 	"Tax Rate" -> tax_formula
 	"Tax Credit" -> tax_formula
+	combined_dataframe -> "Tax Rate"
+	combined_dataframe -> final_tax_dataframe
+	tax_formula -> final_tax_dataframe
+	tax -> final_tax_dataframe
+	combined_dataframe -> Income
 	_split_dataframe_inputs [label=<<table border="0"><tr><td>input</td><td>DataFrame</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style=dashed]
 	_split_dataframe_inputs -> split_dataframe
+	tax_formula -> tax
+	"under_100k_tax.with_tax_credit" -> under_100k_tax
+	split_dataframe -> under_100k
 	subgraph cluster__legend {
 		graph [fontname=helvetica label=Legend rank=same]
 		input [fontname=Helvetica margin=0.15 shape=rectangle style=dashed]

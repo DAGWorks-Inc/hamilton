@@ -10,7 +10,7 @@ Many data analysis or processing involve one or more of the following steps:
 - **Apply**: applying some functions to each of the groups,
 - **Combine**: combining the results.
 
-For this example, we want to **split** a DataFrame in 2 DataFrames, then for each DataFrames 
+For this example, we want to **split** a DataFrame in 2 DataFrames, then for each DataFrames
 *apply** a different transformation pipeline then **combine** the result in a DataFrame.
 
 ## Example
@@ -53,15 +53,15 @@ The following data needs to be processed:
 
 The expected result is :
 
-| Name     | Income | Children | Tax Rate | Tax Credit | Tax   | Tax Formula                             |   
-|----------|--------|----------|----------|------------|-------|-----------------------------------------|    
-| John     | 75600  | 2        | 20 %     | 4 %        | 14515 | (75600 * 0.2) - (75600 * 0.18) * 0.04   |    
-| Bob      | 34000  | 1        | 15 %     | 2 %        | 4998  | (34000 * 0.2) - (34000 * 0.15) * 0.02   |    
-| Chloe    | 111500 | 3        | 22 %     |            | 24530 | (111500 * 0.22)                         |    
-| Thomas   | 234546 | 1        | 28 %     |            | 65673 | (234546 * 0.28)                         |    
-| Ellis    | 144865 | 2        | 25 %     |            | 36216 | (144865 * 0.25)                         |    
-| Deane    | 138500 | 4        | 25 %     |            | 34625 | (138500 * 0.25)                         |    
-| Mariella | 69412  | 5        | 18 %     | 10 %       | 11245 | (69412 * 0.18) - (69412 * 0.2)  * 0.1   |    
-| Carlos   | 65535  | 0        | 18 %     | 0 %        | 11796 | (65535 * 0.18) - (65535 * 0.18) * 0.0   |    
-| Toney    | 43642  | 3        | 15 %     | 6 %        | 6154  | (43642 * 0.15) - (43642 * 0.15)  * 0.06 |    
-| Ramiro   | 117850 | 2        | 22 %     |            | 25927 | (117850 * 0.22)                         |    
+| Name     | Income | Children | Tax Rate | Tax Credit | Tax   | Tax Formula                            |
+|----------|--------|----------|----------|------------|-------|----------------------------------------|    
+| John     | 75600  | 2        | 20 %     | 4 %        | 14515 | (75600 * 0.2) - (75600 * 0.2) * 0.04   |
+| Bob      | 34000  | 1        | 15 %     | 2 %        | 4998  | (34000 * 0.15) - (34000 * 0.15) * 0.02 |
+| Chloe    | 111500 | 3        | 22 %     |            | 24530 | (111500 * 0.22)                        |
+| Thomas   | 234546 | 1        | 28 %     |            | 65673 | (234546 * 0.28)                        |
+| Ellis    | 144865 | 2        | 25 %     |            | 36216 | (144865 * 0.25)                        |
+| Deane    | 138500 | 4        | 25 %     |            | 34625 | (138500 * 0.25)                        |
+| Mariella | 69412  | 5        | 18 %     | 10 %       | 11245 | (69412 * 0.18) - (69412 * 0.18) * 0.1  |
+| Carlos   | 65535  | 0        | 18 %     | 0 %        | 11796 | (65535 * 0.18) - (65535 * 0.18) * 0.0  |
+| Toney    | 43642  | 3        | 15 %     | 6 %        | 6154  | (43642 * 0.15) - (43642 * 0.15) * 0.06 |
+| Ramiro   | 117850 | 2        | 22 %     |            | 25927 | (117850 * 0.22)                        |

@@ -31,10 +31,10 @@ tax_credits_rules = {
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Tax calculation functions
+# Tax calculation private functions
 # ----------------------------------------------------------------------------------------------------------------------
 
-def tax_rate(df: DataFrame, tax_rates: Dict[str, float]) -> DataFrame:
+def _tax_rate(df: DataFrame, tax_rates: Dict[str, float]) -> DataFrame:
     """
     Add a series 'Tax Rate' to the DataFrame based on the tax_rates rules.
     :param df: The DataFrame
@@ -48,11 +48,11 @@ def tax_rate(df: DataFrame, tax_rates: Dict[str, float]) -> DataFrame:
             continue
         tmp = DataFrame({"Tax Rate": tax_rate}, index=selected.index)
         output = pd.concat([output, tmp], axis=0)
-    df["Tax Rate"] = output["Tax Rate"]
+    df = pd.concat([df, output], axis=1)
     return df
 
 
-def tax_credit(df: DataFrame, tax_credits: Dict[str, float]) -> DataFrame:
+def _tax_credit(df: DataFrame, tax_credits: Dict[str, float]) -> DataFrame:
     """
     Add a series 'Tax Credit' to the DataFrame based on the tax_credits rules.
     :param df: The DataFrame
@@ -66,11 +66,73 @@ def tax_credit(df: DataFrame, tax_credits: Dict[str, float]) -> DataFrame:
             continue
         tmp = DataFrame({"Tax Credit": tax_credit}, index=selected.index)
         output = pd.concat([output, tmp], axis=0)
-    df["Tax Credit"] = output["Tax Credit"]
+    df = pd.concat([df, output], axis=1)
     return df
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+# DataFlow: The functions defined below are displayed in the order of execution
+# ----------------------------------------------------------------------------------------------------------------------
+
+@extract_fields(
+    {"under_100k": DataFrame, "over_100k": DataFrame}
+)
+# Step 1: DataFrame is split in 2 DataFrames
+def split_dataframe(input: DataFrame) -> Dict[str, DataFrame]:
+    """
+    That function takes the DataFrame in input and split it in 2 DataFrames:
+      - under_100k: Rows where 'Income' is under 100k
+      - over_100k: Rows where 'Income' is over 100k
+    """
+    return {
+        "under_100k": input.query('Income < 100000'),
+        "over_100k": input.query('Income >= 100000'),
+    }
+
+
+@pipe(
+    step(_tax_rate, tax_rates=tax_rates_rules),  # apply the _tax_rate step
+    step(_tax_credit, tax_credits=tax_credits_rules),  # apply the _tax_credit step
+)
+# Step 2: DataFrame for Income under 100k applies a tax calculation pipeline
+def under_100k_tax(under_100k: DataFrame) -> DataFrame:
+    """
+    Tax calculation pipeline for 'Income' under 100k.
+    :param df: The DataFrame  where 'Income' is under 100k
+    :return: the DataFrame with the 'Tax' Series
+    """
+    return under_100k
+
+
+@pipe(
+    step(_tax_rate, tax_rates=tax_rates_rules),  # apply the _tax_rate step
+)
+# Step 2: DataFrame for Income over 100k applies a tax calculation pipeline
+def over_100k_tax(over_100k: DataFrame) -> DataFrame:
+    """
+    Tax calculation pipeline for 'Income' over 100k.
+    :param over_100k: The DataFrame where 'Income' is over 100k
+    :return: the DataFrame with the 'Tax' Series
+    """
+    return over_100k
+
+
+@extract_columns('Income', 'Tax Rate', 'Tax Credit')
+# Step 3: DataFrames are combined. Series 'Income', 'Tax Rate', 'Tax Credit' are extracted for next processing step
+def combined_dataframe(under_100k_tax: DataFrame, over_100k_tax: DataFrame) -> DataFrame:
+    """
+    That function combine the DataFrames under_100k_tax and over_100k_tax
+
+    The @extract_columns decorator is making the Series available for processing.
+    """
+    combined = pd.concat([under_100k_tax, over_100k_tax], axis=0).sort_index()
+    return combined
+
+
+# We use @inject decorator here because we have spaces in the names of columns.
+# If column names are valid python variable names we wouldn't need this.
 @inject(income=source("Income"), tax_rate=source("Tax Rate"), tax_credit=source("Tax Credit"))
+# Step 4: 'Tax Formula' is calculated from 'Income', 'Tax Rate' and 'Tax Credit' series
 def tax_formula(income: Series, tax_rate: Series, tax_credit: Series) -> Series:
     """
     Return a DataFrame with a series 'Tax Formula' from 'Income', 'Tax Rate' and 'Tax Credit' series.
@@ -92,6 +154,7 @@ def tax_formula(income: Series, tax_rate: Series, tax_credit: Series) -> Series:
     return df["Tax Formula"]
 
 
+# Step 5: 'Tax' is calculated from 'Tax Formula' series
 def tax(tax_formula: Series) -> Series:
     """
     Return a series 'Tax' from 'Tax Formula' series.
@@ -103,77 +166,22 @@ def tax(tax_formula: Series) -> Series:
     return df["Tax"]
 
 
-# ----------------------------------------------------------------------------------------------------------------------
-# Tax calculation pipelines (chained set of transformations)
-# ----------------------------------------------------------------------------------------------------------------------
-
-@pipe(
-    step(tax_rate, tax_rates=tax_rates_rules),  # apply the tax_rate step
-    step(tax_credit, tax_credits=tax_credits_rules),  # apply the tax_credit step
-)
-def under_100k_tax(under_100k: DataFrame) -> DataFrame:
-    """
-    Tax calculation pipeline for 'Income' under 100k.
-    :param df: The DataFrame  where 'Income' is under 100k
-    :return: the DataFrame with the 'Tax' Series
-    """
-    return under_100k
-
-
-@pipe(
-    step(tax_rate, tax_rates=tax_rates_rules),  # apply the tax_rate step
-)
-def over_100k_tax(over_100k: DataFrame) -> DataFrame:
-    """
-    Tax calculation pipeline for 'Income' over 100k.
-    :param over_100k: The DataFrame where 'Income' is over 100k
-    :return: the DataFrame with the 'Tax' Series
-    """
-    return over_100k
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Tax calculator dataflow
-# ----------------------------------------------------------------------------------------------------------------------
-
-@extract_fields(
-    {"under_100k": DataFrame, "over_100k": DataFrame}
-)
-# This is the first node in the DAG
-def split_dataframe(input: DataFrame) -> Dict[str, DataFrame]:
-    """
-    That function takes the DataFrame in input and split it in 2 DataFrames:
-      - under_100k: Rows where 'Income' is under 100k
-      - over_100k: Rows where 'Income' is over 100k
-    """
-    return {
-        "under_100k": input.query('Income < 100000'),
-        "over_100k": input.query('Income >= 100000'),
-    }
-
-
-@extract_columns('Income', 'Tax Rate', 'Tax Credit')
-def combine_dataframe(under_100k_tax: DataFrame, over_100k_tax: DataFrame) -> DataFrame:
-    """
-    That function combine the DataFrames under_100k and over_100k
-
-    The @extract_columns decorator is making the Series available for processing.
-    """
-    combined = pd.concat([under_100k_tax, over_100k_tax], axis=0).sort_index()
-    return combined
-
-
-# This is the last node in the DAG
-def end(combine_dataframe: DataFrame, tax_formula: Series, tax: Series) -> DataFrame:
+# Step 6 (final): DataFrame and Series computed are combined
+def final_tax_dataframe(combined_dataframe: DataFrame, tax_formula: Series, tax: Series) -> DataFrame:
     """
     That function combine the DataFrames
     """
-    df = combine_dataframe.copy(deep=True)
+    df = combined_dataframe.copy(deep=True)
 
+    # Set the 'Tax' and 'Tax Formula' series
     df["Tax Formula"] = tax_formula
     df["Tax"] = tax
+
+    # Transform  the 'Tax Rate' and 'Tax Credit' series to display percentage
     df["Tax Rate"] = df["Tax Rate"].apply(lambda x: f"{int(x * 100)} %")
     df["Tax Credit"] = df["Tax Credit"].apply(lambda x: f"{int(x * 100)} %" if not np.isnan(x) else "")
 
+    # Define the order the DataFrame will be displayed
     order = ["Name", "Income", "Children", "Tax Rate", "Tax Credit", "Tax", "Tax Formula"]
+
     return df.reindex(columns=order)

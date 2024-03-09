@@ -14,7 +14,7 @@ class TaxCalculator:
 
     @staticmethod
     def calculate(input: DataFrame) -> DataFrame:
-        return driver.execute(inputs={"input": input}, final_vars=["end"])
+        return driver.execute(inputs={"input": input}, final_vars=["final_tax_dataframe"])
 
     @staticmethod
     def visualize(output_path="./my_full_dag.png"):
