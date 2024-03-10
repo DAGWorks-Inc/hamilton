@@ -38,7 +38,7 @@ The following rules applies to the **number of children** when the **income is u
 
 The following data needs to be processed:
 
-| Name     | Income | Children | 
+| Name     | Income | Children |
 |----------|--------|----------|
 | John     | 75600  | 2        |
 | Bob      | 34000  | 1        |
@@ -49,21 +49,21 @@ The following data needs to be processed:
 | Mariella | 69412  | 5        |
 | Carlos   | 65535  | 0        |
 | Toney    | 43642  | 3        |
-| Ramiro   | 117850 | 2        |  
+| Ramiro   | 117850 | 2        |
 
 ## Running the example
 
 You can run the example doing:
 
 ```bash
-# cd examples/pandas/split-apply-combine/ 
+# cd examples/pandas/split-apply-combine/
 python my_script.py
 ```
 
 The expected result is :
 
 | Name     | Income | Children | Tax Rate | Tax Credit | Tax   | Tax Formula                            |
-|----------|--------|----------|----------|------------|-------|----------------------------------------|    
+|----------|--------|----------|----------|------------|-------|----------------------------------------|
 | John     | 75600  | 2        | 20 %     | 4 %        | 14515 | (75600 * 0.2) - (75600 * 0.2) * 0.04   |
 | Bob      | 34000  | 1        | 15 %     | 2 %        | 4998  | (34000 * 0.15) - (34000 * 0.15) * 0.02 |
 | Chloe    | 111500 | 3        | 22 %     |            | 24530 | (111500 * 0.22)                        |

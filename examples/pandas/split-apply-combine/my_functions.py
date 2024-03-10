@@ -5,12 +5,12 @@ import pandas
 import pandas as pd
 from pandas import DataFrame, Series
 
-from hamilton.function_modifiers import pipe, step, extract_fields, extract_columns, inject, source, value
-
+from hamilton.function_modifiers import extract_columns, extract_fields, inject, pipe, source, step
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Tax calculation private functions
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def _tax_rate(df: DataFrame, tax_rates: Dict[str, float]) -> DataFrame:
     """
@@ -52,12 +52,12 @@ def _tax_credit(df: DataFrame, tax_credits: Dict[str, float]) -> DataFrame:
 # DataFlow: The functions defined below are displayed in the order of execution
 # ----------------------------------------------------------------------------------------------------------------------
 
-@extract_fields(
-    {"under_100k": DataFrame, "over_100k": DataFrame}
-)
+
+@extract_fields({"under_100k": DataFrame, "over_100k": DataFrame})
 # Step 1: DataFrame is split in 2 DataFrames
-def split_dataframe(input: DataFrame, tax_rates: Dict[str, float], tax_credits: Dict[str, float]) -> Dict[
-    str, DataFrame]:
+def split_dataframe(
+    input: DataFrame, tax_rates: Dict[str, float], tax_credits: Dict[str, float]
+) -> Dict[str, DataFrame]:
     """
     That function takes the DataFrame in input and split it in 2 DataFrames:
       - under_100k: Rows where 'Income' is under 100k
@@ -69,8 +69,8 @@ def split_dataframe(input: DataFrame, tax_rates: Dict[str, float], tax_credits: 
     :return: a Dict with the DataFrames and the Tax Rates & Credit rules
     """
     return {
-        "under_100k": input.query('Income < 100000'),
-        "over_100k": input.query('Income >= 100000'),
+        "under_100k": input.query("Income < 100000"),
+        "over_100k": input.query("Income >= 100000"),
         "tax_rates": tax_rates,
         "tax_credits": tax_credits,
     }
@@ -103,7 +103,7 @@ def over_100k_tax(over_100k: DataFrame) -> DataFrame:
     return over_100k
 
 
-@extract_columns('Income', 'Tax Rate', 'Tax Credit')
+@extract_columns("Income", "Tax Rate", "Tax Credit")
 # Step 3: DataFrames are combined. Series 'Income', 'Tax Rate', 'Tax Credit' are extracted for next processing step
 def combined_dataframe(under_100k_tax: DataFrame, over_100k_tax: DataFrame) -> DataFrame:
     """
@@ -129,13 +129,14 @@ def tax_formula(income: Series, tax_rate: Series, tax_credit: Series) -> Series:
 
     :return: the DataFrame with the 'Tax Formula' Series
     """
-    df = DataFrame({'income': income, 'tax_rate': tax_rate, 'tax_credit': tax_credit})
+    df = DataFrame({"income": income, "tax_rate": tax_rate, "tax_credit": tax_credit})
     df["Tax Formula"] = df.apply(
         lambda x: (
             f"({int(x['income'])} * {x['tax_rate']})"
-            if np.isnan(x["tax_credit"]) else
-            f"({int(x['income'])} * {x['tax_rate']}) - ({int(x['income'])} * {x['tax_rate']}) * {x['tax_credit']}"
-        ), axis=1
+            if np.isnan(x["tax_credit"])
+            else f"({int(x['income'])} * {x['tax_rate']}) - ({int(x['income'])} * {x['tax_rate']}) * {x['tax_credit']}"
+        ),
+        axis=1,
     )
     return df["Tax Formula"]
 
@@ -153,7 +154,9 @@ def tax(tax_formula: Series) -> Series:
 
 
 # Step 6 (final): DataFrame and Series computed are combined
-def final_tax_dataframe(combined_dataframe: DataFrame, tax_formula: Series, tax: Series) -> DataFrame:
+def final_tax_dataframe(
+    combined_dataframe: DataFrame, tax_formula: Series, tax: Series
+) -> DataFrame:
     """
     That function combine the DataFrame and the 'Tax' and 'Tax Formula' series
     """
@@ -165,7 +168,9 @@ def final_tax_dataframe(combined_dataframe: DataFrame, tax_formula: Series, tax:
 
     # Transform  the 'Tax Rate' and 'Tax Credit' series to display percentage
     df["Tax Rate"] = df["Tax Rate"].apply(lambda x: f"{int(x * 100)} %")
-    df["Tax Credit"] = df["Tax Credit"].apply(lambda x: f"{int(x * 100)} %" if not np.isnan(x) else "")
+    df["Tax Credit"] = df["Tax Credit"].apply(
+        lambda x: f"{int(x * 100)} %" if not np.isnan(x) else ""
+    )
 
     # Define the order the DataFrame will be displayed
     order = ["Name", "Income", "Children", "Tax Rate", "Tax Credit", "Tax", "Tax Formula"]

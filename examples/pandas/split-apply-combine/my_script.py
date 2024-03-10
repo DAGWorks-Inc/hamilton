@@ -2,9 +2,8 @@ from inspect import cleandoc
 from io import StringIO
 
 import pandas as pd
-from pandas import DataFrame
-
 from my_wrapper import TaxCalculator
+from pandas import DataFrame
 
 
 def read_table(table: str, delimiter="|") -> DataFrame:
