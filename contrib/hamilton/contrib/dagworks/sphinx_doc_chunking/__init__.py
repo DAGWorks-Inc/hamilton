@@ -9,11 +9,17 @@ Things this module does.
  5. what this doesn't do is create embeddings -- but that would be easy to extend.
 """
 
+import logging
 import re
 
-import requests
-from langchain import text_splitter
-from langchain_core import documents
+logger = logging.getLogger(__name__)
+
+from hamilton import contrib
+
+with contrib.catch_import_errors(__name__, __file__, logger):
+    import requests
+    from langchain import text_splitter
+    from langchain_core import documents
 
 from hamilton.htypes import Collect, Parallelizable
 
@@ -160,3 +166,12 @@ if __name__ == "__main__":
         .build()
     )
     dr.display_all_functions("dag.png")
+    result = dr.execute(
+        ["collect_chunked_url_text"],
+        inputs={"chunk_size": 256, "chunk_overlap": 32},
+    )
+    # do something with the result...
+    import pprint
+
+    for chunk in result["collect_chunked_url_text"]:
+        pprint.pprint(chunk)

@@ -3,5 +3,8 @@
   "use_case_tags": ["data processing", "document chunking", "chunking", "langchain"],
   "secondary_tags": {
     "language": "English"
+  },
+  "driver_tags": {
+    "executor": "multithreading"
   }
 }
