@@ -51,7 +51,7 @@ The preferred way of working with pre-commit hooks is through the [pre-commit](h
     ```
 
 ## Custom Hamilton pre-commit hooks
-pre-commit hooks are great developer tools, but off-the-shelf solutions aren't aware of the Hamilton framework. Hence, we developed a pre-commit hooks to help you author Hamilton dataflows! Under the hood, they leverage the `hamilton` CLI, so if you are unfamiliar with it, feel free to install it and view the `--help` messages.
+pre-commit hooks are great developer tools, but off-the-shelf solutions aren't aware of the Hamilton framework. Hence, we developed a pre-commit hook to help you author Hamilton dataflows! Under the hood, they leverage the `hamilton` CLI, so if you are unfamiliar with it, feel free to install it and view the `--help` messages.
 
 ```console
 pip install sf-hamilton[cli]
@@ -87,7 +87,7 @@ dr.validate_execution(final_vars=["C"]) # <- success
 
 ```python
 # my_module.py - v2
-def B(A: int) -> float: ...
+def B(X: int) -> float: ...
 
 def C(A: int, B: float) -> None: ...
 
@@ -107,7 +107,7 @@ In `v1`, the dataflow could be validated for `C` without any inputs. Now, a deve
 ```
 
 ```{note}
-You shouldn't rely too heavily on pre-commit hooks to check dataflow paths. Use unit tests for more robust checks.
+pre-commit hooks can prevent commits from breaking a core path, but you should use unit and integration tests for more robust checks.
 ```
 
 ## Add Hamilton pre-commit to your project
