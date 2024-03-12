@@ -52,3 +52,4 @@ Recall to add lifecycle adapters, you just need to call the ``with_adapters`` me
     PrintLn
     ProgressBar
     DDOGTracer
+    FunctionInputOutputTypeChecker
