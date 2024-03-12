@@ -9,7 +9,12 @@ driver = (
     driver.Builder()
     .with_config({})
     .with_modules(my_functions)
-    .with_adapters(lifecycle.FunctionInputOutputTypeChecker(), base.PandasDataFrameResult())
+    .with_adapters(
+        # this is a strict type checker for the input and output of each function.
+        lifecycle.FunctionInputOutputTypeChecker(),
+        # this will make execute return a pandas dataframe as a result
+        base.PandasDataFrameResult(),
+    )
     .build()
 )
 

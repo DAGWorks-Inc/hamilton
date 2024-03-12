@@ -13,6 +13,9 @@ Many data analysis or processing involve one or more of the following steps:
 For this example, we want to **split** a DataFrame in 2 DataFrames, then for each DataFrames
 *apply** a different transformation pipeline then **combine** the result in a DataFrame.
 
+Note: we also add an adapter that strictly type checks the inputs and outputs as the code runs.
+This isn't required but is here to show how to exercise it.
+
 ## Example
 
 The example consists of calculating the tax of individuals or families based on their income and the number of children
