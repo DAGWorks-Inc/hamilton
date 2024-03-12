@@ -119,6 +119,32 @@ def create_input_string(kwargs: dict) -> str:
     return input_string
 
 
+def create_error_message(kwargs: dict, node_: node.Node, step: str) -> str:
+    """Creates an error message for a node that errored."""
+    # This code is coupled to how @config resolution works. Ideally it shouldn't be,
+    # so when @config resolvers are changed to return Nodes, then fn.__name__ should
+    # just work.
+    original_func_name = "unknown"
+    if node_.originating_functions:
+        if hasattr(node_.originating_functions[0], "__original_name__"):
+            original_func_name = node_.originating_functions[0].__original_name__
+        else:
+            original_func_name = node_.originating_functions[0].__name__
+    module = (
+        node_.originating_functions[0].__module__
+        if node_.originating_functions and hasattr(node_.originating_functions[0], "__module__")
+        else "unknown_module"
+    )
+    message = f">{step} {node_.name} [{module}.{original_func_name}()] encountered an error"
+    padding = " " * (80 - min(len(message), 79) - 1)
+    message += padding + "<"
+    input_string = create_input_string(kwargs)
+    message += "\n> Node inputs:\n" + input_string
+    border = "*" * 80
+    message = "\n" + border + "\n" + message + "\n" + border
+    return message
+
+
 def execute_subdag(
     nodes: Collection[node.Node],
     inputs: Dict[str, Any],
@@ -178,15 +204,21 @@ def execute_subdag(
             error = None
             result = None
             success = True
+            pre_node_execute_errored = False
             try:
                 if adapter.does_hook("pre_node_execute", is_async=False):
-                    adapter.call_all_lifecycle_hooks_sync(
-                        "pre_node_execute",
-                        run_id=run_id,
-                        node_=node_,
-                        kwargs=kwargs,
-                        task_id=task_id,
-                    )
+                    try:
+                        adapter.call_all_lifecycle_hooks_sync(
+                            "pre_node_execute",
+                            run_id=run_id,
+                            node_=node_,
+                            kwargs=kwargs,
+                            task_id=task_id,
+                        )
+                    except Exception as e:
+                        pre_node_execute_errored = True
+                        raise e
+
                 if adapter.does_method("do_node_execute", is_async=False):
                     result = adapter.call_lifecycle_method_sync(
                         "do_node_execute",
@@ -200,41 +232,29 @@ def execute_subdag(
             except Exception as e:
                 success = False
                 error = e
-                # This code is coupled to how @config resolution works. Ideally it shouldn't be,
-                # so when @config resolvers are changed to return Nodes, then fn.__name__ should
-                # just work.
-                original_func_name = "unknown"
-                if node_.originating_functions:
-                    if hasattr(node_.originating_functions[0], "__original_name__"):
-                        original_func_name = node_.originating_functions[0].__original_name__
-                    else:
-                        original_func_name = node_.originating_functions[0].__name__
-                module = (
-                    node_.originating_functions[0].__module__
-                    if node_.originating_functions
-                    and hasattr(node_.originating_functions[0], "__module__")
-                    else "unknown_module"
-                )
-                message = f"> {node_.name} [{module}.{original_func_name}()] encountered an error"
-                padding = " " * (80 - len(message) - 1)
-                message += padding + "<"
-                input_string = create_input_string(kwargs)
-                message += "\n> Node inputs:\n" + input_string
-                border = "*" * 80
-                logger.exception("\n" + border + "\n" + message + "\n" + border)
+                step = "[pre-node-execute]" if pre_node_execute_errored else ""
+                message = create_error_message(kwargs, node_, step)
+                logger.exception(message)
                 raise
             finally:
-                if adapter.does_hook("post_node_execute", is_async=False):
-                    adapter.call_all_lifecycle_hooks_sync(
-                        "post_node_execute",
-                        run_id=run_id,
-                        node_=node_,
-                        kwargs=kwargs,
-                        success=success,
-                        error=error,
-                        result=result,
-                        task_id=task_id,
-                    )
+                if not pre_node_execute_errored and adapter.does_hook(
+                    "post_node_execute", is_async=False
+                ):
+                    try:
+                        adapter.call_all_lifecycle_hooks_sync(
+                            "post_node_execute",
+                            run_id=run_id,
+                            node_=node_,
+                            kwargs=kwargs,
+                            success=success,
+                            error=error,
+                            result=result,
+                            task_id=task_id,
+                        )
+                    except Exception:
+                        message = create_error_message(kwargs, node_, "[post-node-execute]")
+                        logger.exception(message)
+                        raise
 
         computed[node_.name] = result
         # > pruning the graph

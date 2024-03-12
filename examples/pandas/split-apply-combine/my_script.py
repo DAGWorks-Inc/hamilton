@@ -48,7 +48,7 @@ tax_rates = {
 }
 
 tax_credits = {
-    "Children == 0": 0,  # 0 child: Tax credit 0 %
+    "Children == 0": 0.0,  # 0 child: Tax credit 0 %
     "Children == 1": 0.02,  # 1 child: Tax credit 2 %
     "Children == 2": 0.04,  # 2 children: Tax credit 4 %
     "Children == 3": 0.06,  # 3 children: Tax credit 6 %
