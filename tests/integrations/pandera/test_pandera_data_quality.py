@@ -32,9 +32,7 @@ def test_basic_pandera_decorator_dataframe_fails():
     validator = pandera_validators.PanderaDataFrameValidator(schema=schema, importance="warn")
     validation_result = validator.validate(df)
     assert not validation_result.passes
-    assert (
-        "A total of 4 schema errors were found" in validation_result.message
-    )  # TODO -- ensure this will stay constant with the contract
+    assert len(validation_result.diagnostics["schema_errors"]) == 4
 
 
 def test_basic_pandera_decorator_dataframe_passes():
@@ -81,7 +79,7 @@ def test_basic_pandera_decorator_series_fails():
     validator = pandera_validators.PanderaSeriesSchemaValidator(schema=schema, importance="warn")
     validation_result = validator.validate(series)
     assert not validation_result.passes
-    assert "A total of 1 schema error" in validation_result.message
+    assert len(validation_result.diagnostics["schema_errors"]) == 1
 
 
 def test_basic_pandera_decorator_series_passes():
