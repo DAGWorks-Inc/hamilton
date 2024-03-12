@@ -2,10 +2,14 @@ import inspect
 import sys
 import typing
 from abc import ABC
-from typing import Any, Generator, Optional, Tuple, Type, TypeVar
+from typing import Any, Generator, Optional, Tuple, Type, TypeVar, Union
 
 import typing_inspect
 
+if sys.version_info >= (3, 9):
+    from typing import Literal
+else:
+    Literal = None
 from hamilton.registry import COLUMN_TYPE, DF_TYPE_AND_COLUMN_TYPES
 
 BASE_ARGS_FOR_GENERICS = (typing.T,)
@@ -314,3 +318,64 @@ def check_input_type(node_type: Type, input_value: Any) -> bool:
     elif node_type == type(input_value):
         return True
     return False
+
+
+# TODO: merge the above with this in some way. Right now they're separate because they have different
+# behaviors. We should determine how to reconcile these and how further type checking capabilities,
+# e.g. handling Annotated, Pandera, etc, should be handled...
+def check_instance(obj: Any, type_: Any) -> bool:
+    """This function checks if an object is an instance of a given type. It supports generic types as well.
+
+    :param obj: The object to check.
+    :param type_: The type to check against. This can be a generic type like List[int] or Dict[str, Any].
+    :return: True if the object is an instance of the type, False otherwise.
+    """
+    if type_ == Any:
+        return True
+    # Get the origin of the type (i.e., the base class for generic types)
+    origin = getattr(type_, "__origin__", None)
+
+    # If the type has an origin, it's a generic type
+    if origin is not None:
+        # If the type is a Union type
+        if origin is Union:
+            return any(check_instance(obj, t) for t in type_.__args__)
+        elif origin is Literal:
+            return obj in type_.__args__
+        # Check if the object is an instance of the origin of the type
+        elif not isinstance(obj, origin):
+            return False
+
+        # If the type has arguments (i.e., it's a parameterized generic type like List[int])
+        if hasattr(type_, "__args__"):
+            # Get the element type(s) of the generic type
+            element_type = type_.__args__
+
+            # If the object is a dictionary
+            if isinstance(obj, dict):
+                all_items_meet_condition = True
+
+                # Iterate over each key-value pair in the dictionary
+                for key, value in obj.items():
+                    # Check if the key is an instance of the first element type and the value is an instance of the second element type
+                    key_is_correct_type = check_instance(key, element_type[0])
+                    value_is_correct_type = check_instance(value, element_type[1])
+
+                    # If either the key or the value is not the correct type, set the flag to False and break the loop
+                    if not key_is_correct_type or not value_is_correct_type:
+                        all_items_meet_condition = False
+                        break
+
+                # Return the result
+                return all_items_meet_condition
+
+            # If the object is a list, set, or tuple
+            elif isinstance(obj, (list, set, tuple)):
+                element_type = element_type[0]
+                for i in obj:
+                    if not check_instance(i, element_type):
+                        return False
+                return True
+
+    # If the type is not a generic type, just use isinstance
+    return isinstance(obj, type_)
