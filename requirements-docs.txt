@@ -1,6 +1,7 @@
 -r requirements-dev.txt
 alabaster>=0.7,<0.8,!=0.7.5  # read the docs pins
 commonmark==0.9.1 # read the docs pins
+dask-expr
 dask[distributed]
 ddtrace
 diskcache
