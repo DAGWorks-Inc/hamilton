@@ -55,24 +55,18 @@ def _tax_credit(df: DataFrame, tax_credits: Dict[str, float]) -> DataFrame:
 
 @extract_fields({"under_100k": DataFrame, "over_100k": DataFrame})
 # Step 1: DataFrame is split in 2 DataFrames
-def split_dataframe(
-    input: DataFrame, tax_rates: Dict[str, float], tax_credits: Dict[str, float]
-) -> Dict[str, DataFrame]:
+def split_dataframe(input: DataFrame) -> Dict[str, DataFrame]:
     """
     That function takes the DataFrame in input and split it in 2 DataFrames:
       - under_100k: Rows where 'Income' is under 100k
       - over_100k: Rows where 'Income' is over 100k
 
     :param input: the DataFrame to process
-    :param tax_rates: The Tax Rates rules
-    :param tax_credits: The Tax Credits rules
     :return: a Dict with the DataFrames and the Tax Rates & Credit rules
     """
     return {
         "under_100k": input.query("Income < 100000"),
         "over_100k": input.query("Income >= 100000"),
-        "tax_rates": tax_rates,
-        "tax_credits": tax_credits,
     }
 
 
@@ -84,7 +78,7 @@ def split_dataframe(
 def under_100k_tax(under_100k: DataFrame) -> DataFrame:
     """
     Tax calculation pipeline for 'Income' under 100k.
-    :param df: The DataFrame  where 'Income' is under 100k
+    :param under_100k: The DataFrame  where 'Income' is under 100k
     :return: the DataFrame with the 'Tax' Series
     """
     return under_100k

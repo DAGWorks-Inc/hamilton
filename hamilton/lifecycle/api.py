@@ -174,6 +174,7 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
         node_return_type: type,
         task_id: Optional[str],
         run_id: str,
+        node_input_types: Dict[str, Any],
         **future_kwargs: Any,
     ):
         """Hook that is executed prior to node execution.
@@ -184,6 +185,7 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
         :param node_return_type: Return type of the node
         :param task_id: The ID of the task, none if not in a task-based environment
         :param run_id: Run ID (unique in process scope) of the current run. Use this to track state.
+        :param node_input_types: the input types to the node and what it is expecting
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         """
         pass
@@ -206,6 +208,7 @@ class NodeExecutionHook(BasePreNodeExecute, BasePostNodeExecute, abc.ABC):
             node_return_type=node_.type,
             task_id=task_id,
             run_id=run_id,
+            node_input_types={k: v[0] for k, v in node_.input_types.items()},
         )
 
     @abc.abstractmethod

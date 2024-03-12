@@ -3,9 +3,15 @@ from typing import Dict
 import my_functions
 from pandas import DataFrame
 
-from hamilton import driver
+from hamilton import base, driver, lifecycle
 
-driver = driver.Driver({}, my_functions)
+driver = (
+    driver.Builder()
+    .with_config({})
+    .with_modules(my_functions)
+    .with_adapters(lifecycle.FunctionInputOutputTypeChecker(), base.PandasDataFrameResult())
+    .build()
+)
 
 
 class TaxCalculator:
