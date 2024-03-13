@@ -20,7 +20,7 @@
 
 # Hamilton
 
-The general purpose micro-orchestration framework for creating [dataflows](https://en.wikipedia.org/wiki/Dataflow) from python functions! That is, your single tool to express things like data, ML, LLM pipelines/workflows, and even web request logic!
+The general purpose micro-orchestration framework for building [dataflows](https://en.wikipedia.org/wiki/Dataflow) from python functions. Express data, ML, LLM pipelines/workflows, and web requests with a clear, easy-to-follow API.
 
 Hamilton is a novel paradigm for specifying a flow of delayed execution in python. It works on python objects of any type and dataflows of any complexity. Core to the design of Hamilton is a clear mapping of function name to artifact, allowing you to quickly grok the relationship between the code you write and the data you produce.
 
