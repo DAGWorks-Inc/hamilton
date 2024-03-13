@@ -1,0 +1,6 @@
+langchain
+langchain-core
+sf-hamilton[dask]
+# optionally install Ray, or Dask, or both
+sf-hamilton[ray]
+sf-hamilton[visualization]

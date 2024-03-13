@@ -4,5 +4,8 @@
   "secondary_tags": {
     "dataframe-library" : "pandas",
     "cloud-provider": "aws"
+  },
+  "driver_tags": {
+    "executor": "multithreading"
   }
 }

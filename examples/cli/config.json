@@ -1,0 +1,6 @@
+{
+    "HAMILTON_CONFIG": {
+        "holiday": "halloween"
+    },
+    "HAMILTON_FINAL_VARS": ["customers_df", "customer_summary_table"]
+}

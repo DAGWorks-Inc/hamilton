@@ -1,0 +1,3 @@
+ibis-framework[duckdb,examples]
+sf-hamilton[visualization]
+tdqm

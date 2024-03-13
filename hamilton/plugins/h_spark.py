@@ -264,7 +264,6 @@ def _determine_parameters_to_bind(
 
     :param actual_kwargs: the input dictionary of arguments for the function.
     :param df_columns: the set of column names in the dataframe.
-    :param hamilton_udf: the callable to bind to.
     :param node_input_types: the input types of the function.
     :param node_name: name of the node/function.
     :return: a tuple of the params that come from the dataframe and the parameters to bind.
@@ -396,7 +395,7 @@ def _lambda_udf(df: DataFrame, node_: node.Node, actual_kwargs: Dict[str, Any]) 
         raise ValueError(
             f"Currently unsupported function for {node_.name} with function signature:\n{node_.input_types}."
         )
-    elif all(pandas_annotation.values()):
+    elif all(pandas_annotation.values()) and len(pandas_annotation.values()) > 0:
         hamilton_udf = _fabricate_spark_function(node_, params_to_bind, params_from_df, True)
         # pull from annotation here instead of tag.
         base_type, type_args = htypes.get_type_information(node_.type)
@@ -944,6 +943,7 @@ class with_columns(fm_base.NodeCreator):
         select: List[str] = None,
         namespace: str = None,
         mode: str = "append",
+        config_required: List[str] = None,
     ):
         """Initializes a with_columns decorator for spark. This allows you to efficiently run
          groups of map operations on a dataframe, represented as pandas/primitives UDFs. This
@@ -1001,8 +1001,6 @@ class with_columns(fm_base.NodeCreator):
 
 
         :param load_from: The functions that will be used to generate the group of map operations.
-        :param select: Columns to select from the transformation. If this is left blank it will
-            keep all columns in the subdag.
         :param columns_to_pass: The initial schema of the dataframe. This is used to determine which
             upstream inputs should be taken from the dataframe, and which shouldn't. Note that, if this is
             left empty (and external_inputs is as well), we will assume that all dependencies come
@@ -1010,15 +1008,19 @@ class with_columns(fm_base.NodeCreator):
         :param pass_dataframe_as: The name of the dataframe that we're modifying, as known to the subdag.
             If you pass this in, you are responsible for extracting columns out. If not provided, you have
             to pass columns_to_pass in, and we will extract the columns out for you.
+        :param select: Outputs to select from the subdag, i.e. functions/module passed int. If this is left
+            blank it will add all possible columns from the subdag to the dataframe.
         :param namespace: The namespace of the nodes, so they don't clash with the global namespace
             and so this can be reused. If its left out, there will be no namespace (in which case you'll want
             to be careful about repeating it/reusing the nodes in other parts of the DAG.)
         :param mode: The mode of the operation. This can be either "append" or "select".
-            If it is "append", it will keep all columns in the dataframe. If it is "select",
-            it will only keep the columns in the dataframe from the `select` parameter. Note that,
-            if the `select` parameter is left blank, it will keep all columns in the dataframe
-            that are in the subdag (as that is the behavior of the `select` parameter. This
-            defaults to `append`
+            If it is "append", it will keep all original columns in the dataframe, and append what's in select.
+            If it is "select", it will do a global select of columns in the dataframe from the `select` parameter.
+            Note that, if the `select` parameter is left blank, it will add all columns in the dataframe
+            that are in the subdag. This defaults to `append`. If you're using select, use the `@select` decorator
+            instead.
+        :param config_required: the list of config keys that are required to resolve any functions. Pass in None\
+            if you want the functions/modules to have access to all possible config.
         """
         self.subdag_functions = subdag.collect_functions(load_from)
         self.select = select
@@ -1043,6 +1045,7 @@ class with_columns(fm_base.NodeCreator):
         self.namespace = namespace
         self.upstream_dependency = dataframe
         self.mode = mode
+        self.config_required = config_required
 
     @staticmethod
     def _prep_nodes(initial_nodes: List[node.Node]) -> List[node.Node]:
@@ -1068,17 +1071,39 @@ class with_columns(fm_base.NodeCreator):
         upstream_name: str, columns: List[str], node_name: str = "select"
     ) -> node.Node:
         """Creates a selector node. The sole job of this is to select just the specified columns.
-        Note this is a utility function that's only called
+        Note this is a utility function that's only called here.
 
         :param upstream_name: Name of the upstream dataframe node
         :param columns: Columns to select
-        :param node_namespace: Namespace of the node
         :param node_name: Name of the node to create
         :return:
         """
 
         def new_callable(**kwargs) -> DataFrame:
             return kwargs[upstream_name].select(*columns)
+
+        return node.Node(
+            name=node_name,
+            typ=DataFrame,
+            callabl=new_callable,
+            input_types={upstream_name: DataFrame},
+        )
+
+    @staticmethod
+    def create_drop_node(
+        upstream_name: str, columns: List[str], node_name: str = "select"
+    ) -> node.Node:
+        """Creates a drop node. The sole job of this is to drop just the specified columns.
+        Note this is a utility function that's only called here.
+
+        :param upstream_name: Name of the upstream dataframe node
+        :param columns: Columns to drop
+        :param node_name: Name of the node to create
+        :return:
+        """
+
+        def new_callable(**kwargs) -> DataFrame:
+            return kwargs[upstream_name].drop(*columns)
 
         return node.Node(
             name=node_name,
@@ -1121,6 +1146,9 @@ class with_columns(fm_base.NodeCreator):
                     f"Instead, we found: {upstream_dependency}."
                 )
 
+    def required_config(self) -> List[str]:
+        return self.config_required
+
     def generate_nodes(self, fn: Callable, config: Dict[str, Any]) -> List[node.Node]:
         """Generates nodes in the with_columns groups. This does the following:
 
@@ -1154,6 +1182,7 @@ class with_columns(fm_base.NodeCreator):
         columns_passed_in_from_dataframe = (
             set(self.initial_schema) if self.initial_schema is not None else []
         )
+        drop_list = []
         # Or from the dataframe passed in...
         for node_ in sorted_initial_nodes:
             # dependent columns are broken into two sets:
@@ -1185,17 +1214,33 @@ class with_columns(fm_base.NodeCreator):
                     dependent_columns_in_mapgroup,
                     dependent_columns_in_dataframe,
                 )
+            if self.select is not None and sparkified.name not in self.select:
+                # we need to create a drop list because we don't want to drop
+                # original columns from the DF by accident.
+                drop_list.append(sparkified.name)
             output_nodes.append(sparkified)
             current_dataframe_node = sparkified.name
         # We get the final node, which is the function we're using
         # and reassign inputs to be the dataframe
         if self.mode == "select":
+            # this selects over the original DF and the additions
             select_columns = (
                 self.select if self.select is not None else [item.name for item in output_nodes]
             )
             select_node = with_columns.create_selector_node(
                 upstream_name=current_dataframe_node,
                 columns=select_columns,
+                node_name="_select",
+            )
+            output_nodes.append(select_node)
+            current_dataframe_node = select_node.name
+        elif self.select is not None and len(drop_list) > 0:
+            # since it's in append mode, we only want to append what's in the select
+            # but we don't know what the original schema is, so we instead drop
+            # things from the DF to achieve the same result
+            select_node = with_columns.create_drop_node(
+                upstream_name=current_dataframe_node,
+                columns=drop_list,
                 node_name="_select",
             )
             output_nodes.append(select_node)
@@ -1208,3 +1253,93 @@ class with_columns(fm_base.NodeCreator):
 
     def validate(self, fn: Callable):
         _derive_first_dataframe_parameter_from_fn(fn)
+
+
+class select(with_columns):
+    def __init__(
+        self,
+        *load_from: Union[Callable, ModuleType],
+        columns_to_pass: List[str] = None,
+        pass_dataframe_as: str = None,
+        output_cols: List[str] = None,
+        namespace: str = None,
+        config_required: List[str] = None,
+    ):
+        """Initializes a select decorator for spark. This allows you to efficiently run
+         groups of map operations on a dataframe, represented as pandas/primitives UDFs. This
+         effectively "linearizes" compute -- meaning that a DAG of map operations can be run
+         as a set of `.select` operations on a single dataframe -- ensuring that you don't have
+         to do a complex `extract` then `join` process on spark, which can be inefficient.
+
+         Here's an example of calling it -- if you've seen `@subdag`, you should be familiar with
+         the concepts:
+
+         .. code-block:: python
+
+             # my_module.py
+             def a(a_from_df: pd.Series) -> pd.Series:
+                 return _process(a)
+
+             def b(b_from_df: pd.Series) -> pd.Series:
+                 return _process(b)
+
+             def a_plus_b(a_from_df: pd.Series, b_from_df: pd.Series) -> pd.Series:
+                 return a + b
+
+
+             # the with_columns call
+             @select(
+                 load_from=[my_module], # Load from any module
+                 columns_to_pass=["a_from_df", "b_from_df"], # The columns to pass from original dataframe to
+                 output_cols=["a", "b", "a_plus_b"], # The columns to have in the final dataframe
+             )
+             def final_df(initial_df: ps.DataFrame) -> ps.DataFrame:
+                 # process, or just return unprocessed
+                 ...
+
+         You can think of the above as a series of select/withColumns calls on the dataframe, where the
+         operations are applied in topological order. This is significantly more efficient than
+         extracting out the columns, applying the maps, then joining, but *also* allows you to
+         express the operations individually, making it easy to unit-test and reuse.
+
+         Note that the operation is "append", meaning that the columns that are selected are appended
+         onto the dataframe, and then at the end only what is request is selected.
+
+         If the function takes multiple dataframes, the dataframe input to process will always be
+         the first one. This will be passed to the subdag, transformed, and passed back to the functions.
+         This follows the hamilton rule of reference by parameter name. To demonstarte this, in the code
+         above, the dataframe that is passed to the subdag is `initial_df`. That is transformed
+         by the subdag, and then returned as the final dataframe.
+
+         You can read it as:
+
+         "final_df is a function that transforms the upstream dataframe initial_df, running the transformations
+         from my_module. It starts with the columns a_from_df and b_from_df, and then adds the columns
+         a, b, and a_plus_b to the dataframe. It then returns the dataframe, and does some processing on it."
+
+
+        :param load_from: The functions that will be used to generate the group of map operations.
+        :param columns_to_pass: The initial schema of the dataframe. This is used to determine which
+            upstream inputs should be taken from the dataframe, and which shouldn't. Note that, if this is
+            left empty (and external_inputs is as well), we will assume that all dependencies come
+            from the dataframe. This cannot be used in conjunction with pass_dataframe_as.
+        :param pass_dataframe_as: The name of the dataframe that we're modifying, as known to the subdag.
+            If you pass this in, you are responsible for extracting columns out. If not provided, you have
+            to pass columns_to_pass in, and we will extract the columns out for you.
+        :param output_cols: Columns to select in the final dataframe. If this is left blank it will
+            add all possible columns from the subdag to the dataframe.
+        :param namespace: The namespace of the nodes, so they don't clash with the global namespace
+            and so this can be reused. If its left out, there will be no namespace (in which case you'll want
+            to be careful about repeating it/reusing the nodes in other parts of the DAG.)
+        :param config_required: the list of config keys that are required to resolve any functions. Pass in None\
+            if you want the functions/modules to have access to all possible config.
+        """
+        super(select, self).__init__(
+            *load_from,
+            columns_to_pass=columns_to_pass,
+            pass_dataframe_as=pass_dataframe_as,
+            select=output_cols,
+            namespace=namespace,
+            mode="select",
+            config_required=config_required,
+        )

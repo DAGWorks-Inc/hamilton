@@ -11,7 +11,12 @@ from .api import (  # noqa: F401
     TaskExecutionHook,
 )
 from .base import LifecycleAdapter  # noqa: F401
-from .default import PDBDebugger, PrintLn, SlowDownYouMoveTooFast  # noqa: F401
+from .default import (  # noqa: F401
+    FunctionInputOutputTypeChecker,
+    PDBDebugger,
+    PrintLn,
+    SlowDownYouMoveTooFast,
+)
 
 PrintLnHook = PrintLn  # for backwards compatibility -- this will be removed in 2.0
 
@@ -31,4 +36,5 @@ __all__ = [
     "NodeExecutionMethod",
     "StaticValidator",
     "TaskExecutionHook",
+    "FunctionInputOutputTypeChecker",
 ]
