@@ -57,7 +57,7 @@ def get_git_reference(git_relative_path: Union[str, Path], git_reference: str) -
 
 def version_hamilton_functions(module: ModuleType) -> Dict[str, str]:
     """Hash the source code of Hamilton functions from a module"""
-    from hamilton import graph_utils
+    from hamilton import graph_types, graph_utils
 
     origins_version: Dict[str, str] = dict()
 
@@ -70,7 +70,7 @@ def version_hamilton_functions(module: ModuleType) -> Dict[str, str]:
 
 def hash_hamilton_nodes(dr: driver.Driver) -> Dict[str, str]:
     """Hash the source code of Hamilton functions from nodes in a Driver"""
-    from hamilton import graph_types, graph_utils
+    from hamilton import graph_types
 
     graph = graph_types.HamiltonGraph.from_graph(dr.graph)
     return {n.name: n.version for n in graph.nodes}
