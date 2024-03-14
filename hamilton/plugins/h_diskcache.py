@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Union
 
 import diskcache
 
-from hamilton import driver, graph_types, graph_utils, lifecycle, node
+from hamilton import driver, graph_types, lifecycle, node
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def evict_all_except(nodes_to_keep: Dict[str, node.Node], cache: diskcache.Cache
 
         if node_name in nodes_to_keep.keys():
             node_to_keep = nodes_to_keep[node_name]
-            hash_to_keep = graph_utils.hash_source_code(node_to_keep.callable, strip=True)
+            hash_to_keep = graph_types.hash_source_code(node_to_keep.callable, strip=True)
             history.remove(hash_to_keep)
             new_nodes_history[node_name] = [hash_to_keep]
 
@@ -99,7 +99,7 @@ class DiskCacheAdapter(
         if node_name not in self.cache_vars:
             return node_callable(**node_kwargs)
 
-        node_hash = graph_utils.hash_source_code(node_callable, strip=True)
+        node_hash = graph_types.hash_source_code(node_callable, strip=True)
         self.used_nodes_hash[node_name] = node_hash
         cache_key = (node_hash, *node_kwargs.values())
 

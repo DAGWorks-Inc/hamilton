@@ -50,21 +50,6 @@ def json_encoder(obj: Any):
     return serialized
 
 
-def graph_hash(graph: graph_types.HamiltonGraph) -> str:
-    """Create a single hash (str) from the bytecode of all sorted functions"""
-    nodes_data = []
-    for node in graph.nodes:
-        source_code = ""
-        if node.originating_functions is not None:
-            source_code = inspect.getsource(node.originating_functions[0])
-
-        nodes_data.append(dict(name=node.name, source_code=source_code))
-
-    digest = hashlib.sha256()
-    digest.update(json.dumps(nodes_data, default=json_encoder, sort_keys=True).encode())
-    return digest.hexdigest()
-
-
 @dataclass
 class NodeImplementation:
     name: str
@@ -147,7 +132,7 @@ class ExperimentTracker(
         **kwargs,
     ):
         """Store execution metadata: graph hash, inputs, overrides"""
-        self.graph_hash = graph_hash(graph)
+        self.graph_hash = graph.version
 
         for node in graph.nodes:
             if node.tags.get("module"):

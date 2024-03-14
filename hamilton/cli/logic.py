@@ -57,34 +57,23 @@ def get_git_reference(git_relative_path: Union[str, Path], git_reference: str) -
 
 def version_hamilton_functions(module: ModuleType) -> Dict[str, str]:
     """Hash the source code of Hamilton functions from a module"""
-    from hamilton import graph_utils
+    from hamilton import graph_types, graph_utils
 
     origins_version: Dict[str, str] = dict()
 
     for origin_name, _ in graph_utils.find_functions(module):
         origin_callable = getattr(module, origin_name)
-        origins_version[origin_name] = graph_utils.hash_source_code(origin_callable, strip=True)
+        origins_version[origin_name] = graph_types.hash_source_code(origin_callable, strip=True)
 
     return origins_version
 
 
 def hash_hamilton_nodes(dr: driver.Driver) -> Dict[str, str]:
     """Hash the source code of Hamilton functions from nodes in a Driver"""
-    from hamilton import graph_types, graph_utils
+    from hamilton import graph_types
 
     graph = graph_types.HamiltonGraph.from_graph(dr.graph)
-
-    nodes_version = dict()
-    for n in graph.nodes:
-        # is None for config nodes
-        if n.originating_functions is None:
-            continue
-
-        node_origin = n.originating_functions[0]
-        origin_hash = graph_utils.hash_source_code(node_origin, strip=True)
-        nodes_version[n.name] = origin_hash
-
-    return nodes_version
+    return {n.name: n.version for n in graph.nodes}
 
 
 def map_nodes_to_functions(dr: driver.Driver) -> Dict[str, str]:
