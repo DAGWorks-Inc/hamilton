@@ -16,9 +16,9 @@ def func_a():
 
     return textwrap.dedent(
         """
-    def A(external_input: int) -> int:
-        return external_input % 7
-    """
+        def A(external_input: int) -> int:
+            return external_input % 7
+        """
     )
 
 
@@ -28,9 +28,9 @@ def func_a_body():
 
     return textwrap.dedent(
         """
-    def A(external_input: int) -> int:
-        return external_input % 5
-    """
+        def A(external_input: int) -> int:
+            return external_input % 5
+        """
     )
 
 
@@ -39,11 +39,11 @@ def func_a_docstring():
     """The function A() has a docstring"""
 
     return textwrap.dedent(
-        '''
-    def A(external_input: int) -> int:
-        """This one has a docstring"""
-        return external_input % 7
-    '''
+        """
+        def A(external_input: int) -> int:
+            '''This one has a docstring'''
+            return external_input % 7
+        """
     )
 
 
@@ -52,14 +52,14 @@ def func_a_multiline():
     """The function A() has a docstring"""
 
     return textwrap.dedent(
-        '''
-    def A(external_input: int) -> int:
-        """This one has
-        a multiline
-        docstring
         """
-        return external_input % 7
-    '''
+        def A(external_input: int) -> int:
+            '''This one has
+            a multiline
+            docstring
+            '''
+            return external_input % 7
+        """
     )
 
 
@@ -69,9 +69,9 @@ def func_a_comment():
 
     return textwrap.dedent(
         """
-    def A(external_input: int) -> int:
-        return external_input % 7  # a comment
-    """
+        def A(external_input: int) -> int:
+            return external_input % 7  # a comment
+        """
     )
 
 
@@ -86,7 +86,6 @@ def test_create_hamilton_node():
         tags={"tag_key": "tag_value"}, originating_functions=(node_to_create,)
     )
     hamilton_node = graph_types.HamiltonNode.from_node(n)
-    print(hamilton_node.version)
     assert hamilton_node.name == "node_to_create"
     assert hamilton_node.type == str
     assert hamilton_node.tags["tag_key"] == "tag_value"

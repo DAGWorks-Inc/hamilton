@@ -1,6 +1,7 @@
 """Module for external-facing graph constructs. These help the user navigate/manage the graph as needed."""
 
 import ast
+import functools
 import hashlib
 import inspect
 import typing
@@ -140,7 +141,7 @@ class HamiltonNode:
             },
         )
 
-    @property
+    @functools.cached_property
     def version(self) -> str:
         """Generate a hash of the node originating function source code.
 
@@ -178,7 +179,7 @@ class HamiltonGraph:
             nodes=[HamiltonNode.from_node(n) for n in fn_graph.nodes.values()],
         )
 
-    @property
+    @functools.cached_property
     def version(self) -> str:
         """Generate a hash of the dataflow based on the collection of node hashes.
 

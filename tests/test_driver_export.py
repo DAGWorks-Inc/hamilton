@@ -4,7 +4,7 @@ from hamilton import driver, graph_types
 
 from tests.resources.dynamic_parallelism import no_parallel
 
-# `version` attribute needs to be filled
+# `version` value isn't hardcoded because it's Python version-dependent
 EXPECTED_JSON = {
     "nodes": [
         {
@@ -19,7 +19,7 @@ EXPECTED_JSON = {
                 "    return sum_step_squared_plus_step_cubed\n"
             ),
             "documentation": "",
-            "version": None,
+            "version": None,  # `version` value isn't hardcoded because it's Python version-dependent
         },
         {
             "name": "number_of_steps",
