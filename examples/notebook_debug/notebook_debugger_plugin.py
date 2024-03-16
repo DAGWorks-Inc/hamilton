@@ -1,3 +1,5 @@
+import inspect
+import logging
 from typing import Any, Callable, Dict, Optional
 
 from hamilton import lifecycle
@@ -7,7 +9,8 @@ try:
 except ImportError:
     import pickle
 
-import inspect
+logger = logging.getLogger(__name__)
+
 
 template = """
 try:
@@ -88,7 +91,10 @@ class NotebookErrorDebugger(lifecycle.NodeExecutionHook):
                     )
                 )
             # print out where the data has been saved
-            print(f"Inputs to {node_name} have been saved to {node_name}_inputs.pkl")
-            print(f"The function that errored has been saved to {node_name}_debug.py")
-            print(f"Please run the function in {node_name}_debug.py to debug the error.")
+            message = (
+                f"Inputs to {node_name} have been saved to {node_name}_inputs.pkl\n"
+                f"The function that errored has been saved to {node_name}_debug.py\n"
+                f"Please run the function in {node_name}_debug.py to debug the error."
+            )
+            logger.warning(message)
             # TODO: create file with python requirements for pickle to work...
