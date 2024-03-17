@@ -26,6 +26,10 @@ The [DAGWorks Blog](https://blog.dagworks.io/) publishes articles on problems Ha
 The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) is the ideal place to ask questions, request features, and give feedback.
 
 ## 📣 Talks
+* 2024-02 &nbsp;&nbsp; Hamilton Meet-up for February
+    * [Recording](https://www.youtube.com/watch?v=ks672Lm0CJo.)
+    * [Slides](https://github.com/skrawcz/talks/files/14351139/Hamilton.February.2024.Meetup.pdf)
+
 * 2023-12 &nbsp;&nbsp; Why you should build your GenAI/LLM apps using Hamilton. [AICamp End of Year in SF](https://www.aicamp.ai/event/eventdetails/W2023121217)
     * [Recording](https://youtu.be/IwWixrjhkZU?si=DVa72Zr4iD-hibS5&t=7602)
     * [Slides](https://github.com/skrawcz/talks/files/13666470/Why.you.should.build.your.GenAI_LLM.apps.using.Hamilton.pdf)
@@ -100,6 +104,11 @@ The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/z
 
 ## 📰 External Blogs
 
+* 2024-03 &nbsp;&nbsp; [RAG: ingestion and chunking using Hamilton and scaling to Ray, Dask, or PySpark](https://blog.dagworks.io/p/rag-ingestion-and-chunking-using)
+* 2024-02 &nbsp;&nbsp; [A command line tool to improve your development workflow](https://blog.dagworks.io/p/a-command-line-tool-to-improve-your)
+* 2024-02 &nbsp;&nbsp; [Monthly Meetup Recap and office hours](https://blog.dagworks.io/p/monthly-hamilton-meetup-and-office)
+* 2024-02 &nbsp;&nbsp; [Using IPython Jupyter Magic commands to improve the notebook experience](https://blog.dagworks.io/p/using-ipython-jupyter-magic-commands)
+* 2024-02 &nbsp;&nbsp; [Building a lightweight experiment manager](https://blog.dagworks.io/p/building-a-lightweight-experiment)
 * 2024-01 &nbsp;&nbsp; [Customizing Hamilton’s Execution with the new Lifecycle API](https://blog.dagworks.io/p/customizing-hamiltons-execution-with)
 * 2024-01 &nbsp;&nbsp; [How well-structured should your data code be?](https://blog.dagworks.io/p/how-well-structured-should-your-data)
 * 2024-01 &nbsp;&nbsp; [From Dev to Prod: a ML Pipeline Reference Post](https://blog.dagworks.io/p/from-dev-to-prod-a-ml-pipeline-reference)
@@ -125,6 +134,7 @@ The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/z
 * 2022-05 &nbsp;&nbsp; [Iterating with Hamilton in a Notebook](https://towardsdatascience.com/how-to-use-hamilton-with-pandas-in-5-minutes-89f63e5af8f5)
 
 ## 🎙 Podcasts
+* 2024-03 &nbsp;&nbsp; [Hamilton mention in Real Python, about ipython magic command post](https://realpython.com/podcasts/rpp/196/)
 * 2023-06 &nbsp;&nbsp; [Exploring the Intersection of DAGs, ML Code, and Complex Code Bases: An Elegant Solution Unveiled with Stefan Krawczyk of DAGWorks](https://datastackshow.com/podcast/exploring-the-intersection-of-dags-ml-code-and-complex-code-bases-an-elegant-solution-unveiled-with-stefan-krawczyk-of-dagworks/)
 * 2022-08 &nbsp;&nbsp; [S01 E08 - MLOps Week 8: The MLOps Mindset with Stefan Krawczyk](https://rss.com/podcasts/mlops-weekly/571949/)
 * 2022-04 &nbsp;&nbsp; [MLOps dla 100 data scientistów](https://nieliniowy.pl/mlops-dla-100-data-scientistow-stefan-krawczyk-stitch-fix/) (in Polish)
