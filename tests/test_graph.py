@@ -701,8 +701,8 @@ def test_function_graph_display(tmp_path: pathlib.Path):
     expected_set = set(
         [
             '\t\tfunction [fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
-            "\t\tgraph [fontname=helvetica label=Legend rank=same]\n",
-            "\t\tinput [fontname=Helvetica margin=0.15 shape=rectangle style=dashed]\n",
+            '\t\tgraph [fillcolor="#ffffff" fontname=helvetica label=Legend rank=same]\n',
+            '\t\tinput [fontname=Helvetica margin=0.15 shape=rectangle style="filled,dashed"]\n',
             '\t\toutput [fillcolor="#FFC857" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
             "\tA -> B\n",
             "\tA -> C\n",
@@ -711,7 +711,8 @@ def test_function_graph_display(tmp_path: pathlib.Path):
             '\tC [label=<<b>C</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
             "\t_A_inputs -> A\n",
             # commenting out input node: '\t_A_inputs [label=<<table border="0"><tr><td>c</td><td>int</td></tr><tr><td>b</td><td>int</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style=dashed]\n',
-            "\tgraph [compound=true concentrate=true rankdir=LR ranksep=0.4]\n",
+            "\tgraph [compound=true concentrate=true rankdir=LR ranksep=0.4 style=filled]\n",
+            '\tnode [fillcolor="#ffffff"]\n',
             "\tsubgraph cluster__legend {\n",
             "\t}\n",
             "// Dependency Graph\n",
@@ -726,7 +727,6 @@ def test_function_graph_display(tmp_path: pathlib.Path):
         render_kwargs={"view": False},
         node_modifiers=node_modifiers,
     )
-
     dot = dot_file_path.open("r").readlines()
     dot_set = set(dot)
 
@@ -964,17 +964,18 @@ def test_create_graphviz_graph():
             "// Dependency Graph",
             "",
             "digraph {",
-            "\tgraph [compound=true concentrate=true rankdir=LR ranksep=0.4 ratio=1]",
+            '\tnode [fillcolor="#ffffff"]',
+            "\tgraph [compound=true concentrate=true rankdir=LR ranksep=0.4 ratio=1 style=filled]",
             '\tB [label=<<b>B</b><br /><br /><i>int</i>> fillcolor="#FFC857" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
             '\tC [label=<<b>C</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
             '\tA [label=<<b>A</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
             "\tA -> B",
             "\tA -> C",
-            '\t_A_inputs [label=<<table border="0"><tr><td>b</td><td>int</td></tr><tr><td>b</td><td>int</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style=dashed]',
+            '\t_A_inputs [label=<<table border="0"><tr><td>b</td><td>int</td></tr><tr><td>b</td><td>int</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style="filled,dashed"]',
             "\t_A_inputs -> A",
             "\tsubgraph cluster__legend {",
-            "\t\tgraph [fontname=helvetica label=Legend rank=same]",
-            "\t\tinput [fontname=Helvetica margin=0.15 shape=rectangle style=dashed]",
+            '\t\tgraph [fillcolor="#ffffff" fontname=helvetica label=Legend rank=same]',
+            '\t\tinput [fontname=Helvetica margin=0.15 shape=rectangle style="filled,dashed"]',
             '\t\tfunction [fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
             '\t\toutput [fillcolor="#FFC857" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]',
             "\t}",

@@ -299,19 +299,20 @@ def create_graphviz_graph(
         if node_type == "config":
             node_style = dict(
                 shape="note",
-                style="",
+                style="filled",
                 fontname=fontname,
             )
         elif node_type == "input":
             node_style = dict(
                 shape="rectangle",
                 margin="0.15",
-                style="dashed",
+                style="filled,dashed",
                 fontname=fontname,
             )
         elif node_type == "materializer":
             node_style = dict(
                 shape="cylinder",
+                style="filled",
                 margin="0.15,0.1",
                 fontname=fontname,
             )
@@ -383,6 +384,7 @@ def create_graphviz_graph(
                 label="Legend",
                 rank="same",  # makes the legend perpendicular to the main DAG
                 fontname="helvetica",
+                fillcolor="#ffffff",
             ),
         )
 
@@ -420,6 +422,14 @@ def create_graphviz_graph(
             ranksep="0.4",
             compound="true",
             concentrate="true",
+            style="filled",
+            # bgcolor="transparent",
+        ),
+        node_attr=dict(
+            fillcolor="#ffffff",
+        ),
+        edge_attr=dict(
+            # color="#ffffff",
         ),
     )
     # we need to update the graph_attr dict instead of overwriting it
