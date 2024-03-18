@@ -4,7 +4,7 @@ import shelve
 
 import pytest
 
-from hamilton import graph_utils, node
+from hamilton import graph_types, node
 from hamilton.lifecycle.default import CacheAdapter
 
 
@@ -54,7 +54,7 @@ def node_a_docstring():
 
 def test_set_result(hook: CacheAdapter, node_a: node.Node):
     """Hook sets value and assert value in cache"""
-    node_hash = graph_utils.hash_source_code(node_a.callable, strip=True)
+    node_hash = graph_types.hash_source_code(node_a.callable, strip=True)
     node_kwargs = dict(external_input=7)
     cache_key = CacheAdapter.create_key(node_hash, node_kwargs)
     result = 2
@@ -74,7 +74,7 @@ def test_set_result(hook: CacheAdapter, node_a: node.Node):
 
 def test_get_result(hook: CacheAdapter, node_a: node.Node):
     """Hooks get value and assert cache hit"""
-    node_hash = graph_utils.hash_source_code(node_a.callable, strip=True)
+    node_hash = graph_types.hash_source_code(node_a.callable, strip=True)
     node_kwargs = dict(external_input=7)
     result = 2
     cache_key = CacheAdapter.create_key(node_hash, node_kwargs)
@@ -104,7 +104,7 @@ def test_append_nodes_history(
     hook.cache_vars = [node_a.name]
 
     # node version 1
-    hook.used_nodes_hash[node_name] = graph_utils.hash_source_code(node_a.callable, strip=True)
+    hook.used_nodes_hash[node_name] = graph_types.hash_source_code(node_a.callable, strip=True)
     hook.run_to_execute_node(
         node_name=node_name,
         node_kwargs=node_kwargs,
@@ -115,7 +115,7 @@ def test_append_nodes_history(
     assert len(hook.nodes_history.get(node_name, [])) == 1
 
     # node version 2
-    hook.used_nodes_hash[node_name] = graph_utils.hash_source_code(node_a_body.callable, strip=True)
+    hook.used_nodes_hash[node_name] = graph_types.hash_source_code(node_a_body.callable, strip=True)
     hook.run_to_execute_node(
         node_name=node_name,
         node_kwargs=node_kwargs,
