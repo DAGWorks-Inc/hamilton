@@ -317,7 +317,7 @@ class PDBDebugger(NodeExecutionHook, NodeExecutionMethod):
 
 
 class CacheAdapter(NodeExecutionHook, NodeExecutionMethod, GraphExecutionHook):
-    """Class to cache node results on disk with a key baed on the node code implementation and inputs.
+    """Class to cache node results on disk with a key based on the node code implementation and inputs.
     Following runs with the same key can load node results and skip computation.
 
     The cache `_nodes_history` entry returns an append-only list of results added to the cache.
