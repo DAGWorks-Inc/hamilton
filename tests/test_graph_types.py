@@ -6,6 +6,7 @@ import textwrap
 import pytest
 
 from hamilton import graph_types, node
+from hamilton.node import Node, NodeType
 
 from tests import nodes as test_nodes
 
@@ -110,6 +111,14 @@ def test_create_hamilton_node():
         "documentation": "Documentation",
         "version": graph_types.hash_source_code(node_to_create, strip=True),
     }
+
+
+def test_create_hamilton_node_missing_version():
+    n = Node("foo", int, node_source=NodeType.EXTERNAL)
+    hamilton_node = graph_types.HamiltonNode.from_node(n)
+    # the above will have no specified versions
+    assert hamilton_node.version is None
+    assert hamilton_node.as_dict()["version"] is None
 
 
 def test_json_serializable_dict():
