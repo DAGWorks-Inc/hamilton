@@ -4,6 +4,7 @@ import ast
 import functools
 import hashlib
 import inspect
+import logging
 import typing
 from dataclasses import dataclass
 
@@ -17,6 +18,8 @@ from hamilton.htypes import get_type_as_string
 # The core system (in defaults), and we have not managed to disentangle it yet.
 if typing.TYPE_CHECKING:
     from hamilton import graph
+
+logger = logging.getLogger(__name__)
 
 
 def _remove_docs_and_comments(source: str) -> str:
@@ -93,7 +96,7 @@ class HamiltonNode:
     type: typing.Type
     tags: typing.Dict[str, typing.Union[str, typing.List[str]]]
     is_external_input: bool
-    originating_functions: typing.Tuple[typing.Callable, ...]
+    originating_functions: typing.Optional[typing.Tuple[typing.Callable, ...]]
     documentation: typing.Optional[str]
     required_dependencies: typing.Set[str]
     optional_dependencies: typing.Set[str]
@@ -142,13 +145,27 @@ class HamiltonNode:
         )
 
     @functools.cached_property
-    def version(self) -> str:
+    def version(self) -> typing.Optional[str]:
         """Generate a hash of the node originating function source code.
+
+        Note that this will be `None` if the node is an external input/has no
+        originating functions.
 
         The option `strip=True` means docstring and comments are ignored
         when hashing the function.
         """
-        return hash_source_code(self.originating_functions[0], strip=True)
+        if not self.originating_functions:
+            return None
+        try:
+            return hash_source_code(self.originating_functions[0], strip=True)
+        except (
+            OSError
+        ):  # TODO -- ensure we can get the node hash in a databricks environment when using jupyter magic
+            logger.warning(
+                f"Failed to hash source code for node {self.name}. Certain environments (such as databricks) do not allow it."
+                " In this case, version will be None."
+            )
+            return None
 
     def __repr__(self):
         return f"{self.name}: {htypes.get_type_as_string(self.type)}"
