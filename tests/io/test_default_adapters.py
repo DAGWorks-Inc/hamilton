@@ -28,7 +28,9 @@ def test_raw_file_adapter(data, tmp_path: pathlib.Path) -> None:
     assert data_processed == data2
 
 
-@pytest.mark.parametrize("data", [{"key": "value"}, [{"key": "value1"}, {"key": "value2"}]])
+@pytest.mark.parametrize(
+    "data", [{"key": "value"}, [{"key": "value1"}, {"key": "value2"}], ["value1", "value2"], [0, 1]]
+)
 def test_json_save_object_and_array(data, tmp_path: pathlib.Path):
     """Test that `from_.json` and `to.json` can handle JSON objects where
     the top-level is an object `{ }` -> dict or an array `[ ]` -> list
@@ -45,7 +47,9 @@ def test_json_save_object_and_array(data, tmp_path: pathlib.Path):
     assert data == loaded_data
 
 
-@pytest.mark.parametrize("data", [{"key": "value"}, [{"key": "value1"}, {"key": "value2"}]])
+@pytest.mark.parametrize(
+    "data", [{"key": "value"}, [{"key": "value1"}, {"key": "value2"}], ["value1", "value2"], [0, 1]]
+)
 def test_json_load_object_and_array(data, tmp_path: pathlib.Path):
     """Test that `from_.json` and `to.json` can handle JSON objects where
     the top-level is an object `{ }` -> dict or an array `[ ]` -> list
