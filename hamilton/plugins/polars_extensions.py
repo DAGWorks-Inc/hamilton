@@ -571,10 +571,10 @@ class PolarsDatabaseReader(DataLoader):
     connection: str
     # kwargs:
     iter_batches: bool = False
-    batch_size: int | None = None
-    schema_overrides: dict[str, Any] | None = None
-    infer_schema_length: int | None = None
-    execute_options: dict[str, Any] | None = None
+    batch_size: Union[int, None] = None
+    schema_overrides: Union[Dict[str, Any], None] = None
+    infer_schema_length: Union[int, None] = None
+    execute_options: Union[Dict[str, Any], None] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
