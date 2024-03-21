@@ -5,7 +5,7 @@ from hamilton.io.materialization import to
 from hamilton.plugins import matplotlib_extensions
 
 import dataflow  # import module with dataflow definition
-from .resources import DataGeneratorResource
+from mock_api import DataGeneratorResource
 
 def main():
     dr = (  
