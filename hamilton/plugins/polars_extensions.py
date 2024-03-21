@@ -14,6 +14,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    Literal
 )
 
 try:
@@ -560,6 +561,88 @@ class PolarsJSONWriter(DataSaver):
         return "json"
 
 
+@dataclasses.dataclass
+class PolarsDatabaseReader(DataLoader):
+    """
+    Class specifically to handle loading DataFrame from a database.
+    """
+
+    query: str
+    connection: str
+    # kwargs:
+    iter_batches: bool = False
+    batch_size: int | None = None
+    schema_overrides: dict[str, Any] | None = None
+    infer_schema_length: int | None = None
+    execute_options: dict[str, Any] | None = None
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self):
+        kwargs = {}
+        if self.iter_batches is not None:
+            kwargs["iter_batches"] = self.iter_batches
+        if self.batch_size is not None:
+            kwargs["batch_size"] = self.batch_size
+        if self.schema_overrides is not None:
+            kwargs["schema_overrides"] = self.schema_overrides
+        if self.infer_schema_length is not None:
+            kwargs["infer_schema_length"] = self.infer_schema_length
+        if self.execute_options is not None:
+            kwargs["execute_options"] = self.execute_options
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pl.read_database(
+            query=self.query,
+            connection=self.connection,
+            **self._get_loading_kwargs(),
+        )
+        metadata = utils.get_file_and_dataframe_metadata(self.query, df)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "database"
+
+@dataclasses.dataclass
+class PolarsDatabaseWriter(DataSaver):
+    """
+    Class specifically to handle saving DataFrame to a database.
+    """
+
+    table_name: str
+    connection: str
+    if_table_exists: Literal["fail", "replace", "append"] = "fail"
+    engine: Literal["auto", "sqlalchemy", "adbc"] = "sqlalchemy"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_saving_kwargs(self):
+        kwargs = {}
+        if self.if_table_exists is not None:
+            kwargs["if_table_exists"] = self.if_table_exists
+        if self.engine is not None:
+            kwargs["engine"] = self.engine
+        return kwargs
+
+    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+        data.write_database(
+            table_name=self.table_name,
+            connection=self.connection,
+            **self._get_saving_kwargs(),
+        )
+        return utils.get_file_and_dataframe_metadata(self.table_name, data)
+
+    @classmethod
+    def name(cls) -> str:
+        return "database"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -573,6 +656,8 @@ def register_data_loaders():
         PolarsAvroWriter,
         PolarsJSONReader,
         PolarsJSONWriter,
+        PolarsDatabaseReader,
+        PolarsDatabaseWriter,
     ]:
         registry.register_adapter(loader)
 
