@@ -133,5 +133,7 @@ def test_polars_database(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     
     assert PolarsDatabaseWriter.applicable_types() == [pl.DataFrame]
     assert PolarsDatabaseReader.applicable_types() == [pl.DataFrame]
+    assert kwargs1["if_table_exists"] == "replace"
+    assert "batch_size" not in kwargs2
     assert df2.shape == (2, 2)
     assert df.frame_equal(df2)
