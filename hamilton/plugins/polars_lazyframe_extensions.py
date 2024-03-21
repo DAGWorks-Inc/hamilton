@@ -15,8 +15,6 @@ from typing import (
     Type,
     Union,
 )
-import logging
-
 
 try:
     import polars as pl
@@ -47,28 +45,28 @@ else:
 from hamilton import registry
 from hamilton.io import utils
 from hamilton.io.data_adapters import DataLoader, DataSaver
-
-DATAFRAME_TYPE = pl.DataFrame
-COLUMN_TYPE = pl.Series
-
-
-@registry.get_column.register(pl.DataFrame)
-def get_column_polars(df: pl.DataFrame, column_name: str) -> pl.Series:
-    return df[column_name]
+import logging
+DATAFRAME_TYPE = pl.LazyFrame
+COLUMN_TYPE = pl.LazyFrame
 
 
-@registry.fill_with_scalar.register(pl.DataFrame)
-def fill_with_scalar_polars(df: pl.DataFrame, column_name: str, scalar_value: Any) -> pl.DataFrame:
+@registry.get_column.register(pl.LazyFrame)
+def get_column_polars_lazyframe(df: pl.LazyFrame, column_name: str) -> pl.LazyFrame:
+    return df.select(column_name)
+
+
+@registry.fill_with_scalar.register(pl.LazyFrame)
+def fill_with_scalar_polars_lazyframe(df: pl.LazyFrame, column_name: str, scalar_value: Any) -> pl.LazyFrame:
     if not isinstance(scalar_value, pl.Series):
         scalar_value = [scalar_value]
-    return df.with_column(pl.Series(name=column_name, values=scalar_value))
+    return df.with_columns(pl.Series(name=column_name, values=scalar_value))
 
 
 def register_types():
     logger = logging.getLogger(__name__)
     logger.info("registering lazyframe")
     """Function to register the types for this extension."""
-    registry.register_types("polars", DATAFRAME_TYPE, COLUMN_TYPE)
+    registry.register_types("polars_lazyframe", DATAFRAME_TYPE, COLUMN_TYPE)
 
 
 register_types()
@@ -174,6 +172,7 @@ class PolarsCSVReader(DataLoader):
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pl.read_csv(self.file, **self._get_loading_kwargs())
+        pl.scan_csv(self.file, **self._get_loading_kwargs())
         metadata = utils.get_file_and_dataframe_metadata(self.file, df)
         return df, metadata
 

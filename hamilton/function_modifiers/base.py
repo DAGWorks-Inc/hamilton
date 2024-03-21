@@ -26,6 +26,7 @@ if not registry.INITIALIZED:
         "pandas",
         "plotly",
         "polars",
+        "polars_lazyframe",
         "pyspark_pandas",
         "spark",
         "dask",
