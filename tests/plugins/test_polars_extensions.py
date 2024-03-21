@@ -8,14 +8,14 @@ from hamilton.plugins.polars_extensions import (
     PolarsAvroWriter,
     PolarsCSVReader,
     PolarsCSVWriter,
+    PolarsDatabaseReader,
+    PolarsDatabaseWriter,
     PolarsFeatherReader,
     PolarsFeatherWriter,
     PolarsJSONReader,
     PolarsJSONWriter,
     PolarsParquetReader,
     PolarsParquetWriter,
-    PolarsDatabaseReader,
-    PolarsDatabaseWriter,
 )
 
 
@@ -130,7 +130,7 @@ def test_polars_database(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     reader = PolarsDatabaseReader(query=f"SELECT * FROM {table_name}", connection=conn)
     kwargs2 = reader._get_loading_kwargs()
     df2, metadata = reader.load_data(pl.DataFrame)
-    
+
     assert PolarsDatabaseWriter.applicable_types() == [pl.DataFrame]
     assert PolarsDatabaseReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["if_table_exists"] == "replace"

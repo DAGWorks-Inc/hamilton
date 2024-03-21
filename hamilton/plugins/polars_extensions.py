@@ -7,6 +7,7 @@ from typing import (
     Collection,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -14,7 +15,6 @@ from typing import (
     Tuple,
     Type,
     Union,
-    Literal
 )
 
 try:
@@ -606,6 +606,7 @@ class PolarsDatabaseReader(DataLoader):
     @classmethod
     def name(cls) -> str:
         return "database"
+
 
 @dataclasses.dataclass
 class PolarsDatabaseWriter(DataSaver):
