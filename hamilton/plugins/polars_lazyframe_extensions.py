@@ -47,7 +47,6 @@ else:
 from hamilton import registry
 from hamilton.io import utils
 from hamilton.io.data_adapters import DataLoader, DataSaver
-import logging
 
 DATAFRAME_TYPE = pl.LazyFrame
 COLUMN_TYPE = pl.LazyFrame
@@ -68,8 +67,6 @@ def fill_with_scalar_polars_lazyframe(df: pl.LazyFrame, column_name: str, scalar
 
 
 def register_types():
-    logger = logging.getLogger(__name__)
-    logger.info("registering lazyframe")
     """Function to register the types for this extension."""
     registry.register_types("polars_lazyframe", DATAFRAME_TYPE, COLUMN_TYPE)
 
