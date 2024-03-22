@@ -12,13 +12,13 @@ class PolarsReaderWriter():
     def save_data(self, data: Union[pl.DataFrame, pl.LazyFrame], fmt: str, file: str, kwargs: Dict) -> Dict[str, Any]:
         self.file = file
         if fmt == "csv":
-            return self.save_csv_data(data, kwargs)
+            return self.__save_csv_data(data, kwargs)
 
     def load_data(self, fmt: str, file: str, output: str, kwargs: Dict) -> Tuple[Union[pl.DataFrame, pl.LazyFrame], Dict[str, Any]]:
         self.file = file
 
         if fmt == "csv":
-            return self.load_csv_data(output, kwargs)
+            return self.__load_csv_data(output, kwargs)
 
     def __save_csv_data(self, data: Union[pl.DataFrame, pl.LazyFrame], kwargs: Dict) -> Dict[str, Any]:
         if isinstance(data, pl.LazyFrame):
