@@ -5,21 +5,24 @@ import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-from hamilton.plugins.polars_lazyframe_extensions import (PolarsAvroReader,
-                                                          PolarsAvroWriter,
-                                                          PolarsCSVReader,
-                                                          PolarsCSVWriter,
-                                                          PolarsFeatherReader,
-                                                          PolarsFeatherWriter,
-                                                          PolarsJSONReader,
-                                                          PolarsJSONWriter,
-                                                          PolarsParquetReader,
-                                                          PolarsParquetWriter)
+from hamilton.plugins.polars_lazyframe_extensions import (
+    PolarsAvroReader,
+    PolarsAvroWriter,
+    PolarsCSVReader,
+    PolarsCSVWriter,
+    PolarsFeatherReader,
+    PolarsFeatherWriter,
+    PolarsJSONReader,
+    PolarsJSONWriter,
+    PolarsParquetReader,
+    PolarsParquetWriter,
+)
 
 
 @pytest.fixture
 def df():
     yield pl.LazyFrame({"a": [1, 2], "b": [3, 4]})
+
 
 def test_polars_lazyframe_csv(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
     file = tmp_path / "test.csv"
@@ -76,7 +79,11 @@ def test_polars_feather(tmp_path: pathlib.Path) -> None:
     assert "compression" in write_kwargs
     assert file_path.exists()
     assert metadata["file_metadata"]["path"] == str(file_path)
-    assert metadata["dataframe_metadata"]["column_names"] == ["animal", "points", "environment"]
+    assert metadata["dataframe_metadata"]["column_names"] == [
+        "animal",
+        "points",
+        "environment",
+    ]
     assert metadata["dataframe_metadata"]["datatypes"] == ["String", "Int64", "String"]
 
 
