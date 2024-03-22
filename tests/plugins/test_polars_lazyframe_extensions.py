@@ -1,22 +1,19 @@
 import pathlib
-from test import lazyframe_functions
 
 import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-from hamilton.plugins.polars_lazyframe_extensions import (
-    PolarsAvroReader,
-    PolarsAvroWriter,
-    PolarsCSVReader,
-    PolarsCSVWriter,
-    PolarsFeatherReader,
-    PolarsFeatherWriter,
-    PolarsJSONReader,
-    PolarsJSONWriter,
-    PolarsParquetReader,
-    PolarsParquetWriter,
-)
+from hamilton.plugins.polars_lazyframe_extensions import (PolarsAvroReader,
+                                                          PolarsAvroWriter,
+                                                          PolarsCSVReader,
+                                                          PolarsCSVWriter,
+                                                          PolarsFeatherReader,
+                                                          PolarsFeatherWriter,
+                                                          PolarsJSONReader,
+                                                          PolarsJSONWriter,
+                                                          PolarsParquetReader,
+                                                          PolarsParquetWriter)
 
 
 @pytest.fixture
