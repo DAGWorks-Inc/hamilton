@@ -26,7 +26,7 @@ class PolarsDataFrameResult(base.ResultMixin):
     """
 
     def build_result(
-        self, **outputs: Dict[str, Union[pl.Series, pl.LazyFrame, Any]]
+        self, **outputs: Dict[str, Union[pl.LazyFrame, Any]]
     ) -> pl.LazyFrame:
         """This is the method that Hamilton will call to build the final result. It will pass in the results
         of the requested outputs that you passed in to the execute() method.
@@ -39,15 +39,10 @@ class PolarsDataFrameResult(base.ResultMixin):
         if len(outputs) == 1:
             (value,) = outputs.values()  # this works because it's length 1.
             if isinstance(value, pl.LazyFrame):  # it's a dataframe
-                return value
-            elif not isinstance(value, pl.Series):  # it's a single scalar/object
-                key, value = outputs.popitem()
-                return pl.LazyFrame({key: [value]})
-            else:  # it's a series
-                return pl.LazyFrame(outputs)
+                return value.collect()
         # TODO: check for length of outputs and determine what should
         # happen for mixed outputs that include scalars for example.
-        return pl.LazyFrame(outputs)
+        return pl.DataFrame(outputs)
 
     def output_type(self) -> Type:
         return pl.DataFrame
