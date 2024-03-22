@@ -8,6 +8,8 @@ from hamilton.plugins.polars_extensions import (
     PolarsAvroWriter,
     PolarsCSVReader,
     PolarsCSVWriter,
+    PolarsDatabaseReader,
+    PolarsDatabaseWriter,
     PolarsFeatherReader,
     PolarsFeatherWriter,
     PolarsJSONReader,
@@ -114,4 +116,24 @@ def test_polars_avro(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert PolarsAvroReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["compression"] == "uncompressed"
     assert kwargs2["n_rows"] == 2
+    assert df.frame_equal(df2)
+
+
+def test_polars_database(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
+    conn = f"sqlite:///{tmp_path}/test.db"
+    table_name = "test_table"
+
+    writer = PolarsDatabaseWriter(table_name=table_name, connection=conn, if_table_exists="replace")
+    kwargs1 = writer._get_saving_kwargs()
+    writer.save_data(df)
+
+    reader = PolarsDatabaseReader(query=f"SELECT * FROM {table_name}", connection=conn)
+    kwargs2 = reader._get_loading_kwargs()
+    df2, metadata = reader.load_data(pl.DataFrame)
+
+    assert PolarsDatabaseWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsDatabaseReader.applicable_types() == [pl.DataFrame]
+    assert kwargs1["if_table_exists"] == "replace"
+    assert "batch_size" not in kwargs2
+    assert df2.shape == (2, 2)
     assert df.frame_equal(df2)
