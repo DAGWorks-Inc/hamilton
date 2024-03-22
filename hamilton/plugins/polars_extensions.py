@@ -17,6 +17,7 @@ from typing import (
 )
 import logging
 
+from hamilton.plugins.polars_shared import PolarsReaderWriter
 
 try:
     import polars as pl
@@ -51,6 +52,7 @@ from hamilton.io.data_adapters import DataLoader, DataSaver
 DATAFRAME_TYPE = pl.DataFrame
 COLUMN_TYPE = pl.Series
 
+SHARED_UTILS = PolarsReaderWriter()
 
 @registry.get_column.register(pl.DataFrame)
 def get_column_polars(df: pl.DataFrame, column_name: str) -> pl.Series:
@@ -173,9 +175,7 @@ class PolarsCSVReader(DataLoader):
         return kwargs
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pl.read_csv(self.file, **self._get_loading_kwargs())
-        metadata = utils.get_file_and_dataframe_metadata(self.file, df)
-        return df, metadata
+        return SHARED_UTILS.load_data("csv", self.file, "eager", self._get_loading_kwargs())
 
     @classmethod
     def name(cls) -> str:
@@ -235,13 +235,7 @@ class PolarsCSVWriter(DataSaver):
         return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.write_csv(self.file, **self._get_saving_kwargs())
-        return utils.get_file_and_dataframe_metadata(self.file, data)
-
-    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pl.read_csv(self.file, **self._get_loading_kwargs())
-        metadata = utils.get_file_and_dataframe_metadata(self.file, df)
-        return df, metadata
+        SHARED_UTILS.save_data(data, "csv", self.file, self._get_saving_kwargs())
 
     @classmethod
     def name(cls) -> str:

@@ -16,6 +16,8 @@ from typing import (
     Union,
 )
 
+from hamilton.plugins.polars_shared import PolarsReaderWriter
+
 try:
     import polars as pl
     from polars import PolarsDataType
@@ -46,8 +48,11 @@ from hamilton import registry
 from hamilton.io import utils
 from hamilton.io.data_adapters import DataLoader, DataSaver
 import logging
+
 DATAFRAME_TYPE = pl.LazyFrame
 COLUMN_TYPE = pl.LazyFrame
+
+SHARED_UTILS = PolarsReaderWriter()
 
 
 @registry.get_column.register(pl.LazyFrame)
@@ -142,8 +147,6 @@ class PolarsCSVReader(DataLoader):
             kwargs["n_threads"] = self.n_threads
         if self.infer_schema_length is not None:
             kwargs["infer_schema_length"] = self.infer_schema_length
-        if self.batch_size is not None:
-            kwargs["batch_size"] = self.batch_size
         if self.n_rows is not None:
             kwargs["n_rows"] = self.n_rows
         if self.encoding is not None:
@@ -152,8 +155,6 @@ class PolarsCSVReader(DataLoader):
             kwargs["low_memory"] = self.low_memory
         if self.rechunk is not None:
             kwargs["rechunk"] = self.rechunk
-        if self.use_pyarrow is not None:
-            kwargs["use_pyarrow"] = self.use_pyarrow
         if self.storage_options is not None:
             kwargs["storage_options"] = self.storage_options
         if self.skip_rows_after_header is not None:
@@ -162,8 +163,6 @@ class PolarsCSVReader(DataLoader):
             kwargs["row_count_name"] = self.row_count_name
         if self.row_count_offset is not None:
             kwargs["row_count_offset"] = self.row_count_offset
-        if self.sample_size is not None:
-            kwargs["sample_size"] = self.sample_size
         if self.eol_char is not None:
             kwargs["eol_char"] = self.eol_char
         if self.raise_if_empty is not None:
@@ -171,10 +170,8 @@ class PolarsCSVReader(DataLoader):
         return kwargs
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pl.read_csv(self.file, **self._get_loading_kwargs())
-        pl.scan_csv(self.file, **self._get_loading_kwargs())
-        metadata = utils.get_file_and_dataframe_metadata(self.file, df)
-        return df, metadata
+        return SHARED_UTILS.load_data("csv", self.file, "lazy", self._get_loading_kwargs())
+
 
     @classmethod
     def name(cls) -> str:
@@ -234,13 +231,8 @@ class PolarsCSVWriter(DataSaver):
         return kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.write_csv(self.file, **self._get_saving_kwargs())
-        return utils.get_file_and_dataframe_metadata(self.file, data)
+        SHARED_UTILS.save_data(data, "csv", self.file, self._get_saving_kwargs())
 
-    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        df = pl.read_csv(self.file, **self._get_loading_kwargs())
-        metadata = utils.get_file_and_dataframe_metadata(self.file, df)
-        return df, metadata
 
     @classmethod
     def name(cls) -> str:

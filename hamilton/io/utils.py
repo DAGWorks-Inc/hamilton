@@ -62,13 +62,28 @@ def get_dataframe_metadata(df: pd.DataFrame) -> Dict[str, Any]:
     - the column names
     - the data types
     """
+    metadata = {}
+    try:
+        metadata["rows"] = len(df)
+    except:
+        metadata["rows"] = None
+
+    try:
+        metadata["columns"] = len(df.columns)
+    except:
+        metadata["columns"] = None
+
+    try:
+        metadata["column_names"] = list(df.columns)
+    except:
+        metadata["column_names"] = None
+
+    try:
+        metadata["datatypes"] = [str(t) for t in list(df.dtypes)]
+    except:
+        metadata["datatypes"] = None
     return {
-        DATAFRAME_METADATA: {
-            "rows": len(df),
-            "columns": len(df.columns),
-            "column_names": list(df.columns),
-            "datatypes": [str(t) for t in list(df.dtypes)],  # for serialization purposes
-        }
+        DATAFRAME_METADATA: metadata
     }
 
 
