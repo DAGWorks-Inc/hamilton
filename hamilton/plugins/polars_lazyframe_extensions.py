@@ -60,7 +60,9 @@ def get_column_polars_lazyframe(df: pl.LazyFrame, column_name: str) -> pl.LazyFr
 
 
 @registry.fill_with_scalar.register(pl.LazyFrame)
-def fill_with_scalar_polars_lazyframe(df: pl.LazyFrame, column_name: str, scalar_value: Any) -> pl.LazyFrame:
+def fill_with_scalar_polars_lazyframe(
+    df: pl.LazyFrame, column_name: str, scalar_value: Any
+) -> pl.LazyFrame:
     if not isinstance(scalar_value, pl.Series):
         scalar_value = [scalar_value]
     return df.with_columns(pl.Series(name=column_name, values=scalar_value))
@@ -169,7 +171,6 @@ class PolarsCSVReader(DataLoader):
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         return SHARED_UTILS.load_data("csv", self.file, "lazy", self._get_loading_kwargs())
 
-
     @classmethod
     def name(cls) -> str:
         return "csv"
@@ -229,7 +230,6 @@ class PolarsCSVWriter(DataSaver):
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
         SHARED_UTILS.save_data(data, "csv", self.file, self._get_saving_kwargs())
-
 
     @classmethod
     def name(cls) -> str:

@@ -2,8 +2,20 @@ import dataclasses
 import logging
 from io import BytesIO, IOBase, TextIOWrapper
 from pathlib import Path
-from typing import (Any, BinaryIO, Collection, Dict, List, Mapping, Optional,
-                    Sequence, TextIO, Tuple, Type, Union)
+from typing import (
+    Any,
+    BinaryIO,
+    Collection,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    TextIO,
+    Tuple,
+    Type,
+    Union,
+)
 
 from hamilton.plugins.polars_shared import PolarsReaderWriter
 
@@ -41,6 +53,7 @@ DATAFRAME_TYPE = pl.DataFrame
 COLUMN_TYPE = pl.Series
 
 SHARED_UTILS = PolarsReaderWriter()
+
 
 @registry.get_column.register(pl.DataFrame)
 def get_column_polars(df: pl.DataFrame, column_name: str) -> pl.Series:

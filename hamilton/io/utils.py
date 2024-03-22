@@ -82,9 +82,7 @@ def get_dataframe_metadata(df: pd.DataFrame) -> Dict[str, Any]:
         metadata["datatypes"] = [str(t) for t in list(df.dtypes)]
     except (AttributeError, TypeError):
         metadata["datatypes"] = None
-    return {
-        DATAFRAME_METADATA: metadata
-    }
+    return {DATAFRAME_METADATA: metadata}
 
 
 def get_file_and_dataframe_metadata(path: str, df: pd.DataFrame) -> Dict[str, Any]:

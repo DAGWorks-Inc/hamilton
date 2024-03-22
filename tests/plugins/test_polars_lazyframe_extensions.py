@@ -3,6 +3,7 @@ import pathlib
 import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
+from test import lazyframe_functions
 
 from hamilton.plugins.polars_lazyframe_extensions import (
     PolarsAvroReader,
@@ -23,6 +24,18 @@ def df():
     yield pl.LazyFrame({"a": [1, 2], "b": [3, 4]})
 
 
+def test_driver():
+
+    from hamilton import base, driver
+    from hamilton.plugins import h_polars_lazyframe
+
+    polars_builder = h_polars_lazyframe.PolarsDataFrameResult()
+    adapter = base.SimplePythonGraphAdapter(polars_builder)
+    dr = driver.Driver({}, lazyframe_functions, adapter=adapter)
+    df = dr.execute(["do_something"], inputs={})
+    print(df)
+
+
 def test_polars_lazyframe_csv(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
     file = tmp_path / "test.csv"
 
@@ -39,6 +52,7 @@ def test_polars_lazyframe_csv(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
     assert kwargs1["separator"] == ","
     assert kwargs2["has_header"] is True
     assert_frame_equal(df.collect(), df2.collect())
+
 
 def test_polars_parquet(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
     file = tmp_path / "test.parquet"

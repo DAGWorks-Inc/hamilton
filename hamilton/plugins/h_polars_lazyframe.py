@@ -25,9 +25,7 @@ class PolarsDataFrameResult(base.ResultMixin):
     Note: this is just a first attempt at something for Polars. Think it should handle more? Come chat/open a PR!
     """
 
-    def build_result(
-        self, **outputs: Dict[str, Union[pl.LazyFrame, Any]]
-    ) -> pl.LazyFrame:
+    def build_result(self, **outputs: Dict[str, Union[pl.LazyFrame, Any]]) -> pl.LazyFrame:
         """This is the method that Hamilton will call to build the final result. It will pass in the results
         of the requested outputs that you passed in to the execute() method.
 
