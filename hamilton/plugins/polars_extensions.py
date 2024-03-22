@@ -1,21 +1,9 @@
 import dataclasses
+import logging
 from io import BytesIO, IOBase, TextIOWrapper
 from pathlib import Path
-from typing import (
-    Any,
-    BinaryIO,
-    Collection,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    TextIO,
-    Tuple,
-    Type,
-    Union,
-)
-import logging
+from typing import (Any, BinaryIO, Collection, Dict, List, Mapping, Optional,
+                    Sequence, TextIO, Tuple, Type, Union)
 
 from hamilton.plugins.polars_shared import PolarsReaderWriter
 

@@ -1,6 +1,7 @@
-from typing import Dict, Any, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import polars as pl
+
 from hamilton.io import utils
 
 
