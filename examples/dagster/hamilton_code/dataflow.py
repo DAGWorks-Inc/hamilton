@@ -9,7 +9,7 @@ from hamilton.function_modifiers import extract_columns
 NEWSTORIES_URL = "https://hacker-news.firebaseio.com/v0/topstories.json"
 
 
-def topstory_ids(newstories_url: str = NEWSTORIES_URL) -> list[int]:
+def topstory_ids(newstories_url: str = NEWSTORIES_URL) -> list:
     """Query the id of the top HackerNews stories"""
     return requests.get(newstories_url).json()[:100]
 
