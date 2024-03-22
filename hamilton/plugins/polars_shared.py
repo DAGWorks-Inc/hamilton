@@ -1,8 +1,7 @@
-from typing import Dict, Any, Tuple, Type, Union
+from typing import Dict, Any, Tuple, Union
 
 import polars as pl
 from hamilton.io import utils
-from hamilton.io.utils import get_file_metadata
 
 
 class PolarsReaderWriter():
