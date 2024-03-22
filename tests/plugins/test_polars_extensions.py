@@ -1,10 +1,10 @@
 import pathlib
 import sys
 
-import pytest
+import polars as pl  # isort: skip
+import pytest  # isort: skip
 
-import polars as pl
-from hamilton.plugins.polars_extensions import (
+from hamilton.plugins.polars_extensions import (  # isort: skip
     PolarsAvroReader,
     PolarsAvroWriter,
     PolarsCSVReader,
@@ -120,7 +120,10 @@ def test_polars_avro(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert df.frame_equal(df2)
 
 
-@pytest.mark.skipif(sys.version_info == (3, 12), reason="weird connectorx error on 3.12")
+@pytest.mark.skipif(
+    sys.version_info.major == 3 and sys.version_info.minor == 12,
+    reason="weird connectorx error on 3.12",
+)
 def test_polars_database(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     conn = f"sqlite:///{tmp_path}/test.db"
     table_name = "test_table"
