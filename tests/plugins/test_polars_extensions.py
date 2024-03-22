@@ -1,10 +1,10 @@
 import pathlib
 import sys
 
-import pytest
+import polars as pl  # isort: skip
+import pytest  # isort: skip
 
-import polars as pl
-from hamilton.plugins.polars_extensions import (
+from hamilton.plugins.polars_extensions import (  # isort: skip
     PolarsAvroReader,
     PolarsAvroWriter,
     PolarsCSVReader,
