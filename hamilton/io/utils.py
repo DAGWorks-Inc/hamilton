@@ -65,22 +65,22 @@ def get_dataframe_metadata(df: pd.DataFrame) -> Dict[str, Any]:
     metadata = {}
     try:
         metadata["rows"] = len(df)
-    except:
+    except TypeError:
         metadata["rows"] = None
 
     try:
         metadata["columns"] = len(df.columns)
-    except:
+    except (AttributeError, TypeError):
         metadata["columns"] = None
 
     try:
         metadata["column_names"] = list(df.columns)
-    except:
+    except (AttributeError, TypeError):
         metadata["column_names"] = None
 
     try:
         metadata["datatypes"] = [str(t) for t in list(df.dtypes)]
-    except:
+    except (AttributeError, TypeError):
         metadata["datatypes"] = None
     return {
         DATAFRAME_METADATA: metadata
