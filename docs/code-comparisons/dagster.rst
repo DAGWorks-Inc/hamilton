@@ -156,7 +156,7 @@ Dataflow execution
 More information
 ----------------
 
-For a full side-by-side example of Dagster and Hamilton, visit `this GitHub repository <https://github.com/dagworks-inc/hamilton/tree/main/examples/dagster>`
+For a full side-by-side example of Dagster and Hamilton, visit `this GitHub repository <https://github.com/dagworks-inc/hamilton/tree/main/examples/dagster>`_
 
 For more questions, join our `Slack Channel <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_!
     
