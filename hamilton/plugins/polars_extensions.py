@@ -22,17 +22,6 @@ try:
 except ImportError:
     Workbook = Type
 
-
-from polars.type_aliases import (
-    ColumnFormatDict,
-    ColumnTotalsDefinition,
-    ColumnWidthsDefinition,
-    ConditionalFormatDict,
-    OneOrMoreDataTypes,
-    RowTotalsDefinition,
-    SelectorType,
-)
-
 try:
     import polars as pl
     from polars import PolarsDataType
@@ -633,18 +622,32 @@ class PolarsSpreadsheetWriter(DataSaver):
     Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.write_excel.html
     """
 
+    # importing here because this is where it's used. Can move later.
+    # but yeah the polars type aliases weren't resolving well in python 3.9
+    # so stripped/reduced them appropriately.
+    from polars.datatypes import DataType, DataTypeClass
+    from polars.type_aliases import ColumnTotalsDefinition, RowTotalsDefinition
+
     workbook: Union[Workbook, BytesIO, Path, str]
     worksheet: Union[str, None] = None
     # kwargs:
     position: Union[Tuple[int, int], str] = "A1"
     table_style: Union[str, Dict[str, Any], None] = None
     table_name: Union[str, None] = None
-    column_formats: Union[ColumnFormatDict, None] = None
-    dtype_formats: Union[Dict[OneOrMoreDataTypes, str], None] = None
-    conditional_formats: Union[ConditionalFormatDict, None] = None
+    column_formats: Union[
+        Mapping[Union[str, Tuple[str, ...]], Union[str, Mapping[str, str]]], None
+    ] = None
+    dtype_formats: Union[Dict[Union[DataType, DataTypeClass], str], None] = None
+    conditional_formats: Union[
+        Mapping[
+            Union[str, Collection[str]],
+            Union[str, Union[Mapping[str, Any], Sequence[Union[str, Mapping[str, Any]]]]],
+        ],
+        None,
+    ] = None
     header_format: Union[Dict[str, Any], None] = None
     column_totals: Union[ColumnTotalsDefinition, None] = None
-    column_widths: Union[ColumnWidthsDefinition, None] = None
+    column_widths: Union[Mapping[str, Union[Tuple[str, ...], int]], int, None] = None
     row_totals: Union[RowTotalsDefinition, None] = None
     row_heights: Union[Dict[Union[int, Tuple[int, ...]], int], int, None] = None
     sparklines: Union[Dict[str, Union[Sequence[str], Dict[str, Any]]], None] = None
@@ -653,7 +656,7 @@ class PolarsSpreadsheetWriter(DataSaver):
     include_header: bool = True
     autofilter: bool = True
     autofit: bool = False
-    hidden_columns: Union[Sequence[str], SelectorType, None] = None
+    hidden_columns: Union[Sequence[str], str, None] = None
     hide_gridlines: bool = None
     sheet_zoom: Union[int, None] = None
     freeze_panes: Union[
