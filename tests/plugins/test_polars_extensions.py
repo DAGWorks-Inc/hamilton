@@ -17,6 +17,8 @@ from hamilton.plugins.polars_extensions import (  # isort: skip
     PolarsJSONWriter,
     PolarsParquetReader,
     PolarsParquetWriter,
+    PolarsSpreadsheetReader,
+    PolarsSpreadsheetWriter,
 )
 
 
@@ -142,3 +144,27 @@ def test_polars_database(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert "batch_size" not in kwargs2
     assert df2.shape == (2, 2)
     assert df.frame_equal(df2)
+
+
+def test_polars_spreadsheet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
+    file_path = tmp_path / "test.xlsx"
+    writer = PolarsSpreadsheetWriter(workbook=file_path, worksheet="test_load_from_data_sheet")
+    write_kwargs = writer._get_saving_kwargs()
+    metadata = writer.save_data(df)
+
+    reader = PolarsSpreadsheetReader(source=file_path, sheet_name="test_load_from_data_sheet")
+    read_kwargs = reader._get_loading_kwargs()
+    df2, _ = reader.load_data(pl.DataFrame)
+
+    assert PolarsSpreadsheetWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsSpreadsheetReader.applicable_types() == [pl.DataFrame]
+    assert file_path.exists()
+    assert metadata["file_metadata"]["path"] == str(file_path)
+    assert df.shape == (2, 2)
+    assert metadata["dataframe_metadata"]["column_names"] == ["a", "b"]
+    assert metadata["dataframe_metadata"]["datatypes"] == ["Int64", "Int64"]
+    assert df.frame_equal(df2)
+    assert "include_header" in write_kwargs
+    assert write_kwargs["include_header"] is True
+    assert "raise_if_empty" in read_kwargs
+    assert read_kwargs["raise_if_empty"] is True

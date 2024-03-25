@@ -67,6 +67,14 @@ materializers = [
         file="./df.avro",
         combine=df_builder,
     ),
+    # materialize the dataframe to a spreadsheet file
+    to.spreadsheet(
+        dependencies=output_columns,
+        id="df_to_spreadsheet",
+        workbook="./df.xlsx",
+        worksheet="Sheet1",
+        combine=df_builder,
+    ),
     # materialize the dataframe to a database
     to.database(
         dependencies=output_columns,
@@ -93,6 +101,7 @@ materialization_results, additional_outputs = dr.materialize(
         "df_to_feather_build_result",
         "df_to_json_build_result",
         "df_to_avro_build_result",
+        "df_to_spreadsheet_build_result",
         "df_to_database_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
@@ -102,4 +111,5 @@ print(additional_outputs["df_to_parquet_build_result"])
 print(additional_outputs["df_to_feather_build_result"])
 print(additional_outputs["df_to_json_build_result"])
 print(additional_outputs["df_to_avro_build_result"])
+print(additional_outputs["df_to_spreadsheet_build_result"])
 print(additional_outputs["df_to_database_build_result"])
