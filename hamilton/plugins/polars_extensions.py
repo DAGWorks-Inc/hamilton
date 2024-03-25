@@ -39,8 +39,6 @@ try:
 except ImportError:
     raise NotImplementedError("Polars is not installed.")
 
-from polars.datatypes import DataType, DataTypeClass
-from polars.selectors import _selector_proxy_
 
 # for polars <0.16.0 we need to determine whether type_aliases exist.
 has_alias = False
