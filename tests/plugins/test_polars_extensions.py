@@ -1,5 +1,7 @@
+import io
 import pathlib
 import sys
+import typing
 
 import polars as pl  # isort: skip
 import pytest  # isort: skip
@@ -168,3 +170,9 @@ def test_polars_spreadsheet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert write_kwargs["include_header"] is True
     assert "raise_if_empty" in read_kwargs
     assert read_kwargs["raise_if_empty"] is True
+
+
+def test_getting_type_hints_spreadsheetwriter():
+    """Tests that types can be resolved at run time."""
+    type_hints = typing.get_type_hints(PolarsSpreadsheetWriter)
+    assert type_hints["workbook"] == typing.Union[typing.Type, io.BytesIO, pathlib.Path, str]
