@@ -4,7 +4,7 @@ import json
 import os
 import pathlib
 import pickle
-from typing import Any, Collection, Dict, List, Tuple, Type, Union
+from typing import Any, Collection, Dict, Tuple, Type, Union
 
 from hamilton.io.data_adapters import DataLoader, DataSaver
 from hamilton.io.utils import get_file_metadata
@@ -16,7 +16,7 @@ class JSONDataLoader(DataLoader):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [dict, List[dict]]
+        return [dict, list]
 
     def load_data(self, type_: Type) -> Tuple[dict, Dict[str, Any]]:
         with open(self.path, "r") as f:
@@ -33,7 +33,7 @@ class JSONDataSaver(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [dict, List[dict]]
+        return [dict, list]
 
     @classmethod
     def name(cls) -> str:

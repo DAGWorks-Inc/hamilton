@@ -75,6 +75,15 @@ materializers = [
         worksheet="Sheet1",
         combine=df_builder,
     ),
+    # materialize the dataframe to a database
+    to.database(
+        dependencies=output_columns,
+        id="df_to_database",
+        table_name="test",
+        connection="sqlite:///df.db",
+        if_table_exists="replace",
+        combine=df_builder,
+    ),
 ]
 # Visualize what is happening
 dr.visualize_materialization(
@@ -93,6 +102,7 @@ materialization_results, additional_outputs = dr.materialize(
         "df_to_json_build_result",
         "df_to_avro_build_result",
         "df_to_spreadsheet_build_result",
+        "df_to_database_build_result",
     ],  # because combine is used, we can get that result here.
     inputs=initial_columns,
 )
@@ -102,4 +112,4 @@ print(additional_outputs["df_to_feather_build_result"])
 print(additional_outputs["df_to_json_build_result"])
 print(additional_outputs["df_to_avro_build_result"])
 print(additional_outputs["df_to_spreadsheet_build_result"])
-
+print(additional_outputs["df_to_database_build_result"])
