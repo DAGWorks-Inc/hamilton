@@ -23,6 +23,11 @@ from hamilton.plugins.polars_extensions import (  # isort: skip
     PolarsSpreadsheetWriter,
 )
 
+try:
+    from xlsxwriter.workbook import Workbook
+except ImportError:
+    Workbook = typing.Type
+
 
 @pytest.fixture
 def df():
@@ -175,4 +180,4 @@ def test_polars_spreadsheet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
 def test_getting_type_hints_spreadsheetwriter():
     """Tests that types can be resolved at run time."""
     type_hints = typing.get_type_hints(PolarsSpreadsheetWriter)
-    assert type_hints["workbook"] == typing.Union[typing.Type, io.BytesIO, pathlib.Path, str]
+    assert type_hints["workbook"] == typing.Union[Workbook, io.BytesIO, pathlib.Path, str]
