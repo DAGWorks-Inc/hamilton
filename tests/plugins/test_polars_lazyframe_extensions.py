@@ -4,7 +4,7 @@ import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-from hamilton.plugins.polars_lazyframe_extensions import (
+from hamilton.plugins.polars_extensions import (
     PolarsAvroReader,
     PolarsAvroWriter,
     PolarsCSVReader,

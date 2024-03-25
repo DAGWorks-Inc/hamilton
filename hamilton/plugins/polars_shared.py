@@ -43,3 +43,5 @@ class PolarsReaderWriter:
 
         metadata = utils.get_file_and_dataframe_metadata(self.file, df)
         return df, metadata
+
+

@@ -116,57 +116,7 @@ class PolarsCSVReader(DataLoader):
     def applicable_types(cls) -> Collection[Type]:
         return [DATAFRAME_TYPE]
 
-    def _get_loading_kwargs(self):
-        kwargs = {}
-        if self.has_header is not None:
-            kwargs["has_header"] = self.has_header
-        if self.columns is not None:
-            kwargs["columns"] = self.columns
-        if self.new_columns is not None:
-            kwargs["new_columns"] = self.new_columns
-        if self.separator is not None:
-            kwargs["separator"] = self.separator
-        if self.comment_char is not None:
-            kwargs["comment_char"] = self.comment_char
-        if self.quote_char is not None:
-            kwargs["quote_char"] = self.quote_char
-        if self.skip_rows is not None:
-            kwargs["skip_rows"] = self.skip_rows
-        if self.dtypes is not None:
-            kwargs["dtypes"] = self.dtypes
-        if self.null_values is not None:
-            kwargs["null_values"] = self.null_values
-        if self.missing_utf8_is_empty_string is not None:
-            kwargs["missing_utf8_is_empty_string"] = self.missing_utf8_is_empty_string
-        if self.ignore_errors is not None:
-            kwargs["ignore_errors"] = self.ignore_errors
-        if self.try_parse_dates is not None:
-            kwargs["try_parse_dates"] = self.try_parse_dates
-        if self.n_threads is not None:
-            kwargs["n_threads"] = self.n_threads
-        if self.infer_schema_length is not None:
-            kwargs["infer_schema_length"] = self.infer_schema_length
-        if self.n_rows is not None:
-            kwargs["n_rows"] = self.n_rows
-        if self.encoding is not None:
-            kwargs["encoding"] = self.encoding
-        if self.low_memory is not None:
-            kwargs["low_memory"] = self.low_memory
-        if self.rechunk is not None:
-            kwargs["rechunk"] = self.rechunk
-        if self.storage_options is not None:
-            kwargs["storage_options"] = self.storage_options
-        if self.skip_rows_after_header is not None:
-            kwargs["skip_rows_after_header"] = self.skip_rows_after_header
-        if self.row_count_name is not None:
-            kwargs["row_count_name"] = self.row_count_name
-        if self.row_count_offset is not None:
-            kwargs["row_count_offset"] = self.row_count_offset
-        if self.eol_char is not None:
-            kwargs["eol_char"] = self.eol_char
-        if self.raise_if_empty is not None:
-            kwargs["raise_if_empty"] = self.raise_if_empty
-        return kwargs
+
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         return SHARED_UTILS.load_data("csv", self.file, "lazy", self._get_loading_kwargs())

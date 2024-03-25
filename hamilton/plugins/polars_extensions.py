@@ -115,7 +115,7 @@ class PolarsCSVReader(DataLoader):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [DATAFRAME_TYPE]
+        return [DATAFRAME_TYPE, pl.LazyFrame]
 
     def _get_loading_kwargs(self):
         kwargs = {}
@@ -176,7 +176,13 @@ class PolarsCSVReader(DataLoader):
         return kwargs
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        return SHARED_UTILS.load_data("csv", self.file, "eager", self._get_loading_kwargs())
+        if isinstance(type_, pl.LazyFrame):
+            df = pl.scan_csv(self.file, **self._get_loading_kwargs())
+        else:
+            df = pl.read_csv(self.file, **self._get_loading_kwargs())
+
+        metadata = utils.get_file_and_dataframe_metadata(self.file, df)
+        return df, metadata
 
     @classmethod
     def name(cls) -> str:
@@ -205,7 +211,7 @@ class PolarsCSVWriter(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [DATAFRAME_TYPE]
+        return [DATAFRAME_TYPE, pl.LazyFrame]
 
     def _get_saving_kwargs(self):
         kwargs = {}
@@ -235,8 +241,11 @@ class PolarsCSVWriter(DataSaver):
             kwargs["quote_style"] = self.quote_style
         return kwargs
 
-    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        SHARED_UTILS.save_data(data, "csv", self.file, self._get_saving_kwargs())
+    def save_data(self, data: Union[DATAFRAME_TYPE, pl.LazyFrame]) -> Dict[str, Any]:
+        if isinstance(data, pl.LazyFrame):
+            data = data.collect()
+        data.write_csv(self.file, **self._get_saving_kwargs())
+        return utils.get_file_and_dataframe_metadata(self.file, data)
 
     @classmethod
     def name(cls) -> str:
