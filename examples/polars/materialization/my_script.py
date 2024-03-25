@@ -67,7 +67,7 @@ materializers = [
         file="./df.avro",
         combine=df_builder,
     ),
-    #materialize the dataframe to a spreadsheet file
+    # materialize the dataframe to a spreadsheet file
     to.spreadsheet(
         dependencies=output_columns,
         id="df_to_spreadsheet",

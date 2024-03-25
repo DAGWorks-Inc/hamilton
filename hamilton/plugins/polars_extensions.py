@@ -7,6 +7,7 @@ from typing import (
     Collection,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -15,6 +16,7 @@ from typing import (
     Type,
     Union,
 )
+
 try:
     from xlsxwriter.workbook import Workbook
 except ImportError:
@@ -37,9 +39,8 @@ try:
 except ImportError:
     raise NotImplementedError("Polars is not installed.")
 
-from polars.selectors import _selector_proxy_
 from polars.datatypes import DataType, DataTypeClass
-
+from polars.selectors import _selector_proxy_
 
 # for polars <0.16.0 we need to determine whether type_aliases exist.
 has_alias = False
@@ -577,6 +578,7 @@ class PolarsJSONWriter(DataSaver):
     def name(cls) -> str:
         return "json"
 
+
 @dataclasses.dataclass
 class PolarsSpreadsheetReader(DataLoader):
     """
@@ -632,10 +634,11 @@ class PolarsSpreadsheetWriter(DataSaver):
     Class specifically to handle saving Spreadsheet files with Polars.
     Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.write_excel.html
     """
+
     workbook: Union[Workbook, BytesIO, Path, str]
     worksheet: Union[str, None] = None
     # kwargs:
-    position: Union[Tuple[int, int], str] = 'A1'
+    position: Union[Tuple[int, int], str] = "A1"
     table_style: Union[str, Dict[str, Any], None] = None
     table_name: Union[str, None] = None
     column_formats: Union[ColumnFormatDict, None] = None
@@ -655,7 +658,9 @@ class PolarsSpreadsheetWriter(DataSaver):
     hidden_columns: Union[Sequence[str], SelectorType, None] = None
     hide_gridlines: bool = None
     sheet_zoom: Union[int, None] = None
-    freeze_panes: Union[str, Tuple[int, int], Tuple[str, int, int], Tuple[int, int, int, int], None] = None
+    freeze_panes: Union[
+        str, Tuple[int, int], Tuple[str, int, int], Tuple[int, int, int, int], None
+    ] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:

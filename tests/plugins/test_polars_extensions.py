@@ -164,7 +164,7 @@ def test_polars_spreadsheet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert metadata["dataframe_metadata"]["column_names"] == ["a", "b"]
     assert metadata["dataframe_metadata"]["datatypes"] == ["Int64", "Int64"]
     assert df.frame_equal(df2)
-    assert 'include_header' in write_kwargs
+    assert "include_header" in write_kwargs
     assert write_kwargs["include_header"] is True
     assert "raise_if_empty" in read_kwargs
     assert read_kwargs["raise_if_empty"] is True
