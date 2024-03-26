@@ -7,7 +7,6 @@ from polars.testing import assert_frame_equal
 from hamilton.plugins.polars_extensions import (
     PolarsAvroReader,
     PolarsAvroWriter,
-    PolarsCSVReader,
     PolarsCSVWriter,
     PolarsFeatherReader,
     PolarsFeatherWriter,
@@ -15,6 +14,10 @@ from hamilton.plugins.polars_extensions import (
     PolarsJSONWriter,
     PolarsParquetReader,
     PolarsParquetWriter,
+)
+
+from hamilton.plugins.polars_lazyframe_extensions import (
+    PolarsCSVReader
 )
 
 
@@ -34,7 +37,7 @@ def test_polars_lazyframe_csv(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
     kwargs2 = reader._get_loading_kwargs()
     df2, metadata = reader.load_data(pl.LazyFrame)
 
-    assert PolarsCSVWriter.applicable_types() == [pl.LazyFrame]
+    assert PolarsCSVWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert PolarsCSVReader.applicable_types() == [pl.LazyFrame]
     assert kwargs1["separator"] == ","
     assert kwargs2["has_header"] is True

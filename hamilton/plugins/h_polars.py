@@ -40,6 +40,8 @@ class PolarsDataFrameResult(base.ResultMixin):
             (value,) = outputs.values()  # this works because it's length 1.
             if isinstance(value, pl.DataFrame):  # it's a dataframe
                 return value
+            if isinstance(value, pl.LazyFrame):  # it's a dataframe
+                return value.collect()
             elif not isinstance(value, pl.Series):  # it's a single scalar/object
                 key, value = outputs.popitem()
                 return pl.DataFrame({key: [value]})

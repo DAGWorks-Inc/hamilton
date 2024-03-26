@@ -17,8 +17,6 @@ from typing import (
     Union,
 )
 
-from hamilton.plugins.polars_shared import PolarsReaderWriter
-
 try:
     import polars as pl
     from polars import PolarsDataType
@@ -51,8 +49,6 @@ from hamilton.io.data_adapters import DataLoader, DataSaver
 
 DATAFRAME_TYPE = pl.DataFrame
 COLUMN_TYPE = pl.Series
-
-SHARED_UTILS = PolarsReaderWriter()
 
 
 @registry.get_column.register(pl.DataFrame)
@@ -167,8 +163,6 @@ class PolarsCSVReader(DataLoader):
             kwargs["row_count_name"] = self.row_count_name
         if self.row_count_offset is not None:
             kwargs["row_count_offset"] = self.row_count_offset
-        if self.sample_size is not None:
-            kwargs["sample_size"] = self.sample_size
         if self.eol_char is not None:
             kwargs["eol_char"] = self.eol_char
         if self.raise_if_empty is not None:
@@ -176,10 +170,7 @@ class PolarsCSVReader(DataLoader):
         return kwargs
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
-        if isinstance(type_, pl.LazyFrame):
-            df = pl.scan_csv(self.file, **self._get_loading_kwargs())
-        else:
-            df = pl.read_csv(self.file, **self._get_loading_kwargs())
+        df = pl.read_csv(self.file, **self._get_loading_kwargs())
 
         metadata = utils.get_file_and_dataframe_metadata(self.file, df)
         return df, metadata
