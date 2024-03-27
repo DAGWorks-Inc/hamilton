@@ -1,0 +1,9 @@
+dagster
+dagster-webserver
+dagster_duckdb
+dagster_duckdb_pandas
+Faker==18.4.0
+matplotlib
+pandas
+requests
+sf-hamilton[visualization]

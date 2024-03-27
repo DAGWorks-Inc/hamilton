@@ -6,7 +6,7 @@
 exclude: '^docs/code-comparisons/'  # skip the code comparisons directory
 repos:
 -   repo: https://github.com/ambv/black
-    rev: 24.1.1
+    rev: 24.3.0
     hooks:
     - id: black
       args: [--line-length=100, --exclude=docs/*]
