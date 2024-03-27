@@ -793,7 +793,7 @@ class PolarsDatabaseWriter(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [DATAFRAME_TYPE]
+        return [DATAFRAME_TYPE, pl.LazyFrame]
 
     def _get_saving_kwargs(self):
         kwargs = {}
