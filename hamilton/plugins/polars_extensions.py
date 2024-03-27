@@ -111,7 +111,7 @@ class PolarsCSVReader(DataLoader):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [DATAFRAME_TYPE, pl.LazyFrame]
+        return [DATAFRAME_TYPE]
 
     def _get_loading_kwargs(self):
         kwargs = {}
@@ -323,7 +323,7 @@ class PolarsParquetWriter(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [DATAFRAME_TYPE]
+        return [DATAFRAME_TYPE, pl.LazyFrame]
 
     def _get_saving_kwargs(self):
         kwargs = {}
@@ -341,8 +341,12 @@ class PolarsParquetWriter(DataSaver):
             kwargs["pyarrow_options"] = self.pyarrow_options
         return kwargs
 
-    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+    def save_data(self, data: Union[DATAFRAME_TYPE, pl.LazyFrame]) -> Dict[str, Any]:
+        if isinstance(data, pl.LazyFrame):
+            data = data.collect()
+
         data.write_parquet(self.file, **self._get_saving_kwargs())
+
         return utils.get_file_and_dataframe_metadata(self.file, data)
 
     @classmethod

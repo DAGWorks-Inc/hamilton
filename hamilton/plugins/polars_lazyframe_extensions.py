@@ -40,34 +40,17 @@ from hamilton.io import utils
 from hamilton.io.data_adapters import DataLoader, DataSaver
 
 DATAFRAME_TYPE = pl.LazyFrame
-COLUMN_TYPE = pl.LazyFrame
-
-
-
-@registry.get_column.register(pl.LazyFrame)
-def get_column_polars_lazyframe(df: pl.LazyFrame, column_name: str) -> pl.LazyFrame:
-    return df.select(column_name)
-
-
-@registry.fill_with_scalar.register(pl.LazyFrame)
-def fill_with_scalar_polars_lazyframe(
-    df: pl.LazyFrame, column_name: str, scalar_value: Any
-) -> pl.LazyFrame:
-    if not isinstance(scalar_value, pl.Series):
-        scalar_value = [scalar_value]
-    return df.with_columns(pl.Series(name=column_name, values=scalar_value))
-
+COLUMN_TYPE = None
+COLUMN_FRIENDLY_DF_TYPE = False
 
 def register_types():
     """Function to register the types for this extension."""
     registry.register_types("polars_lazyframe", DATAFRAME_TYPE, COLUMN_TYPE)
 
-
 register_types()
 
-
 @dataclasses.dataclass
-class PolarsCSVReader(DataLoader):
+class PolarsScanCSVReader(DataLoader):
     """Class specifically to handle loading CSV files with Polars.
     Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.read_csv.html
     """
@@ -171,11 +154,122 @@ class PolarsCSVReader(DataLoader):
         return "csv"
 
 
+@dataclasses.dataclass
+class PolarsScanParquetReader(DataLoader):
+    """Class specifically to handle loading parquet files with polars
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.read_parquet.html
+    """
+
+    file: Union[str, TextIO, BytesIO, Path, BinaryIO, bytes]
+    # kwargs:
+    columns: Union[List[int], List[str]] = None
+    n_rows: int = None
+    use_pyarrow: bool = False
+    memory_map: bool = True
+    storage_options: Dict[str, Any] = None
+    parallel: Any = "auto"
+    row_count_name: str = None
+    row_count_offset: int = 0
+    low_memory: bool = False
+    use_statistics: bool = True
+    rechunk: bool = True
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self):
+        kwargs = {}
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.n_rows is not None:
+            kwargs["n_rows"] = self.n_rows
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.parallel is not None:
+            kwargs["parallel"] = self.parallel
+        if self.row_count_name is not None:
+            kwargs["row_count_name"] = self.row_count_name
+        if self.row_count_offset is not None:
+            kwargs["row_count_offset"] = self.row_count_offset
+        if self.low_memory is not None:
+            kwargs["low_memory"] = self.low_memory
+        if self.use_statistics is not None:
+            kwargs["use_statistics"] = self.use_statistics
+        if self.rechunk is not None:
+            kwargs["rechunk"] = self.rechunk
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pl.scan_parquet(self.file, **self._get_loading_kwargs())
+        metadata = utils.get_file_and_dataframe_metadata(self.file, df)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "parquet"
+
+
+@dataclasses.dataclass
+class PolarsScanFeatherReader(DataLoader):
+    """
+    Class specifically to handle loading Feather/Arrow IPC files with Polars.
+    Should map to https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.read_ipc.html
+    """
+
+    source: Union[str, BinaryIO, BytesIO, Path, bytes]
+    # kwargs:
+    columns: Optional[Union[List[str], List[int]]] = None
+    n_rows: Optional[int] = None
+    use_pyarrow: bool = False
+    memory_map: bool = True
+    storage_options: Optional[Dict[str, Any]] = None
+    row_count_name: Optional[str] = None
+    row_count_offset: int = 0
+    rechunk: bool = True
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self):
+        kwargs = {}
+        if self.columns is not None:
+            kwargs["columns"] = self.columns
+        if self.n_rows is not None:
+            kwargs["n_rows"] = self.n_rows
+        if self.use_pyarrow is not None:
+            kwargs["use_pyarrow"] = self.use_pyarrow
+        if self.memory_map is not None:
+            kwargs["memory_map"] = self.memory_map
+        if self.storage_options is not None:
+            kwargs["storage_options"] = self.storage_options
+        if self.row_count_name is not None:
+            kwargs["row_count_name"] = self.row_count_name
+        if self.row_count_offset is not None:
+            kwargs["row_count_offset"] = self.row_count_offset
+        if self.rechunk is not None:
+            kwargs["rechunk"] = self.rechunk
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        df = pl.scan_ipc(self.source, **self._get_loading_kwargs())
+        metadata = utils.get_file_metadata(self.source)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "feather"
+
+
+
 
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
-        PolarsCSVReader,
+        PolarsScanCSVReader,
+        PolarsScanParquetReader,
+        PolarsScanFeatherReader,
     ]:
         registry.register_adapter(loader)
 
