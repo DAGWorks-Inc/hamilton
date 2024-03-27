@@ -247,7 +247,9 @@ class MaterializerFactory:
                 callabl=join_function,
                 input_types={dep.name: dep.type for dep in node_dependencies},
                 originating_functions=(
-                    None if self.result_builder is None else [self.result_builder.build_result]
+                    (join_function,)
+                    if self.result_builder is None
+                    else (self.result_builder.build_result,)
                 ),
             )
             out.append(join_node)

@@ -233,6 +233,7 @@ class LoadFromDecorator(NodeInjector):
             namespace=(
                 (namespace, "load_data") if namespace else ("load_data",)
             ),  # We want no namespace in this case
+            originating_functions=(load_data,),
         )
 
         # the filter node is the node that takes the data from the data source, filters out
@@ -259,6 +260,7 @@ class LoadFromDecorator(NodeInjector):
             # to have this weird DAG shape. For now, this solves the problem, and this is an internal component of the API
             # so we're good to go
             namespace=((namespace, "select_data") if namespace else ()),  # We want no namespace
+            originating_functions=(filter_function,),
         )
         return [loader_node, filter_node]
 
@@ -576,6 +578,7 @@ class SaveToDecorator(SingleNodeNodeTransformer):
                 "hamilton.data_saver.sink": f"{saver_cls.name()}",
                 "hamilton.data_saver.classname": f"{saver_cls.__qualname__}",
             },
+            originating_functions=(save_data,),
         )
         return save_node
 
