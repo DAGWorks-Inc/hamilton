@@ -45,7 +45,7 @@ def test_polars_csv(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     kwargs2 = reader._get_loading_kwargs()
     df2, metadata = reader.load_data(pl.DataFrame)
 
-    assert PolarsCSVWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsCSVWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert PolarsCSVReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["separator"] == ","
     assert kwargs2["has_header"] is True
@@ -63,7 +63,7 @@ def test_polars_parquet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     kwargs2 = reader._get_loading_kwargs()
     df2, metadata = reader.load_data(pl.DataFrame)
 
-    assert PolarsParquetWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsParquetWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert PolarsParquetReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["compression"] == "zstd"
     assert kwargs2["n_rows"] == 2
@@ -85,7 +85,7 @@ def test_polars_feather(tmp_path: pathlib.Path) -> None:
     assert "n_rows" not in read_kwargs
     assert df.shape == (4, 3)
 
-    assert PolarsFeatherWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsFeatherWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert "compression" in write_kwargs
     assert file_path.exists()
     assert metadata["file_metadata"]["path"] == str(file_path)
