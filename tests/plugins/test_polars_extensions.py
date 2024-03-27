@@ -103,7 +103,7 @@ def test_polars_json(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     kwargs2 = reader._get_loading_kwargs()
     df2, metadata = reader.load_data(pl.DataFrame)
 
-    assert PolarsJSONWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsJSONWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert PolarsJSONReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["pretty"]
     assert df2.shape == (2, 2)
@@ -122,7 +122,7 @@ def test_polars_avro(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     kwargs2 = reader._get_loading_kwargs()
     df2, metadata = reader.load_data(pl.DataFrame)
 
-    assert PolarsAvroWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsAvroWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert PolarsAvroReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["compression"] == "uncompressed"
     assert kwargs2["n_rows"] == 2
@@ -145,7 +145,7 @@ def test_polars_database(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     kwargs2 = reader._get_loading_kwargs()
     df2, metadata = reader.load_data(pl.DataFrame)
 
-    assert PolarsDatabaseWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsDatabaseWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert PolarsDatabaseReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["if_table_exists"] == "replace"
     assert "batch_size" not in kwargs2
@@ -163,7 +163,7 @@ def test_polars_spreadsheet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     read_kwargs = reader._get_loading_kwargs()
     df2, _ = reader.load_data(pl.DataFrame)
 
-    assert PolarsSpreadsheetWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsSpreadsheetWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert PolarsSpreadsheetReader.applicable_types() == [pl.DataFrame]
     assert file_path.exists()
     assert metadata["file_metadata"]["path"] == str(file_path)
