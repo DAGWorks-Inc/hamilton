@@ -203,5 +203,6 @@ class HamiltonGraph:
         Node hashes are in a sorted list, then concatenated as a string before hashing.
         To find differences between dataflows, you need to inspect the node level.
         """
-        sorted_node_versions = sorted([n.version for n in self.nodes])
+        sorted_nodes = sorted(self.nodes, key=lambda n: n.name)
+        sorted_node_versions = [n.version if n.version else "" for n in sorted_nodes]
         return hashlib.sha256(str(sorted_node_versions).encode()).hexdigest()
