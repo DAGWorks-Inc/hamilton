@@ -5,7 +5,7 @@ import polars as pl
 from hamilton import base
 
 
-class PolarsDataFrameResult(base.ResultMixin):
+class PolarsLazyFrameResult(base.ResultMixin):
     """A ResultBuilder that produces a polars dataframe.
 
     Use this when you want to create a polars dataframe from the outputs. Caveat: you need to ensure that the length
@@ -26,8 +26,8 @@ class PolarsDataFrameResult(base.ResultMixin):
     """
 
     def build_result(
-        self, **outputs: Dict[str, Union[pl.Series, pl.DataFrame, Any]]
-    ) -> pl.DataFrame:
+        self, **outputs: Dict[str, Union[pl.Series, pl.LazyFrame, Any]]
+    ) -> pl.LazyFrame:
         """This is the method that Hamilton will call to build the final result. It will pass in the results
         of the requested outputs that you passed in to the execute() method.
 
@@ -38,18 +38,9 @@ class PolarsDataFrameResult(base.ResultMixin):
         """
         if len(outputs) == 1:
             (value,) = outputs.values()  # this works because it's length 1.
-            if isinstance(value, pl.DataFrame):  # it's a dataframe
-                return value
             if isinstance(value, pl.LazyFrame):  # it's a lazyframe
-                return value.collect()
-            elif not isinstance(value, pl.Series):  # it's a single scalar/object
-                key, value = outputs.popitem()
-                return pl.DataFrame({key: [value]})
-            else:  # it's a series
-                return pl.DataFrame(outputs)
-        # TODO: check for length of outputs and determine what should
-        # happen for mixed outputs that include scalars for example.
-        return pl.DataFrame(outputs)
+                return value
+        return pl.LazyFrame(outputs)
 
     def output_type(self) -> Type:
-        return pl.DataFrame
+        return pl.LazyFrame
