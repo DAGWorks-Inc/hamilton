@@ -399,6 +399,16 @@ class Driver:
             # TODO -- update this to use the lifecycle methods
             self.capture_constructor_telemetry(error, modules, config, adapter)
 
+    def _repr_mimebundle_(self, include=None, exclude=None, **kwargs):
+        """Attribute read by notebook renderers
+        This returns the attribute of the `graphviz.Digraph` returned by `self.display_all_functions()`
+
+        The parameters `include`, `exclude`, and `**kwargs` are required, but not explicitly used
+        ref: https://ipython.readthedocs.io/en/stable/config/integrating.html
+        """
+        dot = self.display_all_functions()
+        return dot._repr_mimebundle_(include=include, exclude=exclude, **kwargs)
+
     def capture_constructor_telemetry(
         self,
         error: Optional[str],
