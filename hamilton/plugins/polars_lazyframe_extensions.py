@@ -43,6 +43,8 @@ DATAFRAME_TYPE = pl.LazyFrame
 COLUMN_TYPE = None
 COLUMN_FRIENDLY_DF_TYPE = False
 
+def get_column_polars_lazyframe():
+    None
 def register_types():
     """Function to register the types for this extension."""
     registry.register_types("polars_lazyframe", DATAFRAME_TYPE, COLUMN_TYPE)
