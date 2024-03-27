@@ -9,11 +9,10 @@ from hamilton.plugins.polars_extensions import (
     PolarsFeatherWriter,
     PolarsParquetWriter,
 )
-
 from hamilton.plugins.polars_lazyframe_extensions import (
     PolarsScanCSVReader,
-    PolarsScanParquetReader,
     PolarsScanFeatherReader,
+    PolarsScanParquetReader,
 )
 
 
@@ -67,13 +66,13 @@ def test_polars_feather(tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "test.dta"
     writer = PolarsFeatherWriter(file=file_path)
     write_kwargs = writer._get_saving_kwargs()
-    metadata = writer.save_data(df)
+    metadata = writer.save_data(df.collect())
 
-    assert PolarsScanFeatherReader.applicable_types() == [pl.DataFrame]
+    assert PolarsScanFeatherReader.applicable_types() == [pl.LazyFrame]
     assert "n_rows" not in read_kwargs
-    assert df.shape == (4, 3)
+    assert df.collect().shape == (4, 3)
 
-    assert PolarsFeatherWriter.applicable_types() == [pl.DataFrame]
+    assert PolarsFeatherWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert "compression" in write_kwargs
     assert file_path.exists()
     assert metadata["file_metadata"]["path"] == str(file_path)
@@ -83,4 +82,3 @@ def test_polars_feather(tmp_path: pathlib.Path) -> None:
         "environment",
     ]
     assert metadata["dataframe_metadata"]["datatypes"] == ["String", "Int64", "String"]
-

@@ -1,5 +1,5 @@
 import dataclasses
-from io import BytesIO, IOBase, TextIOWrapper
+from io import BytesIO
 from pathlib import Path
 from typing import (
     Any,
@@ -37,19 +37,24 @@ else:
 
 from hamilton import registry
 from hamilton.io import utils
-from hamilton.io.data_adapters import DataLoader, DataSaver
+from hamilton.io.data_adapters import DataLoader
 
 DATAFRAME_TYPE = pl.LazyFrame
 COLUMN_TYPE = None
 COLUMN_FRIENDLY_DF_TYPE = False
 
+
 def get_column_polars_lazyframe():
     None
+
+
 def register_types():
     """Function to register the types for this extension."""
     registry.register_types("polars_lazyframe", DATAFRAME_TYPE, COLUMN_TYPE)
 
+
 register_types()
+
 
 @dataclasses.dataclass
 class PolarsScanCSVReader(DataLoader):
@@ -85,7 +90,6 @@ class PolarsScanCSVReader(DataLoader):
     row_count_offset: int = 0
     eol_char: str = "\n"
     raise_if_empty: bool = True
-
 
     def _get_loading_kwargs(self):
         kwargs = {}
@@ -142,8 +146,6 @@ class PolarsScanCSVReader(DataLoader):
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
         return [DATAFRAME_TYPE]
-
-
 
     def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
         df = pl.scan_csv(self.file, **self._get_loading_kwargs())
@@ -240,8 +242,6 @@ class PolarsScanFeatherReader(DataLoader):
             kwargs["columns"] = self.columns
         if self.n_rows is not None:
             kwargs["n_rows"] = self.n_rows
-        if self.use_pyarrow is not None:
-            kwargs["use_pyarrow"] = self.use_pyarrow
         if self.memory_map is not None:
             kwargs["memory_map"] = self.memory_map
         if self.storage_options is not None:
@@ -262,8 +262,6 @@ class PolarsScanFeatherReader(DataLoader):
     @classmethod
     def name(cls) -> str:
         return "feather"
-
-
 
 
 def register_data_loaders():

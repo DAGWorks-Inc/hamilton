@@ -419,7 +419,7 @@ class PolarsFeatherWriter(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [DATAFRAME_TYPE]
+        return [DATAFRAME_TYPE, pl.LazyFrame]
 
     def _get_saving_kwargs(self):
         kwargs = {}
@@ -427,7 +427,9 @@ class PolarsFeatherWriter(DataSaver):
             kwargs["compression"] = self.compression
         return kwargs
 
-    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+    def save_data(self, data: Union[DATAFRAME_TYPE, pl.LazyFrame]) -> Dict[str, Any]:
+        if isinstance(data, pl.LazyFrame):
+            data = data.collect()
         data.write_ipc(self.file, **self._get_saving_kwargs())
         return utils.get_file_and_dataframe_metadata(self.file, data)
 
