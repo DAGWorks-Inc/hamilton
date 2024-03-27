@@ -1,5 +1,4 @@
 import dataclasses
-import logging
 from io import BytesIO, IOBase, TextIOWrapper
 from pathlib import Path
 from typing import (
@@ -70,8 +69,6 @@ def fill_with_scalar_polars(df: pl.DataFrame, column_name: str, scalar_value: An
 
 
 def register_types():
-    logger = logging.getLogger(__name__)
-    logger.info("registering lazyframe")
     """Function to register the types for this extension."""
     registry.register_types("polars", DATAFRAME_TYPE, COLUMN_TYPE)
 
@@ -489,7 +486,7 @@ class PolarsAvroWriter(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [DATAFRAME_TYPE]
+        return [DATAFRAME_TYPE, pl.LazyFrame]
 
     def _get_saving_kwargs(self):
         kwargs = {}
@@ -497,7 +494,10 @@ class PolarsAvroWriter(DataSaver):
             kwargs["compression"] = self.compression
         return kwargs
 
-    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+    def save_data(self, data: Union[DATAFRAME_TYPE, pl.LazyFrame]) -> Dict[str, Any]:
+        if isinstance(data, pl.LazyFrame):
+            data = data.collect()
+
         data.write_avro(self.file, **self._get_saving_kwargs())
         return utils.get_file_and_dataframe_metadata(self.file, data)
 
@@ -552,7 +552,7 @@ class PolarsJSONWriter(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [DATAFRAME_TYPE]
+        return [DATAFRAME_TYPE, pl.LazyFrame]
 
     def _get_saving_kwargs(self):
         kwargs = {}
@@ -562,7 +562,10 @@ class PolarsJSONWriter(DataSaver):
             kwargs["row_oriented"] = self.row_oriented
         return kwargs
 
-    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+    def save_data(self, data: Union[DATAFRAME_TYPE, pl.LazyFrame]) -> Dict[str, Any]:
+        if isinstance(data, pl.LazyFrame):
+            data = data.collect()
+
         data.write_json(self.file, **self._get_saving_kwargs())
         return utils.get_file_and_dataframe_metadata(self.file, data)
 
@@ -718,7 +721,10 @@ class PolarsSpreadsheetWriter(DataSaver):
             kwargs["freeze_panes"] = self.freeze_panes
         return kwargs
 
-    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+    def save_data(self, data: Union[DATAFRAME_TYPE, pl.LazyFrame]) -> Dict[str, Any]:
+        if isinstance(data, pl.LazyFrame):
+            data = data.collect()
+
         data.write_excel(self.workbook, self.worksheet, **self._get_saving_kwargs())
         return utils.get_file_and_dataframe_metadata(self.workbook, data)
 
@@ -797,7 +803,10 @@ class PolarsDatabaseWriter(DataSaver):
             kwargs["engine"] = self.engine
         return kwargs
 
-    def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
+    def save_data(self, data: Union[DATAFRAME_TYPE, pl.LazyFrame]) -> Dict[str, Any]:
+        if isinstance(data, pl.LazyFrame):
+            data = data.collect()
+
         data.write_database(
             table_name=self.table_name,
             connection=self.connection,

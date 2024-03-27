@@ -17,7 +17,7 @@ class PolarsLazyFrameResult(base.ResultMixin):
 
         from hamilton import base, driver
         from hamilton.plugins import polars_extensions
-        polars_builder = polars_extensions.PolarsDataFrameResult()
+        polars_builder = polars_extensions.PolarsLazyFrameResult()
         adapter = base.SimplePythonGraphAdapter(polars_builder)
         dr =  driver.Driver(config, *modules, adapter=adapter)
         df = dr.execute([...], inputs=...)  # returns polars dataframe
