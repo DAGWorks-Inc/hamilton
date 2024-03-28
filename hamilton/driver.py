@@ -1670,10 +1670,8 @@ class Builder:
         return self
 
     def with_local_modules(self) -> "Builder":
-        """Adds the specified modules to the modules list.
-        This can be called multiple times -- later calls will take precedence.
+        """Adds the local modules to the modules list.
 
-        :param file_path: Path to the file to import.
         :return: self
         """
         import inspect
