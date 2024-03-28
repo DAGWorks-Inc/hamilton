@@ -18,7 +18,7 @@ def _callable_to_node(callable) -> node.Node:
 
 @pytest.fixture()
 def hook(tmp_path: pathlib.Path):
-    return CacheAdapter(cache_path=str(tmp_path.resolve()))
+    return CacheAdapter(cache_path=str((tmp_path / "cache.db").resolve()))
 
 
 @pytest.fixture()

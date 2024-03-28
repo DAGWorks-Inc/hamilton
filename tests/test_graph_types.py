@@ -5,10 +5,11 @@ import textwrap
 
 import pytest
 
-from hamilton import graph_types, node
+from hamilton import driver, graph_types, node
 from hamilton.node import Node, NodeType
 
 from tests import nodes as test_nodes
+from tests.resources.dynamic_parallelism import no_parallel
 
 
 @pytest.fixture()
@@ -113,12 +114,50 @@ def test_create_hamilton_node():
     }
 
 
-def test_create_hamilton_node_missing_version():
+def test_create_hamilton_config_node_version():
+    """Config nodes now return the name as the version."""
     n = Node("foo", int, node_source=NodeType.EXTERNAL)
+    hamilton_node = graph_types.HamiltonNode.from_node(n)
+    # the above will have no specified versions
+    assert hamilton_node.version == "foo"
+    assert hamilton_node.as_dict()["version"] == "foo"
+
+
+def test_create_hamilton_node_missing_version():
+    """We contrive a case where originating_functions is None."""
+
+    def foo(i: int) -> int:
+        return i
+
+    n = Node("foo", int, "", foo, node_source=NodeType.STANDARD)
     hamilton_node = graph_types.HamiltonNode.from_node(n)
     # the above will have no specified versions
     assert hamilton_node.version is None
     assert hamilton_node.as_dict()["version"] is None
+
+
+def test_hamilton_graph_version_normal():
+    dr = driver.Builder().with_modules(no_parallel).build()
+    graph = graph_types.HamiltonGraph.from_graph(dr.graph)
+    # assumption is for python 3
+    if sys.version_info.minor == 8:
+        hash_value = "0a375f3366590453dea8927d4c02c15dc090f8be42e9129d9a1139284eac920c"
+    else:
+        hash_value = "3b3487599ccc4fc56995989c6d32b58a90c0b91b8c16b3f453a2793f47436831"
+    assert graph.version == hash_value
+
+
+def test_hamilton_graph_version_with_none_originating_functions():
+    dr = driver.Builder().with_modules(no_parallel).build()
+    graph = graph_types.HamiltonGraph.from_graph(dr.graph)
+    # if this gets flakey we should find a specific node to make None
+    graph.nodes[-1].originating_functions = None
+    # assumption is for python 3
+    if sys.version_info.minor == 8:
+        hash_value = "7d556424cd84b97a395d9b6219f502e8f818f17002ce88f47974266c0cce454a"
+    else:
+        hash_value = "781d89517c1744c40a7afcdc49ee8592fbb23955e28d87f1b584d08430a3e837"
+    assert graph.version == hash_value
 
 
 def test_json_serializable_dict():
