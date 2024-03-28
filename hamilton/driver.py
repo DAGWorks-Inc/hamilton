@@ -1679,6 +1679,17 @@ class Builder:
         self.config.update(config)
         return self
 
+    def with_local_modules(self) -> "Builder":
+        """Adds the local modules to the modules list.
+
+        :return: self
+        """
+        import inspect
+
+        module = inspect.getmodule(inspect.stack()[1][0])
+        self.modules.append(module)
+        return self
+
     def with_modules(self, *modules: ModuleType) -> "Builder":
         """Adds the specified modules to the modules list.
         This can be called multiple times -- later calls will take precedence.
