@@ -62,14 +62,27 @@ def get_dataframe_metadata(df: pd.DataFrame) -> Dict[str, Any]:
     - the column names
     - the data types
     """
-    return {
-        DATAFRAME_METADATA: {
-            "rows": len(df),
-            "columns": len(df.columns),
-            "column_names": list(df.columns),
-            "datatypes": [str(t) for t in list(df.dtypes)],  # for serialization purposes
-        }
-    }
+    metadata = {}
+    try:
+        metadata["rows"] = len(df)
+    except TypeError:
+        metadata["rows"] = None
+
+    try:
+        metadata["columns"] = len(df.columns)
+    except (AttributeError, TypeError):
+        metadata["columns"] = None
+
+    try:
+        metadata["column_names"] = list(df.columns)
+    except (AttributeError, TypeError):
+        metadata["column_names"] = None
+
+    try:
+        metadata["datatypes"] = [str(t) for t in list(df.dtypes)]
+    except (AttributeError, TypeError):
+        metadata["datatypes"] = None
+    return {DATAFRAME_METADATA: metadata}
 
 
 def get_file_and_dataframe_metadata(path: str, df: pd.DataFrame) -> Dict[str, Any]:
