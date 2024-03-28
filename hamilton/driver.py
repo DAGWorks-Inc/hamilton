@@ -1675,6 +1675,7 @@ class Builder:
         :return: self
         """
         import inspect
+
         module = inspect.getmodule(inspect.stack()[1][0])
         self.modules.append(module)
         return self
