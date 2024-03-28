@@ -26,6 +26,8 @@ Hamilton is a novel paradigm for specifying a flow of delayed execution in pytho
 
 This paradigm makes modifications easy to build and track, ensures code is self-documenting, and makes it natural to unit test your data transformations. When connected together, these functions form a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG), which the Hamilton framework can execute, optimize, and report on.
 
+Note: Hamilton describes DAGs. If you're looking for something to handle loops or conditional edges (say, for a human-in-the-loop application like a chatbot or agent), you might appreciate [Burr](github.com/dagworks-inc/burr) -- it integrates well with any python library (including Hamilton!).
+
 ## Problems Hamilton Solves
 ✅ Model a dataflow -- If you can model your problem as a DAG in python, Hamilton is the cleanest way to build it.<br/>
 ✅ Unmaintainable spaghetti code -- Hamilton dataflows are unit testable, self-documenting, and provide lineage.<br/>
