@@ -1,7 +1,7 @@
 # Classic Hamilton Hello World
 
 In this example we show you how to create a simple hello world dataflow that
-creates a polars dataframe as a result. It performs a series of transforms on the
+creates a polars lazyframe as a result. It performs a series of transforms on the
 input to create columns that appear in the output.
 
 File organization:
