@@ -57,7 +57,7 @@ def test_lazy_polars_parquet(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
 
     reader = PolarsScanParquetReader(file=file, n_rows=2)
     kwargs2 = reader._get_loading_kwargs()
-    df2, metadata = reader.load_data(pl.DataFrame)
+    df2, metadata = reader.load_data(pl.LazyFrame)
 
     assert PolarsParquetWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert PolarsScanParquetReader.applicable_types() == [pl.LazyFrame]
@@ -70,7 +70,7 @@ def test_lazy_polars_feather(tmp_path: pathlib.Path) -> None:
     test_data_file_path = "tests/resources/data/test_load_from_data.feather"
     reader = PolarsScanFeatherReader(source=test_data_file_path)
     read_kwargs = reader._get_loading_kwargs()
-    df, _ = reader.load_data(pl.DataFrame)
+    df, _ = reader.load_data(pl.LazyFrame)
 
     file_path = tmp_path / "test.dta"
     writer = PolarsFeatherWriter(file=file_path)
