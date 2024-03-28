@@ -154,9 +154,13 @@ class HamiltonNode:
         The option `strip=True` means docstring and comments are ignored
         when hashing the function.
         """
-        if not self.originating_functions:
-            return None
+        if self.originating_functions is None or len(self.originating_functions) == 0:
+            if self.is_external_input:
+                # return the name of the config node. (we could add type but skipping for now)
+                return self.name
+            return None  # this shouldn't happen often.
         try:
+            # return hash of first function. It could be that others are Hamilton framework code.
             return hash_source_code(self.originating_functions[0], strip=True)
         except (
             OSError
@@ -203,5 +207,5 @@ class HamiltonGraph:
         Node hashes are in a sorted list, then concatenated as a string before hashing.
         To find differences between dataflows, you need to inspect the node level.
         """
-        sorted_node_versions = sorted([n.version for n in self.nodes])
+        sorted_node_versions = sorted([n.version for n in self.nodes if n.version is not None])
         return hashlib.sha256(str(sorted_node_versions).encode()).hexdigest()

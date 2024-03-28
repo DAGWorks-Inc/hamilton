@@ -564,7 +564,6 @@ class SaveToDecorator(SingleNodeNodeTransformer):
             key: value for key, value in input_types.items() if key not in resolved_kwargs
         }
         input_types[node_to_save] = (node_.type, DependencyType.REQUIRED)
-
         save_node = node.Node(
             name=artifact_name,
             callabl=save_data,
