@@ -42,6 +42,17 @@ class SlackNotifier(NodeExecutionHook):
         if self.slack_client is not None:
             self.slack_client.chat_postMessage(channel=self.channel, text=message)
 
+    def run_before_node_execution(
+        self,
+        node_name: str,
+        node_tags: Dict[str, Any],
+        node_kwargs: Dict[str, Any],
+        node_return_type: type,
+        **future_kwargs: Any,
+    ):
+        """Placeholder required to subclass `NodeExecutionMethod`"""
+        pass
+
     def run_after_node_execution(
         self,
         node_name: str,
