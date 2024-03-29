@@ -1,5 +1,5 @@
 ==========================
-plugins.h_slack.SlackNotifierAdapter
+plugins.h_slack.SlackNotifier
 ==========================
 
 Provides a Slack notifier for Hamilton execution. Must have `slack_sdk` installed to use it:
@@ -7,7 +7,7 @@ Provides a Slack notifier for Hamilton execution. Must have `slack_sdk` installe
 `pip install sf-hamilton[slack]` (use quotes if using zsh)
 
 
-.. autoclass:: hamilton.plugins.h_slack.SlackNotifierAdapter
+.. autoclass:: hamilton.plugins.h_slack.SlackNotifier
    :special-members: __init__
    :members:
    :inherited-members:
