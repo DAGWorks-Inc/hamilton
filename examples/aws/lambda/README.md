@@ -5,63 +5,92 @@
 Here we have an example how to deploy "hello-world" AWS Lambda with Hamilton functions.
 This example is based on the official instruction: https://docs.aws.amazon.com/lambda/latest/dg/python-image.html#python-image-instructions
 
-0. Set up AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html
+## Prerequisites
 
-1. Docker image build:
+- **AWS CLI Setup**: Make sure the AWS CLI is set up on your machine. If you haven't done this yet, no worries! You can follow the [Quick Start guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html) for easy setup instructions.
 
-```shell
-docker build --platform linux/amd64 -t aws-lambda-hamilton .
-```
+## Step-by-Step Guide
 
-2. Local tests:
+### 1. Build Docker image:
 
-```shell
-docker run -p 9000:8080 aws-lambda-hamilton
-```
+- **Build Docker image for deploy in AWS ECR**
 
-```shell
-curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"body": {"columns":["signups","spend"],"index":[0,1,2,3,4,5],"data":[[1,10],[10,10],[50,20],[100,40],[200,40],[400,50]]}}'
-```
+  ```shell
+  docker build --platform linux/amd64 -t aws-lambda-hamilton .
+  ```
 
-3. Create AWS ECR repository:
+- **Local tests:**
 
+  Run Docker container:
 
-```shell
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 111122223333.dkr.ecr.us-east-1.amazonaws.com
-```
+  ```shell
+  docker run -p 9000:8080 aws-lambda-hamilton
+  ```
 
-```shell
-aws ecr create-repository --repository-name aws-lambda-hamilton --region us-east-1 --image-scanning-configuration scanOnPush=true --image-tag-mutability MUTABLE
-```
+  Send test request to check if Docker container executes it correctly:
 
-4. Deploy image to AWS ECR:
+  ```shell
+  curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"body": {"columns":["signups","spend"],"index":[0,1,2,3,4,5],"data":[[1,10],[10,10],[50,20],[100,40],[200,40],[400,50]]}}'
+  ```
+
+### 2. Create AWS ECR repository:
+
+Ensure the AWS account number (`111122223333`) is correctly replaced with yours:
+
+- **Authenticate Docker to Amazon ECR**:
+
+    Retrieve an authentication token to authenticate your Docker client to your Amazon Elastic Container Registry (ECR):
+
+    ```shell
+    aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 111122223333.dkr.ecr.us-east-1.amazonaws.com
+    ```
+
+- **Create the ECR Repository**:
+
+    ```shell
+    aws ecr create-repository --repository-name aws-lambda-hamilton \
+        --region us-east-1 \
+        --image-scanning-configuration scanOnPush=true \
+        --image-tag-mutability MUTABLE
+  ```
+
+### 3. Deploy the Image to AWS ECR
+
+Ensure the AWS account number (`111122223333`) is correctly replaced with yours:
 
 ```shell
 docker tag aws-lambda-hamilton 111122223333.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-hamilton:latest
-```
-
-```shell
 docker push 111122223333.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-hamilton:latest
 ```
 
-4.5. Create simple AWS Lambda role (if needed):
+### 4. Create a simple AWS Lambda role:
+
+Example of creating an AWS Role for Lambda execution:
 
 ```shell
-aws iam create-role --role-name lambda-ex --assume-role-policy-document '{"Version": "2012-10-17","Statement": [{ "Effect": "Allow", "Principal": {"Service": "lambda.amazonaws.com"}, "Action": "sts:AssumeRole"}]}'
+aws iam create-role \
+    --role-name lambda-ex \
+    --assume-role-policy-document '{"Version": "2012-10-17","Statement": [{ "Effect": "Allow", "Principal": {"Service": "lambda.amazonaws.com"}, "Action": "sts:AssumeRole"}]}'
 ```
 
-5. Create AWS Lambda
+### 5. Create AWS Lambda
+
+Ensure the AWS account number (`111122223333`) is correctly replaced with yours:
 
 ```shell
 aws lambda create-function \
-  --function-name aws-lambda-hamilton \
-  --package-type Image \
-  --code ImageUri=111122223333.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-hamilton:latest \
-  --role arn:aws:iam::111122223333:role/lambda-ex
+    --function-name aws-lambda-hamilton \
+    --package-type Image \
+    --code ImageUri=111122223333.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-hamilton:latest \
+    --role arn:aws:iam::111122223333:role/lambda-ex
 ```
 
-6. Test AWS Lambda
+### 6. Test AWS Lambda
 
 ```shell
-aws lambda invoke --function-name aws-lambda-hamilton --cli-binary-format raw-in-base64-out --payload '{"body": {"columns":["signups","spend"],"index":[0,1,2,3,4,5],"data":[[1,10],[10,10],[50,20],[100,40],[200,40],[400,50]]}}' response.json
+aws lambda invoke \
+    --function-name aws-lambda-hamilton \
+    --cli-binary-format raw-in-base64-out \
+    --payload '{"body": {"columns":["signups","spend"],"index":[0,1,2,3,4,5],"data":[[1,10],[10,10],[50,20],[100,40],[200,40],[400,50]]}}' \
+    response.json
 ```
