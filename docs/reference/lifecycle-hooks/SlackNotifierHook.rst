@@ -1,6 +1,6 @@
-==========================
+=============================
 plugins.h_slack.SlackNotifier
-==========================
+=============================
 
 Provides a Slack notifier for Hamilton execution. Must have `slack_sdk` installed to use it:
 

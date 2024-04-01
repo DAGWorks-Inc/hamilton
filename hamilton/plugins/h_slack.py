@@ -1,3 +1,4 @@
+import traceback
 from typing import Any, Dict, Optional
 
 from slack_sdk import WebClient
@@ -68,5 +69,5 @@ class SlackNotifier(NodeExecutionHook):
     ):
         """Sends a message to the slack channel after a node is executed."""
         if error is not None:
-            message = f"Error in Executing Node: {node_name}. Task ID: {task_id}. Run ID: {run_id}. Error: {error}"
+            message = f"Error in Executing Node: {node_name}. Task ID: {task_id}. Run ID: {run_id}. Error: {error}.\n Stack Trace: {''.join(traceback.format_tb(error.__traceback__))}"
             self._send_message(message)
