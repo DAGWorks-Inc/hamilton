@@ -10,6 +10,7 @@ from hamilton import base, htypes, node
 from hamilton.execution import executors
 from hamilton.execution.executors import TaskFuture
 from hamilton.execution.grouping import TaskImplementation
+from hamilton.function_modifiers.metadata import RAY_REMOTE_TAG_NAMESPACE
 
 logger = logging.getLogger(__name__)
 
@@ -98,13 +99,14 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         :param kwargs: the arguments that should be passed to it.
         :return: returns a ray object reference.
         """
+        # Tags are normally added to nodes via the @ray_remote decorator
         ray_tags = {
             tag_name: tag_value
             for tag_name, tag_value in node.tags.items()
-            if tag_name.startswith("ray_remote.")
+            if tag_name.startswith(f"{RAY_REMOTE_TAG_NAMESPACE}.")
         }
-        ray_options = {name[4:]: json.loads(value) for name, value in ray_tags.items()}
-        return ray.remote(raify(node.callable), **ray_options).remote(**kwargs)
+        ray_options = {name.split(".", 1)[1]: json.loads(value) for name, value in ray_tags.items()}
+        return ray.remote(raify(node.callable)).options(**ray_options).remote(**kwargs)
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
@@ -191,13 +193,20 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         return node_type == input_type
 
     def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
+        """Function that is called as we walk the graph to determine how to execute a hamilton function.
+
+        :param node: the node from the graph.
+        :param kwargs: the arguments that should be passed to it.
+        :return: returns a ray object reference.
+        """
+        # Tags are normally added to nodes via the @ray_remote decorator
         ray_tags = {
             tag_name: tag_value
             for tag_name, tag_value in node.tags.items()
-            if tag_name.startswith("ray_remote.")
+            if tag_name.startswith(f"{RAY_REMOTE_TAG_NAMESPACE}.")
         }
-        ray_options = {name[4:]: json.loads(value) for name, value in ray_tags.items()}
-        return ray.remote(raify(node.callable), **ray_options).bind(**kwargs)
+        ray_options = {name.split(".", 1)[1]: json.loads(value) for name, value in ray_tags.items()}
+        return ray.remote(raify(node.callable)).options(**ray_options).bind(**kwargs)
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.

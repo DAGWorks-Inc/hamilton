@@ -1,10 +1,11 @@
+"""Decorators that attach metadata to nodes"""
+import json
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from hamilton import htypes, node, registry
 from hamilton.function_modifiers import base
 
-"""Decorators that attach metadata to nodes"""
-
+RAY_REMOTE_TAG_NAMESPACE = "ray_remote"
 
 class tag(base.NodeDecorator):
     """Decorator class that adds a tag to a node. Tags take the form of key/value pairings.
@@ -54,6 +55,7 @@ class tag(base.NodeDecorator):
         "ccpa",
         "dag",
         "module",
+        #RAY_REMOTE_TAG_NAMESPACE,
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 
     def __init__(self, *, target_: base.TargetType = None, **tags: Union[str, List[str]]):
@@ -271,3 +273,40 @@ class schema:
         Then, when drawing the DAG, the schema will be displayed as sub-elements in the node for the DAG (if `display_schema` is selected).
         """
         return SchemaOutput(*fields, target_=target_)
+
+
+class RayRemote(tag):
+
+    def __init__(self, **options: Union[int, Dict[str, int]]):
+        """Initializes RayRemote. See docs for `@ray_remote` for more details."""
+
+        ray_tags = {f"ray_remote.{option}": json.dumps(value) for option, value in options.items()}
+
+        super(RayRemote, self).__init__(
+            **ray_tags
+        )
+
+
+def ray_remote(**kwargs: Union[int, Dict[str, int]]) -> RayRemote:
+    """Initializes a `@ray_remote` decorator. This takes in a list of options to pass to ray.remote().
+
+    Supported options include resources, as well as other options:
+    https://docs.ray.io/en/latest/ray-core/scheduling/resources.html
+
+    This is implemented using tags, but that might change. Thus you should not
+    rely on the tags created by this decorator (which is why they are prefixed with `internal`).
+
+    To use this, you should decorate a node with `@ray_remote`
+
+    Example usage:
+
+    .. code-block:: python
+
+        @ray_remote(
+            num_gpus=1,
+            resources={"my_custom_resource": 1},
+        )
+        def example() -> pd.DataFrame:
+            ...
+    """
+    return RayRemote(**kwargs)
