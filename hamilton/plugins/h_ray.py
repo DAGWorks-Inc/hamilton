@@ -1,4 +1,5 @@
 import functools
+import json
 import logging
 import typing
 
@@ -97,7 +98,13 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         :param kwargs: the arguments that should be passed to it.
         :return: returns a ray object reference.
         """
-        return ray.remote(raify(node.callable)).remote(**kwargs)
+        ray_tags = {
+            tag_name: tag_value
+            for tag_name, tag_value in node.tags.items()
+            if tag_name.startswith("ray.")
+        }
+        ray_options = {name[4:]: json.loads(value) for name, value in ray_tags.items()}
+        return ray.remote(raify(node.callable), **ray_options).remote(**kwargs)
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
