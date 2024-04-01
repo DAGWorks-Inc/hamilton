@@ -101,7 +101,7 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         ray_tags = {
             tag_name: tag_value
             for tag_name, tag_value in node.tags.items()
-            if tag_name.startswith("ray.")
+            if tag_name.startswith("ray_remote.")
         }
         ray_options = {name[4:]: json.loads(value) for name, value in ray_tags.items()}
         return ray.remote(raify(node.callable), **ray_options).remote(**kwargs)
@@ -191,7 +191,13 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         return node_type == input_type
 
     def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
-        return ray.remote(raify(node.callable)).bind(**kwargs)
+        ray_tags = {
+            tag_name: tag_value
+            for tag_name, tag_value in node.tags.items()
+            if tag_name.startswith("ray_remote.")
+        }
+        ray_options = {name[4:]: json.loads(value) for name, value in ray_tags.items()}
+        return ray.remote(raify(node.callable), **ray_options).bind(**kwargs)
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
