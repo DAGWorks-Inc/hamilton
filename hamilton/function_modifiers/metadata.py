@@ -55,7 +55,7 @@ class tag(base.NodeDecorator):
         "ccpa",
         "dag",
         "module",
-        #RAY_REMOTE_TAG_NAMESPACE,
+        RAY_REMOTE_TAG_NAMESPACE,
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 
     def __init__(self, *, target_: base.TargetType = None, **tags: Union[str, List[str]]):
@@ -85,8 +85,11 @@ class tag(base.NodeDecorator):
         node_tags.update(self.tags)
         return node_.copy_with(tags=node_tags)
 
+    def _key_allowed_wrapper(self, key: str) -> bool:
+        return self._key_allowed(key)
+
     @staticmethod
-    def _key_allowed(key: str) -> bool:
+    def _key_allowed(key: str, reserved_forbidden: bool = True) -> bool:
         """Validates that a tag key is allowed. Rules are:
         1. It must not be empty
         2. It can have dots, which specify a hierarchy of order
@@ -100,7 +103,8 @@ class tag(base.NodeDecorator):
         if len(key_components) == 0:
             # empty string...
             return False
-        if key_components[0] in tag.RESERVED_TAG_NAMESPACES:
+        if reserved_forbidden and \
+           key_components[0] in tag.RESERVED_TAG_NAMESPACES:
             # Reserved prefixes
             return False
         for key in key_components:
@@ -134,7 +138,7 @@ class tag(base.NodeDecorator):
         """
         bad_tags = set()
         for key, value in self.tags.items():
-            if (not tag._key_allowed(key)) or (not tag._value_allowed(value)):
+            if (not self._key_allowed_wrapper(key)) or (not tag._value_allowed(value)):
                 if isinstance(value, list):
                     value = str(value)
                 bad_tags.add((key, value))
@@ -285,6 +289,9 @@ class RayRemote(tag):
         super(RayRemote, self).__init__(
             **ray_tags
         )
+
+    def _key_allowed_wrapper(self, key: str) -> bool:
+        return self._key_allowed(key, reserved_forbidden = False)
 
 
 def ray_remote(**kwargs: Union[int, Dict[str, int]]) -> RayRemote:
