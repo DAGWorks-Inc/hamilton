@@ -12,7 +12,7 @@ The content and structure aims to match the [original dbt `jaffle_shop`](https:/
 - `dataflows/customer_flow.py` and `dataflows/order_flow.py` define data transformations; equivalent to `models/customers.sql` and `models/orders.sql` in the dbt repo.
 - `run.py` specify where to load data from and how to execute dataflows.
 
- Genrally, you'll notice Hamilton aims to reduce the sprawl of configurations (`.yaml`) and documentation (`.md`). Instead, it uses docstrings, type hints, or Python object to couple them to with your code (`.py`).
+ Generally, you'll notice Hamilton aims to reduce the sprawl of configurations (`.yaml`) and documentation (`.md`). Instead, it uses docstrings, type hints, or Python object to couple them to with your code (`.py`).
 
 ## Set up
 1. create and activate virtual environment
