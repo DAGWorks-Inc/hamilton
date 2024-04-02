@@ -61,6 +61,7 @@ class tag(base.NodeDecorator):
     def __init__(self, *, target_: base.TargetType = None, bypass_reserved_namespaces_: bool = False, **tags: Union[str, List[str]]):
         """Constructor for adding tag annotations to a function.
 
+        :param bypass_reserved_namespaces\\_: Whether to bypass Reserved Namespace checking.
         :param target\\_: Target nodes to decorate. This can be one of the following:
 
             * **None**: tag all nodes outputted by this that are "final" (E.g. do not have a node\
