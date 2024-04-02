@@ -28,6 +28,7 @@ from hamilton.plugins.pandas_extensions import (
     PandasSqlWriter,
     PandasStataReader,
     PandasStataWriter,
+    PandasTableReader,
     PandasXmlReader,
     PandasXmlWriter,
 )
@@ -265,6 +266,24 @@ def test_pandas_excel_reader(tmp_path: pathlib.Path) -> None:
     df, metadata = reader.load_data(pd.DataFrame)
 
     assert PandasExcelReader.applicable_types() == [pd.DataFrame]
+    assert df.loc[0, "firstName"] == "John"
+    assert df.shape == (3, 5)
+    assert metadata["dataframe_metadata"]["column_names"] == [
+        "firstName",
+        "lastName",
+        "age",
+        "department",
+        "email",
+    ]
+
+
+def test_pandas_table_reader(tmp_path: pathlib.Path) -> None:
+
+    path_to_test = "tests/resources/data/test_load_from_data.csv"
+    reader = PandasTableReader(filepath_or_buffer=path_to_test)
+    df, metadata = reader.load_data(pd.DataFrame)
+
+    assert PandasTableReader.applicable_types() == [pd.DataFrame]
     assert df.loc[0, "firstName"] == "John"
     assert df.shape == (3, 5)
     assert metadata["dataframe_metadata"]["column_names"] == [
