@@ -1,4 +1,5 @@
 """Decorators that attach metadata to nodes"""
+
 import json
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -6,6 +7,7 @@ from hamilton import htypes, node, registry
 from hamilton.function_modifiers import base
 
 RAY_REMOTE_TAG_NAMESPACE = "ray_remote"
+
 
 class tag(base.NodeDecorator):
     """Decorator class that adds a tag to a node. Tags take the form of key/value pairings.
@@ -58,7 +60,13 @@ class tag(base.NodeDecorator):
         RAY_REMOTE_TAG_NAMESPACE,
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 
-    def __init__(self, *, target_: base.TargetType = None, bypass_reserved_namespaces_: bool = False, **tags: Union[str, List[str]]):
+    def __init__(
+        self,
+        *,
+        target_: base.TargetType = None,
+        bypass_reserved_namespaces_: bool = False,
+        **tags: Union[str, List[str]],
+    ):
         """Constructor for adding tag annotations to a function.
 
         :param bypass_reserved_namespaces\\_: Whether to bypass Reserved Namespace checking.
@@ -101,8 +109,7 @@ class tag(base.NodeDecorator):
         if len(key_components) == 0:
             # empty string...
             return False
-        if not self.bypass_reserved_namespaces and \
-           key_components[0] in tag.RESERVED_TAG_NAMESPACES:
+        if not self.bypass_reserved_namespaces and key_components[0] in tag.RESERVED_TAG_NAMESPACES:
             # Reserved prefixes
             return False
         for key in key_components:
@@ -284,10 +291,7 @@ class RayRemote(tag):
 
         ray_tags = {f"ray_remote.{option}": json.dumps(value) for option, value in options.items()}
 
-        super(RayRemote, self).__init__(
-            bypass_reserved_namespaces_ = True,
-            **ray_tags
-        )
+        super(RayRemote, self).__init__(bypass_reserved_namespaces_=True, **ray_tags)
 
 
 def ray_remote_options(**kwargs: Union[int, Dict[str, int]]) -> RayRemote:
