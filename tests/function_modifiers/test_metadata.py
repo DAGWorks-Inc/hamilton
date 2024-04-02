@@ -27,7 +27,8 @@ def test_tags():
     ],
 )
 def test_tags_invalid_key(key):
-    assert not function_modifiers.tag._key_allowed(key)
+    tag = function_modifiers.tag(**{key: "Dummy Value"})
+    assert not tag._key_allowed(key)
 
 
 @pytest.mark.parametrize(
@@ -39,7 +40,8 @@ def test_tags_invalid_key(key):
     ],
 )
 def test_tags_valid_key(key):
-    assert function_modifiers.tag._key_allowed(key)
+    tag = function_modifiers.tag(**{key: "Dummy Value"})
+    assert tag._key_allowed(key)
 
 
 @pytest.mark.parametrize(
