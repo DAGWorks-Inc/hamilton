@@ -309,7 +309,7 @@ def ray_remote_options(**kwargs: Union[int, Dict[str, int]]) -> RayRemote:
 
     .. code-block:: python
 
-        @ray_remote(
+        @ray_remote_options(
             num_gpus=1,
             resources={"my_custom_resource": 1},
         )
