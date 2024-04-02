@@ -34,6 +34,8 @@ if has_alias and hasattr(pl.type_aliases, "CsvEncoding"):
 else:
     CsvEncoding = Type
 
+# import these types to make type hinting work
+from polars.datatypes import DataType, DataTypeClass  # noqa: F401
 
 from hamilton import registry
 from hamilton.io import utils
