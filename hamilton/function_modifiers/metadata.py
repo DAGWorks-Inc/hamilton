@@ -282,7 +282,7 @@ class schema:
 class RayRemote(tag):
 
     def __init__(self, **options: Union[int, Dict[str, int]]):
-        """Initializes RayRemote. See docs for `@ray_remote` for more details."""
+        """Initializes RayRemote. See docs for `@ray_remote_options` for more details."""
 
         ray_tags = {f"ray_remote.{option}": json.dumps(value) for option, value in options.items()}
 
@@ -294,16 +294,16 @@ class RayRemote(tag):
         return self._key_allowed(key, reserved_forbidden = False)
 
 
-def ray_remote(**kwargs: Union[int, Dict[str, int]]) -> RayRemote:
-    """Initializes a `@ray_remote` decorator. This takes in a list of options to pass to ray.remote().
+def ray_remote_options(**kwargs: Union[int, Dict[str, int]]) -> RayRemote:
+    """Initializes a `@ray_remote_options` decorator. This takes in a list of options to pass to ray.remote().
 
     Supported options include resources, as well as other options:
     https://docs.ray.io/en/latest/ray-core/scheduling/resources.html
 
     This is implemented using tags, but that might change. Thus you should not
-    rely on the tags created by this decorator (which is why they are prefixed with `internal`).
+    rely on the tags created by this decorator (which is why they are on a reserved namespace).
 
-    To use this, you should decorate a node with `@ray_remote`
+    To use this, you should decorate a node with `@ray_remote_options`
 
     Example usage:
 

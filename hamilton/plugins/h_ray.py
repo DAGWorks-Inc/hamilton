@@ -99,7 +99,7 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         :param kwargs: the arguments that should be passed to it.
         :return: returns a ray object reference.
         """
-        # Tags are normally added to nodes via the @ray_remote decorator
+        # Tags are added to nodes via the @ray_remote_options decorator
         ray_tags = {
             tag_name: tag_value
             for tag_name, tag_value in node.tags.items()
@@ -199,7 +199,7 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         :param kwargs: the arguments that should be passed to it.
         :return: returns a ray object reference.
         """
-        # Tags are normally added to nodes via the @ray_remote decorator
+        # Tags are added to nodes via the @ray_remote_options decorator
         ray_tags = {
             tag_name: tag_value
             for tag_name, tag_value in node.tags.items()
