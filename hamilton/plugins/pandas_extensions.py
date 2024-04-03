@@ -1543,7 +1543,7 @@ class PandasTableReader(DataLoader):
     # kwargs
     sep: Union[str, None] = None
     delimiter: Optional[str] = None
-    header: Union[int, Sequence[int], str, None] = 'infer'
+    header: Union[int, Sequence[int], str, None] = "infer"
     names: Optional[Sequence] = None
     index_col: Union[int, str, Sequence, None] = None
     usecols: Union[Sequence[Hashable], Sequence[Callable], None] = None
@@ -1556,7 +1556,7 @@ class PandasTableReader(DataLoader):
     skiprows: Optional[Union[List[int], int, List[Callable]]] = None
     skipfooter: int = 0
     nrows: Optional[int] = None
-    na_values: Optional[Union[Hashable,Iterable[Hashable], Dict[Hashable, Iterable]]]= None
+    na_values: Optional[Union[Hashable, Iterable[Hashable], Dict[Hashable, Iterable]]] = None
     keep_default_na: bool = True
     na_filter: bool = True
     verbose: bool = False
@@ -1565,7 +1565,7 @@ class PandasTableReader(DataLoader):
     infer_datetime_format: bool = False
     keep_date_col: bool = False
     date_parser: Optional[Callable] = None
-    date_format: Optional[Union[str,  str]] = None
+    date_format: Optional[Union[str, str]] = None
     dayfirst: bool = False
     cache_dates: bool = True
     iterator: bool = False
