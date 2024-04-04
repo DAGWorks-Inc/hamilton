@@ -39,7 +39,7 @@ def parse_ray_remote_options_from_tags(tags: typing.Dict[str, str]) -> typing.Di
     :param tags: Full set of Tags for a Node
     :return: The ray-friendly version
     """
- 
+
     ray_tags = {
         tag_name: tag_value
         for tag_name, tag_value in tags.items()

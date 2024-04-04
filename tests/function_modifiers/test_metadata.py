@@ -3,6 +3,7 @@ import pytest
 
 from hamilton import function_modifiers, node
 from hamilton.function_modifiers import base as fm_base
+from hamilton.function_modifiers.metadata import RAY_REMOTE_TAG_NAMESPACE
 
 
 def test_tags():
@@ -223,3 +224,17 @@ def test_decorate_node_with_schema_output_invalid_type():
 
     with pytest.raises(fm_base.InvalidDecoratorException):
         function_modifiers.base.resolve_nodes(foo, {})
+
+
+def test_decorate_node_with_ray_remote_options():
+    # quick test to decorate node with ray_remote_options
+    # this tests an internal implementation, so we will likely change
+    # in the future, but we'll want to keep the same behavior for now
+    @function_modifiers.ray_remote_options({"resources": {"GPU": 1}})
+    def foo() -> pd.DataFrame:
+        return pd.DataFrame.from_records([{"foo": 1, "bar": 2.0, "baz": "3"}])
+
+    nodes = function_modifiers.base.resolve_nodes(foo, {})
+    node_map = {node_.name: node_ for node_ in nodes}
+    node_ = node_map["foo"]
+    assert node_.tags[RAY_REMOTE_TAG_NAMESPACE] == '{"resources": {"GPU": 1}}'
