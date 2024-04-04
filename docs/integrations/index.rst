@@ -5,6 +5,7 @@ Integrations
 This section showcases how Hamilton integrates with popular frameworks.
 
 .. toctree::
+    dlt/index
     fastapi
     ibis/index
     streamlit
