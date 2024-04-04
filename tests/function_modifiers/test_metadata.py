@@ -230,7 +230,7 @@ def test_decorate_node_with_ray_remote_options():
     # quick test to decorate node with ray_remote_options
     # this tests an internal implementation, so we will likely change
     # in the future, but we'll want to keep the same behavior for now
-    @ray_remote_options({"resources": {"GPU": 1}})
+    @ray_remote_options(resources={"GPU": 1})
     def foo() -> pd.DataFrame:
         return pd.DataFrame.from_records([{"foo": 1, "bar": 2.0, "baz": "3"}])
 
