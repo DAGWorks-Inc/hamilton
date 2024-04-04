@@ -237,4 +237,4 @@ def test_decorate_node_with_ray_remote_options():
     nodes = function_modifiers.base.resolve_nodes(foo, {})
     node_map = {node_.name: node_ for node_ in nodes}
     node_ = node_map["foo"]
-    assert node_.tags[RAY_REMOTE_TAG_NAMESPACE] == '{"resources": {"GPU": 1}}'
+    assert node_.tags[f"{RAY_REMOTE_TAG_NAMESPACE}.resources"] == '{"GPU": 1}'

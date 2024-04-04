@@ -4,7 +4,7 @@ from hamilton.plugins import h_ray
 def test_parse_ray_remote_options_from_tags():
 
     tags = {
-        h_ray.RAY_REMOTE_TAG_NAMESPACE: '{"resources": {"GPU": 1}}',
+        f"{h_ray.RAY_REMOTE_TAG_NAMESPACE}.resources": '{"GPU": 1}',
         "another_tag": "another_value",
     }
 
