@@ -31,6 +31,25 @@ def raify(fn):
     return fn
 
 
+def parse_ray_remote_options_from_tags(tags: typing.Dict[str, str]) -> typing.Dict[str, typing.Any]:
+    """DRY helper to parse ray.remote(**options) from Hamilton Tags
+
+    Tags are added to nodes via the @ray_remote_options decorator
+
+    :param tags: Full set of Tags for a Node
+    :return: The ray-friendly version
+    """
+ 
+    ray_tags = {
+        tag_name: tag_value
+        for tag_name, tag_value in tags.items()
+        if tag_name.startswith(f"{RAY_REMOTE_TAG_NAMESPACE}.")
+    }
+    ray_options = {name.split(".", 1)[1]: json.loads(value) for name, value in ray_tags.items()}
+
+    return ray_options
+
+
 class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
     """Class representing what's required to make Hamilton run on Ray.
 
@@ -99,13 +118,7 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         :param kwargs: the arguments that should be passed to it.
         :return: returns a ray object reference.
         """
-        # Tags are added to nodes via the @ray_remote_options decorator
-        ray_tags = {
-            tag_name: tag_value
-            for tag_name, tag_value in node.tags.items()
-            if tag_name.startswith(f"{RAY_REMOTE_TAG_NAMESPACE}.")
-        }
-        ray_options = {name.split(".", 1)[1]: json.loads(value) for name, value in ray_tags.items()}
+        ray_options = parse_ray_remote_options_from_tags(node.tags)
         return ray.remote(raify(node.callable)).options(**ray_options).remote(**kwargs)
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
@@ -199,13 +212,7 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         :param kwargs: the arguments that should be passed to it.
         :return: returns a ray object reference.
         """
-        # Tags are added to nodes via the @ray_remote_options decorator
-        ray_tags = {
-            tag_name: tag_value
-            for tag_name, tag_value in node.tags.items()
-            if tag_name.startswith(f"{RAY_REMOTE_TAG_NAMESPACE}.")
-        }
-        ray_options = {name.split(".", 1)[1]: json.loads(value) for name, value in ray_tags.items()}
+        ray_options = parse_ray_remote_options_from_tags(node.tags)
         return ray.remote(raify(node.callable)).options(**ray_options).bind(**kwargs)
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
