@@ -3,7 +3,7 @@ import pytest
 
 from hamilton import function_modifiers, node
 from hamilton.function_modifiers import base as fm_base
-from hamilton.function_modifiers.metadata import RAY_REMOTE_TAG_NAMESPACE
+from hamilton.function_modifiers.metadata import RAY_REMOTE_TAG_NAMESPACE, ray_remote_options
 
 
 def test_tags():
@@ -230,7 +230,7 @@ def test_decorate_node_with_ray_remote_options():
     # quick test to decorate node with ray_remote_options
     # this tests an internal implementation, so we will likely change
     # in the future, but we'll want to keep the same behavior for now
-    @function_modifiers.ray_remote_options({"resources": {"GPU": 1}})
+    @ray_remote_options({"resources": {"GPU": 1}})
     def foo() -> pd.DataFrame:
         return pd.DataFrame.from_records([{"foo": 1, "bar": 2.0, "baz": "3"}])
 
