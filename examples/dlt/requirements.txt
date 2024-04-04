@@ -1,4 +1,6 @@
 dlt[duckdb]>=0.3.12
+ibis-framework[duckdb]
+openai
 pandas
-sf-hamilton
+sf-hamilton[visualization]
 streamlit

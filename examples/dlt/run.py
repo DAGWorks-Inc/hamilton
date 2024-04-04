@@ -18,11 +18,6 @@ def main(
     """
 
     # dlt
-    source = slack.slack_source(
-        selected_channels=selected_channels,
-        replies=True,
-    )
-
     slack_pipeline = dlt.pipeline(
         pipeline_name="slack",
         destination="duckdb",
@@ -30,7 +25,13 @@ def main(
         full_refresh=ingestion_full_refresh,
     )
 
-    load_info = slack_pipeline.run(source)
+    dlt_source = slack.slack_source(
+        selected_channels=selected_channels,
+        replies=True,
+    )
+
+    load_info = slack_pipeline.run(dlt_source)
+    print(load_info)
 
     if os.environ.get("OPENAI_API_KEY") is None:
         raise KeyError("OPENAI_API_KEY wasn't set.")
@@ -46,9 +47,9 @@ def main(
 
     inputs = dict(
         selected_channels=selected_channels,
-        dlt_load_info=load_info.asdict(),
+        pipeline=slack_pipeline,
     )
-    dr.execute(["threads"], inputs=inputs)
+    dr.execute(["insert_threads"], inputs=inputs)
 
 
 if __name__ == "__main__":

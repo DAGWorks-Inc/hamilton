@@ -1,25 +1,19 @@
 import textwrap
 
+import dlt
 import ibis
 import ibis.expr.types as ir
 import openai
 
-from hamilton.function_modifiers import extract_fields, pipe, source, step
+from hamilton.function_modifiers import pipe, source, step
 from hamilton.htypes import Collect, Parallelizable
 
 
-@extract_fields(dict(db_path=str, database=str, dataset_name=str))
-def parse_load_info(dlt_load_info: dict) -> dict:
-    return dict(
-        db_path=dlt_load_info["destination_displayable_credentials"],
-        database=dlt_load_info["pipeline"]["pipeline_name"],
-        dataset_name=dlt_load_info["dataset_name"],
-    )
-
-
-def duckdb_con(db_path: str) -> ibis.BaseBackend:
-    """Create a connection to the duckdb backend"""
-    return ibis.duckdb.connect(db_path)
+def db_con(pipeline: dlt.Pipeline) -> ibis.BaseBackend:
+    """Connect to the Ibis backend"""
+    backend = ibis.connect(f"{pipeline.pipeline_name}.duckdb")
+    ibis.set_backend(backend)
+    return backend
 
 
 def channel(selected_channels: list[str]) -> Parallelizable[str]:
@@ -38,10 +32,9 @@ def _epoch_microseconds(timestamp: ir.TimestampColumn) -> ir.StringColumn:
 
 
 def channel_message(
-    duckdb_con: ibis.BaseBackend,
     channel: str,
-    dataset_name: str,
-    database: str,
+    db_con: ibis.BaseBackend,
+    pipeline: dlt.Pipeline,
 ) -> ir.Table:
     """Load table containing parent messages of a channel.
     the timestamps `thread_ts` and `ts` are converted to strings.
@@ -51,30 +44,29 @@ def channel_message(
     Slack reference: https://api.slack.com/messaging/retrieving#finding_threads
     """
     return (
-        duckdb_con.table(
+        db_con.table(
             f"{channel}_message",
-            schema=dataset_name,
-            database=database,
+            schema=pipeline.dataset_name,
+            database=pipeline.pipeline_name,
         )
         .mutate(
-            thread_ts=_epoch_microseconds(ibis._.thread_ts),
-            ts=_epoch_microseconds(ibis._.ts),
+            thread_ts=_epoch_microseconds(ibis._.thread_ts).cast(str),
+            ts=_epoch_microseconds(ibis._.ts).cast(str),
         )
         .mutate(thread_ts=ibis.coalesce(ibis._.thread_ts, ibis._.ts))
     )
 
 
 def channel_replies(
-    duckdb_con: ibis.BaseBackend,
     channel: str,
-    dataset_name: str,
-    database: str,
+    db_con: ibis.BaseBackend,
+    pipeline: dlt.Pipeline,
 ) -> ir.Table:
-    """Load table containing reply message of a channel"""
-    return duckdb_con.table(
+    """Create table for replies"""
+    return db_con.table(
         f"{channel}_replies_message",
-        schema=dataset_name,
-        database=database,
+        schema=pipeline.dataset_name,
+        database=pipeline.pipeline_name,
     )
 
 
@@ -190,8 +182,9 @@ def threads(channels_collection: ir.Table) -> ir.Table:
     return channels_collection
 
 
-def save_threads(threads: ir.Table, duckdb_con: ibis.BaseBackend) -> int:
+def insert_threads(threads: ir.Table) -> int:
     """Save `threads` table and return row count."""
-    threads_table = duckdb_con.create_table("threads", schema=threads.schema())
-    duckdb_con.insert("threads", threads.to_pyarrow())
+    db_con = ibis.get_backend()
+    threads_table = db_con.create_table("threads", threads)
+    db_con.insert("threads", threads)
     return int(threads_table.count().execute())

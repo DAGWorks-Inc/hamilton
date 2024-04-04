@@ -9,6 +9,7 @@ It includes a pipeline to ingest messages from Slack channels and generate threa
 - `.dlt/` contains the source's version, config, and secrets for the dlt `Pipeline`
 - `transform.py` contains the Hamilton code to transform data and build the `threads` table
 - `run.py` contains the code to execution the dlt `Pipeline` and the Hamilton dataflow.
+- `notebook.ipynb` contains the equivalent of both `transform.py` and `run.py` allowing you to explore the code interactively.
 
 # Set up
 1. Create a virtual environment and activate it
@@ -22,9 +23,10 @@ It includes a pipeline to ingest messages from Slack channels and generate threa
     ```
 3. Follow this dlt [guide to ingest Slack data](https://dlthub.com/docs/dlt-ecosystem/verified-sources/slack). Make sure to invite your Slack app to your channel!
 
-4. Execute the code
+4. Execute the code. Use `--help` to learn about accepted arguments.
     ```console
-    python run.py
+    python run.py --help
+    python run.py general dlt
     ```
 
 # References
