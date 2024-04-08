@@ -366,8 +366,8 @@ Specific integrations with other systems where we help you write code that runs 
 # Prescribed Development Workflow
 In general we prescribe the following:
 
-1. Ensure you understand [Hamilton Basics](https://github.com/DAGWorks-Inc/hamilton/blob/main/basics.md).
-2. Familiarize yourself with some of the [Hamilton decorators](https://github.com/DAGWorks-Inc/hamilton/blob/main/decorators.md). They will help keep your code DRY.
+1. Ensure you understand [Hamilton Basics](https://www.tryhamilton.dev/intro).
+2. Familiarize yourself with some of the [Hamilton decorators](https://www.tryhamilton.dev/tutorial-extras/configuration). They will help keep your code DRY.
 3. Start creating Hamilton Functions that represent your work. We suggest grouping them in modules where it makes sense.
 4. Write a simple script so that you can easily run things end to end.
 5. Join our [Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) community to chat/ask Qs/etc.
