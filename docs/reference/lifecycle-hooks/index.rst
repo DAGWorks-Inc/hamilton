@@ -53,3 +53,4 @@ Recall to add lifecycle adapters, you just need to call the ``with_adapters`` me
     ProgressBar
     DDOGTracer
     FunctionInputOutputTypeChecker
+    SlackNotifierHook
