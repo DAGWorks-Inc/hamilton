@@ -1556,7 +1556,7 @@ class PandasTableReader(DataLoader):
     skiprows: Optional[Union[List[int], int, List[Callable]]] = None
     skipfooter: int = 0
     nrows: Optional[int] = None
-    na_values: Optional[Union[Hashable, Iterable[Hashable], Dict[Hashable, Iterable]]] = None
+    na_values: Optional[Union[Hashable, Iterable, Dict[Hashable, Iterable]]] = None
     keep_default_na: bool = True
     na_filter: bool = True
     verbose: bool = False
