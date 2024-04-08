@@ -1546,7 +1546,7 @@ class PandasTableReader(DataLoader):
     header: Union[int, Sequence, str, None] = "infer"
     names: Optional[Sequence] = None
     index_col: Union[int, str, Sequence, None] = None
-    usecols: Union[Sequence[Hashable], Sequence[Callable], None] = None
+    usecols: Union[Sequence, None] = None
     dtype: Union[Dtype, Dict[Hashable, Dtype], None] = None
     engine: Optional[Literal["c", "python", "pyarrow"]] = None
     converters: Optional[Dict[Hashable, Callable]] = None
