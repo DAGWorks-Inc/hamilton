@@ -223,6 +223,13 @@ Hamilton is released under the [BSD 3-Clause Clear License](https://github.com/D
 * [KI-Insurance](https://www.ki-insurance.com/)
 * [Ascena Retail](https://www.ascena.com/)
 * [Opendoor](https://www.opendoor.com/)
+* [NaroHQ](https://www.narohq.com/)
+* [Rippling](https://www.rippling.com/)
+* [AB-InBev](https://www.ab-inbev.com/)
+* [EquipmentShare](https://www.equipmentshare.com/)
+* [Everstream.ai](https://www.everstream.ai/)
+* [Flectere](https://flectere.net/)
+* [F33.ai](https://f33.ai/)
 
 To add your company, make a pull request to add it here.
 
@@ -444,6 +451,10 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Bryan Galindo (@bryangalindo)
 - Jordan Smith (@JoJo10Smith)
 - Roel Bertens (@roelbertens)
+- Swapnil Delwalkar (@swapdewalkar)
+- Fran Boon (@flavour)
+- Tom Barber (@buggtb)
+- Konstantin Tyapochkin (@tyapochkin)
 
 ## Bug Hunters/Special Mentions
 - Nils Olsson (@nilsso)
@@ -463,3 +474,5 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Anup Joseph (@AnupJoseph)
 - Jan Hurst (@janhurst)
 - Flavia Santos (@flaviassantos)
+- Nicolas Huray (@nhuray)
+- Manabu Niseki (@ninoseki)
