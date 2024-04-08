@@ -1543,7 +1543,7 @@ class PandasTableReader(DataLoader):
     # kwargs
     sep: Union[str, None] = None
     delimiter: Optional[str] = None
-    header: Union[int, Sequence[int], str, None] = "infer"
+    header: Union[int, Sequence, str, None] = "infer"
     names: Optional[Sequence] = None
     index_col: Union[int, str, Sequence, None] = None
     usecols: Union[Sequence[Hashable], Sequence[Callable], None] = None
