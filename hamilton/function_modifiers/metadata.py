@@ -1,9 +1,12 @@
+"""Decorators that attach metadata to nodes"""
+
+import json
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from hamilton import htypes, node, registry
 from hamilton.function_modifiers import base
 
-"""Decorators that attach metadata to nodes"""
+RAY_REMOTE_TAG_NAMESPACE = "ray_remote"
 
 
 class tag(base.NodeDecorator):
@@ -54,11 +57,19 @@ class tag(base.NodeDecorator):
         "ccpa",
         "dag",
         "module",
+        RAY_REMOTE_TAG_NAMESPACE,
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 
-    def __init__(self, *, target_: base.TargetType = None, **tags: Union[str, List[str]]):
+    def __init__(
+        self,
+        *,
+        target_: base.TargetType = None,
+        bypass_reserved_namespaces_: bool = False,
+        **tags: Union[str, List[str]],
+    ):
         """Constructor for adding tag annotations to a function.
 
+        :param bypass_reserved_namespaces\\_: Whether to bypass Reserved Namespace checking.
         :param target\\_: Target nodes to decorate. This can be one of the following:
 
             * **None**: tag all nodes outputted by this that are "final" (E.g. do not have a node\
@@ -72,6 +83,7 @@ class tag(base.NodeDecorator):
         """
         super(tag, self).__init__(target=target_)
         self.tags = tags
+        self.bypass_reserved_namespaces = bypass_reserved_namespaces_
 
     def decorate_node(self, node_: node.Node) -> node.Node:
         """Decorates the nodes produced by this with the specified tags
@@ -83,8 +95,7 @@ class tag(base.NodeDecorator):
         node_tags.update(self.tags)
         return node_.copy_with(tags=node_tags)
 
-    @staticmethod
-    def _key_allowed(key: str) -> bool:
+    def _key_allowed(self, key: str) -> bool:
         """Validates that a tag key is allowed. Rules are:
         1. It must not be empty
         2. It can have dots, which specify a hierarchy of order
@@ -98,7 +109,7 @@ class tag(base.NodeDecorator):
         if len(key_components) == 0:
             # empty string...
             return False
-        if key_components[0] in tag.RESERVED_TAG_NAMESPACES:
+        if not self.bypass_reserved_namespaces and key_components[0] in tag.RESERVED_TAG_NAMESPACES:
             # Reserved prefixes
             return False
         for key in key_components:
@@ -132,7 +143,7 @@ class tag(base.NodeDecorator):
         """
         bad_tags = set()
         for key, value in self.tags.items():
-            if (not tag._key_allowed(key)) or (not tag._value_allowed(value)):
+            if (not self._key_allowed(key)) or (not tag._value_allowed(value)):
                 if isinstance(value, list):
                     value = str(value)
                 bad_tags.add((key, value))
@@ -271,3 +282,38 @@ class schema:
         Then, when drawing the DAG, the schema will be displayed as sub-elements in the node for the DAG (if `display_schema` is selected).
         """
         return SchemaOutput(*fields, target_=target_)
+
+
+class RayRemote(tag):
+
+    def __init__(self, **options: Union[int, Dict[str, int]]):
+        """Initializes RayRemote. See docs for `@ray_remote_options` for more details."""
+
+        ray_tags = {f"ray_remote.{option}": json.dumps(value) for option, value in options.items()}
+
+        super(RayRemote, self).__init__(bypass_reserved_namespaces_=True, **ray_tags)
+
+
+def ray_remote_options(**kwargs: Union[int, Dict[str, int]]) -> RayRemote:
+    """Initializes a `@ray_remote_options` decorator. This takes in a list of options to pass to ray.remote().
+
+    Supported options include resources, as well as other options:
+    https://docs.ray.io/en/latest/ray-core/scheduling/resources.html
+
+    This is implemented using tags, but that might change. Thus you should not
+    rely on the tags created by this decorator (which is why they are on a reserved namespace).
+
+    To use this, you should decorate a node with `@ray_remote_options`
+
+    Example usage:
+
+    .. code-block:: python
+
+        @ray_remote_options(
+            num_gpus=1,
+            resources={"my_custom_resource": 1},
+        )
+        def example() -> pd.DataFrame:
+            ...
+    """
+    return RayRemote(**kwargs)
