@@ -498,60 +498,100 @@ def build_display():
             "## Running them together\n"
             "While we've represented the logic above as individual components, "
             "we need to do a few more things to generate the data you just looked at:\n"
-            "1. Add persistance\n"
-            "2. Add a while loop to iterate until we reach the specified number (this app has been using 150)\n\n"
-            "We create a driver that has both of them, then execute the DAG using Hamilton's materializer capabilities,"
-            " saving the results. The code is as follows. We then track the prior results and pass them into the next iteration:"
+            "1. Create a Burr application that orchestrates calling them\n"
+            "2. Add in some persistence.\n"
+            "The following shows some simplified code doing (1). For (2) see full example in the [Hamilton repo](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/LLM_Workflows/image_telephone)."
         )
-        code = """
-while iteration < NUM_ITERATIONS:
-    metadata_save_path = os.path.join(BASE_SAVE_LOCATION, f"metadata_{iteration}.json")
-    # Run the caption generation step
-    _, results = dr.materialize(
-        to.json(
-                path=metadata_save_path,
-                dependencies=["metadata"],
-                id="save_metadata",
-            ),
-        *([] if has_original else [
-            to.image(
-                path=os.path.join(BASE_SAVE_LOCATION, "original.png"),
-                dependencies=["image_url"],
-                id=f"save_original_image",
-                format="png",
-            )
-        ]),
-        additional_vars=["generated_caption"],
-        inputs={
-            "image_url" : image_url,
-            "descriptiveness" : DESCRIPTIVENESS,
-            "additional_metadata" : {
-                "descriptiveness" : DESCRIPTIVENESS,
-                "iteration" : iteration,
-            }
-        }
+        code = '''@action(
+    reads=["current_image_location"],
+    writes=["current_image_caption", "image_location_history"],
+)
+def image_caption(state: State, caption_image_driver: driver.Driver) -> tuple[dict, State]:
+    """Action to caption an image."""
+    current_image = state["current_image_location"]
+    result = caption_image_driver.execute(
+        ["generated_caption"], inputs={"image_url": current_image}
     )
+    updates = {
+        "current_image_caption": result["generated_caption"],
+    }
+    return result, state.update(**updates).append(image_location_history=current_image)
 
-    generated_caption = results["generated_caption"]
-    image_save_path = os.path.join(BASE_SAVE_LOCATION, f"image_{iteration}.png")
-
-    # Run the image generation step
-    _, results = dr.materialize(
-        to.image(
-            path=image_save_path,
-            dependencies=["generated_image"],
-            id=f"save_image",
-            format="png",
-        ),
-        inputs={"image_generation_prompt" : generated_caption},
-        additional_vars=["generated_image"]
+@action(
+    reads=["current_image_caption"],
+    writes=["caption_analysis"],
+)
+def caption_embeddings(state: State, caption_image_driver: driver.Driver) -> tuple[dict, State]:
+    """Action to caption embeddings for analysis"""
+    result = caption_image_driver.execute(
+        ["metadata"],
+        overrides={"generated_caption": state["current_image_caption"]}
     )
-    generated_image = image_save_path
-    iteration += 1
-    image_url = generated_image
-    has_original = True
-    img = Image.open(image_url)
-    display(img)"""
+    return result, state.append(caption_analysis=result["metadata"])
+
+
+@action(
+    reads=["current_image_caption"],
+    writes=["current_image_location", "image_caption_history"],
+)
+def image_generation(state: State, generate_image_driver: driver.Driver) -> tuple[dict, State]:
+    """Action to create an image."""
+    current_caption = state["current_image_caption"]
+    result = generate_image_driver.execute(
+        ["generated_image"], inputs={"image_generation_prompt": current_caption}
+    )
+    updates = {
+        "current_image_location": result["generated_image"],
+    }
+    return result, state.update(**updates).append(image_caption_history=current_caption)
+
+
+@action(
+    reads=["image_location_history", "image_caption_history", "caption_analysis"],
+    writes=[]
+)
+def terminal_step(state: State) -> tuple[dict, State]:
+    result = {"image_location_history": state["image_location_history"],
+              "image_caption_history": state["image_caption_history"],
+              "caption_analysis": state["caption_analysis"]}
+    return result, state
+
+caption_image_driver = (
+        driver.Builder().with_config({}).with_modules(caption_images).build()
+    )
+generate_image_driver = (
+    driver.Builder().with_config({}).with_modules(generate_images).build()
+)
+app = (
+    ApplicationBuilder()
+    .with_state(
+        current_image_location=starting_image,
+        current_image_caption="",
+        image_location_history=[],
+        image_caption_history=[],
+        caption_analysis=[],
+    )
+    .with_actions(
+        caption=image_caption.bind(caption_image_driver=caption_image_driver),
+        caption_embeddings=caption_embeddings.bind(caption_image_driver=generate_image_driver),
+        image=image_generation.bind(generate_image_driver=generate_image_driver),
+        terminal=terminal_step,
+    )
+    .with_transitions(
+        ("caption", "caption_embeddings", default),
+        ("caption_embeddings", "image", default),
+        ("image", "terminal", expr(f"len(image_caption_history) == {number_of_images_to_caption}")),
+        ("image", "caption", default),
+    )
+    .with_entrypoint("caption")
+    .with_hooks(ImageSaverHook())
+    .with_tracker(project="image-telephone")
+    .build()
+)
+# run until the end:
+last_action, result, state = app.run(halt_after=["terminal"])
+# save / download images etc. here from the result/state.
+'''
         st.code(code)
 
 
