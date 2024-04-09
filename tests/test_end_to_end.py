@@ -392,7 +392,6 @@ def test_materialize_and_loaders_end_to_end_without_to(tmp_path_factory):
         return data
 
     path_in = tmp_path_factory.mktemp("home") / "unprocessed_data.json"
-    path_out = tmp_path_factory.mktemp("home") / "processed_data.json"
 
     with open(path_in, "w") as f:
         json.dump({"processed": False}, f)
