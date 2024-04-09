@@ -1533,6 +1533,43 @@ class PandasExcelWriter(DataSaver):
         return "excel"
 
 
+@dataclasses.dataclass
+class PandasSPSSReader(DataLoader):
+    """Class for loading/reading spss files with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_spss.html
+    """
+
+    path: Union[str, Path]
+    # kwargs
+    usecols: Optional[Union[List[Hashable], Callable[[str], bool]]] = None
+    convert_categoricals: bool = True
+    dtype_backend: Literal["pyarrow", "numpy_nullable"] = "numpy_nullable"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        # Puts kwargs in a dict
+        kwargs = dataclasses.asdict(self)
+
+        # path corresponds to 'io' argument of pandas.read_spss,
+        # but we send it separately
+        del kwargs["path"]
+
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the spss file
+        df = pd.read_spss(self.path, **self._get_loading_kwargs())
+        metadata = utils.get_file_and_dataframe_metadata(self.path, df)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "spss"
+
+
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -1558,6 +1595,7 @@ def register_data_loaders():
         PandasORCReader,
         PandasExcelWriter,
         PandasExcelReader,
+        PandasSPSSReader,
     ]:
         registry.register_adapter(loader)
 

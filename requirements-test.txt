@@ -15,6 +15,7 @@ pandera
 plotly
 polars
 pyarrow
+pyreadstat  # for SPSS data loader
 pytest
 pytest-cov
 scikit-learn
