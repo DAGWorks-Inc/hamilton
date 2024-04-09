@@ -1455,7 +1455,7 @@ class Driver:
         try:
             materializer_factories, extractor_factories = self._process_materializers(materializers)
             if len(materializer_factories) == len(final_vars) == 0:
-                raise ValueError("No output requested or materializer factories were provided.")
+                raise ValueError("No output requested. Please either pass in materializers that will save data, or pass in `additional_vars` to compute.")
             function_graph = materialization.modify_graph(
                 self.graph, materializer_factories, extractor_factories
             )
