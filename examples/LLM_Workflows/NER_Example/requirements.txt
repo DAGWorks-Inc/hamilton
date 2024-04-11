@@ -1,0 +1,7 @@
+datasets
+lancedb
+numpy
+sentence_transformers
+sf-hamilton[visualization, sdk]
+torch
+tqdm
