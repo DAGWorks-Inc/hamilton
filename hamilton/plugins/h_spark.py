@@ -371,6 +371,8 @@ def _fabricate_spark_function(
     return FunctionType(func_code, {**globals(), **{"partial_fn": partial_fn}}, func_name)
 
 
+# TODO -- change this to have a different implementation based on the dataframe type. This will have
+# to likely be custom to each dataframe type
 def _lambda_udf(df: DataFrame, node_: node.Node, actual_kwargs: Dict[str, Any]) -> DataFrame:
     """Function to create a lambda UDF for a function.
 
@@ -1080,12 +1082,16 @@ class with_columns(fm_base.NodeCreator):
         """
 
         def new_callable(**kwargs) -> DataFrame:
+            # TODO -- change to have a `select` that's generic to the library
+            # Use the registry
             return kwargs[upstream_name].select(*columns)
 
         return node.Node(
             name=node_name,
+            # TODO -- change to have the right dataframe type (from the registry)
             typ=DataFrame,
             callabl=new_callable,
+            # TODO -- change to have the right dataframe type (from the registry)
             input_types={upstream_name: DataFrame},
         )
 
@@ -1107,8 +1113,10 @@ class with_columns(fm_base.NodeCreator):
 
         return node.Node(
             name=node_name,
+            # TODO -- change to have the right dataframe type (from the registry)
             typ=DataFrame,
             callabl=new_callable,
+            # TODO -- change to have the right dataframe type (from the registry)
             input_types={upstream_name: DataFrame},
         )
 
@@ -1195,7 +1203,9 @@ class with_columns(fm_base.NodeCreator):
                 column for column in node_.input_types if column in columns_passed_in_from_dataframe
             }
             # In the case that we are using pyspark UDFs
+            # TODO -- use the right dataframe type to do this correctly
             if require_columns.is_decorated_pyspark_udf(node_):
+                # TODO -- change to use the right "sparkification" function that is dataframe-type-agnostic
                 sparkified = require_columns.sparkify_node(
                     node_,
                     current_dataframe_node,
@@ -1206,6 +1216,7 @@ class with_columns(fm_base.NodeCreator):
                 )
             # otherwise we're using pandas/primitive UDFs
             else:
+                # TODO -- change to use the right "sparkification" function that is dataframe-type-agnostic
                 sparkified = sparkify_node_with_udf(
                     node_,
                     current_dataframe_node,
