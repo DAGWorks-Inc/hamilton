@@ -41,7 +41,7 @@ class SparkKoalasGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
     using the \
     `Pandas API on Spark <https://spark.apache.org/docs/latest/api/python/user_guide/pandas_on_spark/index.html>`__
 
-    Use `pip install sf-hamilton[spark]` to get the dependencies required to run this.
+    Use ``pip install sf-hamilton[spark]`` to get the dependencies required to run this.
 
     Currently, this class assumes you're running SPARK 3.2+. You'd generally use this if you have an existing spark \
     cluster running in your workplace, and you want to scale to very large data set sizes.
@@ -757,7 +757,7 @@ class require_columns(fm_base.NodeTransformer):
 
         Note that, at this point, we don't actually know which columns will come from the
         base dataframe, and which will come from the upstream nodes. This is handled in the
-        `with_columns` decorator, so for now, we need to give it enough information to topologically
+        ``with_columns`` decorator, so for now, we need to give it enough information to topologically
         sort/assign dependencies.
 
         :param node_: Node to transform
@@ -948,10 +948,10 @@ class with_columns(fm_base.NodeCreator):
         """Initializes a with_columns decorator for spark. This allows you to efficiently run
          groups of map operations on a dataframe, represented as pandas/primitives UDFs. This
          effectively "linearizes" compute -- meaning that a DAG of map operations can be run
-         as a set of `.withColumn` operations on a single dataframe -- ensuring that you don't have
-         to do a complex `extract` then `join` process on spark, which can be inefficient.
+         as a set of ``.withColumn`` operations on a single dataframe -- ensuring that you don't have
+         to do a complex ``extract`` then ``join`` process on spark, which can be inefficient.
 
-         Here's an example of calling it -- if you've seen `@subdag`, you should be familiar with
+         Here's an example of calling it -- if you've seen :py:class:`@subdag <hamilton.function_modifiers.recursive>`, you should be familiar with
          the concepts:
 
          .. code-block:: python
