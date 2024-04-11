@@ -16,7 +16,7 @@ PrimitiveType = Union[str, int, bool, dict, list]
 
 @dataclasses.dataclass
 class YAMLDataLoader(DataLoader):
-    path: str
+    path: Union[str, pathlib.Path]
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -27,13 +27,17 @@ class YAMLDataLoader(DataLoader):
         return "yaml"
 
     def load_data(self, type_: Type) -> Tuple[PrimitiveType, Dict[str, Any]]:
-        with pathlib.Path(self.path).open(mode="r") as f:
-            return yaml.safe_load(f), get_file_metadata(self.path)
+        path = self.path
+        if isinstance(self.path, str):
+            path = pathlib.Path(self.path)
+
+        with path.open(mode="r") as f:
+            return yaml.safe_load(f), get_file_metadata(path)
 
 
 @dataclasses.dataclass
 class YAMLDataSaver(DataSaver):
-    path: str
+    path: Union[str, pathlib.Path]
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -44,7 +48,10 @@ class YAMLDataSaver(DataSaver):
         return "yaml"
 
     def save_data(self, data: Any) -> Dict[str, Any]:
-        with pathlib.Path(self.path).open("w") as f:
+        path = self.path
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+        with path.open("w") as f:
             yaml.dump(data, f)
         return get_file_metadata(self.path)
 
