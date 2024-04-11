@@ -22,7 +22,12 @@ This example showcases how Hamilton can help you write modular data transformati
     pip install -r requirements.txt
     ```
 
-3. Visit the notebook or execute the script
+3. Download the data with this command (it should take ~3mins)
+    ```console
+    python download_data.py
+    ```
+
+4. Visit the notebook or execute the script
     ```console
     python run.py
     ```
