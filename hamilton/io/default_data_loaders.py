@@ -239,6 +239,8 @@ class InMemoryResult(DataSaver):
 
 
 DATA_ADAPTERS = [
+    YAMLDataSaver,
+    YAMLDataLoader,
     JSONDataSaver,
     JSONDataLoader,
     LiteralValueDataLoader,
