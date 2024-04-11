@@ -6,8 +6,47 @@ import pathlib
 import pickle
 from typing import Any, Collection, Dict, Tuple, Type, Union
 
+import yaml
+
 from hamilton.io.data_adapters import DataLoader, DataSaver
 from hamilton.io.utils import get_file_metadata
+
+PrimitiveType = Union[str, int, bool, dict, list]
+
+
+@dataclasses.dataclass
+class YAMLDataLoader(DataLoader):
+    path: str
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [str, int, bool, dict, list]
+
+    @classmethod
+    def name(cls) -> str:
+        return "yaml"
+
+    def load_data(self, type_: Type) -> Tuple[PrimitiveType, Dict[str, Any]]:
+        with pathlib.Path(self.path).open(mode="r") as f:
+            return yaml.safe_load(f), get_file_metadata(self.path)
+
+
+@dataclasses.dataclass
+class YAMLDataSaver(DataSaver):
+    path: str
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [str, int, bool, dict, list]
+
+    @classmethod
+    def name(cls) -> str:
+        return "yaml"
+
+    def save_data(self, data: Any) -> Dict[str, Any]:
+        with pathlib.Path(self.path).open("w") as f:
+            yaml.dump(data, f)
+        return get_file_metadata(self.path)
 
 
 @dataclasses.dataclass
