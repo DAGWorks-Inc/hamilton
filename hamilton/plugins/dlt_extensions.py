@@ -27,7 +27,7 @@ class DltSaver(DataSaver):
     """
 
     pipeline: dlt.Pipeline
-    table_name: Optional[dict] = None
+    rename: Optional[dict] = None
     # kwargs for pipeline.run()
     write_disposition: Optional[Literal["skip", "append", "replace", "merge"]] = None
 
@@ -48,12 +48,11 @@ class DltSaver(DataSaver):
                 f"When using `to.dlt()`, make sure to specify `combine=base.DictResult()`"
             )
 
-        if self.table_name is None:
-            self.table_name = dict()
+        rename = {} if self.rename is None else self.rename
 
         resources = []
         for node_name, result in data.items():
-            name = self.table_name.get(node_name, node_name)
+            name = rename.get(node_name, node_name)
             resources.append(dlt.resource(result, name=name))
 
         load_info = self.pipeline.run(resources, write_disposition=self.write_disposition)

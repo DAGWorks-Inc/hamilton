@@ -15,6 +15,7 @@ class DltAdapter(GraphExecutionHook):
     def __init__(
         self,
         pipeline: dlt.Pipeline,
+        rename: Optional[dict] = None,
         write_disposition: Optional[Literal["skip", "append", "replace", "merge"]] = None,
         show_load_info: bool = False,
     ):
@@ -27,6 +28,7 @@ class DltAdapter(GraphExecutionHook):
         to dispatch materialize single or group of nodes to specific pipelines.
         """
         self.pipeline = pipeline
+        self.rename = rename
         self.write_disposition = write_disposition
         self.show_load_info = show_load_info
 
@@ -49,8 +51,8 @@ class DltAdapter(GraphExecutionHook):
     # TODO why is `results` typed optional by default?
     def run_after_graph_execution(self, *, results: Dict[str, Any], **kwargs):
         data_saver = DltSaver(
-            table_name={node_name: node_name for node_name in self.final_vars},
             pipeline=self.pipeline,
+            rename=self.rename,
             write_disposition=self.write_disposition,
         )
         load_info: dict = data_saver.save_data(results)
