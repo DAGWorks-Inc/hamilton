@@ -1,9 +1,8 @@
 import dataclasses
-from typing import Any, Collection, Dict, Iterable, Literal, Optional, Type, Union
+from typing import Any, Collection, Dict, Iterable, Literal, Optional, Type
 
 import dlt
 import pandas as pd
-from dlt import TSecretValue
 
 # importing TDestinationReferenceArg fails if Destination isn't imported
 from dlt.common.destination import Destination, TDestinationReferenceArg  # noqa: F401
@@ -27,40 +26,14 @@ class DltSaver(DataSaver):
     dataflow is responsible for Transform, and `DltDestination` for Load.
     """
 
-    #
-    table_name: Union[str, dict]
-    destination: Optional[TDestinationReferenceArg] = None
-    # kwargs for dlt.pipeline()
-    pipeline_name: Optional[str] = None
-    pipelines_dir: Optional[str] = None
-    pipeline_salt: Optional[TSecretValue] = None
-    staging: Optional[TDestinationReferenceArg] = None
-    dataset_name: Optional[str] = None
-    import_schema_path: Optional[str] = None
-    export_schema_path: Optional[str] = None
-    full_refresh: bool = False
-    credentials: Any = None
-    # pass a pipeline directly instead of creating it from kwargs
-    pipeline: Optional[dlt.Pipeline] = None
+    pipeline: dlt.Pipeline
+    table_name: Optional[dict] = None
     # kwargs for pipeline.run()
     write_disposition: Optional[Literal["skip", "append", "replace", "merge"]] = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
         return SAVER_TYPES
-
-    def _get_kwargs(self):
-        """Utility to get kwargs from the class"""
-        kwargs = {}
-        for field in dataclasses.fields(self):
-            if field.name in ["write_disposition", "pipeline", "table_name"]:
-                continue
-
-            field_value = getattr(self, field.name)
-            if field_value != field.default:
-                kwargs[field.name] = field_value
-
-        return kwargs
 
     def save_data(self, data) -> Dict[str, Any]:
         """
@@ -69,26 +42,21 @@ class DltSaver(DataSaver):
             standalone resources: https://dlthub.com/docs/general-usage/resource#load-resources
             dynamic resources: https://dlthub.com/docs/general-usage/source#create-resources-dynamically
         """
+        if isinstance(data, dict) is False:  # only 1 node, no `combine=base.DictResult()`
+            raise NotImplementedError(
+                f"DltSaver needs to a receive a `Dict[str, {SAVER_TYPES}]`"
+                f"When using `to.dlt()`, make sure to specify `combine=base.DictResult()`"
+            )
 
-        # check if a pipeline was passed directly instead of kwargs
-        if self.pipeline:
-            if isinstance(self.pipeline, dlt.Pipeline):
-                pipeline = self.pipeline
-            else:
-                raise TypeError(
-                    f"DltDataser: `pipeline` argument should be of type `dlt.Pipeline` received {type(self.pipeline)} instead"
-                )
-        else:
-            pipeline = dlt.pipeline(**self._get_kwargs())
+        if self.table_name is None:
+            self.table_name = dict()
 
-        # if `combine` was used in `to.dlt(..., combine=base.DictResult())`, we save multiple
-        # tables via the same pipeline
-        if isinstance(data, dict):
-            resources = [dlt.resource(value, name=name) for name, value in data.items()]
-        else:
-            resources = [dlt.resource([data], name=__name__)]
+        resources = []
+        for node_name, result in data.items():
+            name = self.table_name.get(node_name, node_name)
+            resources.append(dlt.resource(result, name=name))
 
-        load_info = pipeline.run(resources)
+        load_info = self.pipeline.run(resources, write_disposition=self.write_disposition)
         return load_info.asdict()
 
     @classmethod
