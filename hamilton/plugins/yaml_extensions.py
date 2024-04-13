@@ -11,7 +11,8 @@ from hamilton import registry
 from hamilton.io.data_adapters import DataLoader, DataSaver
 from hamilton.io.utils import get_file_metadata
 
-PrimitiveType = Union[str, int, bool, dict, list]
+PrimitiveTypes = str, int, float, bool, dict, list
+AcceptedTypes = Union[PrimitiveTypes]
 
 
 @dataclasses.dataclass
@@ -20,13 +21,13 @@ class YAMLDataLoader(DataLoader):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [str, int, bool, dict, list]
+        return [*PrimitiveTypes]
 
     @classmethod
     def name(cls) -> str:
         return "yaml"
 
-    def load_data(self, type_: Type) -> Tuple[PrimitiveType, Dict[str, Any]]:
+    def load_data(self, type_: Type) -> Tuple[AcceptedTypes, Dict[str, Any]]:
         path = self.path
         if isinstance(self.path, str):
             path = pathlib.Path(self.path)
@@ -41,13 +42,13 @@ class YAMLDataSaver(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [str, int, bool, dict, list]
+        return [*PrimitiveTypes]
 
     @classmethod
     def name(cls) -> str:
         return "yaml"
 
-    def save_data(self, data: Any) -> Dict[str, Any]:
+    def save_data(self, data: AcceptedTypes) -> Dict[str, Any]:
         path = self.path
         if isinstance(path, str):
             path = pathlib.Path(path)
