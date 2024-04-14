@@ -20,7 +20,7 @@ class YAMLDataLoader(DataLoader):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [PrimitiveType]
+        return [str, int, bool, dict, list]
 
     @classmethod
     def name(cls) -> str:
@@ -41,7 +41,7 @@ class YAMLDataSaver(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [PrimitiveType]
+        return [str, int, bool, dict, list]
 
     @classmethod
     def name(cls) -> str:
