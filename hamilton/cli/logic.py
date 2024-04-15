@@ -321,3 +321,55 @@ def _read_py_context(file_path: Path) -> dict:
         context[k] = getattr(module, k, None)
 
     return context
+
+
+def create_tests(input: Path, output: Path) -> None:
+    """Create unit tests for the input python file or module"""
+    import importlib
+    import inspect
+
+    def _get_functions_and_annotations(module):
+        functions = inspect.getmembers(module, inspect.isfunction)
+        annotations, names = list(), list()
+        for name, fn in functions:
+            names.append(name)
+            annotations.append(fn.__annotations__)
+        return annotations, names
+
+    module = importlib.import_module(input.stem)
+    annotations, names = _get_functions_and_annotations(module)
+
+    strip_output_names = []
+    if output.exists():
+        output_module = importlib.import_module(output.stem)
+        output_annotations, output_names = _get_functions_and_annotations(output_module)
+        strip_output_names = [name.lstrip("test_") for name in output_names]
+    new_functions = [name for name in names if name not in strip_output_names]
+    for name, annotation in zip(names, annotations):
+        if name in new_functions:
+            test_stub = _get_test_stub(input.stem, name, annotation)
+            with open(output, "a") as f:
+                f.write(test_stub)
+
+
+def _get_test_stub(input_name: str, name: str, annotation: dict) -> str:
+    """"""
+    import textwrap
+
+    test_stub = "\n\n"
+    test_stub += f"""def test_{name}():"""
+    for k, v in annotation.items():
+        if k == "return":
+            k = "expected"
+        test_stub += textwrap.indent(
+            f"""{k}: {v.__name__} = {v.__name__}() #TODO fill in""",
+        "\n    "
+        )
+    test_stub += textwrap.indent(
+        f"""assert expected == {input_name}.{name}()""",
+        "\n    "
+    )
+
+    return test_stub
+
+

@@ -54,6 +54,17 @@ MODULES_ANNOTATIONS = Annotated[
     ),
 ]
 
+PYTHON_FILE_MODULE_ANNOTATIONS = Annotated[
+    Path,
+    typer.Argument(
+        help="Path to python file or module",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+    ),
+]
+
 NAME_ANNOTATIONS = Annotated[
     Optional[str],
     typer.Option("--name", "-n", help="Name of the dataflow. Default: Derived from MODULES."),
@@ -83,6 +94,19 @@ VIZ_OUTPUT_ANNOTATIONS = Annotated[
         resolve_path=True,
     ),
 ]
+
+OUTPUT_ANNOTATIONS = Annotated[
+    Path,
+    typer.Option(
+        "--output",
+        "-o",
+        help="Output path of unit test file.",
+        dir_okay=False,
+        writable=True,
+        resolve_path=True,
+    ),
+]
+
 
 
 # TODO add `experiments` for `hamilton.plugins.h_experiments`
@@ -281,6 +305,27 @@ def view(
     _response_handler(
         ctx=ctx,
         response=Response(command="view", success=True, message={"path": str(output_file_path)}),
+    )
+
+
+
+@cli.command()
+def create_tests(
+    ctx: typer.Context,
+    python_file_module: PYTHON_FILE_MODULE_ANNOTATIONS,
+    output_file_path: OUTPUT_ANNOTATIONS = None,
+):
+    """Create unit tests for given python file or module"""
+    if output_file_path is None:
+        output_file_path = Path(f"test_{Path(python_file_module).stem}.py")
+
+    if output_file_path.is_dir():
+        raise ValueError("output_file_path can not be a directory")
+
+    _try_command(cmd=commands.create_tests, input_file_path=python_file_module, output_file_path=output_file_path)
+    _response_handler(
+        ctx=ctx,
+        response=Response(command="create_tests", success=True, message={"path": str(output_file_path)}),
     )
 
 
