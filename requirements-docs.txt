@@ -31,4 +31,3 @@ sphinx-rtd-theme # read the docs pins
 sphinx-sitemap
 tqdm
 xgboost
-yaml

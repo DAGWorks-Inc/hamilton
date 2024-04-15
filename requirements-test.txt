@@ -25,4 +25,3 @@ typer
 xgboost
 xlsx2csv  # for excel data loader
 xlsxwriter  # Excel export requires 'xlsxwriter'
-yaml
