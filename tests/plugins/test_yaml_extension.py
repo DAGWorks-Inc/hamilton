@@ -1,9 +1,12 @@
 import pathlib
+from typing import List, Type
 
 import pytest
 import yaml
 
-from hamilton.plugins.yaml_extensions import YAMLDataLoader, YAMLDataSaver
+from hamilton.function_modifiers.adapters import resolve_adapter_class
+from hamilton.io.data_adapters import DataLoader, DataSaver
+from hamilton.plugins.yaml_extensions import PrimitiveTypes, YAMLDataLoader, YAMLDataSaver
 
 TEST_DATA_FOR_YAML = [
     (1, "int.yaml"),
@@ -46,3 +49,23 @@ def test_yaml_loader_and_saver(tmp_path: pathlib.Path, data, file_name):
     loader = YAMLDataLoader(path)
     loaded_data = loader.load_data(type(data))
     assert data == loaded_data[0]
+
+
+@pytest.mark.parametrize(
+    "type_,classes,correct_class",
+    [(t, [YAMLDataLoader], YAMLDataLoader) for t in PrimitiveTypes],
+)
+def test_resolve_correct_loader_class(
+    type_: Type[Type], classes: List[Type[DataLoader]], correct_class: Type[DataLoader]
+):
+    assert resolve_adapter_class(type_, classes) == correct_class
+
+
+@pytest.mark.parametrize(
+    "type_,classes,correct_class",
+    [(t, [YAMLDataSaver], YAMLDataSaver) for t in PrimitiveTypes],
+)
+def test_resolve_correct_saver_class(
+    type_: Type[Type], classes: List[Type[DataSaver]], correct_class: Type[DataLoader]
+):
+    assert resolve_adapter_class(type_, classes) == correct_class

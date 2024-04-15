@@ -20,6 +20,7 @@ pillow
 polars
 pyarrow >= 1.0.0
 pyspark
+PyYAML
 ray
 readthedocs-sphinx-ext<2.3 # read the docs pins
 recommonmark==0.5.0  # read the docs pins
