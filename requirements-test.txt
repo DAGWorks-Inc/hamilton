@@ -2,6 +2,7 @@ connectorx
 dask
 dask-expr; python_version >= '3.9'
 diskcache
+dlt
 fsspec
 graphviz
 kaleido

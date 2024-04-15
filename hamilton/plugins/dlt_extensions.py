@@ -3,7 +3,7 @@ from typing import Any, Collection, Dict, Iterable, Literal, Optional, Sequence,
 
 import dlt
 import pandas as pd
-from dlt.common.destination import Destination, TDestinationReferenceArg  # noqa: F401
+from dlt.common.destination.capabilities import TLoaderFileFormat
 from dlt.common.schema import Schema, TColumnSchema
 
 # importing TDestinationReferenceArg fails if Destination isn't imported
@@ -27,7 +27,6 @@ except ModuleNotFoundError:
 DATAFRAME_TYPES = tuple(DATAFRAME_TYPES)
 
 
-# TODO use `driver.validate_materialization`
 @dataclasses.dataclass
 class DltResourceLoader(DataLoader):
     resource: DltResource
@@ -38,22 +37,26 @@ class DltResourceLoader(DataLoader):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return DATAFRAME_TYPES
+        return [pd.DataFrame]
 
     def load_data(self, type_: Type) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """Creates a pipeline and conduct `extract` and `normalize` steps.
         Then, "load packages" are read with pandas
         """
-        pipeline = dlt.pipeline(pipeline_name="Hamilton-DltResourceLoader")
+        pipeline = dlt.pipeline(
+            pipeline_name="Hamilton-DltResourceLoader", destination="filesystem"
+        )
         pipeline.extract(self.resource)
         normalize_info = pipeline.normalize(loader_file_format="parquet")
 
         partition_file_paths = []
-        for package in normalize_info.load_packages:
-            load_info = package.jobs["new_jobs"][0]
-            partition_file_paths.append(load_info.file_path)
+        package = normalize_info.load_packages[0]
+        for job in package.jobs["new_jobs"]:
+            if job.job_file_info.table_name == self.resource.name:
+                partition_file_paths.append(job.file_path)
 
         # TODO use pyarrow directly to support different dataframe libraries
+        # ref: https://github.com/dlt-hub/verified-sources/blob/master/sources/filesystem/readers.py
         # ref: https://arrow.apache.org/docs/python/generated/pyarrow.parquet.ParquetDataset.html#pyarrow.parquet.ParquetDataset
         df = pd.concat([pd.read_parquet(f) for f in partition_file_paths], ignore_index=True)
 
@@ -79,6 +82,7 @@ class DltDestinationSaver(DataSaver):
     write_disposition: Optional[Literal["skip", "append", "replace", "merge"]] = None
     columns: Optional[Sequence[TColumnSchema]] = None
     schema: Optional[Schema] = None
+    loader_file_format: Optional[TLoaderFileFormat] = None
 
     @classmethod
     def name(cls) -> str:
@@ -113,7 +117,8 @@ class DltDestinationSaver(DataSaver):
             )
 
         load_info = self.pipeline.run(data, **self._get_kwargs())
-        return load_info.asdict()
+        # follows the pattern of metadata output found in hamilton.io.utils
+        return {"dlt_metadata": load_info.asdict()}
 
 
 def register_data_loaders():
