@@ -29,7 +29,13 @@ def test_raw_file_adapter(data, tmp_path: pathlib.Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "data", [{"key": "value"}, [{"key": "value1"}, {"key": "value2"}], ["value1", "value2"], [0, 1]]
+    "data",
+    [
+        {"key": "value"},
+        [{"key": "value1"}, {"key": "value2"}],
+        ["value1", "value2"],
+        [0, 1],
+    ],
 )
 def test_json_save_object_and_array(data, tmp_path: pathlib.Path):
     """Test that `from_.json` and `to.json` can handle JSON objects where
@@ -48,7 +54,13 @@ def test_json_save_object_and_array(data, tmp_path: pathlib.Path):
 
 
 @pytest.mark.parametrize(
-    "data", [{"key": "value"}, [{"key": "value1"}, {"key": "value2"}], ["value1", "value2"], [0, 1]]
+    "data",
+    [
+        {"key": "value"},
+        [{"key": "value1"}, {"key": "value2"}],
+        ["value1", "value2"],
+        [0, 1],
+    ],
 )
 def test_json_load_object_and_array(data, tmp_path: pathlib.Path):
     """Test that `from_.json` and `to.json` can handle JSON objects where

@@ -21,6 +21,7 @@ if not registry.INITIALIZED:
     # right now. Side note: ray serializes things weirdly, so we need to do this here rather than in
     # in the other choice of hamilton/base.py.
     plugins_modules = [
+        "yaml",
         "matplotlib",
         "numpy",
         "pandas",
