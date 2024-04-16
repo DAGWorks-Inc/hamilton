@@ -25,6 +25,7 @@ except ModuleNotFoundError:
 
 # convert to tuple to dynamically define type `Union[DATAFRAME_TYPES]`
 DATAFRAME_TYPES = tuple(DATAFRAME_TYPES)
+COLUMN_FRIENDLY_DF_TYPE = False
 
 
 @dataclasses.dataclass

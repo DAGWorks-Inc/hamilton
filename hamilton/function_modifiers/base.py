@@ -36,6 +36,7 @@ if not registry.INITIALIZED:
         "sklearn_plot",
         "vaex",
         "ibis",
+        "dlt",
     ]
     for plugin_module in plugins_modules:
         try:

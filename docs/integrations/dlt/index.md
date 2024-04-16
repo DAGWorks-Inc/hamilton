@@ -81,16 +81,18 @@ The key consideration for ETL is that the data has to move twice:
             return _table_to_df(client, "general_replies_message")
 
     def threads(
-        general_messages: pd.DataFrame,
+        general_message: pd.DataFrame,
         general_replies_message: pd.DataFrame,
     ) -> pd.DataFrame:
         """Reassemble from the union of parent messages and replies"""
         columns = ["thread_ts", "ts", "user", "text"]
         return pd.concat(
-            [general_messages[columns], general_replies_message[columns]],
+            [general_message[columns], general_replies_message[columns]],
             axis=0
         )
     ```
+
+![](transform.png)
 
 3. Add the Hamilton dataflow execution code to `run.py`
 
@@ -214,7 +216,7 @@ Transformations happen within the data destination, typically a data warehouse. 
         ibis.set_backend(backend)
         return backend
 
-    def general_messages(db_con: ibis.BaseBackend, pipeline: dlt.Pipeline) -> ir.Table:
+    def general_message(db_con: ibis.BaseBackend, pipeline: dlt.Pipeline) -> ir.Table:
         """Load table `general_message` from dlt data"""
         return db_con.table(
             "general_message",
@@ -234,13 +236,13 @@ Transformations happen within the data destination, typically a data warehouse. 
         )
 
     def threads(
-        general_messages: ir.Table,
+        general_message: ir.Table,
         general_replies_message: ir.Table,
     ) -> ir.Table:
         """Create the union of `general_message` and `general_replies_message`"""
         columns = ["thread_ts", "ts", "user", "text"]
         return ibis.union(
-            general_messages.select(columns),
+            general_message.select(columns),
             general_replies_message.select(columns),
         )
 
@@ -319,16 +321,17 @@ dr = driver.Builder().with_modules(transform).build()
 
 materializers = [
     from_.dlt(
-        target="general_messages",  # node name assigned to the data
-        resource=source.resources["general_messages"]
+        target="general_message",  # node name assigned to the data
+        resource=source.resources["general_message"]
     ),
     from_.dlt(
         target="general_replies_message",
         resource=source.resources["general_replies_message"]
     ),
 ]
-
-dr.materialize(*materializers, ...)
+# when using only loaders (i.e., `from_`), you need to specify
+# `additional_vars` to compute, like you would in `.execute(final_vars=["threads"])`
+dr.materialize(*materializers, additional_vars=["threads"])
 ```
 
 ### DataSaver
@@ -336,6 +339,7 @@ The `DataSaver` allows to write node results to any `dlt.Destination`. You'll ne
 
 ```python
 # run.py
+import dlt
 from hamilton import driver
 from hamilton.io.materialization import to
 import slack  # NOTE this is dlt code, not an official Slack library
@@ -367,8 +371,9 @@ You can also combine both the `DataLoader` and `DataSaver`. You will see below t
 
 ```python
 # run.py
+import dlt
 from hamilton import driver
-from hamilton.io.materialization import from_
+from hamilton.io.materialization import from_, to
 import slack  # NOTE this is dlt code, not an official Slack library
 import transform
 
@@ -383,8 +388,8 @@ dr = driver.Builder().with_modules(transform).build()
 
 materializers = [
     from_.dlt(
-        target="general_messages",
-        resource=source.resources["general_messages"]
+        target="general_message",
+        resource=source.resources["general_message"]
     ),
     from_.dlt(
         target="general_replies_message",
@@ -401,6 +406,7 @@ materializers = [
 dr.materialize(*materializers)
 ```
 
+![](./materialization.png)
 
 ## Next steps
 - Our full [code example to ingest Slack data and generate thread summaries](https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/dlt) is available on GitHub.
