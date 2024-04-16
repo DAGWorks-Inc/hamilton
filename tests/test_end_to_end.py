@@ -353,6 +353,83 @@ def test_materialize_and_loaders_end_to_end(tmp_path_factory):
         assert json.load(f) == {"processed": True}
 
 
+def test_materialize_and_loaders_end_to_end_without_additional_vars(tmp_path_factory):
+    def processed_data(input_data: dict) -> dict:
+        data = input_data.copy()
+        data["processed"] = True
+        return data
+
+    path_in = tmp_path_factory.mktemp("home") / "unprocessed_data.json"
+    path_out = tmp_path_factory.mktemp("home") / "processed_data.json"
+
+    with open(path_in, "w") as f:
+        json.dump({"processed": False}, f)
+
+    mod = ad_hoc_utils.create_temporary_module(processed_data)
+
+    dr = driver.Driver({}, mod)
+
+    materialization_result, result = dr.materialize(
+        from_.json(target="input_data", path=value(path_in)),
+        to.json(
+            id="materializer",
+            dependencies=["processed_data"],
+            path=source("output_path"),
+            combine=JoinBuilder(),
+        ),
+        inputs={"output_path": str(path_out)},
+    )
+    assert "materializer" in materialization_result
+
+    with open(path_out) as f:
+        assert json.load(f) == {"processed": True}
+
+
+def test_materialize_and_loaders_end_to_end_without_to(tmp_path_factory):
+    def processed_data(input_data: dict) -> dict:
+        data = input_data.copy()
+        data["processed"] = True
+        return data
+
+    path_in = tmp_path_factory.mktemp("home") / "unprocessed_data.json"
+
+    with open(path_in, "w") as f:
+        json.dump({"processed": False}, f)
+
+    mod = ad_hoc_utils.create_temporary_module(processed_data)
+
+    dr = driver.Driver({}, mod)
+
+    materialization_result, result = dr.materialize(
+        from_.json(target="input_data", path=value(path_in)), additional_vars=["processed_data"]
+    )
+    assert result["processed_data"] == {"processed": True}
+    assert "materializer" not in materialization_result
+
+
+def test_no_materialize_failure(tmp_path_factory):
+    def processed_data(input_data: dict) -> dict:
+        data = input_data.copy()
+        data["processed"] = True
+        return data
+
+    path_in = tmp_path_factory.mktemp("home") / "unprocessed_data.json"
+    path_out = tmp_path_factory.mktemp("home") / "processed_data.json"
+
+    with open(path_in, "w") as f:
+        json.dump({"processed": False}, f)
+
+    mod = ad_hoc_utils.create_temporary_module(processed_data)
+
+    dr = driver.Driver({}, mod)
+
+    with pytest.raises(ValueError):
+        dr.materialize(
+            from_.json(target="input_data", path=value(path_in)),
+            inputs={"output_path": str(path_out)},
+        )
+
+
 def test_driver_validate_with_overrides():
     dr = (
         driver.Builder()

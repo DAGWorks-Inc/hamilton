@@ -26,6 +26,8 @@ Hamilton is a novel paradigm for specifying a flow of delayed execution in pytho
 
 This paradigm makes modifications easy to build and track, ensures code is self-documenting, and makes it natural to unit test your data transformations. When connected together, these functions form a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG), which the Hamilton framework can execute, optimize, and report on.
 
+Note: Hamilton describes DAGs. If you're looking for something to handle loops or conditional edges (say, for a human-in-the-loop application like a chatbot or agent), you might appreciate [Burr](github.com/dagworks-inc/burr) -- it integrates well with any python library (including Hamilton!).
+
 ## Problems Hamilton Solves
 ✅ Model a dataflow -- If you can model your problem as a DAG in python, Hamilton is the cleanest way to build it.<br/>
 ✅ Unmaintainable spaghetti code -- Hamilton dataflows are unit testable, self-documenting, and provide lineage.<br/>
@@ -221,6 +223,13 @@ Hamilton is released under the [BSD 3-Clause Clear License](https://github.com/D
 * [KI-Insurance](https://www.ki-insurance.com/)
 * [Ascena Retail](https://www.ascena.com/)
 * [Opendoor](https://www.opendoor.com/)
+* [NaroHQ](https://www.narohq.com/)
+* [Rippling](https://www.rippling.com/)
+* [AB-InBev](https://www.ab-inbev.com/)
+* [EquipmentShare](https://www.equipmentshare.com/)
+* [Everstream.ai](https://www.everstream.ai/)
+* [Flectere](https://flectere.net/)
+* [F33.ai](https://f33.ai/)
 
 To add your company, make a pull request to add it here.
 
@@ -357,8 +366,8 @@ Specific integrations with other systems where we help you write code that runs 
 # Prescribed Development Workflow
 In general we prescribe the following:
 
-1. Ensure you understand [Hamilton Basics](https://github.com/DAGWorks-Inc/hamilton/blob/main/basics.md).
-2. Familiarize yourself with some of the [Hamilton decorators](https://github.com/DAGWorks-Inc/hamilton/blob/main/decorators.md). They will help keep your code DRY.
+1. Ensure you understand [Hamilton Basics](https://www.tryhamilton.dev/intro).
+2. Familiarize yourself with some of the [Hamilton decorators](https://www.tryhamilton.dev/tutorial-extras/configuration). They will help keep your code DRY.
 3. Start creating Hamilton Functions that represent your work. We suggest grouping them in modules where it makes sense.
 4. Write a simple script so that you can easily run things end to end.
 5. Join our [Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) community to chat/ask Qs/etc.
@@ -442,6 +451,10 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Bryan Galindo (@bryangalindo)
 - Jordan Smith (@JoJo10Smith)
 - Roel Bertens (@roelbertens)
+- Swapnil Delwalkar (@swapdewalkar)
+- Fran Boon (@flavour)
+- Tom Barber (@buggtb)
+- Konstantin Tyapochkin (@tyapochkin)
 
 ## Bug Hunters/Special Mentions
 - Nils Olsson (@nilsso)
@@ -461,3 +474,5 @@ If you do not wish to participate, one can opt-out with one of the following met
 - Anup Joseph (@AnupJoseph)
 - Jan Hurst (@janhurst)
 - Flavia Santos (@flaviassantos)
+- Nicolas Huray (@nhuray)
+- Manabu Niseki (@ninoseki)

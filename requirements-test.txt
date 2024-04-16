@@ -15,8 +15,10 @@ pandera
 plotly
 polars
 pyarrow
+pyreadstat  # for SPSS data loader
 pytest
 pytest-cov
+PyYAML
 scikit-learn
 sqlalchemy==1.4.49; python_version == '3.7.*'
 sqlalchemy; python_version >= '3.8'

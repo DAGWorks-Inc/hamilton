@@ -399,6 +399,16 @@ class Driver:
             # TODO -- update this to use the lifecycle methods
             self.capture_constructor_telemetry(error, modules, config, adapter)
 
+    def _repr_mimebundle_(self, include=None, exclude=None, **kwargs):
+        """Attribute read by notebook renderers
+        This returns the attribute of the `graphviz.Digraph` returned by `self.display_all_functions()`
+
+        The parameters `include`, `exclude`, and `**kwargs` are required, but not explicitly used
+        ref: https://ipython.readthedocs.io/en/stable/config/integrating.html
+        """
+        dot = self.display_all_functions()
+        return dot._repr_mimebundle_(include=include, exclude=exclude, **kwargs)
+
     def capture_constructor_telemetry(
         self,
         error: Optional[str],
@@ -1444,6 +1454,10 @@ class Driver:
         materializer_vars = []
         try:
             materializer_factories, extractor_factories = self._process_materializers(materializers)
+            if len(materializer_factories) == len(final_vars) == 0:
+                raise ValueError(
+                    "No output requested. Please either pass in materializers that will save data, or pass in `additional_vars` to compute."
+                )
             function_graph = materialization.modify_graph(
                 self.graph, materializer_factories, extractor_factories
             )

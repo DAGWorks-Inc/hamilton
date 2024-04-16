@@ -1,4 +1,5 @@
 import functools
+import json
 import logging
 import typing
 
@@ -9,6 +10,7 @@ from hamilton import base, htypes, node
 from hamilton.execution import executors
 from hamilton.execution.executors import TaskFuture
 from hamilton.execution.grouping import TaskImplementation
+from hamilton.function_modifiers.metadata import RAY_REMOTE_TAG_NAMESPACE
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,25 @@ def raify(fn):
 
         return new_fn
     return fn
+
+
+def parse_ray_remote_options_from_tags(tags: typing.Dict[str, str]) -> typing.Dict[str, typing.Any]:
+    """DRY helper to parse ray.remote(**options) from Hamilton Tags
+
+    Tags are added to nodes via the @ray_remote_options decorator
+
+    :param tags: Full set of Tags for a Node
+    :return: The ray-friendly version
+    """
+
+    ray_tags = {
+        tag_name: tag_value
+        for tag_name, tag_value in tags.items()
+        if tag_name.startswith(f"{RAY_REMOTE_TAG_NAMESPACE}.")
+    }
+    ray_options = {name.split(".", 1)[1]: json.loads(value) for name, value in ray_tags.items()}
+
+    return ray_options
 
 
 class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
@@ -97,7 +118,8 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         :param kwargs: the arguments that should be passed to it.
         :return: returns a ray object reference.
         """
-        return ray.remote(raify(node.callable)).remote(**kwargs)
+        ray_options = parse_ray_remote_options_from_tags(node.tags)
+        return ray.remote(raify(node.callable)).options(**ray_options).remote(**kwargs)
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
@@ -184,7 +206,14 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         return node_type == input_type
 
     def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
-        return ray.remote(raify(node.callable)).bind(**kwargs)
+        """Function that is called as we walk the graph to determine how to execute a hamilton function.
+
+        :param node: the node from the graph.
+        :param kwargs: the arguments that should be passed to it.
+        :return: returns a ray object reference.
+        """
+        ray_options = parse_ray_remote_options_from_tags(node.tags)
+        return ray.remote(raify(node.callable)).options(**ray_options).bind(**kwargs)
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.

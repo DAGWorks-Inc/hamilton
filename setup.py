@@ -82,6 +82,7 @@ setup(
         ],  # I'm sure they'll add support soon,
         # but for now its not compatible
         "pandera": ["pandera"],
+        "slack": ["slack-sdk"],
         "tqdm": ["tqdm"],
         "datadog": ["ddtrace"],
         "vaex": [

@@ -1,5 +1,6 @@
 altair
 boto3
+burr
 openai
 opentsne
 pandas

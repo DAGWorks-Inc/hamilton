@@ -1,0 +1,2 @@
+ibis-framework[duckdb]
+sf-hamilton[visualization]

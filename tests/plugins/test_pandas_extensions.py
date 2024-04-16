@@ -24,6 +24,7 @@ from hamilton.plugins.pandas_extensions import (
     PandasParquetWriter,
     PandasPickleReader,
     PandasPickleWriter,
+    PandasSPSSReader,
     PandasSqlReader,
     PandasSqlWriter,
     PandasStataReader,
@@ -284,6 +285,29 @@ def test_pandas_table_reader(tmp_path: pathlib.Path) -> None:
     df, metadata = reader.load_data(pd.DataFrame)
 
     assert PandasTableReader.applicable_types() == [pd.DataFrame]
+    assert df.loc[0, "firstName"] == "John"
+    assert df.shape == (3, 5)
+    assert metadata["dataframe_metadata"]["column_names"] == [
+        "firstName",
+        "lastName",
+        "age",
+        "department",
+        "email",
+    ]
+
+
+def test_pandas_spss_reader(tmp_path: pathlib.Path) -> None:
+    import pyreadstat
+
+    path_to_test = "tests/resources/data/test_load_from_data.xlsx"
+    reader = PandasExcelReader(path=path_to_test)
+    df, metadata = reader.load_data(pd.DataFrame)
+    pyreadstat.write_sav(df, tmp_path / "test.sav")
+
+    reader = PandasSPSSReader(path=tmp_path / "test.sav")
+    df, metadata = reader.load_data(pd.DataFrame)
+
+    assert PandasSPSSReader.applicable_types() == [pd.DataFrame]
     assert df.loc[0, "firstName"] == "John"
     assert df.shape == (3, 5)
     assert metadata["dataframe_metadata"]["column_names"] == [
