@@ -1,5 +1,5 @@
 ==============
-How To Guides
+User Guide
 ==============
 
 This portion of the documentation goes over the set of common examples for Hamilton usage, so you can apply
@@ -8,18 +8,14 @@ directory. If there's an example you want but don't see, reach out or open an is
 
 
 .. toctree::
-   load-data
-   use-without-pandas
    use-in-jupyter-notebook
-   run-data-quality-checks
-   scale-up
-   use-for-training-models
-   use-with-dbt
-   use-online
    use-for-feature-engineering
+   ml-training
+   llm-workflows
+   run-data-quality-checks
    use-hamilton-for-lineage
-   use-hamilton-for-llm-workflows
+   cache-nodes
+   scale-up
+   async
    cli-reference
    pre-commit-hooks
-   cache-nodes
-   custom-driver

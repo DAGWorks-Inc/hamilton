@@ -1,5 +1,5 @@
 =====================
-Use Hamilton with DBT
+dbt
 =====================
 
 If you're familiar with DBT, you likely noticed that it can fill a similar role to Hamilton. What DBT does for SQL

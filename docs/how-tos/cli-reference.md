@@ -1,4 +1,4 @@
-# Hamilton CLI
+# Command line interface
 
 This page covers the Hamilton CLI. It is built directly from the CLI, but note that the command `hamilton --help` always provide the most accurate documentation.
 

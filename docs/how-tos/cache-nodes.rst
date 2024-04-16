@@ -1,5 +1,5 @@
 ======================
-Cache Node Computation
+Caching results
 ======================
 
 Sometimes it is convenient to cache intermediate nodes. This is especially useful during development.

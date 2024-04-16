@@ -1,4 +1,4 @@
-# Using Hamilton in a notebook
+# Jupyter notebooks
 
 There are two main ways to use Hamilton in a notebook.
 
