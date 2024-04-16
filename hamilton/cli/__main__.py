@@ -108,7 +108,6 @@ OUTPUT_ANNOTATIONS = Annotated[
 ]
 
 
-
 # TODO add `experiments` for `hamilton.plugins.h_experiments`
 # TODO add `dataflows` submenu to manage locally installed dataflows
 # TODO add `init` to load project template
@@ -308,7 +307,6 @@ def view(
     )
 
 
-
 @cli.command()
 def create_tests(
     ctx: typer.Context,
@@ -322,10 +320,16 @@ def create_tests(
     if output_file_path.is_dir():
         raise ValueError("output_file_path can not be a directory")
 
-    _try_command(cmd=commands.create_tests, input_file_path=python_file_module, output_file_path=output_file_path)
+    _try_command(
+        cmd=commands.create_tests,
+        input_file_path=python_file_module,
+        output_file_path=output_file_path,
+    )
     _response_handler(
         ctx=ctx,
-        response=Response(command="create_tests", success=True, message={"path": str(output_file_path)}),
+        response=Response(
+            command="create_tests", success=True, message={"path": str(output_file_path)}
+        ),
     )
 
 

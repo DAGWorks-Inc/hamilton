@@ -355,10 +355,10 @@ def create_tests(input: Path, output: Path) -> None:
         output_annotations, output_names = _get_functions_and_annotations(output_module)
         strip_output_names = [name.lstrip("test_") for name in output_names]
     else:
-        with open(output, 'a') as f:
+        with open(output, "a") as f:
             f.write(f"import {input.stem}\n")
         _write_import_statement(output, annotations)
-    
+
     new_functions = [name for name in names if name not in strip_output_names]
 
     for name, annotation in zip(names, annotations):
@@ -378,14 +378,8 @@ def _get_test_stub(input_name: str, name: str, annotation: dict) -> str:
         if k == "return":
             k = "expected"
         test_stub += textwrap.indent(
-            f"""{k}: {v.__name__} = {v.__name__}() #TODO fill in""",
-        "\n    "
+            f"""{k}: {v.__name__} = {v.__name__}() #TODO fill in""", "\n    "
         )
-    test_stub += textwrap.indent(
-        f"""assert expected == {input_name}.{name}()""",
-        "\n    "
-    )
+    test_stub += textwrap.indent(f"""assert expected == {input_name}.{name}()""", "\n    ")
 
     return test_stub
-
-
