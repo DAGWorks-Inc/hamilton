@@ -336,6 +336,16 @@ def create_tests(input: Path, output: Path) -> None:
             annotations.append(fn.__annotations__)
         return annotations, names
 
+    def _write_import_statement(output, annotations):
+        unique_types = set()
+        for annotation in annotations:
+            unique_types |= set([v for v in annotation.values()])
+        primitives = (bool, str, int, float, type(None))
+        for t in unique_types:
+            if t not in primitives:
+                with open(output, "a") as f:
+                    f.write(f"from {t.__module__} import {t.__name__}\n")
+
     module = importlib.import_module(input.stem)
     annotations, names = _get_functions_and_annotations(module)
 
@@ -344,7 +354,13 @@ def create_tests(input: Path, output: Path) -> None:
         output_module = importlib.import_module(output.stem)
         output_annotations, output_names = _get_functions_and_annotations(output_module)
         strip_output_names = [name.lstrip("test_") for name in output_names]
+    else:
+        with open(output, 'a') as f:
+            f.write(f"import {input.stem}\n")
+        _write_import_statement(output, annotations)
+    
     new_functions = [name for name in names if name not in strip_output_names]
+
     for name, annotation in zip(names, annotations):
         if name in new_functions:
             test_stub = _get_test_stub(input.stem, name, annotation)
