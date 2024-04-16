@@ -4,6 +4,8 @@
 
 This example showcases how Hamilton can help you write modular data transformations.
 
+![](all_functions.png)
+> Dataflow visualization generated directly from the Hamilton code.
 
 ## Content
 - `notebook.ipynb` is a step-by-step introduction to Hamilton. Start there.

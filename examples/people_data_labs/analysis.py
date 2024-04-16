@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def pdl_data(pdl_file: str, data_dir: str = "data/") -> pd.DataFrame:
-    """Load raw Pêople Data Labs data stored locally"""
+    """Load raw People Data Labs data stored locally"""
     return pd.read_json(Path(data_dir, pdl_file))
 
 
@@ -49,7 +49,7 @@ def employee_count_by_month_df(pdl_data: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def n_company_by_funding_stage(company_info: pd.DataFrame) -> pd.DataFrame:
+def n_company_by_funding_stage(company_info: pd.DataFrame) -> pd.Series:
     """Get the number of company per funding stage"""
     return (
         company_info.groupby("latest_funding_stage")["latest_funding_stage"]

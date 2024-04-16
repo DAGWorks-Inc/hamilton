@@ -5,7 +5,7 @@ from hamilton import driver
 
 def main():
     hamilton_driver = driver.Builder().with_modules(analysis).build()
-    hamilton_driver.display_all_functions("all_functions.png")
+    hamilton_driver.display_all_functions("all_functions.png", orient="TB")
 
     inputs = dict(
         pdl_file="pdl_data.json",
