@@ -3,7 +3,13 @@ from typing import Callable
 import pytest
 
 from hamilton import settings
-from hamilton.function_modifiers import ResolveAt, base, extract_columns, resolve, resolve_from_config
+from hamilton.function_modifiers import (
+    ResolveAt,
+    base,
+    extract_columns,
+    resolve,
+    resolve_from_config,
+)
 
 CONFIG_WITH_POWER_MODE_ENABLED = {
     settings.ENABLE_POWER_USER_MODE: True,
