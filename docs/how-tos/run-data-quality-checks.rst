@@ -1,5 +1,5 @@
 =======================
-Run Data Quality Checks
+Data quality
 =======================
 
 Hamilton comes with data quality included out of the box.

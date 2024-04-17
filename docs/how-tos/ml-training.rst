@@ -1,5 +1,5 @@
 ===============================
-Use Hamilton for Model Training
+Model training
 ===============================
 
 As Hamilton is a generic library for representing dataflows in pandas, it can be used for a wide array of tasks.

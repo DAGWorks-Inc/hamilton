@@ -1,5 +1,5 @@
 ==================
-Load External Data
+Loading data
 ==================
 
 While we've been injecting data in from the driver in previous examples, Hamilton functions are fully capable of loading their own data.

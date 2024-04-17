@@ -1,5 +1,5 @@
 ==========================================
-Use Hamilton for Feature Engineering
+Feature engineering
 ==========================================
 
 Hamilton's roots are in time-series offline feature engineering. But it can be used for any type of feature engineering:

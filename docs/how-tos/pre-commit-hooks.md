@@ -1,4 +1,4 @@
-# Hamilton pre-commit
+# pre-commit hooks
 ## Use pre-commit hooks for safer Hamilton code changes
 
 This page gives an introduction to pre-commit hooks and how to use custom hooks to validate your Hamilton code.

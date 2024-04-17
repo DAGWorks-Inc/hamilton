@@ -1,4 +1,4 @@
-# How to use Hamilton for LLM Workflows
+# LLM workflows
 
 Hamilton is great for describing dataflows, and a lot of "actions" you want
 an "agent" to perform can be described as one, e.g. create an embedding

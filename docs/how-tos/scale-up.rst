@@ -1,5 +1,5 @@
 =====================
-Run Hamilton at Scale
+Scaling computation
 =====================
 
 Hamilton enables a variety of tools for allowing you to scale your data processing by integrating with third-party libraries.

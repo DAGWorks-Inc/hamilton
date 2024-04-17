@@ -1,5 +1,4 @@
-
-Should I define my own Driver?
+Wrapping the Driver
 ------------------------------
 
 The APIs that the Hamilton Driver is built on, are considered internal. So it is possible for you to define your own
