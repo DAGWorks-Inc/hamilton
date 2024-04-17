@@ -1,5 +1,5 @@
 ==============================
-Online transformations
+Microservice
 ==============================
 
 While we've mainly been discussing running Hamilton in a batch environment, it can easily be used
