@@ -87,6 +87,7 @@ parameterized_subdag = recursive.parameterized_subdag
 
 resolve = delayed.resolve
 ResolveAt = delayed.ResolveAt
+resolve_from_config = delayed.resolve_from_config
 
 # materialization stuff
 load_from = adapters.load_from

@@ -148,3 +148,8 @@ class resolve(DynamicResolver):
             if key in config:
                 kwargs[key] = config[key]
         return self.decorate_with(**kwargs)
+
+
+class resolve_from_config(resolve):
+    def __init__(self, *, decorate_with: Callable[..., NodeTransformLifecycle]):
+        super().__init__(when=ResolveAt.CONFIG_AVAILABLE, decorate_with=decorate_with)
