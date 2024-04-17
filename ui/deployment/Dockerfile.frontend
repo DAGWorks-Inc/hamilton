@@ -1,0 +1,29 @@
+FROM node:20
+
+# Set working directory
+WORKDIR /usr/src/app
+
+# Accept environment variables as build arguments
+ARG REACT_APP_AUTH_MODE
+ARG REACT_APP_USE_POSTHOG
+
+# Install app dependencies by copying package.json and package-lock.json
+COPY frontend/package.json frontend/package-lock.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the frontend directory
+COPY frontend/ ./
+
+# Environment variables
+ENV REACT_APP_AUTH_MODE=${REACT_APP_AUTH_MODE}
+ENV REACT_APP_USE_POSTHOG=${REACT_APP_USE_POSTHOG}
+ENV REACT_APP_API_URL=${REACT_APP_API_URL}
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "run", "start"]

@@ -1,0 +1,75 @@
+import os
+import click
+import json
+
+from hamilton_sdk import driver as dw_driver
+from hamilton import base as h_base
+from hamilton import driver as h_driver
+{% for mod in modules %}from components import {{ mod }}
+{% endfor %}
+{#from components import {{ modules | join(", ") }}#}
+from typing import Union
+
+BASE_CONFIG_PATH = os.path.join(
+    os.path.dirname(__file__),
+    "config")
+
+
+def _load_config(config: Union[str, None]) -> dict:
+    if config is None:
+        return {}
+    config_path = os.path.join(BASE_CONFIG_PATH, config + ".json")
+    with open(config_path, "r") as f:
+        return json.load(f)
+
+
+@click.command()
+@click.option("--dry-run", is_flag=True)
+{%  if configs|length > 0 %}@click.option("--config", required=False, default="{{ configs[0] }}")
+{% endif -%}
+@click.option("--api-key", help="API key for the DAGWorks API. \
+    This is taken from the env variable HAMILTON_API_KEY if its not provided.", type=str)
+def run(dry_run: bool, api_key: str, config: str=None):
+    """
+    Runs the {{ template_name }} hamilton DAG with the DAGWorks UI.
+
+    :param dry_run: If true, the DAG will not be logged to DAGWorks
+    """
+    # Load the configuration file (optional). It is used to shape the DAG.
+    config_loaded = _load_config(config)
+    dag_name = f"{{ template_name }}_dag"
+    # if config is not None:
+    #    dag_name += f"_{config}"
+    if api_key is None:
+        api_key = os.environ.get("HAMILTON_API_KEY", None)
+    if not dry_run:
+        dr = dw_driver.Driver(
+            config_loaded,
+            {{ modules | join(",\n            ") }},
+            username="{{ username }}",
+            api_key=api_key,
+            project_id={{ project_id }},
+            dag_name=dag_name,
+            tags={"template" : "{{ template_name }}", "TODO" : "add_more_tags_to_find_your_run_later"},
+{% if not return_df %}            adapter=h_base.SimplePythonGraphAdapter(h_base.DictResult()),{% endif %}
+        )
+    else:
+        dr = h_driver.Driver(
+             config_loaded,
+             {{ modules | join(",\n             ") }},
+{% if not return_df %}             adapter=h_base.SimplePythonGraphAdapter(h_base.DictResult()),{% endif %}
+        )
+    inputs = {{ inputs | tojson | safe }}{% if use_tags_for_output %}
+    all_possible_outputs = dr.list_available_variables()
+    desired_features = [
+        o.name for o in all_possible_outputs
+        if o.tags.get("{{ use_tags_for_output[0] }}") == "{{ use_tags_for_output[1] }}"]
+    result = dr.execute(desired_features, inputs=inputs)
+    {% else %}
+    result = dr.execute({{ final_vars }}, inputs=inputs)
+    {% endif %}
+    print(result)
+
+
+if __name__ == '__main__':
+    run(auto_envvar_prefix='DAGWORKS')

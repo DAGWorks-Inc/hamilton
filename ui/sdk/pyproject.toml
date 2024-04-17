@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools >= 61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sf-hamilton-sdk"
+description = "Hamilton SDK for reading and writing to the Hamilton backend APIs that support the UI."
+authors = [
+    {name = "Stefan Krawczyk", email = "stefan@dagworks.io"},
+    {name = "Elijah ben Izzy", email = "elijah@dagworks.io"}
+]
+readme = "README.md"
+keywords = ["hamilton", "dagworks", "observability"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
+]
+requires-python = ">=3.7, <4"
+dynamic = ["dependencies", "optional-dependencies", "version"]
+
+[project.urls]
+"Homepage" = "https://github.com/dagworks-inc/hamilton/"
+"Bug Reports" = "https://github.com/dagworks-inc/hamilton/issues"
+"Source" = "https://github.com/dagworks-inc/hamilton/ui/sdk"
+"Documenation" = "https://hamilton.dagworks.io/"
+
+[project.scripts]
+hamilton-sdk = "hamilton_sdk.cli.cli:cli"
+
+# [project.optional-dependencies]
+# Add optional dependencies here, one per line
+
+[options]
+packages = { find = { exclude = ["tests"] } }
+include_package_data = true
+install_requires = [
+]
+zip_safe = false
+
+[tool.setuptools.package-data]
+# If there are data files included in your packages that need to be
+# installed, specify them here.
+"hamilton_sdk.cli.templates" = [
+    "common/*",
+    "*/template_data.json",
+    "*/data/*",
+    "common/.env.jinja2",
+    "*/config/*"]
+
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"]}
+optional-dependencies.test = { file = ["requirements-test.txt"]}
+version = { attr = "hamilton_sdk.__version__" }

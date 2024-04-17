@@ -1,0 +1,13 @@
+order_id,customer_name,order_date,product_name,quantity
+101,John Smith,2021-01-01,Apple,2
+101,John Smith,2021-01-01,Orange,1
+101,John Smith,2021-01-01,Banana,3
+102,Jane Doe,2021-02-01,Grape,4
+102,Jane Doe,2021-02-01,Apple,1
+102,Jane Doe,2021-02-01,Watermelon,2
+103,Bob Johnson,2021-03-01,Orange,3
+103,Bob Johnson,2021-03-01,Watermelon,1
+103,Bob Johnson,2021-03-01,Pineapple,2
+104,John Smith,2021-04-01,Apple,2
+104,John Smith,2021-04-01,Orange,1
+104,John Smith,2021-04-01,Banana,3

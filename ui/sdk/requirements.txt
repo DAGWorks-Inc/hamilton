@@ -1,0 +1,9 @@
+aiohttp
+click
+gitpython
+posthog
+requests
+sf-hamilton>=1.43.0
+sqlglot
+jinja2 # for SDK, todo -- move out
+loguru # for init, todo -- move out

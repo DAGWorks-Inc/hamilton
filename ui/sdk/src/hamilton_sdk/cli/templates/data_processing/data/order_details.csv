@@ -1,0 +1,13 @@
+order_id,product_name,unit_price
+101,Apple,1.00
+101,Orange,0.50
+101,Banana,0.25
+102,Grape,2.00
+102,Apple,1.00
+102,Watermelon,3.50
+103,Orange,0.50
+103,Watermelon,3.50
+103,Pineapple,2.50
+104,Apple,1.00
+104,Orange,0.50
+104,Banana,0.25

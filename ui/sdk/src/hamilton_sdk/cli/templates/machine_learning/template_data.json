@@ -1,0 +1,13 @@
+{
+  "modules" : ["iris_loader", "feature_transforms", "model_fitting", "models"],
+  "configs" : [],
+  "return_df": false,
+  "inputs" :  {},
+  "requirements" : ["pandas", "sf-hamilton", "scikit-learn"],
+  "use_tags_for_output" : null,
+  "final_vars" : [
+    "best_model"
+  ],
+  "template_description": "This template shows a ML pipeline. It shows how one could split up functions into modules. It also shows how to use `@subdag` to fit different models in the same DAG run."
+
+}

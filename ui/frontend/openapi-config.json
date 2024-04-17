@@ -1,0 +1,8 @@
+{
+  "schemaFile": "http://127.0.0.1:8000/api/openapi.json",
+  "apiFile": "./src/state/api/emptyApi.ts",
+  "apiImport": "emptySplitApi",
+  "outputFile": "./src/state/api/backendApiRaw.ts",
+  "exportName": "backendApi",
+  "hooks": true
+}

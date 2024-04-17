@@ -1,0 +1,28 @@
+# pre-commit hooks require a user to have installed `pre-commit`:
+#   $ brew install pre-commit
+# Then install the hooks within the repo:
+#   $ cd /PATH/TO/REPO
+#   $ pre-commit install
+
+repos:
+-   repo: https://github.com/charliermarsh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.0.265
+    hooks:
+        - id: ruff
+          args: [ --fix, --exit-non-zero-on-fix ]
+-   repo: https://github.com/ambv/black
+    rev: 23.3.0
+    hooks:
+    - id: black
+      args: [--line-length=100]
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: trailing-whitespace
+    # ensures files are either empty or end with a blank line
+    -   id: end-of-file-fixer
+    # sorts requirements
+    -   id: requirements-txt-fixer
+    # valid python file
+    -   id: check-ast

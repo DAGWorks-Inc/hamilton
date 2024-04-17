@@ -1,0 +1,21 @@
+{
+  "modules" : ["transforms"],
+  "configs" : [],
+  "return_df": true,
+  "inputs" :  {
+    "signups_path" : "data/signups.csv",
+    "spend_path" : "data/spend.csv"
+  },
+  "requirements" : ["pandas", "sf-hamilton"],
+  "use_tags_for_output" : null,
+  "final_vars" : [
+    "spend",
+    "signups",
+    "avg_3wk_spend",
+    "spend_per_signup",
+    "spend_mean",
+    "spend_zero_mean",
+    "spend_std_dev",
+    "spend_zero_mean_unit_variance"],
+  "template_description": "This is a simple hello world app that loads data and transforms it. Its meant to represent the basics of Hamilton, containing none of the advanced features. You can mess around with it at tryhamilton.dev."
+}

@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:12
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -P password" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: dagworks/ui-backend:latest
+    build:
+        context: ./
+        dockerfile: deployment/Dockerfile.backend
+    entrypoint: ["/bin/bash", "-c", "cd /code/server && ls && ./entrypoint.sh"]
+    volumes:
+      - ./backend:/code
+      - backend_data:/data/
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=password # Purely for local! Do not deploy to production!
+      - HAMILTON_BLOB_STORE=local
+      - HAMILTON_ENV=local # local env
+      - HAMILTON_AUTH_PROVIDER=local # local authentication means unauthenticated -- do not use in production!!
+      - HAMILTON_LOCAL_BLOB_DIR=/data/blobs # TODO -- set this up to be a better one
+      - DJANGO_SECRET_KEY=do_not_use_in_production
+      - HAMILTON_TELEMETRY_ENABLED=${HAMILTON_TELEMETRY_ENABLED}
+    depends_on:
+      - db
+
+  frontend:
+    image: dagworks/ui-frontend:latest
+    build:
+      context: ./
+      dockerfile: deployment/Dockerfile.frontend
+      args:
+        - REACT_APP_AUTH_MODE=local
+        - REACT_APP_USE_POSTHOG=false
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_AUTH_MODE=local
+      - REACT_APP_USE_POSTHOG=false
+      - REACT_APP_API_URL=http://backend:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_data:
