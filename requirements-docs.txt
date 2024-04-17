@@ -5,6 +5,8 @@ dask-expr
 dask[distributed]
 ddtrace
 diskcache
+# required for all the plugins
+dlt
 # furo -- install from main for now until the next release is out:
 git+https://github.com/pradyunsg/furo@main
 gitpython # Required for parsing git info for generation of data-adapter docs
@@ -16,7 +18,6 @@ mock==1.0.1 # read the docs pins
 myst-parser==2.0.0  # latest version of myst at this time
 pandera
 pillow
-# required for all the plugins
 polars
 pyarrow >= 1.0.0
 pyspark
