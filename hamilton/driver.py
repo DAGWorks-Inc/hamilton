@@ -1,5 +1,6 @@
 import abc
 import functools
+import importlib
 import json
 import logging
 import operator
@@ -11,7 +12,7 @@ import typing
 import uuid
 from datetime import datetime
 from types import ModuleType
-from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Collection, Dict, List, Literal, Optional, Set, Tuple, Union
 
 import pandas as pd
 
@@ -1810,11 +1811,46 @@ class Builder:
             _use_legacy_adapter=False,
         )
 
+    @staticmethod
+    def rebuild(
+        driver: Optional[Driver] = None,
+        config: Optional[Dict[str, Any]] = None,
+        modules: Optional[List[ModuleType]] = None,
+        adapters: Optional[
+            Union[lifecycle_base.LifecycleAdapter, List[lifecycle_base.LifecycleAdapter]]
+        ] = None,
+        graph_executor: Optional[GraphExecutor] = None,
+        reload_modules: Literal[True, False, "strict"] = False,
+    ) -> Driver:
+        _driver = driver if driver else Builder().build()
+        _config = config if config else _driver.graph.config
+        _modules = modules if modules else _driver.graph_modules
+        _adapter = adapters if adapters else _driver.adapter
+        _graph_executor = graph_executor if graph_executor else _driver.graph_executor
+
+        if reload_modules:
+            new_modules = []
+            for m in _modules:
+                try:
+                    new_module = importlib.reload(m)
+                except ImportError as e:
+                    if reload_modules == "strict":
+                        raise e
+                    new_module = m
+                new_modules.append(new_module)
+            _modules = new_modules
+
+        return Driver(
+            _config,
+            *_modules,
+            adapter=_adapter,
+            _graph_executor=_graph_executor,
+            _use_legacy_adapter=False,
+        )
+
 
 if __name__ == "__main__":
     """some example test code"""
-    import importlib
-
     formatter = logging.Formatter("[%(levelname)s] %(asctime)s %(name)s(%(lineno)s): %(message)s")
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(formatter)
