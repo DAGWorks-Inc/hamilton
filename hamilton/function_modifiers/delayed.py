@@ -151,5 +151,15 @@ class resolve(DynamicResolver):
 
 
 class resolve_from_config(resolve):
+    """Decorator class to delay evaluation of decorators until after the configuration is available.
+    Note: this is a power-user feature, and you have to enable power-user mode! To do so, you have
+    to add the configuration hamilton.enable_power_user_mode=True to the config you pass into the
+    driver.
+
+    This is a convenience decorator that is a subclass of `resolve` and passes
+    `ResolveAt.CONFIG_AVAILABLE` to the `when` argument such that the decorator is resoled at
+    compile time, E.G. when the driver is instantiated.
+    """
+
     def __init__(self, *, decorate_with: Callable[..., NodeTransformLifecycle]):
         super().__init__(when=ResolveAt.CONFIG_AVAILABLE, decorate_with=decorate_with)
