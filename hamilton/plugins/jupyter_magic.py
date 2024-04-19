@@ -14,26 +14,118 @@ If you are developing on this module you'll then want to use:
 
 """
 
-import json
+import ast
+import importlib
 import os
-import sys
 from pathlib import Path
 from types import ModuleType
+from typing import Any, Dict, List, Literal, Optional, Set, Union
 
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
 from IPython.core.magic_arguments import argument, magic_arguments, parse_argstring
+from IPython.core.shellapp import InteractiveShellApp
 from IPython.display import HTML, display
 
-from hamilton import ad_hoc_utils, driver, lifecycle
+from hamilton import ad_hoc_utils, driver
+from hamilton.lifecycle import base as lifecycle_base
 
 
-def create_module(source: str, name: str = None) -> ModuleType:
-    """Create a temporary module from source code"""
-    module_name = ad_hoc_utils._generate_unique_temp_module_name() if name is None else name
-    module_object = ModuleType(module_name, "")
-    sys.modules[module_name] = module_object
-    exec(source, module_object.__dict__)
-    return module_object
+def get_assigned_variables(module_node: ast.Module) -> Set[str]:
+    """Get the set of variable names assigned in a AST Module"""
+    assigned_vars = set()
+
+    def visit_node(ast_node):
+        if isinstance(ast_node, ast.Assign):
+            for target in ast_node.targets:
+                if isinstance(target, ast.Name):
+                    assigned_vars.add(target.id)
+
+        for child_node in ast.iter_child_nodes(ast_node):
+            visit_node(child_node)
+
+    visit_node(module_node)
+    return assigned_vars
+
+
+def get_function_assigned_variables(code):
+    assigned_variables = []
+
+    def visit_Assign(node):
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                assigned_variables.append(target.id)
+
+    tree = ast.parse(code)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            for sub_node in ast.walk(node):
+                if isinstance(sub_node, ast.Assign):
+                    visit_Assign(sub_node)
+
+    return assigned_variables
+
+
+def execute_and_get_assigned_values(shell: InteractiveShellApp, cell: str) -> Dict[str, Any]:
+    """Execute source code from a cell in the user namespace and collect
+    the values of all assigned variables into a dictionary.
+    """
+    shell.ex(cell)
+    expr = shell.input_transformer_manager.transform_cell(cell)
+    expr_ast = shell.compile.ast_parse(expr)
+    return {name: shell.user_ns[name] for name in get_assigned_variables(expr_ast)}
+
+
+def rebuild_driver(
+    dr: Optional[driver.Driver] = None,
+    config: Optional[Dict[str, Any]] = None,
+    modules: Optional[List[ModuleType]] = None,
+    adapters: Optional[
+        Union[lifecycle_base.LifecycleAdapter, List[lifecycle_base.LifecycleAdapter]]
+    ] = None,
+    graph_executor: Optional[driver.GraphExecutor] = None,
+    reload_modules: Literal[True, False, "strict"] = False,
+) -> driver.Driver:
+    _driver = dr if dr else driver.Builder().build()
+    _config = config if config else _driver.graph.config
+    _modules = modules if modules else _driver.graph_modules
+    _adapter = adapters if adapters else _driver.adapter
+    _graph_executor = graph_executor if graph_executor else _driver.graph_executor
+
+    if reload_modules:
+        new_modules = []
+        for m in _modules:
+            try:
+                new_module = importlib.reload(m)
+            except ImportError as e:
+                if reload_modules == "strict":
+                    raise e
+                new_module = m
+            new_modules.append(new_module)
+        _modules = new_modules
+
+    return driver.Driver(
+        _config,
+        *_modules,
+        adapter=_adapter,
+        _graph_executor=_graph_executor,
+        _use_legacy_adapter=False,
+    )
+
+
+def normalize_result_names(node_name: str) -> str:
+    return node_name.replace(".", "__")
+
+
+def display_in_databricks(dot):
+    try:
+        display(HTML(dot.pipe(format="svg").decode("utf-8")))
+    except Exception as e:
+        print(
+            f"Failed to display graph: {e}\n"
+            "Please ensure graphviz is installed via `%sh apt install -y graphviz`"
+        )
+        return
+    return dot
 
 
 def insert_cell_with_content():
@@ -87,74 +179,6 @@ def insert_cell_with_content():
     display(HTML(js_script))
 
 
-def find_all_hamilton_drivers_using_this_module(shell, module_name: str) -> list:
-    """Find all Hamilton drivers in the notebook that use the module `module_name`.
-
-    :param shell: the ipython shell object
-    :param module_name: the module name to search for
-    :return: the list of (driver variable name, drivers) that use the module
-    """
-    driver_instances = {
-        var_name: shell.user_ns[var_name]
-        for var_name in shell.user_ns
-        if isinstance(shell.user_ns[var_name], driver.Driver) and var_name != f"{module_name}_dr"
-    }
-    impacted_drivers = []
-    for var_name, dr in driver_instances.items():
-        for driver_module in dr.graph_modules:
-            if driver_module.__name__ == module_name:
-                impacted_drivers.append((var_name, dr))
-                break
-    return impacted_drivers
-
-
-def rebuild_drivers(shell, module_name: str, module_object: ModuleType, verbosity: int = 1) -> dict:
-    """Function to rebuild drivers that use the module `module_name` with the new module `module_object`.
-
-    This finds the drivers and rebuilds them if it knows how. It will skip rebuilding if the driver has an adapter.
-
-    :param shell:
-    :param module_name:
-    :param module_object:
-    :param verbosity:
-    :return:
-    """
-    impacted_drivers = find_all_hamilton_drivers_using_this_module(shell, module_name)
-    drivers_rebuilt = {}
-    for var_name, dr in impacted_drivers:
-        modules_to_use = [mod for mod in dr.graph_modules if mod.__name__ != module_name]
-        modules_to_use.append(module_object)
-        # TODO: make this more robust by providing some better APIs.
-        if (
-            dr.adapter
-            and hasattr(dr.adapter, "_adapters")
-            and (
-                not dr.adapter._adapters
-                or isinstance(dr.adapter._adapters[0], lifecycle.base.LifecycleAdapterSet)
-            )
-        ):
-            # TODO: make this more robust with a better API
-            _config = dr.graph._config
-            dr = (
-                driver.Builder()
-                .with_modules(*modules_to_use)
-                .with_config(_config)
-                .with_adapter(dr.adapter)
-                .build()
-            )
-            drivers_rebuilt[var_name] = dr
-
-            if verbosity > 0:
-                print(
-                    f"Rebuilt {var_name} with module {module_name}, using it's config of {_config}"
-                )
-        else:
-            if verbosity > 0:
-                print(f"Driver {var_name} has an adapter passed, skipping rebuild.")
-
-    return drivers_rebuilt
-
-
 def determine_notebook_type() -> str:
     if "DATABRICKS_RUNTIME_VERSION" in os.environ:
         return "databricks"
@@ -163,24 +187,54 @@ def determine_notebook_type() -> str:
 
 @magics_class
 class HamiltonMagics(Magics):
-    """Magics to facilitate Hamilton development in Jupyter notebooks"""
+    """Magics to facilitate interactive Hamilton development in notebooks.
+
+    Use `%%cell_to_module` to define a Python module in a single cell. A Hamilton Driver
+    is automatically built using its content.
+
+    Use `%%set_driver` to explicitly define a Driver, allowing you to:
+    - pass a Driver config
+    - pass external Python modules
+    - pass Adapters
+    - pass Executors
+    Then, `%%cell_to_module` will automatically add its module to this Driver.
+
+    Use `%%set_inputs`, `%%set_overrides`, and `%%set_final_vars` to customize execution.
+    These values will be used when `%%cell_to_module` receives the `--execute` flag.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.driver = None
+        self.external_modules = list()
+        self.inputs = dict()
+        self.overrides = dict()
+        self.final_vars = list()  # empty list will be converted to "all variables"
+        self.display_config = dict()
+
+        if not hasattr(self, "notebook_env"):
+            self.notebook_env = determine_notebook_type()
 
     @magic_arguments()  # needed on top to enable parsing
+    @argument("-m", "--module_name", help="Module name to provide. Default is jupyter_module.")
     @argument(
-        "-m", "--module_name", help="Module name to provide. Default is jupyter_module."
-    )  # keyword / optional arg
+        "-x",
+        "--execute",
+        action="store_true",
+        help="Flag to execute the dataflow using the Driver, final_vars, inputs, and overrides.",
+    )
     @argument(
-        "-c", "--config", help="JSON config, or variable name containing config to use."
-    )  # keyword / optional arg
+        "-w",
+        "--write_to_file",
+        action="store_true",
+        help="Flag to write the cell to a Python file named according to {module_name}.py",
+    )
     @argument(
-        "-r", "--rebuild-drivers", action="store_true", help="Flag to rebuild drivers"
-    )  # Flag / optional arg
-    @argument(
-        "-d", "--display", action="store_true", help="Flag to visualize dataflow."
-    )  # Flag / optional arg
-    @argument(
-        "-v", "--verbosity", type=int, default=1, help="0 to hide. 1 is normal, default"
-    )  # keyword / optional arg
+        "-d",
+        "--display",
+        action="store_true",
+        help="Flag to display all functions or the execution path (if --execute is present).",
+    )
     @cell_magic
     def cell_to_module(self, line, cell):
         """Execute the cell and dynamically create a Python module from its content.
@@ -188,17 +242,6 @@ class HamiltonMagics(Magics):
 
         > %%cell_to_module -m MODULE_NAME --display --rebuild-drivers
         """
-        if "--help" in line.split():
-            print("Help for %%cell_to_module magic:")
-            print("  -m, --module_name: Module name to provide. Default is jupyter_module.")
-            print("  -c, --config: JSON config string, or variable name containing config to use.")
-            print("  -r, --rebuild-drivers: Flag to rebuild drivers.")
-            print("  -d, --display: Flag to visualize dataflow.")
-            print("  -v, --verbosity: of standard output. 0 to hide. 1 is normal, default.")
-            return  # Exit early
-        if not hasattr(self, "notebook_env"):
-            # doing this so I don't have to deal with the constructor
-            self.notebook_env = determine_notebook_type()
         # shell.ex() is equivalent to exec(), but in the user namespace (i.e. notebook context).
         # This allows imports and functions defined in the magic cell %%cell_to_module to be
         # directly accessed from the notebook
@@ -206,49 +249,117 @@ class HamiltonMagics(Magics):
 
         args = parse_argstring(self.cell_to_module, line)  # specify how to parse by passing method
         module_name = "jupyter_module" if args.module_name is None else args.module_name
+        if args.write_to_file:
+            with open(f"{module_name}.py", "w") as f:
+                f.write(cell)
 
-        display_config = {}
-        if args.config:
-            if args.config in self.shell.user_ns:
-                display_config = self.shell.user_ns[args.config]
-            else:
-                try:
-                    if args.config.startswith("'") or args.config.startswith('"'):
-                        # strip quotes if present
-                        args.config = args.config[1:-1]
-                    display_config = json.loads(args.config)
-                except json.JSONDecodeError:
-                    print("Failed to parse config as JSON. Please ensure it's a valid JSON string:")
-                    print(args.config)
-
-        module_object = create_module(cell, module_name)
-
-        # shell.push() assign a variable in the notebook. The dictionary keys are variable name
+        # create a module from the cell and push it to user namespace
+        module_object = ad_hoc_utils.module_from_source(cell)
         self.shell.push({module_name: module_object})
 
-        # shell.user_ns is a dictionary of all variables in the notebook
-        # rebuild drivers that use this module
-        if args.rebuild_drivers:
-            rebuilt_drivers = rebuild_drivers(
-                self.shell, module_name, module_object, verbosity=args.verbosity
-            )
-            self.shell.user_ns.update(rebuilt_drivers)
+        # update the Driver, keeps existing modules, config, adapter; update it in user ns
+        self.driver = rebuild_driver(
+            self.driver,
+            modules=[module_object] + self.external_modules,
+        )
+        self.shell.push({self.driver_name: self.driver})
 
-        # create a driver to display things for every cell with %%with_functions
-        dr = driver.Builder().with_modules(module_object).with_config(display_config).build()
-        self.shell.push({f"{module_name}_dr": dr})
-        if args.display:
-            graphviz_obj = dr.display_all_functions()
-            if self.notebook_env == "databricks" and graphviz_obj:
-                try:
-                    display(HTML(graphviz_obj.pipe(format="svg").decode("utf-8")))
-                except Exception as e:
-                    print(f"Failed to display graph: {e}")
-                    print("Please ensure graphviz is installed via `%sh apt install -y graphviz`")
+        # we don't assign the full list to self.final_vars, otherwise the next iteration
+        # won't pickup on newly available nodes
+        if self.final_vars == []:
+            final_vars = [
+                n.name for n in self.driver.list_available_variables() if not n.is_external_input
+            ]
+        else:
+            final_vars = self.final_vars
+
+        try:
+            if args.execute:
+                dot = self.driver.visualize_execution(
+                    final_vars=final_vars,
+                    inputs=self.inputs,
+                    overrides=self.overrides,
+                    **self.display_config,
+                )
+            else:
+                dot = self.driver.display_all_functions(**self.display_config)
+        except Exception as e:
+            print(f"The display config: {self.display_config}\n\n" f"Failed with exception {e}")
+            self.driver.display_all_functions()
+
+        if self.notebook_env == "databricks":
+            display_in_databricks(dot)
+        else:
+            display(dot)
+
+        if args.execute:
+            results = self.driver.execute(
+                final_vars=final_vars,
+                inputs=self.inputs,
+                overrides=self.overrides,
+            )
+            results = {normalize_result_names(name): value for name, value in results.items()}
+            self.shell.push(results)
+
+    @cell_magic
+    def set_driver(self, line: str, cell: str):
+        """Execute the cell and stores the defined Driver.
+
+        The cell can contain variable assignment, but only the first Driver
+        defined will be stored.
+        """
+        assigned_values = execute_and_get_assigned_values(self.shell, cell)
+
+        for name, value in assigned_values.items():
+            if isinstance(value, driver.Driver):
+                self.driver = value
+                self.driver_name = name
+                self.external_modules = list(value.graph_modules)
                 return
-            # return will go to the output cell. To display multiple elements, use
-            # IPython.display.display(print("hello"), dr.display_all_functions(), ...)
-            return graphviz_obj
+
+        raise ValueError("No Driver variable found in cell.")
+
+    @magic_arguments()
+    @argument(
+        "--all",
+        action="store_true",
+        help="Flag to include all variables and ignore the cell content.",
+    )
+    @cell_magic
+    def set_final_vars(self, line: str, cell: str):
+        """Execute the cell and stores the list of strings passed.
+
+        The cell should contain a single variable assignment, which is a list of strings.
+        """
+        args = parse_argstring(self.set_final_vars, line)
+        if args.all:
+            self.final_vars = []
+            return
+
+        assigned_values = execute_and_get_assigned_values(self.shell, cell)
+
+        if len(assigned_values) != 1:
+            raise ValueError("The cell should contain a single variable that's a list of strings.")
+
+        key, value = next(iter(assigned_values.items()))
+        if not isinstance(assigned_values[key], list):
+            raise TypeError(f"The variable `{key}` isn't a list.")
+
+        self.final_vars = value
+
+    @cell_magic
+    def set_inputs(self, line: str, cell: str):
+        """Execute the cell and store all assigned variables as inputs"""
+        self.inputs = execute_and_get_assigned_values(self.shell, cell)
+
+    @cell_magic
+    def set_overrides(self, line: str, cell: str):
+        """Execute the cell and store all assigned variables as overrides"""
+        self.overrides = execute_and_get_assigned_values(self.shell, cell)
+
+    @cell_magic
+    def set_display_config(self, line: str, cell: str):
+        self.display_config = execute_and_get_assigned_values(self.shell, cell)
 
     @line_magic
     def insert_module(self, line):
@@ -266,12 +377,11 @@ class HamiltonMagics(Magics):
         # insert our custom %%with_functions magic at the top of the cell
         header = f"%%cell_to_module -m {module_path.stem}\n\n"
         module_source = module_path.read_text()
-
         # insert source code as text in the next cell
         self.shell.set_next_input(header + module_source, replace=False)
 
 
-def load_ipython_extension(ipython):
+def load_ipython_extension(ipython: InteractiveShellApp):
     """
     Any module file that define a function named `load_ipython_extension`
     can be loaded via `%load_ext module.path` or be configured to be
