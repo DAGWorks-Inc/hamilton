@@ -3,7 +3,13 @@ from typing import Callable
 import pytest
 
 from hamilton import settings
-from hamilton.function_modifiers import ResolveAt, base, extract_columns, resolve
+from hamilton.function_modifiers import (
+    ResolveAt,
+    base,
+    extract_columns,
+    resolve,
+    resolve_from_config,
+)
 
 CONFIG_WITH_POWER_MODE_ENABLED = {
     settings.ENABLE_POWER_USER_MODE: True,
@@ -47,6 +53,19 @@ def test_extract_and_validate_params_unhappy(fn: Callable):
 def test_dynamic_resolves():
     decorator = resolve(
         when=ResolveAt.CONFIG_AVAILABLE,
+        decorate_with=lambda cols_to_extract: extract_columns(*cols_to_extract),
+    )
+    decorator_resolved = decorator.resolve(
+        {"cols_to_extract": ["a", "b"], **CONFIG_WITH_POWER_MODE_ENABLED}, fn=test_dynamic_resolves
+    )
+    # This uses an internal component of extract_columns
+    # We may want to add a little more comprehensive testing
+    # But for now this will work
+    assert decorator_resolved.columns == ("a", "b")
+
+
+def test_dynamic_resolve_with_configs():
+    decorator = resolve_from_config(
         decorate_with=lambda cols_to_extract: extract_columns(*cols_to_extract),
     )
     decorator_resolved = decorator.resolve(
