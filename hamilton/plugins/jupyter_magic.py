@@ -206,6 +206,7 @@ class HamiltonMagics(Magics):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.driver = None
+        self.driver_name = None
         self.external_modules = list()
         self.inputs = dict()
         self.overrides = dict()
