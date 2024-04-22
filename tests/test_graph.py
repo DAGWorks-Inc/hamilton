@@ -688,7 +688,8 @@ def test_function_graph_has_cycles_false():
 def test_function_graph_display(tmp_path: pathlib.Path):
     """Tests that display saves a file"""
     dot_file_path = tmp_path / "dag"
-    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    config = {"b": 1, "c": 2}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
     node_modifiers = {"B": {graph.VisualizationNodeModifiers.IS_OUTPUT}}
     all_nodes = set()
     for n in fg.get_nodes():
@@ -709,6 +710,8 @@ def test_function_graph_display(tmp_path: pathlib.Path):
             '\tA [label=<<b>A</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
             '\tB [label=<<b>B</b><br /><br /><i>int</i>> fillcolor="#FFC857" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
             '\tC [label=<<b>C</b><br /><br /><i>int</i>> fillcolor="#b4d8e4" fontname=Helvetica margin=0.15 shape=rectangle style="rounded,filled"]\n',
+            "\tb [label=<<b>b</b><br /><br /><i>1</i>> fontname=Helvetica shape=note style=filled]\n",
+            "\tc [label=<<b>c</b><br /><br /><i>2</i>> fontname=Helvetica shape=note style=filled]\n",
             "\t_A_inputs -> A\n",
             # commenting out input node: '\t_A_inputs [label=<<table border="0"><tr><td>c</td><td>int</td></tr><tr><td>b</td><td>int</td></tr></table>> fontname=Helvetica margin=0.15 shape=rectangle style=dashed]\n',
             "\tgraph [compound=true concentrate=true rankdir=LR ranksep=0.4 style=filled]\n",
@@ -726,6 +729,7 @@ def test_function_graph_display(tmp_path: pathlib.Path):
         output_file_path=str(dot_file_path),
         render_kwargs={"view": False},
         node_modifiers=node_modifiers,
+        config=config,
     )
     dot = dot_file_path.open("r").readlines()
     dot_set = set(dot)
@@ -735,9 +739,10 @@ def test_function_graph_display(tmp_path: pathlib.Path):
 
 def test_function_graph_display_no_dot_output(tmp_path: pathlib.Path):
     dot_file_path = tmp_path / "dag"
-    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    config = {"b": 1, "c": 2}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
 
-    fg.display(set(fg.get_nodes()), output_file_path=None)
+    fg.display(set(fg.get_nodes()), output_file_path=None, config=config)
 
     assert not dot_file_path.exists()
 
@@ -746,12 +751,14 @@ def test_function_graph_display_custom_style_node():
     def _styling_function(*, node, node_class):
         return dict(fill_color="aquamarine"), None, "legend_key"
 
-    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    config = {"b": 1, "c": 2}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
 
     digraph = fg.display(
         set(fg.get_nodes()),
         output_file_path=None,
         custom_style_function=_styling_function,
+        config=config,
     )
 
     key_found = False
@@ -767,12 +774,14 @@ def test_function_graph_display_custom_style_legend():
     def _styling_function(*, node, node_class):
         return dict(fill_color="aquamarine"), None, "legend_key"
 
-    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    config = {"b": 1, "c": 2}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
 
     digraph = fg.display(
         set(fg.get_nodes()),
         output_file_path=None,
         custom_style_function=_styling_function,
+        config=config,
     )
 
     key_found = False
@@ -794,12 +803,14 @@ def test_function_graph_display_custom_style_tag():
 
     nodes = create_testing_nodes()
     nodes["A"].tags["some_key"] = "some_value"
-    fg = graph.FunctionGraph(nodes, config={"b": 1, "c": 2})
+    config = {"b": 1, "c": 2}
+    fg = graph.FunctionGraph(nodes, config=config)
 
     digraph = fg.display(
         set(fg.get_nodes()),
         output_file_path=None,
         custom_style_function=_styling_function,
+        config=config,
     )
 
     # check that style is only applied to tagged nodes
@@ -817,13 +828,15 @@ def test_function_graph_display_custom_style_tag():
 @pytest.mark.parametrize("show_legend", [(True), (False)])
 def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path):
     dot_file_path = tmp_path / "dag.png"
-    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    config = {"b": 1, "c": 2}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
 
     fg.display(
         set(fg.get_nodes()),
         output_file_path=str(dot_file_path),
         render_kwargs={"view": False},
         show_legend=show_legend,
+        config=config,
     )
     dot_file = pathlib.Path(os.path.splitext(str(dot_file_path))[0])
     dot = dot_file.open("r").read()
@@ -835,13 +848,15 @@ def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path
 @pytest.mark.parametrize("orient", [("LR"), ("TB"), ("RL"), ("BT")])
 def test_function_graph_display_orient(orient: str, tmp_path: pathlib.Path):
     dot_file_path = tmp_path / "dag"
-    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    config = {"b": 1, "c": 2}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
 
     fg.display(
         set(fg.get_nodes()),
         output_file_path=str(dot_file_path),
         render_kwargs={"view": False},
         orient=orient,
+        config=config,
     )
     dot = dot_file_path.open("r").read()
 
@@ -852,13 +867,15 @@ def test_function_graph_display_orient(orient: str, tmp_path: pathlib.Path):
 @pytest.mark.parametrize("hide_inputs", [(True,), (False,)])
 def test_function_graph_display_inputs(hide_inputs: bool, tmp_path: pathlib.Path):
     dot_file_path = tmp_path / "dag"
-    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    config = {"b": 1, "c": 2}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
 
     fg.display(
         set(fg.get_nodes()),
         output_file_path=str(dot_file_path),
         render_kwargs={"view": False},
         hide_inputs=hide_inputs,
+        config=config,
     )
     dot_lines = dot_file_path.open("r").readlines()
 
@@ -868,14 +885,17 @@ def test_function_graph_display_inputs(hide_inputs: bool, tmp_path: pathlib.Path
 
 def test_function_graph_display_without_saving():
     """Tests that display works when None is passed in for path"""
-    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={"b": 1, "c": 2})
+    config = {"b": 1, "c": 2}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
     all_nodes = set()
     node_modifiers = {"B": {graph.VisualizationNodeModifiers.IS_OUTPUT}}
     for n in fg.get_nodes():
         if n.user_defined:
             node_modifiers[n.name] = {graph.VisualizationNodeModifiers.IS_USER_INPUT}
         all_nodes.add(n)
-    digraph = fg.display(all_nodes, output_file_path=None, node_modifiers=node_modifiers)
+    digraph = fg.display(
+        all_nodes, output_file_path=None, node_modifiers=node_modifiers, config=config
+    )
     assert digraph is not None
     import graphviz
 
@@ -891,13 +911,15 @@ def test_function_graph_display_fields(display_fields: bool, tmp_path: pathlib.P
         pass
 
     mod = ad_hoc_utils.create_temporary_module(df_with_schema)
-    fg = graph.FunctionGraph.from_modules(mod, config={})
+    config = {}
+    fg = graph.FunctionGraph.from_modules(mod, config=config)
 
     fg.display(
         set(fg.get_nodes()),
         output_file_path=str(dot_file_path),
         render_kwargs={"view": False},
         display_fields=display_fields,
+        config=config,
     )
     dot_lines = dot_file_path.open("r").readlines()
     if display_fields:
@@ -927,13 +949,15 @@ def test_function_graph_display_fields_shared_schema(tmp_path: pathlib.Path):
         pass
 
     mod = ad_hoc_utils.create_temporary_module(df_1_with_schema, df_2_with_schema)
-    fg = graph.FunctionGraph.from_modules(mod, config={})
+    config = {}
+    fg = graph.FunctionGraph.from_modules(mod, config=config)
 
     fg.display(
         set(fg.get_nodes()),
         output_file_path=str(dot_file_path),
         render_kwargs={"view": False},
         display_fields=True,
+        config=config,
     )
     dot_lines = dot_file_path.open("r").readlines()
 
@@ -946,9 +970,47 @@ def test_function_graph_display_fields_shared_schema(tmp_path: pathlib.Path):
     assert len(_get_occurances("baz=")) == 2
 
 
+def test_function_graph_display_config_node():
+    """Check if config is displayed by low-level hamilton.graph.FunctionGraph.display"""
+    config = {"X": 1}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
+
+    dot = fg.display(set(fg.get_nodes()), config=config)
+
+    # dot.body is a list of string
+    # lines start tab then node name; check if "b" is a node in the graphviz object
+    assert any(line.startswith("\tX") for line in dot.body)
+
+
+# TODO use high-level visualization dot as fixtures for reuse across tests
+def test_display_config_node(tmp_path: pathlib.Path):
+    """Check if config is displayed by high-level hamilton.driver.display..."""
+    from hamilton import driver
+    from hamilton.io.materialization import to
+
+    config = {"X": 1}
+    dr = driver.Builder().with_modules(tests.resources.dummy_functions).with_config(config).build()
+
+    all_dot = dr.display_all_functions()
+    down_dot = dr.display_downstream_of("A")
+    up_dot = dr.display_upstream_of("C")
+    between_dot = dr.visualize_path_between("A", "C")
+    exec_dot = dr.visualize_execution(["C"], inputs={"b": 1, "c": 2})
+    materialize_dot = dr.visualize_materialization(
+        to.json(
+            id="saver", dependencies=["C"], combine=base.DictResult(), path=f"{tmp_path}/saver.json"
+        ),
+        inputs={"b": 1, "c": 2},
+    )
+
+    for dot in [all_dot, down_dot, up_dot, between_dot, exec_dot, materialize_dot]:
+        assert any(line.startswith("\tX") for line in dot.body)
+
+
 def test_create_graphviz_graph():
     """Tests that we create a graphviz graph"""
-    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={})
+    config = {}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
     nodes, user_nodes = fg.get_upstream_nodes(["A", "B", "C"])
     nodez = nodes.union(user_nodes)
     node_modifiers = {
@@ -990,6 +1052,7 @@ def test_create_graphviz_graph():
         graphviz_kwargs=dict(graph_attr={"ratio": "1"}),
         node_modifiers=node_modifiers,
         strictly_display_only_nodes_passed_in=False,
+        config=config,
     )
     # the HTML table isn't deterministic. Replace the value in it with a single one.
     dot_set = set(str(digraph).replace("<td>c</td>", "<td>b</td>").split("\n"))

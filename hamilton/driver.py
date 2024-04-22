@@ -850,6 +850,7 @@ class Driver:
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
                 custom_style_function=custom_style_function,
+                config=fn_graph._config,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1035,6 +1036,7 @@ class Driver:
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
                 custom_style_function=custom_style_function,
+                config=self.graph._config,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1095,6 +1097,7 @@ class Driver:
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
                 custom_style_function=custom_style_function,
+                config=self.graph._config,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1252,6 +1255,7 @@ class Driver:
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
                 custom_style_function=custom_style_function,
+                config=self.graph._config,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)

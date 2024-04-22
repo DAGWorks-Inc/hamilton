@@ -207,6 +207,7 @@ def create_graphviz_graph(
     deduplicate_inputs: bool = False,
     display_fields: bool = True,
     custom_style_function: Callable = None,
+    config: dict = None,
 ) -> "graphviz.Digraph":  # noqa: F821
     """Helper function to create a graphviz graph.
 
@@ -225,6 +226,9 @@ def create_graphviz_graph(
     :param deduplicate_inputs: If True, remove duplicate input nodes.
         Can improve readability depending on the specifics of the DAG.
     :param custom_style_function: A function that takes in node values and returns a dictionary of styles to apply to it.
+    :param config: The Driver config. This value is passed by the caller, e.g., driver.display_all_functions(),
+        and shouldn't be passed explicitly. Otherwise, it may not match the `nodes` argument leading to an
+        incorrect visualization.
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
     PATH_COLOR = "red"
@@ -241,6 +245,12 @@ def create_graphviz_graph(
                 "     node_class: str\n"
                 ") -> Tuple[dict, Optional[str], Optional[str]]:"
             )
+
+    if config is None:
+        raise ValueError(
+            "Received None for kwarg `config`. Make sure to pass a dictionary that matches the Driver config.\n"
+            "If you're seeing this error, you're likely using a non-public API."
+        )
 
     def _get_node_label(
         n: node.Node,
@@ -443,6 +453,11 @@ def create_graphviz_graph(
     digraph = graphviz.Digraph(**digraph_attr)
     extra_legend_nodes = {}
 
+    for config_key, config_value in config.items():
+        label = _get_node_label(n=None, name=config_key, type_string=str(config_value))
+        style = _get_node_style("config")
+        digraph.node(config_key, label=label, **style)
+
     # create nodes
     seen_node_types = set()
     for n in nodes:
@@ -451,6 +466,15 @@ def create_graphviz_graph(
         if node_type == "input":
             seen_node_types.add(node_type)
             continue
+        # config nodes are handled separately;
+        # only Driver.display_all_functions() passes config via the `nodes` arg
+        elif node_type == "config":
+            continue
+
+        # append config key to node label
+        config_key = n.tags.get("hamilton.config", None)
+        if config_key:
+            label = _get_node_label(n, name=f"{n.name}: {config_key}")
 
         node_style = _get_node_style(node_type)
 
@@ -764,6 +788,7 @@ class FunctionGraph:
             deduplicate_inputs=deduplicate_inputs,
             display_fields=display_fields,
             custom_style_function=custom_style_function,
+            config=self._config,
         )
 
     def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
@@ -809,6 +834,7 @@ class FunctionGraph:
         deduplicate_inputs: bool = False,
         display_fields: bool = True,
         custom_style_function: Callable = None,
+        config: dict = None,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
@@ -836,6 +862,9 @@ class FunctionGraph:
         :param display_fields: If True, display fields in the graph if node has attached
             schema metadata
         :param custom_style_function: Optional. Custom style function.
+        :param config: The Driver config. This value is passed by the caller, e.g., driver.display_all_functions(),
+            and shouldn't be passed explicitly. Otherwise, it may not match the `nodes` argument leading to an
+            incorrect visualization.
         :return: the graphviz graph object if it was created. None if not.
         """
         # Check to see if optional dependencies have been installed.
@@ -863,6 +892,7 @@ class FunctionGraph:
             deduplicate_inputs,
             display_fields=display_fields,
             custom_style_function=custom_style_function,
+            config=config,
         )
         kwargs = {"view": False, "format": "png"}  # default format = png
         if output_file_path:  # infer format from path
