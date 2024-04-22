@@ -1534,6 +1534,88 @@ class PandasExcelWriter(DataSaver):
 
 
 @dataclasses.dataclass
+class PandasTableReader(DataLoader):
+    """Class for loading/reading table files with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_table.html
+    """
+
+    filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs
+    sep: Union[str, None] = None
+    delimiter: Optional[str] = None
+    header: Union[int, Sequence, str, None] = "infer"
+    names: Optional[Sequence] = None
+    index_col: Union[int, str, Sequence, None] = None
+    usecols: Union[Sequence, None] = None
+    dtype: Union[Dtype, Dict[Hashable, Dtype], None] = None
+    engine: Optional[Literal["c", "python", "pyarrow"]] = None
+    converters: Optional[Dict[Hashable, Callable]] = None
+    true_values: Optional[Iterable] = None
+    false_values: Optional[Iterable] = None
+    skipinitialspace: bool = False
+    skiprows: Optional[Union[List[int], int, List[Callable]]] = None
+    skipfooter: int = 0
+    nrows: Optional[int] = None
+    na_values: Optional[Union[Hashable, Iterable, Dict[Hashable, Iterable]]] = None
+    keep_default_na: bool = True
+    na_filter: bool = True
+    verbose: bool = False
+    skip_blank_lines: bool = True
+    parse_dates: Union[List[Union[int, str]], Dict[str, List[Union[int, str]]], bool] = False
+    infer_datetime_format: bool = False
+    keep_date_col: bool = False
+    date_parser: Optional[Callable] = None
+    date_format: Optional[Union[str, str]] = None
+    dayfirst: bool = False
+    cache_dates: bool = True
+    iterator: bool = False
+    chunksize: Optional[int] = None
+    compression: Union[str, Dict] = "infer"
+    thousands: Optional[str] = None
+    decimal: str = "."
+    lineterminator: Optional[str] = None
+    quotechar: Optional[str] = '"'
+    quoting: int = 0
+    doublequote: bool = True
+    escapechar: Optional[str] = None
+    comment: Optional[str] = None
+    encoding: Optional[str] = None
+    encoding_errors: Optional[str] = "strict"
+    dialect: Optional[str] = None
+    on_bad_lines: Union[Literal["error", "warn", "skip"], Callable] = "error"
+    delim_whitespace: bool = False
+    low_memory: bool = True
+    memory_map: bool = False
+    float_precision: Optional[Literal["high", "legacy", "round_trip"]] = None
+    storage_options: Optional[Dict] = None
+    dtype_backend: Literal["numpy_nullable", "pyarrow"] = "numpy_nullable"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        # Puts kwargs in a dict
+        kwargs = dataclasses.asdict(self)
+
+        # filepath_or_buffer corresponds to 'filepath_or_buffer' argument of pandas.read_table,
+        # but we send it separately
+        del kwargs["filepath_or_buffer"]
+
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the table
+        df = pd.read_table(self.filepath_or_buffer, **self._get_loading_kwargs())
+        metadata = utils.get_file_and_dataframe_metadata(self.filepath_or_buffer, df)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "table"
+
+
+@dataclasses.dataclass
 class PandasSPSSReader(DataLoader):
     """Class for loading/reading spss files with Pandas.
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_spss.html
@@ -1595,6 +1677,7 @@ def register_data_loaders():
         PandasORCReader,
         PandasExcelWriter,
         PandasExcelReader,
+        PandasTableReader,
         PandasSPSSReader,
     ]:
         registry.register_adapter(loader)
