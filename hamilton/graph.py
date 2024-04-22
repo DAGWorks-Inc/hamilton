@@ -246,6 +246,12 @@ def create_graphviz_graph(
                 ") -> Tuple[dict, Optional[str], Optional[str]]:"
             )
 
+    if config is None:
+        raise ValueError(
+            "Received None for kwarg `config`. Make sure to pass a dictionary that matches the Driver config.\n"
+            "If you're seeing this error, you're likely using a non-public API."
+        )
+
     def _get_node_label(
         n: node.Node,
         name: Optional[str] = None,
