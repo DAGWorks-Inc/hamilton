@@ -1616,6 +1616,44 @@ class PandasTableReader(DataLoader):
 
 
 @dataclasses.dataclass
+class PandasFWFReader(DataLoader):
+    """Class for loading/reading fixed-width formatted files with Pandas.
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_fwf.html
+    """
+
+    filepath_or_buffer: Union[str, Path, BytesIO, BufferedReader]
+    # kwargs
+    colspecs: Union[str, List[Tuple[int, int]], Tuple[int, int]] = "infer"
+    widths: Optional[List[int]] = None
+    infer_nrows: int = 100
+    dtype_backend: Literal["numpy_nullable", "pyarrow"] = "numpy_nullable"
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [DATAFRAME_TYPE]
+
+    def _get_loading_kwargs(self) -> Dict[str, Any]:
+        # Puts kwargs in a dict
+        kwargs = dataclasses.asdict(self)
+
+        # filepath_or_buffer corresponds to 'filepath_or_buffer' argument of pandas.read_fwf,
+        # but we send it separately
+        del kwargs["filepath_or_buffer"]
+
+        return kwargs
+
+    def load_data(self, type_: Type) -> Tuple[DATAFRAME_TYPE, Dict[str, Any]]:
+        # Loads the data and returns the df and metadata of the fwf file
+        df = pd.read_fwf(self.filepath_or_buffer, **self._get_loading_kwargs())
+        metadata = utils.get_file_and_dataframe_metadata(self.filepath_or_buffer, df)
+        return df, metadata
+
+    @classmethod
+    def name(cls) -> str:
+        return "fwf"
+
+
+@dataclasses.dataclass
 class PandasSPSSReader(DataLoader):
     """Class for loading/reading spss files with Pandas.
     Maps to https://pandas.pydata.org/docs/reference/api/pandas.read_spss.html
@@ -1651,7 +1689,6 @@ class PandasSPSSReader(DataLoader):
     def name(cls) -> str:
         return "spss"
 
-
 def register_data_loaders():
     """Function to register the data loaders for this extension."""
     for loader in [
@@ -1678,6 +1715,7 @@ def register_data_loaders():
         PandasExcelWriter,
         PandasExcelReader,
         PandasTableReader,
+        PandasFWFReader,
         PandasSPSSReader,
     ]:
         registry.register_adapter(loader)

@@ -1,0 +1,4 @@
+firstName lastName age department email
+John      Doe      30  Marketing  john.doe@example.com
+Jane      Doe      28  Marketing  jane.doe@example.com
+Joe       Bloggs   32  Sales      joe.bloggs@example.com
