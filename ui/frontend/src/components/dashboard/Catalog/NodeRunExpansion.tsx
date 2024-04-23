@@ -191,7 +191,7 @@ export const NodeRunsTable = (props: {
           type="button"
           disabled={selectedRunIds.size < 1}
           className={`runs-compare rounded bg-dwlightblue px-2 py-1 text-sm font-semibold w-20
-            text-white shadow-sm hover:bg-dwlightblue focus-visible:outline 
+            text-white shadow-sm hover:bg-dwlightblue focus-visible:outline
               focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dwlightblue ${
                 selectedRunIds.size < 1 ? "opacity-70" : ""
               }`}

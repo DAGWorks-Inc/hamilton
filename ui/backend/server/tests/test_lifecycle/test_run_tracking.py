@@ -5,13 +5,14 @@ from urllib.parse import urlencode
 
 import pytest
 from django.test import AsyncClient
+from trackingserver_run_tracking.schema import DAGRunUpdate
+from trackingserver_template.schema import NodeTemplateIn
+
 from tests.test_lifecycle.test_projects import _setup_sample_project
 from tests.test_lifecycle.test_templates import (
     _generate_sample_dag_template,
     _generate_some_sample_nodes,
 )
-from trackingserver_run_tracking.schema import DAGRunUpdate
-from trackingserver_template.schema import NodeTemplateIn
 
 
 async def _setup_dag_template(

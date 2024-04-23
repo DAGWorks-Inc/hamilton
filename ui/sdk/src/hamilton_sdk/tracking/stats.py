@@ -1,10 +1,8 @@
-
-from functools import singledispatch
 import json
-from typing import Dict, Any
+from functools import singledispatch
+from typing import Any, Dict
 
 import pandas as pd
-
 from hamilton_sdk.tracking import sql_utils
 
 

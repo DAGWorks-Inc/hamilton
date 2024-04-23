@@ -1,4 +1,3 @@
-
 import logging
 import os
 import sys
@@ -6,9 +5,8 @@ from types import ModuleType
 from typing import Any, Dict, List
 
 import click
-import pandas as pd
-
 import dagworks.driver
+import pandas as pd
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 

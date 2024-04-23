@@ -1,6 +1,7 @@
-from hamilton import driver
-import data_loader
 import common
+import data_loader
+
+from hamilton import driver
 
 config = {"schema_version": "old"}
 dr = driver.Driver(config, data_loader, common)

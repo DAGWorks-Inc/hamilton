@@ -167,7 +167,7 @@ export const FunctionDisplay = (props: {
       ) : null}
       {!props.justIcon && (
         <div
-          className="flex flex-row gap-2 break-all overflow-clip items-center hover:underline 
+          className="flex flex-row gap-2 break-all overflow-clip items-center hover:underline
     text-dwlightblue"
         >
           <HashLink className="" to={url}>

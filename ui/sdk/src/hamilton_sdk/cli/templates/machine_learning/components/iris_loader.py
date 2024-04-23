@@ -1,9 +1,11 @@
 """
 Module to load iris data.
 """
+
 import pandas as pd
-from hamilton.function_modifiers import extract_columns
 from sklearn import datasets, utils
+
+from hamilton.function_modifiers import extract_columns
 
 RAW_COLUMN_NAMES = [
     "sepal_length_cm",

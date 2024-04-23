@@ -12,7 +12,7 @@ export const Account = () => {
   if (userInfo.isError) {
     return (
       <ErrorPage
-        message="Unable to retrieve account information from the backend, 
+        message="Unable to retrieve account information from the backend,
       please reach out to the DAGWorks team for support. Please, however, try to refresh first."
       />
     );

@@ -1,11 +1,8 @@
-
-from typing import Dict, Any
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
-
-from hamilton_sdk.tracking import pandas_stats
-from hamilton_sdk.tracking import stats
+from hamilton_sdk.tracking import pandas_stats, stats
 
 """Module that houses functions to compute statistics on numpy objects
 Notes:

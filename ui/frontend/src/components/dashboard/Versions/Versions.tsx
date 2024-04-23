@@ -377,8 +377,8 @@ const Versions = (props: VersionsProps) => {
           }}
           type="button"
           disabled={versionsToCompare.length < 1}
-          className={`versions-compare rounded bg-dwlightblue px-2 py-1 text-sm font-semibold 
-            text-white shadow-sm hover:bg-dwlightblue focus-visible:outline 
+          className={`versions-compare rounded bg-dwlightblue px-2 py-1 text-sm font-semibold
+            text-white shadow-sm hover:bg-dwlightblue focus-visible:outline
               focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dwlightblue w-44 ${
                 versionsToCompare.length < 1 ? "opacity-70" : ""
               }`}

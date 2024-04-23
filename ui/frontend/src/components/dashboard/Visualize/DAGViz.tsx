@@ -652,7 +652,7 @@ const BaseNodeComponent = (props: {
       >
         {" "}
         <div
-          className="flex flex-row gap-1 justify-start items-center 
+          className="flex flex-row gap-1 justify-start items-center
           align-center max-w-full"
         >
           {NodeIcons.map((NodeIcon, i) => (
@@ -932,7 +932,7 @@ const GroupedNodeComponent = (props: {
         isCollapsedGroup ? "bg-gray-300" : ""
       }
         ${shouldBeHidden ? " hidden " : ""}
-        
+
         `}
       style={{
         width: props.data.dimensions?.width,

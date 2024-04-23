@@ -22,7 +22,7 @@ import { extractCodeContents } from "../../../../utils/codeExtraction";
 
 /*
   This example requires some changes to your config:
-  
+
   ```
   // tailwind.config.js
   module.exports = {
@@ -196,7 +196,7 @@ export const NodeLinkMenu = (props: {
       <div>
         <Menu.Button
           disabled={disabled}
-          className={`inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 
+          className={`inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3
             py-2 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-200  ${
               disabled
                 ? "text-gray-300"

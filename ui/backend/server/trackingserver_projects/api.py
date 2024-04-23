@@ -209,15 +209,17 @@ async def _get_visible_projects(
     out = [
         (
             project,
-            "write"
-            if any(
-                [
-                    project_membership.role == "write"
-                    for project_membership in list(project.projectusermembership_set.all())
-                    + list(project.projectteammembership_set.all())
-                ]
-            )
-            else "read",
+            (
+                "write"
+                if any(
+                    [
+                        project_membership.role == "write"
+                        for project_membership in list(project.projectusermembership_set.all())
+                        + list(project.projectteammembership_set.all())
+                    ]
+                )
+                else "read"
+            ),
         )
         for project in all_project_memberships
     ]

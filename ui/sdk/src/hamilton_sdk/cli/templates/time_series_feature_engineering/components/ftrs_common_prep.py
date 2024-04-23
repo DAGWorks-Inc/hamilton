@@ -1,7 +1,8 @@
 import pandas as pd
-from hamilton.function_modifiers import extract_columns, tag
 from pandas import DataFrame
 from pandas.core.groupby import DataFrameGroupBy
+
+from hamilton.function_modifiers import extract_columns, tag
 
 
 def output_idx(lag_sales_31: pd.Series) -> pd.Index:

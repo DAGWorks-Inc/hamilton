@@ -5,7 +5,7 @@ import aiohttp
 from trackingserver_auth.models import User
 
 logger = logging.getLogger(__name__)
-"""When you have signups to the service, you can notify the team. This does it via slack. 
+"""When you have signups to the service, you can notify the team. This does it via slack.
 Note if the proper env vars are not set, this will bypass doing so"""
 
 # TODO -- ensure that in `PROD` mode, these error out if not set

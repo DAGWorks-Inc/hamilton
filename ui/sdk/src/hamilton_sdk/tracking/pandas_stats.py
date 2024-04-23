@@ -1,10 +1,10 @@
+from typing import Any, Dict, Union
 
-from typing import Dict, Any, Union
 import pandas as pd
-from hamilton import driver
-
 from hamilton_sdk.tracking import pandas_col_stats as pcs
 from hamilton_sdk.tracking import stats
+
+from hamilton import driver
 
 """Module that houses functions to compute statistics on pandas series/dataframes.
 Notes:

@@ -1,9 +1,9 @@
-from hamilton import base
-from hamilton import driver
-import iris_loader
 import feature_transforms
+import iris_loader
 import model_fitting
 import models
+
+from hamilton import base, driver
 
 config = {"clf": "svm", "shuffle_train_test_split": True, "test_size_fraction": 0.2}
 adapter = base.SimplePythonGraphAdapter(base.DictResult())

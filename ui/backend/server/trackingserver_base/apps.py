@@ -2,7 +2,8 @@ import os.path
 import uuid
 
 from django.apps import AppConfig
-from hamilton.telemetry import is_telemetry_enabled, BASE_PROPERTIES, send_event_json, API_KEY
+
+from hamilton.telemetry import API_KEY, BASE_PROPERTIES, is_telemetry_enabled, send_event_json
 
 
 def create_server_event_json(telemetry_key: str) -> dict:
@@ -15,7 +16,7 @@ def create_server_event_json(telemetry_key: str) -> dict:
     event = {
         "event": "os_hamilton_ui_server_start",
         "api_key": API_KEY,
-        "properties" : {"telemetry_key": telemetry_key, "old_anonymous_id": old_anonymous_id}
+        "properties": {"telemetry_key": telemetry_key, "old_anonymous_id": old_anonymous_id},
     }
     event["properties"].update(BASE_PROPERTIES)
     event["properties"]["distinct_id"] = telemetry_key
@@ -36,4 +37,3 @@ class TrackingServerConfig(AppConfig):
                 with open("/data/telemetry.txt", "r") as f:
                     telemetry_key = f.read().strip()
             send_event_json(create_server_event_json(telemetry_key))
-

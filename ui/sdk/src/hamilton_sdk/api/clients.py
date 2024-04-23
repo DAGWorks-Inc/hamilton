@@ -1,21 +1,19 @@
-
 import abc
-from collections import defaultdict
-from functools import reduce
-import threading
-import queue
-import time
-import aiohttp
 import datetime
 import logging
-from typing import Dict, Any, List, Callable
+import queue
+import threading
+import time
+from collections import defaultdict
+from functools import reduce
+from typing import Any, Callable, Dict, List
 from urllib.parse import urlencode
 
+import aiohttp
 import requests
-from requests import HTTPError
-
 from hamilton_sdk.api.projecttypes import GitInfo
 from hamilton_sdk.tracking.utils import make_json_safe
+from requests import HTTPError
 
 logger = logging.getLogger(__name__)
 
@@ -360,9 +358,13 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
             logger.debug(f"Project {project_id} exists")
             return True
         except HTTPError as e:
-            logger.debug(f"Project {project_id} does not exist/is accessible for user {self.username}")
+            logger.debug(
+                f"Project {project_id} does not exist/is accessible for user {self.username}"
+            )
             if response.status_code // 100 == 4:
-                raise ResourceDoesNotExistException("project", str(project_id), self.username) from e
+                raise ResourceDoesNotExistException(
+                    "project", str(project_id), self.username
+                ) from e
             raise
 
     def register_dag_template_if_not_exists(
@@ -556,7 +558,9 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
                         f"Failed to access project version {project_id} when looking for code hash: {code_hash}"
                     )
                     if response.status // 100 == 4:
-                        raise ResourceDoesNotExistException("code_version", code_hash, self.username) from e
+                        raise ResourceDoesNotExistException(
+                            "code_version", code_hash, self.username
+                        ) from e
                     raise
 
         if exists:
@@ -603,7 +607,9 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
                 except aiohttp.ClientResponseError as e:
                     logger.debug(f"Project {project_id} does not exist")
                     if response.status // 100 == 4:
-                        raise ResourceDoesNotExistException("project", str(project_id), self.username) from e
+                        raise ResourceDoesNotExistException(
+                            "project", str(project_id), self.username
+                        ) from e
                     raise
 
     async def register_dag_template_if_not_exists(

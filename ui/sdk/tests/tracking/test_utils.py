@@ -1,9 +1,10 @@
-from hamilton_sdk.tracking import utils
-from enum import Enum
-import datetime
-import pandas as pd
-import numpy as np
 import dataclasses
+import datetime
+from enum import Enum
+
+import numpy as np
+import pandas as pd
+from hamilton_sdk.tracking import utils
 
 
 class TestEnum(Enum):

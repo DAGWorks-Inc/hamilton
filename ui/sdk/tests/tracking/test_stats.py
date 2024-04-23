@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 import pandas as pd
-
 from hamilton_sdk.tracking import stats
 
 

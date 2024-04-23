@@ -1,5 +1,6 @@
-from . import subpackage
 import pprint
+
+from . import subpackage
 
 f = 3
 "submodule2"

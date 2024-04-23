@@ -1,12 +1,13 @@
+from typing import Any, Dict
 
-from typing import Dict, Any
 import polars as pl
 
 if not hasattr(pl, "Series"):
     raise ImportError("Polars is not installed")
-from hamilton import driver
 from hamilton_sdk.tracking import polars_col_stats as pls
 from hamilton_sdk.tracking import stats
+
+from hamilton import driver
 
 """Module that houses functions to compute statistics on polars series/dataframes.
 Notes:

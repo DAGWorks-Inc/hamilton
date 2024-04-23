@@ -1,12 +1,11 @@
 import dataclasses
 import os
 from typing import List
+
 import pandas as pd
 
-
-from hamilton.htypes import Parallelizable
-from hamilton.htypes import Collect
 from hamilton.function_modifiers import extract_columns, load_from, source
+from hamilton.htypes import Collect, Parallelizable
 
 
 def files(data_dir: str) -> List[str]:

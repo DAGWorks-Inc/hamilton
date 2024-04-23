@@ -1,26 +1,24 @@
 import asyncio
+import datetime
 import hashlib
 import logging
-import datetime
+import os
+import random
 import traceback
 from datetime import timezone
-import random
 from types import ModuleType
-from typing import Callable, Optional, Dict, Any, List
-
-from hamilton import node
-from hamilton.lifecycle import base
-from hamilton import graph as h_graph
-from hamilton.data_quality import base as dq_base
+from typing import Any, Callable, Dict, List, Optional
 
 from hamilton_sdk import driver
 from hamilton_sdk.api import clients, constants
 from hamilton_sdk.tracking import runs
 from hamilton_sdk.tracking.runs import Status, TrackingState
-
-import os
-
 from hamilton_sdk.tracking.trackingtypes import TaskRun
+
+from hamilton import graph as h_graph
+from hamilton import node
+from hamilton.data_quality import base as dq_base
+from hamilton.lifecycle import base
 
 logger = logging.getLogger(__name__)
 
@@ -391,7 +389,7 @@ class AsyncHamiltonAdapter(
         asyncio.run(self.client.validate_auth())
         logger.debug(f"Ensuring project {self.project_id} exists...")
         try:
-            exists = asyncio.run(self.client.project_exists(self.project_id))
+            asyncio.run(self.client.project_exists(self.project_id))
         except clients.UnauthorizedException:
             logger.exception(
                 f"Authentication failed. Please check your username and try again. "

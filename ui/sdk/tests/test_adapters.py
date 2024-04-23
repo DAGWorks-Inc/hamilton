@@ -1,12 +1,13 @@
 import os.path
 
 import pytest
+from hamilton_sdk import adapters
+
 from hamilton import driver
 
 import tests.resources.basic_dag_with_config
 import tests.resources.parallel_dag
 import tests.resources.parallel_dag_error
-from hamilton_sdk import adapters
 from tests import test_tracking
 
 adapter_kwargs = dict(
@@ -45,8 +46,9 @@ def test_adapters():
 def test_parallel_ray():
     """Tests ray works without sampling.
     Doesn't actually check the client - go do that in the UI."""
-    from hamilton.plugins import h_ray
     import ray
+
+    from hamilton.plugins import h_ray
 
     kwargs = adapter_kwargs | dict(dag_name="parallel_test_dag", tags={"sampling_rate": "None"})
     lifecycle_adapters = [adapters.HamiltonTracker(**kwargs)]
@@ -77,8 +79,9 @@ def test_parallel_ray():
 def test_parallel_ray_sample():
     """Tests ray works with sampling.
     Doesn't actually check the client - go do that in the UI."""
-    from hamilton.plugins import h_ray
     import ray
+
+    from hamilton.plugins import h_ray
 
     special_parallel_sample_strategy = 0.33
     kwargs = adapter_kwargs | dict(
@@ -113,8 +116,9 @@ def test_parallel_ray_sample():
 def test_parallel_ray_sample_error():
     """Tests error returning a sample.
     Doesn't actually check the client - go do that in the UI."""
-    from hamilton.plugins import h_ray
     import ray
+
+    from hamilton.plugins import h_ray
 
     special_parallel_sample_strategy = 0.0
     kwargs = adapter_kwargs | dict(

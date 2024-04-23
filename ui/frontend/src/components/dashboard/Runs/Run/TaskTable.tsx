@@ -338,7 +338,7 @@ const cols = (hasAnyGroupingTask: boolean) => {
             )}/task/${props.nodeName}?tab=${tabToLinkTo}`}
           >
             <div
-              className={`text-white text-sm 
+              className={`text-white text-sm
             bg-dwlightblue rounded-md px-1 py-1 hover:scale-105 flex flex-row w-16 items-center gap-1 justify-center`}
             >
               <span>{Icon}</span>

@@ -5,7 +5,6 @@ from typing import List, Tuple
 import pytest
 from django.test import AsyncClient
 from django.utils.http import urlencode
-from tests.test_lifecycle.test_projects import _setup_sample_project
 from trackingserver_template.schema import (
     CodeArtifactIn,
     CodeLog,
@@ -13,6 +12,8 @@ from trackingserver_template.schema import (
     File,
     NodeTemplateIn,
 )
+
+from tests.test_lifecycle.test_projects import _setup_sample_project
 
 
 def _generate_some_sample_nodes(
@@ -25,9 +26,9 @@ def _generate_some_sample_nodes(
             NodeTemplateIn(
                 name=f"node_{i}",
                 dependencies=[] if i == 0 else [f"node_{i - 1}"],
-                dependency_specs=[]
-                if i == 0
-                else [{"type": "int"}],  # TODO -- model this with actual dependency specs
+                dependency_specs=(
+                    [] if i == 0 else [{"type": "int"}]
+                ),  # TODO -- model this with actual dependency specs
                 dependency_specs_type="python_type_for_testing",
                 dependency_specs_schema_version=1,
                 output={"type": "int"},

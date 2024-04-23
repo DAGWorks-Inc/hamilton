@@ -16,7 +16,7 @@ export const NodeView: React.FC<{
   const Icon = getPythonTypeIconFromNode(node);
   return (
     <div
-      className={`rounded-lg p-1 px-2  text-white text-sm 
+      className={`rounded-lg p-1 px-2  text-white text-sm
       items-center flex flex-row gap-2 ${color}`}
     >
       <Icon></Icon>

@@ -1,6 +1,7 @@
 import pytest
-from tests.test_db_methods.utils import setup_sample_user_random
 from trackingserver_base.auth.api_keys import create_api_key_for_user, validate_api_key
+
+from tests.test_db_methods.utils import setup_sample_user_random
 
 
 @pytest.mark.asyncio

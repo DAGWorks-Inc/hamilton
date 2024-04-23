@@ -1,10 +1,11 @@
 import os
 import socket
 from pathlib import Path
-from typing import Any
 
 
-def get_from_env(var_name: str, valid_values: list = None, allow_missing: bool = False, default_value: str = None):
+def get_from_env(
+    var_name: str, valid_values: list = None, allow_missing: bool = False, default_value: str = None
+):
     value = os.environ.get(var_name)
     if value is None and not allow_missing:
         raise ValueError(f"Missing environment variable {var_name}")
@@ -34,20 +35,21 @@ AUTH_PROVIDER = get_from_env("HAMILTON_AUTH_PROVIDER", ["propel", "local"])
 PROPEL_AUTH_API_KEY = get_from_env("PROPEL_AUTH_API_KEY", allow_missing=True)
 PROPEL_AUTH_URL = get_from_env("PROPEL_AUTH_URL", allow_missing=True)
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "backend"
-]
+ALLOWED_HOSTS = ["localhost", "backend"]
 
 HAMILTON_BLOB_STORE = get_from_env("HAMILTON_BLOB_STORE", ["local", "s3"])
 
-HAMILTON_BLOB_STORE_PARAMS = {
-    "bucket_name": get_from_env("HAMILTON_S3_BUCKET", allow_missing=False),
-    "region_name": get_from_env("HAMILTON_S3_REGION", allow_missing=False),
-    "global_prefix": get_from_env("HAMILTON_ENV", allow_missing=False),
-} if HAMILTON_BLOB_STORE == "s3" else {
-    "base_dir": get_from_env("HAMILTON_LOCAL_BLOB_DIR", allow_missing=False),
-}
+HAMILTON_BLOB_STORE_PARAMS = (
+    {
+        "bucket_name": get_from_env("HAMILTON_S3_BUCKET", allow_missing=False),
+        "region_name": get_from_env("HAMILTON_S3_REGION", allow_missing=False),
+        "global_prefix": get_from_env("HAMILTON_ENV", allow_missing=False),
+    }
+    if HAMILTON_BLOB_STORE == "s3"
+    else {
+        "base_dir": get_from_env("HAMILTON_LOCAL_BLOB_DIR", allow_missing=False),
+    }
+)
 
 hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
@@ -190,7 +192,6 @@ LOGGING = {
         "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
     },
     "loggers": {
-
         "django": {
             "handlers": ["console"],
             "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),

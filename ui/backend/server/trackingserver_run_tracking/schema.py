@@ -34,9 +34,9 @@ class DAGRunOut(ModelSchema):
             **{
                 **DAGRunOut.from_orm(orm_model).dict(),
                 **{
-                    "username_resolved": orm_model.launched_by.email
-                    if orm_model.launched_by
-                    else None,
+                    "username_resolved": (
+                        orm_model.launched_by.email if orm_model.launched_by else None
+                    ),
                     "dag_template_id": orm_model.dag_template_id,
                 },
             }

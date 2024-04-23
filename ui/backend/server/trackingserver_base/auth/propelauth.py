@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Any, Dict, List, Optional, Tuple
 
 import cachetools.func
@@ -36,7 +35,7 @@ def init():
 
 
 def fetch_user_metadata_by_email(
-        email: str, include_orgs: bool, propel_auth_instance
+    email: str, include_orgs: bool, propel_auth_instance
 ) -> Dict[str, Any]:
     """Fetches the metadata for a user by email.
 
@@ -141,7 +140,7 @@ class PropelAuthAPIKeyAuthenticator(APIKeyQuery):
         return await self.authenticate(request, api_key)
 
     async def authenticate(
-            self, request, key, propel_auth_instance=auth
+        self, request, key, propel_auth_instance=auth
     ) -> Optional[Tuple[User, List[Team]]]:
         # TODO _- handle this using the builtin key with param_name
         user_email = request.headers.get("x-api-user")

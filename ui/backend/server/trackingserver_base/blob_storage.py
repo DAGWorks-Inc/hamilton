@@ -2,7 +2,6 @@ import abc
 import json
 import os
 import uuid
-from typing import Dict, Any
 
 import aiobotocore.session
 import aiofiles
@@ -104,7 +103,7 @@ class S3BlobStore(BlobStore):
         # Extract bucket and key from the provided s3:// URL
         if not url.startswith("s3://"):
             raise ValueError("Invalid S3 URL format")
-        parts = url[len("s3://"):].split("/", 1)
+        parts = url[len("s3://") :].split("/", 1)
         if len(parts) != 2:
             raise ValueError("Invalid S3 URL format")
         bucket, key = parts

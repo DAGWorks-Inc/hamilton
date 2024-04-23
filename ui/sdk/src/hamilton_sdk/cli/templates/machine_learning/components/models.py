@@ -1,7 +1,8 @@
 """This module contains specific incarnations of models."""
 
-from hamilton.function_modifiers import source, subdag
 from sklearn import base
+
+from hamilton.function_modifiers import source, subdag
 
 try:
     import model_fitting

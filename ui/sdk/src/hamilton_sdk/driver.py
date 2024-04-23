@@ -6,14 +6,15 @@ import logging
 import operator
 import os
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Set, Tuple, Union, Optional
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
-from hamilton import base, driver, node, graph
+from hamilton_sdk.api.clients import UnauthorizedException
+
+from hamilton import base, driver, graph, node
 from hamilton.driver import Variable
 from hamilton.io import materialization
 from hamilton.lifecycle.base import BaseDoNodeExecute
 from hamilton.node import Node
-from hamilton_sdk.api.clients import UnauthorizedException
 
 try:
     import git
@@ -23,7 +24,6 @@ except ImportError:
 from hamilton_sdk.api import clients, constants
 from hamilton_sdk.api.projecttypes import GitInfo
 from hamilton_sdk.tracking.runs import Status, TrackingState, monkey_patch_adapter
-
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +267,6 @@ class Driver(driver.Driver):
             adapter = base.SimplePythonGraphAdapter(result_builder=base.DictResult())
         super(Driver, self).__init__(config, *modules, adapter=adapter)
 
-
         self.config = config
         self.project = project_id
         self.api_key = api_key
@@ -361,7 +360,6 @@ class Driver(driver.Driver):
         return super(Driver, self).raw_execute(
             final_vars, overrides, display_graph, inputs, _fn_graph
         )
-
 
     def materialize(
         self,
@@ -490,9 +488,13 @@ def _extract_node_templates_from_function_graph(fn_graph: graph.FunctionGraph) -
                 documentation=node_.documentation,
                 tags=node_.tags,  # TODO -- ensure serializable
                 classifications=_convert_classifications(node_),  # TODO -- manage classifications
-                code_artifact_pointers=code_artifact_pointers
-                if node_.originating_functions is None or len(node_.originating_functions) == 0
-                else [_get_fully_qualified_function_path(fn) for fn in node_.originating_functions],
+                code_artifact_pointers=(
+                    code_artifact_pointers
+                    if node_.originating_functions is None or len(node_.originating_functions) == 0
+                    else [
+                        _get_fully_qualified_function_path(fn) for fn in node_.originating_functions
+                    ]
+                ),
                 **_convert_node_dependencies(node_),
             )
         )

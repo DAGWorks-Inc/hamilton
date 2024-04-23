@@ -6,8 +6,8 @@ from ninja.errors import HttpError
 
 
 class EndpointCallable(typing.Protocol):
-    async def __call__(self, request: typing.Any, **kwargs) -> typing.Any:
-        ...
+    # pylint: disable=E704
+    async def __call__(self, request: typing.Any, **kwargs) -> typing.Any: ...
 
 
 class permission:

@@ -8,7 +8,9 @@ from trackingserver_auth.models import APIKey, User
 
 logger = logging.getLogger(__name__)
 
-global_pepper = os.environ.get("API_KEY_PEPPER", "")  # This is a global pepper that is used to salt the API keys
+global_pepper = os.environ.get(
+    "API_KEY_PEPPER", ""
+)  # This is a global pepper that is used to salt the API keys
 
 
 def get_salt(user: User) -> bytes:

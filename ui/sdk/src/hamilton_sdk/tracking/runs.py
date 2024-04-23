@@ -1,4 +1,3 @@
-
 import functools
 import logging
 import sys
@@ -8,17 +7,16 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 
-from hamilton import node as h_node
-from hamilton.data_quality import base as dq_base
-
-from hamilton.lifecycle import base as lifecycle_base
-
 from hamilton_sdk.tracking import stats
 from hamilton_sdk.tracking.trackingtypes import DAGRun, Status, TaskRun
 
+from hamilton import node as h_node
+from hamilton.data_quality import base as dq_base
+from hamilton.lifecycle import base as lifecycle_base
+
 try:
-    from hamilton_sdk.tracking import pandas_stats  # noqa: F401
     from hamilton_sdk.tracking import numpy_stats  # noqa: F401
+    from hamilton_sdk.tracking import pandas_stats  # noqa: F401
 
 except ImportError:
     pass

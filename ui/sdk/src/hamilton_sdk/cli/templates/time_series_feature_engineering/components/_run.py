@@ -1,11 +1,10 @@
 from typing import Tuple
 
-import pandas as pd
-
 import data_loader
 import ftrs_autoregression
 import ftrs_calendar
 import ftrs_common_prep
+import pandas as pd
 
 
 def create_training_features(data_path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:

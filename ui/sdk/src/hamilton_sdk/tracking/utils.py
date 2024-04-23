@@ -1,9 +1,9 @@
 import dataclasses
 import datetime
-from enum import Enum
 import json
 import logging
-from typing import Union, Any
+from enum import Enum
+from typing import Any, Union
 
 import numpy as np
 

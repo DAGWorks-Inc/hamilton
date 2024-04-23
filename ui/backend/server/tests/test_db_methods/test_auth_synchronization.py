@@ -2,18 +2,19 @@ import uuid
 
 import pytest
 from django.forms import model_to_dict
+from trackingserver_auth.models import Team, User
+from trackingserver_base.auth.sync import (
+    ensure_team_exists,
+    ensure_user_exists,
+    ensure_user_only_part_of_orgs,
+)
+
 from tests.test_db_methods.utils import (
     assert_team_state,
     assert_user_only_part_of_teams,
     assert_user_state,
     setup_random_user_with_n_teams,
     setup_sample_team_random,
-)
-from trackingserver_auth.models import Team, User
-from trackingserver_base.auth.sync import (
-    ensure_team_exists,
-    ensure_user_exists,
-    ensure_user_only_part_of_orgs,
 )
 
 

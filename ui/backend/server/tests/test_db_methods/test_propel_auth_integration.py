@@ -5,14 +5,15 @@ from typing import List, Optional, TypedDict
 import pytest
 from django.forms import model_to_dict
 from propelauth_py import UnauthorizedException
+from trackingserver_auth.models import Team
+from trackingserver_base.auth.propelauth import PropelAuthBearerTokenAuthenticator, synchronize_auth
+
 from tests.test_db_methods.utils import (
     assert_user_only_part_of_teams,
     assert_user_state,
     setup_random_user_with_n_teams,
     setup_sample_user_random,
 )
-from trackingserver_auth.models import Team
-from trackingserver_base.auth.propelauth import PropelAuthBearerTokenAuthenticator, synchronize_auth
 
 # I find thi far preferable to standard mocking when
 # we don't have side-effects/care to count whether its called

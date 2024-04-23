@@ -1,10 +1,9 @@
 import math
 
+import numpy as np
 import pandas as pd
 from hamilton_sdk.tracking import dataframe_stats
 from pytest import mark
-
-import numpy as np
 
 
 # Tests the type converter

@@ -300,9 +300,9 @@ export const ApiKeys = () => {
               });
             }}
             type="button"
-            className="inline-flex items-center gap-x-1.5 rounded-md 
-            bg-green-500 py-2 px-3 text-sm font-semibold text-white shadow-sm 
-            hover:bg-green-400 focus-visible:outline focus-visible:outline-2 
+            className="inline-flex items-center gap-x-1.5 rounded-md
+            bg-green-500 py-2 px-3 text-sm font-semibold text-white shadow-sm
+            hover:bg-green-400 focus-visible:outline focus-visible:outline-2
             focus-visible:outline-offset-2 focus-visible:outline-green-500"
           >
             <PlusIcon className="-ml-0.5 h-5 w-5" aria-hidden="true" />

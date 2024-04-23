@@ -1,5 +1,6 @@
-from . import subpackage
 import hashlib
+
+from . import subpackage
 
 c = 3
 "submodule1"

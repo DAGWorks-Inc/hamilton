@@ -4,9 +4,10 @@ from typing import Dict
 
 import numpy as np
 import pandas as pd
-from hamilton import function_modifiers
 from sklearn import base, linear_model, metrics, svm
 from sklearn.model_selection import train_test_split
+
+from hamilton import function_modifiers
 
 
 @function_modifiers.config.when(clf="svm")

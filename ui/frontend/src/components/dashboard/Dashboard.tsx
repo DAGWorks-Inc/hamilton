@@ -284,7 +284,7 @@ const MinimizeButton = (props: {
   return (
     <button
       type="button"
-      className={`ml-1 flex h-10 w-10 items-center justify-center rounded-full 
+      className={`ml-1 flex h-10 w-10 items-center justify-center rounded-full
           focus:outline-none focus:ring-2 focus:ring-inset mb-2 ${
             props.color == "white"
               ? "focus:ring-white"
@@ -734,7 +734,7 @@ const Dashboard = () => {
           <div className="sticky top-0 z-10 bg-gray-100 pl-1 sm:pl-3 sm:pt-3 md:hidden flex flex-row items-center text-gray-600">
             <button
               type="button"
-              className="inline-flex h-12 w-12 items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none 
+              className="inline-flex h-12 w-12 items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none
               focus:ring-2 focus:ring-inset focus:ring-indigo-500"
               onClick={() => setSidebarOpenSmallScreen(true)}
             >

@@ -1,8 +1,6 @@
-
 import os
 
 import click
-
 from hamilton_sdk.cli import initialize
 
 

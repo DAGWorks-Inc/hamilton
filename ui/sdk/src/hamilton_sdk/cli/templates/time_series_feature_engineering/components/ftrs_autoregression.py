@@ -1,6 +1,7 @@
 import pandas as pd
-from hamilton.function_modifiers import parameterize_values, tag
 from pandas.core.groupby import DataFrameGroupBy
+
+from hamilton.function_modifiers import parameterize_values, tag
 
 
 @tag(stage="production")

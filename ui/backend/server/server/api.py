@@ -1,5 +1,3 @@
-import os
-
 from django.conf import settings
 from ninja import NinjaAPI
 from trackingserver_auth import api as auth_api
@@ -19,9 +17,15 @@ elif env == "integration_tests":
     api = NinjaAPI(auth=[TestAPIAuthenticator()])
 else:
     propelauth.init()
-    api = NinjaAPI(auth=[propelauth.PropelAuthBearerTokenAuthenticator(), propelauth.PropelAuthAPIKeyAuthenticator()])
+    api = NinjaAPI(
+        auth=[
+            propelauth.PropelAuthBearerTokenAuthenticator(),
+            propelauth.PropelAuthAPIKeyAuthenticator(),
+        ]
+    )
     # only use ddtrace in prod/staging
     from ddtrace import patch_all  # noqa: E402
+
     patch_all()
 
 

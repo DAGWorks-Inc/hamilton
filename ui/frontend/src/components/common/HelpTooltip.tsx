@@ -7,7 +7,7 @@ export const HelpTooltip: React.FC<{ description: string }> = (props) => {
         <AiFillQuestionCircle className="text-lg" />
       </span>
       <span
-        className="group-hover:opacity-100 w-48 z-50 transition-opacity bg-dwdarkblue p-1.5 text-sm text-gray-100 rounded-md absolute 
+        className="group-hover:opacity-100 w-48 z-50 transition-opacity bg-dwdarkblue p-1.5 text-sm text-gray-100 rounded-md absolute
        opacity-0 m-4"
       >
         {props.description}

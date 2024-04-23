@@ -1,14 +1,14 @@
-from datetime import date
 import json
+from datetime import date
 from typing import Any
 
 import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
-from hamilton import node
-
 from hamilton_sdk.tracking import runs
+
+from hamilton import node
 
 result_base = {
     "observability_type": "REPLACE_ME",
@@ -146,32 +146,40 @@ def create_node(name: str, type_: type) -> node.Node:
             pd.Series(name="a", data=pd.date_range("20230101", "20230103")),
             create_node("a", pd.Series),
             "dagworks_describe",
-            {'a': {'base_data_type': 'datetime',
-                                           'count': 3,
-                                           'data_type': 'datetime64[ns]',
-                                           'histogram': {'(2022-12-31 23:57:07.199999999, 2023-01-01 04:48:00]': 1,
-                                                         '(2023-01-01 04:48:00, 2023-01-01 09:36:00]': 0,
-                                                         '(2023-01-01 09:36:00, 2023-01-01 14:24:00]': 0,
-                                                         '(2023-01-01 14:24:00, 2023-01-01 19:12:00]': 0,
-                                                         '(2023-01-01 19:12:00, 2023-01-02 00:00:00]': 1,
-                                                         '(2023-01-02 00:00:00, 2023-01-02 04:48:00]': 0,
-                                                         '(2023-01-02 04:48:00, 2023-01-02 09:36:00]': 0,
-                                                         '(2023-01-02 09:36:00, 2023-01-02 14:24:00]': 0,
-                                                         '(2023-01-02 14:24:00, 2023-01-02 19:12:00]': 0,
-                                                         '(2023-01-02 19:12:00, 2023-01-03 00:00:00]': 1},
-                                           'max': '2023-01-03T00:00:00',
-                                           'mean': '2023-01-02T00:00:00',
-                                           'min': '2023-01-01T00:00:00',
-                                           'missing': 0,
-                                           'name': 'a',
-                                           'pos': 0,
-                                           'quantiles': {0.1: '2023-01-01T04:48:00',
-                                                         0.25: '2023-01-01T12:00:00',
-                                                         0.5: '2023-01-02T00:00:00',
-                                                         0.75: '2023-01-02T12:00:00',
-                                                         0.9: '2023-01-02T19:12:00'},
-                                           'std': 'P1DT0H0M0S',
-                                           'zeros': 0}},
+            {
+                "a": {
+                    "base_data_type": "datetime",
+                    "count": 3,
+                    "data_type": "datetime64[ns]",
+                    "histogram": {
+                        "(2022-12-31 23:57:07.199999999, 2023-01-01 04:48:00]": 1,
+                        "(2023-01-01 04:48:00, 2023-01-01 09:36:00]": 0,
+                        "(2023-01-01 09:36:00, 2023-01-01 14:24:00]": 0,
+                        "(2023-01-01 14:24:00, 2023-01-01 19:12:00]": 0,
+                        "(2023-01-01 19:12:00, 2023-01-02 00:00:00]": 1,
+                        "(2023-01-02 00:00:00, 2023-01-02 04:48:00]": 0,
+                        "(2023-01-02 04:48:00, 2023-01-02 09:36:00]": 0,
+                        "(2023-01-02 09:36:00, 2023-01-02 14:24:00]": 0,
+                        "(2023-01-02 14:24:00, 2023-01-02 19:12:00]": 0,
+                        "(2023-01-02 19:12:00, 2023-01-03 00:00:00]": 1,
+                    },
+                    "max": "2023-01-03T00:00:00",
+                    "mean": "2023-01-02T00:00:00",
+                    "min": "2023-01-01T00:00:00",
+                    "missing": 0,
+                    "name": "a",
+                    "pos": 0,
+                    "quantiles": {
+                        0.1: "2023-01-01T04:48:00",
+                        0.25: "2023-01-01T12:00:00",
+                        0.5: "2023-01-02T00:00:00",
+                        0.75: "2023-01-02T12:00:00",
+                        0.9: "2023-01-02T19:12:00",
+                    },
+                    "std": "P1DT0H0M0S",
+                    "zeros": 0,
+                }
+            },
         ),
         (
             pd.Series(name="a", data=[pd.NaT] * 3),
@@ -486,11 +494,7 @@ def create_node(name: str, type_: type) -> node.Node:
             pl.date_range(date(2023, 1, 1), date(2023, 1, 3), eager=True).alias("a"),
             create_node("a", pl.Series),
             "dagworks_describe",  # TODO: fix quantiles
-                {'a': {'base_data_type': 'unknown-polars',
-                               'data_type': 'Date',
-                               'name': 'a',
-                               'pos': 0}
-            },
+            {"a": {"base_data_type": "unknown-polars", "data_type": "Date", "name": "a", "pos": 0}},
         ),
     ],
     ids=[
