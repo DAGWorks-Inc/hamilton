@@ -2,6 +2,7 @@ import os.path
 import uuid
 
 from django.apps import AppConfig
+from django.conf import settings
 
 from hamilton.telemetry import API_KEY, BASE_PROPERTIES, is_telemetry_enabled, send_event_json
 
@@ -28,7 +29,7 @@ class TrackingServerConfig(AppConfig):
     name = "trackingserver_base"
 
     def ready(self):
-        if is_telemetry_enabled():
+        if is_telemetry_enabled() and settings.HAMILTON_ENV in ["local"]:
             if not os.path.exists("/data/telemetry.txt"):
                 telemetry_key = str(uuid.uuid4())
                 with open("/data/telemetry.txt", "w") as f:

@@ -30,8 +30,6 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
 HAMILTON_ENV = get_from_env("HAMILTON_ENV", ["integration_tests", "local", "dev", "prod"])
 
-AUTH_PROVIDER = get_from_env("HAMILTON_AUTH_PROVIDER", ["propel", "local"])
-
 PROPEL_AUTH_API_KEY = get_from_env("PROPEL_AUTH_API_KEY", allow_missing=True)
 PROPEL_AUTH_URL = get_from_env("PROPEL_AUTH_URL", allow_missing=True)
 

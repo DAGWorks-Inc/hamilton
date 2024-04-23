@@ -34,7 +34,6 @@ services:
       - DB_PASSWORD=password # Purely for local! Do not deploy to production!
       - HAMILTON_BLOB_STORE=local
       - HAMILTON_ENV=local # local env
-      - HAMILTON_AUTH_PROVIDER=local # local authentication means unauthenticated -- do not use in production!!
       - HAMILTON_LOCAL_BLOB_DIR=/data/blobs # TODO -- set this up to be a better one
       - DJANGO_SECRET_KEY=do_not_use_in_production
       - HAMILTON_TELEMETRY_ENABLED=${HAMILTON_TELEMETRY_ENABLED}

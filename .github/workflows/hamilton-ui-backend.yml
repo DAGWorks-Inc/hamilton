@@ -1,0 +1,104 @@
+name: Backend Test Workflow
+
+on:
+  push:
+    branches:
+      - main  # or any specific branches you want to include
+  pull_request:
+    branches:
+      - main
+
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2 # fetch previous commit for comparison
+      - id: filter
+        run: |
+          echo "Checking for changes in the backend directory and branch..."
+          # Check if the current branch is not main
+          if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
+            # Check for changes in the backend directory
+            if git diff --quiet HEAD^ HEAD -- ui/backend/; then
+              echo "::set-output name=skip::true"
+              echo "No changes in backend/ or not on main branch, skipping subsequent jobs."
+            else
+              echo "::set-output name=skip::false"
+              echo "Changes detected in backend/ and not on main branch."
+            fi
+          else
+            echo "::set-output name=skip::false"
+            echo "On main branch, proceeding with subsequent jobs."
+          fi
+  test-backend:
+    needs: check-changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        testdir: [test_lifecycle, test_db_methods]  # Specify your test directories
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: circleci_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 100s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          cd ui/backend/server
+          pip install -r requirements-base.txt
+          pip install -r requirements-test.txt
+      - name: Run migrations
+        env:
+          DB_HOST: localhost
+          DB_USER: postgres
+          DB_PASSWORD: "postgres"
+          DB_NAME: ${{ matrix.testdir }}
+          DB_PORT: 5432
+          HAMILTON_ENV: integration_tests
+          DJANGO_SECRET_KEY: test
+          PGPASSWORD: postgres
+          PGHOST: localhost
+          PGUSER: postgres
+          HAMILTON_BLOB_STORE: local
+          HAMILTON_LOCAL_BLOB_DIR: ./blob_data
+        run: |
+          cd ui/backend/server
+          python manage.py sqlcreate
+          echo $(python manage.py sqlcreate) | psql -U postgres
+          python manage.py migrate
+      - name: Run tests
+        env:
+          DB_HOST: localhost
+          DB_USER: postgres
+          DB_PASSWORD: "postgres"
+          DB_NAME: ${{ matrix.testdir }}
+          DB_PORT: 5432
+          HAMILTON_ENV: integration_tests
+          DJANGO_SECRET_KEY: test
+          PGPASSWORD: postgres
+          PGHOST: localhost
+          PGUSER: postgres
+          HAMILTON_BLOB_STORE: local
+          HAMILTON_LOCAL_BLOB_DIR: ./blob_data
+        run: |
+          cd ui/backend/server
+          python -m pytest tests/${{ matrix.testdir }} -vvvvv
