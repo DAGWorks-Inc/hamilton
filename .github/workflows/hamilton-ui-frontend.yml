@@ -1,0 +1,55 @@
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ui/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'ui/frontend/**'
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2 # fetch previous commit for comparison
+      - id: filter
+        run: |
+          echo "Checking for changes in the frontend directory and branch..."
+          # Check if the current branch is not main
+          if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
+            # Check for changes in the frontend directory
+            if git diff --quiet HEAD^ HEAD -- ui/frontend/; then
+              echo "::set-output name=skip::true"
+              echo "No changes in frontend/ or not on main branch, skipping subsequent jobs."
+            else
+              echo "::set-output name=skip::false"
+              echo "Changes detected in frontend/ and not on main branch."
+            fi
+          else
+            echo "::set-output name=skip::false"
+            echo "On main branch, proceeding with subsequent jobs."
+          fi
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui/frontend
+    strategy:
+      matrix:
+        node-version: [16.x]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install --ignore-scripts
+    - run: npm run lint-fix
+    - run: npm run format
+    - run: npm run build

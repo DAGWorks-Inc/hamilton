@@ -60,7 +60,7 @@
     "eject": "react-scripts eject",
     "lint": "eslint --ext .js,.ts,.jsx,.tsx --ignore-path .eslintignore .",
     "lint-fix": "eslint --ext .js,.ts,.jsx,.tsx --ignore-path .eslintignore . --fix",
-    "format": "prettier --write 'src/**/*.{js,jsx,ts,tsx,css,md,json}' --config ./.prettierrc",
+    "format": "prettier --write 'src/**/*.{js,jsx,ts,tsx,css,md,json}' --config ./.prettierrc.json",
     "configure-husky": "cd .. && npx husky install frontend/.husky && npx husky add frontend/.husky/pre-commit \"npx --no-install lint-staged\""
   },
   "eslintConfig": {

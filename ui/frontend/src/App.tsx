@@ -80,7 +80,7 @@ export const App = () => {
     if (localMode && userName) {
       dispatch(setLocalUserName(userName));
     }
-  }, [userName]);
+  }, [userName, dispatch]);
   const [currentLoomVideo, setCurrentLoomVideo] = useState<
     keyof typeof HelpVideos | undefined
   >(undefined);
