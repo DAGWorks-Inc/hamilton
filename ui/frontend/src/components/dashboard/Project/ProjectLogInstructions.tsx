@@ -10,7 +10,7 @@ const INSTALL_CODE = `# be sure to initialize any python environment you want to
 pip install hamilton[sdk]`;
 
 export const UsingHamiltonAlready = (props: {
-  projectId: string;
+  projectId: string | undefined;
   username: string;
 }) => {
   const exampleCode = `
@@ -62,7 +62,7 @@ dr = (
 };
 
 export const NotUsingHamiltonYet = (props: {
-  projectId: string;
+  projectId: string | undefined;
   username: string;
 }) => {
   const initCode = `\
@@ -108,14 +108,16 @@ cd hamilton/examples/hamilton_ui
         <div className="flex flex-row gap-2 items-center">
           <CheckBox />
 
-          <p className="text-sm text-gray-500">
-            <Link
-              className="text-dwlightblue hover:underline"
-              to={`/dashboard/project/${props.projectId}/runs`}
-            >
-              Track your runs!
-            </Link>
-          </p>
+          {props.projectId !== undefined && (
+            <p className="text-sm text-gray-500">
+              <Link
+                className="text-dwlightblue hover:underline"
+                to={`/dashboard/project/${props.projectId}/runs`}
+              >
+                Track your runs!
+              </Link>
+            </p>
+          )}
         </div>
       </li>
     </>
@@ -123,7 +125,7 @@ cd hamilton/examples/hamilton_ui
 };
 
 export const ProjectLogInstructions = (props: {
-  projectId: number;
+  projectId?: number;
   username: string;
   canWrite: boolean;
   hideHeader?: boolean;
@@ -216,12 +218,12 @@ export const ProjectLogInstructions = (props: {
           </div>
           {currentTab === USING_HAMILTON ? (
             <UsingHamiltonAlready
-              projectId={props.projectId.toString()}
+              projectId={props.projectId?.toString()}
               username={props.username}
             />
           ) : (
             <NotUsingHamiltonYet
-              projectId={props.projectId.toString()}
+              projectId={props.projectId?.toString()}
               username={props.username}
             />
           )}
