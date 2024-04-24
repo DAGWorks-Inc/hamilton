@@ -1,0 +1,9 @@
+node_modules
+dist
+.eslintignore
+.eslintrc.js
+postcss.config.js
+setupProxy.js
+tailwind.config.js
+src/state/api/backendApiRaw.ts
+src_old/

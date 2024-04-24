@@ -1,0 +1,14 @@
+aioboto3
+aiobotocore
+aiofiles
+aiohttp
+cachetools
+colorlog
+ddtrace
+django
+django-extensions
+django-ninja==1.0b1
+passlib
+propelauth_py
+psycopg2-binary
+sf-hamilton

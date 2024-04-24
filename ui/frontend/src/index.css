@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.barchart-tooltip {
+  line-height: 1;
+  font-weight: thin;
+  padding: 12px 24px;
+  border-radius: 2px;
+  font-size: small;
+}
+
+.react-flow__node-group {
+  border-color: rgb(0, 0, 0, 0) !important;
+}

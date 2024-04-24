@@ -1,0 +1,65 @@
+# TODO: use extends to avoid duplication
+version: '3.8'
+
+services:
+  db:
+    image: postgres:12
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -P password" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: dagworks/ui-backend:latest
+    build:
+        context: ./
+        dockerfile: deployment/Dockerfile.backend-prod
+    entrypoint: ["/bin/bash", "-c", "cd /code/server && ls && ./entrypoint.sh"]
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=password # TODO: Change this to a secret
+      - HAMILTON_BLOB_STORE=local
+      - HAMILTON_ENV=local # local env
+      - HAMILTON_LOCAL_BLOB_DIR=/data/blobs # TODO -- set this up to be a better one
+      - DJANGO_SECRET_KEY=do_not_use_in_production
+      - HAMILTON_TELEMETRY_ENABLED=${HAMILTON_TELEMETRY_ENABLED-true}
+    depends_on:
+      - db
+    volumes:
+      - backend_data:/data/
+
+  frontend:
+    image: dagworks/ui-frontend:latest
+    build:
+      context: ./
+      dockerfile: deployment/Dockerfile.frontend-prod
+      args:
+        - REACT_APP_AUTH_MODE=local
+        - REACT_APP_USE_POSTHOG=false
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_AUTH_MODE=local
+      - REACT_APP_USE_POSTHOG=false
+# TODO -- use envsubst to replace the backend url in the nginx config
+# this is currently hardcoded in the nginx config
+#      - REACT_APP_API_URL=http://backend:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_data:

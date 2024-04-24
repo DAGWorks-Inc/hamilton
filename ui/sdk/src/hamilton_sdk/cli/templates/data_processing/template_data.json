@@ -1,0 +1,14 @@
+{
+  "modules" : ["data_loader", "common"],
+  "configs" : ["config"],
+  "return_df": true,
+  "inputs" :  {"orders_path": "data/orders_old.csv",
+    "order_details_path": "data/order_details.csv"},
+  "requirements" : ["pandas", "sf-hamilton", "pandera"],
+  "use_tags_for_output" : null,
+  "final_vars" : [
+     "orders_by_order_aggregates"
+  ],
+  "template_description": "Shows a basic data processing example. This is a contrived example that requires some 'normalization' of data input and then a merging of two tables and subsequent processing. It is basic, but shows a configuration based way to swap out a function, along with how one might approach data quality checks."
+
+}

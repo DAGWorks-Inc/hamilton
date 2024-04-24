@@ -1,0 +1,30 @@
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ui/frontend/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'ui/frontend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui/frontend
+    strategy:
+      matrix:
+        node-version: [16.x]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install --ignore-scripts
+    - run: npm run lint-fix
+    - run: npm run format
+    - run: npm run build

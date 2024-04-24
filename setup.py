@@ -96,6 +96,7 @@ setup(
         ],
         "diskcache": ["diskcache"],
         "cli": ["typer"],
+        "sdk": ["sf-hamilton-sdk"],
     },
     entry_points={
         "console_scripts": [

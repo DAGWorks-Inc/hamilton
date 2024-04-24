@@ -432,6 +432,8 @@ If you do not wish to participate, one can opt-out with one of the following met
    HAMILTON_TELEMETRY_ENABLED=false python NAME_OF_MY_DRIVER.py
    ```
 
+For the hamilton UI you jmust use the environment variable method prior to running docker compose.
+
 # Contributors
 
 ## Code Contributors
