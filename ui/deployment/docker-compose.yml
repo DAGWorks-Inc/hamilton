@@ -25,7 +25,7 @@ services:
       - ./backend:/code
       - backend_data:/data/
     ports:
-      - "8000:8000"
+      - "8241:8241"
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -52,12 +52,12 @@ services:
       - ./frontend:/usr/src/app
       - /usr/src/app/node_modules
     ports:
-      - "3000:3000"
+      - "8242:8242"
     environment:
       - NODE_ENV=development
       - REACT_APP_AUTH_MODE=local
       - REACT_APP_USE_POSTHOG=false
-      - REACT_APP_API_URL=http://backend:8000
+      - REACT_APP_API_URL=http://backend:8241
     depends_on:
       - backend
 
