@@ -102,7 +102,7 @@ First, install the SDK:
 
 .. code-block:: bash
 
-    pip install sf-hamilton-sdk
+    pip install "sf-hamilton[sdk]"
 
 Then, navigate to the project page (dashboard/projects), in the running UI, and click the green ``+ New DAG`` button.
 
