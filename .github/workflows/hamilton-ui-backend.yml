@@ -4,39 +4,18 @@ on:
   push:
     branches:
       - main  # or any specific branches you want to include
+    paths:
+      - 'ui/backend/**'
+
   pull_request:
     branches:
       - main
+    paths:
+      - 'ui/backend/**'
 
 
 jobs:
-  check-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      changes: ${{ steps.filter.outputs.changes }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2 # fetch previous commit for comparison
-      - id: filter
-        run: |
-          echo "Checking for changes in the backend directory and branch..."
-          # Check if the current branch is not main
-          if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
-            # Check for changes in the backend directory
-            if git diff --quiet HEAD^ HEAD -- ui/backend/; then
-              echo "::set-output name=skip::true"
-              echo "No changes in backend/ or not on main branch, skipping subsequent jobs."
-            else
-              echo "::set-output name=skip::false"
-              echo "Changes detected in backend/ and not on main branch."
-            fi
-          else
-            echo "::set-output name=skip::false"
-            echo "On main branch, proceeding with subsequent jobs."
-          fi
   test-backend:
-    needs: check-changes
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -3,38 +3,13 @@ on:
     branches:
       - main
     paths:
-      - 'ui/**'
+      - 'ui/frontend/**'
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - 'ui/frontend/**'
 
 jobs:
-  check-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      changes: ${{ steps.filter.outputs.changes }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2 # fetch previous commit for comparison
-      - id: filter
-        run: |
-          echo "Checking for changes in the frontend directory and branch..."
-          # Check if the current branch is not main
-          if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
-            # Check for changes in the frontend directory
-            if git diff --quiet HEAD^ HEAD -- ui/frontend/; then
-              echo "::set-output name=skip::true"
-              echo "No changes in frontend/ or not on main branch, skipping subsequent jobs."
-            else
-              echo "::set-output name=skip::false"
-              echo "Changes detected in frontend/ and not on main branch."
-            fi
-          else
-            echo "::set-output name=skip::false"
-            echo "On main branch, proceeding with subsequent jobs."
-          fi
   build:
     runs-on: ubuntu-latest
     defaults:
