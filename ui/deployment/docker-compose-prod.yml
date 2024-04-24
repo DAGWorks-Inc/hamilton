@@ -23,7 +23,7 @@ services:
         dockerfile: deployment/Dockerfile.backend-prod
     entrypoint: ["/bin/bash", "-c", "cd /code/server && ls && ./entrypoint.sh"]
     ports:
-      - "8000:8000"
+      - "8241:8241"
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -49,7 +49,7 @@ services:
         - REACT_APP_AUTH_MODE=local
         - REACT_APP_USE_POSTHOG=false
     ports:
-      - "3000:3000"
+      - "8242:8242"
     environment:
       - NODE_ENV=development
       - REACT_APP_AUTH_MODE=local

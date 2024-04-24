@@ -61,17 +61,9 @@ This will do the following:
 3. Start the backend server
 4. Start the frontend server
 
-This takes a bit of time! So be patient. The server will be running on port 3000 -- in the logs you'll see something like this:
+This takes a bit of time! So be patient. The server will be running on port 8242 -- in the logs you'll see something like this:
 
-.. code-block:: bash
-
-    2024-04-18 15:57:07 You can now view frontend in the browser.
-    2024-04-18 15:57:07
-    2024-04-18 15:57:07   Local:            http://localhost:3000
-    2024-04-18 15:57:07   On Your Network:  http://172.19.0.4:3000
-
-
-Then navigate to ``http://localhost:3000`` in your browser, and enter your email (this will be the username used within the app).
+Then navigate to ``http://localhost:8242`` in your browser, and enter your email (this will be the username used within the app).
 
 Building the Docker Images locally
 __________________________________
