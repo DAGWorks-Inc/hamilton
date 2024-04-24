@@ -17,7 +17,7 @@ It works with the vast majority of Hamilton features.
 
 ## Docs/usage
 
-See documentation [here](https://hamilton.dagworks.io/concepts/ui).
+See documentation [here](https://hamilton.dagworks.io/en/latest/concepts/ui).
 
 ## Architecture
 

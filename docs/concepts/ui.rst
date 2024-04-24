@@ -48,6 +48,7 @@ Then, navigate to the ``ui`` directory:
 
 
 And run the server command:
+
 .. code-block:: bash
 
     ./deployment/run.sh
