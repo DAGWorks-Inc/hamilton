@@ -1,21 +1,21 @@
 import { Listbox, Transition } from "@headlessui/react";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import React, { Fragment } from "react";
-import { AiFillQuestionCircle } from "react-icons/ai";
 import { IconType } from "react-icons/lib";
 import { classNames } from "../../utils";
 import { HelpTooltip } from "./HelpTooltip";
 
 type Selectable = {
   name: string;
+  // eslint-disable-next-line
   value: any;
   icon?: IconType;
 };
 
 export const DropdownSelector: React.FC<{
   choices: Selectable[];
-  setCurrentChoice: (choice: any) => void;
-  currentChoice: any | null;
+  setCurrentChoice: (choice: Selectable) => void;
+  currentChoice: Selectable | null;
   title: string;
   description?: string;
 }> = (props) => {

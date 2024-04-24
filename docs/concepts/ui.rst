@@ -61,9 +61,7 @@ This will do the following:
 3. Start the backend server
 4. Start the frontend server
 
-This takes a bit of time! So be patient. The server will be running on port 8242 -- in the logs you'll see something like this:
-
-Then navigate to ``http://localhost:8242`` in your browser, and enter your email (this will be the username used within the app).
+This takes a bit of time! So be patient. The server will be running on port 8242. Then navigate to ``http://localhost:8242`` in your browser, and enter your email (this will be the username used within the app).
 
 Building the Docker Images locally
 __________________________________
