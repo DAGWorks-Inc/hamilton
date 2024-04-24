@@ -124,7 +124,7 @@ export const ProjectCreateOrEditForm = (props: ProjectCreateFormProps) => {
       ? "Project description is required"
       : undefined,
     selectedWriteSharingEntities.length === 0
-      ? "Write access is required by at least one user/team"
+      ? "Write access is required by at least one user (or team, if using the enterprise version)"
       : undefined,
   ].filter((item) => item !== undefined);
 
@@ -288,7 +288,8 @@ export const ProjectCreateOrEditForm = (props: ProjectCreateFormProps) => {
                 Read Access
               </label>
               <p className="mt-1 text-sm leading-6 text-gray-600 w-full">
-                Enter emails or select teams you are a part of.
+                Enter emails
+                {localMode ? " (reach out if you want team/organization-level ACLs)" : " or select teams you are part of."}.
               </p>
               <div className="mt-2">
                 <CreatableSelect
@@ -337,7 +338,8 @@ export const ProjectCreateOrEditForm = (props: ProjectCreateFormProps) => {
                 Write Access
               </label>
               <p className="mt-1 text-sm leading-6 text-gray-600 w-full">
-                Enter emails or select teams you are a part of.
+                Enter emails
+                {localMode ? " (reach out if you want team/organization-level ACLs)" : " or select teams you are part of."}.
               </p>
               <div className="mt-2">
                 <CreatableSelect
