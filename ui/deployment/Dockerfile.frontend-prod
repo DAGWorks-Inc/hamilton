@@ -36,5 +36,7 @@ EXPOSE 3000
 # Use the default nginx.conf provided by tiangolo/nginx-rtmp
 COPY ./deployment/nginx/nginx.conf /etc/nginx/nginx.conf
 
+CMD ["echo", "Frontend running on port 3000, go to http://localhost:3000 to view the app."]
+
 # Start Nginx and keep the process from backgrounding and the container from quitting
 CMD ["nginx", "-g", "daemon off;"]
