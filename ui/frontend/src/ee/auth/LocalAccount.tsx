@@ -8,7 +8,7 @@ export const LocalAccount = () => {
       <div className="mt-20">
         <h1 className="text-3xl font-bold text-gray-700 pl-5 pb-4">Email: {localAccount}</h1>
         <ProjectLogInstructions
-          projectId={1}
+          projectId={undefined}
           username={localAccount || ""}
           canWrite={true}
           hideAPIKey
