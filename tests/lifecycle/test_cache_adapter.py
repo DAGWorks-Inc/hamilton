@@ -59,6 +59,7 @@ def test_set_result(hook: CacheAdapter, node_a: node.Node):
     cache_key = CacheAdapter.create_key(node_hash, node_kwargs)
     result = 2
 
+    hook.run_before_graph_execution(graph=graph_types.HamiltonGraph([]))  # needed to open cache
     hook.cache_vars = [node_a.name]
     # used_nodes_hash would be set by run_to_execute() hook
     hook.used_nodes_hash[node_a.name] = node_hash
@@ -79,6 +80,7 @@ def test_get_result(hook: CacheAdapter, node_a: node.Node):
     result = 2
     cache_key = CacheAdapter.create_key(node_hash, node_kwargs)
 
+    hook.run_before_graph_execution(graph=graph_types.HamiltonGraph([]))  # needed to open cache
     hook.cache_vars = [node_a.name]
     # run_after_node_execution() would set cache
     hook.cache[cache_key] = result
@@ -103,6 +105,7 @@ def test_append_nodes_history(
     node_kwargs = dict(external_input=7)
     hook.cache_vars = [node_a.name]
 
+    hook.run_before_graph_execution(graph=graph_types.HamiltonGraph([]))  # needed to open cache
     # node version 1
     hook.used_nodes_hash[node_name] = graph_types.hash_source_code(node_a.callable, strip=True)
     hook.run_to_execute_node(
@@ -129,6 +132,7 @@ def test_commit_nodes_history(hook: CacheAdapter):
     """Commit node history to cache"""
     hook.nodes_history = dict(A=["hash_1", "hash_2"])
 
+    hook.run_before_graph_execution(graph=graph_types.HamiltonGraph([]))  # needed to open cache
     hook.run_after_graph_execution()
 
     # need to reopen the hook cache
