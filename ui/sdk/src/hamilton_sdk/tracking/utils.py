@@ -49,6 +49,10 @@ def make_json_safe(item: Union[dict, list, str, float, int, bool]) -> Any:
     else:
         try:
             json.dumps(item)  # Check if item is json serializable
+            if isinstance(item, str):
+                # escape null byte -- postgres doesn't like null bytes at least.
+                # we might need to escape more things; TBD.
+                return item.replace("\x00", "\\x00")
             return item
         except TypeError:
             return str(item)  # Convert item to string if not json serializable
