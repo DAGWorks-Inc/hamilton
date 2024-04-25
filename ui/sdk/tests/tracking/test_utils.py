@@ -108,3 +108,12 @@ def test_make_json_safe_with_file_object(tmp_path):
         f.write("test")
         result = utils.make_json_safe(f)
     assert isinstance(result, str)
+
+
+def test_make_json_safe_str_with_null_byte():
+    """Test that null bytes are escaped"""
+    input_dict = {"key1": "value1", "key2": "value\x00"}
+    result = utils.make_json_safe(input_dict)
+    assert isinstance(result, dict)
+    assert isinstance(result["key2"], str)
+    assert result["key2"] == "value\\x00"
