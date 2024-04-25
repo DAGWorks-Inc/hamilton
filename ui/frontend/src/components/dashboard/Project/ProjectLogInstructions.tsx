@@ -7,7 +7,7 @@ import { classNames } from "../../../utils";
 import { CheckBox } from "../../common/Checkbox";
 
 const INSTALL_CODE = `# be sure to initialize any python environment you want to use first
-pip install hamilton[sdk]`;
+pip install "sf-hamilton[sdk]"`;
 
 export const UsingHamiltonAlready = (props: {
   projectId: string | undefined;
