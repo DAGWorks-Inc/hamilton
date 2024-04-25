@@ -286,12 +286,13 @@ class HamiltonMagics(Magics):
                 dot = self.driver.display_all_functions(**self.display_config)
         except Exception as e:
             print(f"The display config: {self.display_config}\n\n" f"Failed with exception {e}")
-            self.driver.display_all_functions()
+            dot = self.driver.display_all_functions()
 
-        if self.notebook_env == "databricks":
-            display_in_databricks(dot)
-        else:
-            display(dot)
+        if args.display:
+            if self.notebook_env == "databricks":
+                display_in_databricks(dot)
+            else:
+                display(dot)
 
         if args.execute:
             results = self.driver.execute(
@@ -363,7 +364,7 @@ class HamiltonMagics(Magics):
         self.display_config = execute_and_get_assigned_values(self.shell, cell)
 
     @line_magic
-    def insert_module(self, line):
+    def module_to_cell(self, line):
         """Insert in the next cell the source code from the module (.py)
         at the path specified by `line`.
 
