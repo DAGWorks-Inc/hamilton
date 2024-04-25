@@ -1,25 +1,27 @@
-# This example shows a notebook using the Hamilton Jupyter magic
+# Hamilton notebook extension
+
+One of the best part about notebooks is the ability to execute and immediately inspect results. They provide a "read-eval-print" loop (REPL) coding experience. However, the way Hamilton separates dataflow definition (functions in a module) from execution (building and executing a driver) creates an extra step that can slowdown this loop.
+
+We built the Hamilton notebook extension to tighten that loop and even give a better experience than the core notebook experience!
 
 To load the magic:
 ```python
-# load some extensions / magic...
 %load_ext hamilton.plugins.jupyter_magic
 ```
 
-Then to use it:
+For example, this would allow you to define the module `joke` from your notebook
 
 ```python
-%%cell_to_module -m MODULE_NAME # more args
-```
-Other arguments (--help to print this.):
-  -m, --module_name: Module name to provide. Default is jupyter_module.
-  -c, --config: JSON config string, or variable name containing config to use.
-  -r, --rebuild-drivers: Flag to rebuild drivers.
-  -d, --display: Flag to visualize dataflow.
-  -v, --verbosity: of standard output. 0 to hide. 1 is normal, default.
+%%cell_to_module -m joke --display
+def topic() -> str:
+    return "Cowsay"
 
-Example use:
+def joke_prompt(topic: str) -> str:
+    return f"Knock, knock. Who's there? {topic}"
 
-```python
-%%cell_to_module -m MODULE_NAME --display --rebuild-drivers
+def reply(joke_prompt: str) -> str:
+    _, _, right = joke_prompt.partition("? ")
+    return f"{right} who?"
 ```
+
+Go explore `tutorial.ipynb` to learn about all interactive features!
