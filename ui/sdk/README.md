@@ -19,7 +19,7 @@ can do this with:
 
 ```bash
 # install the package & cli into your favorite python environment.
-pip install hamilton-sdk
+pip install "sf-hamilton[sdk]"
 
 # And validate -- this should not error.
 python -c "from hamilton_sdk import adapters"
