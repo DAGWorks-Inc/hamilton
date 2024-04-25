@@ -33,7 +33,7 @@ HAMILTON_ENV = get_from_env("HAMILTON_ENV", ["integration_tests", "local", "dev"
 PROPEL_AUTH_API_KEY = get_from_env("PROPEL_AUTH_API_KEY", allow_missing=True)
 PROPEL_AUTH_URL = get_from_env("PROPEL_AUTH_URL", allow_missing=True)
 
-ALLOWED_HOSTS = ["localhost", "backend"]
+ALLOWED_HOSTS = ["localhost", "backend", "0.0.0.0", "127.0.0.1"]
 
 HAMILTON_BLOB_STORE = get_from_env("HAMILTON_BLOB_STORE", ["local", "s3"])
 
