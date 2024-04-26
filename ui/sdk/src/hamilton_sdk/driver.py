@@ -418,7 +418,12 @@ def hash_dag_modules(dag: graph.FunctionGraph, modules: List[ModuleType]):
     modules_by_path = {}
     for module in modules:
         if hasattr(module, "__file__") and module.__file__ is not None:
-            modules_by_path[module.__file__] = inspect.getsource(module)
+            try:
+                modules_by_path[module.__file__] = inspect.getsource(module)
+            except OSError:
+                logger.warning(
+                    f"Skipping hashing of module {module.__name__} because we could not read the source code."
+                )
     digest = hashlib.sha256()
     for node_ in sorted(dag.nodes.values(), key=operator.attrgetter("name")):
         if node_.originating_functions is None:
@@ -428,7 +433,14 @@ def hash_dag_modules(dag: graph.FunctionGraph, modules: List[ModuleType]):
             if hasattr(module, "__file__") and module.__file__ is not None:
                 modules_by_path[module.__file__] = module
     for module_path, module_contents in sorted(modules_by_path.items()):
-        digest.update(module_path.encode())
+        # if the filename is tmpXXXXXXXX.py  assume it's a temporary file and skip hashing the name
+        # this could be in a jupyter context in which case this will cause different code
+        # versions when in fact there are none.
+        file_name = os.path.basename(module_path)
+        if file_name.startswith("tmp") and len(file_name) == 14:
+            pass
+        else:
+            digest.update(module_path.encode())
         digest.update(_get_modules_hash((module_contents,)).encode())
     return digest.hexdigest()
 
@@ -570,18 +582,35 @@ def extract_code_artifacts_from_function_graph(
                     source_file = inspect.getsourcefile(unwrapped_fn)
                 else:
                     source_file = inspect.getsourcefile(fn)
-                path = os.path.relpath(source_file, repo_base_path)
-                source_lines = inspect.getsourcelines(fn)
-                out.append(
-                    dict(
-                        name=fn_name,
-                        type="p_function",
-                        path=os.path.relpath(source_file, repo_base_path),
-                        start=inspect.getsourcelines(fn)[1] - 1,
-                        end=inspect.getsourcelines(fn)[1] - 1 + len(source_lines[0]),
-                        url=_derive_url(vcs_info, path, source_lines[1]),
+                if source_file is not None:
+                    path = os.path.relpath(source_file, repo_base_path)
+                else:
+                    path = ""
+                try:
+                    source_lines = inspect.getsourcelines(fn)
+                    out.append(
+                        dict(
+                            name=fn_name,
+                            type="p_function",
+                            path=path,
+                            start=inspect.getsourcelines(fn)[1] - 1,
+                            end=inspect.getsourcelines(fn)[1] - 1 + len(source_lines[0]),
+                            url=_derive_url(vcs_info, path, source_lines[1]),
+                        )
                     )
-                )
+                except OSError:
+                    # This is an error state where somehow we don't have
+                    # source code.
+                    out.append(
+                        dict(
+                            name=fn_name,
+                            type="p_function",
+                            path=path,
+                            start=0,
+                            end=0,
+                            url=_derive_url(vcs_info, path, 0),
+                        )
+                    )
     return out
 
 
