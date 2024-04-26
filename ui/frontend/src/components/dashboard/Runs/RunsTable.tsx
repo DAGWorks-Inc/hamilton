@@ -76,7 +76,6 @@ export const RunsTable: FC<{
   selectedTags: string[];
   // selfFilter?: boolean;
 }> = (props) => {
-  console.log(props.projectVersions);
   const { projectId } = props;
   const navigate = useNavigate();
   // const [selectedTags, setSelectedTags] = useState([] as string[]);
@@ -246,7 +245,6 @@ export const RunsTable: FC<{
   props.projectVersions.forEach((version) => {
     projectVersionMap.set(version.id as number, version);
   });
-  console.log(projectVersionMap, props.runs);
   const possibleTagValues = new Map<string, Set<string>>();
   props.runs.forEach((run) => {
     Object.keys(run.tags || {}).forEach((tag) => {

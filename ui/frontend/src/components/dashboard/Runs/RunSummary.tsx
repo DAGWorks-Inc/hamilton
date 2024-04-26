@@ -15,8 +15,7 @@ import {
   Legend,
 } from "chart.js";
 import ReactSelect from "react-select";
-import { useState } from "react";
-import { DateType } from "react-tailwindcss-datepicker/dist/types";
+import { useEffect, useState } from "react";
 import { RunsTable } from "./RunsTable";
 import { GenericTable } from "../../common/GenericTable";
 import { MAX_RUNS_QUERIED } from "./Runs";
@@ -27,6 +26,7 @@ import {
   RUN_FAILURE_STATUS,
   RUN_SUCCESS_STATUS,
 } from "../../../state/api/friendlyApi";
+import { useSearchParams } from "react-router-dom";
 
 ChartJS.register(
   BarElement,
@@ -119,6 +119,11 @@ export const TagSelectorWithValues = (props: {
         options={selectOptions}
         isMulti
         placeholder={"Select tags to view..."}
+        value={Array.from(props.selectedTags).flatMap(([tag, values]) => {
+          return Array.from(values).map((value) => {
+            return { value: [tag, value], label: `${tag}=${value}` };
+          });
+        })}
       />
     </div>
   );
@@ -141,6 +146,9 @@ export const StatusSelector = (props: {
         options={selectOptions}
         isMulti
         placeholder={"Filter by status..."}
+        value={Array.from(props.statuses).map((status) => {
+          return { value: status, label: status };
+        })}
       />
     </div>
   );
@@ -236,12 +244,68 @@ export const RunCountChart = (props: { runs: DAGRun[] }) => {
     // </div>
   );
 };
+const mapToObj = (map: Map<string, Set<string>>): object => {
+  const obj = Object.fromEntries(
+    Array.from(map).map(([key, value]) => [key, Array.from(value)])
+  );
+  return obj;
+};
 
 type Query = {
   selectedTags: Map<string, Set<string>>;
-  dateRange: { startDate: DateType; endDate: DateType };
+  dateRange: { startDate: Date | null; endDate: Date | null };
   statuses: Set<string>;
 };
+function serialize(query: Query): URLSearchParams {
+  const params = new URLSearchParams();
+  // Convert complex state to JSON string
+
+  if (query.selectedTags.size > 0) {
+    params.set("selectedTags", JSON.stringify(mapToObj(query.selectedTags)));
+  }
+  if (query.dateRange.startDate) {
+    params.set("startDate", query.dateRange.startDate.toISOString());
+  }
+  if (query.dateRange.endDate) {
+    params.set("endDate", query.dateRange.endDate.toISOString());
+  }
+  if (query.statuses.size > 0) {
+    params.set("statuses", JSON.stringify(Array.from(query.statuses)));
+  }
+  return params;
+}
+
+const jsonToMap = (obj: object): Map<string, Set<string>> => {
+  return new Map(
+    Object.entries(obj).map(([key, value]) => [key, new Set(value as string[])])
+  );
+};
+
+function deserialize(
+  searchParams: URLSearchParams,
+  minDate: Date,
+  maxDate: Date
+): Query {
+  const selectedTags = searchParams.get("selectedTags");
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
+  const statuses = searchParams.get("statuses");
+  const query: Query = {
+    selectedTags: new Map<string, Set<string>>(),
+    dateRange: {
+      startDate: startDate ? new Date(startDate) : minDate,
+      endDate: endDate ? new Date(endDate) : maxDate,
+    },
+    statuses: new Set<string>(),
+  };
+  if (selectedTags !== null) {
+    query.selectedTags = jsonToMap(JSON.parse(selectedTags));
+  }
+  if (statuses !== null) {
+    query.statuses = new Set(JSON.parse(statuses));
+  }
+  return query;
+}
 
 const RunQueryFilters = (props: {
   query: Query;
@@ -249,6 +313,7 @@ const RunQueryFilters = (props: {
   allTagOptions: Map<string, Set<string>>;
   allStatusOptions: Set<string>;
 }) => {
+  console.log(props.query.selectedTags);
   return (
     <div className="flex flex-wrap gap-4 items-center">
       <div className="w-full lg:w-144">
@@ -642,12 +707,6 @@ export const DAGVersionTable = (props: {
   );
 };
 
-const addDays = (date: Date, days: number) => {
-  const newDate = new Date(date);
-  newDate.setDate(newDate.getDate() + days);
-  return newDate;
-};
-
 export const RunSummary = (props: {
   runs: DAGRun[];
   projectId: number;
@@ -660,14 +719,23 @@ export const RunSummary = (props: {
     .sort((a, b) => a.getTime() - b.getTime());
   const minDate = runsSortedByStartDate[0];
   const maxDate = runsSortedByStartDate[runsSortedByStartDate.length - 1];
-  const [query, setQuery] = useState<Query>({
-    selectedTags: new Map<string, Set<string>>(),
-    dateRange: {
-      startDate: addDays(minDate, -1),
-      endDate: addDays(maxDate, +1),
-    },
-    statuses: new Set<string>(),
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(() =>
+    deserialize(searchParams, minDate, maxDate)
+  );
+
+  useEffect(() => {
+    const newSearchParams = serialize(query);
+    setSearchParams(newSearchParams, { replace: true });
+  }, [query, setSearchParams]);
+  // const [query, setQuery] = useState<Query>({
+  //   selectedTags: new Map<string, Set<string>>(),
+  //   dateRange: {
+  //     startDate: addDays(minDate, -1),
+  //     endDate: addDays(maxDate, +1),
+  //   },
+  //   statuses: new Set<string>(),
+  // });
   const filteredRuns = filterOnQuery(props.runs, query);
   // const filteredRuns = props.runs
   return (
