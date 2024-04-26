@@ -115,10 +115,10 @@ const FeatureNameDisplay = (label: string, value: RowToDisplay) => {
     "NodeMetadataPythonType1"
   );
   return (
-    <div className="flex flex-row gap-2 break-all overflow-clip items-center">
+    <div className="flex flex-row gap-2 break-all overflow-clip items-center cursor-default">
       {outputType ? (
         <ToolTip tooltip={parsePythonType(outputType)}>
-          <Icon className="text-lg hover:scale-125"></Icon>
+          <Icon className="text-lg hover:scale-125 cursor-pointer"></Icon>
         </ToolTip>
       ) : null}
       <div className="">
@@ -199,7 +199,7 @@ const FeatureSearchBox: React.FC<FeatureSearchBoxProps> = ({
       <input
         value={term}
         onChange={(e) => setSearch(e.target.value)}
-        className="text-lg block w-full rounded-md border-dwlightblue/30 border shadow-sm focus:border-dwdarkblue focus:ring-dwdarkblue sm:text-sm py-2 px-2"
+        className="text-lg block w-full rounded-md border-dwlightblue/30 border shadow-sm focus:border-dwdarkblue focus:ring-dwdarkblue sm:text-sm py-2 px-2 bg-white z-50"
         placeholder="Search for nodes, functions, etc..."
       />
     </div>
@@ -386,13 +386,12 @@ export const CatalogView: FC<{
 
   const searchResults = getSearchResult(searchTerm).filter(shouldDisplay);
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pt-10">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <FeatureSearchBox
-            setSearch={setSearchTerm}
-            term={searchTerm}
-          ></FeatureSearchBox>
+    <div className="px-4 sm:px-6 lg:px-8">
+      <div className="sm:flex sm:items-center sticky top-0 bg-white z-50 px-5">
+        <div className="w-full">
+          <div className="pt-10 pb-10">
+            <FeatureSearchBox setSearch={setSearchTerm} term={searchTerm} />
+          </div>
         </div>
       </div>
 

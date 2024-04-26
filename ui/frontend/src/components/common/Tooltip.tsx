@@ -4,7 +4,7 @@ export const ToolTip: React.FC<{ children: ReactNode; tooltip?: string }> = (
   props
 ) => {
   return (
-    <div className="group relative inline-block z-50">
+    <div className="group relative inline-block">
       {props.children}
       {/* This is a hack -- the overflow is hidden for the parent container, so we need to
          position it on the right of the icon.
