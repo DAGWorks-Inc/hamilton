@@ -60,9 +60,9 @@ def create_temporary_module(*functions: Callable, module_name: str = None) -> Mo
     return module
 
 
-def module_from_source(source: str) -> ModuleType:
+def module_from_source(source: str, module_name: str = None) -> ModuleType:
     """Create a temporary module from source code"""
-    module_name = _generate_unique_temp_module_name()
+    module_name = module_name if module_name else _generate_unique_temp_module_name()
     module_object = ModuleType(module_name)
     code_object = compile(source, module_name, "exec")
     sys.modules[module_name] = module_object

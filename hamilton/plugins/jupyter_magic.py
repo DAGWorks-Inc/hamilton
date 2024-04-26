@@ -15,6 +15,7 @@ If you are developing on this module you'll then want to use:
 """
 
 import ast
+import graphlib
 import importlib
 import os
 from pathlib import Path
@@ -73,6 +74,12 @@ def execute_and_get_assigned_values(shell: InteractiveShellApp, cell: str) -> Di
     expr = shell.input_transformer_manager.transform_cell(cell)
     expr_ast = shell.compile.ast_parse(expr)
     return {name: shell.user_ns[name] for name in get_assigned_variables(expr_ast)}
+
+
+def topologically_sorted_nodes(nodes):
+    graph = {n.name: set([*n.required_dependencies, *n.optional_dependencies]) for n in nodes}
+    sorter = graphlib.TopologicalSorter(graph)
+    return list(sorter.static_order())
 
 
 def rebuild_driver(
@@ -187,61 +194,77 @@ def determine_notebook_type() -> str:
 
 @magics_class
 class HamiltonMagics(Magics):
-    """Magics to facilitate interactive Hamilton development in notebooks.
-
-    Use `%%cell_to_module` to define a Python module in a single cell. A Hamilton Driver
-    is automatically built using its content.
-
-    Use `%%set_driver` to explicitly define a Driver, allowing you to:
-    - pass a Driver config
-    - pass external Python modules
-    - pass Adapters
-    - pass Executors
-    Then, `%%cell_to_module` will automatically add its module to this Driver.
-
-    Use `%%set_inputs`, `%%set_overrides`, and `%%set_final_vars` to customize execution.
-    These values will be used when `%%cell_to_module` receives the `--execute` flag.
-    """
+    """Magics to facilitate interactive Hamilton development in notebooks."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.driver = None
         self.driver_name = None
+        self.builder = None
         self.external_modules = list()
-        self.inputs = dict()
-        self.overrides = dict()
         self.final_vars = list()  # empty list will be converted to "all variables"
-        self.display_config = dict()
 
         if not hasattr(self, "notebook_env"):
             self.notebook_env = determine_notebook_type()
 
     @magic_arguments()  # needed on top to enable parsing
-    @argument("-m", "--module_name", help="Module name to provide. Default is jupyter_module.")
+    @argument("module_name", help="Name for the module defined in this cell.")
+    @argument(
+        "-d",
+        "--display",
+        nargs="?",
+        const=True,
+        help="Display the dataflow. The argument is the variable name of a dictionary of visualization kwargs; else {}.",
+    )
     @argument(
         "-x",
         "--execute",
+        nargs="?",
+        const=True,
+        help="Execute the dataflow. The argument is the variable name of a list of nodes; else execute all nodes.",
+    )
+    @argument(
+        "-b",
+        "--builder",
+        help="Builder to which the module will be added and used for execution. Allows to pass Config and Adapters",
+    )
+    @argument(
+        "-i",
+        "--inputs",
+        help="Execution inputs. The argument is the variable name of a dict of inputs; else {}.",
+    )
+    @argument(
+        "-o",
+        "--overrides",
+        help="Execution overrides. The argument is the variable name of a dict of overrides; else {}.",
+    )
+    @argument(
+        "-h",
+        "--hide_results",
         action="store_true",
-        help="Flag to execute the dataflow using the Driver, final_vars, inputs, and overrides.",
+        help="Hides the automatic display of execution results. ",
     )
     @argument(
         "-w",
         "--write_to_file",
-        action="store_true",
-        help="Flag to write the cell to a Python file named according to {module_name}.py",
-    )
-    @argument(
-        "-d",
-        "--display",
-        action="store_true",
-        help="Flag to display all functions or the execution path (if --execute is present).",
+        nargs="?",
+        const=True,
+        help="Write cell content to a file. The argument is the file path; else write to {module_name}.py",
     )
     @cell_magic
     def cell_to_module(self, line, cell):
-        """Execute the cell and dynamically create a Python module from its content.
-        A Hamilton Driver is automatically instantiated with that module for variable `{MODULE_NAME}_dr`.
+        """Turn a notebook cell into a Hamilton module definition. This allows you to define
+        and execute a dataflow from a single cell.
 
-        > %%cell_to_module -m MODULE_NAME --display --rebuild-drivers
+        For example:
+        ```
+        %%cell_to_module dataflow --display --execute
+        def A(external_input: int) -> int:
+          return external_input ** 3
+
+        def B(A: int) -> bool:
+          return (A % 3) > 2
+        ```
         """
         # shell.ex() is equivalent to exec(), but in the user namespace (i.e. notebook context).
         # This allows imports and functions defined in the magic cell %%cell_to_module to be
@@ -249,119 +272,79 @@ class HamiltonMagics(Magics):
         self.shell.ex(cell)
 
         args = parse_argstring(self.cell_to_module, line)  # specify how to parse by passing method
-        module_name = "jupyter_module" if args.module_name is None else args.module_name
-        if args.write_to_file:
-            with open(f"{module_name}.py", "w") as f:
-                f.write(cell)
-
-        # create a module from the cell and push it to user namespace
-        module_object = ad_hoc_utils.module_from_source(cell)
-        self.shell.push({module_name: module_object})
-
-        # update the Driver, keeps existing modules, config, adapter; update it in user ns
-        self.driver = rebuild_driver(
-            self.driver,
-            modules=[module_object] + self.external_modules,
+        module_name = args.module_name
+        builder = self.shell.user_ns[args.builder] if args.builder else driver.Builder()
+        inputs = self.shell.user_ns[args.inputs] if args.inputs else {}
+        overrides = self.shell.user_ns[args.overrides] if args.overrides else {}
+        display_config = (
+            self.shell.user_ns[args.display] if args.display not in [True, None] else {}
         )
-        self.shell.push({self.driver_name: self.driver})
 
-        # we don't assign the full list to self.final_vars, otherwise the next iteration
-        # won't pickup on newly available nodes
-        if self.final_vars == []:
-            final_vars = [
-                n.name for n in self.driver.list_available_variables() if not n.is_external_input
-            ]
-        else:
-            final_vars = self.final_vars
-
-        try:
-            if args.execute:
-                dot = self.driver.visualize_execution(
-                    final_vars=final_vars,
-                    inputs=self.inputs,
-                    overrides=self.overrides,
-                    **self.display_config,
-                )
+        if args.write_to_file:
+            if isinstance(args.write_to_file, str):
+                file_path = Path(args.write_to_file)
             else:
-                dot = self.driver.display_all_functions(**self.display_config)
-        except Exception as e:
-            print(f"The display config: {self.display_config}\n\n" f"Failed with exception {e}")
-            dot = self.driver.display_all_functions()
+                file_path = Path(f"{module_name}.py")
+            file_path.write_text(cell)
 
+        # create modules and build driver
+        module_object = ad_hoc_utils.module_from_source(cell, module_name)
+        self.shell.push({module_name: module_object})
+        base_dr = builder.build()  # easier to rebuild a Driver than messing with Builder
+        dr = rebuild_driver(dr=base_dr, modules=[*base_dr.graph_modules, module_object])
+
+        # determine final vars
+        if args.execute not in [True, None]:
+            final_vars = self.shell.user_ns[args.execute]
+        else:
+            nodes = [n for n in dr.list_available_variables() if not n.is_external_input]
+            final_vars = topologically_sorted_nodes(nodes)
+
+        # visualize
         if args.display:
+            # try/except for display config or invalid `.visualize_execution()` inputs
+            try:
+                if args.execute:
+                    dot = dr.visualize_execution(
+                        final_vars=final_vars,
+                        inputs=inputs,
+                        overrides=overrides,
+                        **display_config,
+                    )
+                else:
+                    dot = dr.display_all_functions(**display_config)
+            except Exception as e:
+                print(f"The display config: {display_config}\n\n" f"Failed with exception {e}")
+                dot = dr.display_all_functions()
+
             if self.notebook_env == "databricks":
                 display_in_databricks(dot)
             else:
                 display(dot)
 
+        # execute
         if args.execute:
-            results = self.driver.execute(
+            results = dr.execute(
                 final_vars=final_vars,
-                inputs=self.inputs,
-                overrides=self.overrides,
+                inputs=inputs,
+                overrides=overrides,
             )
+            # normalize variable names that contain a `.` character like @pipe(step())
             results = {normalize_result_names(name): value for name, value in results.items()}
             self.shell.push(results)
 
-    @cell_magic
-    def set_driver(self, line: str, cell: str):
-        """Execute the cell and stores the defined Driver.
-
-        The cell can contain variable assignment, but only the first Driver
-        defined will be stored.
-        """
-        assigned_values = execute_and_get_assigned_values(self.shell, cell)
-
-        for name, value in assigned_values.items():
-            if isinstance(value, driver.Driver):
-                self.driver = value
-                self.driver_name = name
-                self.external_modules = list(value.graph_modules)
+            if args.hide_results:
                 return
-
-        raise ValueError("No Driver variable found in cell.")
+            # results will follow the order of `final_vars` or topologically sorted if all vars
+            display(*(results[n] for n in final_vars))
 
     @magic_arguments()
-    @argument(
-        "--all",
-        action="store_true",
-        help="Flag to include all variables and ignore the cell content.",
-    )
+    @argument("name", type=str, help="Creates a dictionary fromt the cell's content.")
     @cell_magic
-    def set_final_vars(self, line: str, cell: str):
-        """Execute the cell and stores the list of strings passed.
-
-        The cell should contain a single variable assignment, which is a list of strings.
-        """
-        args = parse_argstring(self.set_final_vars, line)
-        if args.all:
-            self.final_vars = []
-            return
-
-        assigned_values = execute_and_get_assigned_values(self.shell, cell)
-
-        if len(assigned_values) != 1:
-            raise ValueError("The cell should contain a single variable that's a list of strings.")
-
-        key, value = next(iter(assigned_values.items()))
-        if not isinstance(assigned_values[key], list):
-            raise TypeError(f"The variable `{key}` isn't a list.")
-
-        self.final_vars = value
-
-    @cell_magic
-    def set_inputs(self, line: str, cell: str):
+    def set_dict(self, line: str, cell: str):
         """Execute the cell and store all assigned variables as inputs"""
-        self.inputs = execute_and_get_assigned_values(self.shell, cell)
-
-    @cell_magic
-    def set_overrides(self, line: str, cell: str):
-        """Execute the cell and store all assigned variables as overrides"""
-        self.overrides = execute_and_get_assigned_values(self.shell, cell)
-
-    @cell_magic
-    def set_display_config(self, line: str, cell: str):
-        self.display_config = execute_and_get_assigned_values(self.shell, cell)
+        args = parse_argstring(self.set_dict, line)
+        self.shell.user_ns[args.name] = execute_and_get_assigned_values(self.shell, cell)
 
     @line_magic
     def module_to_cell(self, line):
@@ -377,7 +360,7 @@ class HamiltonMagics(Magics):
 
         module_path = Path(line)
         # insert our custom %%with_functions magic at the top of the cell
-        header = f"%%cell_to_module -m {module_path.stem}\n\n"
+        header = f"%%cell_to_module {module_path.stem}\n"
         module_source = module_path.read_text()
         # insert source code as text in the next cell
         self.shell.set_next_input(header + module_source, replace=False)
