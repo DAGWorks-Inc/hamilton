@@ -28,6 +28,8 @@ import {
 } from "react-icons/ai";
 import { NodeRunsView } from "./NodeRunExpansion";
 import { getFunctionIdentifier } from "../Code/CodeExplorer";
+import { useURLParams } from "../../../state/urlState";
+import { useParams, useSearchParams } from "react-router-dom";
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 const displayTagValue = (value: any) => {
@@ -255,7 +257,11 @@ export const CatalogView: FC<{
 }> = (props) => {
   const projectId = props.project.id as number;
   const catalogData = useCatalogView({ projectId: projectId, limit: 10000 });
-  const [searchTerm, setSearchTerm] = useState("");
+  const [queryParams, setQueryParams] = useSearchParams();
+  const searchTerm = queryParams.get("query") || "";
+  const setSearchTerm = (term: string) => {
+    setQueryParams({ query: term });
+  };
   const [expandedRowsByKey, setExpandedRowsByKey] = useState<
     Map<string, "runtime-chart" | "table">
   >(new Map());
