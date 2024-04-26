@@ -28,8 +28,7 @@ import {
 } from "react-icons/ai";
 import { NodeRunsView } from "./NodeRunExpansion";
 import { getFunctionIdentifier } from "../Code/CodeExplorer";
-import { useURLParams } from "../../../state/urlState";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 const displayTagValue = (value: any) => {
