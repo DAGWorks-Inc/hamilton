@@ -28,7 +28,7 @@ Before we dive into the concepts, let's clarify the terminology we'll be using:
        many (using function modifiers). See :doc:`node`.
    * - Module |
        Python module
-     - Python code organized into a ``.py`` file.
+     - Python code organized into a ``.py`` file. These are natural groupings of functions that turn to a set of nodes. See [code organization](https://hamilton.dagworks.io/en/latest/concepts/best-practices/code-organization/#code-organization) for more details.
    * - Driver |
        Hamilton Driver
      - An object that loads Python modules to build a dataflow. It is responsible for visualizing and executing the \
