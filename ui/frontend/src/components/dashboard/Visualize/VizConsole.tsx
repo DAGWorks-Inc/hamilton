@@ -17,7 +17,6 @@ import { DAGTemplateWithData } from "../../../state/api/friendlyApi";
 export const NodeVizConsole = (props: NodeVizConsoleProps) => {
   // const [open, setOpen] = useState(true);
   const { open, nodes, setOpen } = props;
-  console.log(open, nodes, setOpen);
 
   const uniqueCodeMap = nodes.reduce((acc, node) => {
     const group = node.codeArtifact?.name;
@@ -31,7 +30,6 @@ export const NodeVizConsole = (props: NodeVizConsoleProps) => {
     }
     return acc;
   }, new Map<string, DAGNode[]>());
-  console.log(uniqueCodeMap);
 
   return (
     <Transition.Root show={open} as={Fragment}>

@@ -639,7 +639,6 @@ const AutoRefreshButton = (props: {
       intervalId = setInterval(() => {
         refetch(); // Call the refetch function
         setElapsedTime((prevTime) => prevTime + REFRESH_SECONDS); // Update elapsed time
-        console.log("Refreshing...");
       }, REFRESH_SECONDS * 1000); // Convert seconds to milliseconds
     } else {
       // Disable auto-refresh and reset elapsed time if total duration is reached
