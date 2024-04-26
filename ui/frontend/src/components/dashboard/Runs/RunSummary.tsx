@@ -313,7 +313,6 @@ const RunQueryFilters = (props: {
   allTagOptions: Map<string, Set<string>>;
   allStatusOptions: Set<string>;
 }) => {
-  console.log(props.query.selectedTags);
   return (
     <div className="flex flex-wrap gap-4 items-center">
       <div className="w-full lg:w-144">

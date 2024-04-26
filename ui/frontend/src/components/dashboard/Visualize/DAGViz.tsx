@@ -579,7 +579,6 @@ const BaseNodeComponent = (props: {
     selectedDAGIndices,
   } = useContext(SelectedNodesContext);
 
-  // console.log(selectedNodes)
   const highlightedContext = getStateContext(
     upstreamNodes,
     downstreamNodes,
@@ -764,7 +763,6 @@ const FunctionNodeComponent = (props: {
     selectedDAGIndices,
   } = useContext(SelectedNodesContext);
 
-  // console.log(selectedNodes)
   const highlightedContext = getStateContext(
     upstreamNodes,
     downstreamNodes,
@@ -1154,7 +1152,6 @@ const createNodes = (
   const codeArtifactsById = new Map(
     codeArtifacts.map((ca) => [ca.id as number, ca])
   );
-  console.log(allCodeContents, codeArtifactsById);
   const nodeRunsGroupedByTemplateName = new Map<
     string,
     NodeRunWithAttributes[]
@@ -1181,7 +1178,6 @@ const createNodes = (
   const nodes = dagTemplate.nodes.map((nodeTemplate) => {
     // TODO -- allow for multiple, and select the primary
     const codeArtifactId = nodeTemplate.code_artifacts[0];
-    console.log(nodeTemplate.name, codeArtifactId, allCodeContentsByArtifactId);
     return {
       nodeTemplate: nodeTemplate,
       nodeRuns: nodeRunsGroupedByTemplateName.get(nodeTemplate.name), // TODO -- use Node Runs to get this to work

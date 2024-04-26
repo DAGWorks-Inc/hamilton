@@ -634,11 +634,6 @@ export const DAGWorksDescribe3View = (props: {
         if (value.length > 1) {
           return <></>;
         }
-        // console.log(value[0].mean, value[0].std)
-        // if (value[0].mean === null || value[0].std === null) {
-        //   //eslint-disable-next-line no-debugger
-        //   debugger;
-        // }
         const meanStr = value[0].mean?.toFixed(2);
         const stdStr = value[0].std?.toFixed(2);
 
@@ -650,9 +645,6 @@ export const DAGWorksDescribe3View = (props: {
                 : `${meanStr}±${stdStr}`}
             </code>
           </div>
-          // <div>{`${value[0].mean.toFixed(2)} ± ${value[0].std.toFixed(
-          //   2
-          // )}`}</div>
         );
       },
     },
