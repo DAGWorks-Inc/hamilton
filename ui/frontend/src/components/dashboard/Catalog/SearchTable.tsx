@@ -29,6 +29,10 @@ import {
 import { NodeRunsView } from "./NodeRunExpansion";
 import { getFunctionIdentifier } from "../Code/CodeExplorer";
 import { useSearchParams } from "react-router-dom";
+import {
+  TagSelectorWithValues,
+  selectedTagsToObj,
+} from "../../common/TagSelector";
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 const displayTagValue = (value: any) => {
@@ -244,6 +248,47 @@ const extractTableData = (
   });
 };
 
+type QueryState = {
+  searchTerm: string;
+  selectedTags: Map<string, Set<string>>;
+};
+// TODO -- organize this with the one in RunSummary, there's some duplicated code
+const useQueryState = () => {
+  const [queryParams, setQueryParams] = useSearchParams();
+  const searchTerm = queryParams.get("query") || "";
+  const selectedTagsRaw = queryParams.get("tags");
+  let selectedTags = new Map<string, Set<string>>();
+  if (selectedTagsRaw !== null) {
+    const parsed = JSON.parse(selectedTagsRaw);
+    selectedTags = new Map(
+      Object.entries(parsed).map(([key, value]) => [
+        key,
+        new Set(value as string[]),
+      ])
+    );
+  }
+  const setParams = (params: QueryState) => {
+    const newParams = new URLSearchParams();
+    if (params.searchTerm !== "") {
+      newParams.set("query", params.searchTerm);
+    }
+    if (params.selectedTags.size > 0) {
+      newParams.set(
+        "tags",
+        JSON.stringify(selectedTagsToObj(params.selectedTags))
+      );
+    }
+    setQueryParams(newParams);
+  };
+  return [
+    {
+      searchTerm,
+      selectedTags,
+    },
+    setParams,
+  ] as const;
+};
+
 /**
  * Table with search bar for nodes in prior versions/runs
  * Note that this optionally comes with the ability to attach run data to it -- that will augment
@@ -256,11 +301,8 @@ export const CatalogView: FC<{
 }> = (props) => {
   const projectId = props.project.id as number;
   const catalogData = useCatalogView({ projectId: projectId, limit: 10000 });
-  const [queryParams, setQueryParams] = useSearchParams();
-  const searchTerm = queryParams.get("query") || "";
-  const setSearchTerm = (term: string) => {
-    setQueryParams({ query: term });
-  };
+
+  const [{ searchTerm, selectedTags }, setQueryParams] = useQueryState();
   const [expandedRowsByKey, setExpandedRowsByKey] = useState<
     Map<string, "runtime-chart" | "table">
   >(new Map());
@@ -269,6 +311,15 @@ export const CatalogView: FC<{
     catalogData.data?.code_artifacts || [],
     props.project.id as number
   );
+  const allTags = new Map<string, Set<string>>();
+  searchData.forEach((row) => {
+    Object.entries(row.node.tags || {}).forEach(([tag, value]) => {
+      if (!allTags.has(tag)) {
+        allTags.set(tag, new Set());
+      }
+      allTags.get(tag)?.add(value as string);
+    });
+  });
   const fuse = useMemo(
     () =>
       new Fuse(searchData, {
@@ -366,14 +417,23 @@ export const CatalogView: FC<{
   ];
 
   const shouldDisplay = (row: { item: RowToDisplay }) => {
-    // return true;
-    //eslint-disable-next-line no-prototype-builtins
     const node = row.item.node;
-    return !Object.prototype.hasOwnProperty.call(
+    let disp = true;
+    disp &&= !Object.prototype.hasOwnProperty.call(
       node.tags,
       "hamilton.non_final_node"
     );
-    // return !node.tags.hasOwnProperty("hamilton.decorators.non_final"); // Really it should check the value...
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tags = node.tags as any;
+    if (selectedTags.size > 0) {
+      for (const [tag, values] of Array.from(selectedTags.entries())) {
+        if (!values.has(tags[tag])) {
+          disp = false;
+          break;
+        }
+      }
+    }
+    return disp;
   };
   const getSearchResult = (term: string) => {
     if (searchTerm == "") {
@@ -394,8 +454,21 @@ export const CatalogView: FC<{
     <div className="px-4 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center sticky top-0 bg-white z-50 px-5">
         <div className="w-full">
-          <div className="pt-10 pb-10">
-            <FeatureSearchBox setSearch={setSearchTerm} term={searchTerm} />
+          <div className="pt-10 pb-10 flex flex-col gap-2">
+            <FeatureSearchBox
+              setSearch={(term) => {
+                setQueryParams({ searchTerm: term, selectedTags });
+              }}
+              term={searchTerm}
+            />
+            <TagSelectorWithValues
+              selectedTags={selectedTags}
+              setSelectedTags={(tags) => {
+                setQueryParams({ searchTerm, selectedTags: tags });
+              }}
+              allTags={allTags}
+              placeholder="Filter by tags (select key/value pairs, multiple values is an OR query)"
+            />
           </div>
         </div>
       </div>
