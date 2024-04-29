@@ -242,7 +242,6 @@ const extractTableData = (
       projectVersionName: "",
       projectId: projectId,
       codeArtifact: codeArtifactsById.get(node.code_artifacts?.[0]),
-
       // runInfo: [],
     };
   });
