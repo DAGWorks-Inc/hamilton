@@ -1,6 +1,6 @@
 import pyspark.sql as ps
+from column_features import darkshore_flag, durotar_flag
 from pyspark.sql import functions as sf
-from with_columns import darkshore_flag, durotar_flag
 
 from hamilton.function_modifiers import schema
 from hamilton.plugins.h_spark import with_columns
