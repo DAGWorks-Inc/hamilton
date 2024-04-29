@@ -1,5 +1,6 @@
 import { ChevronRightIcon, HomeIcon } from "@heroicons/react/20/solid";
 import { DAGTemplateWithoutData, Project } from "../../state/api/friendlyApi";
+import { Link } from "react-router-dom";
 
 export const NavBreadCrumb = (props: {
   project: Project;
@@ -18,19 +19,27 @@ export const NavBreadCrumb = (props: {
             : index == 3
             ? props.dagTemplates[0]?.name
             : pathName;
+        let linkPath =
+          "/dashboard/" +
+          pathNameRelativeToDashboard.slice(0, index + 1).join("/");
+        if (linkPath.endsWith("/project")) {
+          linkPath = "/dashboard/projects";
+        } else if (linkPath.endsWith("/version")) {
+          linkPath = linkPath.replace("/version", "/versions");
+        }
         return (
           // TODO -- enable when we can get this working -- we just need to link for links that exist
           // Should be easy I just don't have time now
-          <span
-            // to={
-            //   "/dashboard/" +
-            //   pathNameRelativeToDashboard.slice(0, index + 1).join("/")
-            // }
+          <Link
+            to={
+              "/dashboard/" +
+              pathNameRelativeToDashboard.slice(0, index + 1).join("/")
+            }
             key={linkName}
-            className="ml-4 font-medium hover:text-gray-800"
+            className="ml-4 font-medium hover:text-gray-800 cursor-pointer hover:scale-105"
           >
             {linkName}
-          </span>
+          </Link>
         );
       }),
     ];
@@ -41,7 +50,10 @@ export const NavBreadCrumb = (props: {
   const elements = getElements();
 
   return (
-    <nav className="flex max-w-full bg-transparent" aria-label="Breadcrumb">
+    <nav
+      className="flex max-w-full bg-transparent z-50"
+      aria-label="Breadcrumb"
+    >
       <ol role="list" className="flex items-center space-x-4 flex-wrap">
         <li>
           <div>
