@@ -16,11 +16,13 @@ if env == "local":
 elif env == "integration_tests":
     api = NinjaAPI(auth=[TestAPIAuthenticator()])
 else:
-    propelauth.init()
+    propel_auth_instance = propelauth.init()
     api = NinjaAPI(
         auth=[
-            propelauth.PropelAuthBearerTokenAuthenticator(),
-            propelauth.PropelAuthAPIKeyAuthenticator(),
+            propelauth.PropelAuthBearerTokenAuthenticator(
+                propel_auth_instance=propel_auth_instance
+            ),
+            propelauth.PropelAuthAPIKeyAuthenticator(propel_auth_instance=propel_auth_instance),
         ]
     )
     # only use ddtrace in prod/staging

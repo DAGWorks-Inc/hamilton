@@ -17,8 +17,6 @@ from trackingserver_base.auth.sync import (
     ensure_user_only_part_of_orgs,
 )
 
-auth = None
-
 logger = logging.getLogger(__name__)
 
 
@@ -29,8 +27,8 @@ def init():
     if propel_auth_url is None or propel_auth_api_key is None:
         raise ValueError("PROPEL_AUTH_URL and PROPEL_AUTH_API_KEY must be set.")
 
-    global auth
     auth = init_base_auth(propel_auth_url, propel_auth_api_key)
+    return auth
 
 
 def fetch_user_metadata_by_email(
@@ -52,7 +50,7 @@ if settings.HAMILTON_ENV != "integration_tests":
     )(fetch_user_metadata_by_email)
 
 
-async def synchronize_auth(email: str, propel_auth_instance=auth) -> Tuple[User, List[Team]]:
+async def synchronize_auth(email: str, propel_auth_instance) -> Tuple[User, List[Team]]:
     """Validates that the user exists in the database, and that the user is part of the
     associated organizations.
 
@@ -93,7 +91,7 @@ class PropelAuthBearerTokenAuthenticator(HttpBearer):
     """Basic auth provider. Note that this is overloaded -- it actually synchronizes
     the DB with the auth provider. See `ensure_user` for more details."""
 
-    def __init__(self, propel_auth_instance=auth):
+    def __init__(self, propel_auth_instance):
         super(PropelAuthBearerTokenAuthenticator).__init__()
         self.propel_auth_instance = propel_auth_instance
 
@@ -132,19 +130,21 @@ class PropelAuthBearerTokenAuthenticator(HttpBearer):
 
 
 class PropelAuthAPIKeyAuthenticator(APIKeyQuery):
+    def __init__(self, propel_auth_instance):
+        super(PropelAuthAPIKeyAuthenticator).__init__()
+        self.propel_auth_instance = propel_auth_instance
+
     param_name = "x-api-key"
 
     async def __call__(self, request: HttpRequest) -> Optional[Any]:
         api_key = request.headers.get("x-api-key")
         return await self.authenticate(request, api_key)
 
-    async def authenticate(
-        self, request, key, propel_auth_instance=auth
-    ) -> Optional[Tuple[User, List[Team]]]:
+    async def authenticate(self, request, key) -> Optional[Tuple[User, List[Team]]]:
         # TODO _- handle this using the builtin key with param_name
         user_email = request.headers.get("x-api-user")
         is_valid = await validate_api_key(user_email, api_key=key)
         if not is_valid:
             return None
         # We ensure any synchronization is done here
-        return await synchronize_auth(user_email)
+        return await synchronize_auth(user_email, propel_auth_instance=self.propel_auth_instance)
