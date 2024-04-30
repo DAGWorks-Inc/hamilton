@@ -5,9 +5,10 @@ Hamilton UI
 Hamilton comes with a fully open-source UI that can be run both for local deployment and on a remote server.
 The UI consists of the following features:
 
-1. Telemetry for hamilton executions -- both on the history of executions and the data itself
-2. A feature/artifact catalog for browsing/connecting executions of nodes -> results
-3. A DAG visualizer for exploring the DAG, looking at the code, and determining lineage
+1. Telemetry for hamilton executions -- both on the history of executions and the data itself.
+2. A feature/artifact catalog for browsing/connecting executions of nodes -> results.
+3. A dataflow (i.e. DAG) visualizer for exploring and looking at your code, and determining lineage.
+4. A project explorer for viewing curating projects and viewing versions of your Hamilton dataflows.
 
 --------
 Overview

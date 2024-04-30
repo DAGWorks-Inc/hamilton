@@ -21,6 +21,7 @@
 # Hamilton
 
 The general purpose micro-orchestration framework for building [dataflows](https://en.wikipedia.org/wiki/Dataflow) from python functions. Express data, ML, LLM pipelines/workflows, and web requests in a simple declarative manner.
+Hamilton also comes with a [UI](https://hamilton.dagworks.io/en/latest/concepts/ui) to visualize, catalog, and monitor your dataflows.
 
 Hamilton is a novel paradigm for specifying a flow of delayed execution in python. It works on python objects of any type and dataflows of any complexity. Core to the design of Hamilton is a clear mapping of function name to artifact, allowing you to quickly grok the relationship between the code you write and the data you produce.
 
@@ -32,12 +33,12 @@ Note: Hamilton describes DAGs. If you're looking for something to handle loops o
 ✅ Model a dataflow -- If you can model your problem as a DAG in python, Hamilton is the cleanest way to build it.<br/>
 ✅ Unmaintainable spaghetti code -- Hamilton dataflows are unit testable, self-documenting, and provide lineage.<br/>
 ✅ Long iteration/experimentation cycles -- Hamilton provides a clear, quick, and methodical path to debugging/modifying/extending your code.<br/>
-✅ Reusing code across contexts -- Hamilton encourages code that is independent of infrastructure and can run regardless of execution setting.
+✅ Reusing code across contexts -- Hamilton encourages code that is independent of infrastructure and can run regardless of execution setting.<br/>
+✅ Collaborating on dataflows & tracking execution + artifacts -- Hamilton comes with an optional [UI](https://hamilton.dagworks.io/en/latest/concepts/ui) to visualize, catalog, and monitor your dataflows, which helps team operate smoothly.
 
 ## Problems Hamilton Does not Solve
 ❌ Provisioning infrastructure -- you want a macro-orchestration system (see airflow, kubeflow, sagemaker, etc...).<br/>
 ❌ Doing your ML for you -- we organize your code, BYOL (bring your own libraries).<br/>
-❌ Tracking execution + associated artifacts -- Hamilton is lightweight, but if this is important to you see the [DAGWorks product](https://www.dagworks.io).
 
 See the table below for more specifics/how it compares to other common tooling.
 
