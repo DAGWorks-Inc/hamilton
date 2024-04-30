@@ -68,7 +68,7 @@ export const NotUsingHamiltonYet = (props: {
   const initCode = `\
 git clone https://github.com/DAGWorks-Inc/hamilton.git
 cd hamilton/examples/hamilton_ui
-# modify the project ID and username in run.py.
+# provide the project ID and username for run.py.
 `;
   const pipCode = `pip install -r requirements.txt`;
   const runCode = `python run.py`;
