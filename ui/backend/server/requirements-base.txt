@@ -7,8 +7,9 @@ colorlog
 ddtrace
 django
 django-extensions
-django-ninja==1.0b1
+django-ninja>=1.1.0
 passlib
 propelauth_py
 psycopg2-binary
+pydantic
 sf-hamilton
