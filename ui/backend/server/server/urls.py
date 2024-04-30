@@ -14,10 +14,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-import os
-
 from django.contrib import admin
-from django.urls import path  # include,
+from django.urls import path
 
 from . import api, default_views
 
@@ -32,6 +30,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 ]
 
-HAMILTON_ENV = os.environ.get("HAMILTON_ENV", "dev")
+# HAMILTON_ENV = os.environ.get("HAMILTON_ENV", "dev")
 # if HAMILTON_ENV == "dev":
 #     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
