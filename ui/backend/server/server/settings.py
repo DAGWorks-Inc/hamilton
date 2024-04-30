@@ -52,7 +52,12 @@ HAMILTON_BLOB_STORE_PARAMS = (
 hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
 
-ALLOWED_HOSTS = ALLOWED_HOSTS + [local_ip] + [hostname]
+ALLOWED_HOSTS = (
+    ALLOWED_HOSTS
+    + [local_ip]
+    + [hostname]
+    + os.environ.get("HAMILTON_ALLOWED_HOSTS", "").split(",")
+)
 
 # Application definition
 
