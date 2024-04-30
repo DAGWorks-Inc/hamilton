@@ -13,6 +13,12 @@ The UI consists of the following features:
 Overview
 --------
 
+If you'd like a video walkthrough on getting set up, you can watch the following video:
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/DPfxlTwaNsM?si=gks5oOAWsNPSJbe_" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 Getting Started
 ---------------
 
@@ -100,7 +106,9 @@ Then, navigate to the project page (dashboard/projects), in the running UI, and 
 
 Remember the project ID -- you'll use it for the next steps.
 
-Add the following adapter to your code:
+Existing Hamilton Code
+______________________
+Add the following adapter to your code if you have existing Hamilton code:
 
 .. code-block:: python
 
@@ -123,12 +131,27 @@ Add the following adapter to your code:
 
 Then run your DAG, and follow the links in the logs!
 
+I need some Hamilton code to run
+________________________________
+If you don't have Hamilton code to run this with, you can run Hamilton UI example under `examples/hamilton_ui <https://github.com/dagworks-inc/hamilton/tree/main/examples/hamilton_ui>`_:
 
-Exploring in the UI
+.. code-block:: bash
+
+    # we assume you're in the Hamilton repository root
+    cd examples/hamilton_ui
+    # make sure you have the right python packages installed
+    pip install -r requirements.txt
+    # run the pipeline providing the email and project_id you created in the UI
+    python run.py --email <email> --project_id <project_id>
+
+You should see links in the `logs to the UI <http://localhost:8242/dashboard/projects>`_, where you can see the DAG run + the data summaries captured.
+
+Exploring the UI
 -------------------
 
-Once you get to the UI, you will be navigated to the projects page. After you create one + log,
-you can navigate to `runs/history` for a history of runs. You can select by tags, date, etc...
+Once you get to the UI, you can navigate to the projects page (left hand nav-bar). Assuming you have created a project
+and logged to it, you can then navigate to view it and then more details about it. E.g. versions, code, lineage, catalog, execution runs.
+See below for a few screenshots of the UI.
 
 ----
 

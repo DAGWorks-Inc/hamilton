@@ -1,0 +1,4 @@
+click
+pandas
+scikit-learn
+sf-hamilton[sdk]
