@@ -16,7 +16,6 @@ If you are developing on this module you'll then want to use:
 
 import json
 import os
-import sys
 from pathlib import Path
 from types import ModuleType
 
@@ -25,15 +24,6 @@ from IPython.core.magic_arguments import argument, magic_arguments, parse_argstr
 from IPython.display import HTML, display
 
 from hamilton import ad_hoc_utils, driver, lifecycle
-
-
-def create_module(source: str, name: str = None) -> ModuleType:
-    """Create a temporary module from source code"""
-    module_name = ad_hoc_utils._generate_unique_temp_module_name() if name is None else name
-    module_object = ModuleType(module_name, "")
-    sys.modules[module_name] = module_object
-    exec(source, module_object.__dict__)
-    return module_object
 
 
 def insert_cell_with_content():
@@ -221,7 +211,7 @@ class HamiltonMagics(Magics):
                     print("Failed to parse config as JSON. Please ensure it's a valid JSON string:")
                     print(args.config)
 
-        module_object = create_module(cell, module_name)
+        module_object = ad_hoc_utils.create_module(cell, module_name, verbosity=args.verbosity)
 
         # shell.push() assign a variable in the notebook. The dictionary keys are variable name
         self.shell.push({module_name: module_object})

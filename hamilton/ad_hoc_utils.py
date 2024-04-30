@@ -1,7 +1,11 @@
 """A suite of tools for ad-hoc use"""
 
+import atexit
+import importlib.util
 import linecache
+import os
 import sys
+import tempfile
 import types
 import uuid
 from types import ModuleType
@@ -61,7 +65,9 @@ def create_temporary_module(*functions: Callable, module_name: str = None) -> Mo
 
 
 def module_from_source(source: str) -> ModuleType:
-    """Create a temporary module from source code"""
+    """Create a temporary module from source code.
+    Deprecated in favor of `create_module()` below.
+    """
     module_name = _generate_unique_temp_module_name()
     module_object = ModuleType(module_name)
     code_object = compile(source, module_name, "exec")
@@ -74,4 +80,38 @@ def module_from_source(source: str) -> ModuleType:
         source.splitlines(True),
         module_name,
     )
+    return module_object
+
+
+def create_module(source: str, module_name: str = None, verbosity: int = 0) -> ModuleType:
+    """Create a temporary module from source code and load it as a proper Python module.
+
+    Registers the module in sys.modules and cleans up the temporary file on interpreter shutdown.
+    But if the python interpreter errors out, or the server is shutdown, the temporary file will not be cleaned up.
+    """
+    # Create a temporary file to hold the code
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".py", mode="w") as tmp_file:
+        tmp_file.write(source)
+        module_path = tmp_file.name
+        if verbosity > 1:
+            print(f"Temporary file created at {module_path}")
+
+    # Determine a module name if not provided
+    if module_name is None:
+        module_name = os.path.basename(module_path).split(".")[0]
+
+    # Load the module from the temporary file
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    module_object = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module_object)
+
+    # Register the module in sys.modules
+    sys.modules[module_name] = module_object
+
+    # Clean up the temporary file on interpreter shutdown
+    def cleanup(module_path=module_path):
+        os.remove(module_path)
+
+    atexit.register(lambda: cleanup())
+
     return module_object
