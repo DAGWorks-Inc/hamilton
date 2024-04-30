@@ -223,7 +223,7 @@ if HAMILTON_ENV == "dev":
         }
     }
     LOGGING["handlers"]["console"]["filters"] = ["truncate_sql"]
-    SILKY_PYTHON_PROFILER = True
-    MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
+    SILKY_PYTHON_PROFILER = False
+    # MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
     MIDDLEWARE.append("trackingserver_base.middleware.timing_middleware.TimingMiddleware")
-    INSTALLED_APPS.append("silk")
+    # INSTALLED_APPS.append("silk")

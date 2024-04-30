@@ -7,7 +7,6 @@ from cachetools import cached
 from cachetools.keys import hashkey
 from django.conf import settings
 from django.http import HttpRequest
-from ninja.compatibility import get_headers
 from ninja.security import APIKeyQuery, HttpBearer
 from propelauth_py import UnauthorizedException, init_base_auth
 from trackingserver_auth.models import Team, User
@@ -105,7 +104,7 @@ class PropelAuthBearerTokenAuthenticator(HttpBearer):
         @param request:
         @return:
         """
-        headers = get_headers(request)
+        headers = request.headers
         auth_value = headers.get(self.header)
         if not auth_value:
             return None

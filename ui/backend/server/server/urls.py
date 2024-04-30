@@ -17,7 +17,7 @@ Including another URLconf
 import os
 
 from django.contrib import admin
-from django.urls import include, path  # include,
+from django.urls import path  # include,
 
 from . import api, default_views
 
@@ -33,5 +33,5 @@ urlpatterns = [
 ]
 
 HAMILTON_ENV = os.environ.get("HAMILTON_ENV", "dev")
-if HAMILTON_ENV == "dev":
-    urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
+# if HAMILTON_ENV == "dev":
+#     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
