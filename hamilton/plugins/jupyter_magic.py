@@ -16,11 +16,9 @@ If you are developing on this module you'll then want to use:
 
 import ast
 import graphlib
-import importlib
 import os
 from pathlib import Path
-from types import ModuleType
-from typing import Any, Dict, List, Literal, Optional, Set, Union
+from typing import Any, Dict, Set
 
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
 from IPython.core.magic_arguments import argument, magic_arguments, parse_argstring
@@ -28,7 +26,6 @@ from IPython.core.shellapp import InteractiveShellApp
 from IPython.display import HTML, display
 
 from hamilton import ad_hoc_utils, driver
-from hamilton.lifecycle import base as lifecycle_base
 
 
 def get_assigned_variables(module_node: ast.Module) -> Set[str]:
@@ -80,43 +77,6 @@ def topologically_sorted_nodes(nodes):
     graph = {n.name: set([*n.required_dependencies, *n.optional_dependencies]) for n in nodes}
     sorter = graphlib.TopologicalSorter(graph)
     return list(sorter.static_order())
-
-
-def rebuild_driver(
-    dr: Optional[driver.Driver] = None,
-    config: Optional[Dict[str, Any]] = None,
-    modules: Optional[List[ModuleType]] = None,
-    adapters: Optional[
-        Union[lifecycle_base.LifecycleAdapter, List[lifecycle_base.LifecycleAdapter]]
-    ] = None,
-    graph_executor: Optional[driver.GraphExecutor] = None,
-    reload_modules: Literal[True, False, "strict"] = False,
-) -> driver.Driver:
-    _driver = dr if dr else driver.Builder().build()
-    _config = config if config else _driver.graph.config
-    _modules = modules if modules else _driver.graph_modules
-    _adapter = adapters if adapters else _driver.adapter
-    _graph_executor = graph_executor if graph_executor else _driver.graph_executor
-
-    if reload_modules:
-        new_modules = []
-        for m in _modules:
-            try:
-                new_module = importlib.reload(m)
-            except ImportError as e:
-                if reload_modules == "strict":
-                    raise e
-                new_module = m
-            new_modules.append(new_module)
-        _modules = new_modules
-
-    return driver.Driver(
-        _config,
-        *_modules,
-        adapter=_adapter,
-        _graph_executor=_graph_executor,
-        _use_legacy_adapter=False,
-    )
 
 
 def normalize_result_names(node_name: str) -> str:
@@ -198,14 +158,8 @@ class HamiltonMagics(Magics):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.driver = None
-        self.driver_name = None
         self.builder = None
-        self.external_modules = list()
-        self.final_vars = list()  # empty list will be converted to "all variables"
-
-        if not hasattr(self, "notebook_env"):
-            self.notebook_env = determine_notebook_type()
+        self.notebook_env = determine_notebook_type()
 
     @magic_arguments()  # needed on top to enable parsing
     @argument("module_name", help="Name for the module defined in this cell.")
@@ -239,10 +193,9 @@ class HamiltonMagics(Magics):
         help="Execution overrides. The argument is the variable name of a dict of overrides; else {}.",
     )
     @argument(
-        "-h",
         "--hide_results",
         action="store_true",
-        help="Hides the automatic display of execution results. ",
+        help="Hides the automatic display of execution results.",
     )
     @argument(
         "-w",
@@ -273,7 +226,7 @@ class HamiltonMagics(Magics):
 
         args = parse_argstring(self.cell_to_module, line)  # specify how to parse by passing method
         module_name = args.module_name
-        builder = self.shell.user_ns[args.builder] if args.builder else driver.Builder()
+        base_builder = self.shell.user_ns[args.builder] if args.builder else driver.Builder()
         inputs = self.shell.user_ns[args.inputs] if args.inputs else {}
         overrides = self.shell.user_ns[args.overrides] if args.overrides else {}
         display_config = (
@@ -288,10 +241,11 @@ class HamiltonMagics(Magics):
             file_path.write_text(cell)
 
         # create modules and build driver
-        module_object = ad_hoc_utils.module_from_source(cell, module_name)
-        self.shell.push({module_name: module_object})
-        base_dr = builder.build()  # easier to rebuild a Driver than messing with Builder
-        dr = rebuild_driver(dr=base_dr, modules=[*base_dr.graph_modules, module_object])
+        cell_module = ad_hoc_utils.module_from_source(cell, module_name)
+        self.shell.push({module_name: cell_module})
+
+        builder = base_builder.copy()
+        dr = builder.with_modules(cell_module).build()
 
         # determine final vars
         if args.execute not in [True, None]:
