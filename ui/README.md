@@ -1,7 +1,7 @@
 # Hamilton UI
 
 This contains the code for the new Hamilton UI. Read the documentation for getting started
-[here](https://hamilton.dagworks.io/concepts/ui).
+[here](https://hamilton.dagworks.io/en/latest/concepts/ui/).
 
 ## Overview
 
