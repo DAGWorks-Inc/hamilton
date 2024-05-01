@@ -34,7 +34,7 @@ Note: Hamilton describes DAGs. If you're looking for something to handle loops o
 ✅ Unmaintainable spaghetti code -- Hamilton dataflows are unit testable, self-documenting, and provide lineage.<br/>
 ✅ Long iteration/experimentation cycles -- Hamilton provides a clear, quick, and methodical path to debugging/modifying/extending your code.<br/>
 ✅ Reusing code across contexts -- Hamilton encourages code that is independent of infrastructure and can run regardless of execution setting.<br/>
-✅ Collaborating on dataflows & tracking execution + artifacts -- Hamilton comes with an optional [UI](https://hamilton.dagworks.io/en/latest/concepts/ui) to visualize, catalog, and monitor your dataflows, which helps team operate smoothly.
+✅ Collaborating on dataflows & tracking execution + artifacts -- Hamilton comes with an optional [UI](https://hamilton.dagworks.io/en/latest/concepts/ui) to visualize, catalog, and monitor your dataflows, which helps teams operate smoothly.
 
 ## Problems Hamilton Does not Solve
 ❌ Provisioning infrastructure -- you want a macro-orchestration system (see airflow, kubeflow, sagemaker, etc...).<br/>
