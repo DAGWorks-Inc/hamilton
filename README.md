@@ -29,6 +29,16 @@ This paradigm makes modifications easy to build and track, ensures code is self-
 
 Note: Hamilton describes DAGs. If you're looking for something to handle loops or conditional edges (say, for a human-in-the-loop application like a chatbot or agent), you might appreciate [Burr](https://github.com/dagworks-inc/burr) -- it integrates well with any python library (including Hamilton!).
 
+
+<p align="center">
+  <img src="./docs/_static/hamilton_1.jpeg" alt="Description1" width="30%" style="margin-right: 20px;"/>
+  <img src="./docs/_static/hamilton_2.jpeg" alt="Description2" width="30%" style="margin-right: 20px;"/>
+  <img src="./docs/_static/hamilton_3.jpeg" alt="Description3" width="30%"/>
+</p>
+<p align="center">
+  <em>Optional UI to browse transforms, monitor datasets, and track executions</em>
+</p>
+
 ## Problems Hamilton Solves
 ✅ Model a dataflow -- If you can model your problem as a DAG in python, Hamilton is the cleanest way to build it.<br/>
 ✅ Unmaintainable spaghetti code -- Hamilton dataflows are unit testable, self-documenting, and provide lineage.<br/>
