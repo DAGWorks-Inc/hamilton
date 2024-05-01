@@ -10,11 +10,16 @@ The UI consists of the following features:
 3. A dataflow (i.e. DAG) visualizer for exploring and looking at your code, and determining lineage.
 4. A project explorer for viewing curating projects and viewing versions of your Hamilton dataflows.
 
+In short, the Hamilton UI aims to combine a large swath of MLOps/data observability systems in one simple application.
+
+.. image:: ../_static/hamilton_ui.jpeg
+    :alt: Hamilton UI
+
 --------
 Overview
 --------
 
-If you'd like a video walkthrough on getting set up, you can watch the following video:
+If you'd like a video walkthrough on getting set up, you can watch the following:
 
 .. raw:: html
 
@@ -153,8 +158,6 @@ Exploring the UI
 Once you get to the UI, you can navigate to the projects page (left hand nav-bar). Assuming you have created a project
 and logged to it, you can then navigate to view it and then more details about it. E.g. versions, code, lineage, catalog, execution runs.
 See below for a few screenshots of the UI.
-
-----
 
 -----------
 Features
