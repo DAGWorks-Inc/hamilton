@@ -28,7 +28,7 @@ dataflow authors to move faster during all phases of the software development li
   <em>See what's slow (left), pinpoint errors (middle) compare execution performance (right)</em>
 </p>
 
-### Data/Aritfact Observability
+### Data/Artifact Observability
 
 <p align="center">
   <img src="./screenshots/execution_data_view.png" alt="Description3" width="30%"/>
