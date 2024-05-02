@@ -59,6 +59,7 @@ jobs:
           PGUSER: postgres
           HAMILTON_BLOB_STORE: local
           HAMILTON_LOCAL_BLOB_DIR: ./blob_data
+          HAMILTON_AUTH_MODE: integration_tests
         run: |
           cd ui/backend/server
           python manage.py sqlcreate
@@ -78,6 +79,7 @@ jobs:
           PGUSER: postgres
           HAMILTON_BLOB_STORE: local
           HAMILTON_LOCAL_BLOB_DIR: ./blob_data
+          HAMILTON_AUTH_MODE: integration_tests
         run: |
           cd ui/backend/server
           python -m pytest tests/${{ matrix.testdir }} -vvvvv
