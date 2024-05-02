@@ -1,24 +1,66 @@
 # Hamilton UI
 
-This contains the code for the new Hamilton UI. For an overview of getting started & featuresr
+This contains the code for the new Hamilton UI. For an overview of getting started & features
 [see this documentation](https://hamilton.dagworks.io/en/latest/concepts/ui). For a lengthier post and intro see our [blog post](https://blog.dagworks.io/p/hamilton-ui-streamlining-metadata).
 
 ## One operational UI for all your dataflows
 
-The Hamilton UI is a system that does the following:
+The Hamilton UI is a system that provides the following capabilities:
 
-1. Tracks Hamilton Executions & surrounding metadata through an SDK using the [lifecycle adapter framework](https://hamilton.dagworks.io/en/latest/reference/lifecycle-hooks/)
+1. Execution tracking with associated metadata
    * Provides a persistent database to store/manage these
    * Provides a server that allows reading/writing/authentication
-2. Observability: provides telemetry/observability of Hamilton executions + specific function results/code through a web interface
-3. Lineage & Provenance: allows you to quickly inspect how code and data is connected.
+2. Data/artifact observability: provides telemetry/observability of Hamilton executions + specific function results/code through a web interface
+3. Lineage & provenance: allows you to quickly inspect how code and data is connected.
 4. Catalog: everything is observed and cataloged, so you can quickly search and find what exists and when it was run.
 
-The UI is meant to be used both for debugging purposes and for monitoring Hamilton executions in production.
-It works with the vast majority of Hamilton features.
+The UI is meant to monitor/debug Hamilton dataflows both to in development and production. The aim is to enable
+dataflow authors to move faster during all phases of the software development lifecycle.
 
+### Execution Tracking
+
+<p align="center">
+  <img src="./screenshots/execution_waterfall_view.png" alt="Description1" width="30%" style="margin-right: 20px;"/>
+  <img src="./screenshots/execution_graph_error.png" alt="Description2" width="30%" style="margin-right: 20px;"/>
+  <img src="./screenshots/execution_comparison_waterfall.png" alt="Description3" width="30%"/>
+</p>
+<p align="center">
+  <em>See what's slow (left), pinpoint errors (middle) compare execution performance (right)</em>
+</p>
+
+### Data/Aritfact Observability
+
+<p align="center">
+  <img src="./screenshots/execution_data_view.png" alt="Description3" width="30%"/>
+  <img src="./screenshots/execution_code_view.png" alt="Description2" width="30%" style="margin-right: 20px;"/>
+  <img src="./screenshots/execution_data_comparison.png" alt="Description1" width="30%" style="margin-right: 20px;"/>
+</p>
+<p align="center">
+  <em>Visualize data for a run (left), track code the run used (middle) compare data across executions (right)</em>
+</p>
+
+### Lineage & Provenance
+
+<p align="center">
+  <img src="./screenshots/lineage_view.png" alt="Description3" width="30%"/>
+  <img src="./screenshots/lineage_code_view_grouped_by_module.png" alt="Description2" width="30%" style="margin-right: 20px;"/>
+</p>
+<p align="center">
+  <em>See how things connect: what's upstream/downstream (left), walk through code visually (right) </em>
+</p>
+
+### Catalog
+
+<p align="center">
+  <img src="./screenshots/catalog_artifact.png" alt="Description3" width="30%"/>
+  <img src="./screenshots/catalog_transform.png" alt="Description2" width="30%" style="margin-right: 20px;"/>
+</p>
+<p align="center">
+  <em>Understand artifacts produced (left), find features and when they were used (right) </em>
+</p>
 
 ## Getting started
+
 Make sure you have docker running:
 ```bash
 # clone the repository if you haven't
