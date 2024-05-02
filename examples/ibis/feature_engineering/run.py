@@ -31,7 +31,7 @@ def main(level: str):
     dr = driver.Builder().with_modules(feature_dataflow).with_adapters(ProgressBar()).build()
 
     inputs = dict(
-        raw_data_path="../data_quality/simple/Absenteeism_at_work.csv",
+        raw_data_path="../../data_quality/simple/Absenteeism_at_work.csv",
         feature_selection=[
             "has_children",
             "has_pet",
