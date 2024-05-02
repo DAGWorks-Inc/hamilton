@@ -9,13 +9,13 @@ from trackingserver_projects import api as project_api
 from trackingserver_run_tracking import api as run_tracking_api
 from trackingserver_template import api as template_api
 
-env = settings.HAMILTON_ENV
+auth_mode = settings.HAMILTON_AUTH_MODE
 
-if env == "local":
+if auth_mode == "permissive":
     api = NinjaAPI(auth=[LocalAPIAuthenticator()])
-elif env == "integration_tests":
+elif auth_mode == "integration_tests":
     api = NinjaAPI(auth=[TestAPIAuthenticator()])
-else:
+elif auth_mode == "propelauth":
     propel_auth_instance = propelauth.init()
     api = NinjaAPI(
         auth=[
