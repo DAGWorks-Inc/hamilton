@@ -1,4 +1,5 @@
 import functools
+import importlib
 import logging
 import sys
 import time as py_time
@@ -14,20 +15,22 @@ from hamilton import node as h_node
 from hamilton.data_quality import base as dq_base
 from hamilton.lifecycle import base as lifecycle_base
 
-try:
-    from hamilton_sdk.tracking import numpy_stats  # noqa: F401
-    from hamilton_sdk.tracking import pandas_stats  # noqa: F401
-
-except ImportError:
-    pass
-
-try:
-    from hamilton_sdk.tracking import polars_stats  # noqa: F401
-
-except ImportError:
-    pass
+_modules_to_import = [
+    "numpy",
+    "pandas",
+    "polars",
+    "pyspark",
+    "ibis",
+]
 
 logger = logging.getLogger(__name__)
+
+for module in _modules_to_import:
+    try:
+        importlib.import_module(f"hamilton_sdk.tracking.{module}_stats")
+    except ImportError:
+        logger.debug(f"Failed to import hamilton_sdk.tracking.{module}_stats")
+        pass
 
 
 def process_result(result: Any, node: h_node.Node) -> Any:
