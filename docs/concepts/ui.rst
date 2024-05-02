@@ -25,6 +25,12 @@ If you'd like a video walkthrough on getting set up, you can watch the following
 
     <iframe width="560" height="315" src="https://www.youtube.com/embed/DPfxlTwaNsM?si=gks5oOAWsNPSJbe_" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
+If you'd like a quick overview of some of the features, you can watch the following:
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/0VIVSeN7Ij8?si=i3vTsfTNorzh5y2C" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 Getting Started
 ---------------
 

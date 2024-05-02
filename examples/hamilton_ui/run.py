@@ -8,7 +8,9 @@ from hamilton.lifecycle import PrintLnHook
 
 
 @click.command()
-@click.option("--load-from-parquet", is_flag=False)
+@click.option(
+    "--load-from-parquet", is_flag=True, help="Load from saved parquet or load fresh dataset."
+)
 @click.option("--email", help="Email for the Hamilton UI", type=str, required=True)
 @click.option(
     "--project-id", help="Project ID to log to for the Hamilton UI", type=int, required=True
@@ -17,12 +19,12 @@ def run(load_from_parquet: bool, email: str, project_id: int):
     """
     Runs the machine_learning hamilton DAG emitting metadata to the Hamilton UI.
 
-    Prerequisite:
-     - You need to have the Hamilton UI running.
+    Prerequisite - you need to have the Hamilton UI running:
 
-    :param load_from_parquet: If true, the DAG will not be logged to DAGWorks
-    :param email: Email for the Hamilton UI
-    :param project_id: Project ID to log to for the Hamilton UI
+    cd hamilton/ui/deployment  # directory with docker files
+
+    ./run.sh  # will start docker
+
     """
     if load_from_parquet:
         config = {"case": "parquet"}
