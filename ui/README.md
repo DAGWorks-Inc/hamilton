@@ -14,7 +14,7 @@ The Hamilton UI is a system that provides the following capabilities:
 3. Lineage & provenance: allows you to quickly inspect how code and data is connected.
 4. Catalog: everything is observed and cataloged, so you can quickly search and find what exists and when it was run.
 
-The UI is meant to monitor/debug Hamilton dataflows both to in development and production. The aim is to enable
+The UI is meant to monitor/debug Hamilton dataflows both in **development** and **production**. The aim is to enable
 dataflow authors to move faster during all phases of the software development lifecycle.
 
 ### Execution Tracking
