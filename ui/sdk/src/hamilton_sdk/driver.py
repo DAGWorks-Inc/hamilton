@@ -57,8 +57,20 @@ def _hash_module(
             module,
         )
 
+    def safe_getmembers(module):
+        """Need this because some modules are lazily loaded and we can't get the members."""
+        try:
+            return inspect.getmembers(module)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Skipping hash for module {module.__name__} because we could not get the members. "
+                    f"Error: {e}"
+                )
+            return []
+
     # Loop through the module's attributes
-    for name, value in inspect.getmembers(module):
+    for name, value in safe_getmembers(module):
         # Check if the attribute is a module
         if inspect.ismodule(value):
             if value.__package__ is None:
