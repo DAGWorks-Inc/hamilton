@@ -17,6 +17,8 @@ The Hamilton UI is a system that provides the following capabilities:
 The UI is meant to monitor/debug Hamilton dataflows both in **development** and **production**. The aim is to enable
 dataflow authors to move faster during all phases of the software development lifecycle.
 
+For an overview of some of these features [you can watch this quick video](https://youtu.be/0VIVSeN7Ij8?si=maeV0zdzTPSqUl1N).
+
 ### Execution Tracking
 
 <p align="center">
@@ -60,6 +62,8 @@ dataflow authors to move faster during all phases of the software development li
 </p>
 
 ## Getting started
+
+You can watch this [video walkthrough on getting set up](https://youtu.be/DPfxlTwaNsM).
 
 Make sure you have docker running:
 ```bash
