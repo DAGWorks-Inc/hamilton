@@ -28,4 +28,7 @@ def feature_set(
     condition: Optional[ibis.common.deferred.Deferred] = None,
 ) -> ir.Table:
     """Select feature columns and filter rows"""
-    return feature_table[feature_selection].filter(condition)
+    selection = feature_table[feature_selection]
+    if condition is None:
+        return selection
+    return selection.filter(condition)
