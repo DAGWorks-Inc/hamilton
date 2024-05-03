@@ -746,6 +746,7 @@ class Driver:
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
         custom_style_function: Callable = None,
+        keep_dot: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays the graph of all functions loaded!
 
@@ -767,6 +768,7 @@ class Driver:
         :param show_schema: If True, display the schema of the DAG if
             the nodes have schema data provided
         :param custom_style_function: Optional. Custom style function. See example in repository for example use.
+        :param keep_dot: If true, produce a DOT file (ref: https://graphviz.org/doc/info/lang.html)
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -781,6 +783,7 @@ class Driver:
                 deduplicate_inputs=deduplicate_inputs,
                 display_fields=show_schema,
                 custom_style_function=custom_style_function,
+                keep_dot=keep_dot,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
