@@ -73,5 +73,4 @@ Multiple companies are doing cool stuff with Hamilton! Come chat with members of
 * **Lexis Nexis** - Feature processing and lineage
 * **Opendoor** - Manage PySpark pipelines
 * **KI** - Feature engineering
-* **AB-InBev** - Machine learning Platform on PySpark
 * **Rippling** - Feature engineering on PySpark
