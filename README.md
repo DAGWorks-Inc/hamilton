@@ -236,7 +236,6 @@ Hamilton is released under the [BSD 3-Clause Clear License](https://github.com/D
 * [Opendoor](https://www.opendoor.com/)
 * [NaroHQ](https://www.narohq.com/)
 * [Rippling](https://www.rippling.com/)
-* [AB-InBev](https://www.ab-inbev.com/)
 * [EquipmentShare](https://www.equipmentshare.com/)
 * [Everstream.ai](https://www.everstream.ai/)
 * [Flectere](https://flectere.net/)
