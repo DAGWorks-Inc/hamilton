@@ -805,6 +805,7 @@ class Driver:
         show_schema: bool = True,
         custom_style_function: Callable = None,
         bypass_validation: bool = False,
+        keep_dot: bool = False,
     ):
         """Helper function to visualize execution, using a passed-in function graph.
 
@@ -819,6 +820,7 @@ class Driver:
         :param deduplicate_inputs: If True, remove duplicate input nodes.
         :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :param custom_style_function: Optional. Custom style function.
+        :param keep_dot: If true, produce a DOT file (ref: https://graphviz.org/doc/info/lang.html)
         :return: the graphviz object if you want to do more with it.
         """
         # TODO should determine if the visualization logic should live here or in the graph.py module
@@ -854,6 +856,7 @@ class Driver:
                 display_fields=show_schema,
                 custom_style_function=custom_style_function,
                 config=fn_graph._config,
+                keep_dot=keep_dot,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -874,6 +877,7 @@ class Driver:
         show_schema: bool = True,
         custom_style_function: Callable = None,
         bypass_validation: bool = False,
+        keep_dot: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes Execution.
 
@@ -905,6 +909,7 @@ class Driver:
             Can improve readability depending on the specifics of the DAG.
         :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :param custom_style_function: Optional. Custom style function.
+        :param keep_dot: If true, produce a DOT file (ref: https://graphviz.org/doc/info/lang.html)
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -925,6 +930,7 @@ class Driver:
             show_schema=show_schema,
             custom_style_function=custom_style_function,
             bypass_validation=bypass_validation,
+            keep_dot=keep_dot,
         )
 
     @capture_function_usage
@@ -991,6 +997,7 @@ class Driver:
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
         custom_style_function: Callable = None,
+        keep_dot: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG starting from the passed in function name(s).
 
@@ -1013,6 +1020,7 @@ class Driver:
             Can improve readability depending on the specifics of the DAG.
         :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :param custom_style_function: Optional. Custom style function.
+        :param keep_dot: If true, produce a DOT file (ref: https://graphviz.org/doc/info/lang.html)
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -1057,6 +1065,7 @@ class Driver:
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
         custom_style_function: Callable = None,
+        keep_dot: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Creates a visualization of the DAG going backwards from the passed in function name(s).
 
@@ -1079,6 +1088,7 @@ class Driver:
             Can improve readability depending on the specifics of the DAG.
         :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :param custom_style_function: Optional. Custom style function.
+        :param keep_dot: If true, produce a DOT file (ref: https://graphviz.org/doc/info/lang.html)
         :return: the graphviz object if you want to do more with it.
             If returned as the result in a Jupyter Notebook cell, it will render.
         """
@@ -1175,6 +1185,7 @@ class Driver:
         deduplicate_inputs: bool = False,
         show_schema: bool = True,
         custom_style_function: Callable = None,
+        keep_dot: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes the path between two nodes.
 
@@ -1200,6 +1211,7 @@ class Driver:
         :param show_schema: If True, display the schema of the DAG if nodes have schema data provided
         :return: graphviz object.
         :param custom_style_function: Optional. Custom style function.
+        :param keep_dot: If true, produce a DOT file (ref: https://graphviz.org/doc/info/lang.html)
         :raise ValueError: if the upstream or downstream node names are not found in the graph,
             or there is no path between them.
         """
@@ -1259,6 +1271,7 @@ class Driver:
                 display_fields=show_schema,
                 custom_style_function=custom_style_function,
                 config=self.graph._config,
+                keep_dot=keep_dot,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1526,6 +1539,7 @@ class Driver:
         show_schema: bool = True,
         custom_style_function: Callable = None,
         bypass_validation: bool = False,
+        keep_dot: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Visualizes materialization. This helps give you a sense of how materialization
         will impact the DAG.
@@ -1575,6 +1589,7 @@ class Driver:
             show_schema=show_schema,
             custom_style_function=custom_style_function,
             bypass_validation=bypass_validation,
+            keep_dot=keep_dot,
         )
 
     def validate_execution(
