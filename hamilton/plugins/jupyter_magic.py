@@ -249,15 +249,13 @@ class HamiltonMagics(Magics):
         self.shell.set_next_input(header + module_source, replace=False)
 
     @magic_arguments()  # needed on top to enable parsing
-    @argument(
-        "-m", "--module_name", help="Module name to provide. Default is jupyter_module."
-    )  # keyword / optional arg
+    @argument("module_name", help="Module name to provide")  # keyword / optional arg
     @argument(
         "-i",
         "--identifier",
         help="Identifier for this cell w.r.t. the module being created. "
         "Integer or String. Integer is simplest.",
-    )  # keyword / optional arg
+    )  # required argument
     @argument(
         "-c", "--config", help="JSON config, or variable name containing config to use."
     )  # keyword / optional arg
@@ -276,7 +274,7 @@ class HamiltonMagics(Magics):
         """
         if "--help" in line.split():
             print("Help for %%incr_cell_to_module magic:")
-            print("  -m, --module_name: Module name to provide. Default is jupyter_module.")
+            print("module_name: Module name to provide. Required.")
             print("  -i, --identifier: the ID for this cell w.r.t. to the module name. Required.")
             print("  -c, --config: JSON config string, or variable name containing config to use.")
             print("  -d, --display: Flag to visualize dataflow.")
@@ -299,7 +297,7 @@ class HamiltonMagics(Magics):
         # directly accessed from the notebook
         self.shell.ex(cell)
 
-        module_name = self.get_module_name(args)
+        module_name = args.module_name
 
         display_config = self.get_display_config(args)
 
@@ -350,9 +348,7 @@ class HamiltonMagics(Magics):
         return display_config
 
     @magic_arguments()  # needed on top to enable parsing
-    @argument(
-        "-m", "--module_name", help="Module name to print. Default is jupyter_module."
-    )  # keyword / optional arg
+    @argument("module_name", help="Module name to print.")  # required argument
     @line_magic
     def print_module(self, line):
         """Prints the contents of a dynamic module we've been creating."""
@@ -363,7 +359,7 @@ class HamiltonMagics(Magics):
         args = parse_argstring(
             self.incr_cell_to_module, line
         )  # specify how to parse by passing method
-        module_name = self.get_module_name(args)
+        module_name = args.module_name
         if module_name not in self.module_to_cell_mapping:
             raise ValueError(f"Module {module_name} not found.")
         module_source = self.get_module_source(module_name)
@@ -377,9 +373,7 @@ class HamiltonMagics(Magics):
         return module_source
 
     @magic_arguments()  # needed on top to enable parsing
-    @argument(
-        "-m", "--module_name", help="Module name to print. Default is jupyter_module."
-    )  # keyword / optional arg
+    @argument("module_name", help="Module to print.")  # required argument
     @line_magic
     def reset_module(self, line):
         if not hasattr(self, "notebook_env"):
@@ -389,7 +383,7 @@ class HamiltonMagics(Magics):
         args = parse_argstring(
             self.incr_cell_to_module, line
         )  # specify how to parse by passing method
-        module_name = self.get_module_name(args)
+        module_name = args.module_name
         if module_name in self.module_to_cell_mapping:
             print(f"Reset {module_name}")
             del self.module_to_cell_mapping[module_name]
