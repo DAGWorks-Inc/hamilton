@@ -1,10 +1,4 @@
-Software contained in this repository is licensed as follows:
-
-* All content that resides under the "ui/frontend/src/ee" and "ui/backend/server/trackingserver_auth" directory of this
-repository is licensed under the license defined in "ui/frontend/src/ee/LICENSE", "ui/backend/server/trackingserver_auth/LICENSE" respectively.
-* All third party components incorporated into the Hamilton UI Software under "ui/" are licensed under the original license provided by the owner of the applicable component.
-* Content outside of the above mentioned directories or restrictions above is available under the "BSD-3 Clear Clause" license as defined below. For example, the libraries sf-hamilton, sf-hamilton-contrib, and sf-hamilton-sdk are all "BSD-3 Clear Clause" licensed.
-
+Copyright (c) 2019-2022 Stitch Fix
 Copyright (c) 2023-2024 DAGWorks Inc.
 All rights reserved.
 
@@ -15,7 +9,7 @@ Redistribution and use in source and binary forms, with or without modification,
 disclaimer.
 * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
 disclaimer in the documentation and/or other materials provided with the distribution.
-* Neither the name of DAGWorks Inc., nor the names of its contributors may be used to endorse or promote products derived
+* Neither the name of Stitch Fix, DAGWorks, nor the names of its contributors may be used to endorse or promote products derived
 from this software without specific prior written permission.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
