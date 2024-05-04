@@ -25,8 +25,8 @@ import { TaskRunOutlet } from "./components/dashboard/Runs/Task/TaskRunOutlet";
 import { CodeOutlet } from "./components/dashboard/Code/CodeOutlet";
 import { VisualizeOutlet } from "./components/dashboard/Visualize/VisualizeOutlet";
 import Settings from "./components/dashboard/Settings/Settings";
-import { UserContext } from "./ee/auth/Login";
-import { LocalAccount } from "./ee/auth/LocalAccount";
+import { UserContext } from "./auth/Login";
+import { LocalAccount } from "./auth/LocalAccount";
 
 export const FeedbackButton = (props: { userName: string }) => {
   return (
