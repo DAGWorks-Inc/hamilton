@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { UserContext } from "./Login";
-import { ProjectLogInstructions } from "../../components/dashboard/Project/ProjectLogInstructions";
+import { ProjectLogInstructions } from "../components/dashboard/Project/ProjectLogInstructions";
 
 export const LocalAccount = () => {
   const localAccount = useContext(UserContext)?.username;
