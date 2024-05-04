@@ -13,7 +13,7 @@ import { Loading } from "./components/common/Loading";
 import { PostHogProvider } from "posthog-js/react";
 import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en.json";
-import { LocalLoginProvider } from "./ee/auth/Login";
+import { LocalLoginProvider } from "./auth/Login";
 
 const posthogOptions = {
   api_host: process.env.REACT_APP_PUBLIC_POSTHOG_HOST,

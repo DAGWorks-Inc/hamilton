@@ -2,7 +2,11 @@ from django.conf import settings
 from ninja import NinjaAPI
 from trackingserver_auth import api as auth_api
 from trackingserver_base import api as base_api
-from trackingserver_base.auth import propelauth
+
+try:
+    from trackingserver_extensions import propelauth
+except ImportError:
+    pass  # this is just so we can allow enterprise mode to work
 from trackingserver_base.auth.local import LocalAPIAuthenticator
 from trackingserver_base.auth.testing import TestAPIAuthenticator
 from trackingserver_projects import api as project_api
