@@ -1,9 +1,9 @@
-Portions of this software are licensed as follows:
+Software contained in this repository is licensed as follows:
 
 * All content that resides under the "ui/frontend/src/ee" and "ui/backend/server/trackingserver_auth" directory of this
-repository is licensed under the license defined in "ui/frontend/src/ee/LICENSE" "ui/backend/server/trackingserver_auth/LICENSE" respectively.
-* All third party components incorporated into the Hamilton Software are licensed under the original license provided by the owner of the applicable component.
-* Content outside of the above mentioned directories or restrictions above is available under the "BSD-3 Clear Clause" license as defined below.
+repository is licensed under the license defined in "ui/frontend/src/ee/LICENSE", "ui/backend/server/trackingserver_auth/LICENSE" respectively.
+* All third party components incorporated into the Hamilton UI Software under "ui/" are licensed under the original license provided by the owner of the applicable component.
+* Content outside of the above mentioned directories or restrictions above is available under the "BSD-3 Clear Clause" license as defined below. For example, the libraries sf-hamilton, sf-hamilton-contrib, and sf-hamilton-sdk are all "BSD-3 Clear Clause" licensed.
 
 Copyright (c) 2023-2024 DAGWorks Inc.
 All rights reserved.
