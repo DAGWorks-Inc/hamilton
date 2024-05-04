@@ -909,8 +909,10 @@ class FunctionGraph:
             kwargs.update(render_kwargs)
         if output_file_path:
             if keep_dot:
+                kwargs["view"] = kwargs.get("view", False)
                 dot.render(output_file_path, **kwargs)
             else:
+                kwargs.pop("view", None)
                 pathlib.Path(output_file_path).write_bytes(dot.pipe(**kwargs))
         return dot
 
