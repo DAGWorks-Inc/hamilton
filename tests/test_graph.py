@@ -1,8 +1,8 @@
 import inspect
+import os
 import pathlib
 import uuid
 from itertools import permutations
-from typing import List
 
 import pandas as pd
 import pytest
@@ -727,12 +727,12 @@ def test_function_graph_display(tmp_path: pathlib.Path):
     fg.display(
         all_nodes,
         output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
         node_modifiers=node_modifiers,
         config=config,
-        keep_dot=True,
     )
-    dot_file = dot_file_path.open("r").readlines()
-    dot_set = set(dot_file)
+    dot = dot_file_path.open("r").readlines()
+    dot_set = set(dot)
 
     assert dot_set.issuperset(expected_set) and len(dot_set.difference(expected_set)) == 1
 
@@ -756,6 +756,7 @@ def test_function_graph_display_custom_style_node():
 
     digraph = fg.display(
         set(fg.get_nodes()),
+        output_file_path=None,
         custom_style_function=_styling_function,
         config=config,
     )
@@ -778,6 +779,7 @@ def test_function_graph_display_custom_style_legend():
 
     digraph = fg.display(
         set(fg.get_nodes()),
+        output_file_path=None,
         custom_style_function=_styling_function,
         config=config,
     )
@@ -806,6 +808,7 @@ def test_function_graph_display_custom_style_tag():
 
     digraph = fg.display(
         set(fg.get_nodes()),
+        output_file_path=None,
         custom_style_function=_styling_function,
         config=config,
     )
@@ -823,47 +826,60 @@ def test_function_graph_display_custom_style_tag():
 
 
 @pytest.mark.parametrize("show_legend", [(True), (False)])
-def test_function_graph_display_legend(show_legend: bool):
+def test_function_graph_display_legend(show_legend: bool, tmp_path: pathlib.Path):
+    dot_file_path = tmp_path / "dag.png"
     config = {"b": 1, "c": 2}
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
 
-    dot = fg.display(
+    fg.display(
         set(fg.get_nodes()),
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
         show_legend=show_legend,
         config=config,
     )
+    dot_file = pathlib.Path(os.path.splitext(str(dot_file_path))[0])
+    dot = dot_file.open("r").read()
 
-    found_legend = "cluster__legend" in dot.source
+    found_legend = "cluster__legend" in dot
     assert found_legend is show_legend
 
 
 @pytest.mark.parametrize("orient", [("LR"), ("TB"), ("RL"), ("BT")])
-def test_function_graph_display_orient(orient: str):
+def test_function_graph_display_orient(orient: str, tmp_path: pathlib.Path):
+    dot_file_path = tmp_path / "dag"
     config = {"b": 1, "c": 2}
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
 
-    dot = fg.display(
+    fg.display(
         set(fg.get_nodes()),
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
         orient=orient,
         config=config,
     )
+    dot = dot_file_path.open("r").read()
 
     # this could break if a rankdir is given to the legend subgraph
-    assert f"rankdir={orient}" in dot.source
+    assert f"rankdir={orient}" in dot
 
 
 @pytest.mark.parametrize("hide_inputs", [(True,), (False,)])
-def test_function_graph_display_inputs(hide_inputs: bool):
+def test_function_graph_display_inputs(hide_inputs: bool, tmp_path: pathlib.Path):
+    dot_file_path = tmp_path / "dag"
     config = {"b": 1, "c": 2}
     fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
 
-    dot = fg.display(
+    fg.display(
         set(fg.get_nodes()),
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
         hide_inputs=hide_inputs,
         config=config,
     )
+    dot_lines = dot_file_path.open("r").readlines()
 
-    found_input = any(line.startswith("\t_") for line in dot.body)
+    found_input = any(line.startswith("\t_") for line in dot_lines)
     assert found_input is not hide_inputs
 
 
@@ -887,7 +903,9 @@ def test_function_graph_display_without_saving():
 
 
 @pytest.mark.parametrize("display_fields", [(True,), (False,)])
-def test_function_graph_display_fields(display_fields: bool):
+def test_function_graph_display_fields(display_fields: bool, tmp_path: pathlib.Path):
+    dot_file_path = tmp_path / "dag"
+
     @schema.output(("foo", "int"), ("bar", "float"), ("baz", "str"))
     def df_with_schema() -> pd.DataFrame:
         pass
@@ -896,25 +914,30 @@ def test_function_graph_display_fields(display_fields: bool):
     config = {}
     fg = graph.FunctionGraph.from_modules(mod, config=config)
 
-    dot = fg.display(
+    fg.display(
         set(fg.get_nodes()),
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
         display_fields=display_fields,
         config=config,
     )
+    dot_lines = dot_file_path.open("r").readlines()
     if display_fields:
-        assert any("foo" in line for line in dot.body)
-        assert any("bar" in line for line in dot.body)
-        assert any("baz" in line for line in dot.body)
-        assert any("cluster" in line for line in dot.body)
+        assert any("foo" in line for line in dot_lines)
+        assert any("bar" in line for line in dot_lines)
+        assert any("baz" in line for line in dot_lines)
+        assert any("cluster" in line for line in dot_lines)
     else:
-        assert not any("foo" in line for line in dot.body)
-        assert not any("bar" in line for line in dot.body)
-        assert not any("baz" in line for line in dot.body)
-        assert not any("cluster" in line for line in dot.body)
+        assert not any("foo" in line for line in dot_lines)
+        assert not any("bar" in line for line in dot_lines)
+        assert not any("baz" in line for line in dot_lines)
+        assert not any("cluster" in line for line in dot_lines)
 
 
-def test_function_graph_display_fields_shared_schema():
+def test_function_graph_display_fields_shared_schema(tmp_path: pathlib.Path):
     # This ensures an edge case where they end up getting dropped if there are duplicates
+    dot_file_path = tmp_path / "dag"
+
     SCHEMA = (("foo", "int"), ("bar", "float"), ("baz", "str"))
 
     @schema.output(*SCHEMA)
@@ -929,19 +952,22 @@ def test_function_graph_display_fields_shared_schema():
     config = {}
     fg = graph.FunctionGraph.from_modules(mod, config=config)
 
-    dot = fg.display(
+    fg.display(
         set(fg.get_nodes()),
+        output_file_path=str(dot_file_path),
+        render_kwargs={"view": False},
         display_fields=True,
         config=config,
     )
+    dot_lines = dot_file_path.open("r").readlines()
 
-    def _get_occurances(var: str, lines: List[str]):
-        return [item for item in lines if var in item]
+    def _get_occurances(var: str):
+        return [item for item in dot_lines if var in item]
 
     # We just need to make sure these show up twice
-    assert len(_get_occurances("foo=", dot.body)) == 2
-    assert len(_get_occurances("bar=", dot.body)) == 2
-    assert len(_get_occurances("baz=", dot.body)) == 2
+    assert len(_get_occurances("foo=")) == 2
+    assert len(_get_occurances("bar=")) == 2
+    assert len(_get_occurances("baz=")) == 2
 
 
 def test_function_graph_display_config_node():
@@ -951,12 +977,13 @@ def test_function_graph_display_config_node():
 
     dot = fg.display(set(fg.get_nodes()), config=config)
 
+    # dot.body is a list of string
     # lines start tab then node name; check if "b" is a node in the graphviz object
     assert any(line.startswith("\tX") for line in dot.body)
 
 
 # TODO use high-level visualization dot as fixtures for reuse across tests
-def test_display_config_node():
+def test_display_config_node(tmp_path: pathlib.Path):
     """Check if config is displayed by high-level hamilton.driver.display..."""
     from hamilton import driver
     from hamilton.io.materialization import to
@@ -970,7 +997,9 @@ def test_display_config_node():
     between_dot = dr.visualize_path_between("A", "C")
     exec_dot = dr.visualize_execution(["C"], inputs={"b": 1, "c": 2})
     materialize_dot = dr.visualize_materialization(
-        to.json(id="saver", dependencies=["C"], combine=base.DictResult(), path="saver.json"),
+        to.json(
+            id="saver", dependencies=["C"], combine=base.DictResult(), path=f"{tmp_path}/saver.json"
+        ),
         inputs={"b": 1, "c": 2},
     )
 
