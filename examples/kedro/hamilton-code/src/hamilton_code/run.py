@@ -1,12 +1,12 @@
 import data_processing
 import data_science
 
-from hamilton.driver import Builder
+from hamilton import driver
 
 
 def main():
-    driver = Builder().with_modules(data_processing, data_science).build()
-    driver.display_all_functions("all_functions.png")
+    dr = driver.Builder().with_modules(data_processing, data_science).build()
+    dr.display_all_functions("all_functions.png")
 
     inputs = dict(
         data_dir="../data/",
@@ -23,7 +23,7 @@ def main():
             "review_scores_rating",
         ],
     )
-    results = driver.execute(["evaluate_model"], inputs=inputs)
+    results = dr.execute(["evaluate_model"], inputs=inputs)
     print(results)
 
 

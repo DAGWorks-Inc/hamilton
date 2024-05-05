@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 from hamilton_code import data_science
 
-from hamilton.driver import Builder
+from hamilton import driver
 
 
 @pytest.fixture
@@ -45,8 +45,8 @@ def test_split_data_missing_price(dummy_data, dummy_inputs):
 
 
 def test_data_science_pipeline(dummy_data, dummy_inputs):
-    driver = Builder().with_modules(data_science).build()
-    results = driver.execute(
+    dr = driver.Builder().with_modules(data_science).build()
+    results = dr.execute(
         ["evaluate_model"],
         inputs=dict(
             create_model_input_table=dummy_data,
