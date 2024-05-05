@@ -21,7 +21,7 @@ from types import ModuleType
 
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
 from IPython.core.magic_arguments import argument, magic_arguments, parse_argstring
-from IPython.display import HTML, display
+from IPython.display import HTML, Code, display
 
 from hamilton import ad_hoc_utils, driver, lifecycle
 
@@ -195,21 +195,9 @@ class HamiltonMagics(Magics):
         self.shell.ex(cell)
 
         args = parse_argstring(self.cell_to_module, line)  # specify how to parse by passing method
-        module_name = "jupyter_module" if args.module_name is None else args.module_name
+        module_name = self.get_module_name(args)
 
-        display_config = {}
-        if args.config:
-            if args.config in self.shell.user_ns:
-                display_config = self.shell.user_ns[args.config]
-            else:
-                try:
-                    if args.config.startswith("'") or args.config.startswith('"'):
-                        # strip quotes if present
-                        args.config = args.config[1:-1]
-                    display_config = json.loads(args.config)
-                except json.JSONDecodeError:
-                    print("Failed to parse config as JSON. Please ensure it's a valid JSON string:")
-                    print(args.config)
+        display_config = self.get_display_config(args)
 
         module_object = ad_hoc_utils.create_module(cell, module_name, verbosity=args.verbosity)
 
@@ -259,6 +247,151 @@ class HamiltonMagics(Magics):
 
         # insert source code as text in the next cell
         self.shell.set_next_input(header + module_source, replace=False)
+
+    @magic_arguments()  # needed on top to enable parsing
+    @argument("module_name", help="Module name to provide")  # keyword / optional arg
+    @argument(
+        "-i",
+        "--identifier",
+        help="Identifier for this cell w.r.t. the module being created. "
+        "Integer or String. Integer is simplest.",
+    )  # required argument
+    @argument(
+        "-c", "--config", help="JSON config, or variable name containing config to use."
+    )  # keyword / optional arg
+    @argument(
+        "-d", "--display", action="store_true", help="Flag to visualize dataflow."
+    )  # Flag / optional arg
+    @argument(
+        "-v", "--verbosity", type=int, default=1, help="0 to hide. 1 is normal, default"
+    )  # keyword / optional arg
+    @cell_magic
+    def incr_cell_to_module(self, line, cell):
+        """Incrementally build a module. This executes the cell and dynamically creates a Python module from its content.
+        A Hamilton Driver is automatically instantiated with that module for variable `{MODULE_NAME}_dr`.
+
+        > %%incr_cell_to_module -m MODULE_NAME -i IDENTIFIER --display
+        """
+        if "--help" in line.split():
+            print("Help for %%incr_cell_to_module magic:")
+            print("module_name: Module name to provide. Required.")
+            print("  -i, --identifier: the ID for this cell w.r.t. to the module name. Required.")
+            print("  -c, --config: JSON config string, or variable name containing config to use.")
+            print("  -d, --display: Flag to visualize dataflow.")
+            print("  -v, --verbosity: of standard output. 0 to hide. 1 is normal, default.")
+            return  # Exit early
+
+        if not hasattr(self, "notebook_env"):
+            self.notebook_env = determine_notebook_type()
+        if not hasattr(self, "module_to_cell_mapping"):
+            self.module_to_cell_mapping = {}  # dict of dicts
+
+        args = parse_argstring(
+            self.incr_cell_to_module, line
+        )  # specify how to parse by passing method
+        if args.identifier is None:
+            raise ValueError("Identifier is required. Please provide an identifier for this cell.")
+
+        # shell.ex() is equivalent to exec(), but in the user namespace (i.e. notebook context).
+        # This allows imports and functions defined in the magic cell %%cell_to_module to be
+        # directly accessed from the notebook
+        self.shell.ex(cell)
+
+        module_name = args.module_name
+
+        display_config = self.get_display_config(args)
+
+        if module_name not in self.module_to_cell_mapping:
+            self.module_to_cell_mapping[module_name] = {}
+
+        self.module_to_cell_mapping[module_name][args.identifier] = cell
+        module_source = self.get_module_source(module_name)
+        module_object = ad_hoc_utils.create_module(
+            module_source, module_name, verbosity=args.verbosity
+        )
+
+        # shell.push() assign a variable in the notebook. The dictionary keys are variable name
+        self.shell.push({module_name: module_object})
+
+        # shell.user_ns is a dictionary of all variables in the notebook
+        # create a driver to display things for every cell with %%with_functions
+        dr = driver.Builder().with_modules(module_object).with_config(display_config).build()
+        self.shell.push({f"{module_name}_dr": dr})
+        if args.display:
+            graphviz_obj = dr.display_all_functions()
+            if self.notebook_env == "databricks" and graphviz_obj:
+                try:
+                    display(HTML(graphviz_obj.pipe(format="svg").decode("utf-8")))
+                except Exception as e:
+                    print(f"Failed to display graph: {e}")
+                    print("Please ensure graphviz is installed via `%sh apt install -y graphviz`")
+                return
+            # return will go to the output cell. To display multiple elements, use
+            # IPython.display.display(print("hello"), dr.display_all_functions(), ...)
+            return graphviz_obj
+
+    def get_display_config(self, args) -> dict:
+        """Gets the display config from args if they exist"""
+        display_config = {}
+        if args.config:
+            if args.config in self.shell.user_ns:
+                display_config = self.shell.user_ns[args.config]
+            else:
+                try:
+                    if args.config.startswith("'") or args.config.startswith('"'):
+                        # strip quotes if present
+                        args.config = args.config[1:-1]
+                    display_config = json.loads(args.config)
+                except json.JSONDecodeError:
+                    print("Failed to parse config as JSON. Please ensure it's a valid JSON string:")
+                    print(args.config)
+        return display_config
+
+    @magic_arguments()  # needed on top to enable parsing
+    @argument("module_name", help="Module name to print.")  # required argument
+    @line_magic
+    def print_module(self, line):
+        """Prints the contents of a dynamic module we've been creating."""
+        if not hasattr(self, "notebook_env"):
+            self.notebook_env = determine_notebook_type()
+        if not hasattr(self, "module_to_cell_mapping"):
+            self.module_to_cell_mapping = {}
+        args = parse_argstring(
+            self.incr_cell_to_module, line
+        )  # specify how to parse by passing method
+        module_name = args.module_name
+        if module_name not in self.module_to_cell_mapping:
+            raise ValueError(f"Module {module_name} not found.")
+        module_source = self.get_module_source(module_name)
+        display(Code(module_source))
+
+    def get_module_source(self, module_name: str) -> str:
+        """Creates the module source from incremental code."""
+        module_dict = self.module_to_cell_mapping[module_name]
+        module_order = sorted(list(module_dict.keys()))
+        module_source = "\n\n".join([module_dict[k] for k in module_order])
+        return module_source
+
+    @magic_arguments()  # needed on top to enable parsing
+    @argument("module_name", help="Module to print.")  # required argument
+    @line_magic
+    def reset_module(self, line):
+        if not hasattr(self, "notebook_env"):
+            self.notebook_env = determine_notebook_type()
+        if not hasattr(self, "module_to_cell_mapping"):
+            self.module_to_cell_mapping = {}
+        args = parse_argstring(
+            self.incr_cell_to_module, line
+        )  # specify how to parse by passing method
+        module_name = args.module_name
+        if module_name in self.module_to_cell_mapping:
+            print(f"Reset {module_name}")
+            del self.module_to_cell_mapping[module_name]
+
+    def get_module_name(self, args, default_name: str = "jupyter_module") -> str:
+        """Gets the module name, else returns the default."""
+        module_name = default_name if args.module_name is None else args.module_name
+        return module_name
 
 
 def load_ipython_extension(ipython):
