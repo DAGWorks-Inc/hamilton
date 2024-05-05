@@ -907,12 +907,16 @@ class FunctionGraph:
                 kwargs.update(format=inferred_format)
         if render_kwargs and isinstance(render_kwargs, dict):  # accept explicit format
             kwargs.update(render_kwargs)
+        # .render()` and `.pipe()` have quirks to handle separately
+        # - `render()` accepts a `view` kwarg
+        # - `render()` will append it's kwarg `format` to the filename
         if output_file_path:
             if keep_dot:
                 kwargs["view"] = kwargs.get("view", False)
                 dot.render(output_file_path, **kwargs)
             else:
                 kwargs.pop("view", None)
+                output_file_path = f"{output_file_path}.{kwargs['format']}"
                 pathlib.Path(output_file_path).write_bytes(dot.pipe(**kwargs))
         return dot
 

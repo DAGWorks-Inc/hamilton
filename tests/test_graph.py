@@ -685,7 +685,7 @@ def test_function_graph_has_cycles_false():
     assert fg.has_cycles(nodes, user_nodes) is False
 
 
-def test_function_graph_display(tmp_path: pathlib.Path):
+def test_function_graph_display_content(tmp_path: pathlib.Path):
     """Tests that display saves a file"""
     dot_file_path = tmp_path / "dag"
     config = {"b": 1, "c": 2}
@@ -735,6 +735,27 @@ def test_function_graph_display(tmp_path: pathlib.Path):
     dot_set = set(dot_file)
 
     assert dot_set.issuperset(expected_set) and len(dot_set.difference(expected_set)) == 1
+
+
+@pytest.mark.parametrize(
+    "filename, keep_dot", [("dag", False), ("dag.png", False), ("dag", True), ("dag.png", True)]
+)
+def test_function_graph_display_output_filename(
+    tmp_path: pathlib.Path, filename: str, keep_dot: bool
+):
+    """Handle file generation with `graph.Digraph` `.render()` and `.pipe()`"""
+    output_file_path = f"{tmp_path}/{filename}"
+    config = {"b": 1, "c": 2}
+    fg = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config=config)
+
+    fg.display(
+        set(fg.get_nodes()),
+        output_file_path=output_file_path,
+        config=config,
+        keep_dot=keep_dot,
+    )
+    assert pathlib.Path(tmp_path, "dag.png").exists()
+    assert pathlib.Path(tmp_path, "dag").exists() == keep_dot
 
 
 def test_function_graph_display_no_dot_output(tmp_path: pathlib.Path):
