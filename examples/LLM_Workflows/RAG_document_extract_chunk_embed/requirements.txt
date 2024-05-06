@@ -1,3 +1,4 @@
+langchain
 langchain-core
 openai
 pandas
