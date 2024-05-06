@@ -9,6 +9,7 @@ Note: one should largely consider the code in this module to be "private".
 import inspect
 import logging
 import os.path
+import pathlib
 import uuid
 from enum import Enum
 from types import ModuleType
@@ -747,6 +748,7 @@ class FunctionGraph:
         deduplicate_inputs: bool = False,
         display_fields: bool = True,
         custom_style_function: Callable = None,
+        keep_dot: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Displays & saves a dot file of the entire DAG structure constructed.
 
@@ -764,6 +766,7 @@ class FunctionGraph:
             Can improve readability depending on the specifics of the DAG.
         :param display_fields: If True, display fields in the graph if node has attached schema metadata
         :param custom_style_function: Optional. Custom style function.
+        :param keep_dot: If true, produce a DOT file (ref: https://graphviz.org/doc/info/lang.html)
         :return: the graphviz graph object if it was created. None if not.
         """
         all_nodes = set()
@@ -789,6 +792,7 @@ class FunctionGraph:
             display_fields=display_fields,
             custom_style_function=custom_style_function,
             config=self._config,
+            keep_dot=keep_dot,
         )
 
     def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
@@ -823,7 +827,7 @@ class FunctionGraph:
     @staticmethod
     def display(
         nodes: Set[node.Node],
-        output_file_path: Optional[str] = "test-output/graph.gv",
+        output_file_path: Optional[str] = None,
         render_kwargs: dict = None,
         graphviz_kwargs: dict = None,
         node_modifiers: Dict[str, Set[VisualizationNodeModifiers]] = None,
@@ -835,6 +839,7 @@ class FunctionGraph:
         display_fields: bool = True,
         custom_style_function: Callable = None,
         config: dict = None,
+        keep_dot: bool = False,
     ) -> Optional["graphviz.Digraph"]:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
@@ -894,7 +899,7 @@ class FunctionGraph:
             custom_style_function=custom_style_function,
             config=config,
         )
-        kwargs = {"view": False, "format": "png"}  # default format = png
+        kwargs = {"format": "png"}  # default format = png
         if output_file_path:  # infer format from path
             output_file_path, suffix = os.path.splitext(output_file_path)
             if suffix != "":
@@ -902,8 +907,17 @@ class FunctionGraph:
                 kwargs.update(format=inferred_format)
         if render_kwargs and isinstance(render_kwargs, dict):  # accept explicit format
             kwargs.update(render_kwargs)
+        # .render()` and `.pipe()` have quirks to handle separately
+        # - `render()` accepts a `view` kwarg
+        # - `render()` will append it's kwarg `format` to the filename
         if output_file_path:
-            dot.render(output_file_path, **kwargs)
+            if keep_dot:
+                kwargs["view"] = kwargs.get("view", False)
+                dot.render(output_file_path, **kwargs)
+            else:
+                kwargs.pop("view", None)
+                output_file_path = f"{output_file_path}.{kwargs['format']}"
+                pathlib.Path(output_file_path).write_bytes(dot.pipe(**kwargs))
         return dot
 
     def get_impacted_nodes(self, var_changes: List[str]) -> Set[node.Node]:
