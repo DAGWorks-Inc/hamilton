@@ -109,6 +109,10 @@ What this leaves us with is a general way to then plug in various executors to r
 This is what the `run.py`, `run_dask.py`, `run_ray.py`, and `spark/spark_pipeline.py` files do. They run the same code, but on different
 execution systems.
 
+Or you can open the notebook in google collab:<a target="_blank" href="https://colab.research.google.com/github/DAGWorks-Inc/hamilton/blob/main/examples/LLM_Workflows/scraping_and_chunking/notebook.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a> That will exercise the different execution systems.
+
 ### File Structure
 Here we explain the file structure of the example:
 
