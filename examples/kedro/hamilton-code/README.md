@@ -7,6 +7,7 @@
 The Hamilton refactor is composed of a few files:
 - `data_processing.py` and `data_science.py` contains regular Python functions to define the Hamilton dataflow. This is equivalent to Kedro's `pipeline.py` **and** `nodes.py` files.
 - `run.py` contains the "driver code" to load and execute the dataflow. There's no direct equivalent in the Kedro tutorial since it prefers using the CLI for execution.
+- `noteboks/interactive.ipynb` contains the "driver code", similar to `run.py`, but uses [Hamilton Jupyter Magics](https://hamilton.dagworks.io/en/latest/how-tos/use-in-jupyter-notebook/#use-hamilton-jupyter-magic) to define the dataflow interactily in a notebook.
 - `tests/test_dataflow.py` includes tests equivalent to `tests/pipelines/data_science/test_pipeline.py` in the Kedro code.
 
 ## Instructions
