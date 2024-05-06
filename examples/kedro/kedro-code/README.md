@@ -1,4 +1,4 @@
-# kedro_code
+# Kedro code
 
 ## Overview
 
