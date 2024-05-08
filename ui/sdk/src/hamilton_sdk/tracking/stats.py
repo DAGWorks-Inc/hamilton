@@ -114,6 +114,11 @@ def compute_stats_tuple(result: tuple, node_name: str, node_tags: dict) -> Dict[
                 },
                 "observability_schema_version": "0.0.2",
             }
+    # namedtuple -- this how we guide people to not have something tracked easily.
+    # so we skip it if it has a `secret_key`. This is hacky -- better choice would
+    # be to have an internal object or way to decorate a parameter to not track it.
+    if hasattr(result, "_asdict") and not hasattr(result, "secret_key"):
+        return compute_stats_dict(result._asdict(), node_name, node_tags)
     return {
         "observability_type": "unsupported",
         "observability_value": {
