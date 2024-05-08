@@ -1,16 +1,16 @@
 Kedro
 =========
 
-Both ``Kedro`` and ``Hamilton`` are Python tools to help define directed acyclic graph (DAG) of data transformations. While there's overlap between the two in terms of features, we note 2 main differences:
+Both ``Kedro`` and ``Hamilton`` are Python tools to help define directed acyclic graph (DAG) of data transformations. While there's overlap between the two in terms of features, we note two main differences:
 
 - ``Kedro`` is imperative and focuses on tasks; ``Hamilton`` is declarative and focuses on assets.
-- ``Kedro`` is heavier and comes with YAML config and dataset definition to manage; ``Hamilton`` is lighter to adopt and you can progressively opt-in features that you find valuable.
+- ``Kedro`` is heavier and comes with a project structure, YAML configs, and dataset definition to manage; ``Hamilton`` is lighter to adopt and you can progressively opt-in features that you find valuable.
 
 On this page, we'll dive into these differences, compare features, and present
 some code snippets from both tools. 
 
 .. note::
-    See this `GitHub repository <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/kedro>`_ to compare a full proejct using Kedro or Hamilton.
+    See this `GitHub repository <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/kedro>`_ to compare a full project using Kedro or Hamilton.
 
 Imperative vs. Declarative
 ---------------------------
@@ -59,8 +59,11 @@ With ``Hamilton``, you pass the module containing all functions from **Step 1** 
 **Benefits of adopting a declarative approach**
 
 - Less errors since you skip manual node creation (i.e., strings **will** lead to typos).
+
 - Handle complexity since assembling a dataflow remains the same for 10 or 1000 nodes.
+
 - Maintainability improves since editing your functions (**Step 1**) modifies the structure of your DAG, removing the pipeline definition as a failure point.
+
 - Readability improves because you can understand how functions relate to each other without jumping between files.
 
 These benefits of ``Hamilton`` encourage developers to write smaller functions that are easier to debug and maintain, leading to major code quality gains. On the opposite, the burden of ``node`` and ``pipeline`` creation as projects grow in size lead to users stuffing more and more logic in a single node, making it increasingly harder to maintain.
@@ -152,6 +155,7 @@ Kedro
 - Register datasets using the data catalog construct
 - Pass parameters to data runs
 - Configure environment variables and credentials
+- Navigate the project structure
 
 This provides guidance when building your first data pipeline, but it's also a lot to take in at once. As you'll see in the `project comparison on GitHub <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/kedro>`_, ``Kedro`` involves more files making it harder to navigate. Also, it's reliant on YAML which is `generally seen as an unreliable format <https://noyaml.com/>`_. If you have an existing data stack or favorite library, it might clash with ``Kedro``'s way of thing (e.g., you have credentials management tool; you prefer `Hydra <https://hydra.cc/>`_ for configs).
 
@@ -164,6 +168,8 @@ Hamilton
 - Build a ``Driver`` with your dataflow module and call ``.execute()`` to get results
 
 ``Hamilton`` allows you to start light and opt-in features as your project's requirements evolve (data validation, scaling compute, testing, etc.). Python is a powerful language with rich editor support and tooling hence why it advocates for "everything in Python" instead of external configs in YAML or JSON. For example, parameters, data assets, and configurations can very much live as dataclasses within a ``.py`` file. ``Hamilton`` was built with an extensive plugin system. There are many extensions, some contributed by users, to adapt Hamilton to your project, and it's easy for you to extend yourself for further customization.
+
+In fact, ``Hamilton`` is so lightweight, you could even run it inside ``Kedro``!
 
 Feature comparison
 ------------------
