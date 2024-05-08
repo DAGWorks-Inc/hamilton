@@ -218,7 +218,7 @@ Feature comparison
       - Compare artifacts in the experiment tracker
       - Compare dataflow structure, code versions, and artifacts in the Hamilton UI.
     * - Data validation
-      - `Pandera plugin picked up after 6 months donwtime <https://github.com/Galileo-Galilei/kedro-pandera/releases>`_
+      - `Pandera plugin picked up after 6 months of downtime <https://github.com/Galileo-Galilei/kedro-pandera/releases>`_
       - `Native and Pandera plugin <https://hamilton.dagworks.io/en/latest/how-tos/run-data-quality-checks/>`_
     * - Executors
       - `Sequential, multiprocessing, multi-threading <https://docs.kedro.org/en/stable/nodes_and_pipelines/run_a_pipeline.html>`_
