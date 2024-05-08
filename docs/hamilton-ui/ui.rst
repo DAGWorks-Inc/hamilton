@@ -1,6 +1,6 @@
-===========
-Hamilton UI
-===========
+-----------
+Overview
+-----------
 
 Hamilton comes with a fully open-source UI that can be run both for local deployment and on a remote server.
 The UI consists of the following features:
@@ -15,9 +15,19 @@ In short, the Hamilton UI aims to combine a large swath of MLOps/data observabil
 .. image:: ../_static/hamilton_ui.jpeg
     :alt: Hamilton UI
 
---------
-Overview
---------
+---
+
+
+The Hamilton UI is contained within a set of Docker images. You launch with `docker-compose <https://docs.docker.com/compose/>`_, and it will start up the UI, the backend server,
+and a Postgres database. If you'd like a quick overview of some of the features, you can watch the following:
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/0VIVSeN7Ij8?si=i3vTsfTNorzh5y2C" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+-------
+Install
+-------
 
 If you'd like a video walkthrough on getting set up, you can watch the following:
 
@@ -25,64 +35,42 @@ If you'd like a video walkthrough on getting set up, you can watch the following
 
     <iframe width="560" height="315" src="https://www.youtube.com/embed/DPfxlTwaNsM?si=gks5oOAWsNPSJbe_" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-If you'd like a quick overview of some of the features, you can watch the following:
 
-.. raw:: html
+As prerequisites, you will need to have Docker installed -- you can follow instructions  `here <https://docs.docker.com/engine/install/>`_.
 
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/0VIVSeN7Ij8?si=i3vTsfTNorzh5y2C" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
-Getting Started
----------------
-
-The Hamilton UI is contained within a set of docker images. You launch with `docker-compose <https://docs.docker.com/compose/>`_, and it will start up the UI, the backend server,
-and a postgres database.
-
-
-Prerequisites
--------------
-
-To run this, you'll need:
-
-1. Docker installed -- you can follow instructions  `here <https://docs.docker.com/engine/install/>`_.
-2. A Hamilton workflow -- if you don't have this there's an init command that will create a basic one for you.
-3. The `hamilton` repository cloned locally.
-
-----
-
-Starting the UI
----------------
-
-Start by ensuring that the hamilton repository is cloned locally. Then, navigate to the `ui` directory:
+1. Clone the Hamilton repository locally
 
 .. code-block:: bash
 
     git clone https://github.com/dagworks-inc/hamilton
 
-Then, navigate to the ``ui`` directory:
+2. Navigate to the ``hamilton/ui`` directory
 
 .. code-block:: bash
 
     cd hamilton/ui
 
 
-And run the server command:
+3. Execute the installation script with the following command
 
 .. code-block:: bash
 
     ./deployment/run.sh
 
 
-This will do the following:
+This will:
 
-1. Pull all docker images from the docker hub
-2. Start a local postgres database
-3. Start the backend server
-4. Start the frontend server
+- Pull all Docker images from the Docker Hub
+- Start a local Postgres database
+- Start the backend server
+- Start the frontend server
 
-This takes a bit of time! So be patient. The server will be running on port 8242. Then navigate to ``http://localhost:8242`` in your browser, and enter your email (this will be the username used within the app).
+This takes a bit of time! So be patient. The server will be running on port 8242.
+
+4. Then navigate to ``http://localhost:8242`` in your browser, and enter your email (this will be the username used within the app).
 
 Building the Docker Images locally
-__________________________________
+-----------------------------------
 If building the Docker containers from scratch, increase your Docker memory to 10gb or more -- you can do this in the Docker Desktop settings.
 
 To build the images locally, you can run the following command:
@@ -98,10 +86,15 @@ This will build the containers from scratch. If you just want to mount the local
 
     ./deployment/dev.sh
 
-----
+Self-Hosting
+-------------
 
-Running your first dataflows
-----------------------------
+Please reach out to us if you want to deploy on your own infrastructure. Self-hosting documentation will be up soon.
+
+
+-----------
+Get started
+-----------
 
 Now that you have your server running, you can run a simple dataflow and watch it in the UI!
 You can follow instructions in the UI when you create a new project, or follow the instructions here.
@@ -119,7 +112,7 @@ Then, navigate to the project page (dashboard/projects), in the running UI, and 
 Remember the project ID -- you'll use it for the next steps.
 
 Existing Hamilton Code
-______________________
+----------------------
 Add the following adapter to your code if you have existing Hamilton code:
 
 .. code-block:: python
@@ -144,7 +137,7 @@ Add the following adapter to your code if you have existing Hamilton code:
 Then run your DAG, and follow the links in the logs!
 
 I need some Hamilton code to run
-________________________________
+--------------------------------
 If you don't have Hamilton code to run this with, you can run Hamilton UI example under `examples/hamilton_ui <https://github.com/dagworks-inc/hamilton/tree/main/examples/hamilton_ui>`_:
 
 .. code-block:: bash
@@ -158,30 +151,25 @@ If you don't have Hamilton code to run this with, you can run Hamilton UI exampl
 
 You should see links in the `logs to the UI <http://localhost:8242/dashboard/projects>`_, where you can see the DAG run + the data summaries captured.
 
-Exploring the UI
--------------------
+----------
+Features
+----------
 
 Once you get to the UI, you can navigate to the projects page (left hand nav-bar). Assuming you have created a project
 and logged to it, you can then navigate to view it and then more details about it. E.g. versions, code, lineage, catalog, execution runs.
 See below for a few screenshots of the UI.
 
------------
-Features
------------
 
-The UI has the following features:
-
-
-DAG version tracking
+Dataflow versioning
 --------------------
 
-Select DAG versions to compare + visualize.
+Select a dataflow versions to compare and visualize.
 
 .. image:: ../_static/version_tracking.png
     :alt: DAG Version Tracking
 
-Feature/asset Catalog
----------------------
+Assets/features catalog
+-----------------------
 
 View functions, nodes, and assets across a history of runs.
 
@@ -189,9 +177,9 @@ View functions, nodes, and assets across a history of runs.
     :alt: Catalog
 
 Browser
--------
+--------
 
-View DAG shapes + code:
+View dataflow structure and code.
 
 
 .. image:: ../_static/code_browser.png
@@ -201,7 +189,7 @@ View DAG shapes + code:
     :alt: Browser
 
 Run tracking + telemetry
-------------------------
+-------------------------
 
 View a history of runs, telemetry on runs/comparison, and data for specific runs:
 
@@ -213,11 +201,3 @@ View a history of runs, telemetry on runs/comparison, and data for specific runs
 
 .. image:: ../_static/run_data.png
     :alt: Run Data
-
-----
-
-------------
-Self-Hosting
-------------
-
-Please reach out to us if you want to deploy on your own infrastructure. Self-hosting documentation will be up soon.

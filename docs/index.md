@@ -9,6 +9,7 @@
 get-started/index
 concepts/index
 how-tos/index
+hamilton-ui/index
 integrations/index
 code-comparisons/index
 ```
