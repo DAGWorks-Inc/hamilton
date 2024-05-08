@@ -208,23 +208,8 @@ Feature comparison
     * - Interactive DAG viewer
       - `Kedro Viz <https://github.com/kedro-org/kedro-viz>`_
       - `Hamilton UI <https://github.com/DAGWorks-Inc/hamilton/tree/main/ui>`_
-    * - Observability and artifact lineage
-      - ⛔
-      - ✅
-    * - Node and dataflow versioning
-      - ⛔
-      - Directly derive from the node's code and dataflow structure. Supported in  Hamilton UI.
-    * - Data versioning
-      - `Timestamp versioning <https://docs.kedro.org/en/stable/data/data_catalog.html#dataset-versioning>`_
-      - Based on code version and inputs. Supported in Hamilton UI. 
-    * - Diff and compare dataflows
-      - ⛔
-      - Can compare dataflows structure and code via the CLI or Hamilton UI
-    * - Experiment manager
-      - Compare artifacts in the experiment tracker
-      - Compare dataflow structure, code versions, and artifacts in the Hamilton UI.
     * - Data validation
-      - `Pandera plugin picked up after 6 months donwtime <https://github.com/Galileo-Galilei/kedro-pandera/releases>`_
+      - `Pandera plugin picked up after 6 months downtime <https://github.com/Galileo-Galilei/kedro-pandera/releases>`_
       - `Native and Pandera plugin <https://hamilton.dagworks.io/en/latest/how-tos/run-data-quality-checks/>`_
     * - Executors
       - `Sequential, multiprocessing, multi-threading <https://docs.kedro.org/en/stable/nodes_and_pipelines/run_a_pipeline.html>`_
@@ -246,9 +231,54 @@ Feature comparison
       - ✅
 
 
+Both ``Kedro`` and ``Hamilton`` provide applications to view dataflows/pipelines and interact with their results. Here, ``Kedro`` provides a lighter webserver and UI, while ``Hamilton`` offers a production-ready containerized application.
+
+
+.. list-table::
+    :widths: 24 39 39
+    :header-rows: 1
+
+    * - Trait
+      - Kedro Viz
+      - Hamilton UI
+    * - Interactive dataflow viewer
+      - ✅
+      - ✅
+    * - View code definition of nodes
+      - ✅
+      - ✅
+    * - Code versioning
+      - Git SHA (may be out of sync with actual code)
+      - Node-level versioning at runtime
+    * - Collapsible view
+      - ✅
+      - ✅
+    * - Tag nodes
+      - ✅
+      - ✅ 
+    * - Execution observability
+      - ⛔
+      - ✅
+    * - Artifact lineage and versioning
+      - ⛔
+      - ✅    
+    * - Column-level lineage
+      - ⛔
+      - ✅
+    * - Node and dataflow versioning
+      - ⛔
+      - Directly derive from the node's code and dataflow structure. Supported in  Hamilton UI.
+    * - Compare run results
+      - ✅
+      - ✅
+    * - Automatic dataset profiling
+      - ⛔
+      - ✅ 
+
+
 More information
 ----------------
 
-For a full side-by-side example of Dagster and Hamilton, visit `this GitHub repository <https://github.com/dagworks-inc/hamilton/tree/main/examples/kedro>`_
+For a full side-by-side example of Kedro and Hamilton, visit `this GitHub repository <https://github.com/dagworks-inc/hamilton/tree/main/examples/kedro>`_
 
 For more questions, join our `Slack Channel <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_
