@@ -1,4 +1,6 @@
+import sys
 from collections import namedtuple
+from typing import NamedTuple
 
 import pandas as pd
 from hamilton_sdk.tracking import stats
@@ -40,6 +42,13 @@ def test_compute_stats_tuple_dataloader():
         "test_node",
         {"hamilton.data_loader": True},
     )
+    # in python 3.11 numbers change
+    if sys.version_info >= (3, 11):
+        index = 132
+        memory = 156
+    else:
+        index = 128
+        memory = 152
     assert actual == {
         "observability_schema_version": "0.0.2",
         "observability_type": "dict",
@@ -47,12 +56,38 @@ def test_compute_stats_tuple_dataloader():
             "type": "<class 'dict'>",
             "value": {
                 "CONNECTION_INFO": {"URL": "SOME_URL"},
-                "DF_MEMORY_BREAKDOWN": {"Index": 128, "a": 24},
-                "DF_MEMORY_TOTAL": 152,
+                "DF_MEMORY_BREAKDOWN": {"Index": index, "a": 24},
+                "DF_MEMORY_TOTAL": memory,
                 "QUERIED_TABLES": {
                     "table-0": {"catalog": "FOO", "database": "BAR", "name": "TABLE"}
                 },
                 "SQL_QUERY": "SELECT * FROM FOO.BAR.TABLE",
+            },
+        },
+    }
+
+
+def test_compute_states_tuple_namedtuple():
+    """Tests namedtuple capture correctly"""
+
+    class Foo(NamedTuple):
+        x: int
+        y: str
+
+    f = Foo(1, "a")
+    actual = stats.compute_stats(
+        f,
+        "test_node",
+        {"some_tag": "foo-bar"},
+    )
+    assert actual == {
+        "observability_schema_version": "0.0.2",
+        "observability_type": "dict",
+        "observability_value": {
+            "type": "<class 'dict'>",
+            "value": {
+                "x": 1,
+                "y": "a",
             },
         },
     }
