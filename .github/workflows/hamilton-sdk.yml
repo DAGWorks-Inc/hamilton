@@ -1,0 +1,38 @@
+name: SDK Test Workflow
+
+on:
+  push:
+    branches:
+      - main  # or any specific branches you want to include
+    paths:
+      - 'ui/sdk/**'
+
+  pull_request:
+    paths:
+      - 'ui/sdk/**'
+
+
+jobs:
+  sdk-unit-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    defaults:
+      run:
+        working-directory: ui/sdk
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+        pip install -e .
+    - name: Run unit tests
+      run: |
+        pytest tests/
