@@ -265,9 +265,6 @@ Both ``Kedro`` and ``Hamilton`` provide applications to view dataflows/pipelines
     * - Column-level lineage
       - ⛔
       - ✅
-    * - Node and dataflow versioning
-      - ⛔
-      - Directly derive from the node's code and dataflow structure. Supported in  Hamilton UI.
     * - Compare run results
       - ✅
       - ✅
