@@ -17,5 +17,4 @@ concepts that makes Hamilton unique and powerful.
    builder
    function-modifiers-advanced
    parallel-task
-   ui
    best-practices/index

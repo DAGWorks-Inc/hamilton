@@ -6,7 +6,7 @@
 </div>
 
 Hamilton is a general-purpose framework to write dataflows using regular Python functions. At the core, each function defines a transformation and its parameters indicates its dependencies. Hamilton automatically connects individual functions into a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG) that can be executed, visualized, optimized, and reported on.
-Hamilton also comes with a [UI](concepts/ui.rst) to visualize, catalog, and monitor your dataflows.
+Hamilton also comes with a [UI](hamilton-ui/index.rst) to visualize, catalog, and monitor your dataflows.
 
 ```{figure} ./_static/abc.png
 :scale: 50
@@ -17,7 +17,7 @@ The ABC of Hamilton
 
 # Why should you use Hamilton?
 **Facilitate collaboration**. By focusing on functions, Hamilton avoids sprawling code hierarchy and generates flat dataflows. Well-scoped functions make it easier to add features, complete code reviews, debug pipeline failures, and hand-off projects. Visualizations can be generated directly from your code to better understand and document it.
-Integration with the [Hamilton UI](concepts/ui.rst) allows you to track lineage, catalog code & artifacts, and monitor your dataflows.
+Integration with the [Hamilton UI](hamilton-ui/index.rst) allows you to track lineage, catalog code & artifacts, and monitor your dataflows.
 
 **Reduce development time**. Hamilton dataflows are reusable across projects and context (e.g., pipeline vs. web service). The benefits of developing robust and well-tested solutions are multiplied by reusability. Off-the-shelf dataflows are available on the [Hamilton Hub](https://hub.dagworks.io/).
 
