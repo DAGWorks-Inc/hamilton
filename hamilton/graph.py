@@ -475,6 +475,7 @@ def create_graphviz_graph(
         # append config key to node label
         config_key = n.tags.get("hamilton.config", None)
         if config_key:
+            seen_node_types.add("config")
             label = _get_node_label(n, name=f"{n.name}: {config_key}")
 
         node_style = _get_node_style(node_type)
