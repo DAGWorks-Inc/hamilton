@@ -37,7 +37,7 @@ const TableRow = <T extends object>(props: {
   const labelData = (
     <td
       key={props.name}
-      className="py-4 px-3 text-sm font-semibold text-gray-500"
+      className="py-4 px-3 text-sm font-semibold text-gray-500 w-48"
     >
       {props.dataTypeDisplay
         ? props.dataTypeDisplay(props.name, props.data)
