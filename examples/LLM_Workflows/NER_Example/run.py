@@ -1,6 +1,6 @@
-import os
+# import os
 
-from dagworks import adapters
+from hamilton_sdk import adapters
 
 from hamilton import driver
 
@@ -9,12 +9,11 @@ from hamilton.execution import executors
 
 
 def run_parallel():
-    tracker = adapters.DAGWorksTracker(
-        project_id=19349,
-        api_key=os.environ["DW_API_KEY"],
-        username="stefan@dagworks.io",
-        dag_name="lancedb_parallel_rag",
-        tags={"environment": "DEV", "team": "MY_TEAM", "version": "1"},
+    tracker = adapters.HamiltonTracker(
+        project_id=7,  # modify this as needed
+        username="user@example.com",  # modify this as needed
+        dag_name="my_version_of_the_dag",
+        tags={"environment": "DEV", "team": "MY_TEAM", "version": "X"},
     )
     import ner_extraction_parallel
 
@@ -62,12 +61,11 @@ def run_parallel():
 
 
 def run_sequential():
-    tracker = adapters.DAGWorksTracker(
-        project_id=19349,
-        api_key=os.environ["DW_API_KEY"],
-        username="stefan@dagworks.io",
-        dag_name="lancedb_rag",
-        tags={"environment": "DEV", "team": "MY_TEAM", "version": "1"},
+    tracker = adapters.HamiltonTracker(
+        project_id=7,  # modify this as needed
+        username="elijah@dagworks.io",  # modify this as needed
+        dag_name="my_version_of_the_dag",
+        tags={"environment": "DEV", "team": "MY_TEAM", "version": "X"},
     )
     import ner_extraction
 
@@ -80,17 +78,17 @@ def run_sequential():
     )
     dr.display_all_functions("ner_extraction.png")
 
-    results = dr.execute(
-        ["load_into_lancedb", "lancedb_table"],
-        inputs={"table_name": "temp1"},
-    )
-    print(results)
+    # results = dr.execute(
+    #     ["load_into_lance_db"],
+    #     inputs={"table_name": "temp2"},
+    # )
+    # print(results)
     query = "How Data is changing the world?"
-    r = dr.execute(["search_lancedb"], inputs={"query": query, "table_name": "temp1"})
+    r = dr.execute(["search_lancedb"], inputs={"query": query, "table_name": "temp2"})
     print(r)
 
     query = "Why does SpaceX want to build a city on Mars?"
-    r = dr.execute(["search_lancedb"], inputs={"query": query, "table_name": "temp1"})
+    r = dr.execute(["search_lancedb"], inputs={"query": query, "table_name": "temp2"})
     print(r)
 
 
