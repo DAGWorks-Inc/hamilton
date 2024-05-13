@@ -1,3 +1,6 @@
+ibis-framework
+langchain_core
 polars
+pyspark
 pytest
 ray
