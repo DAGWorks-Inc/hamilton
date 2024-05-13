@@ -159,6 +159,8 @@ def compute_stats_list(result: list, node_name: str, node_tags: dict) -> Dict[st
                     # else just string it -- max 200 chars.
                     if len(v) > 200:
                         v = v[:200] + "..."
+                elif observed_type == "dict":
+                    v = v_result["observability_value"]
             result_values.append(v)
     return {
         # yes dict type -- that's so that we can display in the UI. It's a hack.
