@@ -1832,6 +1832,23 @@ class Builder:
             _use_legacy_adapter=False,
         )
 
+    def copy(self) -> "Builder":
+        """Creates a copy of the current state of this Builder.
+
+        NOTE. The copied Builder currently holds reference of Builder attributes
+        """
+        new_builder = Builder()
+        new_builder.v2_executor = self.v2_executor
+        new_builder.config = self.config.copy()
+        new_builder.modules = self.modules.copy()
+        new_builder.legacy_graph_adapter = self.legacy_graph_adapter
+        new_builder.adapters = self.adapters.copy()
+        new_builder.execution_manager = self.execution_manager
+        new_builder.local_executor = self.local_executor
+        new_builder.remote_executor = self.remote_executor
+        new_builder.grouping_strategy = self.grouping_strategy
+        return new_builder
+
 
 if __name__ == "__main__":
     """some example test code"""

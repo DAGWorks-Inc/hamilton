@@ -509,6 +509,28 @@ def test_builder_defaults_to_dict_result():
     assert result == {"C": 4}
 
 
+def test_builder_copy():
+    builder = (
+        Builder()
+        .with_modules(tests.resources.dummy_functions)
+        .with_config({"config_key": 13})
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .with_adapter(base.DefaultAdapter())
+        .with_local_executor(executors.SynchronousLocalTaskExecutor())
+        .with_remote_executor(executors.SynchronousLocalTaskExecutor())
+    )
+    builder_copy = builder.copy()
+
+    assert builder_copy is not builder
+    for attr, attr_value in builder.__dict__.items():
+        attr_value_copy = getattr(builder_copy, attr)
+        assert attr_value_copy == attr_value
+        # TODO check that each objects
+        # if isinstance(attr_value, bool):
+        #     continue
+        # assert attr_value_copy is not attr_value
+
+
 def test_materialize_checks_required_input(tmp_path):
     dr = Builder().with_modules(tests.resources.dummy_functions).build()
 
