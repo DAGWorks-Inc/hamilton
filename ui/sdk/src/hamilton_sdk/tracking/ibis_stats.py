@@ -30,7 +30,7 @@ def base_data_type_mapping(data_type: core.DataType) -> str:
 
 
 base_schema = {
-    # we can't get all of these about a pyspark dataframe
+    # we can't get all of these about an ibis dataframe
     "base_data_type": None,
     # 'count': 0,
     "data_type": None,

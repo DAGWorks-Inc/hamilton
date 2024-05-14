@@ -58,7 +58,9 @@ def _hash_module(
         )
 
     def safe_getmembers(module):
-        """Need this because some modules are lazily loaded and we can't get the members."""
+        """Need this because some modules are lazily loaded and we can't get the members.
+        e.g. ibis.
+        """
         try:
             return inspect.getmembers(module)
         except Exception as e:
