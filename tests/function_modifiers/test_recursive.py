@@ -1,4 +1,5 @@
 import collections
+import inspect
 import random
 from typing import Tuple
 
@@ -247,6 +248,25 @@ def test_reuse_subdag_end_to_end():
     assert fg.nodes["v3.d"].callable(**{"v3.c": 10, "a": 100}) == 100 + 10
     res = fg.execute(nodes=[fg.nodes["sum_everything"]])
     assert res["sum_everything"] == 318
+
+
+@pytest.mark.asyncio
+async def test_subdag_async():
+    async def foo(a: int) -> int:
+        return a
+
+    async def bar(b: int) -> int:
+        return b
+
+    async def baz(foo: int, bar: int) -> int:
+        return foo + bar
+
+    decorator = recursive.subdag(foo, bar, inputs={}, config={})
+    nodes = {node_.name: node_ for node_ in decorator.generate_nodes(baz, {})}
+    assert inspect.iscoroutinefunction(nodes["baz.bar"].callable)
+    assert inspect.iscoroutinefunction(nodes["baz.foo"].callable)
+    assert inspect.iscoroutinefunction(nodes["baz"].callable)
+    assert await nodes["baz"](**{"baz.foo": 2, "baz.bar": 3}) == 5
 
 
 def test_parameterized_subdag():
