@@ -185,10 +185,10 @@ Feature comparison
       - Tasks (imperative)
       - Assets (declarative)
     * - Code structure
-      - Opiniated. Requires boilerplate around pipeline creation and registration
+      - Opiniated. Makes assumptions about pipeline creation & registration and configuration.
       - Unopiniated.
     * - In-memory execution
-      - 🚸 It's a bit hacky, but possible
+      - Execute using a `KedroSession <https://docs.kedro.org/en/stable/kedro_project_setup/session.html>`_, but returning values in-memory is hacky.
       - Default
     * - I/O execution
       - `Datasets and Data Catalog <https://docs.kedro.org/en/stable/data/data_catalog.html>`_
@@ -200,16 +200,16 @@ Feature comparison
       - ⛔
       - ✅
     * - LLM applications
-      - ⛔ requires in-memory execution.
+      - ⛔ Limited by in-memory execution and return values.
       - ✅ declarative API in-memory makes it easy (`RAG app <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/LLM_Workflows/retrieval_augmented_generation>`_).
-    * - Produce DAG visualizations
-      - ⛔
-      - Can visualize entire dataflow, execution path, query what's upstream, etc. and output a file (``.png``, ``.svg``, etc.)
+    * - Static DAG visualizations
+      - Need ``Kedro Viz`` installed to export static visualizations.
+      - Visualize entire dataflow, execution path, query what's upstream, etc. directly in a notebook or output to a file (``.png``, ``.svg``, etc.). Single dependency is ``graphviz``.
     * - Interactive DAG viewer
       - `Kedro Viz <https://github.com/kedro-org/kedro-viz>`_
       - `Hamilton UI <https://github.com/DAGWorks-Inc/hamilton/tree/main/ui>`_
     * - Data validation
-      - `Pandera plugin picked up after 6 months downtime <https://github.com/Galileo-Galilei/kedro-pandera/releases>`_
+      - `Community Pandera plugin <https://github.com/Galileo-Galilei/kedro-pandera/releases>`_
       - `Native and Pandera plugin <https://hamilton.dagworks.io/en/latest/how-tos/run-data-quality-checks/>`_
     * - Executors
       - `Sequential, multiprocessing, multi-threading <https://docs.kedro.org/en/stable/nodes_and_pipelines/run_a_pipeline.html>`_
@@ -268,9 +268,9 @@ Both ``Kedro`` and ``Hamilton`` provide applications to view dataflows/pipelines
     * - Compare run results
       - ✅
       - ✅
-    * - Automatic dataset profiling
-      - ⛔
-      - ✅ 
+    * - Rich artifact view
+      - Preview 5 dataframe rows. Metadata about artifact (column count, row count, size).
+      - Automatic statistical profiling of various dataframe libraries. 
 
 
 More information
