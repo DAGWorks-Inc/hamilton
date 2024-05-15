@@ -652,8 +652,15 @@ export const RunSummary = (props: {
       run.run_start_time ? new Date(run.run_start_time) : new Date(Date.now())
     )
     .sort((a, b) => a.getTime() - b.getTime());
-  const minDate = runsSortedByStartDate[0];
-  const maxDate = runsSortedByStartDate[runsSortedByStartDate.length - 1];
+  const minDate = new Date(runsSortedByStartDate[0]);
+  const maxDate = new Date(
+    runsSortedByStartDate[runsSortedByStartDate.length - 1]
+  );
+
+  // Quick buffer to ensure no runs are missed
+  minDate.setDate(minDate.getDate() - 1);
+  maxDate.setDate(maxDate.getDate() + 1);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(() =>
     deserialize(searchParams, minDate, maxDate)
@@ -663,14 +670,6 @@ export const RunSummary = (props: {
     const newSearchParams = serialize(query);
     setSearchParams(newSearchParams, { replace: true });
   }, [query, setSearchParams]);
-  // const [query, setQuery] = useState<Query>({
-  //   selectedTags: new Map<string, Set<string>>(),
-  //   dateRange: {
-  //     startDate: addDays(minDate, -1),
-  //     endDate: addDays(maxDate, +1),
-  //   },
-  //   statuses: new Set<string>(),
-  // });
   const filteredRuns = filterOnQuery(props.runs, query);
   // const filteredRuns = props.runs
   return (
