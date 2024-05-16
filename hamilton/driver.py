@@ -1657,6 +1657,7 @@ class Builder:
         # common fields
         self.config = {}
         self.modules = []
+        self.materializers = []
 
         self.legacy_graph_adapter = None
         # Standard execution fields
@@ -1734,6 +1735,16 @@ class Builder:
         self.adapters.extend(adapters)
         return self
 
+    def with_materializers(self, *materializers) -> "Builder":
+        """Add materializer nodes to the `Driver`
+        The generated nodes can be referenced by name in `.execute()`
+
+        :param materializers: materializers to add to the dataflow
+        :return: self
+        """
+        self.materializers.extend(materializers)
+        return self
+
     def with_execution_manager(self, execution_manager: executors.ExecutionManager) -> "Builder":
         """Sets the execution manager to use. Note that this cannot be used if local_executor
         or remote_executor are also set
@@ -1807,30 +1818,47 @@ class Builder:
         if self.legacy_graph_adapter is not None:
             adapter.append(self.legacy_graph_adapter)
 
-        if not self.v2_executor:
-            return Driver(
-                self.config, *self.modules, adapter=adapter, _use_legacy_adapter=False
-            )  # TODO -- validate that this is backwards compatible
-        execution_manager = self.execution_manager
-        if execution_manager is None:
-            local_executor = self.local_executor or executors.SynchronousLocalTaskExecutor()
-            remote_executor = self.remote_executor or executors.MultiThreadingExecutor(max_tasks=10)
-            execution_manager = executors.DefaultExecutionManager(
-                local_executor=local_executor, remote_executor=remote_executor
+        if self.v2_executor:
+            execution_manager = self.execution_manager
+            if execution_manager is None:
+                local_executor = self.local_executor or executors.SynchronousLocalTaskExecutor()
+                remote_executor = self.remote_executor or executors.MultiThreadingExecutor(max_tasks=10)
+                execution_manager = executors.DefaultExecutionManager(
+                    local_executor=local_executor, remote_executor=remote_executor
+                )
+            grouping_strategy = self.grouping_strategy or grouping.GroupByRepeatableBlocks()
+            graph_executor = TaskBasedGraphExecutor(
+                execution_manager=execution_manager,
+                grouping_strategy=grouping_strategy,
+                adapter=lifecycle_base.LifecycleAdapterSet(*adapter),
             )
-        grouping_strategy = self.grouping_strategy or grouping.GroupByRepeatableBlocks()
-        graph_executor = TaskBasedGraphExecutor(
-            execution_manager=execution_manager,
-            grouping_strategy=grouping_strategy,
-            adapter=lifecycle_base.LifecycleAdapterSet(*adapter),
-        )
-        return Driver(
-            self.config,
-            *self.modules,
-            adapter=adapter,
-            _graph_executor=graph_executor,
-            _use_legacy_adapter=False,
-        )
+            dr = Driver(
+                self.config,
+                *self.modules,
+                adapter=adapter,
+                _graph_executor=graph_executor,
+                _use_legacy_adapter=False,
+            )
+        else:
+            dr = Driver(self.config, *self.modules, adapter=adapter, _use_legacy_adapter=False)
+
+        if len(self.materializers) > 0:
+            try:  # logic adapted from `Driver.materialize()`; could be deduplicated for maintenance
+                materializer_factories, extractor_factories = dr._process_materializers(self.materializers)
+                augmented_fn_graph = materialization.modify_graph(dr.graph, materializer_factories, extractor_factories)
+                Driver._perform_graph_validations(dr.adapter, augmented_fn_graph, self.modules)
+                dr.graph = augmented_fn_graph
+                if dr.adapter.does_hook("post_graph_construct", is_async=False):
+                    dr.adapter.call_all_lifecycle_hooks_sync(
+                        "post_graph_construct",
+                        graph=augmented_fn_graph,
+                        modules=self.modules,
+                        config=augmented_fn_graph.config,
+                    )
+            except BaseException:
+                raise
+
+        return dr
 
     def copy(self) -> "Builder":
         """Creates a copy of the current state of this Builder.
@@ -1843,6 +1871,7 @@ class Builder:
         new_builder.modules = self.modules.copy()
         new_builder.legacy_graph_adapter = self.legacy_graph_adapter
         new_builder.adapters = self.adapters.copy()
+        new_builder.materializers = self.materializers.copy()
         new_builder.execution_manager = self.execution_manager
         new_builder.local_executor = self.local_executor
         new_builder.remote_executor = self.remote_executor
