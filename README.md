@@ -466,6 +466,7 @@ For the hamilton UI you jmust use the environment variable method prior to runni
 - Fran Boon (@flavour)
 - Tom Barber (@buggtb)
 - Konstantin Tyapochkin (@tyapochkin)
+- Walber Moreira (@wmoreiraa)
 
 ## Bug Hunters/Special Mentions
 - Nils Olsson (@nilsso)
@@ -487,3 +488,6 @@ For the hamilton UI you jmust use the environment variable method prior to runni
 - Flavia Santos (@flaviassantos)
 - Nicolas Huray (@nhuray)
 - Manabu Niseki (@ninoseki)
+- Kyle Pounder (@kpounder)
+- Alex Bustos (@bustosalex1)
+- Andy Day (@adayNU)
