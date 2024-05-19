@@ -357,7 +357,7 @@ class Driver:
         adapter: Optional[
             Union[lifecycle_base.LifecycleAdapter, List[lifecycle_base.LifecycleAdapter]]
         ] = None,
-        materializers = None,
+        materializers: typing.Sequence[Union[ExtractorFactory, MaterializerFactory]] = None,
         _graph_executor: GraphExecutor = None,
         _use_legacy_adapter: bool = True,
     ):
@@ -1740,7 +1740,7 @@ class Builder:
         self.adapters.extend(adapters)
         return self
 
-    def with_materializers(self, *materializers) -> "Builder":
+    def with_materializers(self, *materializers: typing.Sequence[Union[ExtractorFactory, MaterializerFactory]]) -> "Builder":
         """Add materializer nodes to the `Driver`
         The generated nodes can be referenced by name in `.execute()`
 
