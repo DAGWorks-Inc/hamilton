@@ -22,6 +22,7 @@ from hamilton.io import materialization
 from hamilton.io.materialization import ExtractorFactory, MaterializerFactory
 from hamilton.lifecycle import base as lifecycle_base
 
+
 SLACK_ERROR_MESSAGE = (
     "-------------------------------------------------------------------\n"
     "Oh no an error! Need help with Hamilton?\n"
@@ -356,6 +357,7 @@ class Driver:
         adapter: Optional[
             Union[lifecycle_base.LifecycleAdapter, List[lifecycle_base.LifecycleAdapter]]
         ] = None,
+        materializers = None,
         _graph_executor: GraphExecutor = None,
         _use_legacy_adapter: bool = True,
     ):
@@ -382,6 +384,9 @@ class Driver:
         self.graph_modules = modules
         try:
             self.graph = graph.FunctionGraph.from_modules(*modules, config=config, adapter=adapter)
+            if materializers:
+                materializer_factories, extractor_factories = self._process_materializers(materializers)
+                self.graph = materialization.modify_graph(self.graph, materializer_factories, extractor_factories)
             Driver._perform_graph_validations(adapter, graph=self.graph, graph_modules=modules)
             if adapter.does_hook("post_graph_construct", is_async=False):
                 adapter.call_all_lifecycle_hooks_sync(
@@ -1818,6 +1823,7 @@ class Builder:
         if self.legacy_graph_adapter is not None:
             adapter.append(self.legacy_graph_adapter)
 
+        graph_executor = None
         if self.v2_executor:
             execution_manager = self.execution_manager
             if execution_manager is None:
@@ -1832,33 +1838,15 @@ class Builder:
                 grouping_strategy=grouping_strategy,
                 adapter=lifecycle_base.LifecycleAdapterSet(*adapter),
             )
-            dr = Driver(
-                self.config,
-                *self.modules,
-                adapter=adapter,
-                _graph_executor=graph_executor,
-                _use_legacy_adapter=False,
-            )
-        else:
-            dr = Driver(self.config, *self.modules, adapter=adapter, _use_legacy_adapter=False)
 
-        if len(self.materializers) > 0:
-            try:  # logic adapted from `Driver.materialize()`; could be deduplicated for maintenance
-                materializer_factories, extractor_factories = dr._process_materializers(self.materializers)
-                augmented_fn_graph = materialization.modify_graph(dr.graph, materializer_factories, extractor_factories)
-                Driver._perform_graph_validations(dr.adapter, augmented_fn_graph, self.modules)
-                dr.graph = augmented_fn_graph
-                if dr.adapter.does_hook("post_graph_construct", is_async=False):
-                    dr.adapter.call_all_lifecycle_hooks_sync(
-                        "post_graph_construct",
-                        graph=augmented_fn_graph,
-                        modules=self.modules,
-                        config=augmented_fn_graph.config,
-                    )
-            except BaseException:
-                raise
-
-        return dr
+        return Driver(
+            self.config,
+            *self.modules,
+            adapter=adapter,
+            materializers=self.materializers,
+            _graph_executor=graph_executor,
+            _use_legacy_adapter=False
+        )
 
     def copy(self) -> "Builder":
         """Creates a copy of the current state of this Builder.
