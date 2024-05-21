@@ -79,7 +79,7 @@ class HuggingFaceDSLoader(DataLoader):
 
         return kwargs
 
-    def load_data(self, type_: Type) -> Tuple[Union[HF_types], dict[str, Any]]:
+    def load_data(self, type_: Type) -> Tuple[Union[HF_types], Dict[str, Any]]:
         """Loads the data set given the path and class values."""
         ds = load_dataset(self.path, **self._get_loading_kwargs())
         is_dataset = isinstance(ds, Dataset)
