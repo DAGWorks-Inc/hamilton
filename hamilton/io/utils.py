@@ -1,6 +1,7 @@
 import os
 import time
 from datetime import datetime
+from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, Union
 from urllib import parse
@@ -12,7 +13,7 @@ SQL_METADATA = "sql_metadata"
 FILE_METADATA = "file_metadata"
 
 
-def get_file_metadata(path: Union[str, Path]) -> Dict[str, Any]:
+def get_file_metadata(path: Union[str, Path, PathLike]) -> Dict[str, Any]:
     """Gives metadata from loading a file.
 
     Note: we reserve the right to change this schema. So if you're using this come

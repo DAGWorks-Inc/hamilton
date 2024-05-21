@@ -1,11 +1,13 @@
 connectorx
 dask
 dask-expr; python_version >= '3.9'
+datasets  # huggingface datasets
 diskcache
 dlt
 fsspec
 graphviz
 kaleido
+lancedb
 lightgbm
 lxml
 lz4
