@@ -356,6 +356,7 @@ class Driver:
         adapter: Optional[
             Union[lifecycle_base.LifecycleAdapter, List[lifecycle_base.LifecycleAdapter]]
         ] = None,
+        _materializers: typing.Sequence[Union[ExtractorFactory, MaterializerFactory]] = None,
         _graph_executor: GraphExecutor = None,
         _use_legacy_adapter: bool = True,
     ):
@@ -366,6 +367,7 @@ class Driver:
         :param modules: Python module objects you want to inspect for Hamilton Functions.
         :param adapter: Optional. A way to wire in another way of "executing" a hamilton graph.
             Defaults to using original Hamilton adapter which is single threaded in memory python.
+        :param _materializers: Not public facing, do not use this parameter. This is injected by the builder.
         :param _graph_executor: Not public facing, do not use this parameter. This is injected by the builder.
             If you need to tune execution, use the builder to do so.
         :param _use_legacy_adapter: Not public facing, do not use this parameter.
@@ -382,6 +384,13 @@ class Driver:
         self.graph_modules = modules
         try:
             self.graph = graph.FunctionGraph.from_modules(*modules, config=config, adapter=adapter)
+            if _materializers:
+                materializer_factories, extractor_factories = self._process_materializers(
+                    _materializers
+                )
+                self.graph = materialization.modify_graph(
+                    self.graph, materializer_factories, extractor_factories
+                )
             Driver._perform_graph_validations(adapter, graph=self.graph, graph_modules=modules)
             if adapter.does_hook("post_graph_construct", is_async=False):
                 adapter.call_all_lifecycle_hooks_sync(
@@ -1657,6 +1666,7 @@ class Builder:
         # common fields
         self.config = {}
         self.modules = []
+        self.materializers = []
 
         self.legacy_graph_adapter = None
         # Standard execution fields
@@ -1734,6 +1744,18 @@ class Builder:
         self.adapters.extend(adapters)
         return self
 
+    def with_materializers(
+        self, *materializers: Union[ExtractorFactory, MaterializerFactory]
+    ) -> "Builder":
+        """Add materializer nodes to the `Driver`
+        The generated nodes can be referenced by name in `.execute()`
+
+        :param materializers: materializers to add to the dataflow
+        :return: self
+        """
+        self.materializers.extend(materializers)
+        return self
+
     def with_execution_manager(self, execution_manager: executors.ExecutionManager) -> "Builder":
         """Sets the execution manager to use. Note that this cannot be used if local_executor
         or remote_executor are also set
@@ -1807,27 +1829,29 @@ class Builder:
         if self.legacy_graph_adapter is not None:
             adapter.append(self.legacy_graph_adapter)
 
-        if not self.v2_executor:
-            return Driver(
-                self.config, *self.modules, adapter=adapter, _use_legacy_adapter=False
-            )  # TODO -- validate that this is backwards compatible
-        execution_manager = self.execution_manager
-        if execution_manager is None:
-            local_executor = self.local_executor or executors.SynchronousLocalTaskExecutor()
-            remote_executor = self.remote_executor or executors.MultiThreadingExecutor(max_tasks=10)
-            execution_manager = executors.DefaultExecutionManager(
-                local_executor=local_executor, remote_executor=remote_executor
+        graph_executor = None
+        if self.v2_executor:
+            execution_manager = self.execution_manager
+            if execution_manager is None:
+                local_executor = self.local_executor or executors.SynchronousLocalTaskExecutor()
+                remote_executor = self.remote_executor or executors.MultiThreadingExecutor(
+                    max_tasks=10
+                )
+                execution_manager = executors.DefaultExecutionManager(
+                    local_executor=local_executor, remote_executor=remote_executor
+                )
+            grouping_strategy = self.grouping_strategy or grouping.GroupByRepeatableBlocks()
+            graph_executor = TaskBasedGraphExecutor(
+                execution_manager=execution_manager,
+                grouping_strategy=grouping_strategy,
+                adapter=lifecycle_base.LifecycleAdapterSet(*adapter),
             )
-        grouping_strategy = self.grouping_strategy or grouping.GroupByRepeatableBlocks()
-        graph_executor = TaskBasedGraphExecutor(
-            execution_manager=execution_manager,
-            grouping_strategy=grouping_strategy,
-            adapter=lifecycle_base.LifecycleAdapterSet(*adapter),
-        )
+
         return Driver(
             self.config,
             *self.modules,
             adapter=adapter,
+            _materializers=self.materializers,
             _graph_executor=graph_executor,
             _use_legacy_adapter=False,
         )
@@ -1843,6 +1867,7 @@ class Builder:
         new_builder.modules = self.modules.copy()
         new_builder.legacy_graph_adapter = self.legacy_graph_adapter
         new_builder.adapters = self.adapters.copy()
+        new_builder.materializers = self.materializers.copy()
         new_builder.execution_manager = self.execution_manager
         new_builder.local_executor = self.local_executor
         new_builder.remote_executor = self.remote_executor

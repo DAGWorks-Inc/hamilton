@@ -1,25 +1,20 @@
 import pandas as pd
 import xgboost
 
-
-def raw_df(data_path: str) -> pd.DataFrame:
-    """Load raw data from parquet file"""
-    return pd.read_parquet(data_path)
+from hamilton.function_modifiers import load_from, save_to, source
 
 
+# source("data_path") allows to read the input value for `data_path`
+@load_from.parquet(path=source("data_path"))
 def preprocessed_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     """preprocess raw data"""
     return ...
 
 
+@save_to.json(path=source("model_path"))
 def model(preprocessed_df: pd.DataFrame) -> xgboost.XGBModel:
     """Train model on preprocessed data"""
     return ...
-
-
-def save_model(model: xgboost.XGBModel, model_dir: str) -> None:
-    """Save trained model to JSON format"""
-    model.save_model(f"{model_dir}/model.json")
 
 
 if __name__ == "__main__":
@@ -30,8 +25,9 @@ if __name__ == "__main__":
     dr = driver.Builder().with_modules(__main__).build()
 
     data_path = "..."
-    model_dir = "..."
-    inputs = dict(data_path=data_path, model_dir=model_dir)
-    final_vars = ["save_model"]
+    model_path = "..."
+    inputs = dict(data_path=data_path, model_path=model_path)
+    final_vars = ["save.model", "model"]
     results = dr.execute(final_vars, inputs=inputs)
-    # results["save_model"] == None
+    # results["model"]  <- the model
+    # results["save.model"] <- metadata from saving the model

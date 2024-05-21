@@ -111,6 +111,58 @@ This is directly related to the ``@config`` function decorator (see :ref:`config
         .build()
     )
 
+    dr.display_all_functions("dag.png")
+
+
+.. image:: ./_snippets/config_when.png
+    :align: center
+
+
+with_materializers()
+____________________
+
+Adds `DataSaver` and `DataLoader` nodes to your dataflow. This allows to visualize these nodes using ``Driver.display_all_functions()`` and be executed by name with ``Driver.execute()``. More details on the :doc:`materialization` documentation page.
+
+.. code-block:: python
+
+    # my_dataflow.py
+    import pandas as pd
+    from hamilton.function_modifiers import config
+
+    def clean_df(raw_df: pd.DataFrame) -> pd.DataFrame:
+        return ...
+
+    def features_df(clean_df: pd.DataFrame) -> pd.DataFrame:
+        return ...
+
+.. code-block:: python
+
+    # run.py
+    from hamilton import driver
+    from hamilton.io.materialization import from_, to
+    import my_dataflow
+
+    loader = from_.parquet(target="raw_df", path="/my/raw_file.parquet")
+    saver = to.parquet(
+        id="features__parquet",
+        dependencies=["features_df"],
+        path="/my/feature_file.parquet"
+    )
+
+    dr = (
+        driver.Builder()
+        .with_modules(my_dataflow)
+        .with_materializers(loader, saver)
+        .build()
+    )
+    dr.display_all_functions("dag.png")
+
+    dr.execute(["features__parquet"])
+
+.. image:: ./_snippets/materializers.png
+    :align: center
+
+
 with_adapters()
 ---------------
 

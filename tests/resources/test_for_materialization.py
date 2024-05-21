@@ -10,3 +10,7 @@ def json_to_save_2() -> dict:
         "key3": "value3",
         "key4": "value4",
     }
+
+
+def expects_loader(external: dict) -> dict:
+    return external

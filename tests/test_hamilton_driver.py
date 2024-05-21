@@ -12,13 +12,14 @@ from hamilton.driver import (
     Variable,
 )
 from hamilton.execution import executors
-from hamilton.io.materialization import to
+from hamilton.io.materialization import from_, to
 
 import tests.resources.cyclic_functions
 import tests.resources.dummy_functions
 import tests.resources.dynamic_parallelism.parallel_linear_basic
 import tests.resources.tagging
 import tests.resources.test_default_args
+import tests.resources.test_for_materialization
 import tests.resources.very_simple_dag
 
 """This file tests driver capabilities.
@@ -529,6 +530,59 @@ def test_builder_copy():
         # if isinstance(attr_value, bool):
         #     continue
         # assert attr_value_copy is not attr_value
+
+
+def test_builder_with_loader_materializer():
+    loader_target = "external"
+    loader = from_.json(target=loader_target, path="/my/file.json")
+    dr = (
+        Builder()
+        .with_modules(tests.resources.test_for_materialization)
+        .with_materializers(loader)
+        .build()
+    )
+
+    assert any(n.name == f"load_data.{loader_target}" for n in dr.graph.get_nodes())
+
+
+def test_builder_with_saver_materializer():
+    saver_id = "saver_node"
+    saver = to.json(
+        id=saver_id,
+        dependencies=["expects_loader"],
+        path="/my/file.json",
+    )
+    dr = (
+        Builder()
+        .with_modules(tests.resources.test_for_materialization)
+        .with_materializers(saver)
+        .build()
+    )
+
+    assert any(n.name == saver_id for n in dr.graph.get_nodes())
+
+
+def test_builder_materializer_and_execution_materializer(tmp_path):
+    static_saver = to.json(
+        id="static_saver",
+        dependencies=["json_to_save_1"],
+        path=f"{tmp_path}/file.json",
+    )
+    dynamic_saver = to.json(
+        id="dynamic_saver",
+        dependencies=["json_to_save_2"],
+        path=f"{tmp_path}/file2.json",
+    )
+    dr = (
+        Builder()
+        .with_modules(tests.resources.test_for_materialization)
+        .with_materializers(static_saver)
+        .build()
+    )
+    metadata, additional = dr.materialize(dynamic_saver, additional_vars=["static_saver"])
+
+    assert "dynamic_saver" in metadata.keys()
+    assert "static_saver" in additional.keys()
 
 
 def test_materialize_checks_required_input(tmp_path):
