@@ -36,6 +36,8 @@ HF_types = (DatasetDict, Dataset, IterableDatasetDict, IterableDataset)
 
 @dataclasses.dataclass
 class HuggingFaceDSLoader(DataLoader):
+    """Data loader for hugging face datasets. Uses load_data method."""
+
     path: str
     dataset_name: Optional[str] = None  # this can't be `name` because it clashes with `.name()`
     data_dir: Optional[str] = None
@@ -77,8 +79,8 @@ class HuggingFaceDSLoader(DataLoader):
 
         return kwargs
 
-    def load_data(self, type_: Type) -> Tuple[Union[HF_types], dict[str, Any]]:
-        """"""
+    def load_data(self, type_: Type) -> Tuple[Union[HF_types], Dict[str, Any]]:
+        """Loads the data set given the path and class values."""
         ds = load_dataset(self.path, **self._get_loading_kwargs())
         is_dataset = isinstance(ds, Dataset)
         f_meta = {"path": self.path}
@@ -95,6 +97,8 @@ class HuggingFaceDSLoader(DataLoader):
 
 @dataclasses.dataclass
 class HuggingFaceDSParquetSaver(DataSaver):
+    """Saves a Huggingface dataset to parquet."""
+
     path_or_buf: Union[PathLike, BinaryIO]
     batch_size: Optional[int] = None
     parquet_writer_kwargs: Optional[dict] = None
@@ -110,7 +114,7 @@ class HuggingFaceDSParquetSaver(DataSaver):
     def _get_saving_kwargs(self) -> dict:
         # Puts kwargs in a dict
         kwargs = dataclasses.asdict(self)
-        # but we send it separately
+        # we put path_or_buff as a positional argument
         del kwargs["path_or_buf"]
         parquet_writer_kwargs: Optional[dict] = kwargs.pop("parquet_writer_kwargs", None)
         if parquet_writer_kwargs:
@@ -120,6 +124,7 @@ class HuggingFaceDSParquetSaver(DataSaver):
         return kwargs
 
     def save_data(self, ds: Union[HF_types]) -> Dict[str, Any]:
+        """Saves the data to parquet."""
         is_dataset = isinstance(ds, Dataset)
         ds.to_parquet(self.path_or_buf, **self._get_saving_kwargs())
         ds_meta = {
@@ -139,6 +144,7 @@ class HuggingFaceDSParquetSaver(DataSaver):
         return "parquet"
 
 
+# we do this here just in case lancedb is not installed.
 if lancedb is not None:
 
     def _batch_write(
@@ -158,6 +164,8 @@ if lancedb is not None:
 
     @dataclasses.dataclass
     class HuggingFaceDSLanceDBSaver(DataSaver):
+        """Data saver that saves Huggingface datasets to lancedb."""
+
         db_client: lancedb.DBConnection
         table_name: str
         columns_to_write: list[str] = None  # None means all.
@@ -168,6 +176,7 @@ if lancedb is not None:
             return list(HF_types)
 
         def save_data(self, ds: Union[HF_types]) -> Dict[str, Any]:
+            """This batches writes to lancedb."""
             ds.map(
                 _batch_write,
                 batched=True,
