@@ -18,16 +18,17 @@ if __name__ == "__main__":
     from hamilton import driver
     from hamilton.io.materialization import from_, to
 
-    # this registers DataSaver and DataLoader objects
-    from hamilton.plugins import pandas_extensions, xgboost_extensions  # noqa: F401
-
-    dr = driver.Builder().with_modules(__main__).build()
-
     data_path = "..."
     model_dir = "..."
     materializers = [
-        from_.parquet(path=data_path, target="raw_df"),
-        to.json(path=f"{model_dir}/model.json", dependencies=["model"], id="model__json"),
+        from_.parquet(target="raw_df", path=data_path),
+        to.json(
+            id="model__json",  # name of the DataSaver node
+            dependencies=["model"],
+            path=f"{model_dir}/model.json",
+        ),
     ]
-
-    dr.materialize(*materializers)
+    dr = driver.Builder().with_modules(__main__).with_materializers(*materializers).build()
+    results = dr.execute(["model", "model__json"])
+    # results["model"]  <- the model
+    # results["model__json"] <- metadata from saving the model

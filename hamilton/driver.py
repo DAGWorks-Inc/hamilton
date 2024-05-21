@@ -1745,7 +1745,7 @@ class Builder:
         return self
 
     def with_materializers(
-        self, *materializers: typing.Sequence[Union[ExtractorFactory, MaterializerFactory]]
+        self, *materializers: Union[ExtractorFactory, MaterializerFactory]
     ) -> "Builder":
         """Add materializer nodes to the `Driver`
         The generated nodes can be referenced by name in `.execute()`

@@ -12,15 +12,15 @@ from hamilton.driver import (
     Variable,
 )
 from hamilton.execution import executors
-from hamilton.io.materialization import to, from_
+from hamilton.io.materialization import from_, to
 
 import tests.resources.cyclic_functions
 import tests.resources.dummy_functions
 import tests.resources.dynamic_parallelism.parallel_linear_basic
 import tests.resources.tagging
 import tests.resources.test_default_args
-import tests.resources.very_simple_dag
 import tests.resources.test_for_materialization
+import tests.resources.very_simple_dag
 
 """This file tests driver capabilities.
 Anything involving execution is tested for multiple executors/driver configuration.
@@ -579,10 +579,7 @@ def test_builder_materializer_and_execution_materializer(tmp_path):
         .with_materializers(static_saver)
         .build()
     )
-    metadata, additional = dr.materialize(
-        dynamic_saver,
-        additional_vars=["static_saver"]
-    )
+    metadata, additional = dr.materialize(dynamic_saver, additional_vars=["static_saver"])
 
     assert "dynamic_saver" in metadata.keys()
     assert "static_saver" in additional.keys()
