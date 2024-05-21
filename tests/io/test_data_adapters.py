@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Collection, Dict, Tuple, Type
+from typing import Any, Collection, Dict, Tuple, Type, Union
 
 from hamilton.io.data_adapters import DataLoader, DataSaver
 
@@ -72,6 +72,23 @@ class MockDataSaver2(DataSaver):
         pass
 
 
+@dataclasses.dataclass
+class MockDataSaver3(DataSaver):
+    required_param: int
+    default_param: int = 1
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [int, float]
+
+    def save_data(self, type_: Type) -> Tuple[int, Dict[str, Any]]:
+        pass
+
+    @classmethod
+    def name(cls) -> str:
+        pass
+
+
 def test_data_loader_get_required_params():
     assert MockDataLoader.get_required_arguments() == {"required_param": int}
     assert MockDataLoader.get_optional_arguments() == {"default_param": int}
@@ -105,3 +122,20 @@ def test_saver_applies_to():
     assert saver2.applies_to(int) is True
     # bool -> int -- bool is a subclass of int
     assert saver2.applies_to(bool) is True
+    # [int, float] -> int -- can't handle union type here correctly
+    assert saver2.applies_to(Union[int, float]) is False
+
+
+def test_saver_applies_to_union_of_all_types():
+    """If a saver supports saving multiple things, then we need to take the union of that type.
+
+    Why? well if there's a type that outputs a union, then we will not match it when
+    we should. So the only way to do that is to take the union of all types if there's
+    more than 1 and simply match it.
+    """
+    saver = MockDataSaver3(1, 3)
+    assert saver.applies_to(Union[float, int]) is True
+    # order shouldn't matter
+    assert saver.applies_to(Union[int, float]) is True
+    assert saver.applies_to(int) is True
+    assert saver.applies_to(float) is True
