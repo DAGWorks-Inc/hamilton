@@ -186,7 +186,11 @@ class DataSaver(AdapterCommon, abc.ABC):
         :param type_: Candidate type
         :return: True if this data saver can handle to the type, False otherwise.
         """
-        for save_to in cls.applicable_types():
+        applicable_types = cls.applicable_types()
+        if len(applicable_types) > 1 and typing.Union[tuple(applicable_types)] == type_:
+            # if someone outputs the union of what we support we should match it.
+            return True
+        for save_to in applicable_types:
             # is the adapter type `save_to` a superclass of `type_` ?
             # i.e. is `type_` a subclass of `save_to` ?
             if custom_subclass_check(type_, save_to):
