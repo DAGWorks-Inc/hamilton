@@ -1,97 +1,89 @@
-# import os
+import argparse
 
-from hamilton_sdk import adapters
+import lancedb_module
+import ner_extraction
 
-from hamilton import driver
-
-# from hamilton.plugins import h_ray
-from hamilton.execution import executors
+from hamilton import driver, lifecycle
 
 
-def run_parallel():
-    tracker = adapters.HamiltonTracker(
-        project_id=7,  # modify this as needed
-        username="user@example.com",  # modify this as needed
-        dag_name="my_version_of_the_dag",
-        tags={"environment": "DEV", "team": "MY_TEAM", "version": "X"},
-    )
-    import ner_extraction_parallel
-
+def build_driver(adapter_list):
+    """Builds the driver with the necessary modules and adapters."""
     dr = (
         driver.Builder()
         .with_config({})
-        .with_modules(ner_extraction_parallel)
-        .enable_dynamic_execution(allow_experimental_mode=True)
-        .with_remote_executor(executors.MultiThreadingExecutor(5))
-        .with_adapters(tracker)  # h_tqdm.ProgressBar(), # lifecycle.PrintLn()
+        .with_modules(ner_extraction, lancedb_module)
+        .with_adapters(*adapter_list)
         .build()
     )
-    dr.display_all_functions("ner_extraction_parallel.png")
+    return dr
 
-    sampled_articles = dr.execute(["sampled_articles"])["sampled_articles"]
-    # print(sampled_articles.iloc[0:64].copy())
-    #
-    retriever = dr.execute(["retriever"])["retriever"]
-    #
-    ner_pipeline = dr.execute(["ner_pipeline"])["ner_pipeline"]
+
+def load_data(table_name: str, use_tracker: bool = False):
+    adapter_list = [lifecycle.PrintLn()]
+    if use_tracker:
+        from hamilton_sdk import adapters
+
+        tracker = adapters.HamiltonTracker(
+            project_id=41,  # modify this as needed
+            username="elijah@dagworks.io",
+            dag_name="ner-lancedb-pipeline",
+            tags={"context": "extraction", "team": "MY_TEAM", "version": "1"},
+        )
+        adapter_list.append(tracker)
+
+    dr = build_driver(adapter_list)
+    # display the graph
+    dr.display_all_functions("ner_extraction_pipeline.png")
+
     results = dr.execute(
-        ["total_upserted", "lancedb_table"],
-        inputs={"table_name": "temp1"},
-        overrides={
-            "retriever": retriever,
-            "ner_pipeline": ner_pipeline,
-            "sampled_articles": sampled_articles,
-        },
-    )
-    cached = results.update(
-        {"retriever": retriever, "ner_pipeline": ner_pipeline, "sampled_articles": sampled_articles}
+        ["load_into_lancedb"],
+        inputs={"table_name": table_name},
     )
     print(results)
-    query = "How Data is changing the world?"
-    r = dr.execute(
-        ["search_lancedb"], inputs={"query": query, "table_name": "temp1"}, overrides=cached
-    )
+
+
+def query_data(query: str, table_name: str, use_tracker: bool = False):
+    adapter_list = [lifecycle.PrintLn()]
+    if use_tracker:
+        from hamilton_sdk import adapters
+
+        tracker = adapters.HamiltonTracker(
+            project_id=41,  # modify this as needed
+            username="elijah@dagworks.io",
+            dag_name="ner-lancedb-pipeline",
+            tags={"context": "inference", "team": "MY_TEAM", "version": "1"},
+        )
+        adapter_list.append(tracker)
+
+    dr = build_driver(adapter_list)
+
+    r = dr.execute(["lancedb_result"], inputs={"query": query, "table_name": table_name})
     print(r)
 
-    query = "Why does SpaceX want to build a city on Mars?"
-    r = dr.execute(
-        ["search_lancedb"], inputs={"query": query, "table_name": "temp1"}, overrides=cached
-    )
-    print(r)
 
+def main():
+    parser = argparse.ArgumentParser(description="Process command-line arguments.")
+    parser.add_argument("table_name", help="The name of the table.")
+    parser.add_argument("operation", choices=["load", "query"], help="The operation to perform.")
+    parser.add_argument("--query", help="The query to run. Required if operation is 'query'.")
+    parser.add_argument("--use-tracker", action="store_true", help="Whether to use the tracker.")
 
-def run_sequential():
-    tracker = adapters.HamiltonTracker(
-        project_id=7,  # modify this as needed
-        username="elijah@dagworks.io",  # modify this as needed
-        dag_name="my_version_of_the_dag",
-        tags={"environment": "DEV", "team": "MY_TEAM", "version": "X"},
-    )
-    import ner_extraction
+    args = parser.parse_args()
 
-    dr = (
-        driver.Builder()
-        .with_config({})
-        .with_modules(ner_extraction)
-        .with_adapters(tracker)  # h_tqdm.ProgressBar(), # lifecycle.PrintLn()
-        .build()
-    )
-    dr.display_all_functions("ner_extraction.png")
+    if args.operation == "query" and args.query is None:
+        parser.error("The --query argument is required when operation is 'query'.")
 
-    # results = dr.execute(
-    #     ["load_into_lance_db"],
-    #     inputs={"table_name": "temp2"},
-    # )
-    # print(results)
-    query = "How Data is changing the world?"
-    r = dr.execute(["search_lancedb"], inputs={"query": query, "table_name": "temp2"})
-    print(r)
-
-    query = "Why does SpaceX want to build a city on Mars?"
-    r = dr.execute(["search_lancedb"], inputs={"query": query, "table_name": "temp2"})
-    print(r)
+    if args.operation == "load":
+        load_data(args.table_name, args.use_tracker)
+    else:
+        query_data(args.query, args.table_name, args.use_tracker)
 
 
 if __name__ == "__main__":
-    run_sequential()
-    # run_parallel()
+    """
+    Some example commands:
+    > python run.py medium_docs load
+    > python run.py medium_docs query --query "Why does SpaceX want to build a city on Mars?"
+    > python run.py medium_docs query --query "How are autonomous vehicles changing the world?"
+    """
+    main()
