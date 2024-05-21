@@ -19,13 +19,14 @@ def build_driver(adapter_list):
 
 
 def load_data(table_name: str, use_tracker: bool = False):
+    """Runs the DAG to load data into LanceDB."""
     adapter_list = [lifecycle.PrintLn()]
     if use_tracker:
         from hamilton_sdk import adapters
 
         tracker = adapters.HamiltonTracker(
             project_id=41,  # modify this as needed
-            username="elijah@dagworks.io",
+            username="elijah@dagworks.io",  # modify this as needed
             dag_name="ner-lancedb-pipeline",
             tags={"context": "extraction", "team": "MY_TEAM", "version": "1"},
         )
@@ -43,13 +44,14 @@ def load_data(table_name: str, use_tracker: bool = False):
 
 
 def query_data(query: str, table_name: str, use_tracker: bool = False):
+    """Runs the DAG to query LanceDB."""
     adapter_list = [lifecycle.PrintLn()]
     if use_tracker:
         from hamilton_sdk import adapters
 
         tracker = adapters.HamiltonTracker(
             project_id=41,  # modify this as needed
-            username="elijah@dagworks.io",
+            username="elijah@dagworks.io",  # modify this as needed
             dag_name="ner-lancedb-pipeline",
             tags={"context": "inference", "team": "MY_TEAM", "version": "1"},
         )
@@ -61,7 +63,13 @@ def query_data(query: str, table_name: str, use_tracker: bool = False):
     print(r)
 
 
-def main():
+if __name__ == "__main__":
+    """
+    Some example commands:
+    > python run.py medium_docs load
+    > python run.py medium_docs query --query "Why does SpaceX want to build a city on Mars?"
+    > python run.py medium_docs query --query "How are autonomous vehicles changing the world?"
+    """
     parser = argparse.ArgumentParser(description="Process command-line arguments.")
     parser.add_argument("table_name", help="The name of the table.")
     parser.add_argument("operation", choices=["load", "query"], help="The operation to perform.")
@@ -77,13 +85,3 @@ def main():
         load_data(args.table_name, args.use_tracker)
     else:
         query_data(args.query, args.table_name, args.use_tracker)
-
-
-if __name__ == "__main__":
-    """
-    Some example commands:
-    > python run.py medium_docs load
-    > python run.py medium_docs query --query "Why does SpaceX want to build a city on Mars?"
-    > python run.py medium_docs query --query "How are autonomous vehicles changing the world?"
-    """
-    main()

@@ -28,12 +28,13 @@ def _write_to_lancedb(
     return len(data)
 
 
-def _batch_write(dataset_batch: LazyBatch, db, table_name, other_columns) -> None:
+def _batch_write(dataset_batch: LazyBatch, db, table_name, columns_of_interest) -> None:
     """Helper function to batch write to lancedb."""
     # we pull out the pyarrow table and select what we want from it
-    _write_to_lancedb(
-        dataset_batch.pa_table.select(["vector", "named_entities"] + other_columns), db, table_name
-    )
+    if columns_of_interest is not None:
+        _write_to_lancedb(dataset_batch.pa_table.select(columns_of_interest), db, table_name)
+    else:
+        _write_to_lancedb(dataset_batch.pa_table, db, table_name)
     return None
 
 
@@ -41,7 +42,7 @@ def loaded_lancedb_table(
     final_dataset: Dataset,
     db_client: lancedb.DBConnection,
     table_name: str,
-    metadata_of_interest: list[str],
+    columns_of_interest: list[str],
     write_batch_size: int = 100,
 ) -> lancedb.table.Table:
     """Loads the data into lancedb explicitly -- but we lose some visibility this way.
@@ -55,7 +56,7 @@ def loaded_lancedb_table(
         fn_kwargs={
             "db": db_client,
             "table_name": table_name,
-            "other_columns": metadata_of_interest,
+            "columns_of_interest": columns_of_interest,
         },
         desc="writing to lancedb",
     )
