@@ -18,7 +18,7 @@ To run this in a notebook:
 
 Alternatively open this notebook in Google Colab by clicking the button below:
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/add_lancedb_ner_example/examples/LLM_Workflows/NER_Example/notebook.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/LLM_Workflows/NER_Example/notebook.ipynb)
 
 To run this example via the commandline :
 1. Install the requirements by running `pip install -r requirements.txt`
