@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from kedro.pipeline.node import Node as KNode
 from kedro.pipeline.pipeline import Pipeline as KPipeline
@@ -10,7 +10,7 @@ from hamilton.lifecycle import base as lifecycle_base
 from hamilton.node import Node as HNode
 
 
-def expand_k_node(base_node: HNode, outputs: list[str]) -> list[HNode]:
+def expand_k_node(base_node: HNode, outputs: List[str]) -> List[HNode]:
     """Manually apply `@extract_fields()` on a Hamilton node.Node for a Kedro
     node that specifies >1 `outputs`.
 
@@ -31,7 +31,7 @@ def expand_k_node(base_node: HNode, outputs: list[str]) -> list[HNode]:
     return list(extractor.transform_node(base_node, {}, func))
 
 
-def k_node_to_h_nodes(node: KNode) -> list[HNode]:
+def k_node_to_h_nodes(node: KNode) -> List[HNode]:
     """Convert a Kedro node to a list of Hamilton nodes.
     If the Kedro node specifies 1 output, generate 1 Hamilton node.
     If it generate >1 output, generate len(outputs) + 1 to include the base node + extracted fields.
