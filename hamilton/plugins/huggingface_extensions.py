@@ -1,6 +1,18 @@
 import dataclasses
 from os import PathLike
-from typing import Any, BinaryIO, Collection, Dict, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    Any,
+    BinaryIO,
+    Collection,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 try:
     from datasets import (
@@ -168,7 +180,7 @@ if lancedb is not None:
 
         db_client: lancedb.DBConnection
         table_name: str
-        columns_to_write: list[str] = None  # None means all.
+        columns_to_write: List[str] = None  # None means all.
         write_batch_size: int = 100
 
         @classmethod
