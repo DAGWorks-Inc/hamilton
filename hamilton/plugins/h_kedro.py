@@ -1,6 +1,5 @@
 import inspect
-from types import NoneType
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Type
 
 from kedro.pipeline.node import Node as KNode
 from kedro.pipeline.pipeline import Pipeline as KPipeline
@@ -56,7 +55,8 @@ def k_node_to_h_nodes(node: KNode) -> list[HNode]:
     params = func_sig.parameters.values()
     output_type = func_sig.return_annotation
     if output_type is None:
-        output_type = NoneType  # manually creating `hamilton.node.Node` doesn't accept `typ=None`
+        # manually creating `hamilton.node.Node` doesn't accept `typ=None`
+        output_type = Type[None]  # NoneType is introduced in Python 3.10
 
     base_node = HNode(
         name=base_node_name,
