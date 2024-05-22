@@ -717,6 +717,8 @@ def _validate_extract_fields(fields: dict):
 
             if not (
                 isinstance(field_type, type)
+                or field_type
+                is Any  # condition needed becuase isinstance(Any, type) == False for Python <3.11
                 or typing_inspect.is_generic_type(field_type)
                 or typing_inspect.is_union_type(field_type)
             ):
