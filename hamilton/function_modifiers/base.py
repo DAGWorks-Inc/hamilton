@@ -38,6 +38,7 @@ if not registry.INITIALIZED:
         "vaex",
         "ibis",
         "dlt",
+        "kedro",
         "huggingface",
     ]
     for plugin_module in plugins_modules:

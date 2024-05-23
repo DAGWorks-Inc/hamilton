@@ -715,8 +715,10 @@ def _validate_extract_fields(fields: dict):
             if not isinstance(field, str):
                 errors.append(f"{field} is not a string. All keys must be strings.")
 
+            # second condition needed because isinstance(Any, type) == False for Python <3.11
             if not (
                 isinstance(field_type, type)
+                or field_type is Any
                 or typing_inspect.is_generic_type(field_type)
                 or typing_inspect.is_union_type(field_type)
             ):
