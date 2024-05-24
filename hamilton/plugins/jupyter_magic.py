@@ -2,13 +2,14 @@ import argparse
 import ast
 import json
 import os
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple, Union
 
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
 from IPython.core.magic_arguments import argument, magic_arguments, parse_argstring
 from IPython.core.shellapp import InteractiveShellApp
-from IPython.display import HTML, display
+from IPython.display import HTML, Code, display
 from IPython.utils.process import arg_split
 
 from hamilton import ad_hoc_utils, driver
@@ -150,7 +151,7 @@ def parse_known_argstring(magic_func, argstring) -> Tuple[argparse.Namespace, Li
     return known, unknown
 
 
-def parse_config(config_string):
+def parse_key_value_config(config_string):
     config = {}
     for item in config_string.split():
         key, value = item.split("=")
@@ -166,6 +167,7 @@ class HamiltonMagics(Magics):
         super().__init__(**kwargs)
         self.builder = None
         self.notebook_env = determine_notebook_type()
+        self.incremental_cells_state = defaultdict(dict)
 
     def resolve_unknown_args_cell_to_module(self, unknown: List[str]):
         """Handle unknown arguments. It won't make the magic execution fail."""
@@ -186,6 +188,28 @@ class HamiltonMagics(Magics):
         # not included as @argument because it's not really a function arg to %%cell_to_module
         if any(arg in ("-h", "--help") for arg in unknown):
             print(help(self.cell_to_module))
+
+    def resolve_config_arg(self, config_arg) -> Union[bool, dict]:
+        # default case: didn't receive `-c/--config`. Set an empty dict
+        if config_arg is None:
+            config = {}
+        # case 1, 2, 3: `-c/--config` is specified
+        # case 1: -c/--config refers to variable in the user namespace
+        elif self.shell.user_ns.get(config_arg):
+            config = self.shell.user_ns.get(config_arg)
+        # case 2: parse using key=value
+        elif "=" in config_arg:
+            config = parse_key_value_config(config_arg)
+        # case 3: parse as JSON
+        elif ":" in config_arg:
+            try:
+                # strip quotation marks added by IPython and avoid mutating `args`
+                config_str = config_arg.strip("'\"")
+                config = json.loads(config_str)
+            except json.JSONDecodeError:
+                print(f"JSONDecodeError: Failed to parse `config` as JSON. Received {config_arg}")
+                return False
+        return config
 
     @magic_arguments()  # needed on top to enable parsing
     @argument("module_name", nargs="?", help="Name for the module defined in this cell.")
@@ -269,43 +293,25 @@ class HamiltonMagics(Magics):
 
         # validate variables exist in the user namespace expect `config` because it's a special case
         # will exit using `return` in case of error
-        args_that_read_user_namespace = ["display", "builder", "inputs", "overrides"]
+        args_that_read_user_namespace = ["display", "builder", "final_vars", "inputs", "overrides"]
         for name, value in vars(args).items():
             if name not in args_that_read_user_namespace:
                 continue
 
-            # special case: `display` can be passed as a flag (=True), without a config
-            if name == "display" and value is True:
+            # special case: args that can be passed as a flag (=True) without values
+            if name in ["display", "final_vars"] and value is True:
                 continue
 
             # main case: exit if variable is not in user namespace
             if value and self.shell.user_ns.get(value) is None:
                 return f"KeyError: Received `--{name} {value}` but variable not found."
 
-        # special case: `config` expects potentially a JSON string
-        # there for backwards compatibility
+        # parse config; exit if config is invalid
+        config = self.resolve_config_arg(args.config)
+        if config is False:
+            return
 
-        # default case: didn't receive `-c/--config`. Set an empty dict
-        if args.config is None:
-            config = {}
-        # case 1, 2, 3: `-c/--config` is specified
-        # case 1: -c/--config refers to variable in the user namespace
-        elif self.shell.user_ns.get(args.config):
-            config = self.shell.user_ns.get(args.config)
-        # case 2: parse using key=value
-        elif "=" in args.config:
-            config = parse_config(args.config)
-        # case 3: parse as JSON
-        elif ":" in args.config:
-            try:
-                # strip quotation marks added by IPython and avoid mutating `args`
-                config_str = args.config.strip("'\"")
-                config = json.loads(config_str)
-            except json.JSONDecodeError:
-                print(f"JSONDecodeError: Failed to parse `config` as JSON. Received {value}")
-                return
-
-        # get the default values of args
+        # resolve the values of args
         module_name = args.module_name
         base_builder = self.shell.user_ns[args.builder] if args.builder else driver.Builder()
         inputs = self.shell.user_ns[args.inputs] if args.inputs else {}
@@ -313,6 +319,11 @@ class HamiltonMagics(Magics):
         display_config = (
             self.shell.user_ns[args.display] if args.display not in [True, None] else {}
         )
+
+        # determine the Driver config
+        # can't check from args.builder because it might be None
+        if config and base_builder.config:
+            return "AssertionError: Received a config -c/--config and a Builder -b/--builder with an existing config. Pass either one."
 
         # Decision: write to file before trying to build and execute Driver
         # See argument `help` for behavior details
@@ -327,10 +338,6 @@ class HamiltonMagics(Magics):
         # the integration with the Hamilton UI which assumes physical Python modules
         cell_module = ad_hoc_utils.create_module(cell, module_name)
         self.shell.push({module_name: cell_module})
-
-        # determine the Driver config
-        if config and base_builder.config:
-            return "AssertionError: Received a config -c/--config and a Builder -b/--builder with an existing config. Pass either one."
 
         # build the Driver. the Builder is copied to avoid conflict with the user namespace
         builder = base_builder.copy()
@@ -381,6 +388,152 @@ class HamiltonMagics(Magics):
                 return
             # results will follow the order of `final_vars` or topologically sorted if all vars
             display(*(results[n] for n in final_vars))
+
+    # TODO unify the API and logic of `%%cell_to_module` and `%%incr_cell_to_module`
+    @magic_arguments()
+    @argument("module_name", nargs="?", help="Name for the module defined in this cell.")
+    @argument(
+        "-id",
+        "--identifier",
+        type=int,
+        help="Identifier for this cell w.r.t. the module being created. ",
+    )  # required argument
+    @argument(
+        "-c",
+        "--config",
+        help="Config to build a Driver. Passing -c/--config at the same time as a Builder -b/--builder with a config will raise an exception.",
+    )
+    @argument(
+        "-b",
+        "--builder",
+        help="Builder to which the module will be added and used for execution. Allows to pass Config and Adapters",
+    )
+    @argument(
+        "-d",
+        "--display",
+        nargs="?",
+        const=True,
+        help="Display the dataflow. The argument is the variable name of a dictionary of visualization kwargs; else {}.",
+    )
+    @argument(
+        "-w",
+        "--write_to_file",
+        nargs="?",
+        const=True,
+        help="Write cell content to a file. The argument is the file path; else write to {module_name}.py",
+    )
+    @cell_magic
+    def incr_cell_to_module(self, line, cell):
+        """Incrementally build a module. This executes the cell and dynamically creates a Python module from its content.
+        A Hamilton Driver is automatically instantiated with that module for variable `{MODULE_NAME}_dr`.
+
+        > %%incr_cell_to_module -m MODULE_NAME -i IDENTIFIER --display
+        """
+        # This function mimics the logic of `.cell_to_module()`. Find more comments there.
+        # Start by trying to execute the code cell.
+        self.shell.ex(cell)
+
+        # parse user inputs
+        args, unknown_args = parse_known_argstring(self.incr_cell_to_module, line)
+        self.resolve_unknown_args_cell_to_module(unknown_args)
+
+        # check user inputs pointing to variables in user namespace
+        args_that_read_user_namespace = ["display", "builder"]
+        for name, value in vars(args).items():
+            if name not in args_that_read_user_namespace:
+                continue
+
+            # special case: `display` can be passed as a flag (=True), without a config
+            if name in ["display"] and value is True:
+                continue
+
+            # main case: exit if variable is not in user namespace
+            if value and self.shell.user_ns.get(value) is None:
+                return f"KeyError: Received `--{name} {value}` but variable not found."
+
+        # TODO convert -i to -id
+        if args.identifier is None:
+            raise ValueError("`-id/--identifier` is required. Please provide an id for this cell.")
+
+        # parse config; exit if config is invalid
+        config = self.resolve_config_arg(args.config)
+        if config is False:
+            return
+
+        # set parsed arguments
+        module_name = args.module_name
+        base_builder = self.shell.user_ns[args.builder] if args.builder else driver.Builder()
+        display_config = (
+            self.shell.user_ns[args.display] if args.display not in [True, None] else {}
+        )
+
+        # determine the Driver config
+        # can't check from args.builder because it might be None
+        if config and base_builder.config:
+            return "AssertionError: Received a config -c/--config and a Builder -b/--builder with an existing config. Pass either one."
+
+        # store current cell in state
+        self.incremental_cells_state[module_name][args.identifier] = cell
+
+        # build module source from multiple cells
+        module_dict = self.incremental_cells_state[module_name]
+        sorted_module_keys = sorted(list(module_dict[module_name].keys()))
+        module_source = "\n\n".join([module_dict[k] for k in sorted_module_keys])
+        multi_cell_module = ad_hoc_utils.create_module(module_source, module_name)
+        self.shell.push({module_name: multi_cell_module})
+
+        # Decision: write to file before trying to build and execute Driver
+        # See argument `help` for behavior details
+        if args.write_to_file:
+            if isinstance(args.write_to_file, str):
+                file_path = Path(args.write_to_file)
+            else:
+                file_path = Path(f"{module_name}.py")
+            file_path.write_text(module_source)
+
+        # build Driver
+        builder = base_builder.copy()
+        dr = builder.with_config(config).with_modules(multi_cell_module).build()
+
+        # visualize
+        if args.display:
+            # try/except `display_config` or inputs/overrides may be invalid
+            try:
+                dot = dr.display_all_functions(**display_config)
+            except Exception as e:
+                print(f"Failed to display {e}.\n\nThe display config was: {display_config}")
+                dot = dr.display_all_functions()
+
+            # handle output environment
+            if self.notebook_env == "databricks":
+                display_in_databricks(dot)
+            else:
+                display(dot)
+
+    @magic_arguments()  # needed on top to enable parsing
+    @argument("module_name", help="Module name to print.")  # required argument
+    @line_magic
+    def print_module(self, line):
+        """Prints the contents of a dynamic module we've been creating."""
+        args = parse_argstring(self.incr_cell_to_module, line)
+        if args.module_name in self.incremental_cells_state:
+            module_dict = self.incremental_cells_state[args.module_name]
+            sorted_module_keys = sorted(list(module_dict[args.module_name].keys()))
+            module_source = "\n\n".join([module_dict[k] for k in sorted_module_keys])
+            display(Code(module_source))
+        else:
+            print(f"KeyError: `{args.module_name}` not found.")
+
+    @magic_arguments()  # needed on top to enable parsing
+    @argument("module_name", help="Module to print.")  # required argument
+    @line_magic
+    def reset_module(self, line):
+        args = parse_argstring(self.incr_cell_to_module, line)
+        if args.module_name in self.incremental_cells_state:
+            del self.incremental_cells_state[args.module_name]
+            print(f"Reset `{args.module_name}`")
+        else:
+            print(f"KeyError: `{args.module_name}` not found.")
 
     @magic_arguments()
     @argument("name", type=str, help="Creates a dictionary fromt the cell's content.")
