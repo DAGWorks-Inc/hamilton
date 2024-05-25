@@ -427,7 +427,7 @@ class HamiltonMagics(Magics):
         """Incrementally build a module. This executes the cell and dynamically creates a Python module from its content.
         A Hamilton Driver is automatically instantiated with that module for variable `{MODULE_NAME}_dr`.
 
-        > %%incr_cell_to_module -m MODULE_NAME -i IDENTIFIER --display
+        > %%incr_cell_to_module MODULE_NAME -i IDENTIFIER --display
         """
         # This function mimics the logic of `.cell_to_module()`. Find more comments there.
         # Start by trying to execute the code cell.
