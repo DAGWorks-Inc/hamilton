@@ -227,4 +227,4 @@ class HamiltonGraph:
         self, filter: typing.Callable[[HamiltonNode], bool]
     ) -> typing.List[HamiltonNode]:
         """Return Hamilton nodes matching the filter criteria"""
-        return [n for n in self.nodes if filter(n)]
+        return [n for n in self.nodes if filter(n) is True]
