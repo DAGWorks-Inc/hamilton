@@ -176,7 +176,7 @@ def test_hamilton_graph_filter_nodes():
     def filter_cache_equal_str(n: graph_types.HamiltonNode) -> bool:
         return n.tags.get("cache") == "str"
 
-    node_selection = h_graph.filter_nodes(filter)
+    node_selection = h_graph.filter_nodes(filter=filter_cache_equal_str)
     node_names = [n.name for n in node_selection]
 
     assert len(node_selection) == 2
