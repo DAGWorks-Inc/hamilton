@@ -172,7 +172,7 @@ class HamiltonNode:
             return None
 
     def __repr__(self):
-        return f"{self.name}: {htypes.get_type_as_string(self.type)}"
+        return f'Node("{self.name}": {htypes.get_type_as_string(self.type)})'
 
 
 @dataclass
@@ -209,3 +209,22 @@ class HamiltonGraph:
         """
         sorted_node_versions = sorted([n.version for n in self.nodes if n.version is not None])
         return hashlib.sha256(str(sorted_node_versions).encode()).hexdigest()
+
+    @functools.cached_property
+    def __nodes_lookup(self) -> typing.Dict[str, HamiltonNode]:
+        """Cache the mapping {node_name: node} for faster `__getitem__`"""
+        return {n.name: n for n in self.nodes}
+
+    def __getitem__(self, key: str) -> HamiltonNode:
+        """Get an HamiltonNode by name
+
+        :param key: Hamilton node name
+        :return: Hamilton node
+        """
+        return self.__nodes_lookup[key]
+
+    def filter_nodes(
+        self, filter: typing.Callable[[HamiltonNode], bool]
+    ) -> typing.List[HamiltonNode]:
+        """Return Hamilton nodes matching the filter criteria"""
+        return [n for n in self.nodes if filter(n) is True]
