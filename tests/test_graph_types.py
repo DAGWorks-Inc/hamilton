@@ -160,6 +160,30 @@ def test_hamilton_graph_version_with_none_originating_functions():
     assert graph.version == hash_value
 
 
+def test_hamilton_graph_getitem():
+    dr = driver.Builder().with_modules(test_nodes).build()
+    h_graph = graph_types.HamiltonGraph.from_graph(dr.graph)
+
+    assert isinstance(h_graph["lowercased"], graph_types.HamiltonNode)
+    assert h_graph["lowercased"].name == "lowercased"
+
+
+def test_hamilton_graph_filter_nodes():
+    dr = driver.Builder().with_modules(test_nodes).build()
+    h_graph = graph_types.HamiltonGraph.from_graph(dr.graph)
+
+    # could be a lambda but flake8 doesn't like it.
+    def filter_cache_equal_str(n: graph_types.HamiltonNode) -> bool:
+        return n.tags.get("cache") == "str"
+
+    node_selection = h_graph.filter_nodes(filter)
+    node_names = [n.name for n in node_selection]
+
+    assert len(node_selection) == 2
+    assert "lowercased" in node_names
+    assert "uppercased" in node_names
+
+
 def test_json_serializable_dict():
     for name, obj in inspect.getmembers(test_nodes):
         if inspect.isfunction(obj) and not name.startswith("_"):
