@@ -397,11 +397,8 @@ class HamiltonMagics(Magics):
     @magic_arguments()
     @argument("module_name", nargs="?", help="Name for the module defined in this cell.")
     @argument(
-        "-id",
-        "--identifier",
-        type=int,
-        help="Identifier for this cell w.r.t. the module being created. ",
-    )  # required argument
+        "identifier", type=int, help="Identifier for this cell w.r.t. the module being created."
+    )
     @argument(
         "-c",
         "--config",
@@ -481,7 +478,7 @@ class HamiltonMagics(Magics):
 
         # build module source from multiple cells
         module_dict = self.incremental_cells_state[module_name]
-        sorted_module_keys = sorted(list(module_dict[module_name].keys()))
+        sorted_module_keys = sorted(list(module_dict.keys()))
         module_source = "\n\n".join([module_dict[k] for k in sorted_module_keys])
         multi_cell_module = ad_hoc_utils.create_module(module_source, module_name)
         self.shell.push({module_name: multi_cell_module})
