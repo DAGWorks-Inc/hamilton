@@ -44,6 +44,9 @@ class AbstractBackend(metaclass=_AbstractBackendMeta):
 import inspect
 from typing import Tuple, Type, Union
 
+# TODO add a `_has__dataframe__` attribute for those that implement the
+# dataframe interchange protocol
+
 
 # PyArrow
 class AbstractPyArrowDataFrame(AbstractBackend):
@@ -125,6 +128,16 @@ class AbstractGeoPandasDataFrame(AbstractBackend):
 
 class AbstractGeoPandasColumn(AbstractBackend):
     _backends = [("geopandas", "GeoSeries")]
+
+
+# cuDF
+class AbstractCuDFDataFrame(AbstractBackend):
+    _backends = [("cudf", "DataFrame")]
+
+
+# Modin
+class AbstractModinDataFrame(AbstractBackend):
+    _backends = [("modin.pandas", "DataFrame")]
 
 
 def register_backends() -> Tuple[Type, Type]:

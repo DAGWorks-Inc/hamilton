@@ -31,30 +31,48 @@ def pandas_new_col__v1(ibis_rename: ir.Table) -> pd.DataFrame:
 
 @config.when(version="2")
 def pandas_new_col__v2(ibis_rename: ir.Table) -> pd.DataFrame:
-    """Add the column `new_col`"""
+    """Add the columns `new_col` and `another_col`"""
     df = ibis_rename.to_pandas()
+    df["new_col"] = True
     df["another_col"] = "X"
     return df
 
 
+@config.when(version="3")
+def pandas_new_col__v4(ibis_rename: ir.Table) -> pd.DataFrame:
+    """Add the column `new_col` of type float"""
+    df = ibis_rename.to_pandas()
+    df["new_col"] = 1.0
+    return df
+
+
 if __name__ == "__main__":
+    import argparse
+    import json
+
     import __main__
 
     from hamilton import driver
     from hamilton.experimental import h_schema
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--version", default="1", type=str, help="The Driver config version")
+    parser.add_argument(
+        "--no-check", action="store_false", help="Disable `check` to update the stored schemas."
+    )
+    args = parser.parse_args()
+
     dr = (
         driver.Builder()
         .with_modules(__main__)
-        .with_config(dict(version="2"))
-        .with_adapters(h_schema.SchemaValidator("./my_schemas", importance="fail"))
+        .with_config(dict(version=args.version))
+        .with_adapters(
+            h_schema.SchemaValidator("./my_schemas", check=args.no_check, importance="fail")
+        )
         .build()
     )
     res = dr.execute(["pandas_new_col"])
     print(res["pandas_new_col"].head())
+    print()
 
-    collected_schemas = dr.adapter.adapters[0].schemas
-    for node_name, schema in collected_schemas.items():
-        print()
-        print(f"## {node_name}")
-        print(schema)
+    print(json.dumps(dr.adapter.adapters[0].json_schemas, indent=2))

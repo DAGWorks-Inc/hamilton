@@ -15,6 +15,106 @@ from hamilton.lifecycle.api import GraphExecutionHook, NodeExecutionHook
 logger = logging.getLogger(__file__)
 
 
+def pyarrow_schema_to_json(schema: pyarrow.Schema) -> dict:
+    schema_dict = dict(metadata={k.decode(): v.decode() for k, v in schema.metadata.items()})
+
+    for name in schema.names:
+        field = schema.field(name)
+        schema_dict[str(name)] = dict(
+            name=field.name,
+            type=field.type.__str__(),  # __str__() and __repr__() are different
+            nullable=field.nullable,
+            metadata=field.metadata,
+        )
+
+    return schema_dict
+
+
+# TODO use ENUMs for a safe format and create a human readable format
+# ENUM {0: "equal", 1: "added", 2: "removed", 3: "edited"}
+def diff_schemas(
+    current_schema: pyarrow.Schema,
+    reference_schema: pyarrow.Schema,
+    check_schema_metadata: bool = False,
+    check_field_metadata: bool = False,
+) -> dict:
+    if current_schema.equals(reference_schema, check_metadata=check_schema_metadata):
+        return {}
+
+    schema_diff = {}
+    diff_template = "{ref} -> {cur}"
+
+    current_names = set(current_schema.names)
+    reference_names = set(reference_schema.names)
+
+    schema_diff.update(**{name: "added" for name in current_names.difference(reference_names)})
+    schema_diff.update(**{name: "removed" for name in reference_names.difference(current_names)})
+    if check_schema_metadata:
+        schema_metadata_diff = {}
+        d = dict_diff(current_schema.metadata, reference_schema.metadata)
+        for key in d["added"]:
+            schema_metadata_diff[key] = "added"
+        for key in d["removed"]:
+            schema_metadata_diff[key] = "deleted"
+        for key in d["edited"]:
+            schema_metadata_diff[key] = diff_template.format(
+                ref=reference_schema.metadata[key], cur=current_schema.metadata[key]
+            )
+
+    for name in current_names.intersection(reference_names):
+        current_field = current_schema.field(name)
+        reference_field = reference_schema.field(name)
+        if current_field.equals(reference_field, check_metadata=check_field_metadata):
+            continue
+
+        field_diff = {}
+        if current_field.nullable != reference_field.nullable:
+            field_diff["nullable"] = diff_template.format(
+                ref=reference_field.nullable, cur=current_field.nullable
+            )
+        if not current_field.type.equals(reference_field.type):
+            field_diff["type"] = diff_template.format(
+                ref=reference_field.type, cur=current_field.type
+            )
+        if check_field_metadata:
+            field_metadata_diff = {}
+            d = dict_diff(current_field.metadata, reference_field.metadata)
+            for key in d["added"]:
+                field_metadata_diff[key] = "added"
+            for key in d["removed"]:
+                field_metadata_diff[key] = "deleted"
+            for key in d["edited"]:
+                field_metadata_diff[key] = diff_template.format(
+                    ref=reference_field.metadata[key], cur=current_field.metadata[key]
+                )
+
+        schema_diff[name] = field_diff
+
+    return schema_diff
+
+
+def dict_diff(current_map: Dict[str, str], reference_map: Dict[str, str]) -> dict:
+    """Generic diff of two mappings"""
+    current_only, reference_only, edit = [], [], []
+
+    for key, value1 in current_map.items():
+        value2 = reference_map.get(key)
+        if value2 is None:
+            current_only.append(key)
+            continue
+
+        if value1 != value2:
+            edit.append(key)
+
+    for key, value2 in reference_map.items():
+        value1 = current_map.get(key)
+        if value1 is None:
+            reference_only.append(key)
+            continue
+
+    return dict(added=current_only, removed=reference_only, edited=edit)
+
+
 @functools.singledispatch
 def _get_arrow_schema(df, allow_copy: bool = True) -> pyarrow.Schema:
     # the property required for `from_dataframe()`
@@ -77,6 +177,12 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
         self.importance = importance
         self.h_graph: HamiltonGraph = None
 
+    @property
+    def json_schemas(self):
+        return {
+            node_name: pyarrow_schema_to_json(schema) for node_name, schema in self.schemas.items()
+        }
+
     @staticmethod
     def get_dataframe_schema(node: HamiltonNode, df) -> pyarrow.Schema:
         """Get pyarrow schema of a table node result and add metadata to it."""
@@ -111,19 +217,14 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
         """Save pyarrow schema to disk using IPC serialization"""
         self.get_schema_path(node_name).write_bytes(schema.serialize())
 
-    @staticmethod
-    def diff_schemas(schema: pyarrow.Schema, reference: pyarrow.Schema, details: bool = False):
-        # TODO expose schema diff when check fails
-        raise NotImplementedError
-
-    @staticmethod
-    def human_readable_schema(schemas: Dict[str, pyarrow.Schema]) -> dict:
-        """Give a human-readable representation of schema"""
-        # TODO implement Hamilton metadata format and parser
-        return {name: schema.to_string(truncate_metadata=False) for name, schema in schemas.items()}
-
-    def handle_schema(self, node_name: str, schema: pyarrow.Schema) -> None:
+    def handle_node(self, node_name: str, node_value: Any) -> None:
         """Create or check schema based on __init__ parameters."""
+        # generate the schema from the HamiltonNode and node value
+        node = self.h_graph[node_name]
+        schema = self.get_dataframe_schema(node, node_value)
+        self.schemas[node_name] = schema
+
+        # handle schema
         schema_path = self.get_schema_path(node_name)
 
         if self.check is False:
@@ -141,46 +242,36 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
 
         reference_schema = self.load_schema(node_name)
 
-        schema_error_message = f"Schemas for node `{node_name}` are unequal."
         # TODO expose `check_metadata` in equality
-        schema_equality = schema.equals(reference_schema, check_metadata=False)
-        if schema_equality is False:
+        schema_diff = diff_schemas(schema, reference_schema)
+        if schema_diff != {}:
             if self.importance == "warn":
-                logger.warning(schema_error_message)
+                logger.warning(schema_diff)
             elif self.importance == "fail":
-                raise RuntimeError(schema_error_message)
+                raise RuntimeError(schema_diff)
 
     def run_before_graph_execution(
         self, *, graph: HamiltonGraph, inputs: Dict[str, Any], overrides: Dict[str, Any], **kwargs
     ):
         """Store schemas of inputs and overrides nodes that are tables or columns."""
-        self.h_graph = (
-            graph  # store HamiltonGraph to get HamiltonNodes in `run_after_node_execution`
-        )
+        self.h_graph = graph
+
         for node_sets in [inputs, overrides]:
             if node_sets is None:
                 continue
 
             for node_name, node_value in node_sets.items():
-                h_node = self.h_graph[node_name]
-
                 if isinstance(node_value, h_databackends.DATAFRAME_TYPES):
-                    current_schema = self.get_dataframe_schema(h_node, node_value)
-                    self.schemas[node_name] = current_schema
-                    self.handle_schema(node_name=node_name, schema=current_schema)
+                    self.handle_node(node_name, node_value)
 
     def run_after_node_execution(self, *, node_name: str, result: Any, **kwargs):
         """Store schema of executed node if table or column type."""
-        h_node = self.h_graph[node_name]
         if isinstance(result, h_databackends.DATAFRAME_TYPES):
-            current_schema = self.get_dataframe_schema(h_node, result)
-            self.schemas[node_name] = current_schema
-            self.handle_schema(node_name=node_name, schema=current_schema)
+            self.handle_node(node_name, result)
 
     def run_after_graph_execution(self, *args, **kwargs):
         """Store a human-readable JSON of all current schemas."""
-        schemas_json_string = json.dumps(self.human_readable_schema(self.schemas))
-        Path(f"{self.schema_dir}/schemas.json").write_text(schemas_json_string)
+        Path(f"{self.schema_dir}/schemas.json").write_text(json.dumps(self.json_schemas))
 
     def run_before_node_execution(self, *args, **kwargs):
         pass
