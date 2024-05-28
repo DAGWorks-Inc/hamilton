@@ -101,10 +101,10 @@ def create_module(source: str, module_name: str = None, verbosity: int = 0) -> M
     # Load the module from the temporary file
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     module_object = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module_object)
 
     # Register the module in sys.modules
     sys.modules[module_name] = module_object
+    spec.loader.exec_module(module_object)
 
     # Clean up the temporary file on interpreter shutdown
     def cleanup(module_path=module_path):
