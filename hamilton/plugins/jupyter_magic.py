@@ -336,7 +336,11 @@ class HamiltonMagics(Magics):
 
         # create_module() is preferred over module_from_source() to simplify
         # the integration with the Hamilton UI which assumes physical Python modules
-        cell_module = ad_hoc_utils.create_module(cell, module_name)
+        try:
+            cell_module = ad_hoc_utils.create_module(cell, module_name)
+        except BaseException as e:
+            print("Failed to build the module. Stack trace:")
+            raise e
         self.shell.push({module_name: cell_module})
 
         # build the Driver. the Builder is copied to avoid conflict with the user namespace
