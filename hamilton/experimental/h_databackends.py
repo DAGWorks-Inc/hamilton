@@ -142,9 +142,6 @@ class AbstractModinDataFrame(AbstractBackend):
 
 def register_backends() -> Tuple[Type, Type]:
     """Register Abstract classes"""
-    global DATAFRAME_TYPES
-    global COLUMN_TYPES
-
     abstract_dataframe_types = set()
     abstract_column_types = set()
 
