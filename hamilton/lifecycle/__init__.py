@@ -13,6 +13,7 @@ from .api import (  # noqa: F401
 from .base import LifecycleAdapter  # noqa: F401
 from .default import (  # noqa: F401
     FunctionInputOutputTypeChecker,
+    GracefulErrorAdapter,
     PDBDebugger,
     PrintLn,
     SlowDownYouMoveTooFast,
