@@ -1,6 +1,6 @@
------------
-Overview
------------
+--------------------
+UI Overview
+--------------------
 
 Hamilton comes with a fully open-source UI that can be run both for local deployment and on a remote server.
 The UI consists of the following features:
