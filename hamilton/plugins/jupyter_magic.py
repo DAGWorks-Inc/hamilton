@@ -212,7 +212,7 @@ class HamiltonMagics(Magics):
         return config
 
     @magic_arguments()  # needed on top to enable parsing
-    @argument("module_name", nargs="?", help="Name for the module defined in this cell.")
+    @argument("name", nargs="?", help="Name for the module defined in this cell.")
     @argument(
         "-m",
         "--module_name",
@@ -311,8 +311,15 @@ class HamiltonMagics(Magics):
         if config is False:
             return
 
-        # resolve the values of args
-        module_name = args.module_name
+        # check if string instance because module_name has default `True`
+        if isinstance(args.name, str) and isinstance(args.module_name, str):
+            print(
+                f"ValueError: Received both positional arg name={args.name} and named arg module_name={args.module_name}. Pass either one."
+            )
+            return
+
+        # merged the positional arg `name` with named arg `module_name` for backwards compatibility
+        module_name = args.module_name if isinstance(args.module_name, str) else args.name
         base_builder = self.shell.user_ns[args.builder] if args.builder else driver.Builder()
         inputs = self.shell.user_ns[args.inputs] if args.inputs else {}
         overrides = self.shell.user_ns[args.overrides] if args.overrides else {}
