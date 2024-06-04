@@ -265,7 +265,7 @@ class Driver(driver.Driver):
         :param modules: Modules to use, same as standard Hamilton driver.
         :param project_id: Identifier for the project to use to store this DAG under.
         :param api_key: API key to use for authentication. Remember not to save this in plaintext!
-        :param username: email address to use for authentication.
+        :param username: username for authentication.
         :param dag_name: name for this DAG. You will use this for top level curation of DAGs
         within a project.
         :param tags: Optional key value string pairs to help identify and curate this instance of

@@ -13,7 +13,6 @@ export const UserContext = createContext<UserContextType | undefined>(
 
 export const LocalLoginProvider = (props: { children: React.ReactNode }) => {
   const [localUsername, setLocalUsername] = useState<string>("");
-  const isValidEmail = localUsername.includes("@"); // Quick hack -- todo: use email-validator
   const [username, setUsername] = useLocalStorage(
     "hamilton-username",
     undefined
@@ -31,9 +30,6 @@ export const LocalLoginProvider = (props: { children: React.ReactNode }) => {
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    if (!isValidEmail) {
-      return;
-    }
     event.preventDefault();
     setUsername(localUsername); // Store username
   };
@@ -45,9 +41,6 @@ export const LocalLoginProvider = (props: { children: React.ReactNode }) => {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Welcome to the Hamilton UI!
           </h2>
-          <p className="mt-4 text-center text-sm text-gray-600">
-            Please enter an email address
-          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <input
@@ -62,8 +55,7 @@ export const LocalLoginProvider = (props: { children: React.ReactNode }) => {
           />
           <button
             type="submit"
-            className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${isValidEmail ? "bg-dwdarkblue" : "bg-dwdarkblue/50"}  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dwdarkblue`}
-            disabled={!isValidEmail}
+            className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-dwdarkblue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dwdarkblue`}
           >
             Get started!
           </button>
