@@ -11,7 +11,7 @@ Note that you currently have to call `enable_dynamic_execution(allow_experimenta
 which will toggle it to use the `V2` executor. Then, you can:
 
 1. Add task executors to specify how to run the tasks
-2. Add node gropuing strategies
+2. Add node grouping strategies
 3. Add modules to crawl for functions
 4. Add a results builder to shape the results
 
