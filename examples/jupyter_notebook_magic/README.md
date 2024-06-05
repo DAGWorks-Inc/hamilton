@@ -24,4 +24,9 @@ def reply(joke_prompt: str) -> str:
     return f"{right} who?"
 ```
 
-Go explore `tutorial.ipynb` to learn about all interactive features!
+Go explore `example.ipynb` to learn about all interactive features!
+
+To exercise this example you can run it in Google Colab too:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/jupyter_notebook_magic/example.ipynb)

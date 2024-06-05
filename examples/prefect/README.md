@@ -36,6 +36,12 @@ The easiest way to get this example running is to sign up for Prefect's free tie
 4. Login to Prefect with your local machine using `prefect cloud login`
 5. Execute the workflow by running `python run.py`. You should see a new run appear on your dashboard at https://app.prefect.cloud/
 
+6. You can even run this example in Google Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/prefect/hamilton_prefect_notebook.ipynb)
+
+
+
 ## Tips
 1. Use Prefect [Blocks](https://docs.prefect.io/latest/concepts/blocks/) to store your Hamilton configuration. This way, you can edit it directly from your Prefect dashboard to launch different runs without altering your source code.
 ![blocks](./docs/prefect_config_block.JPG)

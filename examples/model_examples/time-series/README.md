@@ -16,6 +16,12 @@ you will need to log in to Kaggle to download the data.
 3. Decompress the data into the same folder as the code.
 4. Run `run.py`. `python run.py`.
 
+You can even run this example in Google Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/model_examples/time-series/Hamilton-TimeSeriesmodel.ipynb)
+
+
+
 # Notes
 Here's what this code executes:
 ![kaggle_submission_df](kaggle_submission_df.dot.png)

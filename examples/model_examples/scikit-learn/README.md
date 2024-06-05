@@ -24,6 +24,11 @@ house the same function names as they should map to the inputs required by funct
 * run.py houses the "driver code" required to stitch everything together. It is responsible for creating the
 right configuration to create the DAG, as well as determining what python modules should be loaded.
 
+You can even run this example in Google Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/model_examples/scikit-learn/Hamilton_for_ML_dataflows.ipynb)
+
+
 # Visualization of execution
 Here is the graph of execution for the digits data set and logistic regression model:
 

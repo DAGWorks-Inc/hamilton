@@ -19,6 +19,12 @@ idea is that you'd swap this module out for other ways of loading data or use @c
 *  `run_with_delayed_and_dask_objects.py` shows the combination of the above. It is slightly non-sensical, since we're
 entirely operating on what are dask objects effectively. But otherwise shows the code pattern to use both.
 
+Or run it in Google Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/dask/hello_world/notebook.ipynb)
+
+
+
 # Visualization of execution
 Here is the graph of execution:
 

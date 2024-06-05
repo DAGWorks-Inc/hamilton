@@ -18,6 +18,12 @@ The directory also include `mock_api.py` which simulates a `ressource` in the Da
     python run.py
     ```
 
+Or run it in Google Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/dagster/hamilton_code/notebook.ipynb)
+
+
+
 ## Going further
 - Learn the basics of Hamilton via the `Concepts/` [documentation section](https://hamilton.dagworks.io/en/latest/concepts/node/)
 - Visit [tryhamilton.dev](tryhamilton.dev) for an interactive tutorial in your browser

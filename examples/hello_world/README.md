@@ -18,6 +18,12 @@ To run things:
 > python my_script.py
 ```
 
+To exercise this example you can run it in Google Colab:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/hello_world/my_notebook.ipynb)
+
+
 If you have questions, or need help with this example,
 join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg), and we'll try to help!
 
