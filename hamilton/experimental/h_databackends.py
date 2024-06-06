@@ -1,48 +1,36 @@
-# Copyright (c) 2024 databackend contributors (MIT License)
-#
-# See https://github.com/machow/databackend
+"""This module defines "databackends". They are essentially abstract types such as
+`AbstractPandasDataFrame` or `AbstractPandasSeries` which can be used with
+`isinstance()` or `issubclass()` without having to import pandas.
+
+It is powerful when used with `@functools.singledispatch`
+
+    ```python
+    @functools.singledispatch
+    def get_arrow_schema(df) -> pyarrow.Schema:
+        if not hasattr(df, "__dataframe__"):
+            raise NotImplementedError(f"Type {type(df)} is currently unsupported.")
+        return from_dataframe(df, allow_copy=True).schema
+
+    @get_arrow_schema.register
+    def _(df: h_databackends.AbstractPandasDataFrame) -> pyarrow.Schema:
+        return pyarrow.Table.from_pandas(df).schema
+
+    @get_arrow_schema.register
+    def _(df: h_databackends.AbstractIbisDataFrame) -> pyarrow.Schema:
+        return df.schema().to_pyarrow()
+    ```
+
+Instead of centralizing code by library / dependency, we can now centralize it
+by Hamilton feature. For example, we can have all the implementations to collect
+schemas under `schema.py` instead of spread across `pandas_extension.py`,
+polars_extension.py`, etc.
+"""
 
 import importlib
-import sys
-from abc import ABCMeta
-
-
-def _load_class(mod_name: str, cls_name: str):
-    mod = importlib.import_module(mod_name)
-    return getattr(mod, cls_name)
-
-
-class _AbstractBackendMeta(ABCMeta):
-    def register_backend(cls, mod_name: str, cls_name: str):
-        cls._backends.append((mod_name, cls_name))
-        cls._abc_caches_clear()
-
-
-class AbstractBackend(metaclass=_AbstractBackendMeta):
-    @classmethod
-    def __init_subclass__(cls):
-        if not hasattr(cls, "_backends"):
-            cls._backends = []
-
-    @classmethod
-    def __subclasshook__(cls, subclass):
-        for mod_name, cls_name in cls._backends:
-            if mod_name not in sys.modules:
-                # module isn't loaded, so it can't be the subclass
-                # we don't want to import the module to explicitly run the check
-                # so skip here.
-                continue
-            else:
-                parent_candidate = _load_class(mod_name, cls_name)
-                if issubclass(subclass, parent_candidate):
-                    return True
-
-        return NotImplemented
-
-
-# Below is no longer under the above copyright
 import inspect
 from typing import Tuple, Type, Union
+
+from hamilton.experimental.databackend import AbstractBackend
 
 # TODO add a `_has__dataframe__` attribute for those that implement the
 # dataframe interchange protocol
@@ -141,7 +129,9 @@ class AbstractModinDataFrame(AbstractBackend):
 
 
 def register_backends() -> Tuple[Type, Type]:
-    """Register Abstract classes"""
+    """Register databackends defined in this module that
+    include `DataFrame` and `Column` in their class name
+    """
     abstract_dataframe_types = set()
     abstract_column_types = set()
 
@@ -152,7 +142,7 @@ def register_backends() -> Tuple[Type, Type]:
         elif "Column" in name:
             abstract_column_types.add(cls)
 
-    # overwrite sets with Union type objects
+    # Union[tuple()] creates a Union type object
     DATAFRAME_TYPES = Union[tuple(abstract_dataframe_types)]
     COLUMN_TYPES = Union[tuple(abstract_column_types)]
     return DATAFRAME_TYPES, COLUMN_TYPES

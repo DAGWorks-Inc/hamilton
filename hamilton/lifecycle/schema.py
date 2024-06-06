@@ -2,7 +2,7 @@ import functools
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Literal, Union
+from typing import Any, Dict, Literal
 
 import pyarrow
 import pyarrow.ipc
@@ -10,19 +10,23 @@ from pyarrow.interchange import from_dataframe
 
 from hamilton.experimental import h_databackends
 from hamilton.graph_types import HamiltonGraph, HamiltonNode
-from hamilton.lifecycle.api import GraphExecutionHook, NodeExecutionHook
+from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook
 
 logger = logging.getLogger(__file__)
 
 
 def pyarrow_schema_to_json(schema: pyarrow.Schema) -> dict:
+    """Convert a pyarrow.Schema to a JSON-serializable dictionary
+
+    Pyarrow provides a schema-to-string, but not schema-to-json.
+    """
     schema_dict = dict(metadata={k.decode(): v.decode() for k, v in schema.metadata.items()})
 
     for name in schema.names:
         field = schema.field(name)
         schema_dict[str(name)] = dict(
             name=field.name,
-            type=field.type.__str__(),  # __str__() and __repr__() are different
+            type=field.type.__str__(),  # __str__() and __repr__() of pyarrow.Field are different
             nullable=field.nullable,
             metadata=field.metadata,
         )
@@ -38,17 +42,19 @@ def diff_schemas(
     check_schema_metadata: bool = False,
     check_field_metadata: bool = False,
 ) -> dict:
+    """Diff two Pyarrow schema field-by-field to return a human readable output.
+    Options to diff schema and field metadata key-by-key.
+
+    Returning an empty dict means equality / no diff
+    """
+    # if schemas are equal, return an empty diff
     if current_schema.equals(reference_schema, check_metadata=check_schema_metadata):
         return {}
 
     schema_diff = {}
-    diff_template = "{ref} -> {cur}"
+    diff_template = "{ref} -> {cur}"  # template for human readable output
 
-    current_names = set(current_schema.names)
-    reference_names = set(reference_schema.names)
-
-    schema_diff.update(**{name: "added" for name in current_names.difference(reference_names)})
-    schema_diff.update(**{name: "removed" for name in reference_names.difference(current_names)})
+    # compare schema metadata
     if check_schema_metadata:
         schema_metadata_diff = {}
         d = dict_diff(current_schema.metadata, reference_schema.metadata)
@@ -61,21 +67,35 @@ def diff_schemas(
                 ref=reference_schema.metadata[key], cur=current_schema.metadata[key]
             )
 
+    # sets of column names in each schema
+    current_names = set(current_schema.names)
+    reference_names = set(reference_schema.names)
+
+    # add to diffs field only present in either schema
+    schema_diff.update(**{name: "added" for name in current_names.difference(reference_names)})
+    schema_diff.update(**{name: "removed" for name in reference_names.difference(current_names)})
+    # compare fields present in both schemas
     for name in current_names.intersection(reference_names):
         current_field = current_schema.field(name)
         reference_field = reference_schema.field(name)
+        # if field is equal in both schema, skip it
         if current_field.equals(reference_field, check_metadata=check_field_metadata):
             continue
 
+        # a pyarrow field has 4 attributes: name, type, nullable, metadata
+        # name is equal
         field_diff = {}
-        if current_field.nullable != reference_field.nullable:
-            field_diff["nullable"] = diff_template.format(
-                ref=reference_field.nullable, cur=current_field.nullable
-            )
+        # check if type is equal
         if not current_field.type.equals(reference_field.type):
             field_diff["type"] = diff_template.format(
                 ref=reference_field.type, cur=current_field.type
             )
+        # check if nullable is equal
+        if current_field.nullable != reference_field.nullable:
+            field_diff["nullable"] = diff_template.format(
+                ref=reference_field.nullable, cur=current_field.nullable
+            )
+        # check if metadata is equal
         if check_field_metadata:
             field_metadata_diff = {}
             d = dict_diff(current_field.metadata, reference_field.metadata)
@@ -94,7 +114,13 @@ def diff_schemas(
 
 
 def dict_diff(current_map: Dict[str, str], reference_map: Dict[str, str]) -> dict:
-    """Generic diff of two mappings"""
+    """Compare two mappings and collect:
+        - keys only in current_map
+        - keys only in reference_map
+        - keys in both, but with different values
+
+    Returns a dictionary with a list for each category; empty dict means no diff
+    """
     current_only, reference_only, edit = [], [], []
 
     for key, value1 in current_map.items():
@@ -117,13 +143,24 @@ def dict_diff(current_map: Dict[str, str], reference_map: Dict[str, str]) -> dic
 
 @functools.singledispatch
 def _get_arrow_schema(df, allow_copy: bool = True) -> pyarrow.Schema:
-    # the property required for `from_dataframe()`
+    """Base case for getting a pyarrow schema from a dataframe.
+
+    :param allow_copy: If True, allow to convert the object to Pyarrow
+        even if zero-copy is unavailable
+
+    It looks for the `__dataframe__` attribute associated with the dataframe interchange protocol
+    ref: https://data-apis.org/dataframe-protocol/latest/API.html
+    """
     if not hasattr(df, "__dataframe__"):
+        # if hitting this condition, we can register a new function
+        # to conver the dataframe to pyarrow
         raise NotImplementedError(f"Type {type(df)} is currently unsupported.")
 
-    # try to convert to Pyarrow using zero-copy; otherwise hit RuntimeError
+    # try to convert to Pyarrow using zero-copy
     try:
         df = from_dataframe(df, allow_copy=False)
+    # if unable to zero-copy, convert the object to Pyarrow
+    # this may be undesirable if the object is large because of memory overhead
     except RuntimeError as e:
         if allow_copy is False:
             raise e
@@ -133,20 +170,21 @@ def _get_arrow_schema(df, allow_copy: bool = True) -> pyarrow.Schema:
 
 
 @_get_arrow_schema.register
-def _(
-    df: Union[
-        h_databackends.AbstractPandasDataFrame,
-        h_databackends.AbstractGeoPandasDataFrame,
-    ],
-    **kwargs,
-) -> pyarrow.Schema:
+def _(df: h_databackends.AbstractPandasDataFrame, **kwargs) -> pyarrow.Schema:
+    """pandas to pyarrow using pyarrow-native method"""
     table = pyarrow.Table.from_pandas(df)
     return table.schema
 
 
 @_get_arrow_schema.register
 def _(df: h_databackends.AbstractIbisDataFrame, **kwargs) -> pyarrow.Schema:
+    """Convert the Ibis schema to pyarrow Schema. The operation is lazy
+    and doesn't require Ibis execution"""
     return df.schema().to_pyarrow()
+
+
+# TODO lazy polars schema conversion
+# ongoing polars discussion: https://github.com/pola-rs/polars/issues/15600
 
 
 class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
@@ -154,7 +192,7 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
 
     def __init__(
         self,
-        schema_dir: str = "./schema",
+        schema_dir: str = "./schemas",
         check: bool = True,
         must_exist: bool = False,
         importance: Literal["warn", "fail"] = "warn",
@@ -177,15 +215,21 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
         self.importance = importance
         self.h_graph: HamiltonGraph = None
 
+        # create the directory where schemas will be stored
+        Path(schema_dir).mkdir(parents=True, exist_ok=True)
+
     @property
-    def json_schemas(self):
+    def json_schemas(self) -> Dict[str, dict]:
+        """Return schemas collected during the run"""
         return {
             node_name: pyarrow_schema_to_json(schema) for node_name, schema in self.schemas.items()
         }
 
     @staticmethod
-    def get_dataframe_schema(node: HamiltonNode, df) -> pyarrow.Schema:
-        """Get pyarrow schema of a table node result and add metadata to it."""
+    def get_dataframe_schema(
+        df: h_databackends.DATAFRAME_TYPES, node: HamiltonNode
+    ) -> pyarrow.Schema:
+        """Get pyarrow schema of a node result and store node metadata on the pyarrow schema."""
         schema = _get_arrow_schema(df)
         metadata = dict(
             name=str(node.name),
@@ -194,10 +238,7 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
         )
         return schema.with_metadata(metadata)
 
-    # TODO support column-level schema; could implement `column_to_dataframe` in h_databackend
-    @staticmethod
-    def get_column_schema(node: HamiltonNode, col) -> pyarrow.Schema:
-        raise NotImplementedError
+    # TODO support nodes returning columns by writing them as single column dataframe
 
     def get_schema_path(self, node_name: str) -> Path:
         """Generate schema filepath based on node name.
@@ -206,8 +247,7 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
         but it wouldn't communicate that the file contains only schema metadata.
         The serialization format is IPC by default (see `.save_schema()`).
         """
-        schema_file_suffix = ".schema"
-        return Path(self.schema_dir, node_name).with_suffix(schema_file_suffix)
+        return Path(self.schema_dir, node_name).with_suffix(".schema")
 
     def load_schema(self, node_name: str) -> pyarrow.Schema:
         """Load pyarrow schema from disk using IPC deserialization"""
@@ -217,20 +257,36 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
         """Save pyarrow schema to disk using IPC serialization"""
         self.get_schema_path(node_name).write_bytes(schema.serialize())
 
-    def handle_node(self, node_name: str, node_value: Any) -> None:
-        """Create or check schema based on __init__ parameters."""
+    def run_before_graph_execution(
+        self, *, graph: HamiltonGraph, inputs: Dict[str, Any], overrides: Dict[str, Any], **kwargs
+    ):
+        """Store schemas of inputs and overrides nodes that are tables or columns."""
+        self.h_graph = graph
+        for node_sets in [inputs, overrides]:
+            if node_sets is None:
+                continue
+
+            for node_name, node_value in node_sets.items():
+                self.run_after_node_execution(node_name=node_name, result=node_value)
+
+    def run_after_node_execution(self, *, node_name: str, result: Any, **kwargs):
+        """Store schema of executed node if table or column type."""
+        if not isinstance(result, h_databackends.DATAFRAME_TYPES):
+            return
+
         # generate the schema from the HamiltonNode and node value
         node = self.h_graph[node_name]
-        schema = self.get_dataframe_schema(node, node_value)
+        schema = self.get_dataframe_schema(df=result, node=node)
         self.schemas[node_name] = schema
 
-        # handle schema
         schema_path = self.get_schema_path(node_name)
 
+        # behavior 1: only save schema
         if self.check is False:
             self.save_schema(node_name, schema=schema)
             return
 
+        # behavior 2: handle missing reference schema while validating
         if not schema_path.exists():
             if self.must_exist:
                 raise FileNotFoundError(
@@ -240,8 +296,8 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
                 self.save_schema(node_name, schema=schema)
                 return
 
+        # behavior 3: validate current schema with reference schema
         reference_schema = self.load_schema(node_name)
-
         # TODO expose `check_metadata` in equality
         schema_diff = diff_schemas(schema, reference_schema)
         if schema_diff != {}:
@@ -250,28 +306,9 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
             elif self.importance == "fail":
                 raise RuntimeError(schema_diff)
 
-    def run_before_graph_execution(
-        self, *, graph: HamiltonGraph, inputs: Dict[str, Any], overrides: Dict[str, Any], **kwargs
-    ):
-        """Store schemas of inputs and overrides nodes that are tables or columns."""
-        self.h_graph = graph
-
-        for node_sets in [inputs, overrides]:
-            if node_sets is None:
-                continue
-
-            for node_name, node_value in node_sets.items():
-                if isinstance(node_value, h_databackends.DATAFRAME_TYPES):
-                    self.handle_node(node_name, node_value)
-
-    def run_after_node_execution(self, *, node_name: str, result: Any, **kwargs):
-        """Store schema of executed node if table or column type."""
-        if isinstance(result, h_databackends.DATAFRAME_TYPES):
-            self.handle_node(node_name, result)
-
     def run_after_graph_execution(self, *args, **kwargs):
         """Store a human-readable JSON of all current schemas."""
         Path(f"{self.schema_dir}/schemas.json").write_text(json.dumps(self.json_schemas))
 
     def run_before_node_execution(self, *args, **kwargs):
-        pass
+        """Required by subclassing NodeExecutionHook"""
