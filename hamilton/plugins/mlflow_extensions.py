@@ -1,5 +1,6 @@
 import dataclasses
 import pathlib
+import shutil
 from typing import Any, Callable, Collection, Dict, Literal, Optional, Tuple, Type, Union
 
 try:
@@ -13,27 +14,33 @@ from hamilton.io.data_adapters import DataLoader, DataSaver
 
 @dataclasses.dataclass
 class MLFlowModelSaver(DataSaver):
-    def __init__(
-        self,
-        path: Union[str, pathlib.Path] = "model",
-        mode: Literal["save", "log"] = "save",
-        flavor: Optional[str] = None,
-        run_id: Optional[str] = None,
-        **kwargs,
-    ):
-        """
-        :param path: Specify a filesystem path or model URI for MLFlow runs or registry
-        :param mode: `save` will store to local filesystem; `log` will add to MLFlow registry
-        :param flavor: sklearn, xgboost, etc.
-        :param run_id: Explicit run id used for `mode=log`. Otherwise, will use active run or create one.
-        :param kwargs: additional arguments to pass to `.save_model()` and `.log_model()`.
-            They can be flavor-specific.
-        """
-        self.path = path
-        self.mode = mode
-        self.flavor = flavor
-        self.run_id = run_id
-        self.kwargs = kwargs
+    """
+    :param path: Specify a filesystem path or model URI for MLFlow runs or registry
+    :param mode: `save` will store to local filesystem; `log` will add to MLFlow registry
+    :param flavor: sklearn, xgboost, etc.
+    :param run_id: Explicit run id used for `mode=log`. Otherwise, will use active run or create one.
+    :param kwargs: additional arguments to pass to `.save_model()` and `.log_model()`.
+        They can be flavor-specific.
+    """
+
+    path: Union[str, pathlib.Path] = "model"
+    mode: Literal["filesystem", "runs"] = "filesystem"
+    flavor: Optional[str] = None
+    run_id: Optional[str] = None
+    overwrite: bool = False
+    register: bool = False
+    model_name: Optional[str] = None
+    kwargs: Optional[Dict[str, Any]] = None
+    # kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
+
+    # A lot of dancing around because dataclass doesn't accept kwargs
+    # and hamilton.function_modifiers.adapters throws `InvalidDecoratorException` for dataclasses.field() defaults
+    def __post_init__(self):
+        self.kwargs = self.kwargs if self.kwargs else {}
+
+        # ensures that model_name is not None in case register=True
+        if self.model_name is None:
+            self.model_name = pathlib.Path(self.path).name
 
     @classmethod
     def name(cls) -> str:
@@ -41,7 +48,7 @@ class MLFlowModelSaver(DataSaver):
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
-        return [Callable]
+        return [Any]
 
     def save_data(self, data) -> Dict[str, Any]:
         if self.flavor:
@@ -57,12 +64,16 @@ class MLFlowModelSaver(DataSaver):
         except ImportError:
             raise ImportError(f"Flavor {flavor} is unsupported by MLFlow")
 
-        if self.mode == "save":
+        if self.mode == "filesystem":
+            # have to manually delete directory to avoid MLFlow exception
+            if self.overwrite is True:
+                shutil.rmtree(self.path)
+
             # .save_model() doesn't return anything
             flavor_module.save_model(data, self.path, **self.kwargs)
-            metadata = dict(path=self.path, mode="save", flavor=flavor, **self.kwargs)
+            model_info = mlflow.models.get_model_info(self.path)
 
-        elif self.mode == "log":
+        elif self.mode == "runs":
             # handle `run_id` and active run conflicts
             if mlflow.active_run() and self.run_id:
                 if mlflow.active_run().info.run_id != self.run_id:
@@ -79,7 +90,15 @@ class MLFlowModelSaver(DataSaver):
                 with mlflow.start_run(run_id=self.run_id):
                     model_info = flavor_module.log_model(data, self.path, **self.kwargs)
 
-            metadata = {k.strip("_"): v for k, v in model_info.__dict__.items()}
+        metadata = {k.strip("_"): v for k, v in model_info.__dict__.items()}
+        if self.register:
+            model_version = mlflow.register_model(
+                model_uri=metadata["model_uri"], name=self.model_name
+            )
+            metadata["registered_model"] = {
+                k.strip("_"): v for k, v in model_version.__dict__.items()
+            }
+
         return metadata
 
 
@@ -88,50 +107,30 @@ class MLFlowModelSaver(DataSaver):
 
 @dataclasses.dataclass
 class MLFlowModelLoader(DataLoader):
-    def __init__(
-        self,
-        flavor: str,
-        path: Union[str, pathlib.Path] = "model",
-        model_uri: Optional[str] = None,
-        mode: Literal["filesystem", "runs", "registry"] = "filesystem",
-        run_id: Optional[str] = None,
-        model_name: Optional[str] = None,
-        version: Union[str, int] = "latest",
-        **kwargs,
-    ):
-        """ """
-        self.flavor = flavor
-        self.path = path
-        self.model_uri = model_uri
-        self.mode = mode
-        self.run_id = run_id
-        self.model_name = model_name
-        self.version = version
-        self.kwargs = kwargs
+    flavor: str
+    path: Union[str, pathlib.Path] = "model"
+    model_uri: Optional[str] = None
+    mode: Literal["filesystem", "runs", "registry"] = "filesystem"
+    run_id: Optional[str] = None
+    model_name: Optional[str] = None
+    version: Union[str, int] = "latest"
+    kwargs: Optional[Dict[str, Any]] = None
+    # kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
-        # if self.model_uri:
-        # if "runs:/" in self.model_uri:
-        #     self.mode = "runs"
-        #     # extract info from run model_uri
-        #     _, _, remainder = self.model_uri.partition("runs:/")
-        #     run_id, _, inferred_path = remainder.partition("/")
-        #     self.run_id = run_id
-        #     self.path = inferred_path
+    # A lot of dancing around because dataclass doesn't accept kwargs
+    # and hamilton.function_modifiers.adapters throws `InvalidDecoratorException` for dataclasses.field() defaults
+    def __post_init__(self):
+        self.kwargs = self.kwargs if self.kwargs else {}
 
-        # elif "models:/" in self.model_uri:
-        #     self.mode = "registry"
-        #     # extract info from registry model_uri
-        #     _, _, remainder = self.model_uri.partition("models:/")
-        #     model_name, _, version = remainder.partition("/")
-        #     self.model_name = model_name
-        #     self.model_version = version
-        if not self.model_uri:
-            if self.mode == "filesystem":
-                self.model_uri = pathlib.Path(self.path).as_uri()
-            elif self.mode == "runs":
-                self.model_uri = f"runs:/{self.run_id}/{self.path}"
-            elif self.mode == "registry":
-                self.model_uri = f"models:/{self.model_name}/{self.version}"
+        if self.model_uri:
+            return
+
+        if self.mode == "filesystem":
+            self.model_uri = pathlib.Path(self.path).as_uri()
+        elif self.mode == "runs":
+            self.model_uri = f"runs:/{self.run_id}/{self.path}"
+        elif self.mode == "registry":
+            self.model_uri = f"models:/{self.model_name}/{self.version}"
 
     @classmethod
     def name(cls) -> str:
@@ -163,3 +162,5 @@ def register_data_loaders():
 
 
 register_data_loaders()
+
+COLUMN_FRIENDLY_DF_TYPE = False
