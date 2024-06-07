@@ -335,6 +335,7 @@ export const TaskView = (props: {
   const whichTab = searchParams.get("tab");
   return (
     <div className="pt-10">
+      <div className="text-gray-500 text-xl pb-2">Viewing {taskName}</div>
       <div className="sm:hidden">
         <label htmlFor="tabs" className="sr-only">
           Select a tab
