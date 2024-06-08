@@ -1,9 +1,16 @@
 import abc
 import json
+import logging
 import os
 import uuid
 
-import aiobotocore.session
+try:
+    import aiobotocore.session
+except ImportError:
+    logging.info(
+        "aiobotocore is not installed. Please install aiobotocore to use S3BlobStore -- "
+        "if you're using the normal (local) blob store ignore this."
+    )
 import aiofiles
 from django.conf import settings
 

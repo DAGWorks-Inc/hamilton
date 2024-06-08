@@ -35,6 +35,14 @@ def load_requirements():
     return list(requirements)
 
 
+def load_server_requirements():
+    # TODO -- confirm below works/delete this
+    requirements = {"click", "loguru", "requests", "typer"}
+    with open("hamilton/server/requirements-mini.txt") as f:
+        requirements.update(line.strip() for line in f)
+    return list(requirements)
+
+
 setup(
     name="sf-hamilton",  # there's already a hamilton in pypi
     version=VERSION,
@@ -44,7 +52,14 @@ setup(
     author="Stefan Krawczyk, Elijah ben Izzy",
     author_email="stefan@dagworks.io,elijah@dagworks.io",
     url="https://github.com/dagworks-inc/hamilton",
-    packages=find_packages(exclude=["tests"]),
+    packages=find_packages(exclude=["tests"], include=["hamilton", "hamilton.*"]),
+    # package_data={
+    #     "hamilton": [
+    #         "ui/server/build/**/*",
+    #         "hamilton/server/**/*",
+    #         "hamilton/server/build/**/*"
+    #     ]
+    # },
     include_package_data=True,
     install_requires=load_requirements(),
     zip_safe=False,
@@ -97,11 +112,15 @@ setup(
         "diskcache": ["diskcache"],
         "cli": ["typer"],
         "sdk": ["sf-hamilton-sdk"],
+        "ui": load_server_requirements(),
     },
     entry_points={
         "console_scripts": [
             "h_experiments = hamilton.plugins.h_experiments.__main__:main",
             "hamilton = hamilton.cli.__main__:cli",
+            "hamilton-serve = hamilton.server.__main__:run",
+            "hamilton-admin-build-ui = hamilton.admin:build_ui",
+            "hamilton-admin-build-and-publish = hamilton.admin:build_and_publish",
         ]
     },
     # Relevant project URLs

@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import logging
+import os
 import sys
 import warnings
 from pathlib import Path
@@ -41,7 +42,6 @@ class CliState:
 
 cli = typer.Typer(rich_markup_mode="rich")
 state = CliState()
-
 
 MODULES_ANNOTATIONS = Annotated[
     List[Path],
@@ -282,6 +282,19 @@ def view(
         ctx=ctx,
         response=Response(command="view", success=True, message={"path": str(output_file_path)}),
     )
+
+
+@cli.command()
+def ui(
+    ctx: typer.Context,
+    port: int = 8241,
+    base_dir: str = os.path.join(Path.home(), ".hamilton", "db"),
+    no_migration: bool = False,
+):
+    """Runs the Hamilton UI on sqllite in port 8241"""
+    from hamilton.server import commands
+
+    ctx.invoke(commands.run, port=port, base_dir=base_dir, no_migration=no_migration)
 
 
 if __name__ == "__main__":

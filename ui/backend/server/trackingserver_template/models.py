@@ -1,7 +1,7 @@
-from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.translation import gettext as _
+from trackingserver_base.models import ArrayField as ArrayField
 from trackingserver_base.models import GenericAttribute, TimeStampedModel
 from trackingserver_projects.models import Project
 

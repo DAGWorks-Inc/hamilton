@@ -1,5 +1,4 @@
 import os
-import socket
 from pathlib import Path
 
 
@@ -17,6 +16,7 @@ def get_from_env(
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+DB_DIR = Path(get_from_env("HAMILTON_BASE_DIR", allow_missing=True))
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
@@ -25,46 +25,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+# DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+DEBUG = True
 
-HAMILTON_ENV = get_from_env("HAMILTON_ENV", ["integration_tests", "local", "dev", "prod", "mini"])
+HAMILTON_ENV = "mini"
 
+SECRET_KEY = "test_do_not_use_in_production"
 
-SECRET_KEY = get_from_env("DJANGO_SECRET_KEY")
-
-
-HAMILTON_AUTH_MODE = get_from_env(
-    "HAMILTON_AUTH_MODE", ["permissive", "integration_tests", "propelauth"]
-)
-
-PROPEL_AUTH_API_KEY = get_from_env("PROPEL_AUTH_API_KEY", allow_missing=True)
-PROPEL_AUTH_URL = get_from_env("PROPEL_AUTH_URL", allow_missing=True)
+HAMILTON_AUTH_MODE = "permissive"
 
 ALLOWED_HOSTS = ["localhost", "backend", "0.0.0.0", "127.0.0.1"]
 
-HAMILTON_BLOB_STORE = get_from_env("HAMILTON_BLOB_STORE", ["local", "s3"])
+HAMILTON_BLOB_STORE = "local"
 
-HAMILTON_BLOB_STORE_PARAMS = (
-    {
-        "bucket_name": get_from_env("HAMILTON_S3_BUCKET", allow_missing=False),
-        "region_name": get_from_env("HAMILTON_S3_REGION", allow_missing=False),
-        "global_prefix": get_from_env("HAMILTON_ENV", allow_missing=False),
-    }
-    if HAMILTON_BLOB_STORE == "s3"
-    else {
-        "base_dir": get_from_env("HAMILTON_LOCAL_BLOB_DIR", allow_missing=False),
-    }
-)
+HAMILTON_BLOB_STORE_PARAMS = {"base_dir": os.path.join(DB_DIR, "blobs")}
 
-hostname = socket.gethostname()
-local_ip = socket.gethostbyname(hostname)
+# hostname = socket.gethostname()
+# local_ip = socket.gethostbyname(hostname)
 
-ALLOWED_HOSTS = (
-    ALLOWED_HOSTS
-    + [local_ip]
-    + [hostname]
-    + os.environ.get("HAMILTON_ALLOWED_HOSTS", "").split(",")
-)
+# ALLOWED_HOSTS = ALLOWED_HOSTS + [local_ip] + [hostname]
+
+ADMIN_ENABLED = False
 
 # Application definition
 
@@ -77,7 +58,7 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    # "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
@@ -99,7 +80,7 @@ ROOT_URLCONF = "server.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "build")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -111,35 +92,37 @@ TEMPLATES = [
         },
     },
 ]
-
 WSGI_APPLICATION = "server.wsgi.application"
 
-STATIC_ROOT = "./staticfiles"
+# STATIC_ROOT = "./staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "build/static/"),
+]
+
+# Add for serving the 'index.html' and other build files not in STATICFILES_DIRS
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "build/")
+# WHITENOISE_ROOT = os.path.join(BASE_DIR, 'build')
+
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-db_password = get_from_env("DB_PASSWORD")
-db_host = get_from_env("DB_HOST")
-db_user = get_from_env("DB_USER")
-db_name = get_from_env("DB_NAME")
-db_port = get_from_env("DB_PORT")
-
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": db_name,
-        "USER": db_user,
-        "PASSWORD": db_password,
-        "HOST": db_host,
-        "PORT": db_port,
-        "TEST": {
-            "NAME": "test_dagworks",
-        },
-    },
+    "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": DB_DIR / "db.sqlite3"},
+}
+DB = DATABASES["default"]["ENGINE"]
+
+app_names = [app.split(".")[0] for app in INSTALLED_APPS if app.startswith("trackingserver")]
+
+MIGRATION_MODULES = {
+    # app_name: f"{app.name.split('.')[0]}.migrations_sqlite" for app_name in INSTALLED_APPS if app.name.startswith("trackingserver")
+    app_name: f"{app_name}.migrations_sqlite"
+    for app_name in app_names
 }
 
-DB = DATABASES["default"]["ENGINE"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -170,7 +153,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = "static/"
+# STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -216,28 +199,6 @@ LOGGING = {
         # },
     },
 }
-if HAMILTON_ENV not in ["integration_tests", "local", "dev"]:
-    LOGGING["loggers"]["ddtrace"] = {
-        "handlers": ["console"],
-        "level": "WARNING",
-    }
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2621440 * 100  # 250MB
 SILKY_PYTHON_PROFILER = False
-
-if HAMILTON_ENV == "dev":
-    # LOGGING["loggers"]["django.db.backends"] = {
-    #     "level": "DEBUG",
-    #     "handlers": ["console"],
-    #     "propagate": False,
-    # }
-    LOGGING["filters"] = {
-        "truncate_sql": {
-            "()": "trackingserver_base.middleware.custom_logging.TruncateSQLFilter",
-        }
-    }
-    LOGGING["handlers"]["console"]["filters"] = ["truncate_sql"]
-    SILKY_PYTHON_PROFILER = False
-    # MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
-    MIDDLEWARE.append("trackingserver_base.middleware.timing_middleware.TimingMiddleware")
-    # INSTALLED_APPS.append("silk")

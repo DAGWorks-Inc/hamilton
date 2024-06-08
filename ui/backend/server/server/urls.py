@@ -14,21 +14,31 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
+from django.views.generic import TemplateView
+from django.views.static import serve
 
 from . import api, default_views
 
-# from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-
-
-urlpatterns = [
-    # path('api/schema/swagger-ui', SpectacularSwaggerView.as_view(), name='schema'),
-    # path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path("api/", api.api.urls),
-    path("", default_views.root_index),
-    path("admin/", admin.site.urls),
-]
+# TODO -- ensure we didn't break the actual deployment
+if settings.HAMILTON_ENV == "mini":
+    # mini-mode
+    # TODO -- do meda assets correctly -- this just hardcodes logo.png for now
+    urlpatterns = [
+        path("api/", api.api.urls),
+        path("admin/", admin.site.urls),
+        re_path(r"^logo\.png$", serve, {"document_root": settings.MEDIA_ROOT, "path": "logo.png"}),
+        re_path(".*", TemplateView.as_view(template_name="index.html")),
+    ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+else:
+    urlpatterns = [
+        path("api/", api.api.urls),
+        path("", default_views.root_index),
+        path("admin/", admin.site.urls),
+    ]
 
 # HAMILTON_ENV = os.environ.get("HAMILTON_ENV", "dev")
 # if HAMILTON_ENV == "dev":

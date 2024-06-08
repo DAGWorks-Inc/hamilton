@@ -1,4 +1,6 @@
 include requirements.txt
 include requirements-test.txt
+include hamilton/server/requirements-mini.txt
+recursive-include hamilton/server/build *
 include LICENSE
 include *.md
