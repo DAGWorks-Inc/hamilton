@@ -18,3 +18,21 @@
 #     data = {"repo": "foobar", "files": "Finland", "is_active": True, "count": 28}
 #     # return JsonResponse(data)
 #     return data
+import os
+
+from django.conf import settings
+from django.http import HttpResponse
+
+
+def serve_frontend(request):
+    """
+    Serves the index.html file or other static files directly from the build folder.
+    """
+    path = request.path.strip("/")
+    if not path:
+        path = "index.html"
+    file_path = os.path.join(settings.BASE_DIR, "build", path)
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as file:
+            return HttpResponse(file.read(), content_type="text/html")
+    return HttpResponse("File not found", status=404)

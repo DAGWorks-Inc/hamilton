@@ -1,3 +1,7 @@
+import json
+
+from django.conf import settings
+from django.contrib.postgres.fields import ArrayField as BaseArrayField
 from django.db import models
 
 
@@ -51,3 +55,46 @@ class GenericAttribute(TimeStampedModel):
 
     class Meta:
         abstract = True
+
+
+class ArrayField(models.Field):
+    """
+    A field that acts like an ArrayField when using PostgreSQL and as a serialized TextField when using SQLite.
+    """
+
+    def __init__(self, base_field, **kwargs):
+        self.base_field = base_field
+        self.array_field = BaseArrayField(base_field, **kwargs)
+        super().__init__(**kwargs)
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        return name, path, (self.base_field,) + tuple(args), kwargs
+
+    def db_type(self, connection):
+        return "text"
+
+    def from_db_value(self, value, expression, connection):
+        if value is None:
+            return value
+        return json.loads(value)
+
+    def to_python(self, value):
+        if isinstance(value, list) or value is None:
+            return value
+        return json.loads(value)
+
+    def get_db_prep_save(self, value, connection):
+        return json.dumps(value)
+
+    def get_prep_value(self, value):
+        return json.dumps(value)
+
+    def value_to_string(self, obj):
+        value = self.value_from_object(obj)
+        if isinstance(value, list):
+            return json.dumps(value)
+        return value
+
+
+ArrayField = ArrayField if settings.DB == "django.db.backends.sqlite3" else BaseArrayField
