@@ -23,25 +23,9 @@ def coefficients_are_equal(model1, model2) -> bool:
     )
 
 
-def test_mlflow_save_model(fitted_sklearn_model: BaseEstimator, tmp_path: Path):
-    model_path = tmp_path / "sklearn_model"
-    saver = MLFlowModelSaver(path=model_path, mode="save", flavor="sklearn")
-    expected_files = ["model.pkl", "conda.yaml", "MLmodel", "requirements.txt", "python_env.yaml"]
-
-    # using MLFlow saver
-    saver.save_data(fitted_sklearn_model)
-    created_files = [str(p.name) for p in model_path.iterdir()]
-    # loading the saved model
-    loaded_model = mlflow.sklearn.load_model(model_path)
-
-    assert model_path.exists()
-    assert set(created_files) == set(expected_files)
-    assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
-
-
 def test_mlflow_log_model_to_active_run(fitted_sklearn_model: BaseEstimator, tmp_path: Path):
     model_path = tmp_path / "sklearn_model"
-    saver = MLFlowModelSaver(mode="log", flavor="sklearn")
+    saver = MLFlowModelSaver(flavor="sklearn")
 
     mlflow.set_tracking_uri(model_path.as_uri())
     with mlflow.start_run():
@@ -50,9 +34,7 @@ def test_mlflow_log_model_to_active_run(fitted_sklearn_model: BaseEstimator, tmp
     # reload model
     loaded_model = mlflow.sklearn.load_model(metadata["model_uri"])
 
-    assert np.allclose(fitted_sklearn_model.coef_, loaded_model.coef_) and np.allclose(
-        fitted_sklearn_model.intercept_, loaded_model.intercept_
-    )
+    assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
 
 
 def test_mlflow_log_model_to_specific_run(fitted_sklearn_model: BaseEstimator, tmp_path: Path):
@@ -62,16 +44,14 @@ def test_mlflow_log_model_to_specific_run(fitted_sklearn_model: BaseEstimator, t
     mlflow.start_run()
     run_id = mlflow.active_run().info.run_id
     mlflow.end_run()
-    saver = MLFlowModelSaver(mode="log", flavor="sklearn", run_id=run_id)
+    saver = MLFlowModelSaver(flavor="sklearn", run_id=run_id)
 
     # save model
     metadata = saver.save_data(fitted_sklearn_model)
     # reload model
     loaded_model = mlflow.sklearn.load_model(metadata["model_uri"])
 
-    assert np.allclose(fitted_sklearn_model.coef_, loaded_model.coef_) and np.allclose(
-        fitted_sklearn_model.intercept_, loaded_model.intercept_
-    )
+    assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
 
 
 def test_mlflow_log_model_active_and_specific_run_ids_are_equal(
@@ -82,15 +62,13 @@ def test_mlflow_log_model_active_and_specific_run_ids_are_equal(
     mlflow.set_tracking_uri(model_path.as_uri())
     with mlflow.start_run():
         run_id = mlflow.active_run().info.run_id
-        saver = MLFlowModelSaver(mode="log", flavor="sklearn", run_id=run_id)
+        saver = MLFlowModelSaver(flavor="sklearn", run_id=run_id)
         # save model
         metadata = saver.save_data(fitted_sklearn_model)
     # reload model
     loaded_model = mlflow.sklearn.load_model(metadata["model_uri"])
 
-    assert np.allclose(fitted_sklearn_model.coef_, loaded_model.coef_) and np.allclose(
-        fitted_sklearn_model.intercept_, loaded_model.intercept_
-    )
+    assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
 
 
 def test_mlflow_log_model_active_and_specific_run_ids_are_unequal(
@@ -101,22 +79,12 @@ def test_mlflow_log_model_active_and_specific_run_ids_are_unequal(
     mlflow.start_run()
     run_id = mlflow.active_run().info.run_id
     mlflow.end_run()
-    saver = MLFlowModelSaver(mode="log", flavor="sklearn", run_id=run_id)
+    saver = MLFlowModelSaver(flavor="sklearn", run_id=run_id)
 
     with mlflow.start_run():
         # save model
         with pytest.raises(RuntimeError):
             saver.save_data(fitted_sklearn_model)
-
-
-def test_mlflow_load_local_model(fitted_sklearn_model: BaseEstimator, tmp_path: Path):
-    model_path = tmp_path / "sklearn_model"
-    mlflow.sklearn.save_model(fitted_sklearn_model, model_path)
-    loader = MLFlowModelLoader(path=model_path, flavor="sklearn")
-
-    loaded_model, metadata = loader.load_data(LinearRegression)
-
-    assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
 
 
 def test_mlflow_load_runs_model(fitted_sklearn_model: BaseEstimator, tmp_path: Path):
@@ -129,12 +97,12 @@ def test_mlflow_load_runs_model(fitted_sklearn_model: BaseEstimator, tmp_path: P
 
     # specify run via model_uri
     loader = MLFlowModelLoader(model_uri=f"runs:/{run_id}/{artifact_path}", flavor="sklearn")
-    loaded_model, metadata = loader.load_data(LinearRegression)
+    loaded_model, _ = loader.load_data(LinearRegression)
     assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
 
     # specify run via arguments
-    loader = MLFlowModelLoader(path=artifact_path, run_id=run_id, mode="runs", flavor="sklearn")
-    loaded_model, metadata = loader.load_data(LinearRegression)
+    loader = MLFlowModelLoader(mode="tracking", path=artifact_path, run_id=run_id, flavor="sklearn")
+    loaded_model, _ = loader.load_data(LinearRegression)
     assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
 
 
@@ -154,33 +122,30 @@ def test_mlflow_load_registry_model(fitted_sklearn_model: BaseEstimator, tmp_pat
 
     # specify via model_uri
     loader = MLFlowModelLoader(model_uri=f"models:/{model_name}/{version}", flavor="sklearn")
-    loaded_model, metadata = loader.load_data(LinearRegression)
+    loaded_model, _ = loader.load_data(LinearRegression)
     assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
 
     # specify via arguments
     loader = MLFlowModelLoader(
         mode="registry", model_name=model_name, version=version, flavor="sklearn"
     )
-    loaded_model, metadata = loader.load_data(LinearRegression)
+    loaded_model, _ = loader.load_data(LinearRegression)
     assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
 
 
 def test_mlflow_infer_flavor(fitted_sklearn_model: BaseEstimator, tmp_path: Path):
-    model_path = tmp_path / "sklearn_model"
-    saver = MLFlowModelSaver(path=model_path)
+    saver = MLFlowModelSaver(path="model")
 
     metadata = saver.save_data(fitted_sklearn_model)
 
-    assert metadata["flavor"] == "sklearn"
+    assert "sklearn" in metadata["flavors"].keys()
 
 
 def test_mlflow_handle_saver_kwargs():
     path = "tmp/path"
-    mode = "save"
     flavor = "sklearn"
-    saver = MLFlowModelSaver(path=path, mode=mode, flavor=flavor, unknown_kwarg=True)
+    saver = MLFlowModelSaver(path=path, flavor=flavor, kwargs=dict(unknown_kwarg=True))
 
     assert saver.path == path
-    assert saver.mode == mode
     assert saver.flavor == flavor
     assert saver.kwargs.get("unknown_kwarg") is True
