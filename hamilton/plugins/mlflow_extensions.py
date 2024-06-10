@@ -24,7 +24,6 @@ class MLFlowModelSaver(DataSaver):
 
     path: Union[str, pathlib.Path] = "model"
     register_as: Optional[str] = None
-    alias: Optional[str] = None
     flavor: Optional[str] = None
     run_id: Optional[str] = None
     kwargs: Dict[str, Any] = None
