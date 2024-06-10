@@ -1,5 +1,6 @@
 import logging
 import pickle
+import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
 import mlflow
@@ -7,6 +8,11 @@ import mlflow.data
 
 from hamilton import graph_types
 from hamilton.lifecycle import GraphConstructionHook, GraphExecutionHook, NodeExecutionHook
+
+# silence odd ongoing MLFlow issue that spams warnings
+# GitHub Issue https://github.com/mlflow/mlflow/issues/8605
+warnings.filterwarnings("ignore", category=UserWarning)
+
 
 FIGURE_TYPES = []
 try:

@@ -132,7 +132,7 @@ class MLFlowModelLoader(DataLoader):
             if not self.model_name:
                 raise ValueError("Using `mode='registry` requires passing `model_name`")
 
-            if bool(self.version) and bool(self.version_alias):
+            if not (bool(self.version) ^ bool(self.version_alias)):
                 raise ValueError(
                     "If using `mode='registry'` requires passing `version` OR `version_alias"
                 )
