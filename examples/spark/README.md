@@ -5,7 +5,7 @@
 If you're using pyspark, Hamilton allows for natural manipulation of pyspark dataframes,
 with some special constructs for managing DAGs of UDFs.
 
-See the example in `pyspark` to learn more.
+See the examples in `pyspark` & `world_of_warcraft` and `tpc-h` to learn more.
 
 ## Pandas
 If you're using Pandas, Hamilton scales by using Koalas on Spark.
