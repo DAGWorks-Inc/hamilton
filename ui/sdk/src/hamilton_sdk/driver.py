@@ -82,8 +82,10 @@ def _hash_module(
                 )
                 continue
             # Check if the module is in the same top level package
-            if value.__package__ != module.__package__ and not value.__package__.startswith(
-                module.__package__
+            if (
+                value.__package__ != module.__package__
+                and module.__package__ is not None
+                and not value.__package__.startswith(module.__package__)
             ):
                 logger.debug(
                     f"Skipping hash for module {value.__name__} because it is in a different "
