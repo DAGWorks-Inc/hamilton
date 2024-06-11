@@ -2,7 +2,7 @@ import functools
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Union
 
 import pyarrow
 import pyarrow.ipc
@@ -187,6 +187,27 @@ def _(df: h_databackends.AbstractIbisDataFrame, **kwargs) -> pyarrow.Schema:
 # ongoing polars discussion: https://github.com/pola-rs/polars/issues/15600
 
 
+def get_dataframe_schema(df: h_databackends.DATAFRAME_TYPES, node: HamiltonNode) -> pyarrow.Schema:
+    """Get pyarrow schema of a node result and store node metadata on the pyarrow schema."""
+    schema = _get_arrow_schema(df)
+    metadata = dict(
+        name=str(node.name),
+        documentation=str(node.documentation),
+        version=str(node.version),
+    )
+    return schema.with_metadata(metadata)
+
+
+def load_schema(path: Union[str, Path]) -> pyarrow.Schema:
+    """Load pyarrow schema from disk using IPC deserialization"""
+    return pyarrow.ipc.read_schema(path)
+
+
+def save_schema(path: Union[str, Path], schema: pyarrow.Schema) -> None:
+    """Save pyarrow schema to disk using IPC serialization"""
+    Path(path).write_bytes(schema.serialize())
+
+
 class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
     """Collect dataframe and columns schemas at runtime. Can also conduct runtime checks against schemas"""
 
@@ -225,21 +246,7 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
             node_name: pyarrow_schema_to_json(schema) for node_name, schema in self.schemas.items()
         }
 
-    @staticmethod
-    def get_dataframe_schema(
-        df: h_databackends.DATAFRAME_TYPES, node: HamiltonNode
-    ) -> pyarrow.Schema:
-        """Get pyarrow schema of a node result and store node metadata on the pyarrow schema."""
-        schema = _get_arrow_schema(df)
-        metadata = dict(
-            name=str(node.name),
-            documentation=str(node.documentation),
-            version=str(node.version),
-        )
-        return schema.with_metadata(metadata)
-
     # TODO support nodes returning columns by writing them as single column dataframe
-
     def get_schema_path(self, node_name: str) -> Path:
         """Generate schema filepath based on node name.
 
@@ -248,14 +255,6 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
         The serialization format is IPC by default (see `.save_schema()`).
         """
         return Path(self.schema_dir, node_name).with_suffix(".schema")
-
-    def load_schema(self, node_name: str) -> pyarrow.Schema:
-        """Load pyarrow schema from disk using IPC deserialization"""
-        return pyarrow.ipc.read_schema(self.get_schema_path(node_name))
-
-    def save_schema(self, node_name: str, schema: pyarrow.Schema) -> None:
-        """Save pyarrow schema to disk using IPC serialization"""
-        self.get_schema_path(node_name).write_bytes(schema.serialize())
 
     def run_before_graph_execution(
         self, *, graph: HamiltonGraph, inputs: Dict[str, Any], overrides: Dict[str, Any], **kwargs
@@ -276,14 +275,14 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
 
         # generate the schema from the HamiltonNode and node value
         node = self.h_graph[node_name]
-        schema = self.get_dataframe_schema(df=result, node=node)
+        schema = get_dataframe_schema(df=result, node=node)
         self.schemas[node_name] = schema
 
         schema_path = self.get_schema_path(node_name)
 
         # behavior 1: only save schema
         if self.check is False:
-            self.save_schema(node_name, schema=schema)
+            save_schema(self.get_schema_path(node_name), schema)
             return
 
         # behavior 2: handle missing reference schema while validating
@@ -293,11 +292,11 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
                     f"{schema_path} not found. Set `check=False` or `must_exist=False` to create it."
                 )
             else:
-                self.save_schema(node_name, schema=schema)
+                save_schema(self.get_schema_path(node_name), schema)
                 return
 
         # behavior 3: validate current schema with reference schema
-        reference_schema = self.load_schema(node_name)
+        reference_schema = load_schema(self.get_schema_path(node_name))
         # TODO expose `check_metadata` in equality
         schema_diff = diff_schemas(schema, reference_schema)
         if schema_diff != {}:
