@@ -183,6 +183,7 @@ class MLFlowTracker(
     ):
         """Log materializers and final vars as artifacts"""
         # log DataSavers as artifacts
+        # TODO refactor if/else as `handle_materializers()`
         if node_tags.get("hamilton.data_saver") is True:
             # don't log mlflow materializers as artifact since they already create models
             # instead, use the Materializer metadata to add metadata to registered models
@@ -246,6 +247,7 @@ class MLFlowTracker(
         if node_name not in self.final_vars:
             return
 
+        # TODO refactor if/else as `handle_final_vars()`
         # log float and int as metrics
         if node_return_type in [float, int]:
             self.client.log_metric(self.run_id, key=node_name, value=float(result))
