@@ -92,18 +92,20 @@ While it is installing we encourage you to start on the next section.
 Note: the content (i.e. names, function bodies) of our example code snippets are for illustrative purposes only, and don't reflect what we actually do internally.
 
 ## Hamilton in <15 minutes
-Hamilton is a new paradigm when it comes to creating, um, dataframes (let's use dataframes as an example, otherwise you can create _ANY_ python object).
-Rather than thinking about manipulating a central dataframe, as is normal in some data engineering/data science work,
-you instead think about the column(s) you want to create, and what inputs are required. There
-is no need for you to think about maintaining this dataframe, meaning you do not need to think about any "glue" code;
+Hamilton is a new paradigm when it comes to building datasets (in this case we'll use Hamilton to create columns of a
+dataframe as an example. Otherwise hamilton can handle _any_ python object.
+
+Rather than thinking about manipulating a central object (dataframe in this case),
+you instead declare the components (columns in this case)/intermediate results you want to create, and the inputs that are required. There
+is no need for you to worry about maintaining this object, meaning you do not need to think about any "glue" code;
 this is all taken care of by the Hamilton framework.
 
-For example rather than writing the following to manipulate a central dataframe object `df`:
+For example, rather than writing the following to manipulate a central dataframe object `df`:
 ```python
 df['col_c'] = df['col_a'] + df['col_b']
 ```
 
-you write
+you would write
 ```python
 def col_c(col_a: pd.Series, col_b: pd.Series) -> pd.Series:
     """Creating column c from summing column a and column b."""
@@ -136,36 +138,28 @@ this just means these need to be provided as input when we come to actually want
 Note: functions can take or create scalar values, in addition to any python object type.
 
 2. Create a `my_script.py` which is where code will live to tell Hamilton what to do:
-```python
-import sys
-import logging
-import importlib
 
+```python
 import pandas as pd
+import my_functions
+
 from hamilton import driver
 
-logging.basicConfig(stream=sys.stdout)
-initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
-    # Note: these do not have to be all series, they could be scalar inputs.
-    'signups': pd.Series([1, 10, 50, 100, 200, 400]),
-    'spend': pd.Series([10, 10, 20, 40, 40, 50]),
+# This uses one module, but you are free to pass in multiple
+dr = driver.Builder().with_modules(my_functions).build()
+
+# This is input data -- you can get it from anywhere
+initial_columns = {
+   'signups': pd.Series([1, 10, 50, 100, 200, 400]),
+   'spend': pd.Series([10, 10, 20, 40, 40, 50]),
 }
-# we need to tell hamilton where to load function definitions from
-module_name = 'my_functions'
-module = importlib.import_module(module_name) # or we could just do `import my_functions`
-dr = driver.Driver(initial_columns, module)  # can pass in multiple modules
-# we need to specify what we want in the final dataframe.
 output_columns = [
-    'spend',  # or module.spend
-    'signups',  # or module.signups
-    'avg_3wk_spend',  # or module.avg_3wk_spend
-    'spend_per_signup',  # or module.spend_per_signup
+   'spend',
+   'signups',
+   'avg_3wk_spend',
+   'spend_per_signup',
 ]
-# let's create the dataframe!
-# if you only did `pip install sf-hamilton` earlier:
-df = dr.execute(output_columns)
-# else if you did `pip install "sf-hamilton[visualization]"` earlier:
-# dr.visualize_execution(output_columns, './my-dag.dot', {})
+df = dr.execute(output_columns, inputs=initial_columns)
 print(df)
 ```
 3. Run my_script.py
@@ -188,6 +182,60 @@ Note: we treat displaying `Inputs` in a special manner for readability in our vi
 nodes repeated.
 
 Congratulations - you just created your Hamilton dataflow that created a dataframe!
+
+### Tracking in the UI
+
+To get started with tracking in the UI, you'll first have to install the `sf-hamilton[ui]` package:
+
+```bash
+pip install "sf-hamilton[ui, sdk]".
+```
+
+Then, you can run the following code to start the UI:
+
+```bash
+hamilton ui
+```
+
+This will start the UI at [localhost:8241](https://localhost:8241). You can then navigate to the UI to see your dataflows.
+You will next want to create a project (you'll have an empty project page), and remember the project ID (E.G. 2 in the following case).
+You will also be prompted to enter a username -- recall that as well!
+
+To track, we'll modify the driver you wrote above:
+
+```python
+import pandas as pd
+import my_functions
+from hamilton import driver
+from hamilton_sdk import driver
+dr = (
+   driver
+   .Builder()
+   .with_modules(my_functions)
+   .with_adapters(adapters.HamiltonTracker(
+        username="elijah", # replace with your username
+        project_id=2,
+        dag_name="hello_world",
+    ))
+   .build()
+)
+
+# This is input data -- you can get it from anywhere
+initial_columns = {
+   'signups': pd.Series([1, 10, 50, 100, 200, 400]),
+   'spend': pd.Series([10, 10, 20, 40, 40, 50]),
+}
+output_columns = [
+   'spend',
+   'signups',
+   'avg_3wk_spend',
+   'spend_per_signup',
+]
+df = dr.execute(output_columns, inputs=initial_columns)
+print(df)
+```
+Run this script, navigate back to the UI/select your project, and click on the `runs`
+link on the left hand side. You'll see your run!
 
 ## Example Hamilton Dataflows
 We have a growing list of examples showcasing how one might use Hamilton. You currently have two places to find them:

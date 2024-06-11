@@ -17,15 +17,37 @@ In short, the Hamilton UI aims to combine a large swath of MLOps/data observabil
 
 ---
 
+The Hamilton UI has two modes:
+1. Run locally using sqlite3
+2. Run on docker images with postgres (meant for deployment)
 
-The Hamilton UI is contained within a set of Docker images. You launch with `docker-compose <https://docs.docker.com/compose/>`_, and it will start up the UI, the backend server,
+----------
+Local Mode
+----------
+
+To run the hamilton UI in local mode, you can do the following:
+
+.. code-block:: bash
+
+    pip install `hamilton[ui]`
+    hamilton ui
+
+This will launch a browser window in localhost:8241. You can then navigate to the UI and start using it!
+While this can potentially handle a small production workflow, you may want to run on postgres with a separate frontend/backend/db
+for full scalability and a multi-read/write db.
+
+--------------------
+Docker/Deployed Mode
+--------------------
+
+The Hamilton UI can be contained within a set of Docker images. You launch with `docker-compose <https://docs.docker.com/compose/>`_, and it will start up the UI, the backend server,
 and a Postgres database. If you'd like a quick overview of some of the features, you can watch the following:
 
 .. raw:: html
 
     <iframe width="560" height="315" src="https://www.youtube.com/embed/0VIVSeN7Ij8?si=i3vTsfTNorzh5y2C" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
--------
+
 Install
 -------
 
