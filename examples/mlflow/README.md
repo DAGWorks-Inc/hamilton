@@ -8,7 +8,7 @@ The MLFlow plugin for Hamilton includes two sets of features:
 
 This pairs nicely with the `HamiltonTracker` and the [Hamilton UI](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/) which gives you execution observability.
 
-We're looking forward to better link Hamilton "projects" with MLFlow "experiments" and runs from both projects.
+We're working on better linking Hamilton "projects" with MLFlow "experiments" and runs from both projects.
 
 ## Instructions
 1. Create a virtual environment and activate it
