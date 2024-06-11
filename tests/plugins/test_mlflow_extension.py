@@ -8,6 +8,9 @@ from sklearn.linear_model import LinearRegression
 
 from hamilton.plugins.mlflow_extensions import MLFlowModelLoader, MLFlowModelSaver
 
+# TODO move these tests to `plugin_tests` because the required read-writes can get
+# complicated and tests are time consuming.
+
 
 @pytest.fixture
 def fitted_sklearn_model() -> BaseEstimator:
@@ -149,3 +152,17 @@ def test_mlflow_handle_saver_kwargs():
     assert saver.path == path
     assert saver.flavor == flavor
     assert saver.kwargs.get("unknown_kwarg") is True
+
+
+def test_mlflow_registered_model_metadata(fitted_sklearn_model: BaseEstimator, tmp_path: Path):
+    """When registering a model through materializers, the metadata must contain the
+    key `registered_model` because the `hamilton.plugins.h_mlflow.MLFlowTracker` is expecting it.
+    """
+    model_path = tmp_path / "sklearn_model"
+    saver = MLFlowModelSaver(flavor="sklearn", register_as="my_model")
+
+    mlflow.set_tracking_uri(model_path.as_uri())
+    with mlflow.start_run():
+        metadata = saver.save_data(fitted_sklearn_model)
+
+    assert metadata.get("registered_model")
