@@ -139,7 +139,7 @@ class MLFlowModelLoader(DataLoader):
 
             if self.version:
                 self.model_uri = f"models:/{self.model_name}/{self.version}"
-            elif self.version:
+            elif self.version_alias:
                 self.model_uri = f"models:/{self.model_name}@{self.version_alias}"
 
     @classmethod
