@@ -53,13 +53,6 @@ setup(
     author_email="stefan@dagworks.io,elijah@dagworks.io",
     url="https://github.com/dagworks-inc/hamilton",
     packages=find_packages(exclude=["tests"], include=["hamilton", "hamilton.*"]),
-    # package_data={
-    #     "hamilton": [
-    #         "ui/server/build/**/*",
-    #         "hamilton/server/**/*",
-    #         "hamilton/server/build/**/*"
-    #     ]
-    # },
     include_package_data=True,
     install_requires=load_requirements(),
     zip_safe=False,
