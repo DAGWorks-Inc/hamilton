@@ -6,7 +6,7 @@ The MLFlow plugin for Hamilton includes two sets of features:
 - Save and load machine learning models with the `MLFlowModelSaver` and `MLFlowModelLoader` materializers
 - Automatically track data pipeline results in MLFlow with the `MLFlowTracker`.
 
-This pairs nicely with the `HamiltonTracker` and the [Hamilton UI](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/) which gives you execution observability.
+This pairs nicely with the `HamiltonTracker` and the [Hamilton UI](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/) which gives you a way to explore your pipeline code, attributes of the artifacts produced, and execution observability.
 
 We're working on better linking Hamilton "projects" with MLFlow "experiments" and runs from both projects.
 
