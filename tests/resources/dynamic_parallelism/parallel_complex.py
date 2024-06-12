@@ -17,6 +17,9 @@ def steps(number_of_steps: int) -> Parallelizable[int]:
     yield from range(number_of_steps)
 
 
+# Parallelizable block Start
+
+
 def step_modified(steps: int, second_param_external_to_block: int) -> int:
     return steps + second_param_external_to_block
 
@@ -37,6 +40,9 @@ def double_plus_triple_plus_param_external_to_block(
     double_plus_triple_step: int, param_external_to_block: int
 ) -> int:
     return double_plus_triple_step + param_external_to_block
+
+
+# Parallelizable block ends here
 
 
 def sum_of_some_things(double_plus_triple_plus_param_external_to_block: Collect[int]) -> int:

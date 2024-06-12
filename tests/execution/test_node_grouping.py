@@ -64,7 +64,8 @@ def test_group_nodes_by_repeatable_blocks_complex():
     }
     assert len(nodes_grouped_by_name["collect-steps"].nodes) == 1
     assert len(nodes_grouped_by_name["expand-steps"].nodes) == 1
-    assert len(nodes_grouped_by_name["block-steps"].nodes) == 6
+    assert len(nodes_grouped_by_name["block-steps"].nodes) == 5
+    # See comments in parallel_complex.py for why this is -- between start/end of parallelizable block
     assert nodes_grouped_by_name["number_of_steps"].purpose == NodeGroupPurpose.EXECUTE_SINGLE
     assert nodes_grouped_by_name["block-steps"].purpose == NodeGroupPurpose.EXECUTE_BLOCK
     assert nodes_grouped_by_name["collect-steps"].purpose == NodeGroupPurpose.GATHER
