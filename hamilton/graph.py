@@ -1035,6 +1035,8 @@ class FunctionGraph:
         missing_vars = []
         for var in starting_nodes:
             if var not in self.nodes and var not in self.config:
+                # checking for runtime_inputs because it's not in the graph isn't really a graph concern. So perhaps we
+                # should move this outside of the graph in the future. This will do fine for now.
                 if var not in runtime_inputs:
                     # if it's not in the runtime inputs, it's a properly missing variable
                     missing_vars.append(var)

@@ -156,6 +156,8 @@ class DefaultGraphExecutor(GraphExecutor):
         nodes = [fg.nodes[node_name] for node_name in final_vars if node_name in fg.nodes]
         fg.execute(nodes, memoized_computation, overrides, inputs, run_id=run_id)
         outputs = {
+            # we do this here to enable inputs to also be used as outputs
+            # putting inputs into memoized before execution doesn't work due to some graphadapter assumptions.
             final_var: memoized_computation.get(final_var, inputs.get(final_var))
             for final_var in final_vars
         }  # only want request variables in df.
