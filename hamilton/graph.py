@@ -981,7 +981,9 @@ class FunctionGraph:
                 deps.append(dep)
             return deps
 
-        return self.directional_dfs_traverse(next_nodes_function, starting_nodes=final_vars)
+        return self.directional_dfs_traverse(
+            next_nodes_function, starting_nodes=final_vars, runtime_inputs=runtime_inputs
+        )
 
     def nodes_between(self, start: str, end: str) -> Set[node.Node]:
         """Given our function graph, and a list of desired output variables, returns the subgraph
@@ -1006,15 +1008,19 @@ class FunctionGraph:
         self,
         next_nodes_fn: Callable[[node.Node], Collection[node.Node]],
         starting_nodes: List[str],
+        runtime_inputs: Dict[str, Any] = None,
     ):
         """Traverses the DAG directionally using a DFS.
 
         :param next_nodes_fn: Function to give the next set of nodes
         :param starting_nodes: Which nodes to start at.
+        :param runtime_inputs: runtime inputs to the DAG. This is here to allow for inputs to be also outputs.
         :return: a tuple of sets:
             - set of all nodes.
             - subset of nodes that human input is required for.
         """
+        if runtime_inputs is None:
+            runtime_inputs = {}
         nodes = set()
         user_nodes = set()
 
@@ -1029,7 +1035,11 @@ class FunctionGraph:
         missing_vars = []
         for var in starting_nodes:
             if var not in self.nodes and var not in self.config:
-                missing_vars.append(var)
+                # checking for runtime_inputs because it's not in the graph isn't really a graph concern. So perhaps we
+                # should move this outside of the graph in the future. This will do fine for now.
+                if var not in runtime_inputs:
+                    # if it's not in the runtime inputs, it's a properly missing variable
+                    missing_vars.append(var)
                 continue  # collect all missing final variables
             dfs_traverse(self.nodes[var])
         if missing_vars:
