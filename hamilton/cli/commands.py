@@ -108,3 +108,9 @@ def version(dr: driver.Driver) -> dict:
 def view(dr: driver.Driver, output_file_path: Path = Path("dag.png")) -> None:
     """Display all functions of the instantiated Driver"""
     dr.display_all_functions(output_file_path)
+
+
+def create_tests(input_file_path: Path, output_file_path: Optional[Path] = None) -> None:
+    """Create unit tests for the given input file path"""
+    res = logic.create_tests(input_file_path, output_file_path)
+    return res
