@@ -13,6 +13,7 @@ lightgbm
 lxml
 lz4
 matplotlib
+mlflow
 networkx
 openpyxl  # for excel data loader
 pandera

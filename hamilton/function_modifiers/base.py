@@ -40,6 +40,7 @@ if not registry.INITIALIZED:
         "dlt",
         "kedro",
         "huggingface",
+        "mlflow",
     ]
     for plugin_module in plugins_modules:
         try:

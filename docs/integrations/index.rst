@@ -10,6 +10,7 @@ This section showcases how Hamilton integrates with popular frameworks.
     ibis/index
     streamlit
     dbt
+    MLFlow <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/mlflow>
     Airflow <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/airflow>
     Amazon Web Services <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/aws>
     Burr <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/LLM_Workflows/image_telephone>
