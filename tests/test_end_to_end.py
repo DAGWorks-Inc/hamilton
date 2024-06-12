@@ -464,6 +464,9 @@ def test_driver_extra_inputs_can_be_outputs():
     actual = dr.execute(["d", "e"], inputs={"a": 1, "e": 10})
     assert actual["d"] == 4
     assert actual["e"] == 10
+    # validates validate functions
+    dr.validate_execution(["d", "e"], inputs={"a": 1, "e": 10})
+    dr.validate_materialization(additional_vars=["d", "e"], inputs={"a": 1, "e": 10})
     # Checks dataframe use case
     dr = (
         driver.Builder()
