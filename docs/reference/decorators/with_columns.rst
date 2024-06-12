@@ -2,13 +2,18 @@
 with_columns
 =======================
 
-** Overview **
+
+--------
+Overview
+--------
 
 This is part of the hamilton pyspark integration. To install, run:
 
-`pip install sf-hamilton[pyspark]`
+``pip install sf-hamilton[pyspark]``
 
-**Reference Documentation**
+-----------------------
+Reference Documentation
+-----------------------
 
 .. autoclass:: hamilton.plugins.h_spark.with_columns
    :special-members: __init__
