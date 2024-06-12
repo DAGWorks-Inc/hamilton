@@ -205,6 +205,27 @@ class MLFlowTracker(
                     model_name, version, materialized_node.documentation
                 )
 
+                # add node name as tag
+                self.client.set_registered_model_tag(
+                    model_name, key="node_name", value=materialized_node.name
+                )
+                self.client.set_model_version_tag(
+                    model_name, version, key="node_name", value=materialized_node.name
+                )
+
+                # add origin function name as tag
+                self.client.set_registered_model_tag(
+                    model_name,
+                    key="function_name",
+                    value=materialized_node.originating_functions[0].__name__,
+                )
+                self.client.set_model_version_tag(
+                    model_name,
+                    version,
+                    key="function_name",
+                    value=materialized_node.originating_functions[0].__name__,
+                )
+
                 # add the materialized node @tag values as tags
                 for k, v in materialized_node.tags.items():
                     # skip internal Hamilton tags
