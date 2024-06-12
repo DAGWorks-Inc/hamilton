@@ -131,8 +131,22 @@ def _is(name: str) -> Callable[[node.Node], bool]:
             "d",
         ),
         ({"a": [], "b": [], "c": ["a", "b"], "d": "c"}, {"c"}, "a", "d"),
+        # https://github.com/DAGWorks-Inc/hamilton/issues/948
+        (
+            {
+                "random_int": [],
+                "numbers": ["random_int"],
+                "add1": ["numbers", "random_int"],
+                "add2": ["add1", "random_int"],
+                "collect_numbers": ["add2"],
+                "final_result": ["collect_numbers"],
+            },
+            {"add1", "add2"},
+            "numbers",
+            "collect_numbers",
+        ),
     ],
-    ids=["simple_base", "longer_chain", "complex_dag", "subdag_with_external_dep"],
+    ids=["simple_base", "longer_chain", "complex_dag", "subdag_with_external_dep", "issue_948"],
 )
 def test_find_nodes_between(dag_repr, expected_nodes_in_between, start_node, end_node):
     nodes = _create_dummy_dag(dag_repr, dict_output=True)
