@@ -1,8 +1,10 @@
 import importlib
 import json
+import math
 import sys
 from typing import Any, Callable, Dict, List, Type
 
+import pandas as pd
 import pytest
 
 from hamilton import ad_hoc_utils, base, driver, settings
@@ -14,6 +16,7 @@ from hamilton.io.materialization import from_, to
 
 import tests.resources.data_quality
 import tests.resources.dynamic_config
+import tests.resources.example_module
 import tests.resources.overrides
 import tests.resources.test_for_materialization
 
@@ -448,3 +451,93 @@ def test_driver_validate_with_overrides_2():
         .build()
     )
     assert dr.execute(["d"], overrides={"b": 1})["d"] == 3
+
+
+def test_driver_extra_inputs_can_be_outputs():
+    """Tests that we can request outputs that not in the graph, but are in the inputs."""
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.overrides)
+        .with_adapter(base.DefaultAdapter())
+        .build()
+    )
+    actual = dr.execute(["d", "e"], inputs={"a": 1, "e": 10})
+    assert actual["d"] == 4
+    assert actual["e"] == 10
+    # Checks dataframe use case
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.example_module)
+        .with_adapter(base.PandasDataFrameResult())
+        .build()
+    )
+    actual = dr.execute(
+        ["avg_3wk_spend", "e"],
+        inputs={"spend": pd.Series([1, 1, 1, 1, 1]), "e": pd.Series([10, 10, 10, 10, 10])},
+    )
+    pd.testing.assert_frame_equal(
+        actual,
+        pd.DataFrame(
+            {
+                "avg_3wk_spend": pd.Series([math.nan, math.nan, 1.0, 1.0, 1.0], dtype=float),
+                "e": [10, 10, 10, 10, 10],
+            }
+        ),
+    )
+
+
+def test_driver_v2_extra_inputs_can_be_outputs():
+    """Tests that we can request outputs that not in the graph, but are in the inputs."""
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.overrides)
+        .with_adapter(base.DefaultAdapter())
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .build()
+    )
+    actual = dr.execute(["d", "e"], inputs={"a": 1, "e": 10})
+    assert actual["d"] == 4
+    assert actual["e"] == 10
+
+
+def test_driver_fails_on_outputs_not_in_input():
+    """Tests that we fail correctly on outputs that are not in the inputs or the graph."""
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.overrides)
+        .with_adapter(base.DefaultAdapter())
+        .build()
+    )
+    with pytest.raises(ValueError):
+        # f missing
+        dr.execute(["d", "f"], inputs={"a": 1})
+
+
+def test_driver_v2_fails_on_outputs_not_in_input():
+    """Tests that we fail correctly on outputs that are not in the inputs or the graph."""
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.overrides)
+        .with_adapter(base.DefaultAdapter())
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        .build()
+    )
+    with pytest.raises(ValueError):
+        # f missing
+        dr.execute(["d", "f"], inputs={"a": 1})
+
+
+def test_driver_v2_inputs_can_be_none():
+    """Tests that input can be None and checks will still work."""
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.overrides)
+        .with_adapter(base.DefaultAdapter())
+        .build()
+    )
+    actual = dr.execute(["d"], inputs=None, overrides={"b": 1})
+    assert actual["d"] == 3
+
+    with pytest.raises(ValueError):
+        # validate that None doesn't cause issues
+        dr.execute(["e"], inputs=None)
