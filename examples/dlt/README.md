@@ -29,12 +29,6 @@ It includes a pipeline to ingest messages from Slack channels and generate threa
     python run.py general dlt
     ```
 
-Or run it in Google Colab:
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
-](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/dlt/notebook.ipynb)
-
-
-
 # References
 - dlt to ingest [Slack data](https://dlthub.com/docs/dlt-ecosystem/verified-sources/slack)
 - Reconstructing Slack threads [docs](https://api.slack.com/messaging/retrieving#finding_threads)

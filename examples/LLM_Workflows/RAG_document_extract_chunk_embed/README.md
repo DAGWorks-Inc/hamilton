@@ -18,4 +18,4 @@ Open it in google collab:
 To exercise this example you can run it in Google Colab:
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
-](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/LLM_Workflows/simple_pipeline.ipynb)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/LLM_Workflows/RAG_document_extract_chunk_embed/simple_pipeline.ipynb)
