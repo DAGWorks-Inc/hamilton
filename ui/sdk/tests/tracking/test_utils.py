@@ -95,12 +95,29 @@ def test_make_json_safe_with_pandas_dataframe():
             "F": "foo",
         }
     )
-    utils.make_json_safe(input_dataframe)
+    actual = utils.make_json_safe(input_dataframe)
+    assert actual == {
+        "A": {"0": 1.0, "1": 1.0, "2": 1.0, "3": 1.0},
+        "B": {"0": 1357, "1": 1357, "2": 1357, "3": 1357},
+        "C": {"0": 1.0, "1": 1.0, "2": 1.0, "3": 1.0},
+        "D": {"0": 3, "1": 3, "2": 3, "3": 3},
+        "E": {"0": "test", "1": "train", "2": "test", "3": "train"},
+        "F": {"0": "foo", "1": "foo", "2": "foo", "3": "foo"},
+    }
 
 
 def test_make_json_safe_with_pandas_series():
-    input_series = pd.Series(["a", "b", "c", "d"])
-    utils.make_json_safe(input_series)
+    index = pd.date_range("2022-01-01", periods=6, freq="w")
+    input_series = pd.Series([1, 10, 50, 100, 200, 400], index=index)
+    actual = utils.make_json_safe(input_series)
+    assert actual == {
+        "1641081600000": 1,
+        "1641686400000": 10,
+        "1642291200000": 50,
+        "1642896000000": 100,
+        "1643500800000": 200,
+        "1644105600000": 400,
+    }
 
 
 def test_make_json_safe_with_file_object(tmp_path):
