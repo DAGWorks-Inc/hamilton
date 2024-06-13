@@ -818,7 +818,7 @@ export const ProjectsView = () => {
           item,
         ])}
         columns={projectCols}
-        dataTypeName=""
+        dataTypeName="Project ID"
         extraRowData={{
           shouldRender: (project: ProjectWithData) =>
             project.id === expandedProject,
