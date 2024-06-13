@@ -971,13 +971,6 @@ const GroupedNodeComponent = (props: {
                 {groupName}
               </span>
             </div>
-            {/* <CollapseExpandIcon
-                className="font-extrabold hover:scale-110 cursor-pointer"
-                onClick={() => {
-                  //eslint-disable-next-line no-debugger
-                  toggleCollapseExpand();
-                }}
-              /> */}
           </>
         )}
       </span>

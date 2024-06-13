@@ -149,6 +149,7 @@ export const ResultsSummaryView = (props: {
 
   const primitive1Views = getNodeRunAttributes<AttributePrimitive1>(
     props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.runIds,
     "AttributePrimitive1"
   );
   if (primitive1Views.length > 0) {
@@ -161,6 +162,7 @@ export const ResultsSummaryView = (props: {
       />
     );
   }
+
 
   // ... [similar blocks for other attributes]
 
@@ -180,6 +182,7 @@ export const ResultsSummaryView = (props: {
 
   const dict1Views = getNodeRunAttributes<AttributeDict1>(
     props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.runIds,
     "AttributeDict1"
   );
 
@@ -195,6 +198,7 @@ export const ResultsSummaryView = (props: {
 
   const dict2Views = getNodeRunAttributes<AttributeDict2>(
     props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.runIds,
     "AttributeDict2"
   );
   if (dict2Views.length > 0) {
@@ -210,6 +214,7 @@ export const ResultsSummaryView = (props: {
   const dagworksDescribe3Views =
     getNodeRunAttributes<AttributeDagworksDescribe3>(
       props.nodeRunData.flatMap((i) => i?.attributes || []),
+      props.runIds,
       "AttributeDagworksDescribe3"
     );
   if (dagworksDescribe3Views.length > 0) {
@@ -225,6 +230,7 @@ export const ResultsSummaryView = (props: {
 
   const pandasDescribe1View = getNodeRunAttributes<AttributePandasDescribe1>(
     props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.runIds,
     "AttributePandasDescribe1"
   );
 
@@ -241,6 +247,7 @@ export const ResultsSummaryView = (props: {
 
   const unsupportedViews = getNodeRunAttributes<AttributeUnsupported1>(
     props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.runIds,
     "AttributeUnsupported1"
   );
 

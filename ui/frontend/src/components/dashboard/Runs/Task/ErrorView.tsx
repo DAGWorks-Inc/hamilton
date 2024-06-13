@@ -34,6 +34,7 @@ export const ErrorView = (props: {
 
   const errorAttributes = getNodeRunAttributes<AttributeError1>(
     props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.nodeRunData.map((i) => i?.dag_run || 0),
     "AttributeError1"
   );
   const [priorRunIndex, setPriorRunIndex] = useState(
