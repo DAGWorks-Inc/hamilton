@@ -67,3 +67,12 @@ async def get_node_metadata_types(
 ) -> AllNodeMetadataTypes:
     error = HttpError(status_code=400, message="This only exists to populate the openAPI schema.")
     raise error
+
+
+@router.get(
+    "/v1/health",
+    tags=["health"],
+    response=bool,
+)
+def health_check(request):
+    return True

@@ -1,10 +1,13 @@
 import os
 import sys
+import threading
+import time
+import webbrowser
 from contextlib import contextmanager
 
+import hamilton_ui
+import requests
 from django.core.management import execute_from_command_line
-
-import hamilton
 
 
 @contextmanager
@@ -40,13 +43,36 @@ def set_env_variables(vars: dict):
                 os.environ[key] = original_values[key]
 
 
-def run(port: int, base_dir: str, no_migration: bool):
+def _open_when_ready(check_url: str, open_url: str):
+    while True:
+        try:
+            response = requests.get(check_url)
+            if response.status_code == 200:
+                webbrowser.open(open_url)
+                return
+            else:
+                pass
+        except requests.exceptions.RequestException:
+            pass
+        time.sleep(0.1)
+
+
+def run(port: int, base_dir: str, no_migration: bool, no_open: bool):
     env = {
-        "DJANGO_SETTINGS_MODULE": "hamilton.server.server.settings_mini",
         "HAMILTON_BASE_DIR": base_dir,
     }
+    if not no_open:
+        thread = threading.Thread(
+            target=_open_when_ready,
+            kwargs={
+                "open_url": (open_url := f"http://localhost:{port}"),
+                "check_url": f"{open_url}/api/v0/health",
+            },
+            daemon=True,
+        )
+        thread.start()
     with set_env_variables(env):
-        with extend_sys_path(os.path.join(*hamilton.__path__, "server")):
+        with extend_sys_path(hamilton_ui.__path__[0]):
             if not no_migration:
                 execute_from_command_line(
                     ["manage.py", "migrate", "--settings=server.settings_mini"]

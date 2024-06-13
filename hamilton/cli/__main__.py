@@ -290,11 +290,21 @@ def ui(
     port: int = 8241,
     base_dir: str = os.path.join(Path.home(), ".hamilton", "db"),
     no_migration: bool = False,
+    no_open: bool = False,
 ):
     """Runs the Hamilton UI on sqllite in port 8241"""
-    from hamilton.server import commands
+    try:
+        from hamilton_ui import commands
+    except ImportError:
+        logger.error(
+            "hamilton[ui] not installed -- you have to install this to run the UI. "
+            'Run `pip install "sf-hamilton[ui]"` to install and get started with the UI!'
+        )
+        raise typer.Exit(code=1)
 
-    ctx.invoke(commands.run, port=port, base_dir=base_dir, no_migration=no_migration)
+    ctx.invoke(
+        commands.run, port=port, base_dir=base_dir, no_migration=no_migration, no_open=no_open
+    )
 
 
 if __name__ == "__main__":

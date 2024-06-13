@@ -66,10 +66,10 @@ def _build_ui():
     # building the UI
     cmd = "npm run build --prefix ui/frontend"
     _command(cmd, capture_output=False)
-    # wipring the old build if it exists
-    cmd = "rm -rf hamilton/server/build"
+    # wiping the old build if it exists
+    cmd = "rm -rf ui/backend/build"
     _command(cmd, capture_output=False)
-    cmd = "cp -R ui/frontend/build hamilton/server/build"
+    cmd = "cp -R ui/frontend/build ui/backend/server/build"
     _command(cmd, capture_output=False)
 
 
@@ -87,9 +87,10 @@ def build_ui():
 @click.option("--no-wipe-dist", is_flag=True, help="Wipe the dist/ directory before building")
 def build_and_publish(prod: bool, no_wipe_dist: bool):
     git_root = _get_git_root()
-    with cd(git_root):
-        logger.info("Building UI -- this may take a bit...")
-        _build_ui()
+    install_path = os.path.join(git_root, "ui/backend")
+    logger.info("Building UI -- this may take a bit...")
+    # build_ui.callback()  # use the underlying function, not click's object
+    with cd(install_path):
         logger.info("Built UI!")
         if not no_wipe_dist:
             logger.info("Wiping dist/ directory for a clean publish.")
