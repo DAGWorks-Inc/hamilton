@@ -216,17 +216,18 @@ export type DAGWorksDescribeColumn =
 
 export function getNodeRunAttributes<T>(
   allAttributes: NodeRunAttribute[],
+  dagRunIds: number[],
   cls: keyof typeof nodeAttributeTypeMap
 ): { name: string; value: T; runId: number }[] {
   const { version, type } = nodeAttributeTypeMap[cls];
   return allAttributes
-    .map((item) => {
+    .map((item, i) => {
       return {
         name: item.name,
         value: item.value as T,
         schema_version: item.schema_version,
         type: item.type,
-        runId: item.dag_run as number,
+        runId: dagRunIds[i],
       };
     })
     .filter((attr) => attr.schema_version === version && attr.type === type);
