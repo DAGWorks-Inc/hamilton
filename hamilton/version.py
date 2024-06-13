@@ -1,1 +1,1 @@
-VERSION = (1, 66, 0, "rc1")
+VERSION = (1, 66, 0)
