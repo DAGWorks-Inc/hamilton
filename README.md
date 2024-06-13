@@ -208,7 +208,7 @@ To track, we'll modify the driver you wrote above:
 import pandas as pd
 import my_functions
 from hamilton import driver
-from hamilton_sdk import driver
+from hamilton_sdk import adapters
 dr = (
    driver
    .Builder()
