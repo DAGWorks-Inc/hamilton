@@ -90,11 +90,19 @@ on local mode. The frontend is a simple React application. There are a few authe
 but the default is to use local/unauthenticated (open). Please talk to us if you have a need for more custom authentication.
 
 
-## License
+## Development
 
-There are a few directories that are not licensed under the BSD-3 Clear Clause license. These are:
-* frontend/src/ee
-* backend/server/trackingserver_auth
+The structure involves a bit of cleverness to ensure the UI can easily be deployed and served from the CLI.
 
-See the main repository [LICENSE](../LICENSE) for details, else the LICENSE file in the respective directories
-mentioned above.
+We have a symlink from `backend/hamilton_ui` to `backend/server`, allowing us to work with django's structure
+while simultaneously allowing for import as hamilton_ui. (this should probably be changed at some point but not worth it now).
+
+To deploy, use the `admin.py` script in the UI directory.
+
+This:
+
+1. Builds the frontend
+2. Copies it into the build/ directory
+3. Publishes to the [sf-hamilton-ui](https://pypi.org/project/sf-hamilton-ui/) package on pypi
+
+Then you'll run it with `hamilton ui` after installing `sf-hamilton[ui]`.
