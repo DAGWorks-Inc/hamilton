@@ -195,6 +195,7 @@ Then, you can run the following code to start the UI:
 
 ```bash
 hamilton ui
+# python -m hamilton.cli.__main__ ui # on windows
 ```
 
 This will start the UI at [localhost:8241](https://localhost:8241). You can then navigate to the UI to see your dataflows.
