@@ -34,6 +34,12 @@ This example showcases how Hamilton can help you write modular data transformati
     python run.py
     ```
 
+You can even run this example in Google Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/people_data_labs/notebook.ipynb)
+
+
+
 ## Resources
 - [PDL Blog](https://blog.peopledatalabs.com/) and [PDL Recipes](https://docs.peopledatalabs.com/recipes)
 - [Interactive Hamilton training](https://www.tryhamilton.dev/hamilton-basics/jumping-in)

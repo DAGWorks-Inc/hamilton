@@ -11,6 +11,12 @@ To run things:
 ```bash
 > python run.py
 ```
+You can even run this example in Google Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/scikit-learn/hamilton_notebook.ipynb)
+
+
+
 # DAG Visualization:
 Here is the visualization of the execution that the transformer currently performs if you run `run.py`:
 

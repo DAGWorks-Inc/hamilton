@@ -76,11 +76,11 @@ class resolve(DynamicResolver):
         from hamilton.function_modifiers import resolve, ResolveAt
 
         @resolve(
-            when=ResolveAt.CONFIG_AVAILABLE
+            when=ResolveAt.CONFIG_AVAILABLE,
             decorate_with=lambda first_series_sum, second_series_sum: parameterize_sources(
                 series_sum_1={"s1": first_series_sum[0], "s2": second_series_sum[1]},
                 series_sum_2={"s1": second_series_sum[1], "s2": second_series_sum[2]},
-
+            )
         )
         def summation(s1: pd.Series, s2: pd.Series) -> pd.Series:
             return s1 + s2

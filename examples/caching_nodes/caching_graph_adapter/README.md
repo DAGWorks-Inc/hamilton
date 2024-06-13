@@ -16,3 +16,8 @@ For iterating during development, the general process would be:
        its name to the adapter in the `force_compute` argument. Then, this node and its downstream
        nodes will be computed instead of loaded from cache.
 4. When no longer required, you can just skip (3) and any caching behavior will be skipped.
+
+To exercise this example you can run it in Google Colab:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/caching_nodes/caching_graph_adapter/caching_nodes.ipynb)

@@ -14,3 +14,8 @@ Open it in google collab:
 * simple_pipeline.ipynb - this contains documentation and code. Read this.
 * pipeline.py - what the code in simple_pipeline.ipynb creates for easy reference
 * requirements.txt - python dependencies required (outside of jupyter lab)
+
+To exercise this example you can run it in Google Colab:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/LLM_Workflows/RAG_document_extract_chunk_embed/simple_pipeline.ipynb)

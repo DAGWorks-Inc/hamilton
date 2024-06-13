@@ -19,6 +19,12 @@ pip install -r requirements.txt
 jupyter notebook
 ```
 
+Or run it in Google Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/dask/community_demo/demo_day_notebook.ipynb)
+
+
+
 If you have questions, or need help with this example,
 join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg), and we'll try to help!
 

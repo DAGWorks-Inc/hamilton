@@ -9,6 +9,10 @@ For the purpose of this example, we will create a virtual environment with hamil
 2. `. venv/bin/activate` (on MacOS / Linux) or `. venv/bin/Scripts` (Windows)
 3. `pip install -r requirements.txt`
 
+Or run it in Google Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/contrib/notebook.ipynb)
+
 
 # 3 ways to import
 There are 3 main ways to use community dataflows: static installation, dynamic installation, and local copy (see [documentation](https://github.com/DAGWorks-Inc/hamilton/tree/main/contrib)). We present each of them in this example:

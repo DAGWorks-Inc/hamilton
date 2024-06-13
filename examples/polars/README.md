@@ -17,6 +17,12 @@ To run things:
 > python my_script.py
 ```
 
+You can even run this example in Google Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)
+](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/polars/notebook.ipynb)
+
+
+
 # Visualizing Execution
 Here is the graph of execution - which should look the same as the pandas example:
 
