@@ -29,7 +29,7 @@ To run the hamilton UI in local mode, you can do the following:
 
 .. code-block:: bash
 
-    pip install `hamilton[ui]`
+    pip install "sf-hamilton[ui]"
     hamilton ui
 
 This will launch a browser window in localhost:8241. You can then navigate to the UI and start using it!
