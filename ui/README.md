@@ -105,5 +105,5 @@ This:
 2. Copies it into the build/ directory
 3. Publishes to the [sf-hamilton-ui](https://pypi.org/project/sf-hamilton-ui/) package on pypi
 
-Then you'll run it with `hamilton ui` after installing `sf-hamilton[ui]`. Not to
+Then you'll run it with `hamilton ui` after installing `sf-hamilton[ui]`. Note to
 talk to it you'll need the hamilton_sdk pacakge which can be installed with `pip install sf-hamilton[sdk]`.
