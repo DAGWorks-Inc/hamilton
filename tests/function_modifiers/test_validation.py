@@ -107,6 +107,58 @@ def test_check_output_custom_node_transform():
     )
 
 
+def test_check_output_custom_node_transform_duplicate():
+    """You should be able to pass in the same validator twice; IRL it would be different args."""
+    decorator = check_output_custom(
+        SampleDataValidator2(dataset_length=1, importance="warn"),
+        SampleDataValidator2(dataset_length=1, importance="warn"),
+    )
+
+    def fn(input: pd.Series) -> pd.Series:
+        return input
+
+    node_ = node.Node.from_fn(fn)
+    subdag = decorator.transform_node(node_, config={}, fn=fn)
+    assert 4 == len(subdag)
+    subdag_as_dict = {node_.name: node_ for node_ in subdag}
+    assert sorted(subdag_as_dict.keys()) == [
+        "fn",
+        "fn_dummy_data_validator_2",
+        "fn_dummy_data_validator_2_1",
+        "fn_raw",
+    ]
+    # TODO -- change when we change the naming scheme
+    assert subdag_as_dict["fn_raw"].input_types["input"][1] == DependencyType.REQUIRED
+    assert 3 == len(
+        subdag_as_dict["fn"].input_types
+    )  # Three dependencies -- the two with DQ + the original
+    data_validators = [
+        value
+        for value in subdag_as_dict.values()
+        if value.tags.get("hamilton.data_quality.contains_dq_results", False)
+    ]
+    assert len(data_validators) == 2  # One for each validator
+    first_validator, _ = data_validators
+    assert (
+        IS_DATA_VALIDATOR_TAG in first_validator.tags
+        and first_validator.tags[IS_DATA_VALIDATOR_TAG] is True
+    )  # Validates that all the required tags are included
+    assert (
+        DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG in first_validator.tags
+        and first_validator.tags[DATA_VALIDATOR_ORIGINAL_OUTPUT_TAG] == "fn"
+    )
+
+    # The final function should take in everything but only use the raw results
+    assert (
+        subdag_as_dict["fn"].callable(
+            fn_raw="test",
+            fn_dummy_data_validator_2=ValidationResult(True, "", {}),
+            fn_dummy_data_validator_2_1=ValidationResult(True, "", {}),
+        )
+        == "test"
+    )
+
+
 def test_check_output_custom_node_transform_raises_exception_with_failure():
     decorator = check_output_custom(
         SampleDataValidator2(dataset_length=1, importance="fail"),
