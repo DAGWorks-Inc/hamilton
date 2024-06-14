@@ -30,12 +30,6 @@ class NodeTemplateOut(ModelSchema):
 
     primary_code_artifact: Optional[str] = None
 
-    # @classmethod
-    # def from_orm(cls, obj: Any, **kw: Any) -> "NodeTemplateOut":
-    #     out = super().from_orm(obj, **kw)
-    #     out.dag_template_id = obj.dag_template_id
-    #     return out
-
 
 class File(Schema):
     path: str
