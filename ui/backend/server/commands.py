@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 import threading
@@ -8,6 +9,8 @@ from contextlib import contextmanager
 import hamilton_ui
 import requests
 from django.core.management import execute_from_command_line
+
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -73,6 +76,15 @@ def run(port: int, base_dir: str, no_migration: bool, no_open: bool):
         thread.start()
     with set_env_variables(env):
         with extend_sys_path(hamilton_ui.__path__[0]):
+            # This is here as some folks didn't have it created automatically through django
+            if not os.path.exists(base_dir):
+                try:
+                    os.makedirs(os.path.join(base_dir, "blobs"))
+                    os.makedirs(os.path.join(base_dir, "db"))
+                except Exception as e:
+                    logger.exception(
+                        f"Error creating directories -- manually create them instead: {e}"
+                    )
             if not no_migration:
                 execute_from_command_line(
                     ["manage.py", "migrate", "--settings=server.settings_mini"]
