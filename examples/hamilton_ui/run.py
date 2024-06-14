@@ -11,11 +11,11 @@ from hamilton.lifecycle import PrintLnHook
 @click.option(
     "--load-from-parquet", is_flag=True, help="Load from saved parquet or load fresh dataset."
 )
-@click.option("--email", help="Email for the Hamilton UI", type=str, required=True)
+@click.option("--username", help="Email for the Hamilton UI", type=str, required=True)
 @click.option(
     "--project-id", help="Project ID to log to for the Hamilton UI", type=int, required=True
 )
-def run(load_from_parquet: bool, email: str, project_id: int):
+def run(load_from_parquet: bool, username: str, project_id: int):
     """
     Runs the machine_learning hamilton DAG emitting metadata to the Hamilton UI.
 
@@ -34,7 +34,7 @@ def run(load_from_parquet: bool, email: str, project_id: int):
 
     # create tracker object
     tracker = adapters.HamiltonTracker(
-        username=email,
+        username=username,
         project_id=project_id,
         dag_name=dag_name,
         tags={
