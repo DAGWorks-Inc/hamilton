@@ -188,7 +188,7 @@ Congratulations - you just created your Hamilton dataflow that created a datafra
 To get started with tracking in the UI, you'll first have to install the `sf-hamilton[ui]` package:
 
 ```bash
-pip install "sf-hamilton[ui, sdk]".
+pip install "sf-hamilton[ui,sdk]"
 ```
 
 Then, you can run the following code to start the UI:
