@@ -29,8 +29,9 @@ To run the hamilton UI in local mode, you can do the following:
 
 .. code-block:: bash
 
-    pip install "sf-hamilton[ui]"
+    pip install "sf-hamilton[ui,sdk]"
     hamilton ui
+    # python -m hamilton.cli.__main__ ui # on windows
 
 This will launch a browser window in localhost:8241. You can then navigate to the UI and start using it!
 While this can potentially handle a small production workflow, you may want to run on postgres with a separate frontend/backend/db

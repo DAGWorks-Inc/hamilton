@@ -14,6 +14,25 @@ that can be used to track lineage in the UI.
 
 To get started, you need to have the Hamilton UI running.
 
+There are two ways to do this:
+
+1. Pip install the Hamilton UI and run it. This is the recommended way to get started.
+2. Run the Hamilton UI in a docker container.
+
+### Local Install
+You just need to install the following targets:
+
+```bash
+pip install "sf-hamilton[ui,sdk]"
+```
+And then run:
+```bash
+hamilton ui
+# python -m hamilton.cli.__main__ ui # on windows
+```
+
+### Docker Install
+
 1. See https://hamilton.dagworks.io/en/latest/concepts/ui/ for details, here are the cliff notes:
 
     ```bash
@@ -24,13 +43,15 @@ To get started, you need to have the Hamilton UI running.
    Then go to http://localhost:8242 and create (1) an email, and (2) a project.
    See [this video](https://youtu.be/DPfxlTwaNsM) for a walkthrough.
 
+### Run the example
+
 2. Ensure you have the right python dependencies installed.
 ```bash
 cd hamilton/examples/hamilton_ui
 pip install -r requirements.txt
 ```
 
-2. Run the `run.py` script. Providing the email, and project ID to be able to log to the Hamilton UI.
+2. Run the `run.py` script. Providing the email/username, and project ID to be able to log to the Hamilton UI.
 ```bash
 python run.py --email <email> --project_id <project_id>
 ```
