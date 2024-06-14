@@ -1,4 +1,5 @@
 import abc
+from collections import defaultdict
 from typing import Any, Callable, Collection, Dict, List, Type
 
 from hamilton import node
@@ -38,6 +39,7 @@ class BaseDataValidationDecorator(base.NodeTransformer):
         validators = self.get_validators(node_)
         validator_nodes = []
         validator_name_map = {}
+        validator_name_count = defaultdict(int)
         for validator in validators:
 
             def validation_function(validator_to_call: dq_base.DataValidator = validator, **kwargs):
@@ -45,6 +47,13 @@ class BaseDataValidationDecorator(base.NodeTransformer):
                 return validator_to_call.validate(result)
 
             validator_node_name = node_.name + "_" + validator.name()
+            validator_name_count[validator_node_name] = (
+                validator_name_count[validator_node_name] + 1
+            )
+            if validator_name_count[validator_node_name] > 1:
+                validator_node_name = (
+                    validator_node_name + "_" + str(validator_name_count[validator_node_name] - 1)
+                )
             validator_node = node.Node(
                 name=validator_node_name,  # TODO -- determine a good approach towards naming this
                 typ=dq_base.ValidationResult,
