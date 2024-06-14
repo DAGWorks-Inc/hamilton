@@ -219,8 +219,8 @@ function serialize(query: Query): URLSearchParams {
 
 function deserialize(
   searchParams: URLSearchParams,
-  minDate: Date,
-  maxDate: Date
+  minDate: Date | null,
+  maxDate: Date | null
 ): Query {
   const selectedTags = searchParams.get("selectedTags");
   const startDate = searchParams.get("startDate");
@@ -652,14 +652,24 @@ export const RunSummary = (props: {
       run.run_start_time ? new Date(run.run_start_time) : new Date(Date.now())
     )
     .sort((a, b) => a.getTime() - b.getTime());
-  const minDate = new Date(runsSortedByStartDate[0]);
-  const maxDate = new Date(
-    runsSortedByStartDate[runsSortedByStartDate.length - 1]
-  );
+  const minDate =
+    runsSortedByStartDate.length > 0
+      ? new Date(runsSortedByStartDate[0])
+      : null;
+  const maxDate =
+    runsSortedByStartDate.length > 0
+      ? new Date(runsSortedByStartDate[runsSortedByStartDate.length - 1])
+      : null;
 
   // Quick buffer to ensure no runs are missed
-  minDate.setDate(minDate.getDate() - 1);
-  maxDate.setDate(maxDate.getDate() + 1);
+  console.log("minDate", minDate);
+  console.log("maxDate", maxDate);
+  if (minDate !== null) {
+    minDate.setDate(minDate.getDate() - 1);
+  }
+  if (maxDate !== null) {
+    maxDate.setDate(maxDate.getDate() + 1);
+  }
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(() =>

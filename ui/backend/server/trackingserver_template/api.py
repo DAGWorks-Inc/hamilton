@@ -300,8 +300,6 @@ async def get_dag_template_catalog(
     ]
     for i, node_template in enumerate(node_templates):
         node_template.dag_template = all_node_templates[i].dag_template_id
-    # node_templates = []
-    # dag_template = node_template.dag_template_id
     code_artifacts = list(
         {
             code_artifact
