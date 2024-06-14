@@ -19,6 +19,12 @@ const injectedRtkApi = api.injectEndpoints({
     >({
       query: () => ({ url: `/api/v1/metadata/node_metadata/schema` }),
     }),
+    trackingserverBaseApiHealthCheck: build.query<
+      TrackingserverBaseApiHealthCheckApiResponse,
+      TrackingserverBaseApiHealthCheckApiArg
+    >({
+      query: () => ({ url: `/api/v1/health` }),
+    }),
     trackingserverAuthApiPhoneHome: build.query<
       TrackingserverAuthApiPhoneHomeApiResponse,
       TrackingserverAuthApiPhoneHomeApiArg
@@ -260,6 +266,9 @@ export type TrackingserverBaseApiGetCodeVersionTypesApiArg = void;
 export type TrackingserverBaseApiGetNodeMetadataTypesApiResponse =
   /** status 200 OK */ AllNodeMetadataTypes;
 export type TrackingserverBaseApiGetNodeMetadataTypesApiArg = void;
+export type TrackingserverBaseApiHealthCheckApiResponse =
+  /** status 200 OK */ boolean;
+export type TrackingserverBaseApiHealthCheckApiArg = void;
 export type TrackingserverAuthApiPhoneHomeApiResponse =
   /** status 200 OK */ PhoneHomeResult;
 export type TrackingserverAuthApiPhoneHomeApiArg = void;
@@ -587,10 +596,10 @@ export type ProjectOut = {
   updated_at: string;
 };
 export type Visibility = {
-  user_ids_visible: (number | string)[];
+  user_ids_visible: (string | number)[];
   team_ids_visible: number[];
   team_ids_writable: number[];
-  user_ids_writable: (number | string)[];
+  user_ids_writable: (string | number)[];
 };
 export type ProjectAttributeIn = {
   name: string;
@@ -700,6 +709,7 @@ export type DagTemplateIn = {
   code_version_info_schema?: number | null;
 };
 export type NodeTemplateOut = {
+  dag_template_id: number;
   primary_code_artifact?: string | null;
   id?: number | null;
   created_at: string;
@@ -760,8 +770,8 @@ export type DagTemplateUpdate = {
   is_active?: boolean;
 };
 export type DagRunOut = {
-  username_resolved?: string | null;
   dag_template_id: number;
+  username_resolved?: string | null;
   id?: number | null;
   created_at: string;
   updated_at: string;
@@ -784,6 +794,7 @@ export type DagRunIn = {
   outputs: any[];
 };
 export type NodeRunAttributeOut = {
+  dag_run_id: number;
   id?: number | null;
   created_at: string;
   updated_at: string;
@@ -810,8 +821,8 @@ export type NodeRunOutWithAttributes = {
   dag_run_id: number;
 };
 export type DagRunOutWithData = {
-  username_resolved?: string | null;
   dag_template_id: number;
+  username_resolved?: string | null;
   id?: number | null;
   created_at: string;
   updated_at: string;
@@ -873,6 +884,7 @@ export const {
   useTrackingserverBaseApiGetAttributesTypeQuery,
   useTrackingserverBaseApiGetCodeVersionTypesQuery,
   useTrackingserverBaseApiGetNodeMetadataTypesQuery,
+  useTrackingserverBaseApiHealthCheckQuery,
   useTrackingserverAuthApiPhoneHomeQuery,
   useTrackingserverAuthApiWhoamiQuery,
   useTrackingserverAuthApiCreateApiKeyMutation,

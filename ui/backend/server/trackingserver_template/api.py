@@ -298,6 +298,10 @@ async def get_dag_template_catalog(
     node_templates = [
         NodeTemplateOut.from_orm(node_template) for node_template in all_node_templates
     ]
+    for i, node_template in enumerate(node_templates):
+        node_template.dag_template = all_node_templates[i].dag_template_id
+    # node_templates = []
+    # dag_template = node_template.dag_template_id
     code_artifacts = list(
         {
             code_artifact
@@ -306,7 +310,7 @@ async def get_dag_template_catalog(
         }
     )
     out = CatalogResponse(
-        nodes=node_templates,
+        nodes=node_templates[:],
         code_artifacts=code_artifacts,
     )
     logger.info(

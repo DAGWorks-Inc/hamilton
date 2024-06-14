@@ -21,12 +21,13 @@ class DAGRunUpdate(Schema):
 
 
 class DAGRunOut(ModelSchema):
+    dag_template_id: int
+
     class Meta:
         model = DAGRun
         fields = "__all__"
 
     username_resolved: Optional[str] = None
-    dag_template_id: int
 
     @classmethod
     def create_with_username(cls, orm_model: DAGRun) -> "DAGRunOut":
@@ -62,6 +63,8 @@ class NodeRunAttributeIn(ModelSchema):
 
 
 class NodeRunAttributeOut(ModelSchema):
+    dag_run_id: int
+
     class Meta:
         model = NodeRunAttribute
         fields = "__all__"
