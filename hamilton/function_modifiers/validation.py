@@ -134,6 +134,10 @@ class check_output_custom(BaseDataValidationDecorator):
             4. **Collection[str]**: This will check all nodes specified in the list.
 
             In all likelihood, you *don't* want ``...``, but the others are useful.
+
+            Note: you cannot stack `@check_output_custom` decorators. If you want to use multiple custom validators, \
+            you should pass them all in as arguments to a single `@check_output_custom` decorator.
+
         """
         super(check_output_custom, self).__init__(target=target_)
         self.validators = list(validators)

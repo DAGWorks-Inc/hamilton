@@ -142,8 +142,8 @@ The ``@check_output`` function modifiers are applied on the **node output / func
 
     In the future, validatation capabailities may be added to ``@schema``. For now, it's only added metadata.
 
-@check_output
-~~~~~~~~~~~~~
+@check_output*
+~~~~~~~~~~~~~~
 
 The ``@check_output`` implements many data checks for Python objects and DataFrame/Series including data type, min/max/between, count, fraction of null/nan values, and allow null/nan. Failed checks are either logged (``importance="warn"``) or make the dataflow fail (``importance="fail"``).
 
@@ -162,6 +162,7 @@ The next snippet checks if the returned Series is of type ``np.int32``, which is
 
 - To see all available validators, go to the file ``hamilton/data_quality/default_validators.py`` and view the variable ``AVAILABLE_DEFAULT_VALIDATORS``.
 - The function modifier ``@check_output_custom`` allows you to define your own validator. Validators inherit the ``base.BaseDefaultValidator`` class and are essentially standardized Hamilton node definitions (instead of functions). See ``hamilton/data_quality/default_validators.py`` or reach out on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_ for help!
+- Note: ``@check_output_custom`` decorators cannot be stacked, but they instead can take multiple validators.
 
 .. note::
 
