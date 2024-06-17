@@ -1,11 +1,11 @@
 import abc
 import datetime
+import functools
 import logging
 import queue
 import threading
 import time
 from collections import defaultdict
-from functools import reduce
 from typing import Any, Callable, Dict, List
 from urllib.parse import urlencode
 
@@ -233,12 +233,14 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
                             continue
                         task_updates[task_update["node_name"]].append(task_update)
 
-            # this assumes correct ordering of the attributes and task_updates
-            attributes_list = [
-                reduce(lambda x, y: {**x, **y}, attributes[node_name]) for node_name in attributes
-            ]
+            # We do not care about disambiguating here --  only one named attribute should be logged
+
+            attributes_list = []
+            for node_name in attributes:
+                attributes_list.extend(attributes[node_name])
+            # in this case we do care about order so we don't send double the updates.
             task_updates_list = [
-                reduce(lambda x, y: {**x, **y}, task_updates[node_name])
+                functools.reduce(lambda x, y: {**x, **y}, task_updates[node_name])
                 for node_name in task_updates
             ]
 
