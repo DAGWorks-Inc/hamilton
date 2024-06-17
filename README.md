@@ -27,14 +27,17 @@
 </div>
 <br></br>
 
-With Hamilton, write a directed acyclic graph (DAG) of data transformations using regular Python functions. You don't even need to `import hamilton`! It uses the function name and parameters to resolve the graph. As shown below, functions specify their dependencies, resulting in readable code that can always be visualized.
+Hamilton is a lightweight Python library for directed acyclic graphs (DAGs) of data transformations. Your DAG is **portable**; it runs anywhere Python runs, whether it's a script, notebook, Airflow pipeline, FastAPI server, etc. Your DAG is **expressive**; Hamilton has extensive features to define and modify the execution of a DAG (e.g., data validation, experiment tracking, remote execution).
+
+To create a DAG, write regular Python functions that specify their dependencies with their parameters. As shown below, it results in readable code that can always be visualized. Hamilton loads that definition and automatically builds the DAG for you!
 
 <div align="center">
-  <img src="./docs/_static/abc.png" alt="Create a project" width="70%"/>
+  <img src="./docs/_static/abc_highlight.png" alt="Create a project" width="65%"/>
+  <figcaption>Functions <code>B()</code> and <code>C()</code> refer to function <code>A</code> in their parameters</figcaption>
 </div>
 <br>
 
-Hamilton brings modularity and structure to any Python application moving data: ETL pipelines, ML workflows, LLM applications, RAG systems, business analytics dashboards, web scrapers, and more. The [Hamilton UI](https://hamilton.dagworks.io/en/latest/concepts/ui) allows you to automatically visualize, catalog, and monitor execution.
+Hamilton brings modularity and structure to any Python application moving data: ETL pipelines, ML workflows, LLM applications, RAG systems, BI dashboards, and the [Hamilton UI](https://hamilton.dagworks.io/en/latest/concepts/ui) allows you to automatically visualize, catalog, and monitor execution.
 
 > Hamilton is great for DAGs, but if you need loops or conditional logic to create an LLM agent or a simulation, take a look at our sister library  [Burr](https://github.com/dagworks-inc/burr) 🤖 .
 
@@ -59,23 +62,23 @@ To try Hamilton in the browser, visit [www.tryhamilton.dev](https://www.tryhamil
 
 Data teams write code to deliver business value, but few have the resources to standardize practices and provide quality assurance. Moving from proof-of-concept to production and cross-function collaboration (e.g., data science, engineering, ops) remain challenging for teams, big or small. Hamilton is designed to help throughout a project's lifecycle:
 
-- **Built-in coding style**. The Hamilton DAG is [defined using Python functions](https://hamilton.dagworks.io/en/latest/concepts/node/), encouraging  modular, easy-to-read, self-documenting, and unit testable code.
+- **Separation of concerns**. Hamilton separates the DAG "definition" and "execution" which lets data scientists focus on solving problems and engineers manage production pipelines.
+
+- **Effective collaboration**. The [Hamilton UI provides a shared interface](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/) for teams to inspect results and debug failures throughout the development cycle.
+
+- **Low-friction dev to prod**. Use `@config.when()` to modify your DAG between execution environments instead of error-prone `if/else` feature flags. The notebook extension prevents the pain of migrating code from a notebook to a Python module.
+
+- **Portable transformations**. Your DAG is [independent of infrastructure or orchestration](https://blog.dagworks.io/publish/posts/detail/145543927?referrer=%2Fpublish%2Fposts), meaning you can develop and debug locally and reuse code across contexts (local, Airflow, FastAPI, etc.).
 
 - **Maintainable DAG definition**. Hamilton [automatically builds the DAG from a single line of code whether it has 10 or 1000 nodes](https://hamilton.dagworks.io/en/latest/concepts/driver/). It can also assemble multiple Python modules into a pipeline, encouraging modularity.
 
 - **Expressive DAGs**. [Function modifiers](https://hamilton.dagworks.io/en/latest/concepts/function-modifiers/) are a unique feature to keep your code [DRY](https://en.wikipedia.org/wiki/Don't_repeat_yourself) and reduce the complexity of maintaining large DAGs. Other frameworks inevitably lead to code redundancy or bloated functions.
 
-- **Portable transformations**. Your DAG is [independent of infrastructure or orchestration](https://blog.dagworks.io/publish/posts/detail/145543927?referrer=%2Fpublish%2Fposts), meaning you can develop and debug locally and reuse code across contexts (local, Airflow, FastAPI, etc.).
-
-- **Separation of concerns**. Hamilton separates the DAG "definition" and "execution" which lets data scientists focus on solving problems and engineers manage production pipelines.
-
-- **Low-friction dev to prod**. Use `@config.when()` to modify your DAG between execution environments instead of error-prone `if/else` feature flags. The notebook extension prevents the pain of migrating code from a notebook to a Python module.
-
-- **Effective collaboration**. The [Hamilton UI provides a shared interface](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/) for teams to inspect results and debug failures throughout the development cycle.
-
-- **Built for plugins**. Hamilton is designed to play nice with all tools and provides the right abstractions to create custom integrations with your stack. Our lively community will help you build what you need!
+- **Built-in coding style**. The Hamilton DAG is [defined using Python functions](https://hamilton.dagworks.io/en/latest/concepts/node/), encouraging  modular, easy-to-read, self-documenting, and unit testable code.
 
 - **Data and schema validation**. Decorate functions with `@check_output` to validate output properties, and raise warnings or exceptions. Add the `SchemaValidator()` adapter to automatically inspect dataframe-like objects (pandas, polars, Ibis, etc.) to track and validate their schema.
+
+- **Built for plugins**. Hamilton is designed to play nice with all tools and provides the right abstractions to create custom integrations with your stack. Our lively community will help you build what you need!
 
 
 # Hamilton UI
@@ -241,7 +244,7 @@ Hamilton was started at Stitch Fix before the original creators founded DAGWorks
 * [F33.ai](https://f33.ai/)
 
 ## 🤝 Code Contributors
-[![Contributors](https://contrib.rocks/image?repo=dagworks-inc/hamilton)](https://contrib.rocks/image?repo=dagworks-inc/hamilton)
+[![Contributors](https://contrib.rocks/image?repo=dagworks-inc/hamilton)](https://github.com/DAGWorks-Inc/hamilton/graphs/contributors)
 
 
 ## 🙌 Special Mentions & 🦟 Bug Hunters
