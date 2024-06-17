@@ -16,24 +16,12 @@ import {
   getNodeOutputType,
 } from "../../../../state/api/friendlyApi";
 import { NodeMetadataPythonType1 } from "../../../../state/api/backendApiRaw";
-import { ResultsSummaryView } from "./result-summaries/DataObservability";
+import {
+  MultiResultSummaryView,
+} from "./result-summaries/DataObservability";
 import { RunLink } from "../../../common/CommonLinks";
 import { extractCodeContents } from "../../../../utils/codeExtraction";
 
-/*
-  This example requires some changes to your config:
-
-  ```
-  // tailwind.config.js
-  module.exports = {
-    // ...
-    plugins: [
-      // ...
-      require('@tailwindcss/forms'),
-    ],
-  }
-  ```
-*/
 const tabs = [
   // { name: "Code", href: "#" },
   { name: "Output", href: "#" },
@@ -334,8 +322,7 @@ export const TaskView = (props: {
   };
   const whichTab = searchParams.get("tab");
   return (
-    <div className="pt-10">
-      <div className="text-gray-500 text-xl pb-2">Viewing {taskName}</div>
+    <div className="pt-10 flex flex-col gap-5">
       <div className="sm:hidden">
         <label htmlFor="tabs" className="sr-only">
           Select a tab
@@ -363,7 +350,7 @@ export const TaskView = (props: {
           <Link
             className={classNames(
               "text-gray-500 hover:text-gray-700",
-              "px-3 py-2 font-medium text-md rounded-md"
+              "py-2 font-medium text-md rounded-md"
             )}
             to={path.split("/task/")[0]}
           >
@@ -412,6 +399,8 @@ export const TaskView = (props: {
         upstreamNodes={upstreamNodes}
         downstreamNodes={downstreamNodes}
       /> */}
+      <h2 className="text-gray-800 text-xl pb-2 font-semibold">{taskName}</h2>
+
       {whichTab === "Errors" ? (
         <div className="pt-4">
           <ErrorView
@@ -420,7 +409,7 @@ export const TaskView = (props: {
           ></ErrorView>
         </div>
       ) : whichTab === "Output" ? (
-        <ResultsSummaryView
+        <MultiResultSummaryView
           projectId={props.projectId}
           nodeRunData={nodeRunData}
           taskName={taskName}
