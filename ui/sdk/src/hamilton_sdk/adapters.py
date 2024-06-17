@@ -297,8 +297,6 @@ class HamiltonTracker(
                 },
                 attribute_role="error",
             )
-        task_attr_2 = task_attr.copy()
-        task_attr_2["name"] = "task_attr_2"
         task_run.end_time = datetime.datetime.now(timezone.utc)
         tracking_state.update_task(node_.name, task_run)
         task_update = dict(
@@ -311,7 +309,7 @@ class HamiltonTracker(
         )
         self.client.update_tasks(
             self.dw_run_ids[run_id],
-            attributes=[task_attr, task_attr_2],
+            attributes=[task_attr],
             task_updates=[task_update],
             in_samples=[task_run.is_in_sample],
         )

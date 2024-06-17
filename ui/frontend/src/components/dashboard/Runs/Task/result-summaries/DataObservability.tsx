@@ -8,6 +8,7 @@ import {
   AttributeUnsupported1,
 } from "../../../../../state/api/backendApiRaw";
 import {
+  NodeRunAttribute,
   NodeRunWithAttributes,
   getNodeRunAttributes,
 } from "../../../../../state/api/friendlyApi";
@@ -131,8 +132,49 @@ const Unsupported1View = (props: {
   );
 };
 
-export const ResultsSummaryView = (props: {
+export const snakeToTitle = (s: string) => {
+  return s
+    .split("_")
+    .map((i, n) => (n === 0 ? i[0].toUpperCase() : i[0]) + i.slice(1))
+    .join(" ");
+};
+
+export const MultiResultSummaryView = (props: {
   nodeRunData: (NodeRunWithAttributes | null)[];
+  taskName: string | undefined;
+  projectId: number;
+  runIds: number[];
+}) => {
+  const attributes = props.nodeRunData.flatMap((i) => i?.attributes || []);
+  const attributesGroupedByName = attributes.reduce((acc, item) => {
+    if (acc[item.name]) {
+      acc[item.name].push(item);
+    } else {
+      acc[item.name] = [item];
+    }
+    return acc;
+  }, {} as { [key: string]: NodeRunAttribute[] });
+  return (
+    <div className="flex flex-col gap-2">
+      {Object.entries(attributesGroupedByName).map(([key, value]) => (
+        <div key={key}>
+          <h2 className="text-lg font-semibold text-gray-800">
+            {snakeToTitle(key)}
+          </h2>
+          <ResultsSummaryView
+            runAttributes={value}
+            taskName={props.taskName}
+            projectId={props.projectId}
+            runIds={props.runIds}
+          />
+        </div>
+      ))}
+    </div>
+  );
+};
+export const ResultsSummaryView = (props: {
+  // nodeRunData: (NodeRunWithAttributes | null)[];
+  runAttributes: NodeRunAttribute[];
   taskName: string | undefined;
   projectId: number;
   runIds: number[];
@@ -148,7 +190,7 @@ export const ResultsSummaryView = (props: {
    */
 
   const primitive1Views = getNodeRunAttributes<AttributePrimitive1>(
-    props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.runAttributes,
     props.runIds,
     "AttributePrimitive1"
   );
@@ -163,11 +205,10 @@ export const ResultsSummaryView = (props: {
     );
   }
 
-
   // ... [similar blocks for other attributes]
 
   // const error1Views = getNodeRunAttributes<AttributeError1>(
-  //   props.nodeRunData.flatMap((i) => i?.attributes || []),
+  //   props.runAttributes
   //   "AttributeError1"
   // );
   // if (error1Views.length > 0) {
@@ -181,7 +222,7 @@ export const ResultsSummaryView = (props: {
   // }
 
   const dict1Views = getNodeRunAttributes<AttributeDict1>(
-    props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.runAttributes,
     props.runIds,
     "AttributeDict1"
   );
@@ -197,7 +238,7 @@ export const ResultsSummaryView = (props: {
   }
 
   const dict2Views = getNodeRunAttributes<AttributeDict2>(
-    props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.runAttributes,
     props.runIds,
     "AttributeDict2"
   );
@@ -213,7 +254,7 @@ export const ResultsSummaryView = (props: {
 
   const dagworksDescribe3Views =
     getNodeRunAttributes<AttributeDagworksDescribe3>(
-      props.nodeRunData.flatMap((i) => i?.attributes || []),
+      props.runAttributes,
       props.runIds,
       "AttributeDagworksDescribe3"
     );
@@ -229,7 +270,7 @@ export const ResultsSummaryView = (props: {
   }
 
   const pandasDescribe1View = getNodeRunAttributes<AttributePandasDescribe1>(
-    props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.runAttributes,
     props.runIds,
     "AttributePandasDescribe1"
   );
@@ -246,7 +287,7 @@ export const ResultsSummaryView = (props: {
   }
 
   const unsupportedViews = getNodeRunAttributes<AttributeUnsupported1>(
-    props.nodeRunData.flatMap((i) => i?.attributes || []),
+    props.runAttributes,
     props.runIds,
     "AttributeUnsupported1"
   );
@@ -262,7 +303,7 @@ export const ResultsSummaryView = (props: {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col border-l-8 my-2 border-gray-100 hover:bg-gray-100">
       {allViews.map((item, i) => {
         return <div key={i}>{item}</div>;
       })}
