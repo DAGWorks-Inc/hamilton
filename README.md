@@ -35,7 +35,7 @@ To create a DAG, write regular Python functions that specify their dependencies 
   <img src="./docs/_static/abc_highlight.png" alt="Create a project" width="65%"/>
 </div>
 <div align="center">
-   <em>Functions <code>B()</code> and <code>C()</code> refer to function <code>A</code> in their parameters</em>
+   Functions <code>B()</code> and <code>C()</code> refer to function <code>A</code> in their parameters
 </div>
 <br>
 
