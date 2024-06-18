@@ -15,7 +15,7 @@ from hamilton import node as h_node
 from hamilton.data_quality import base as dq_base
 from hamilton.lifecycle import base as lifecycle_base
 
-_modules_to_import = ["numpy", "pandas", "polars", "pyspark", "ibis", "langchain"]
+_modules_to_import = ["numpy", "pandas", "polars", "pyspark", "ibis", "langchain", "pydantic"]
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,6 @@ def process_result(result: Any, node: h_node.Node) -> Any:
     :param node: The node that produced the result
     :return: The processed  result - it has to be JSON serializable!
     """
-
     try:
         start = py_time.time()
         statistics = stats.compute_stats(result, node.name, node.tags)
