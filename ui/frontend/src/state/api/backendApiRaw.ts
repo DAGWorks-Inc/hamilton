@@ -521,6 +521,9 @@ export type AttributeDagworksDescribe3 = {
     | DwDescribeV003CategoryColumnStatistics
     | DwDescribeV003StringColumnStatistics;
 };
+export type AttributeHTML1 = {
+  html: string;
+};
 export type AllAttributeTypes = {
   documentation_loom__1: AttributeDocumentationLoom1;
   primitive__1: AttributePrimitive1;
@@ -530,6 +533,7 @@ export type AllAttributeTypes = {
   dict__1: AttributeDict1;
   dict__2: AttributeDict2;
   dagworks_describe__3: AttributeDagworksDescribe3;
+  html__1: AttributeHTML1;
 };
 export type CodeVersionGit1 = {
   git_hash: string;

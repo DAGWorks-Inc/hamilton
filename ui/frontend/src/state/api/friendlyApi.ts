@@ -201,6 +201,8 @@ export type AttributeDict2 = AllAttributeTypes["dict__2"];
 export type AttributeDagworksDescribe3 =
   AllAttributeTypes["dagworks_describe__3"];
 
+export type AttributeHTML1 = AllAttributeTypes["html__1"];
+
 export const nodeAttributeTypeMap = {
   AttributePrimitive1: { version: 1, type: "primitive" },
   AttributeUnsupported1: { version: 1, type: "unsupported" },
@@ -209,6 +211,7 @@ export const nodeAttributeTypeMap = {
   AttributeDict1: { version: 1, type: "dict" },
   AttributeDict2: { version: 2, type: "dict" },
   AttributeDagworksDescribe3: { version: 3, type: "dagworks_describe" },
+  AttributeHTML1: {version: 1, type: "html"},
 };
 
 export type DAGWorksDescribeColumn =
