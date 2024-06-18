@@ -106,6 +106,29 @@ def test_make_json_safe_with_pandas_dataframe():
     }
 
 
+def test_make_json_safe_with_pandas_dataframe_duplicate_indexes():
+    """to_json failes with duplicate indexes"""
+    input_dataframe = pd.DataFrame(
+        {
+            "A": 1.0,
+            "B": pd.Timestamp("20130102"),
+            "C": pd.Series(1, index=list(range(4)), dtype=np.float64),
+            "D": np.array([3] * 4, dtype="int32"),
+            "E": pd.Categorical(["test", "train", "test", "train"]),
+            "F": "foo",
+        },
+        index=[0, 1, 0, 1],
+    )
+    actual = utils.make_json_safe(input_dataframe)
+    assert actual == (
+        "     A          B    C  D      E    F\n"
+        "0  1.0 2013-01-02  1.0  3   test  foo\n"
+        "1  1.0 2013-01-02  1.0  3  train  foo\n"
+        "0  1.0 2013-01-02  1.0  3   test  foo\n"
+        "1  1.0 2013-01-02  1.0  3  train  foo..."
+    )
+
+
 def test_make_json_safe_with_pandas_series():
     index = pd.date_range("2022-01-01", periods=6, freq="w")
     input_series = pd.Series([1, 10, 50, 100, 200, 400], index=index)
