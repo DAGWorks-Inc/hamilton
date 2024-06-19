@@ -135,7 +135,8 @@ def is_telemetry_enabled() -> bool:
             logger.info(
                 "Note: Hamilton collects completely anonymous data about usage. "
                 "This will help us improve Hamilton over time. "
-                "See https://github.com/dagworks-inc/hamilton#usage-analytics--data-privacy for details."
+                "See https://hamilton.dagworks.io/en/latest/get-started/license/#usage-analytics-data-privacy"
+                " for details."
             )
         call_counter += 1
         if call_counter > MAX_COUNT_SESSION:
