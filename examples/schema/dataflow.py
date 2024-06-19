@@ -29,12 +29,12 @@ if __name__ == "__main__":
     import __main__
 
     from hamilton import driver
-    from hamilton.lifecycle import schema
+    from hamilton.plugins import h_schema
 
     dr = (
         driver.Builder()
         .with_modules(__main__)
-        .with_adapters(schema.SchemaValidator("./schemas"))
+        .with_adapters(h_schema.SchemaValidator("./schemas"))
         .build()
     )
     res = dr.execute(["df_with_renamed_cols"])

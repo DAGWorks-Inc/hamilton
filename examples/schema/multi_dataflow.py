@@ -53,7 +53,7 @@ if __name__ == "__main__":
     import __main__
 
     from hamilton import driver
-    from hamilton.lifecycle import schema
+    from hamilton.plugins import h_schema
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", default="1", type=str, help="The Driver config version")
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         .with_modules(__main__)
         .with_config(dict(version=args.version))
         .with_adapters(
-            schema.SchemaValidator("./multi_schemas", check=args.no_check, importance="warn")
+            h_schema.SchemaValidator("./multi_schemas", check=args.no_check, importance="warn")
         )
         .build()
     )
