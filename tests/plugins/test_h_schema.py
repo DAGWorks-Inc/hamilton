@@ -101,7 +101,7 @@ def test_schema_unequal_but_no_schema_metadata_diff(
     schema_diff = h_schema.diff_schemas(schema1, schema2, check_schema_metadata=True)
 
     assert schema_diff["baz"].diff == h_schema.Diff.REMOVED
-    assert schema_diff[h_schema.SCHEMA_METADATA_FIELD]["key"].diff == h_schema.Diff.EQUAL
+    assert schema_diff[h_schema.SCHEMA_METADATA_FIELD].value["key"].diff == h_schema.Diff.EQUAL
 
     human_readable_diff = h_schema.human_readable_diff(schema_diff)
     assert human_readable_diff == {"baz": "-"}
@@ -112,7 +112,7 @@ def test_schema_added_schema_metadata(schema1: pyarrow.Schema, metadata1: dict):
 
     schema_diff = h_schema.diff_schemas(schema1_with_metadata, schema1, check_schema_metadata=True)
 
-    assert schema_diff[h_schema.SCHEMA_METADATA_FIELD]["key"].diff == h_schema.Diff.ADDED
+    assert schema_diff[h_schema.SCHEMA_METADATA_FIELD].value["key"].diff == h_schema.Diff.ADDED
 
     human_readable_diff = h_schema.human_readable_diff(schema_diff)
     assert human_readable_diff == {h_schema.SCHEMA_METADATA_FIELD: {"key": "+"}}
@@ -123,7 +123,7 @@ def test_schema_removed_schema_metadata(schema1: pyarrow.Schema, metadata1: dict
 
     schema_diff = h_schema.diff_schemas(schema1, schema1_with_metadata, check_schema_metadata=True)
 
-    assert schema_diff[h_schema.SCHEMA_METADATA_FIELD]["key"].diff == h_schema.Diff.REMOVED
+    assert schema_diff[h_schema.SCHEMA_METADATA_FIELD].value["key"].diff == h_schema.Diff.REMOVED
 
     human_readable_diff = h_schema.human_readable_diff(schema_diff)
     assert human_readable_diff == {h_schema.SCHEMA_METADATA_FIELD: {"key": "-"}}
@@ -137,53 +137,68 @@ def test_schema_edited_schema_metadata(schema1: pyarrow.Schema, metadata1: dict,
         schema1_with_metadata1, schema1_with_metadata2, check_schema_metadata=True
     )
 
-    assert schema_diff[h_schema.SCHEMA_METADATA_FIELD]["key"].diff == h_schema.Diff.UNEQUAL
+    assert schema_diff[h_schema.SCHEMA_METADATA_FIELD].value["key"].diff == h_schema.Diff.UNEQUAL
 
     human_readable_diff = h_schema.human_readable_diff(schema_diff)
+    print(human_readable_diff)
+
     assert human_readable_diff == {
         h_schema.SCHEMA_METADATA_FIELD: {"key": {"cur": "value1", "ref": "value2"}}
     }
 
 
-# def test_schema_added_field_metadata(schema1: pyarrow.Schema, metadata1: dict):
-#     field1 = schema1.field(1)
-#     field1_with_metadata = field1.with_metadata(metadata1)
-#     schema1.set(1, field1_with_metadata)
+def test_schema_added_field_metadata(schema1: pyarrow.Schema, metadata1: dict):
+    field0 = schema1.field(0)
+    schema1_with_field_metadata = pyarrow.schema(
+        [field0.with_metadata(metadata1), schema1.field(1)]
+    )
 
-#     schema_diff = h_schema.diff_schemas(schema1, schema1, check_field_metadata=True)
-#     print(schema_diff)
+    schema_diff = h_schema.diff_schemas(
+        schema1_with_field_metadata, schema1, check_field_metadata=True
+    )
 
-#     assert schema_diff[field1.name]["metadata"].diff == h_schema.Diff.ADDED
+    assert schema_diff[field0.name].diff == h_schema.Diff.UNEQUAL
+    assert schema_diff[field0.name].value["metadata"].diff == h_schema.Diff.UNEQUAL
 
-#     human_readable_diff = h_schema.human_readable_diff_json(schema_diff)
-#     assert human_readable_diff == {h_schema.SCHEMA_METADATA_FIELD: {"key": "+"}}
-
-
-# def test_schema_removed_field_metadata(schema1: pyarrow.Schema, metadata1: dict):
-#     schema1_with_metadata = schema1.with_metadata(metadata1)
-
-#     schema_diff = h_schema.diff_schemas(schema1, schema1_with_metadata, check_field_metadata=True)
-
-#     assert schema_diff[h_schema.SCHEMA_METADATA_FIELD]["key"].diff == h_schema.Diff.REMOVED
-
-#     human_readable_diff = h_schema.human_readable_diff_json(schema_diff)
-#     assert human_readable_diff == {h_schema.SCHEMA_METADATA_FIELD: {"key": "-"}}
+    human_readable_diff = h_schema.human_readable_diff(schema_diff)
+    assert human_readable_diff == {"foo": {"metadata": {"key": "+"}}}
 
 
-# def test_schema_edited_field_metadata(schema1: pyarrow.Schema, metadata1: dict, metadata2: dict):
-#     schema1_with_metadata1 = schema1.with_metadata(metadata1)
-#     schema1_with_metadata2 = schema1.with_metadata(metadata2)
+def test_schema_removed_field_metadata(schema1: pyarrow.Schema, metadata1: dict):
+    field0 = schema1.field(0)
+    schema1_with_field_metadata = pyarrow.schema(
+        [field0.with_metadata(metadata1), schema1.field(1)]
+    )
 
-#     schema_diff = h_schema.diff_schemas(
-#         schema1_with_metadata1,
-#         schema1_with_metadata2,
-#         check_field_metadata=True
-#     )
+    schema_diff = h_schema.diff_schemas(
+        schema1, schema1_with_field_metadata, check_field_metadata=True
+    )
 
-#     assert schema_diff[h_schema.SCHEMA_METADATA_FIELD]["key"].diff == h_schema.Diff.UNEQUAL
+    assert schema_diff[field0.name].diff == h_schema.Diff.UNEQUAL
+    assert schema_diff[field0.name].value["metadata"].diff == h_schema.Diff.UNEQUAL
 
-#     human_readable_diff = h_schema.human_readable_diff_json(schema_diff)
-#     assert human_readable_diff == {h_schema.SCHEMA_METADATA_FIELD: {'key': {"cur": "value1", "ref": "value2"}}}
+    human_readable_diff = h_schema.human_readable_diff(schema_diff)
+    assert human_readable_diff == {"foo": {"metadata": {"key": "-"}}}
+
+
+def test_schema_edited_field_metadata(schema1: pyarrow.Schema, metadata1: dict, metadata2: dict):
+    field0 = schema1.field(0)
+    schema1_with_field_metadata1 = pyarrow.schema(
+        [field0.with_metadata(metadata1), schema1.field(1)]
+    )
+    schema1_with_field_metadata2 = pyarrow.schema(
+        [field0.with_metadata(metadata2), schema1.field(1)]
+    )
+
+    schema_diff = h_schema.diff_schemas(
+        schema1_with_field_metadata1, schema1_with_field_metadata2, check_field_metadata=True
+    )
+
+    assert schema_diff[field0.name].diff == h_schema.Diff.UNEQUAL
+    assert schema_diff[field0.name].value["metadata"].diff == h_schema.Diff.UNEQUAL
+
+    human_readable_diff = h_schema.human_readable_diff(schema_diff)
+    assert human_readable_diff == {"foo": {"metadata": {"key": {"cur": "value1", "ref": "value2"}}}}
 
 
 def test_pyarrow_schema_equals_json_schema(schema1: pyarrow.Schema, metadata1: dict):

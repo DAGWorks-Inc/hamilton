@@ -81,17 +81,40 @@ def diff_schemas(
 ):
     """Diff two Pyarrow schema field-by-field. Options to diff schema and field metadata key-by-key.
     Returning an empty dict means equality / no diff
+
+    example:
+        {
+            '__metadata': DiffResult(diff=<Diff.UNEQUAL: '!='>, value={
+                'key': DiffResult(diff=<Diff.UNEQUAL: '!='>, value={
+                    'cur': 'value1', 'ref': 'value2'
+                })
+            }),
+            'bar': DiffResult(diff=<Diff.EQUAL: '=='>, value={
+                'name': 'bar', 'type': 'int64', 'nullable': True, 'metadata': {}
+            }),
+            'foo': DiffResult(diff=<Diff.UNEQUAL: '!='>, value={
+                'name': DiffResult(diff=<Diff.EQUAL: '=='>, value='foo')
+                'type': DiffResult(diff=<Diff.EQUAL: '=='>, value='string'),
+                'nullable': DiffResult(diff=<Diff.EQUAL: '=='>, value=True),
+                'metadata': DiffResult(diff=<Diff.UNEQUAL: '!='>, value={
+                    'key': DiffResult(diff=<Diff.UNEQUAL: '!='>, value={
+                        'cur': 'value1', 'ref': 'value2'
+                    })
+                }),
+            })
+        }
+
     """
     # if schemas are equal, return an empty diff
-    if current_schema.equals(reference_schema, check_metadata=check_schema_metadata):
+    if current_schema.equals(
+        reference_schema, check_metadata=(check_schema_metadata or check_field_metadata)
+    ):
         return {}
 
     current_schema = pyarrow_schema_to_json(current_schema)
     reference_schema = pyarrow_schema_to_json(reference_schema)
 
-    schema_diff: Dict[str, Union[dict, DiffResult]] = _diff_mappings(
-        current_schema, reference_schema
-    )
+    schema_diff = _diff_mappings(current=current_schema, reference=reference_schema)
 
     # compare fields shared by both schemas
     for field_name, diff_result in schema_diff.items():
@@ -99,34 +122,64 @@ def diff_schemas(
             current_field = current_schema.get(field_name, {})
             reference_field = reference_schema.get(field_name, {})
 
-            schema_diff[field_name] = DiffResult(
-                Diff.UNEQUAL, _diff_mappings(current_field, reference_field)
+            field_diff = DiffResult(
+                diff=Diff.UNEQUAL,
+                value=_diff_mappings(current=current_field, reference=reference_field),
             )
+
+            if check_field_metadata and (field_diff.value["metadata"].diff != Diff.EQUAL):
+                current_field_metadata = current_field.get("metadata", {})
+                reference_field_metadata = reference_field.get("metadata", {})
+
+                field_diff.value["metadata"] = DiffResult(
+                    diff=Diff.UNEQUAL,
+                    value=_diff_mappings(
+                        current=current_field_metadata,
+                        reference=reference_field_metadata,
+                    ),
+                )
+
+            schema_diff[field_name] = field_diff
 
     # compare schema metadata
     if check_schema_metadata:
-        schema_diff[SCHEMA_METADATA_FIELD] = _diff_mappings(
-            current=current_schema.get(SCHEMA_METADATA_FIELD, {}),
-            reference=reference_schema.get(SCHEMA_METADATA_FIELD, {}),
+        current_schema_metadata = current_schema.get(SCHEMA_METADATA_FIELD, {})
+        reference_schema_metadata = reference_schema.get(SCHEMA_METADATA_FIELD, {})
+
+        schema_diff[SCHEMA_METADATA_FIELD] = DiffResult(
+            Diff.UNEQUAL,
+            _diff_mappings(current=current_schema_metadata, reference=reference_schema_metadata),
         )
 
     return schema_diff
 
 
 def human_readable_diff(diff: dict) -> dict:
-    """Format a diff to exclude EQUAL fields and make it easier to read."""
+    """Format a diff to exclude EQUAL fields and make it easier to read.
+
+    example:
+        {
+            '__metadata': {
+                'key': {'cur': 'value1', 'ref': 'value2'}
+            },
+            "foo": {
+                "metadata": {
+                    'key': {"cur": "value1", "ref": "value2"}
+                },
+            },
+            "baz": "-",
+            "bar": {
+                "type": {"cur": "int64", "ref": "double"}
+            },
+        }
+    """
 
     readable_diff = {}
 
     for field_name, diff_result in diff.items():
         # special case for the schema metadata field
         if field_name == SCHEMA_METADATA_FIELD:
-            if isinstance(diff_result, DiffResult):
-                value = diff_result.value
-            else:
-                value = diff_result
-
-            schema_metadata_diff = human_readable_diff(value)
+            schema_metadata_diff = human_readable_diff(diff_result.value)
             if schema_metadata_diff != {}:
                 readable_diff[SCHEMA_METADATA_FIELD] = schema_metadata_diff
             continue
