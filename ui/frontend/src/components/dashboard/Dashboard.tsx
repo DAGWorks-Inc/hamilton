@@ -213,7 +213,7 @@ const MiniSideBar = (props: {
           aria-hidden="true"
           title="Search"
         />
-        <a href="https://hamilton.dagworks.io/en/latest/concepts/ui">
+        <a href="https://hamilton.dagworks.io/en/latest/concepts/ui" target="_blank" rel="noopener noreferrer">
           <QuestionMarkCircleIcon
             className={classNames(
               "text-gray-300 hover:bg-gray-700 hover:text-white hover:cursor-pointer rounded-md",
