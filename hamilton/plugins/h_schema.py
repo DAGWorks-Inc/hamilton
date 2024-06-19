@@ -121,7 +121,7 @@ def human_readable_diff(diff: dict) -> dict:
     for field_name, diff_result in diff.items():
         # special case for the schema metadata field
         if field_name == SCHEMA_METADATA_FIELD:
-            schema_metadata_diff = human_readable_diff(diff_result)
+            schema_metadata_diff = human_readable_diff(diff_result.value)
             if schema_metadata_diff != {}:
                 readable_diff[SCHEMA_METADATA_FIELD] = schema_metadata_diff
             continue
@@ -141,7 +141,7 @@ def human_readable_diff(diff: dict) -> dict:
             else:
                 readable_diff[field_name] = human_readable_diff(diff_result.value)
 
-    return readable_diff
+    return dict(sorted(readable_diff.items()))
 
 
 def pyarrow_schema_to_json(schema: pyarrow.Schema) -> dict:
@@ -265,6 +265,7 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
         """
         self.schemas: Dict[str, pyarrow.Schema] = {}
         self.reference_schemas: Dict[str, pyarrow.Schema] = {}
+        self.schema_diffs: dict = {}
         self.schema_dir = schema_dir
         self.check = check
         self.must_exist = must_exist
@@ -341,10 +342,12 @@ class SchemaValidator(NodeExecutionHook, GraphExecutionHook):
             check_field_metadata=self.check_field_metadata,
         )
         if schema_diff != {}:
+            self.schema_diffs[node_name] = schema_diff
+            readable_diff = json.dumps({node_name: human_readable_diff(schema_diff)}, indent=2)
             if self.importance == "warn":
-                logger.warning(schema_diff)
+                logger.warning(f"Schema diff:\n{readable_diff}\n")
             elif self.importance == "fail":
-                raise RuntimeError(schema_diff)
+                raise RuntimeError(readable_diff)
 
     def run_after_graph_execution(self, *args, **kwargs):
         """Store a human-readable JSON of all current schemas."""
