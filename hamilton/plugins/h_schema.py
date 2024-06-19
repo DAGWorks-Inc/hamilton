@@ -121,7 +121,12 @@ def human_readable_diff(diff: dict) -> dict:
     for field_name, diff_result in diff.items():
         # special case for the schema metadata field
         if field_name == SCHEMA_METADATA_FIELD:
-            schema_metadata_diff = human_readable_diff(diff_result.value)
+            if isinstance(diff_result, DiffResult):
+                value = diff_result.value
+            else:
+                value = diff_result
+
+            schema_metadata_diff = human_readable_diff(value)
             if schema_metadata_diff != {}:
                 readable_diff[SCHEMA_METADATA_FIELD] = schema_metadata_diff
             continue
