@@ -1,10 +1,9 @@
 import { AiFillCode } from "react-icons/ai";
-import { BiAlarmExclamation, BiRun } from "react-icons/bi";
+import { BiRun } from "react-icons/bi";
 import { GoBook } from "react-icons/go";
 import { IoGitNetworkSharp } from "react-icons/io5";
-import { VscVersions } from "react-icons/vsc";
 import { DAGTemplateWithData } from "../../state/api/friendlyApi";
-export const navKeys = ["Structure", "Runs"];
+export const navKeys = [];
 
 const pathNav = (pathEnd: string) => {
   return (
@@ -22,37 +21,30 @@ const pathNav = (pathEnd: string) => {
 // Mapping of nav to help in the HelpVideo file
 export const NAV_HELP = {
   Versions: "VERSIONS",
-  Structure: "STRUCTURE",
-  Runs: "RUNS",
+  Visualize: "STRUCTURE",
+  History: "RUNS",
 };
 
 export const navigation = [
   {
-    name: "Code",
-    href: pathNav("code"),
-    icon: AiFillCode,
-    under: "Structure",
-    requires: ["project", "projectVersion"],
-  },
-  {
     name: "Visualize",
     href: pathNav("visualize"),
     icon: IoGitNetworkSharp,
-    under: "Structure",
+    under: null,
+    requires: ["project", "projectVersion"],
+  },
+  {
+    name: "Code",
+    href: pathNav("code"),
+    icon: AiFillCode,
+    under: null,
     requires: ["project", "projectVersion"],
   },
   {
     name: "History",
     href: pathNav("runs"),
     icon: BiRun,
-    under: "Runs",
-    requires: ["project"],
-  },
-  {
-    name: "Alerts",
-    href: pathNav("alerts"),
-    icon: BiAlarmExclamation,
-    under: "Runs",
+    under: null,
     requires: ["project"],
   },
   // {
@@ -69,13 +61,6 @@ export const navigation = [
   //   under: null,
   //   requires: ["project", "projectVersion"],
   // },
-  {
-    name: "Versions",
-    href: pathNav("versions"),
-    icon: VscVersions,
-    under: null,
-    requires: ["project"],
-  },
   {
     name: "Catalog",
     href: pathNav("catalog"),

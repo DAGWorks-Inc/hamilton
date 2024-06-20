@@ -56,6 +56,19 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
 
+export const FeedbackButton = (props: { userName: string }) => {
+  return (
+      <button
+        data-feedback-fish
+        data-feedback-fish-url={window.location.href}
+        data-feedback-fish-userid={props.userName}
+        className="cursor-pointer select-none rounded-full py-2 px-5 flex justify-center items-center bg-yellow-400 text-gray-900"
+      >
+        Feedback
+      </button>
+  );
+};
+
 const SubMenu = (props: {
   name: string;
   navigate: (href: string) => void;
@@ -137,7 +150,7 @@ const TopLevelMenu = (props: {
           props.item?.current
             ? "bg-gray-900 text-white"
             : "text-gray-300 hover:bg-gray-700 hover:text-white",
-          "group flex items-center px-2 py-2 text-base font-medium rounded-md"
+          "hover:cursor-pointer select-none group flex items-center px-2 py-2 text-base font-medium rounded-md"
         )}
       >
         <props.item.icon
@@ -333,24 +346,20 @@ const ProjectAwareSidebar = (props: {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col overflow-y-auto pt-4 pb-4">
         <div className="border-b-2 border-b-gray-700 px-3 pb-2">
-          <Link to={`/dashboard/project/${props.projectId}`}>
-            <div className="text-gray-300 hover:underline">
+          <Link to={`/dashboard/project/${props.projectId}`} className="text-gray-300 hover:underline select-none">
               {props.projectName}
-            </div>
           </Link>
           {props.dagTemplates.length > 0 ? (
             <div className="text-gray-300 font-semibold flex flex-row gap-1 items-center">
-              <span>v. </span>
-              {"  "}
               {props.dagTemplates.flatMap((v, i) => {
                 const isLast = i === props.dagTemplates.length - 1;
                 const vNumber = (
                   <Link
-                    className=" hover:text-white hover:underline"
-                    to={`/dashboard/project/${props.projectId}/version/${v.id}/visualize`}
+                    className="hover:cursor-pointer select-none hover:text-white hover:underline"
+                    to={`/dashboard/project/${props.projectId}/versions`}
                     key={v.id}
                   >
-                    {v.id}
+                    version {v.id}
                   </Link>
                 );
                 const joined = <TbDelta className="" />;
@@ -382,11 +391,7 @@ const ProjectAwareSidebar = (props: {
         </nav>
       </div>
       <div className="flex flex-shrink-0 py-3 p-3">
-        {/* <a href="#" className="group block flex-shrink-0"> */}
         <div className="flex items-center">
-          <Link to="/dashboard/account">
-            <VscOrganization className="text-white text-3xl hover:scale-125" />
-          </Link>
           <div className="ml-3">
             <p className="text-base font-medium text-white truncate w-48">
               {props.userName}
@@ -394,9 +399,9 @@ const ProjectAwareSidebar = (props: {
             <p className="font-medium text-gray-400 group-hover:text-gray-300">
               {props.userOrg}
             </p>
+            <FeedbackButton userName={props.userName}></FeedbackButton>
           </div>
         </div>
-        {/* </a> */}
       </div>
     </div>
   );

@@ -28,20 +28,6 @@ import Settings from "./components/dashboard/Settings/Settings";
 import { UserContext } from "./auth/Login";
 import { LocalAccount } from "./auth/LocalAccount";
 
-export const FeedbackButton = (props: { userName: string }) => {
-  return (
-    <Draggable>
-      <button
-        data-feedback-fish
-        data-feedback-fish-url={window.location.href}
-        data-feedback-fish-userid={props.userName}
-        className=" fixed opacity-90 hover:opacity-100 hover:shadow-xl cursor-pointer shadow-lg z-[10000] rounded-full bg-yellow-400 py-2 px-5 right-10 top-10 text-gray-900"
-      >
-        Feedback!
-      </button>
-    </Draggable>
-  );
-};
 
 export const localMode = process.env.REACT_APP_AUTH_MODE === "local";
 
@@ -95,7 +81,6 @@ export const App = () => {
 
   return (
     <div>
-      <FeedbackButton userName={userName || ""} />
       {currentLoomVideo && (
         <HelpModal
           whichLoom={currentLoomVideo}
