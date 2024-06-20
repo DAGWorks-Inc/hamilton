@@ -278,7 +278,9 @@ def _(df: h_databackends.AbstractIbisDataFrame, **kwargs) -> pyarrow.Schema:
 # ongoing polars discussion: https://github.com/pola-rs/polars/issues/15600
 
 
-def get_dataframe_schema(df: h_databackends.DATAFRAME_TYPES, node: HamiltonNode) -> pyarrow.Schema:
+def get_dataframe_schema(
+    df: Union[h_databackends.DATAFRAME_TYPES], node: HamiltonNode
+) -> pyarrow.Schema:
     """Get pyarrow schema of a node result and store node metadata on the pyarrow schema."""
     schema = _get_arrow_schema(df)
     metadata = dict(
