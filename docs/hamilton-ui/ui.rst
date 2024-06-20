@@ -157,7 +157,8 @@ Add the following adapter to your code if you have existing Hamilton code:
         .build()
     )
 
-Then run your DAG, and follow the links in the logs!
+Then run your DAG, and follow the links in the logs! Note that the link is correct if you're using
+the local mode -- if you're on postgres it links to 8241 (but you'll want to follow it to 8241).
 
 I need some Hamilton code to run
 --------------------------------
