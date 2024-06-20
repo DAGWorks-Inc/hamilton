@@ -28,7 +28,7 @@ polars_extension.py`, etc.
 
 import importlib
 import inspect
-from typing import Tuple, Type, Union
+from typing import Tuple
 
 from hamilton.experimental.databackend import AbstractBackend
 
@@ -128,7 +128,7 @@ class AbstractModinDataFrame(AbstractBackend):
     _backends = [("modin.pandas", "DataFrame")]
 
 
-def register_backends() -> Tuple[Type, Type]:
+def register_backends() -> Tuple[Tuple[type], Tuple[type]]:
     """Register databackends defined in this module that
     include `DataFrame` and `Column` in their class name
     """
@@ -143,8 +143,8 @@ def register_backends() -> Tuple[Type, Type]:
             abstract_column_types.add(cls)
 
     # Union[tuple()] creates a Union type object
-    DATAFRAME_TYPES = Union[tuple(abstract_dataframe_types)]
-    COLUMN_TYPES = Union[tuple(abstract_column_types)]
+    DATAFRAME_TYPES = tuple(abstract_dataframe_types)
+    COLUMN_TYPES = tuple(abstract_column_types)
     return DATAFRAME_TYPES, COLUMN_TYPES
 
 

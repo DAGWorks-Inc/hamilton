@@ -1,9 +1,11 @@
 import json
 import pathlib
 
+import pandas as pd
 import pyarrow
 import pytest
 
+from hamilton import graph_types
 from hamilton.plugins import h_schema
 
 
@@ -140,7 +142,6 @@ def test_schema_edited_schema_metadata(schema1: pyarrow.Schema, metadata1: dict,
     assert schema_diff[h_schema.SCHEMA_METADATA_FIELD].value["key"].diff == h_schema.Diff.UNEQUAL
 
     human_readable_diff = h_schema.human_readable_diff(schema_diff)
-    print(human_readable_diff)
 
     assert human_readable_diff == {
         h_schema.SCHEMA_METADATA_FIELD: {"key": {"cur": "value1", "ref": "value2"}}
@@ -227,3 +228,81 @@ def test_save_schema_to_disk(schema1: pyarrow.Schema, tmp_path: pathlib.Path):
     h_schema.save_schema(path=schema_path, schema=schema1)
     loaded_schema = pyarrow.ipc.read_schema(schema_path)
     assert schema1.equals(loaded_schema)
+
+
+def test_get_dataframe_schema():
+    def foo(x: pd.DataFrame) -> pd.DataFrame:
+        """doc"""
+        return x
+
+    version = graph_types.hash_source_code(foo, strip=True)
+    node = graph_types.HamiltonNode(
+        name=foo.__name__,
+        type=pd.DataFrame,
+        documentation=foo.__doc__,
+        tags={},
+        is_external_input=False,
+        originating_functions=(foo,),
+        required_dependencies=set(),
+        optional_dependencies=set(),
+    )
+    df = pd.DataFrame({"a": [0, 1], "b": [True, False]})
+
+    expected_schema = pyarrow.schema(
+        [
+            ("a", "int64"),
+            ("b", "bool"),
+        ]
+    )
+    expected_metadata = {
+        b"name": foo.__name__.encode(),
+        b"documentation": foo.__doc__.encode(),
+        b"version": version.encode(),
+    }
+
+    schema = h_schema.get_dataframe_schema(df, node)
+
+    assert schema.equals(expected_schema.with_metadata(expected_metadata), check_metadata=True)
+
+
+def test_schema_validator_after_node_execution(tmp_path):
+    def foo(x: pd.DataFrame) -> pd.DataFrame:
+        """doc"""
+        return x
+
+    version = graph_types.hash_source_code(foo, strip=True)
+    node = graph_types.HamiltonNode(
+        name=foo.__name__,
+        type=pd.DataFrame,
+        documentation=foo.__doc__,
+        tags={},
+        is_external_input=False,
+        originating_functions=(foo,),
+        required_dependencies=set(),
+        optional_dependencies=set(),
+    )
+    h_graph = graph_types.HamiltonGraph([node])
+    df = pd.DataFrame({"a": [0, 1], "b": [True, False]})
+
+    expected_schema = pyarrow.schema(
+        [
+            ("a", "int64"),
+            ("b", "bool"),
+        ]
+    )
+    expected_metadata = {
+        b"name": foo.__name__.encode(),
+        b"documentation": foo.__doc__.encode(),
+        b"version": version.encode(),
+    }
+
+    # set the HamiltonGraph on the state of the adaper
+    adapter = h_schema.SchemaValidator(schema_dir=tmp_path)
+    adapter.h_graph = h_graph
+
+    adapter.run_after_node_execution(node_name=foo.__name__, result=df)
+
+    tracked_schema = adapter.schemas[foo.__name__]
+    assert tracked_schema.equals(
+        expected_schema.with_metadata(expected_metadata), check_metadata=True
+    )
