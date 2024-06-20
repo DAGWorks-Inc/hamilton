@@ -31,11 +31,7 @@ if __name__ == "__main__":
     from hamilton import driver
     from hamilton.plugins import h_schema
 
-    dr = (
-        driver.Builder()
-        .with_modules(__main__)
-        .with_adapters(h_schema.SchemaValidator("./schemas"))
-        .build()
-    )
+    validator_adapter = h_schema.SchemaValidator("./schemas")
+    dr = driver.Builder().with_modules(__main__).with_adapters(validator_adapter).build()
     res = dr.execute(["df_with_renamed_cols"])
-    print(json.dumps(dr.adapter.adapters[0].json_schemas, indent=2))
+    print(json.dumps(validator_adapter.json_schemas, indent=2))

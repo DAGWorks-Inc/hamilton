@@ -61,18 +61,18 @@ if __name__ == "__main__":
         "--no-check", action="store_false", help="Disable `check` to update the stored schemas."
     )
     args = parser.parse_args()
-
+    validator_adapter = h_schema.SchemaValidator(
+        "./multi_schemas", check=args.no_check, importance="warn"
+    )
     dr = (
         driver.Builder()
         .with_modules(__main__)
         .with_config(dict(version=args.version))
-        .with_adapters(
-            h_schema.SchemaValidator("./multi_schemas", check=args.no_check, importance="warn")
-        )
+        .with_adapters(validator_adapter)
         .build()
     )
     res = dr.execute(["pandas_new_col"])
     print(res["pandas_new_col"].head())
     print()
 
-    print(json.dumps(dr.adapter.adapters[0].json_schemas, indent=2))
+    print(json.dumps(validator_adapter.json_schemas, indent=2))
