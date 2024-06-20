@@ -719,7 +719,7 @@ const Dashboard = () => {
 
         {/* Static sidebar for desktop. Overflow-clip is probably not the right one, but it solves the problem of it scrolling unecessarily for now... */}
 
-        <div className="hidden md:flex md:flex-col z-50 sticky top-0 h-screen overflow-y-clip">
+        <div className="md:flex md:flex-col z-50 sticky top-0 h-screen overflow-y-clip">
           {/* Sidebar component, swap this element with another sidebar if you like */}
           <SideBar
             allowMinimization={canDisplayFullSidebar}
