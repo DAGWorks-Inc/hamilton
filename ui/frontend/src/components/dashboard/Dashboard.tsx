@@ -40,6 +40,8 @@ import { SearchBar } from "./Search/search";
 import { ErrorPage } from "../common/Error";
 import { IconType } from "react-icons";
 import { localMode } from "../../App";
+import { RootState } from "../../state/store";
+
 
 const useProcessAwareLogout = () => {
   if (process.env.REACT_APP_AUTH_MODE === "local") {
@@ -385,6 +387,16 @@ const ProjectAwareSidebar = (props: {
         </nav>
       </div>
       <div className="w-48 px-3 py-3">
+        <div className="flex flex-shrink-0 items-center pb-8">
+          <div className="ml-3">
+            <p className="text-base font-medium text-white truncate w-48">
+              {props.userName}
+            </p>
+            <p className="font-medium text-gray-400 group-hover:text-gray-300">
+              {props.userOrg}
+            </p>
+          </div>
+        </div>
         <FeedbackButton userName={props.userName}></FeedbackButton>
       </div>
     </div>
