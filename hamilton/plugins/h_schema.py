@@ -274,6 +274,66 @@ def _(df: h_databackends.AbstractIbisDataFrame, **kwargs) -> pyarrow.Schema:
     return df.schema().to_pyarrow()
 
 
+def _spark_to_arrow(type_):
+    import pyspark.sql.types as pt
+
+    _from_pyspark_dtypes = {
+        pt.NullType: pyarrow.null(),
+        pt.BooleanType: pyarrow.bool_(),
+        pt.BinaryType: pyarrow.binary(),
+        pt.ByteType: pyarrow.int8(),
+        pt.ShortType: pyarrow.int16(),
+        pt.IntegerType: pyarrow.int32(),
+        pt.LongType: pyarrow.int64(),
+        pt.DateType: pyarrow.date64(),
+        pt.FloatType: pyarrow.float32(),
+        pt.DoubleType: pyarrow.float64(),
+        pt.TimestampType: pyarrow.timestamp(unit="ms", tz=None),
+        pt.TimestampNTZType: pyarrow.timestamp(unit="ms", tz=None),
+        pt.StringType: pyarrow.string(),
+        pt.VarcharType: pyarrow.string(),  # TODO specify length
+        pt.CharType: pyarrow.string(),  # TODO specify length
+        pt.DayTimeIntervalType: pyarrow.month_day_nano_interval(),  # TODO specify unit
+        pt.YearMonthIntervalType: pyarrow.month_day_nano_interval(),  # TODO specify unit
+    }
+
+    if isinstance(type_, pt.DecimalType):
+        arrow_type = pyarrow.decimal128(type_.precision, type_.scale)
+    elif isinstance(type_, pt.ArrayType):
+        arrow_type = pyarrow.array([], type=_spark_to_arrow(type_.elementType))
+    elif isinstance(type_, pt.MapType):
+        arrow_type = pyarrow.map_(
+            _spark_to_arrow(type_.keyType),
+            _spark_to_arrow(type_.valueType),
+        )
+    elif isinstance(type_, pt.StructType):
+        arrow_type = pyarrow.struct(
+            {field.name: _spark_to_arrow(field.dataType) for field in type_.fields}
+        )
+    else:
+        try:
+            arrow_type = _from_pyspark_dtypes[type(type_)]
+        except KeyError:
+            raise NotImplementedError(f"Can't convert {type_} to pyarrow type.")
+
+    return arrow_type
+
+
+@_get_arrow_schema.register(h_databackends.AbstractSparkSQLDataFrame)
+def _get_spark_schema(df, **kwargs) -> pyarrow.Schema:
+    """Convert the PySpark schema to pyarrow Schema. The operation is lazy
+    and doesn't require PySpark execution"""
+    return pyarrow.schema(
+        pyarrow.field(
+            name=field.name,
+            type=_spark_to_arrow(field.dataType),
+            nullable=field.nullable,
+            metadata=field.metadata,
+        )
+        for field in df.schema
+    )
+
+
 # TODO lazy polars schema conversion
 # ongoing polars discussion: https://github.com/pola-rs/polars/issues/15600
 
