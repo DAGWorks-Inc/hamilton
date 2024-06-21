@@ -15,7 +15,16 @@ from hamilton import node as h_node
 from hamilton.data_quality import base as dq_base
 from hamilton.lifecycle import base as lifecycle_base
 
-_modules_to_import = ["numpy", "pandas", "polars", "pyspark", "ibis", "langchain", "pydantic"]
+_modules_to_import = [
+    "numpy",
+    "pandas",
+    "polars",
+    "pyspark",
+    "ibis",
+    "langchain",
+    "pydantic",
+    "scikit_learn",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -174,9 +183,23 @@ class RunTracker:
         self.tracking_state.update_task(node_.name, task_run)
         try:
             result = original_do_node_execute(run_id, node_, kwargs, task_id)
+
+            # NOTE This is a temporary hack to make process_result() able to return
+            # more than one object that will be used as UI "task attributes".
+            # There's a conflict between `TaskRun.result_summary` that expect a single
+            # dict from process_result() and the `HamiltonTracker.post_node_execute()`
+            # that can more freely handle "stats" to create multiple "task attributes"
+            result_summary = process_result(result, node_)  # add node
+            if isinstance(result_summary, dict):
+                result_summary = result_summary
+            elif isinstance(result_summary, list):
+                result_summary = result_summary[0]
+            else:
+                raise TypeError("`process_result()` needs to return a dict or list of dict")
+
             task_run.status = Status.SUCCESS
             task_run.result_type = type(result)
-            task_run.result_summary = process_result(result, node_)  # add node
+            task_run.result_summary = result_summary
             task_run.end_time = datetime.now(timezone.utc)
             self.tracking_state.update_task(node_.name, task_run)
             logger.debug(f"Node: {node_.name} ran successfully")
