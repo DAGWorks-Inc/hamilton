@@ -274,6 +274,72 @@ def _(df: h_databackends.AbstractIbisDataFrame, **kwargs) -> pyarrow.Schema:
     return df.schema().to_pyarrow()
 
 
+def _spark_to_arrow(type_):
+    import pyspark.sql.types as pt
+
+    _from_pyspark_dtypes = {
+        pt.NullType: pyarrow.null(),
+        pt.BooleanType: pyarrow.bool_(),
+        pt.BinaryType: pyarrow.binary(),
+        pt.ByteType: pyarrow.int8(),
+        pt.ShortType: pyarrow.int16(),
+        pt.IntegerType: pyarrow.int32(),
+        pt.LongType: pyarrow.int64(),
+        pt.DateType: pyarrow.date64(),
+        pt.FloatType: pyarrow.float32(),
+        pt.DoubleType: pyarrow.float64(),
+        pt.StringType: pyarrow.string(),
+        pt.TimestampType: pyarrow.timestamp(),
+    }
+
+    if isinstance(type_, pt.DecimalType):
+        arrow_type = pyarrow.decimal128(type_.precision, type_.scale)
+    elif isinstance(type_, pt.ArrayType):
+        arrow_type = pyarrow.array(_spark_to_arrow(type_.elementType))
+    elif isinstance(type_, pt.MapType):
+        arrow_type = pyarrow.map_(
+            _spark_to_arrow(type_.keyType),
+            _spark_to_arrow(type_.valueType),
+        )
+    elif isinstance(type_, pt.StructType):
+        arrow_type = pyarrow.struct(
+            {field.name: _spark_to_arrow(field.dataType) for field in type_.fields}
+        )
+    elif isinstance(type_, pt.VarcharType):
+        # TODO handle length more specifically
+        arrow_type = pyarrow.string()
+    elif isinstance(type_, pt.CharType):
+        # TODO handle length more specifically
+        arrow_type = pyarrow.string()
+    elif isinstance(type_, pt.DayTimeIntervalType):
+        # TODO more specifically handle the unit of the interval
+        arrow_type = pyarrow.month_day_nano_interval()
+    elif isinstance(type_, pt.YearMonthIntervalType):
+        # TODO more specifically handle the unit of the interval
+        arrow_type = pyarrow.month_day_nano_interval()
+    elif isinstance(type_, pt.TimestampNTZType):
+        arrow_type = pyarrow.timestamp()
+    elif isinstance(type_, pt.UserDefinedType):
+        arrow_type = _spark_to_arrow(type_.sqlType())
+    else:
+        try:
+            arrow_type = _from_pyspark_dtypes[type(type_)]
+        except KeyError:
+            raise NotImplementedError(f"Can't convert {type_} to pyarrow type.")
+
+    return arrow_type
+
+
+@_get_arrow_schema.register
+def _(
+    df: h_databackends.AbstractSparkSQLDataFrame, strict_conversion: bool = False, **kwargs
+) -> pyarrow.Schema:
+    """Convert the Ibis schema to pyarrow Schema. The operation is lazy
+    and doesn't require Ibis execution"""
+    fields = [(field_name, _spark_to_arrow(type_)) for field_name, type_ in df.schema.items()]
+    return pyarrow.schema(fields)
+
+
 # TODO lazy polars schema conversion
 # ongoing polars discussion: https://github.com/pola-rs/polars/issues/15600
 
