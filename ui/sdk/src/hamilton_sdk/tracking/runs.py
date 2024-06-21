@@ -15,7 +15,15 @@ from hamilton import node as h_node
 from hamilton.data_quality import base as dq_base
 from hamilton.lifecycle import base as lifecycle_base
 
-_modules_to_import = ["numpy", "pandas", "polars", "pyspark", "ibis", "langchain", "scikit_learn"]
+_modules_to_import = [
+    "numpy",
+    "pandas",
+    "polars",
+    "pyspark",
+    "ibis",
+    "langchain",
+    "scikit_learn",
+]
 
 logger = logging.getLogger(__name__)
 
