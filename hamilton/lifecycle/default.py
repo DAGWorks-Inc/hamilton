@@ -17,8 +17,9 @@ from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook, NodeExecut
 logger = logging.getLogger(__name__)
 
 NodeFilter = Union[
-    Callable[[str], Dict[str, Any]],
-    bool,  # filter function for nodes, mapping node name to a boolean
+    Callable[
+        [str, Dict[str, Any]], bool
+    ],  # filter function for nodes, mapping node name to a boolean
     List[str],  # list of node names to run
     str,  # node name to run
     None,  # run all nodes
