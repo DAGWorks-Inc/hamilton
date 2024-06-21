@@ -255,6 +255,8 @@ class HamiltonTracker(
         logger.debug("post_node_execute %s %s", run_id, task_id)
         task_run: TaskRun = self.task_runs[run_id][node_.name]
         tracking_state = self.tracking_states[run_id]
+
+        other_results = []
         if success:
             task_run.status = Status.SUCCESS
             task_run.result_type = type(result)
@@ -268,6 +270,19 @@ class HamiltonTracker(
                         "value": "Failed to process result.",
                     },
                 }
+            # NOTE This is a temporary hack to make process_result() able to return
+            # more than one object that will be used as UI "task attributes".
+            # There's a conflict between `TaskRun.result_summary` that expect a single
+            # dict from process_result() and the `HamiltonTracker.post_node_execute()`
+            # that can more freely handle "stats" to create multiple "task attributes"
+            elif isinstance(result_summary, dict):
+                result_summary = result_summary
+            elif isinstance(result_summary, list):
+                other_results = [obj for obj in result_summary[1:]]
+                result_summary = result_summary[0]
+            else:
+                raise TypeError("`process_result()` needs to return a dict or sequence of dict")
+
             task_run.result_summary = result_summary
             task_attr = dict(
                 node_name=get_node_name(node_, task_id),
@@ -280,6 +295,7 @@ class HamiltonTracker(
                 value=task_run.result_summary["observability_value"],
                 attribute_role="result_summary",
             )
+
         else:
             task_run.status = Status.FAILURE
             task_run.is_in_sample = True  # override any sampling
@@ -297,6 +313,21 @@ class HamiltonTracker(
                 },
                 attribute_role="error",
             )
+
+        # `result_summary` or "error" is first because the order influences UI display order
+        attributes = [task_attr]
+        for i, other_result in enumerate(other_results):
+            other_attr = dict(
+                node_name=get_node_name(node_, task_id),
+                name=other_result.get("name", f"Attribute {i+1}"),  # retrieve name if specified
+                type=other_result["observability_type"],
+                # 0.0.3 -> 3
+                schema_version=int(other_result["observability_schema_version"].split(".")[-1]),
+                value=other_result["observability_value"],
+                attribute_role="result_summary",
+            )
+            attributes.append(other_attr)
+
         task_run.end_time = datetime.datetime.now(timezone.utc)
         tracking_state.update_task(node_.name, task_run)
         task_update = dict(
@@ -309,9 +340,9 @@ class HamiltonTracker(
         )
         self.client.update_tasks(
             self.dw_run_ids[run_id],
-            attributes=[task_attr],
-            task_updates=[task_update],
-            in_samples=[task_run.is_in_sample],
+            attributes=attributes,
+            task_updates=[task_update for _ in attributes],
+            in_samples=[task_run.is_in_sample for _ in attributes],
         )
 
     def post_graph_execute(

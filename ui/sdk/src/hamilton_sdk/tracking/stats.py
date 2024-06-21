@@ -1,13 +1,15 @@
 import json
 from functools import singledispatch
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 import pandas as pd
 from hamilton_sdk.tracking import sql_utils
 
+StatsType = Dict[str, Any]
+
 
 @singledispatch
-def compute_stats(result, node_name: str, node_tags: dict) -> Dict[str, Any]:
+def compute_stats(result, node_name: str, node_tags: dict) -> Union[StatsType, List[StatsType]]:
     """This is the default implementation for computing stats on a result.
 
     All other implementations should be registered with the `@compute_stats.register` decorator.
@@ -31,7 +33,7 @@ def compute_stats(result, node_name: str, node_tags: dict) -> Dict[str, Any]:
 @compute_stats.register(int)
 @compute_stats.register(float)
 @compute_stats.register(bool)
-def compute_stats_primitives(result, node_name: str, node_tags: dict) -> Dict[str, Any]:
+def compute_stats_primitives(result, node_name: str, node_tags: dict) -> StatsType:
     return {
         "observability_type": "primitive",
         "observability_value": {
@@ -43,7 +45,7 @@ def compute_stats_primitives(result, node_name: str, node_tags: dict) -> Dict[st
 
 
 @compute_stats.register(dict)
-def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> Dict[str, Any]:
+def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> StatsType:
     """call summary stats on the values in the dict"""
     try:
         # if it's JSON serializable, take it.
@@ -58,6 +60,15 @@ def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> Dict[st
                 continue
             # else it's a dict, list, tuple, etc. Compute stats.
             v_result = compute_stats(v, node_name, node_tags)
+
+            # NOTE recursive approaches are problematic if wanting to return
+            # more than one "stats" per node. Would need to add max recursive depth
+            # In particular, @extract_field nodes will often return dictionaries
+            # of complex types
+            if isinstance(v_result, list):
+                result_values[k] = str(v)
+                continue
+
             # determine what to pull out of the result for the value
             observed_type = v_result["observability_type"]
             if observed_type == "primitive":
@@ -83,7 +94,7 @@ def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> Dict[st
 
 
 @compute_stats.register(tuple)
-def compute_stats_tuple(result: tuple, node_name: str, node_tags: dict) -> Dict[str, Any]:
+def compute_stats_tuple(result: tuple, node_name: str, node_tags: dict) -> StatsType:
     if "hamilton.data_loader" in node_tags and node_tags["hamilton.data_loader"] is True:
         # assumption it's a tuple
         if isinstance(result[1], dict):
@@ -130,7 +141,7 @@ def compute_stats_tuple(result: tuple, node_name: str, node_tags: dict) -> Dict[
 
 
 @compute_stats.register(list)
-def compute_stats_list(result: list, node_name: str, node_tags: dict) -> Dict[str, Any]:
+def compute_stats_list(result: list, node_name: str, node_tags: dict) -> StatsType:
     """call summary stats on the values in the list"""
     try:
         # if it's JSON serializable, take it.
