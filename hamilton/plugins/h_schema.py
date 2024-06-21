@@ -321,8 +321,8 @@ def _spark_to_arrow(type_):
 
 @_get_arrow_schema.register(h_databackends.AbstractSparkSQLDataFrame)
 def _get_spark_schema(df, **kwargs) -> pyarrow.Schema:
-    """Convert the Ibis schema to pyarrow Schema. The operation is lazy
-    and doesn't require Ibis execution"""
+    """Convert the PySpark schema to pyarrow Schema. The operation is lazy
+    and doesn't require PySpark execution"""
     return pyarrow.schema(
         pyarrow.field(
             name=field.name,
