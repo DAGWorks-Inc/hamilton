@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+// NOTE The Alerts() page is currently not displayed in the UI
 export const Alerts = () => {
   const currentURL = new URL(window.location.href);
   const pathParts = currentURL.pathname.split("/");

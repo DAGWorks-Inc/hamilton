@@ -10,7 +10,6 @@ import {
   HelpModal,
   HelpVideos,
 } from "./components/tutorial/HelpVideo";
-import Draggable from "react-draggable";
 import { usePostHog } from "posthog-js/react";
 import { Alerts } from "./components/dashboard/Alerts";
 import Account from "./components/dashboard/Account/Account";
