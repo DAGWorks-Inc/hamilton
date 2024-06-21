@@ -40,7 +40,6 @@ import { SearchBar } from "./Search/search";
 import { ErrorPage } from "../common/Error";
 import { IconType } from "react-icons";
 import { localMode } from "../../App";
-import { RootState } from "../../state/store";
 
 
 const useProcessAwareLogout = () => {
