@@ -1,8 +1,21 @@
 import pyarrow as pa
 import pyspark.sql.types as pt
 import pytest
+from pyspark.sql import SparkSession
 
 from hamilton.plugins import h_schema
+
+
+@pytest.fixture(scope="module")
+def spark_session():
+    spark = (
+        SparkSession.builder.master("local")
+        .appName("spark session")
+        .config("spark.sql.shuffle.partitions", "1")
+        .getOrCreate()
+    )
+    yield spark
+    spark.stop()
 
 
 @pytest.mark.parametrize(
@@ -39,3 +52,25 @@ from hamilton.plugins import h_schema
 def test_spark_to_arrow_type(spark_type, arrow_type):
     converted_type = h_schema._spark_to_arrow(spark_type)
     assert converted_type == arrow_type
+
+
+def test_convert_schema(spark_session):
+    pyspark_schema = pt.StructType(
+        [
+            pt.StructField("a", pt.NullType()),
+            pt.StructField("b", pt.StringType()),
+            pt.StructField("c", pt.FloatType()),
+        ]
+    )
+    empty_df = spark_session.createDataFrame([], pyspark_schema)
+    expected_arrow_schema = pa.schema(
+        [
+            pa.field("a", pa.null()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float32()),
+        ]
+    )
+
+    converted_schema = h_schema._get_spark_schema(empty_df)
+
+    assert expected_arrow_schema.equals(converted_schema)
