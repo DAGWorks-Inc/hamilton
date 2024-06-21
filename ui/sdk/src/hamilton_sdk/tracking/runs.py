@@ -22,6 +22,7 @@ _modules_to_import = [
     "pyspark",
     "ibis",
     "langchain",
+    "pydantic",
     "scikit_learn",
 ]
 
@@ -52,7 +53,6 @@ def process_result(result: Any, node: h_node.Node) -> Any:
     :param node: The node that produced the result
     :return: The processed  result - it has to be JSON serializable!
     """
-
     try:
         start = py_time.time()
         statistics = stats.compute_stats(result, node.name, node.tags)

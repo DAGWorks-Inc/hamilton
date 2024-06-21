@@ -47,7 +47,11 @@ def make_json_safe(item: Union[dict, list, str, float, int, bool]) -> Any:
     elif hasattr(item, "to_json"):
         # we convert to json string and then deserialize it so that
         # it's not a string in the UI.
-        return json.loads(item.to_json())
+        try:
+            return json.loads(item.to_json())
+        except Exception:
+            # pass
+            return str(item)[0:200] + "..."
     elif hasattr(item, "to_dict"):
         return make_json_safe(item.to_dict())
     else:
