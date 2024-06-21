@@ -59,7 +59,7 @@ export const FeedbackButton = (props: { userName: string }) => {
         data-feedback-fish
         data-feedback-fish-url={window.location.href}
         data-feedback-fish-userid={props.userName}
-        className="cursor-pointer select-none rounded-full py-2 px-5 flex justify-center items-center bg-yellow-400 text-gray-900"
+        className="cursor-pointer select-none rounded-full py-2 px-5 bg-yellow-400 text-gray-900"
       >
         Feedback
       </button>
@@ -384,14 +384,12 @@ const ProjectAwareSidebar = (props: {
           })}
         </nav>
       </div>
-      <div className="flex flex-shrink-0 py-3 p-3">
+      <div className="w-48 px-3 py-3">
         <FeedbackButton userName={props.userName}></FeedbackButton>
       </div>
     </div>
   );
 };
-
-//<FeedbackButton userName={props.userName}></FeedbackButton>
 
 const SideBar = (props: {
   allowMinimization: boolean;
