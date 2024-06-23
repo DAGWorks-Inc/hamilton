@@ -1,12 +1,10 @@
-import { Fragment, useState } from "react";
-import { Dialog, Transition } from "@headlessui/react";
+import { useState } from "react";
 import {
-  Bars3Icon,
-  XMarkIcon,
+  FolderIcon,
   QuestionMarkCircleIcon,
-  Squares2X2Icon,
   ArrowRightOnRectangleIcon,
   MagnifyingGlassIcon,
+  IdentificationIcon,
 } from "@heroicons/react/24/outline";
 import { NAV_HELP, navKeys, resolveNav } from "./nav";
 import { GoTriangleDown, GoTriangleRight } from "react-icons/go";
@@ -21,7 +19,6 @@ import {
 import { Loading } from "../common/Loading";
 
 import { useAuthData } from "../../state/authSlice";
-import { VscOrganization } from "react-icons/vsc";
 import { useLogoutFunction } from "@propelauth/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
 import { IoKeyOutline } from "react-icons/io5";
@@ -44,6 +41,7 @@ import { ErrorPage } from "../common/Error";
 import { IconType } from "react-icons";
 import { localMode } from "../../App";
 
+
 const useProcessAwareLogout = () => {
   if (process.env.REACT_APP_AUTH_MODE === "local") {
     return null;
@@ -55,6 +53,19 @@ const useProcessAwareLogout = () => {
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
+
+export const FeedbackButton = (props: { userName: string }) => {
+  return (
+      <button
+        data-feedback-fish
+        data-feedback-fish-url={window.location.href}
+        data-feedback-fish-userid={props.userName}
+        className="cursor-pointer select-none rounded-full py-2 px-5 bg-yellow-400 text-gray-900"
+      >
+        Feedback
+      </button>
+  );
+};
 
 const SubMenu = (props: {
   name: string;
@@ -137,7 +148,7 @@ const TopLevelMenu = (props: {
           props.item?.current
             ? "bg-gray-900 text-white"
             : "text-gray-300 hover:bg-gray-700 hover:text-white",
-          "group flex items-center px-2 py-2 text-base font-medium rounded-md"
+          "hover:cursor-pointer select-none group flex items-center px-2 py-2 text-base font-medium rounded-md"
         )}
       >
         <props.item.icon
@@ -194,12 +205,9 @@ const MiniSideBar = (props: {
           whichIcon="PROJECT_SELECTOR"
           translate="-translate-x-3 translate-y-3"
         >
-          <Squares2X2Icon
+          <FolderIcon
             onClick={() => navigate("/dashboard/projects")}
-            className={classNames(
-              "text-gray-300 hover:bg-gray-700 hover:text-white hover:cursor-pointer rounded-md border-0 border-transparent",
-              " h-10 w-10"
-            )}
+            className="text-gray-300 hover:bg-gray-700 hover:text-white hover:cursor-pointer rounded-md h-10 w-10"
             aria-hidden="true"
             title="Projects"
           />
@@ -245,7 +253,7 @@ const MiniSideBar = (props: {
         </div>
         <div>
           <Link to="/dashboard/account">
-            <VscOrganization
+            <IdentificationIcon
               className={classNames(
                 "text-gray-300 hover:bg-gray-700 hover:text-white hover:cursor-pointer rounded-md border-0 border-transparent",
                 " h-10 w-10"
@@ -331,26 +339,22 @@ const ProjectAwareSidebar = (props: {
   // const navKeys = [...props.navSubMenus.map((item) => item.header)];
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-1 flex-col overflow-y-auto pt-4 pb-4">
+      <div className="flex flex-1 flex-col overflow-y-auto py-4">
         <div className="border-b-2 border-b-gray-700 px-3 pb-2">
-          <Link to={`/dashboard/project/${props.projectId}`}>
-            <div className="text-gray-300 hover:underline">
+          <Link to={`/dashboard/project/${props.projectId}`} className="text-gray-300 hover:underline select-none">
               {props.projectName}
-            </div>
           </Link>
           {props.dagTemplates.length > 0 ? (
             <div className="text-gray-300 font-semibold flex flex-row gap-1 items-center">
-              <span>v. </span>
-              {"  "}
               {props.dagTemplates.flatMap((v, i) => {
                 const isLast = i === props.dagTemplates.length - 1;
                 const vNumber = (
                   <Link
-                    className=" hover:text-white hover:underline"
-                    to={`/dashboard/project/${props.projectId}/version/${v.id}/visualize`}
+                    className="hover:cursor-pointer select-none hover:text-white hover:underline"
+                    to={`/dashboard/project/${props.projectId}/versions`}
                     key={v.id}
                   >
-                    {v.id}
+                    version {v.id}
                   </Link>
                 );
                 const joined = <TbDelta className="" />;
@@ -381,12 +385,8 @@ const ProjectAwareSidebar = (props: {
           })}
         </nav>
       </div>
-      <div className="flex flex-shrink-0 py-3 p-3">
-        {/* <a href="#" className="group block flex-shrink-0"> */}
-        <div className="flex items-center">
-          <Link to="/dashboard/account">
-            <VscOrganization className="text-white text-3xl hover:scale-125" />
-          </Link>
+      <div className="w-48 px-3 py-3">
+        <div className="flex flex-shrink-0 items-center pb-8">
           <div className="ml-3">
             <p className="text-base font-medium text-white truncate w-48">
               {props.userName}
@@ -396,7 +396,7 @@ const ProjectAwareSidebar = (props: {
             </p>
           </div>
         </div>
-        {/* </a> */}
+        <FeedbackButton userName={props.userName}></FeedbackButton>
       </div>
     </div>
   );
@@ -503,10 +503,7 @@ const Dashboard = () => {
    * State for the dashboard.
    * Most of this is delegated to the subcomponents.
    */
-  const [sidebarOpenSmallScreen, setSidebarOpenSmallScreen] = useState(false);
   const [searchBarOpen, setSearchBarOpen] = useState(false);
-  // const { projectVersion, project, projectVersionIds, projectId } =
-  //   useProjectGlobals();
   const { versionIds, projectId } = useURLParams();
   const navigate = useNavigate();
   const whereAmI = useLocation();
@@ -634,87 +631,8 @@ const Dashboard = () => {
   return (
     <>
       <SearchBar open={searchBarOpen} setOpen={setSearchBarOpen} />
-
       <div className="flex flex-row overflow-y-clip overscroll-none">
-        <Transition.Root show={sidebarOpenSmallScreen} as={Fragment}>
-          <Dialog
-            as="div"
-            className="relative z-40 md:hidden"
-            onClose={setSidebarOpenSmallScreen}
-          >
-            <Transition.Child
-              as={Fragment}
-              enter="transition-opacity ease-linear duration-300"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-              leave="transition-opacity ease-linear duration-300"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-            >
-              <div className="fixed inset-0 bg-gray-600 bg-opacity-75" />
-            </Transition.Child>
-
-            <div className="fixed inset-0 z-40 flex">
-              <Transition.Child
-                as={Fragment}
-                enter="transition ease-in-out duration-300 transform"
-                enterFrom="-translate-x-full"
-                enterTo="translate-x-0"
-                leave="transition ease-in-out duration-300 transform"
-                leaveFrom="translate-x-0"
-                leaveTo="-translate-x-full"
-              >
-                <Dialog.Panel className="flex w-full max-w-xs flex-1 flex-col bg-gray-800 z-[1000]">
-                  <Transition.Child
-                    as={Fragment}
-                    enter="ease-in-out duration-300"
-                    enterFrom="opacity-0"
-                    enterTo="opacity-100"
-                    leave="ease-in-out duration-300"
-                    leaveFrom="opacity-100"
-                    leaveTo="opacity-0"
-                  >
-                    <div className="absolute top-0 right-0 -mr-12 pt-2">
-                      <button
-                        type="button"
-                        className="ml-1 flex h-10 w-10 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-                        onClick={() => setSidebarOpenSmallScreen(false)}
-                      >
-                        <span className="sr-only">Close sidebar</span>
-                        <XMarkIcon
-                          className="h-6 w-6 text-white"
-                          aria-hidden="true"
-                        />
-                      </button>
-                    </div>
-                  </Transition.Child>
-                  {hasChosenProject && (
-                    <SideBar
-                      allowMinimization={canDisplayFullSidebar}
-                      full={canDisplayFullSidebar}
-                      topLevelNavs={topLevelNavs}
-                      navSubMenus={navSubMenus}
-                      userName={userName || ""}
-                      userOrg={userOrg || ""}
-                      navigate={navigate}
-                      setSearchBarOpen={() => setSearchBarOpen(true)}
-                      projectName={project.data?.name || ""}
-                      dagTemplates={dagTemplateVersions?.data || []}
-                      projectId={projectId}
-                    />
-                  )}
-                </Dialog.Panel>
-              </Transition.Child>
-              <div className="w-14 flex-shrink-0">
-                {/* Force sidebar to shrink to fit close icon */}
-              </div>
-            </div>
-          </Dialog>
-        </Transition.Root>
-
-        {/* Static sidebar for desktop. Overflow-clip is probably not the right one, but it solves the problem of it scrolling unecessarily for now... */}
-
-        <div className="hidden md:flex md:flex-col z-50 sticky top-0 h-screen overflow-y-clip">
+        <div className="md:flex md:flex-col z-50 sticky top-0 h-screen overflow-y-clip">
           {/* Sidebar component, swap this element with another sidebar if you like */}
           <SideBar
             allowMinimization={canDisplayFullSidebar}
@@ -731,27 +649,13 @@ const Dashboard = () => {
           />
         </div>
         <div className="flex flex-1 flex-col">
-          <div className="sticky top-0 z-10 bg-gray-100 pl-1 sm:pl-3 sm:pt-3 md:hidden flex flex-row items-center text-gray-600">
-            <button
-              type="button"
-              className="inline-flex h-12 w-12 items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none
-              focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-              onClick={() => setSidebarOpenSmallScreen(true)}
-            >
-              <span className="sr-only">Open sidebar</span>
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-            </button>
-          </div>
           <main className="flex-1 px-4">
             {dagTemplateVersions.isSuccess &&
               project.isSuccess &&
               project.data !== null && // TODO -- determine if this could be null?
               hasChosenProject && (
                 <div className="fixed top-0 px-4 sm:px-6 md:px-8 py-4 bg-white w-full z-0 hidden md:block text-gray-600">
-                  <NavBreadCrumb
-                    project={project.data}
-                    dagTemplates={dagTemplateVersions.data}
-                  />
+                  <NavBreadCrumb project={project.data} dagTemplates={dagTemplateVersions.data}/>
                 </div>
               )}
             <div className="mx-auto max-w-10xl sm:px-6 md:px-8">

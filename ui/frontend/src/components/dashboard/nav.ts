@@ -1,10 +1,7 @@
 import { AiFillCode } from "react-icons/ai";
-import { BiAlarmExclamation, BiRun } from "react-icons/bi";
-import { GoBook } from "react-icons/go";
-import { IoGitNetworkSharp } from "react-icons/io5";
-import { VscVersions } from "react-icons/vsc";
+import { IoGitNetworkSharp, IoExtensionPuzzle, IoFileTrayFull, IoGitMerge} from "react-icons/io5";
 import { DAGTemplateWithData } from "../../state/api/friendlyApi";
-export const navKeys = ["Structure", "Runs"];
+export const navKeys = [];
 
 const pathNav = (pathEnd: string) => {
   return (
@@ -22,64 +19,43 @@ const pathNav = (pathEnd: string) => {
 // Mapping of nav to help in the HelpVideo file
 export const NAV_HELP = {
   Versions: "VERSIONS",
-  Structure: "STRUCTURE",
+  Dataflow: "STRUCTURE",
   Runs: "RUNS",
 };
 
 export const navigation = [
   {
-    name: "Code",
-    href: pathNav("code"),
-    icon: AiFillCode,
-    under: "Structure",
-    requires: ["project", "projectVersion"],
-  },
-  {
-    name: "Visualize",
+    name: "Dataflow",
     href: pathNav("visualize"),
     icon: IoGitNetworkSharp,
-    under: "Structure",
+    under: null,
     requires: ["project", "projectVersion"],
   },
   {
-    name: "History",
-    href: pathNav("runs"),
-    icon: BiRun,
-    under: "Runs",
-    requires: ["project"],
-  },
-  {
-    name: "Alerts",
-    href: pathNav("alerts"),
-    icon: BiAlarmExclamation,
-    under: "Runs",
-    requires: ["project"],
-  },
-  // {
-  //   name: "Materialize",
-  //   href: pathNav("materialize"),
-  //   icon: FiDatabase,
-  //   under: null,
-  //   requires: ["project", "projectVersion"],
-  // },
-  // {
-  //   name: "Report",
-  //   href: pathNav("report"),
-  //   icon: TbReportAnalytics,
-  //   under: null,
-  //   requires: ["project", "projectVersion"],
-  // },
-  {
-    name: "Versions",
-    href: pathNav("versions"),
-    icon: VscVersions,
+    name: "Assets",
+    href: pathNav("catalog"),
+    icon: IoExtensionPuzzle,
     under: null,
     requires: ["project"],
   },
   {
-    name: "Catalog",
-    href: pathNav("catalog"),
-    icon: GoBook,
+    name: "Code",
+    href: pathNav("code"),
+    icon: AiFillCode,
+    under: null,
+    requires: ["project", "projectVersion"],
+  },
+  {
+    name: "Runs",
+    href: pathNav("runs"),
+    icon: IoFileTrayFull,
+    under: null,
+    requires: ["project"],
+  },
+  {
+    name: "Versions",
+    href: pathNav("versions"),
+    icon: IoGitMerge,
     under: null,
     requires: ["project"],
   },
