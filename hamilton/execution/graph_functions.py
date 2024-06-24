@@ -3,6 +3,7 @@ import pprint
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 from hamilton import node
+from hamilton.htypes import DataLoaderMetadata
 from hamilton.lifecycle.base import LifecycleAdapterSet
 
 logger = logging.getLogger(__name__)
@@ -218,7 +219,18 @@ def execute_subdag(
                     except Exception as e:
                         pre_node_execute_errored = True
                         raise e
-
+                # this is a hack
+                # if one of the kwargs is a tuple[Value, DataLoaderMetadata] we need to unpack it
+                kwargs = {
+                    k: (
+                        v[0]
+                        if isinstance(v, tuple)
+                        and len(v) == 2
+                        and isinstance(v[1], DataLoaderMetadata)
+                        else v
+                    )
+                    for k, v in kwargs.items()
+                }
                 if adapter.does_method("do_node_execute", is_async=False):
                     result = adapter.call_lifecycle_method_sync(
                         "do_node_execute",
