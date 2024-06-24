@@ -3,6 +3,7 @@ import {
   AttributeDagworksDescribe3,
   AttributeDict1,
   AttributeDict2,
+  AttributeHTML1,
   AttributePandasDescribe1,
   AttributePrimitive1,
   AttributeUnsupported1,
@@ -18,6 +19,7 @@ import { RunLink } from "../../../../common/CommonLinks";
 import { PandasDescribe1View } from "./PandasDescribe";
 import { Dict1View, Dict2View } from "./DictView";
 import { DAGWorksDescribe3View } from "./DAGWorksDescribe";
+import { HTML1View } from "./HTMLView";
 
 const Primitive1View = (props: {
   taskName: string;
@@ -248,6 +250,21 @@ export const ResultsSummaryView = (props: {
         taskName={props.taskName || ""}
         runIds={dict2Views.map((i) => i.runId)}
         values={dict2Views.map((i) => i.value)}
+      />
+    );
+  }
+
+  const html1Views = getNodeRunAttributes<AttributeHTML1>(
+    props.runAttributes,
+    props.runIds,
+    "AttributeHTML1"
+  );
+  if (html1Views.length > 0) {
+    allViews.push(
+      <HTML1View
+        taskName={props.taskName || ""}
+        runIds={html1Views.map((i) => i.runId)}
+        values={html1Views.map((i) => i.value)}
       />
     );
   }
