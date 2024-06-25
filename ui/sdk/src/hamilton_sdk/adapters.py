@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import hashlib
 import logging
@@ -148,7 +147,6 @@ class HamiltonTracker(
             dag_template_id = self.dag_template_id_cache[fg_id]
         else:
             raise ValueError("DAG template ID not found in cache. This should never happen.")
-
         tracking_state = TrackingState(run_id)
         self.tracking_states[run_id] = tracking_state  # cache
         tracking_state.clock_start()
@@ -386,7 +384,7 @@ class HamiltonTracker(
         )
 
 
-class AsyncHamiltonAdapter(
+class AsyncHamiltonTracker(
     base.BasePostGraphConstructAsync,
     base.BasePreGraphExecuteAsync,
     base.BasePreNodeExecuteAsync,
@@ -396,13 +394,13 @@ class AsyncHamiltonAdapter(
     def __init__(
         self,
         project_id: int,
-        api_key: str,
         username: str,
         dag_name: str,
         tags: Dict[str, str] = None,
         client_factory: Callable[
-            [str, str, str], clients.HamiltonClient
+            [str, str, str], clients.BasicAsynchronousHamiltonClient
         ] = clients.BasicAsynchronousHamiltonClient,
+        api_key: str = os.environ.get("HAMILTON_API_KEY", ""),
         hamilton_api_url=os.environ.get("HAMILTON_API_URL", constants.HAMILTON_API_URL),
         hamilton_ui_url=os.environ.get("HAMILTON_UI_URL", constants.HAMILTON_UI_URL),
     ):
@@ -416,11 +414,22 @@ class AsyncHamiltonAdapter(
         driver.validate_tags(self.base_tags)
         self.dag_name = dag_name
         self.hamilton_ui_url = hamilton_ui_url
-        logger.debug("Validating authentication against Hamilton BE API...")
-        asyncio.run(self.client.validate_auth())
-        logger.debug(f"Ensuring project {self.project_id} exists...")
+        self.dag_template_id_cache = {}
+        self.tracking_states = {}
+        self.dw_run_ids = {}
+        self.task_runs = {}
+        self.initialized = False
+        super().__init__()
+
+    async def ainit(self):
+        if self.initialized:
+            return self
+        """You must call this to initialize the tracker."""
+        logger.info("Validating authentication against Hamilton BE API...")
+        await self.client.validate_auth()
+        logger.info(f"Ensuring project {self.project_id} exists...")
         try:
-            asyncio.run(self.client.project_exists(self.project_id))
+            await self.client.project_exists(self.project_id)
         except clients.UnauthorizedException:
             logger.exception(
                 f"Authentication failed. Please check your username and try again. "
@@ -433,11 +442,11 @@ class AsyncHamiltonAdapter(
                 f"You can do so at {self.hamilton_ui_url}/dashboard/projects"
             )
             raise
-        self.dag_template_id_cache = {}
-        self.tracking_states = {}
-        self.dw_run_ids = {}
-        self.task_runs = {}
-        super().__init__()
+        logger.info("Initializing Hamilton tracker.")
+        await self.client.ainit()
+        logger.info("Initialized Hamilton tracker.")
+        self.initialized = True
+        return self
 
     async def post_graph_construct(
         self, graph: h_graph.FunctionGraph, modules: List[ModuleType], config: Dict[str, Any]
@@ -476,7 +485,6 @@ class AsyncHamiltonAdapter(
         overrides: Dict[str, Any],
     ):
         logger.debug("pre_graph_execute %s", run_id)
-        self.run_id = run_id
         fg_id = id(graph)
         if fg_id in self.dag_template_id_cache:
             dag_template_id = self.dag_template_id_cache[fg_id]
@@ -511,7 +519,7 @@ class AsyncHamiltonAdapter(
 
         task_update = dict(
             node_template_name=node_.name,
-            node_name=get_node_name(node_.name, task_id),
+            node_name=get_node_name(node_, task_id),
             realized_dependencies=[dep.name for dep in node_.dependencies],
             status=task_run.status,
             start_time=task_run.start_time,
@@ -519,7 +527,7 @@ class AsyncHamiltonAdapter(
         )
         await self.client.update_tasks(
             self.dw_run_ids[run_id],
-            attributes=[None],
+            attributes=[],
             task_updates=[task_update],
             in_samples=[task_run.is_in_sample],
         )
@@ -532,6 +540,7 @@ class AsyncHamiltonAdapter(
         error: Optional[Exception],
         result: Any,
         task_id: Optional[str] = None,
+        **future_kwargs,
     ):
         logger.debug("post_node_execute %s", run_id)
         task_run = self.task_runs[run_id][node_.name]

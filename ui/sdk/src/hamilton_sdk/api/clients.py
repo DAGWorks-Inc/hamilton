@@ -1,4 +1,5 @@
 import abc
+import asyncio
 import datetime
 import functools
 import logging
@@ -28,6 +29,33 @@ class UnauthorizedException(Exception):
     def __init__(self, path: str, user: str):
         message = f"Unauthorized to access {path} by {user}."
         super().__init__(message)
+
+
+def create_batch(batch: dict, dag_run_id: int):
+    attributes = defaultdict(list)
+    task_updates = defaultdict(list)
+    for item in batch:
+        if item["dag_run_id"] == dag_run_id:
+            for attr in item["attributes"]:
+                if attr is None:
+                    continue
+                attributes[attr["node_name"]].append(attr)
+            for task_update in item["task_updates"]:
+                if task_update is None:
+                    continue
+                task_updates[task_update["node_name"]].append(task_update)
+
+    # We do not care about disambiguating here --  only one named attribute should be logged
+
+    attributes_list = []
+    for node_name in attributes:
+        attributes_list.extend(attributes[node_name])
+    # in this case we do care about order so we don't send double the updates.
+    task_updates_list = [
+        functools.reduce(lambda x, y: {**x, **y}, task_updates[node_name])
+        for node_name in task_updates
+    ]
+    return attributes_list, task_updates_list
 
 
 class HamiltonClient:
@@ -220,30 +248,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         # group by dag_run_id -- just incase someone does something weird?
         dag_run_ids = set([item["dag_run_id"] for item in batch])
         for dag_run_id in dag_run_ids:
-            attributes = defaultdict(list)
-            task_updates = defaultdict(list)
-            for item in batch:
-                if item["dag_run_id"] == dag_run_id:
-                    for attr in item["attributes"]:
-                        if attr is None:
-                            continue
-                        attributes[attr["node_name"]].append(attr)
-                    for task_update in item["task_updates"]:
-                        if task_update is None:
-                            continue
-                        task_updates[task_update["node_name"]].append(task_update)
-
-            # We do not care about disambiguating here --  only one named attribute should be logged
-
-            attributes_list = []
-            for node_name in attributes:
-                attributes_list.extend(attributes[node_name])
-            # in this case we do care about order so we don't send double the updates.
-            task_updates_list = [
-                functools.reduce(lambda x, y: {**x, **y}, task_updates[node_name])
-                for node_name in task_updates
-            ]
-
+            attributes_list, task_updates_list = create_batch(batch, dag_run_id)
             response = requests.put(
                 f"{self.base_url}/dag_runs_bulk?dag_run_id={dag_run_id}",
                 json={
@@ -514,6 +519,65 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
         self.api_key = api_key
         self.username = username
         self.base_url = h_api_url + base_path
+        self.flush_interval = 5
+        self.data_queue = asyncio.Queue()
+        self.running = True
+        self.max_batch_size = 100
+
+    async def ainit(self):
+        asyncio.create_task(self.worker())
+
+    async def flush(self, batch):
+        """Flush the batch (send it to the backend or process it)."""
+        logger.debug(f"Flushing batch: {len(batch)}")  # Replace with actual processing logic
+        # group by dag_run_id -- just incase someone does something weird?
+        dag_run_ids = set([item["dag_run_id"] for item in batch])
+        for dag_run_id in dag_run_ids:
+            attributes_list, task_updates_list = create_batch(batch, dag_run_id)
+            async with aiohttp.ClientSession() as session:
+                async with session.put(
+                    f"{self.base_url}/dag_runs_bulk?dag_run_id={dag_run_id}",
+                    json={
+                        "attributes": make_json_safe(attributes_list),
+                        "task_updates": make_json_safe(task_updates_list),
+                    },
+                    headers=self._common_headers(),
+                ) as response:
+                    try:
+                        response.raise_for_status()
+                        logger.debug(f"Updated tasks for DAG run {dag_run_id}")
+                    except HTTPError:
+                        logger.exception(f"Failed to update tasks for DAG run {dag_run_id}")
+                        # zraise
+
+    async def worker(self):
+        """Worker thread to process the queue"""
+        batch = []
+        last_flush_time = time.time()
+        logger.debug("Starting worker")
+        while True:
+            logger.debug(
+                f"Awaiting item from queue -- current batched # of items are: {len(batch)}"
+            )
+            try:
+                item = await asyncio.wait_for(self.data_queue.get(), timeout=self.flush_interval)
+                batch.append(item)
+            except asyncio.TimeoutError:
+                # This is fine, we just keep waiting
+                pass
+            else:
+                if item is None:
+                    await self.flush(batch)
+                    return
+
+            # Check if batch is full or flush interval has passed
+            if (
+                len(batch) >= self.max_batch_size
+                or (time.time() - last_flush_time) >= self.flush_interval
+            ):
+                await self.flush(batch)
+                batch = []
+                last_flush_time = time.time()
 
     def _common_headers(self) -> Dict[str, Any]:
         """Yields the common headers for all requests.
@@ -728,26 +792,14 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
             f"Updating tasks for DAG run {dag_run_id} with {len(attributes)} "
             f"attributes and {len(task_updates)} task updates"
         )
-        url = f"{self.base_url}/dag_runs_bulk?dag_run_id={dag_run_id}"
-        headers = self._common_headers()
-        data = {
-            "attributes": make_json_safe(attributes),
-            "task_updates": make_json_safe(task_updates),
-        }
-
-        async with aiohttp.ClientSession() as session:
-            async with session.put(url, json=data, headers=headers) as response:
-                try:
-                    response.raise_for_status()
-                    logger.debug(f"Updated tasks for DAG run {dag_run_id}")
-                except aiohttp.ClientResponseError:
-                    logger.exception(f"Failed to update tasks for DAG run {dag_run_id}")
-                    raise
+        await self.data_queue.put(
+            {"dag_run_id": dag_run_id, "attributes": attributes, "task_updates": task_updates}
+        )
 
     async def log_dag_run_end(self, dag_run_id: int, status: str):
         logger.debug(f"Logging end of DAG run {dag_run_id} with status {status}")
         url = f"{self.base_url}/dag_runs/{dag_run_id}/"
-        data = (make_json_safe({"run_status": status, "run_end_time": datetime.datetime.utcnow()}),)
+        data = make_json_safe({"run_status": status, "run_end_time": datetime.datetime.utcnow()})
         headers = self._common_headers()
         async with aiohttp.ClientSession() as session:
             async with session.put(url, json=data, headers=headers) as response:
