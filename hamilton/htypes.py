@@ -379,3 +379,75 @@ def check_instance(obj: Any, type_: Any) -> bool:
 
     # If the type is not a generic type, just use isinstance
     return isinstance(obj, type_)
+
+
+from io import BytesIO
+from pathlib import Path
+from typing import Any, BinaryIO, Literal, TextIO
+
+
+class DataSaverMetadata:
+
+    def __init__(self, metadata: dict):
+        self.value: dict = metadata
+
+    @classmethod
+    def from_file_and_dataframe(
+        cls, file: Union[str, TextIO, BytesIO, Path, BinaryIO, bytes], dataframe: Any
+    ) -> "DataSaverMetadata":
+        from hamilton.io import utils as io_utils  # here due to circular import
+
+        metadata = io_utils.get_file_and_dataframe_metadata(file, dataframe)
+        return DataSaverMetadata(metadata)
+
+    @classmethod
+    def from_file(
+        cls, file: Union[str, TextIO, BytesIO, Path, BinaryIO, bytes]
+    ) -> "DataSaverMetadata":
+        from hamilton.io import utils as io_utils  # here due to circular import
+
+        metadata = io_utils.get_file_metadata(file)
+        return DataSaverMetadata(metadata)
+
+    @classmethod
+    def from_dataframe(cls, dataframe: Any) -> "DataSaverMetadata":
+        from hamilton.io import utils as io_utils  # here due to circular import
+
+        metadata = io_utils.get_dataframe_metadata(dataframe)
+        return DataSaverMetadata(metadata)
+
+    def to_dict(self) -> dict:
+        return self.value
+
+
+class DataLoaderMetadata:
+    def __init__(self, metadata: dict):
+        self.value: dict = metadata
+
+    @classmethod
+    def from_file_and_dataframe(
+        cls, file: Union[str, TextIO, BytesIO, Path, BinaryIO, bytes], dataframe: Any
+    ) -> "DataLoaderMetadata":
+        from hamilton.io import utils as io_utils  # here due to circular import
+
+        metadata = io_utils.get_file_and_dataframe_metadata(file, dataframe)
+        return DataLoaderMetadata(metadata)
+
+    @classmethod
+    def from_file(
+        cls, file: Union[str, TextIO, BytesIO, Path, BinaryIO, bytes]
+    ) -> "DataLoaderMetadata":
+        from hamilton.io import utils as io_utils  # here due to circular import
+
+        metadata = io_utils.get_file_metadata(file)
+        return DataLoaderMetadata(metadata)
+
+    @classmethod
+    def from_dataframe(cls, dataframe: Any) -> "DataLoaderMetadata":
+        from hamilton.io import utils as io_utils  # here due to circular import
+
+        metadata = io_utils.get_dataframe_metadata(dataframe)
+        return DataLoaderMetadata(metadata)
+
+    def to_dict(self) -> dict:
+        return self.value
