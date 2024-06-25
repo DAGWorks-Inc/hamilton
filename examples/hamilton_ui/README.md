@@ -1,65 +1,63 @@
-# machine\_learning
+# Hamilton UI - Machine learning example
 
-This template shows a ML pipeline.
+Learn how to use the `HamiltonTracker` and the Hamilton UI to track a simple machine learning pipeline.
 
-It shows a few things:
+It also illustrates the following notions:
 
-1. It shows how one could split up functions into modules. E.g. loading, vs features, vs fitting.
-2. It also shows how to use `@subdag` to fit different models in the same DAG run and reuse the same fitting code.
-3. It shows how to use data loaders and data savers to load and save data, that also then emit extra metadata
-that can be used to track lineage in the UI.
-4. It shows how to use the HamiltonTracker to integrate with the Hamilton UI.
+1. Splitting a pipeline into separate modules (e.g., data loading, feature enginering, model fitting)
+2. Use `DataLoader` and `DataSaver` objects to load & save data and collect extra metadata in the UI
+3. Use `@subdag` to fit different ML models with the same model training code in the same DAG run.
+
 
 ## Getting started
+### Install the Hamilton UI
 
-To get started, you need to have the Hamilton UI running.
+First, you need to have the Hamilton UI running. You can either `pip install` the Hamilton UI (recommended) or run it as a Docker container.
 
-There are two ways to do this:
-
-1. Pip install the Hamilton UI and run it. This is the recommended way to get started.
-2. Run the Hamilton UI in a docker container.
-
-### Local Install
-You just need to install the following targets:
+#### Local Install
+Install the Python dependencies:
 
 ```bash
 pip install "sf-hamilton[ui,sdk]"
 ```
-And then run:
+then launch the Hamilton UI server:
 ```bash
 hamilton ui
 # python -m hamilton.cli.__main__ ui # on windows
 ```
 
-### Docker Install
+#### Docker Install
 
-1. See https://hamilton.dagworks.io/en/latest/concepts/ui/ for details, here are the cliff notes:
+See https://hamilton.dagworks.io/en/latest/concepts/ui/ for details, here are the cliff notes:
 
-    ```bash
-    git clone https://github.com/dagworks-inc/hamilton
-    cd hamilton/ui/deployment
-    ./run.sh
-    ```
-   Then go to http://localhost:8242 and create (1) an email, and (2) a project.
-   See [this video](https://youtu.be/DPfxlTwaNsM) for a walkthrough.
+```bash
+git clone https://github.com/dagworks-inc/hamilton
+cd hamilton/ui/deployment
+./run.sh
+```
+Then go to http://localhost:8242 to create (1) a username and (2) a project.
+See [this video](https://youtu.be/DPfxlTwaNsM) for a walkthrough.
 
-### Run the example
+### Execute and track the pipeline
 
-2. Ensure you have the right python dependencies installed.
+Now that you have the Hamilton UI running, open another terminal tab to:
+
+1. Ensure you have the right python dependencies installed.
 ```bash
 cd hamilton/examples/hamilton_ui
 pip install -r requirements.txt
 ```
 
-2. Run the `run.py` script. Providing the email/username, and project ID to be able to log to the Hamilton UI.
+2. Run the `run.py` script. Providing the username and project ID to be able to log to the Hamilton UI.
 ```bash
-python run.py --email <email> --project_id <project_id>
+python run.py --username <username> --project_id <project_id>
 ```
 Once you've run that, run this:
 ```bash
-python run.py --email <email> --project_id <project_id> --load-from-parquet True
+python run.py --username <username> --project_id <project_id> --load-from-parquet
 ```
-Then you can go see the difference in the Hamilton UI. Find your project under http://localhost:8242/dashboard/projects.
+
+3. Explore results in the Hamilton UI. Find your project under http://localhost:8242/dashboard/projects.
 
 ## Things to try:
 
