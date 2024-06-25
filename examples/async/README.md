@@ -29,6 +29,30 @@ You should get the following result:
 {"pipeline":{"computation1":false,"computation2":true}}
 ```
 
+## Tracking
+
+This has an additional endpoint that will use the async tracker if the [ui](https://hamilton.dagworks.io/en/latest/concepts/ui/)
+is running on port 8241 -- see [fastapi_example.py](fastapi_example.py) for the code.
+If it is not running it will proceed anyway without tracking.
+
+You can run it with:
+
+```bash
+curl -X 'POST' \
+  'http://localhost:8000/execute' \
+  -H 'accept: application/json' \
+  -d '{}'
+```
+
+Recall, to get the server running, you'll have to run the following:
+
+```bash
+pip install sf-hamilton[ui]
+hamilton ui
+```
+
+This assumes a project (1) exists -- if you want a different one you can go the the UI and create one and/or set it in the code.
+
 
 ## How it works
 
