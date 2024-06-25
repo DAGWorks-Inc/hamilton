@@ -9,6 +9,7 @@ import time
 # required if we want to run this code stand alone.
 import typing
 import uuid
+from collections.abc import Sequence  # typing.Sequence is deprecated in >=3.9
 from datetime import datetime
 from types import ModuleType
 from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Union
@@ -1756,6 +1757,11 @@ class Builder:
         :param materializers: materializers to add to the dataflow
         :return: self
         """
+        if len(materializers) == 1 and isinstance(materializers[0], Sequence):
+            raise ValueError(
+                "`.with_materializers()` received a sequence. Unpack it by prepending `*` e.g., `*[to.json(...), from_.parquet(...)]`"
+            )
+
         self.materializers.extend(materializers)
         return self
 
