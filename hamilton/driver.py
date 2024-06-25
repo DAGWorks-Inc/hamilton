@@ -403,6 +403,7 @@ class Driver:
             if _graph_executor is None:
                 _graph_executor = DefaultGraphExecutor(self.adapter)
             self.graph_executor = _graph_executor
+            self.config = config
         except Exception as e:
             error = telemetry.sanitize_error(*sys.exc_info())
             logger.error(SLACK_ERROR_MESSAGE)

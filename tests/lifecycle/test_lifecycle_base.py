@@ -215,7 +215,10 @@ def test_lifecycle_adapter_set_with_single_multi_hook():
 
     assert adapter_set.does_hook("pre_do_anything", is_async=False)
     assert adapter_set.does_hook("post_graph_execute", is_async=False)
+    # either sync or async
+    assert adapter_set.does_hook("post_graph_execute", is_async=None)
     assert not adapter_set.does_hook("pre_node_execute", is_async=False)
+    assert not adapter_set.does_hook("pre_node_execute", is_async=None)
     assert not adapter_set.does_hook("pre_node_execute", is_async=True)
 
     adapter_set.call_all_lifecycle_hooks_sync("pre_do_anything")
