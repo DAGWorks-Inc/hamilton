@@ -751,6 +751,14 @@ class LifecycleAdapterSet:
         self.sync_validators = self._get_lifecycle_validators()
 
     def _uniqify_adapters(self, adapters: List[LifecycleAdapter]) -> List[LifecycleAdapter]:
+        """Removes duplicate adapters from the list of adapters -- this often happens on how they're passed in
+        and we don't want to have the same adapter twice. Specifically, this came up due to parsing/splitting out adapters
+        with async lifecycle hooks -- there were cases in which we were passed duplicates. This was compounded as we would pass
+        adapters to other adapter sets and end up further duplicating.
+
+        TODO -- remove this and ensure that no case passes in duplicates.
+        """
+
         seen = set()
         return [
             adapter for adapter in adapters if not (id(adapter) in seen or seen.add(id(adapter)))
@@ -967,9 +975,12 @@ class LifecycleAdapterSet:
 
     async def ainit(self):
         """Asynchronously initializes the adapters in this group. This is so we can avoid having an async constructor
-        -- it is an implicit contract -- the async adapters are allowed one ainit() method that will be called by the driver.
+        -- it is an implicit internal-facing contract -- the async adapters are allowed one ainit()
+        method that will be called by the driver.
+
+        Note this is not public-facing -- E.G. you cannot expect to define this on your own adapters. We may consider adding
+        a ``pre_do_anything`` async hook and removing this, but for now this should suffice.
         """
         for adapter in self.adapters:
-            print(adapter)
             if hasattr(adapter, "ainit"):
                 await adapter.ainit()
