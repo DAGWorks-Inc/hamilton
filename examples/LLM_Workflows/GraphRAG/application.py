@@ -52,7 +52,7 @@ def set_inital_chat_history(schema_prompt: str) -> list[dict]:
     SYSTEM_MESSAGE = "You are a Cypher expert with access to a directed knowledge graph\n"
     SYSTEM_MESSAGE += schema_prompt
     SYSTEM_MESSAGE += (
-        "Query the knowledge graph to extract relevant information to help you anwser the users "
+        "Query the knowledge graph to extract relevant information to help you answer the users "
         "questions, base your answer only on the context retrieved from the knowledge graph, "
         "do not use preexisting knowledge."
     )
