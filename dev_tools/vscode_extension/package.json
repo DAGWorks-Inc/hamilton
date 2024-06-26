@@ -7,7 +7,7 @@
   "author": {
     "name": "Thierry Jean"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.77.0"
   },
