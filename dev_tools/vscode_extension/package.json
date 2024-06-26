@@ -1,0 +1,210 @@
+{
+  "name": "hamilton",
+  "displayName": "Hamilton",
+  "description": "VSCode extension for the Hamilton Python library.",
+  "publisher": "DAGWorks",
+  "repository": "https://github.com/dagworks-inc/hamilton",
+  "author": {
+    "name": "Thierry Jean"
+  },
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.77.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "hamilton",
+    "dagworks",
+    "data science",
+    "pipeline"
+  ],
+  "icon": "resources/marketplace_icon.png",
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "category": "Hamilton",
+        "command": "hamilton.dataflowWebview.rotate",
+        "title": "Rotate dataflow",
+        "icon": "$(debug-step-over)"
+      },
+      {
+        "category": "Hamilton",
+        "command": "hamilton.logger.focus",
+        "title": "Show Output"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "hamilton-sidebar",
+          "title": "Hamilton",
+          "icon": "$(type-hierarchy)"
+        }
+      ]
+    },
+    "views": {
+      "hamilton-sidebar": [
+        {
+          "type": "webview",
+          "id": "hamilton.dataflowWebview",
+          "name": "Dataflow",
+          "when": "true"
+        },
+        {
+          "id": "hamilton.linksTreeview",
+          "name": "Support",
+          "when": "true"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "hamilton.dataflowWebview.rotate",
+          "when": "view == hamilton.dataflowWebview",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "hamilton.linksTreeview",
+        "contents": "[$(book)Walkthrough](command:welcome.showAllWalkthroughs)\n[$(github)Hamilton docs](https://hamilton.readthedocs.io/en/latest/)\n[$(comment-discussion)Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg)"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "hamilton",
+        "title": "Get Started with Hamilton",
+        "description": "Write dataflows interactively in VSCode",
+        "steps": [
+          {
+            "id": "extensionDependencies",
+            "title": "Install VSCode Python Extension",
+            "description": "[Go to extension marketplace](command:workbench.extensions.action.installExtensions)",
+            "media": {
+              "markdown": "resources/walkthrough/1_extensionDependencies.md"
+            },
+            "completionEvents": [
+              "extensionInstalled:ms-python.python"
+            ]
+          },
+          {
+            "id": "pythonInterpreter",
+            "title": "Select Python Interpreter",
+            "description": "[Select interpreter](command:python.setInterpreter)",
+            "media": {
+              "markdown": "resources/walkthrough/2_pythonInterpreter.md"
+            },
+            "completionEvents": [
+              "onSettingChanged:python.pythonPath"
+            ]
+          },
+          {
+            "id": "pythonDependencies",
+            "title": "Install Python Dependencies",
+            "description": "[Open terminal](command:workbench.action.terminal.new)",
+            "media": {
+              "markdown": "resources/walkthrough/3_pythonDependencies.md"
+            }
+          },
+          {
+            "id": "reload",
+            "title": "Reload VSCode",
+            "description": "[Reload VSCode](command:workbench.action.reloadWindow)",
+            "media": {
+              "markdown": "resources/walkthrough/4_reloadVscode.md"
+            }
+          },
+          {
+            "id": "visitServer",
+            "title": "Feature: Hamilton Language Server",
+            "description": "[Show server logger](command:hamilton.logger.focus)\n[Set debug level](command:workbench.action.setLogLevel)",
+            "media": {
+              "markdown": "resources/walkthrough/4_visitLSP.md"
+            },
+            "completionEvents": [
+              "onCommand:hamilton.logger.focus"
+            ]
+          },
+          {
+            "id": "visitDataflowWebview",
+            "title": "Feature: Dataflow View",
+            "description": "[Go to dataflow visualization](command:hamilton.dataflowWebview.focus)",
+            "media": {
+              "markdown": "resources/walkthrough/5_visitDataflowWebview.md"
+            },
+            "completionEvents": [
+              "onView:hamilton.dataflowWebview"
+            ]
+          },
+          {
+            "id": "tips",
+            "title": "Additional Tips",
+            "description": "",
+            "media": {
+              "markdown": "resources/walkthrough/6_tips.md"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "NODE_ENV=production node ./esbuild.js",
+    "watch": "node ./esbuild.js --watch",
+    "pretty": "prettier --write \"src/**/*.ts\""
+  },
+  "devDependencies": {
+    "@githubocto/tailwind-vscode": "^1.0.5",
+    "@hpcc-js/wasm": "^2.16.0",
+    "@types/chai": "4.3.4",
+    "@types/cytoscape": "^3.19.9",
+    "@types/d3": "^7.4.3",
+    "@types/d3-graphviz": "^2.6.10",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.77.0",
+    "@types/vscode-notebook-renderer": "^1.72.0",
+    "@types/vscode-webview": "^1.57.1",
+    "@types/ws": "^8.5.4",
+    "@typescript-eslint/eslint-plugin": "^5.53.0",
+    "@typescript-eslint/parser": "^5.53.0",
+    "@vscode/test-electron": "^2.2.3",
+    "chai": "4.3.7",
+    "cytoscape": "^3.24.0",
+    "cytoscape-dagre": "^2.5.0",
+    "cytoscape-expand-collapse": "^4.1.0",
+    "cytoscape-svg": "^0.4.0",
+    "cytoscape-undo-redo": "^1.3.3",
+    "d3": "^7.9.0",
+    "d3-graphviz": "^5.3.0",
+    "esbuild": "^0.16.17",
+    "eslint": "^8.34.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "mocha": "^10.2.0",
+    "prettier": "^2.8.8",
+    "sinon": "^15.0.3",
+    "ts-jest": "^29.1.0",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5",
+    "vscode-notebook-error-overlay": "^1.0.1",
+    "ws": "^8.13.0"
+  },
+  "extensionDependencies": [
+    "ms-python.python"
+  ],
+  "dependencies": {
+    "vscode-languageclient": "^8.1.0"
+  }
+}
