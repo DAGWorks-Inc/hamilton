@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools >= 65.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hamilton-lsp"
+description = "Hamilton Language Server powering IDE features."
+authors = [
+    {name = "Thierry Jean", email = "thierry@dagworks.io"},
+]
+dynamic = ["version"]
+readme = "README.md"
+license = {text = "MIT"}
+keywords = [
+    "hamilton",
+    "dagworks",
+    "vscode",
+    "extension",
+    "data science",
+    "pipelines",
+]
+classifiers = [
+    "Framework :: Hamilton",
+    "Topic :: Text Editors :: Integrated Development Environments (IDE)",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+requires-python = ">=3.8, <4"
+dependencies = [
+    "pygls>=1.3.1",
+    "sf-hamilton[visualization]>=1.56",
+]
+
+[project.optional-dependencies]
+test = [
+    "pre-commit",
+    "pytest",
+]
+
+[project.scripts]
+hamilton_lsp = "hamilton_lsp.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hamilton_lsp*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "hamilton_lsp.__version__"}
