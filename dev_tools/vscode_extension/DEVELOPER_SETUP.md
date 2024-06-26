@@ -59,7 +59,7 @@ The steps are detailed on the [official VSCode page](https://code.visualstudio.c
 
 
 
-### Automated publishing
+### Programmatic publishing
 1. Register your VSCode Marketplace access token
 
     ```sh
@@ -69,5 +69,5 @@ The steps are detailed on the [official VSCode page](https://code.visualstudio.c
 2. [Autoincrement releases](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrement-the-extension-version) and publish the extension.
 
     ```sh
-    vsce publish [major|minor|patch]
+    vsce publish [major|minor|patch] -p ACCESS_TOKEN
     ```

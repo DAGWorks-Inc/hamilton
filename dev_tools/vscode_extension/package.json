@@ -1,6 +1,6 @@
 {
-  "name": "hamilton",
-  "displayName": "Hamilton",
+  "name": "hamilton-vsc",
+  "displayName": "Hamilton VSCode",
   "description": "VSCode extension for the Hamilton Python library.",
   "publisher": "DAGWorks",
   "repository": "https://github.com/dagworks-inc/hamilton",
