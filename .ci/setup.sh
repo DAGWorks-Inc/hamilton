@@ -21,11 +21,6 @@ if [[ ${TASK} != "pre-commit" ]]; then
         -r requirements-test.txt
 fi
 
-if [[ ${TASK} == "async" ]]; then
-    pip install \
-        -r plugin_tests/h_async/requirements-test.txt
-fi
-
 if [[ ${TASK} == "pyspark" ]]; then
     if [[ ${OPERATING_SYSTEM} == "Linux" ]]; then
         sudo apt-get install \

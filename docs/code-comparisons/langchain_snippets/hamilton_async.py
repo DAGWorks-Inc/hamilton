@@ -38,9 +38,9 @@ if __name__ == "__main__":
     import hamilton_async
 
     from hamilton import base
-    from hamilton.experimental import h_async
+    from hamilton import async_driver
 
-    dr = h_async.AsyncDriver(
+    dr = async_driver.AsyncDriver(
         {},
         hamilton_async,
         result_builder=base.DictResult()

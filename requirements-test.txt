@@ -22,6 +22,7 @@ polars
 pyarrow
 pyreadstat  # for SPSS data loader
 pytest
+pytest-asyncio
 pytest-cov
 PyYAML
 scikit-learn

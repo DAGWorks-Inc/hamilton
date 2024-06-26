@@ -7,8 +7,7 @@ from unittest import mock
 
 import pytest
 
-from hamilton import base, node, telemetry
-from hamilton.experimental import h_async
+from hamilton import async_driver, base, node, telemetry
 from hamilton.lifecycle import base as lifecycle_base
 
 
@@ -163,8 +162,8 @@ class CustomResultBuilder(base.ResultMixin):
             "hamilton.base.DefaultAdapter",
         ),
         (
-            h_async.AsyncGraphAdapter(base.DictResult()),
-            "hamilton.experimental.h_async.AsyncGraphAdapter",
+            async_driver.AsyncGraphAdapter(base.DictResult()),
+            "hamilton.experimental.async_driver.AsyncGraphAdapter",
         ),
         (CustomAdapter(base.DictResult()), "custom_adapter"),
     ],
@@ -189,7 +188,7 @@ def test_get_adapter_name(adapter, expected):
             "hamilton.base.StrictIndexTypePandasDataFrameResult",
         ),
         (base.SimplePythonGraphAdapter(CustomResultBuilder()), "custom_builder"),
-        (h_async.AsyncGraphAdapter(base.DictResult()), "hamilton.base.DictResult"),
+        (async_driver.AsyncGraphAdapter(base.DictResult()), "hamilton.base.DictResult"),
         (CustomAdapter(base.DictResult()), "hamilton.base.DictResult"),
         (CustomAdapter(CustomResultBuilder()), "custom_builder"),
     ],
