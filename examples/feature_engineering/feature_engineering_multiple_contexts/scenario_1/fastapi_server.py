@@ -17,8 +17,7 @@ import named_model_feature_sets
 import pandas as pd
 import pydantic
 
-from hamilton import base
-from hamilton.experimental import h_async
+from hamilton import async_driver, base
 
 app = fastapi.FastAPI()
 
@@ -56,7 +55,7 @@ invariant_feature_values = load_invariant_feature_values()
 
 # We instantiate an async driver once for the life of the app. We use the AsyncDriver here because under the hood
 # FastAPI is async. If you were using Flask, you could use the regular Hamilton driver without issue.
-dr = h_async.AsyncDriver(
+dr = async_driver.AsyncDriver(
     {},  # no config/invariant inputs in this example.
     features,  # the module that contains the common feature definitions.
     result_builder=base.SimplePythonDataFrameGraphAdapter(),

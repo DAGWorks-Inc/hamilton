@@ -7,13 +7,13 @@ import fastapi
 from aiohttp import client_exceptions
 from hamilton_sdk import adapters
 
-from hamilton.experimental import h_async
+from hamilton import async_driver
 
 logger = logging.getLogger(__name__)
 
 # can instantiate a driver once for the life of the app:
-dr_with_tracking: h_async.AsyncDriver = None
-dr_without_tracking: h_async.AsyncDriver = None
+dr_with_tracking: async_driver.AsyncDriver = None
+dr_without_tracking: async_driver.AsyncDriver = None
 
 
 async def _tracking_server_running():
@@ -36,7 +36,7 @@ async def lifespan(app: fastapi.FastAPI):
     """
     global dr_with_tracking
     global dr_without_tracking
-    builder = h_async.Builder().with_modules(async_module)
+    builder = async_driver.Builder().with_modules(async_module)
     is_server_running = await _tracking_server_running()
     dr_without_tracking = await builder.build()
     dr_with_tracking = (
@@ -66,8 +66,6 @@ app = fastapi.FastAPI(lifespan=lifespan)
 async def call_without_tracker(request: fastapi.Request) -> dict:
     """Handler for pipeline call -- this does not track in the Hamilton UI"""
     input_data = {"request": request}
-    # Can instantiate a driver within a request as well:
-    # dr = h_async.AsyncDriver({}, async_module, result_builder=base.DictResult())
     result = await dr_without_tracking.execute(["pipeline"], inputs=input_data)
     # dr.visualize_execution(["pipeline"], "./pipeline.dot", {"format": "png"}, inputs=input_data)
     return result
@@ -77,8 +75,6 @@ async def call_without_tracker(request: fastapi.Request) -> dict:
 async def call_with_tracker(request: fastapi.Request) -> dict:
     """Handler for pipeline call -- this does track in the Hamilton UI."""
     input_data = {"request": request}
-    # Can instantiate a driver within a request as well:
-    # dr = h_async.AsyncDriver({}, async_module, result_builder=base.DictResult())
     if dr_with_tracking is None:
         raise ValueError(
             "Tracking driver not initialized -- you must have the tracking server running at app startup to use this endpoint."
