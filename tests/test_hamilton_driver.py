@@ -585,6 +585,31 @@ def test_builder_materializer_and_execution_materializer(tmp_path):
     assert "static_saver" in additional.keys()
 
 
+def test_builder_materializer_error():
+    static_saver = to.json(
+        id="static_saver",
+        dependencies=["json_to_save_1"],
+        path="/file.json",
+    )
+
+    materializers = [static_saver]
+    with pytest.raises(ValueError):
+        (
+            Builder()
+            .with_modules(tests.resources.test_for_materialization)
+            .with_materializers(materializers)
+            .build()
+        )
+
+    # also check that using `*` leads to no issue
+    (
+        Builder()
+        .with_modules(tests.resources.test_for_materialization)
+        .with_materializers(*materializers)
+        .build()
+    )
+
+
 def test_materialize_checks_required_input(tmp_path):
     dr = Builder().with_modules(tests.resources.dummy_functions).build()
 

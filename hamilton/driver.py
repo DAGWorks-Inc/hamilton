@@ -1757,10 +1757,17 @@ class Builder:
         :param materializers: materializers to add to the dataflow
         :return: self
         """
-        if len(materializers) == 1 and isinstance(materializers[0], Sequence):
-            raise ValueError(
-                "`.with_materializers()` received a sequence. Unpack it by prepending `*` e.g., `*[to.json(...), from_.parquet(...)]`"
-            )
+        if any(
+            m for m in materializers if not isinstance(m, (ExtractorFactory, MaterializerFactory))
+        ):
+            if len(materializers) == 1 and isinstance(materializers[0], Sequence):
+                raise ValueError(
+                    "`.with_materializers()` received a sequence. Unpack it by prepending `*` e.g., `*[to.json(...), from_.parquet(...)]`"
+                )
+            else:
+                raise ValueError(
+                    f"`.with_materializers()` only accepts materializers. Received instead: {materializers}"
+                )
 
         self.materializers.extend(materializers)
         return self
