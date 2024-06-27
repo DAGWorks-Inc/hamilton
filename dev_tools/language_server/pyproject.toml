@@ -3,7 +3,7 @@ requires = ["setuptools >= 65.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hamilton-lsp"
+name = "sf-hamilton-lsp"
 description = "Hamilton Language Server powering IDE features."
 authors = [
     {name = "Thierry Jean", email = "thierry@dagworks.io"},

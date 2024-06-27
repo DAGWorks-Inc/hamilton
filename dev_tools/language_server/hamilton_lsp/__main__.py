@@ -14,14 +14,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import logging
-    import warnings
-
-    logger = logging.getLogger("pygls")
-    logger.addHandler(logging.StreamHandler())
-
-    # silence UserWarning: 'PYARROW_IGNORE_TIMEZONE'
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=UserWarning)
-
-        main()
+    main()

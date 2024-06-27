@@ -12,7 +12,6 @@ from lsprotocol.types import (
     CompletionItemKind,
     CompletionItemLabelDetails,
     CompletionList,
-    CompletionOptions,
     CompletionParams,
     DidChangeTextDocumentParams,
     DidOpenTextDocumentParams,
@@ -56,10 +55,11 @@ def _parse_function_tokens(source: str) -> dict[str, str]:
         results[function_name] = return_type
 
         argument_string = matching.group(2)
-        for arg_with_type in argument_string.split(","):
-            arg_with_type = arg_with_type.strip()
-            arg, arg_type = arg_with_type.split(":")
-            results[arg.strip()] = arg_type.strip()
+        if argument_string:
+            for arg_with_type in argument_string.split(","):
+                arg, _, arg_type = arg_with_type.strip().partition(":")
+                arg_type, _, _ = arg_type.partition("=")
+                results[arg.strip()] = arg_type.strip()
 
     return results
 
@@ -77,7 +77,26 @@ class HamiltonLanguageServer(LanguageServer):
         self.node_locations = {}
         self.fn_graph = FunctionGraph({}, {})
         self.h_graph = HamiltonGraph.from_graph(self.fn_graph)
-        self.index = {}
+
+    # def get_range(self, node):
+    #     FUNCTION = re.compile(r"^fn ([a-z]\w+)\(")
+    #     ARGUMENT = re.compile(r"(?P<name>\w+): (?P<type>\w+)")
+
+    #     origin = node.originating_functions[0]
+    #     name = node.name
+    #     # get node type icon (function, inputs, config, materializers)
+    #     # get location
+    #     lines, linenum = inspect.getsourcelines(origin)
+
+    #     for incr, line in enumerate(lines):
+    #         if (match := FUNCTION.match(line)) is not None:
+    #             symbol_name = match.group(1)
+    #             if name in symbol_name:
+    #                 start_char = match.start() + line.find(name)
+    #                 return Range(
+    #                     start=Position(line=linenum+incr, character=start_char),
+    #                     end=Position(line=linenum+incr, character=start_char + len(name)),
+    #                 )
 
 
 def regiser_server_features(ls: HamiltonLanguageServer) -> HamiltonLanguageServer:
@@ -98,13 +117,13 @@ def regiser_server_features(ls: HamiltonLanguageServer) -> HamiltonLanguageServe
             # store the updated HamiltonGraph on server state
             server.fn_graph = fn_graph
             server.h_graph = h_graph
-
-            # refresh the visualization if new graph version
-            if server.active_version != server.h_graph.version:
-                server.active_version = server.h_graph.version
-                hamilton_view(server, [{}])
         except BaseException:
             pass
+
+        # refresh the visualization if new graph version
+        if server.active_version != server.h_graph.version:
+            server.active_version = server.h_graph.version
+            hamilton_view(server, [{}])
 
     @ls.feature(TEXT_DOCUMENT_DID_OPEN)
     def did_open(server: HamiltonLanguageServer, params: DidOpenTextDocumentParams):
@@ -120,16 +139,13 @@ def regiser_server_features(ls: HamiltonLanguageServer) -> HamiltonLanguageServe
             ),
         )
 
-    @ls.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=["(", ","]))
+    @ls.feature(TEXT_DOCUMENT_COMPLETION)  # , CompletionOptions(trigger_characters=["(", ","]))
     def on_completion(server: HamiltonLanguageServer, params: CompletionParams) -> CompletionList:
         """Return completion items based on the cached dataflow nodes name and type."""
         uri = params.text_document.uri
         document = server.workspace.get_document(uri)
 
-        try:
-            tokens = _parse_function_tokens(document.source)
-        except BaseException:
-            return CompletionList(is_incomplete=True, items=[])
+        tokens = _parse_function_tokens(document.source)
 
         # could be refactored to a single loop, but this logic might be reused elsewhere
         local_node_types = {}
@@ -141,7 +157,7 @@ def regiser_server_features(ls: HamiltonLanguageServer) -> HamiltonLanguageServe
             local_node_types[node.name] = type_
 
         return CompletionList(
-            is_incomplete=True,
+            is_incomplete=False,
             items=[
                 CompletionItem(
                     label=node.name,
@@ -202,23 +218,17 @@ def regiser_server_features(ls: HamiltonLanguageServer) -> HamiltonLanguageServe
 
     #     input_position = params.position
     #     if not server.node_locations:
-    #         server.send_notification(TEXT_DOCUMENT_DOCUMENT_SYMBOL, DocumentSymbolParams())
+    #         server.send_notification(TEXT_DOCUMENT_DOCUMENT_SYMBOL, DocumentSymbolParams(params.text_document))
 
     #     word = doc.word_at_position(input_position)
     #     server.show_message_log(f"{word}")
 
-    #     input_node = None
-    #     for name, loc in server.node_locations.items():
-    #         start_pos = loc.range.start
-    #         end_pos = loc.range.end
-    #         if start_pos <= input_position <= end_pos:
-    #             input_node = name
-
     #     # server.show_message_log(input_node)
     #     depend_on_input = []
-    #     for node in server.fgraph.get_nodes():
-    #         for dep in node.dependencies:
-    #             if input_node != dep.name:
+    #     for node in server.h_graph.nodes:
+    #         dependencies = [*node.optional_dependencies, *node.required_dependencies]
+    #         for dep in dependencies:
+    #             if word != dep:
     #                 continue
     #             depend_on_input.append(node.name)
 
