@@ -205,18 +205,20 @@ class AsyncDriver(driver.Driver):
 
         Note that this is not the desired API -- you should be using the :py:class:`hamilton.async_driver.Builder` class to create the driver.
 
+        This will only (currently) work properly with asynchronous lifecycle hooks, and does not support methods or validators.
+        You can still pass in synchronous lifecycle hooks, but they may behave strangely.
+
         :param config: Config to build the graph
         :param modules: Modules to crawl for fns/graph nodes
         :param adapters: Adapters to use for lifecycle methods.
         :param result_builder: Results mixin to compile the graph's final results. TBD whether this should be included in the long run.
         """
-        if adapters is not None:
-            sync_adapters, async_adapters = separate_sync_from_async(adapters)
-        else:
-            # separate out so we know what the driver
-            sync_adapters = []
-            async_adapters = []
+        if adapters is None:
+            adapters = []
+        sync_adapters, async_adapters = separate_sync_from_async(adapters)
+
         # we'll need to use this in multiple contexts so we'll keep it around for later
+
         result_builders = [adapter for adapter in adapters if isinstance(adapter, base.ResultMixin)]
         if result_builder is not None:
             result_builders.append(result_builder)
