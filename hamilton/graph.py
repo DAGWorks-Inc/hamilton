@@ -500,6 +500,13 @@ def create_graphviz_graph(
             node_style.update(**modifier_style)
             seen_node_types.add("materializer")
 
+        if n.tags.get("hamilton.data_loader") and "load_data." in n.name:
+            materializer_type = n.tags["hamilton.data_loader.classname"]
+            label = _get_node_label(n, type_string=materializer_type)
+            modifier_style = _get_function_modifier_style("materializer")
+            node_style.update(**modifier_style)
+            seen_node_types.add("materializer")
+
         # apply custom styles before node modifiers
         seen_node_type = None
         if custom_style_function:
