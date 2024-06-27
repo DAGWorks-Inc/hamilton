@@ -89,7 +89,7 @@ def build_and_publish(prod: bool, no_wipe_dist: bool):
     git_root = _get_git_root()
     install_path = os.path.join(git_root, "ui/backend")
     logger.info("Building UI -- this may take a bit...")
-    # build_ui.callback()  # use the underlying function, not click's object
+    build_ui.callback()  # use the underlying function, not click's object
     with cd(install_path):
         logger.info("Built UI!")
         if not no_wipe_dist:
