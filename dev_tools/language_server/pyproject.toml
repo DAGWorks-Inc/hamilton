@@ -19,7 +19,6 @@ keywords = [
     "pipelines",
 ]
 classifiers = [
-    "Framework :: Hamilton",
     "Topic :: Text Editors :: Integrated Development Environments (IDE)",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: BSD License",
