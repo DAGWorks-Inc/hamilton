@@ -163,7 +163,7 @@ class CustomResultBuilder(base.ResultMixin):
         ),
         (
             async_driver.AsyncGraphAdapter(base.DictResult()),
-            "hamilton.experimental.async_driver.AsyncGraphAdapter",
+            "hamilton.async_driver.AsyncGraphAdapter",
         ),
         (CustomAdapter(base.DictResult()), "custom_adapter"),
     ],
