@@ -98,6 +98,7 @@ setup(
         "cli": ["typer"],
         "sdk": ["sf-hamilton-sdk"],
         "ui": ["sf-hamilton-ui"],
+        "lsp": ["sf-hamilton-lsp"],
     },
     entry_points={
         "console_scripts": [
