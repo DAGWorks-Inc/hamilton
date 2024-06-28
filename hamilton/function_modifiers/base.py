@@ -49,6 +49,8 @@ if not registry.INITIALIZED:
             logger.debug(f"Did not load {plugin_module} extension because {str(e)}.")
         except ModuleNotFoundError as e:
             logger.debug(f"Did not load {plugin_module} extension because {e.msg}.")
+        except ImportError as e:
+            logger.debug(f"Did not load {plugin_module} extension because {str(e)}.")
     registry.INITIALIZED = True
 
 
