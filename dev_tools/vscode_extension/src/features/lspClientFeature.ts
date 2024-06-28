@@ -20,8 +20,6 @@ export class LSPClientFeature implements vscode.Disposable {
       documentSelector: [
         { scheme: "file", language: "python" },
         { scheme: "untitle", language: "python" },
-        { scheme: "vscode-notebook", language: "python" },
-        { scheme: "vscode-notebook-cell", language: "python" },
       ],
       outputChannel: outputChannel,
       traceOutputChannel: outputChannel,
