@@ -1,3 +1,4 @@
+import configparser
 import logging
 import os
 import sys
@@ -5,6 +6,8 @@ import threading
 import time
 import webbrowser
 from contextlib import contextmanager
+from enum import Enum
+from typing import Optional
 
 import hamilton_ui
 import requests
@@ -60,10 +63,44 @@ def _open_when_ready(check_url: str, open_url: str):
         time.sleep(0.1)
 
 
-def run(port: int, base_dir: str, no_migration: bool, no_open: bool):
-    env = {
-        "HAMILTON_BASE_DIR": base_dir,
-    }
+class SettingsFile(str, Enum):
+    mini = "server.settings_mini"
+    deploy = "server.settings"
+
+
+def _initialize_db_mini_mode(base_dir):
+    if not os.path.exists(base_dir):
+        try:
+            os.makedirs(os.path.join(base_dir, "blobs"))
+            os.makedirs(os.path.join(base_dir, "db"))
+        except Exception as e:
+            logger.exception(f"Error creating directories -- manually create them instead: {e}")
+
+
+def _load_env(config_file: str):
+    config = configparser.RawConfigParser()
+    config.optionxform = lambda option: option
+    config.read(config_file)
+    if "deploy" not in config:
+        raise ValueError(
+            f"Invalid config file: {config_file}. Must be an ini-format file with one section named 'deploy'"
+        )
+    return dict(config["deploy"])
+
+
+def run(
+    port: int,
+    base_dir: str,
+    no_migration: bool,
+    no_open: bool,
+    settings_file: str,
+    config_file: Optional[str],
+):
+    if not hasattr(SettingsFile, settings_file):
+        raise ValueError(f"Invalid settings file: {settings_file}")
+
+    settings_file = SettingsFile[settings_file]
+
     if not no_open:
         thread = threading.Thread(
             target=_open_when_ready,
@@ -74,21 +111,23 @@ def run(port: int, base_dir: str, no_migration: bool, no_open: bool):
             daemon=True,
         )
         thread.start()
-    with set_env_variables(env):
-        with extend_sys_path(hamilton_ui.__path__[0]):
-            # This is here as some folks didn't have it created automatically through django
-            if not os.path.exists(base_dir):
-                try:
-                    os.makedirs(os.path.join(base_dir, "blobs"))
-                    os.makedirs(os.path.join(base_dir, "db"))
-                except Exception as e:
-                    logger.exception(
-                        f"Error creating directories -- manually create them instead: {e}"
-                    )
+    env = {
+        "HAMILTON_BASE_DIR": base_dir,
+    }
+
+    with extend_sys_path(hamilton_ui.__path__[0]):
+        # This is here as some folks didn't have it created automatically through django
+        if settings_file == SettingsFile.mini:
+            _initialize_db_mini_mode(base_dir)
+
+        else:
+            if config_file is None:
+                raise ValueError(f"Must provide a config file for settings file: {settings_file}")
+            env = {**_load_env(config_file), **env}
+        with set_env_variables(env):
+            settings_file_param = f"--settings={settings_file.value}"
             if not no_migration:
-                execute_from_command_line(
-                    ["manage.py", "migrate", "--settings=server.settings_mini"]
-                )
+                execute_from_command_line(["manage.py", "migrate", settings_file_param])
             execute_from_command_line(
-                ["manage.py", "runserver", "--settings=server.settings_mini", f"0.0.0.0:{port}"]
+                ["manage.py", "runserver", settings_file_param, f"0.0.0.0:{port}"]
             )
