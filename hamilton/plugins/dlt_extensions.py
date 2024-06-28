@@ -1,13 +1,22 @@
 import dataclasses
 from typing import Any, Collection, Dict, Iterable, Literal, Optional, Sequence, Tuple, Type
 
-import dlt
-import pandas as pd
-from dlt.common.destination.capabilities import TLoaderFileFormat
-from dlt.common.schema import Schema, TColumnSchema
+try:
+    import dlt
+    from dlt.common.destination.capabilities import TLoaderFileFormat
+    from dlt.common.schema import Schema, TColumnSchema
 
-# importing TDestinationReferenceArg fails if Destination isn't imported
-from dlt.extract.resource import DltResource
+    # importing TDestinationReferenceArg fails if Destination isn't imported
+    from dlt.extract.resource import DltResource
+
+except ImportError as e:
+    # raise import error first
+    raise ImportError(f"Failed to import the DLT library. {e}")
+except Exception as e:
+    # raise import error with custom message
+    raise ImportError("Failed to import the DLT library.") from e
+
+import pandas as pd
 
 from hamilton import registry
 from hamilton.io import utils
