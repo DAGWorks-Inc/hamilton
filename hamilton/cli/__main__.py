@@ -291,6 +291,8 @@ def ui(
     base_dir: str = os.path.join(Path.home(), ".hamilton", "db"),
     no_migration: bool = False,
     no_open: bool = False,
+    settings_file: str = "mini",
+    config_file: Optional[str] = None,
 ):
     """Runs the Hamilton UI on sqllite in port 8241"""
     try:
@@ -303,7 +305,13 @@ def ui(
         raise typer.Exit(code=1)
 
     ctx.invoke(
-        commands.run, port=port, base_dir=base_dir, no_migration=no_migration, no_open=no_open
+        commands.run,
+        port=port,
+        base_dir=base_dir,
+        no_migration=no_migration,
+        no_open=no_open,
+        settings_file=settings_file,
+        config_file=config_file,
     )
 
 
