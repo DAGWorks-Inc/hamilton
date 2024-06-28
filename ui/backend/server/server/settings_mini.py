@@ -1,5 +1,9 @@
+import logging
 import os
+import socket
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def get_from_env(
@@ -34,7 +38,19 @@ SECRET_KEY = "test_do_not_use_in_production"
 
 HAMILTON_AUTH_MODE = "permissive"
 
-ALLOWED_HOSTS = ["localhost", "backend", "0.0.0.0", "127.0.0.1"]
+# set up allowed hosts
+try:
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+    hosts_to_add = [local_ip, hostname]
+except Exception:
+    logger.warning("Could not get hostname or local IP")
+    hosts_to_add = []
+ALLOWED_HOSTS = ["localhost", "backend", "0.0.0.0", "127.0.0.1", "colab.research.google.com"]
+ALLOWED_HOSTS = (
+    ALLOWED_HOSTS + hosts_to_add + os.environ.get("HAMILTON_ALLOWED_HOSTS", "").split(",")
+)
+logger.debug(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 
 HAMILTON_BLOB_STORE = "local"
 
