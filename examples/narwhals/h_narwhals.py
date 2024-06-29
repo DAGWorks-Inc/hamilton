@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type, Union
 
 import narwhals as nw
 
@@ -32,3 +32,31 @@ class NarwhalsAdapter(api.NodeExecutionMethod):
             nw_kwargs = {k: True for k in node_tags["nw_kwargs"]}
         nw_func = nw.narwhalify(node_callable, **nw_kwargs)
         return nw_func(**node_kwargs)
+
+
+class NarwhalsDataFrameResultBuilder(api.ResultBuilder):
+    """Builds the result. It unwraps the narwhals parts of it and delegates."""
+
+    def __init__(self, result_builder: Union[api.ResultBuilder, api.LegacyResultMixin]):
+        self.result_builder = result_builder
+
+    def build_result(self, **outputs: Any) -> Any:
+        """Given a set of outputs, build the result.
+
+        :param outputs: the outputs from the execution of the graph.
+        :return: the result of the execution of the graph.
+        """
+        de_narwhaled_outputs = {}
+        for key, value in outputs.items():
+            if isinstance(value, (nw.DataFrame, nw.Series)):
+                de_narwhaled_outputs[key] = nw.to_native(value)
+            else:
+                de_narwhaled_outputs[key] = value
+
+        return self.result_builder.build_result(**de_narwhaled_outputs)
+
+    def output_type(self) -> Type:
+        """Returns the output type of this result builder
+        :return: the type that this creates
+        """
+        return self.result_builder.output_type()

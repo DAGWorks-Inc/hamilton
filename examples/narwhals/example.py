@@ -38,17 +38,34 @@ if __name__ == "__main__":
     import __main__ as example
     import h_narwhals
 
-    from hamilton import driver
+    from hamilton import base, driver
+    from hamilton.plugins import h_polars
 
+    # pandas
+    dr = (
+        driver.Builder()
+        .with_config({"load": "pandas"})
+        .with_modules(example)
+        .with_adapters(
+            h_narwhals.NarwhalsAdapter(),
+            h_narwhals.NarwhalsDataFrameResultBuilder(base.PandasDataFrameResult()),
+        )
+        .build()
+    )
+    r = dr.execute([example.group_by_mean, example.example1], inputs={"col_name": "a"})
+    print(r)
+
+    # polars
     dr = (
         driver.Builder()
         .with_config({"load": "polars"})
         .with_modules(example)
-        .with_adapters(h_narwhals.NarwhalsAdapter())
+        .with_adapters(
+            h_narwhals.NarwhalsAdapter(),
+            h_narwhals.NarwhalsDataFrameResultBuilder(h_polars.PolarsDataFrameResult()),
+        )
         .build()
     )
-    r = dr.execute([example.example1, example.group_by_mean], inputs={"col_name": "a"})
-    for k, v in r.items():
-        print(k, v)
-
+    r = dr.execute([example.group_by_mean, example.example1], inputs={"col_name": "a"})
+    print(r)
     dr.display_all_functions("example.png")
