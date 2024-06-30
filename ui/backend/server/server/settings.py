@@ -48,7 +48,8 @@ HAMILTON_BLOB_STORE = get_from_env("HAMILTON_BLOB_STORE", ["local", "s3"])
 HAMILTON_BLOB_STORE_PARAMS = (
     {
         "bucket_name": get_from_env("HAMILTON_S3_BUCKET", allow_missing=False),
-        "region_name": get_from_env("HAMILTON_S3_REGION", allow_missing=False),
+        "region_name": get_from_env("HAMILTON_S3_REGION", allow_missing=True),
+        "endpoint_url": get_from_env("HAMILTON_S3_ENDPOINT_URL", allow_missing=True),
         "global_prefix": get_from_env("HAMILTON_ENV", allow_missing=False),
     }
     if HAMILTON_BLOB_STORE == "s3"
