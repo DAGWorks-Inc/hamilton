@@ -10,15 +10,25 @@ logger = logging.getLogger(__name__)
 
 
 class LocalAPIAuthenticator(HttpAuthBase):
+    """This is a local API authenticator for the Hamilton UI. This is not
+    secure and should not be used in production outside of a very specific VPN context in which
+    the team has shared global access."""
+
+    def __init__(self, global_key: Optional[str] = None):
+        self.global_key = global_key
+
     async def __call__(self, request: HttpRequest) -> Optional[Tuple[User, List[Team]]]:
         """This is an authentication client for local mode. It will ensure a user exists with
         the appropriate username.
         """
         username = request.headers.get("x-api-user")
-        return await self.ensure(username)
+        key = request.headers.get("x-api-key", None)
+        return await self.ensure(username, key)
 
-    @staticmethod
-    async def ensure(username: str):
+    async def ensure(self, username: str, key: str):
+        if self.global_key is not None:
+            if key is None or (key[0:200] != self.global_key[0:200]):
+                return None
         try:
             user = await User.objects.aget(email=username)
         except User.DoesNotExist:

@@ -31,6 +31,7 @@ const baseQuery = fetchBaseQuery({
       headers.set("Authorization", `Bearer ${token}`);
     } else if (process.env.REACT_APP_AUTH_MODE === "local") {
       headers.set("x-api-user", getStateTyped().auth.localUserName || "");
+      headers.set("x-api-key", getStateTyped().auth.localAPIKey || "");
     }
     return headers;
   },

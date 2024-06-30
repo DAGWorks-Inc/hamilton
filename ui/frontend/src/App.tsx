@@ -2,7 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 import { useAuthInfo } from "@propelauth/react";
 import { useAppDispatch } from "./state/hooks";
-import { setAuth, setLocalUserName } from "./state/authSlice";
+import { setAuth, setLocalAPIKey, setLocalUserName } from "./state/authSlice";
 // import Run from "./components/dashboard/Runs/Run/Run";
 import Dashboard from "./components/dashboard/Dashboard";
 import {
@@ -26,7 +26,6 @@ import { VisualizeOutlet } from "./components/dashboard/Visualize/VisualizeOutle
 import Settings from "./components/dashboard/Settings/Settings";
 import { UserContext } from "./auth/Login";
 import { LocalAccount } from "./auth/LocalAccount";
-
 
 export const localMode = process.env.REACT_APP_AUTH_MODE === "local";
 
@@ -52,6 +51,7 @@ export const App = () => {
   const [isTutorialVideoOpen, setTutorialVideoOpen] = useState(false);
   let userName =
     authInfo == null || authInfo.loading ? undefined : authInfo.user?.email;
+  let localAPIKey: string | null = null;
 
   if (userName === undefined) {
     // This is a pretty quick hack for two oseparate authentication systems
@@ -59,13 +59,16 @@ export const App = () => {
     // TODO -- unify the local + propelauth system into a single so we can polymorphically switch between
     // eslint-disable-next-line
     userName = useContext(UserContext)?.username;
+    // eslint-disable-next-line
+    localAPIKey = useContext(UserContext)?.userAPIKey || null;
   }
 
   useEffect(() => {
     if (localMode && userName) {
       dispatch(setLocalUserName(userName));
+      dispatch(setLocalAPIKey(localAPIKey === null ? "" : localAPIKey));
     }
-  }, [userName, dispatch]);
+  }, [userName, dispatch, localAPIKey]);
   const [currentLoomVideo, setCurrentLoomVideo] = useState<
     keyof typeof HelpVideos | undefined
   >(undefined);
@@ -98,12 +101,20 @@ export const App = () => {
       >
         <BrowserRouter>
           <Routes>
-            {localMode && (<Route path="/" element={<Navigate to="/dashboard/account" />} />)}
-            {!localMode && (<Route path="/" element={<Navigate to="/dashboard/welcome" />} />)}
+            {localMode && (
+              <Route path="/" element={<Navigate to="/dashboard/account" />} />
+            )}
+            {!localMode && (
+              <Route path="/" element={<Navigate to="/dashboard/welcome" />} />
+            )}
             <Route path="/dashboard" element={<Dashboard />}>
-              {!localMode && (<Route path="welcome" element={<Welcome />} />)}
-              {!localMode && (<Route path="" element={<Navigate to="welcome" />} />)}
-              {localMode && (<Route path="" element={<Navigate to="projects" />} />)}
+              {!localMode && <Route path="welcome" element={<Welcome />} />}
+              {!localMode && (
+                <Route path="" element={<Navigate to="welcome" />} />
+              )}
+              {localMode && (
+                <Route path="" element={<Navigate to="projects" />} />
+              )}
               <Route path="projects" element={<ProjectsView />} />
               <Route
                 path="project"
