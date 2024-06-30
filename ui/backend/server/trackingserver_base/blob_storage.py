@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import uuid
+from typing import Optional
 
 try:
     import aiobotocore.session
@@ -86,10 +87,30 @@ class LocalTextFileBlobStore(BlobStore):
 
 
 class S3BlobStore(BlobStore):
-    def __init__(self, bucket_name: str, region_name: str, global_prefix: str):
+    def __init__(
+        self,
+        bucket_name: str,
+        global_prefix: str,
+        region_name: Optional[str] = None,
+        endpoint_url: Optional[str] = None,
+    ):
         self.bucket_name = bucket_name
         self.region_name = region_name
         self.global_prefix = global_prefix
+        if endpoint_url is None and region_name is None:
+            raise ValueError("Must provide either region_name or endpoint_url")
+        self.endpoint_url = endpoint_url
+        self.region_name = region_name
+
+    @property
+    def client(self):
+        session = aiobotocore.session.get_session()
+        kwargs = {}
+        if self.region_name is not None:
+            kwargs["region_name"] = self.region_name
+        if self.endpoint_url is not None:
+            kwargs["endpoint_url"] = self.endpoint_url
+        return session.create_client("s3", **kwargs)
 
     async def write_obj(self, namespace: str, contents: dict) -> str:
         # Generate a unique filename for the new blob
@@ -98,8 +119,7 @@ class S3BlobStore(BlobStore):
 
         serialized_contents = json.dumps(contents)
 
-        session = aiobotocore.session.get_session()
-        async with session.create_client("s3", region_name=self.region_name) as client:
+        async with self.client as client:
             await client.put_object(Bucket=self.bucket_name, Key=key, Body=serialized_contents)
 
         # Construct the object URL using s3:// scheme
@@ -115,8 +135,7 @@ class S3BlobStore(BlobStore):
             raise ValueError("Invalid S3 URL format")
         bucket, key = parts
 
-        session = aiobotocore.session.get_session()
-        async with session.create_client("s3", region_name=self.region_name) as client:
+        async with self.client as client:
             response = await client.get_object(Bucket=bucket, Key=key)
             async with response["Body"] as stream:
                 contents_str = await stream.read()
