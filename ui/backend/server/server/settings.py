@@ -38,6 +38,10 @@ HAMILTON_AUTH_MODE = get_from_env(
     "HAMILTON_AUTH_MODE", ["permissive", "integration_tests", "propelauth"]
 )
 
+HAMILTON_PERMISSIVE_MODE_GLOBAL_KEY = get_from_env(
+    "HAMILTON_PERMISSIVE_MODE_GLOBAL_KEY", allow_missing=True
+)
+
 PROPEL_AUTH_API_KEY = get_from_env("PROPEL_AUTH_API_KEY", allow_missing=True)
 PROPEL_AUTH_URL = get_from_env("PROPEL_AUTH_URL", allow_missing=True)
 

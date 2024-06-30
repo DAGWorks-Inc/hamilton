@@ -40,11 +40,15 @@ import { SearchBar } from "./Search/search";
 import { ErrorPage } from "../common/Error";
 import { IconType } from "react-icons";
 import { localMode } from "../../App";
-
+import { localLogout } from "../../auth/Login";
 
 const useProcessAwareLogout = () => {
   if (process.env.REACT_APP_AUTH_MODE === "local") {
-    return null;
+    return (redirectOnLogin: boolean) => {
+      return new Promise<void>(() => {
+        localLogout(redirectOnLogin);
+      });
+    };
   }
   // eslint-disable-next-line
   return useLogoutFunction();
@@ -56,14 +60,14 @@ function classNames(...classes: string[]) {
 
 export const FeedbackButton = (props: { userName: string }) => {
   return (
-      <button
-        data-feedback-fish
-        data-feedback-fish-url={window.location.href}
-        data-feedback-fish-userid={props.userName}
-        className="cursor-pointer select-none rounded-full py-2 px-5 bg-yellow-400 text-gray-900"
-      >
-        Feedback
-      </button>
+    <button
+      data-feedback-fish
+      data-feedback-fish-url={window.location.href}
+      data-feedback-fish-userid={props.userName}
+      className="cursor-pointer select-none rounded-full py-2 px-5 bg-yellow-400 text-gray-900"
+    >
+      Feedback
+    </button>
   );
 };
 
@@ -221,7 +225,11 @@ const MiniSideBar = (props: {
           aria-hidden="true"
           title="Search"
         />
-        <a href="https://hamilton.dagworks.io/en/latest/concepts/ui" target="_blank" rel="noopener noreferrer">
+        <a
+          href="https://hamilton.dagworks.io/en/latest/concepts/ui"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <QuestionMarkCircleIcon
             className={classNames(
               "text-gray-300 hover:bg-gray-700 hover:text-white hover:cursor-pointer rounded-md",
@@ -262,12 +270,8 @@ const MiniSideBar = (props: {
             />
           </Link>
         </div>
-        <div
-          onClick={() =>
-            (props.logout !== null ? props.logout : () => void 0)(true)
-          }
-        >
-          {!localMode && (
+        <div onClick={() => (props.logout ? props.logout : () => void 0)(true)}>
+          {
             <ArrowRightOnRectangleIcon
               className={classNames(
                 "text-gray-300 hover:bg-gray-700 hover:text-white hover:cursor-pointer rounded-md",
@@ -276,7 +280,7 @@ const MiniSideBar = (props: {
               aria-hidden="true"
               title="Logout"
             />
-          )}
+          }
         </div>
       </div>
     </div>
@@ -341,8 +345,11 @@ const ProjectAwareSidebar = (props: {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col overflow-y-auto py-4">
         <div className="border-b-2 border-b-gray-700 px-3 pb-2">
-          <Link to={`/dashboard/project/${props.projectId}`} className="text-gray-300 hover:underline select-none">
-              {props.projectName}
+          <Link
+            to={`/dashboard/project/${props.projectId}`}
+            className="text-gray-300 hover:underline select-none"
+          >
+            {props.projectName}
           </Link>
           {props.dagTemplates.length > 0 ? (
             <div className="text-gray-300 font-semibold flex flex-row gap-1 items-center">
@@ -655,7 +662,10 @@ const Dashboard = () => {
               project.data !== null && // TODO -- determine if this could be null?
               hasChosenProject && (
                 <div className="fixed top-0 px-4 sm:px-6 md:px-8 py-4 bg-white w-full z-0 hidden md:block text-gray-600">
-                  <NavBreadCrumb project={project.data} dagTemplates={dagTemplateVersions.data}/>
+                  <NavBreadCrumb
+                    project={project.data}
+                    dagTemplates={dagTemplateVersions.data}
+                  />
                 </div>
               )}
             <div className="mx-auto max-w-10xl sm:px-6 md:px-8">

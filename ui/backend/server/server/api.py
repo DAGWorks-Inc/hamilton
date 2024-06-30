@@ -16,7 +16,13 @@ from trackingserver_template import api as template_api
 auth_mode = settings.HAMILTON_AUTH_MODE
 
 if auth_mode == "permissive":
-    api = NinjaAPI(auth=[LocalAPIAuthenticator()])
+    api = NinjaAPI(
+        auth=[
+            LocalAPIAuthenticator(
+                global_key=getattr(settings, "HAMILTON_PERMISSIVE_MODE_GLOBAL_KEY", None)
+            )
+        ]
+    )
 elif auth_mode == "integration_tests":
     api = NinjaAPI(auth=[TestAPIAuthenticator()])
 elif auth_mode == "propelauth":
