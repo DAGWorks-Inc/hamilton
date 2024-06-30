@@ -126,8 +126,13 @@ def run(
             env = {**_load_env(config_file), **env}
         with set_env_variables(env):
             settings_file_param = f"--settings={settings_file.value}"
+            # execute_from_command_line(["manage.py", "collectstatic", settings_file_param])
             if not no_migration:
                 execute_from_command_line(["manage.py", "migrate", settings_file_param])
             execute_from_command_line(
-                ["manage.py", "runserver", settings_file_param, f"0.0.0.0:{port}"]
+                # Why insecure? Because we're running locally using django's server which
+                # is not specifically meant for production. That said, we'll be fixing this up shortly,
+                # but for now, users who want to run this not in debug mode and serve it will want to use this:
+                # See https://stackoverflow.com/questions/5836674/why-does-debug-false-setting-make-my-django-static-files-access-fail
+                ["manage.py", "runserver", settings_file_param, f"0.0.0.0:{port}", "--insecure"]
             )
