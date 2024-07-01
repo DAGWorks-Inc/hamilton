@@ -161,7 +161,10 @@ def _derive_version_control_info(module_hash: str) -> GitInfo:
         )
         return default
 
-    commit = repo.head.commit
+    try:
+        commit = repo.head.commit
+    except ValueError:
+        return default
     try:
         repo_url = repo.remote().url
     except ValueError:
