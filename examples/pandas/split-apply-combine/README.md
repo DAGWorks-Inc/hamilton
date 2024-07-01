@@ -63,6 +63,16 @@ You can run the example doing:
 python my_script.py
 ```
 
+or running the notebook:
+
+```bash
+# cd examples/pandas/split-apply-combine/
+jupyter notebook   # pip install jupyter if you don't have it
+```
+Or you can open up the notebook in Colab:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/examples/pandas/split-apply-combine/notebook.ipynb)
+
 The expected result is :
 
 | Name     | Income | Children | Tax Rate | Tax Credit | Tax   | Tax Formula                            |
