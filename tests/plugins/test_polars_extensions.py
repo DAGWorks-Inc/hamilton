@@ -3,10 +3,13 @@ import pathlib
 import sys
 import typing
 
+import polars.testing
+from sqlalchemy import create_engine
+
 import polars as pl  # isort: skip
 import pytest  # isort: skip
 
-from hamilton.plugins.polars_extensions import (  # isort: skip
+from hamilton.plugins.polars_post_1_0_0_extension import (  # isort: skip
     PolarsAvroReader,
     PolarsAvroWriter,
     PolarsCSVReader,
@@ -49,7 +52,7 @@ def test_polars_csv(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert PolarsCSVReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["separator"] == ","
     assert kwargs2["has_header"] is True
-    assert df.frame_equal(df2)
+    polars.testing.assert_frame_equal(df, df2)
 
 
 def test_polars_parquet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
@@ -67,7 +70,7 @@ def test_polars_parquet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert PolarsParquetReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["compression"] == "zstd"
     assert kwargs2["n_rows"] == 2
-    assert df.frame_equal(df2)
+    polars.testing.assert_frame_equal(df, df2)
 
 
 def test_polars_feather(tmp_path: pathlib.Path) -> None:
@@ -95,8 +98,7 @@ def test_polars_feather(tmp_path: pathlib.Path) -> None:
 
 def test_polars_json(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     file = tmp_path / "test.json"
-    writer = PolarsJSONWriter(file=file, pretty=True)
-    kwargs1 = writer._get_saving_kwargs()
+    writer = PolarsJSONWriter(file=file)
     writer.save_data(df)
 
     reader = PolarsJSONReader(source=file)
@@ -105,10 +107,9 @@ def test_polars_json(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
 
     assert PolarsJSONWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert PolarsJSONReader.applicable_types() == [pl.DataFrame]
-    assert kwargs1["pretty"]
     assert df2.shape == (2, 2)
     assert "schema" not in kwargs2
-    assert df.frame_equal(df2)
+    polars.testing.assert_frame_equal(df, df2)
 
 
 def test_polars_avro(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
@@ -126,7 +127,7 @@ def test_polars_avro(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert PolarsAvroReader.applicable_types() == [pl.DataFrame]
     assert kwargs1["compression"] == "uncompressed"
     assert kwargs2["n_rows"] == 2
-    assert df.frame_equal(df2)
+    polars.testing.assert_frame_equal(df, df2)
 
 
 @pytest.mark.skipif(
@@ -134,15 +135,19 @@ def test_polars_avro(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     reason="weird connectorx error on 3.12",
 )
 def test_polars_database(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
-    conn = f"sqlite:///{tmp_path}/test.db"
     table_name = "test_table"
 
-    writer = PolarsDatabaseWriter(table_name=table_name, connection=conn, if_table_exists="replace")
+    connector = create_engine(f"sqlite:///{tmp_path}/test.db")
+
+    writer = PolarsDatabaseWriter(
+        table_name=table_name, connection=connector, if_table_exists="replace"
+    )
     kwargs1 = writer._get_saving_kwargs()
     writer.save_data(df)
 
-    reader = PolarsDatabaseReader(query=f"SELECT * FROM {table_name}", connection=conn)
+    reader = PolarsDatabaseReader(query=f"SELECT * FROM {table_name}", connection=connector)
     kwargs2 = reader._get_loading_kwargs()
+
     df2, metadata = reader.load_data(pl.DataFrame)
 
     assert PolarsDatabaseWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
@@ -150,7 +155,7 @@ def test_polars_database(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert kwargs1["if_table_exists"] == "replace"
     assert "batch_size" not in kwargs2
     assert df2.shape == (2, 2)
-    assert df.frame_equal(df2)
+    polars.testing.assert_frame_equal(df, df2)
 
 
 def test_polars_spreadsheet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
@@ -170,7 +175,7 @@ def test_polars_spreadsheet(df: pl.DataFrame, tmp_path: pathlib.Path) -> None:
     assert df.shape == (2, 2)
     assert metadata["dataframe_metadata"]["column_names"] == ["a", "b"]
     assert metadata["dataframe_metadata"]["datatypes"] == ["Int64", "Int64"]
-    assert df.frame_equal(df2)
+    polars.testing.assert_frame_equal(df, df2)
     assert "include_header" in write_kwargs
     assert write_kwargs["include_header"] is True
     assert "raise_if_empty" in read_kwargs

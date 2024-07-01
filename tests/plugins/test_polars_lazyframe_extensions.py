@@ -4,8 +4,14 @@ import sys
 import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
+from sqlalchemy import create_engine
 
-from hamilton.plugins.polars_extensions import (
+from hamilton.plugins.polars_lazyframe_extensions import (
+    PolarsScanCSVReader,
+    PolarsScanFeatherReader,
+    PolarsScanParquetReader,
+)
+from hamilton.plugins.polars_post_1_0_0_extension import (
     PolarsAvroReader,
     PolarsAvroWriter,
     PolarsCSVWriter,
@@ -17,11 +23,6 @@ from hamilton.plugins.polars_extensions import (
     PolarsParquetWriter,
     PolarsSpreadsheetReader,
     PolarsSpreadsheetWriter,
-)
-from hamilton.plugins.polars_lazyframe_extensions import (
-    PolarsScanCSVReader,
-    PolarsScanFeatherReader,
-    PolarsScanParquetReader,
 )
 
 
@@ -113,8 +114,7 @@ def test_lazy_polars_avro(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
 
 def test_polars_json(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
     file = tmp_path / "test.json"
-    writer = PolarsJSONWriter(file=file, pretty=True)
-    kwargs1 = writer._get_saving_kwargs()
+    writer = PolarsJSONWriter(file=file)
     writer.save_data(df)
 
     reader = PolarsJSONReader(source=file)
@@ -123,7 +123,6 @@ def test_polars_json(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
 
     assert PolarsJSONWriter.applicable_types() == [pl.DataFrame, pl.LazyFrame]
     assert PolarsJSONReader.applicable_types() == [pl.DataFrame]
-    assert kwargs1["pretty"]
     assert df2.shape == (2, 2)
     assert "schema" not in kwargs2
     assert_frame_equal(df.collect(), df2)
@@ -134,14 +133,16 @@ def test_polars_json(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
     reason="weird connectorx error on 3.12",
 )
 def test_polars_database(df: pl.LazyFrame, tmp_path: pathlib.Path) -> None:
-    conn = f"sqlite:///{tmp_path}/test.db"
+    connector = create_engine(f"sqlite:///{tmp_path}/test.db")
     table_name = "test_table"
 
-    writer = PolarsDatabaseWriter(table_name=table_name, connection=conn, if_table_exists="replace")
+    writer = PolarsDatabaseWriter(
+        table_name=table_name, connection=connector, if_table_exists="replace"
+    )
     kwargs1 = writer._get_saving_kwargs()
     writer.save_data(df)
 
-    reader = PolarsDatabaseReader(query=f"SELECT * FROM {table_name}", connection=conn)
+    reader = PolarsDatabaseReader(query=f"SELECT * FROM {table_name}", connection=connector)
     kwargs2 = reader._get_loading_kwargs()
     df2, metadata = reader.load_data(pl.DataFrame)
 
