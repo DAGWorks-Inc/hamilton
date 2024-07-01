@@ -18,7 +18,6 @@ from typing import (
 
 try:
     import polars as pl
-    from polars import PolarsDataType
 except ImportError:
     raise NotImplementedError("Polars is not installed.")
 
@@ -69,7 +68,7 @@ class PolarsScanCSVReader(DataLoader):
     comment_char: str = None
     quote_char: str = '"'
     skip_rows: int = 0
-    dtypes: Union[Mapping[str, PolarsDataType], Sequence[PolarsDataType]] = None
+    dtypes: Union[Mapping[str, Any], Sequence[Any]] = None
     null_values: Union[str, Sequence[str], Dict[str, str]] = None
     missing_utf8_is_empty_string: bool = False
     ignore_errors: bool = False
