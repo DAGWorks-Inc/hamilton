@@ -7,6 +7,9 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, 
 
 import numpy as np
 import pandas as pd
+from pyspark.sql import SparkSession
+from pyspark.sql.connect.dataframe import DataFrame as CDataFrame
+from pyspark.sql.connect.session import SparkSession as CSparkSession
 
 try:
     import pyspark.pandas as ps
@@ -21,6 +24,7 @@ from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers import subdag
 from hamilton.function_modifiers.recursive import assign_namespace
 from hamilton.htypes import custom_subclass_check
+from hamilton.lifecycle import base as lifecycle_base
 
 logger = logging.getLogger(__name__)
 
@@ -1343,3 +1347,40 @@ class select(with_columns):
             mode="select",
             config_required=config_required,
         )
+
+
+class SparkInputValidator(lifecycle_base.BaseDoValidateInput):
+    """This is a graph hook adapter that allows you to get past a <4.0.0 limitation in spark.
+    Spark has the option to choose between spark connect and spark, which largely have the same API.
+    That said, they don't have the proper subclass relationships, which make hamilton fail on the input type checking.
+
+    See the following for more information as to why this is necessary:
+    - https://community.databricks.com/t5/data-engineering/pyspark-sql-connect-dataframe-dataframe-vs-pyspark-sql-dataframe/td-p/71055
+    - https://issues.apache.org/jira/browse/SPARK-47909
+
+    You can access an instance of this through the convenience variable `SPARK_INPUT_CHECK`.
+    This allows you to bypass that. This has to be used with the driver builder pattern -- this will look as follows:
+
+    .. code-block:: python
+
+        from hamilton import driver
+        from hamilton.plugins import h_spark
+
+        dr = driver.Builder().with_modules(...).with_adapters(h_spark.SPARK_INPUT_CHECK).build()
+
+    Then run it as you would normally. Note that in spark==4.0.0, you will only need the spark session check,
+    not the dataframe check.
+    """
+
+    def do_validate_input(self, *, node_type: type, input_value: Any) -> bool:
+        """Validates the input. Treats connect/classic sessios/dataframe as interchangeable."""
+        node_type_is_df = isinstance(input_value, (CDataFrame, DataFrame))
+        if node_type_is_df and issubclass(node_type, (DataFrame, CDataFrame)):
+            return True
+        node_type_is_spark_session = isinstance(input_value, (CSparkSession, SparkSession))
+        if node_type_is_spark_session and issubclass(node_type, (CSparkSession, SparkSession)):
+            return True
+        return htypes.check_input_type(node_type, input_value)
+
+
+SPARK_INPUT_CHECK = SparkInputValidator()

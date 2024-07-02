@@ -18,3 +18,16 @@ See the example in `pyspark_udfs`.
 
 Note: we're looking to expand coverage and support for more Spark use cases. Please come find us, or open an issue,
 if you have a use case that you'd like to see supported!
+
+## Caveats
+
+Hamilton's type-checking doesn't inherently work with spark connect, which can swap out different types of dataframes that
+are not part of the same subclass. Thus when you are passing in a spark session or spark dataframe as an input,
+you can use the `SparkInputValidator` (available by instantiation or access of the static field `h_spark.SPARK_INPUT_CHECK`).
+
+```python
+from hamilton import driver
+from hamilton.plugins import h_spark
+
+dr = driver.Builder().with_modules(...).with_adapters(h_spark.SPARK_INPUT_CHECK).build()
+```
