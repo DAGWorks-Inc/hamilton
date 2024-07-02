@@ -16,3 +16,7 @@
 #     ).result()
 #
 #     assert response
+
+
+def test_dummy():
+    assert True
