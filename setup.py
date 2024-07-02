@@ -76,9 +76,8 @@ setup(
         "ray": ["ray>=2.0.0", "pyarrow"],
         "pyspark": [
             # we have to run these dependencies cause Spark does not check to ensure the right target was called
-            "pyspark[pandas_on_spark,sql]",
+            "pyspark[pandas_on_spark,sql,connect]",
             # This is problematic, see https://stackoverflow.com/questions/76072664/convert-pyspark-dataframe-to-pandas-dataframe-fails-on-timestamp-column
-            "pandas<2.0",
         ],  # I'm sure they'll add support soon,
         # but for now its not compatible
         "pandera": ["pandera"],

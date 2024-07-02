@@ -6,10 +6,13 @@ import pyspark.pandas as ps
 import pytest
 from pyspark import Row
 from pyspark.sql import Column, DataFrame, SparkSession, types
+from pyspark.sql.connect.dataframe import DataFrame as CDataFrame
+from pyspark.sql.connect.session import SparkSession as CSparkSession
 from pyspark.sql.functions import column
 
 from hamilton import base, driver, htypes, node
 from hamilton.plugins import h_spark
+from hamilton.plugins.h_spark import SparkInputValidator
 
 from .resources import example_module, smoke_screen_module
 from .resources.spark import (
@@ -858,4 +861,30 @@ def test_create_selector_node(spark_session):
     transformed = selector_node(foo=df).toPandas()
     pd.testing.assert_frame_equal(
         transformed, pandas_df[["a", "b"]], check_names=False, check_dtype=False
+    )
+
+
+def test_spark_input_adapter_dataframe():
+    # We have to do these at is is very difficult to mock out connect.x objects
+
+    class ConnectDataFrame(CDataFrame):
+        def __init__(self):
+            pass
+
+        def __repr__(self):
+            return "df"
+
+    assert SparkInputValidator().do_validate_input(
+        node_type=DataFrame, input_value=ConnectDataFrame()
+    )
+
+
+def test_spark_input_adapter_connector():
+    # We have to do these at is is very difficult to mock out connect.x objects
+    class ConnectSparkSession(CSparkSession):
+        def __init__(self):
+            pass
+
+    assert SparkInputValidator().do_validate_input(
+        node_type=SparkSession, input_value=ConnectSparkSession()
     )
