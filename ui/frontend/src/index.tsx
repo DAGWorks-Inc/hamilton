@@ -41,22 +41,22 @@ const TelemetryProvider =
 
 root.render(
   // <React.StrictMode>
-  <AuthProvider
-    authUrl={process.env.REACT_APP_AUTH_URL as string}
-    displayWhileLoading={<Loading />}
-    displayIfLoggedOut={<RedirectToLogin />}
-  >
-    <Provider store={store}>
-      <PersistGate loading={<Loading />} persistor={persistor}>
+  <Provider store={store}>
+    <PersistGate loading={<Loading />} persistor={persistor}>
+      <AuthProvider
+        authUrl={process.env.REACT_APP_AUTH_URL as string}
+        displayWhileLoading={<Loading />}
+        displayIfLoggedOut={<RedirectToLogin />}
+      >
         <TelemetryProvider
           apiKey={process.env.REACT_APP_PUBLIC_POSTHOG_KEY}
           options={posthogOptions}
         >
           <App />
         </TelemetryProvider>
-      </PersistGate>
-    </Provider>
-  </AuthProvider>
+      </AuthProvider>
+    </PersistGate>
+  </Provider>
   // </React.StrictMode>
 );
 
