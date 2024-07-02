@@ -99,7 +99,7 @@ class HamiltonLanguageServer(LanguageServer):
     #                 )
 
 
-def regiser_server_features(ls: HamiltonLanguageServer) -> HamiltonLanguageServer:
+def register_server_features(ls: HamiltonLanguageServer) -> HamiltonLanguageServer:
     @ls.feature(TEXT_DOCUMENT_DID_CHANGE)
     def did_change(server: HamiltonLanguageServer, params: DidChangeTextDocumentParams):
         """try to build the dataflow and cache it on the server by creating

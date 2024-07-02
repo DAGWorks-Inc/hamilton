@@ -1,4 +1,4 @@
-from hamilton_lsp.server import HamiltonLanguageServer, regiser_server_features
+from hamilton_lsp.server import HamiltonLanguageServer, register_server_features
 
 
 # TODO use argparse to allow
@@ -6,7 +6,7 @@ from hamilton_lsp.server import HamiltonLanguageServer, regiser_server_features
 #   - select host and port
 def main():
     language_server = HamiltonLanguageServer()
-    language_server = regiser_server_features(language_server)
+    language_server = register_server_features(language_server)
 
     language_server.start_io()
     # tcp is good for debugging

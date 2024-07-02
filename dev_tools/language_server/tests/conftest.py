@@ -17,7 +17,7 @@
 # limitations under the License.                                           #
 ############################################################################
 import pytest
-from hamilton_lsp.server import HamiltonLanguageServer, regiser_server_features
+from hamilton_lsp.server import HamiltonLanguageServer, register_server_features
 
 from .ls_setup import NativeClientServer
 
@@ -25,7 +25,7 @@ from .ls_setup import NativeClientServer
 @pytest.fixture(autouse=False)
 def client_server():
     client_server = NativeClientServer(LS=HamiltonLanguageServer)
-    regiser_server_features(client_server.server)
+    register_server_features(client_server.server)
 
     client_server.start()
     client, server = client_server
