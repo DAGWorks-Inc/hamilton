@@ -41,6 +41,7 @@ import {
   useTrackingserverAuthApiCreateApiKeyMutation,
   ApiKeyOut,
   DagTemplateOutWithData,
+  useTrackingserverAuthApiPhoneHomeQuery,
 } from "./backendApiRaw";
 
 /**
@@ -235,3 +236,5 @@ export function getNodeRunAttributes<T>(
     })
     .filter((attr) => attr.schema_version === version && attr.type === type);
 }
+
+export const usePhoneHome = useTrackingserverAuthApiPhoneHomeQuery;

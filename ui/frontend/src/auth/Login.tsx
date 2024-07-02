@@ -15,6 +15,7 @@ export const UserContext = createContext<UserContextType | undefined>(
 
 export const LocalLoginProvider = (props: { children: React.ReactNode }) => {
   const [localUsername, setLocalUsername] = useState<string>("");
+  const [localAPIKey, setLocalAPIKey] = useState<string | undefined>("");
   const [keyInputExpanded, setKeyInputExpanded] = useState(false);
 
   const [username, setUsername] = useLocalStorage(
@@ -22,24 +23,41 @@ export const LocalLoginProvider = (props: { children: React.ReactNode }) => {
     undefined
   );
   const [apiKey, setApiKey] = useLocalStorage("hamilton-api-key", undefined);
-
-  if (username) {
+  const [authed, setAuthed] = useLocalStorage("authed", "false");
+  if (authed === "true") {
     return (
       <UserContext.Provider
-        value={{ username, setUsername, userAPIKey: apiKey }}
+        value={{ username: username || "", setUsername, userAPIKey: apiKey }}
       >
         {props.children}
       </UserContext.Provider>
     );
   }
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalUsername(event.target.value);
-  };
-
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setUsername(localUsername); // Store username
+    event.stopPropagation();
+    if (authed != "true") {
+      const results = fetch("/api/v1/phone_home", {
+        method: "GET",
+        headers: {
+          "x-api-key": localAPIKey || "",
+          "x-api-user": localUsername || "",
+        },
+      });
+      results.then((response) => {
+        if (response.status !== 200) {
+          setUsername(undefined);
+          setApiKey(undefined);
+          setAuthed("false");
+          alert("Invalid API key or username. Please try again.");
+        } else {
+          setAuthed("true");
+          setUsername(localUsername); // Store username
+          setApiKey(localAPIKey); // Store API key
+        }
+      });
+    }
   };
 
   const KeyInputExpandIcon = keyInputExpanded ? HiChevronUp : HiChevronDown;
@@ -58,8 +76,8 @@ export const LocalLoginProvider = (props: { children: React.ReactNode }) => {
               type="text"
               autoComplete="username"
               name="username"
-              value={username}
-              onChange={handleChange}
+              value={localUsername}
+              onChange={(event) => setLocalUsername(event.target.value)}
               placeholder="Username"
               required
               className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-dwdarkblue focus:border-dwdarkblue focus:z-10 sm:text-sm"
@@ -70,35 +88,28 @@ export const LocalLoginProvider = (props: { children: React.ReactNode }) => {
               type="password"
               autoComplete="api-key"
               name="api-key"
-              value={apiKey || ""}
+              value={localAPIKey}
               onChange={(event) => {
-                setApiKey(event.target.value);
+                setLocalAPIKey(event.target.value);
               }}
-              placeholder="API Key (power-user-mode)"
-              required
+              placeholder="API Key (leave blank for local mode)"
               className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-dwdarkblue focus:border-dwdarkblue focus:z-10 sm:text-sm"
             />
           )}
-          {/* <input
-            type="text"
-            autoComplete="username"
-            name="username"
-            value={username}
-            onChange={handleChange}
-            placeholder="Username"
-            required
-            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-dwdarkblue focus:border-dwdarkblue focus:z-10 sm:text-sm"
-          /> */}
           <button
             type="submit"
-            className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-dwdarkblue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dwdarkblue`}
+            className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-dwdarkblue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dwdarkblue z-50`}
           >
             <div className="flex flex-row justify-between w-full items-center">
               <div className="w-max">
                 <span>Get started!</span>
               </div>
               <KeyInputExpandIcon
-                onClick={() => setKeyInputExpanded(!keyInputExpanded)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault()
+                  setKeyInputExpanded(!keyInputExpanded);
+                }}
                 className="h-6 w-6 text-white hover:scale-105"
               ></KeyInputExpandIcon>
             </div>
@@ -112,6 +123,7 @@ export const LocalLoginProvider = (props: { children: React.ReactNode }) => {
 export const localLogout = (redirectOnLogin: boolean) => {
   localStorage.removeItem("hamilton-username");
   localStorage.removeItem("hamilton-api-key");
+  localStorage.removeItem("authed");
   if (redirectOnLogin) {
     window.location.reload();
   }

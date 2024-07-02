@@ -32,6 +32,7 @@ const baseQuery = fetchBaseQuery({
     } else if (process.env.REACT_APP_AUTH_MODE === "local") {
       headers.set("x-api-user", getStateTyped().auth.localUserName || "");
       headers.set("x-api-key", getStateTyped().auth.localAPIKey || "");
+      console.log(headers)
     }
     return headers;
   },

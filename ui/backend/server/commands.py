@@ -126,7 +126,6 @@ def run(
             env = {**_load_env(config_file), **env}
         with set_env_variables(env):
             settings_file_param = f"--settings={settings_file.value}"
-            # execute_from_command_line(["manage.py", "collectstatic", settings_file_param])
             if not no_migration:
                 execute_from_command_line(["manage.py", "migrate", settings_file_param])
             execute_from_command_line(
