@@ -79,6 +79,20 @@ class HamiltonClient:
         pass
 
     @abc.abstractmethod
+    def create_or_get_project(
+        self, project_name: str, project_description: str = "", tags: dict = None
+    ) -> int:
+        """Creates or gets the project by name. If multiple exist to which a user
+        has access, this will error out.
+        :param project_name: Name of the project
+        :param project_description: Description of the project
+        :param tags: Tags to associate with the project
+
+        :return: project ID
+        """
+        pass
+
+    @abc.abstractmethod
     def register_dag_template_if_not_exists(
         self,
         project_id: int,
@@ -161,6 +175,7 @@ class HamiltonClient:
 
 
 class BasicSynchronousHamiltonClient(HamiltonClient):
+
     def __init__(
         self,
         api_key: str,
@@ -374,6 +389,50 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
                 ) from e
             raise
 
+    def create_or_get_project(
+        self, project_name: str, project_description: str = "", tags: dict = None
+    ) -> int:
+        if tags is None:
+            tags = {}
+        logger.debug("Listing all projects")
+        results = requests.get(f"{self.base_url}/projects", headers=self._common_headers()).json()
+        result_with_name = [project for project in results if project["name"] == project_name]
+        if len(result_with_name) == 1:
+            return result_with_name[0]["id"]
+        elif len(result_with_name) > 1:
+            raise ValueError(f"Multiple projects with name {project_name} found.")
+        else:
+            logger.info(f"Creating project {project_name}")
+
+        project_created = requests.post(
+            f"{self.base_url}/projects",
+            headers=self._common_headers(),
+            json={
+                "name": project_name,
+                "description": project_description,
+                "tags": tags,
+                "visibility": {
+                    "user_ids_visible": [],
+                    "team_ids_visible": [],
+                    "team_ids_writable": [],
+                    "user_ids_writable": [self.username],
+                },
+                "attributes": [],
+            },
+        )
+        try:
+            project_created.raise_for_status()
+            project_created_data = project_created.json()
+            logger.debug(
+                f"Created project with ID: {project_created_data['id']} with name: {project_name}"
+            )
+            return project_created_data["id"]
+        except HTTPError:
+            logger.exception(
+                f"Failed to create project with name: {project_name}. Error: {project_created.text}"
+            )
+            raise
+
     def register_dag_template_if_not_exists(
         self,
         project_id: int,
@@ -584,7 +643,10 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
 
         @return: a dictionary of headers.
         """
-        return {"x-api-user": self.username, "x-api-key": self.api_key}
+        return {
+            "x-api-user": self.username,
+            "x-api-key": self.api_key if self.api_key is not None else "",
+        }
 
     async def validate_auth(self):
         logger.debug(f"Validating auth against {self.base_url}/phone_home")
@@ -657,6 +719,51 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
                     logger.exception(
                         f"Failed to create code version {code_hash} for project {project_id}. "
                         f"Error was: {await response.text()}"
+                    )
+                    raise
+
+    async def create_or_get_project(
+        self, project_name: str, project_description: str = "", tags: dict = None
+    ) -> int:
+        if tags is None:
+            tags = {}
+        logger.debug("Listing all projects")
+        results = requests.get(f"{self.base_url}/projects", headers=self._common_headers()).json()
+        result_with_name = [project for project in results if project["name"] == project_name]
+        if len(result_with_name) == 1:
+            return result_with_name[0]["id"]
+        elif len(result_with_name) > 1:
+            raise ValueError(f"Multiple projects with name {project_name} found.")
+        else:
+            logger.info(f"Creating project {project_name}")
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{self.base_url}/projects",
+                headers=self._common_headers(),
+                json={
+                    "name": project_name,
+                    "description": project_description,
+                    "tags": tags,
+                    "visibility": {
+                        "user_ids_visible": [],
+                        "team_ids_visible": [],
+                        "team_ids_writable": [],
+                        "user_ids_writable": [self.username],
+                    },
+                    "attributes": [],
+                },
+            ) as project_created:
+                try:
+                    project_created.raise_for_status()
+                    project_created_data = await project_created.json()
+                    logger.debug(
+                        f"Created project with ID: {project_created_data['id']} with name: {project_name}"
+                    )
+                    return project_created_data["id"]
+                except HTTPError:
+                    logger.exception(
+                        f"Failed to create project with name: {project_name}. Error: {project_created.text}"
                     )
                     raise
 
