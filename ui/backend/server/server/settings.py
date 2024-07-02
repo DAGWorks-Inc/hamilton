@@ -1,6 +1,9 @@
+import logging
 import os
 import socket
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def get_from_env(
@@ -29,12 +32,14 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
 HAMILTON_ENV = get_from_env("HAMILTON_ENV", ["integration_tests", "local", "dev", "prod", "mini"])
 
-
 SECRET_KEY = get_from_env("DJANGO_SECRET_KEY")
-
 
 HAMILTON_AUTH_MODE = get_from_env(
     "HAMILTON_AUTH_MODE", ["permissive", "integration_tests", "propelauth"]
+)
+
+HAMILTON_PERMISSIVE_MODE_GLOBAL_KEY = get_from_env(
+    "HAMILTON_PERMISSIVE_MODE_GLOBAL_KEY", allow_missing=True
 )
 
 PROPEL_AUTH_API_KEY = get_from_env("PROPEL_AUTH_API_KEY", allow_missing=True)
@@ -47,7 +52,8 @@ HAMILTON_BLOB_STORE = get_from_env("HAMILTON_BLOB_STORE", ["local", "s3"])
 HAMILTON_BLOB_STORE_PARAMS = (
     {
         "bucket_name": get_from_env("HAMILTON_S3_BUCKET", allow_missing=False),
-        "region_name": get_from_env("HAMILTON_S3_REGION", allow_missing=False),
+        "region_name": get_from_env("HAMILTON_S3_REGION", allow_missing=True),
+        "endpoint_url": get_from_env("HAMILTON_S3_ENDPOINT_URL", allow_missing=True),
         "global_prefix": get_from_env("HAMILTON_ENV", allow_missing=False),
     }
     if HAMILTON_BLOB_STORE == "s3"
@@ -55,15 +61,16 @@ HAMILTON_BLOB_STORE_PARAMS = (
         "base_dir": get_from_env("HAMILTON_LOCAL_BLOB_DIR", allow_missing=False),
     }
 )
-
-hostname = socket.gethostname()
-local_ip = socket.gethostbyname(hostname)
+try:
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+    hosts_to_add = [local_ip, hostname]
+except Exception:
+    logger.exception("Could not get hostname or local IP")
+    hosts_to_add = []
 
 ALLOWED_HOSTS = (
-    ALLOWED_HOSTS
-    + [local_ip]
-    + [hostname]
-    + os.environ.get("HAMILTON_ALLOWED_HOSTS", "").split(",")
+    ALLOWED_HOSTS + hosts_to_add + os.environ.get("HAMILTON_ALLOWED_HOSTS", "").split(",")
 )
 
 # Application definition
@@ -77,7 +84,7 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    # "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
@@ -99,7 +106,9 @@ ROOT_URLCONF = "server.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": (
+            [os.path.join(BASE_DIR, "build")] if HAMILTON_ENV == "mini" else []
+        ),  # TODO -- unify
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -115,6 +124,17 @@ TEMPLATES = [
 WSGI_APPLICATION = "server.wsgi.application"
 
 STATIC_ROOT = "./staticfiles"
+STATIC_URL = "static/"
+
+# TODO -- unify this/fix with the mini settings
+if HAMILTON_ENV == "mini":
+    STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+    STATIC_URL = "/static/"
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, "build/static/"),
+    ]
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = os.path.join(BASE_DIR, "build/")
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -166,11 +186,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.1/howto/static-files/
-
-STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

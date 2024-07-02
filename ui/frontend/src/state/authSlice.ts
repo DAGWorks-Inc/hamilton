@@ -7,11 +7,13 @@ export type AuthData = ReturnType<typeof useAuthInfo>;
 export type AuthState = {
   authData: AuthData | null;
   localUserName: string | null;
+  localAPIKey: string | null;
 };
 
 const initialState = {
   authData: null,
   localUserName: null,
+  localAPIKey: null,
 } as AuthState;
 
 /**
@@ -30,10 +32,13 @@ export const authSlice = createSlice({
     setLocalUserName: (state: AuthState, action: PayloadAction<string>) => {
       state.localUserName = action.payload;
     },
+    setLocalAPIKey: (state: AuthState, action: PayloadAction<string>) => {
+      state.localAPIKey = action.payload;
+    }
   },
 });
 
 export default authSlice.reducer;
 
-export const { logout, setAuth, setLocalUserName } = authSlice.actions;
+export const { logout, setAuth, setLocalUserName, setLocalAPIKey } = authSlice.actions;
 export const useAuthData = (state: RootState) => state.auth.authData;
