@@ -43,33 +43,8 @@ def test_polars():
     r = dr.execute(
         [narwhals_example.group_by_mean, narwhals_example.example1], inputs={"col_name": "a"}
     )
-    assert json.loads(r.write_json()) == {
-        "columns": [
-            {
-                "datatype": {
-                    "Struct": [{"dtype": "Int64", "name": "a"}, {"dtype": "Float64", "name": "b"}]
-                },
-                "name": "group_by_mean",
-                "values": [
-                    {
-                        "bit_settings": "SORTED_ASC",
-                        "datatype": "Int64",
-                        "name": "a",
-                        "values": [1, 2, 3],
-                    },
-                    {
-                        "bit_settings": "",
-                        "datatype": "Float64",
-                        "name": "b",
-                        "values": [4.5, 6.5, 8.0],
-                    },
-                ],
-            },
-            {
-                "bit_settings": "SORTED_ASC",
-                "datatype": "Int32",
-                "name": "example1",
-                "values": [3, 3, 3],
-            },
-        ]
-    }
+    assert json.loads(r.write_json()) == [
+        {"example1": 3, "group_by_mean": {"a": 1, "b": 4.5}},
+        {"example1": 3, "group_by_mean": {"a": 2, "b": 6.5}},
+        {"example1": 3, "group_by_mean": {"a": 3, "b": 8.0}},
+    ]
