@@ -26,3 +26,4 @@ This section showcases how Hamilton integrates with popular frameworks.
     Slack <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/slack>
     Spark <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/spark>
     Vaex <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/vaex>
+    Narwhals <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/narwhals>

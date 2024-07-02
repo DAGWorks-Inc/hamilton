@@ -51,6 +51,13 @@ if [[ ${TASK} == "vaex" ]]; then
     exit 0
 fi
 
+if [[ ${TASK} == "narwhals" ]]; then
+    pip install -e .
+    pip install polars pandas narwhals
+    pytest plugin_tests/h_narwhals
+    exit 0
+fi
+
 if [[ ${TASK} == "tests" ]]; then
     pip install .
     pytest \

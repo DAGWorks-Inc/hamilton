@@ -1,0 +1,4 @@
+narwhals
+pandas
+polars
+sf-hamilton[visualization]
