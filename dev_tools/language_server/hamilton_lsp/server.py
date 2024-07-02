@@ -68,8 +68,8 @@ class HamiltonLanguageServer(LanguageServer):
     CMD_VIEW_REQUEST = "lsp-view-request"
     CMD_VIEW_RESPONSE = "lsp-view-response"
 
-    def __init__(self):
-        super().__init__("HamiltonServer", __version__, max_workers=2)
+    def __init__(self, server: str = "HamiltonServer", version: str = __version__, loop=None):
+        super().__init__(server, version, loop=loop, max_workers=2)
 
         self.active_uri: str = ""
         self.active_version: str = ""

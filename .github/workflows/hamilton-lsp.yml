@@ -1,0 +1,36 @@
+name: LSP Test Workflow
+
+on:
+  push:
+    branches:
+      - main  # or any specific branches you want to include
+    paths:
+      - 'dev_tools/language_server/**'
+
+  pull_request:
+    paths:
+      - 'dev_tools/language_server/**'
+
+
+jobs:
+  sdk-unit-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    defaults:
+      run:
+        working-directory: dev_tools/language_server
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip pytest
+        pip install -e .
+    - name: Run unit tests
+      run: |
+        pytest tests/
