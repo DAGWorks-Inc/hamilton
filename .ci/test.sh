@@ -53,7 +53,7 @@ fi
 
 if [[ ${TASK} == "narwhals" ]]; then
     pip install -e .
-    pip install polars pandas
+    pip install polars pandas narwhals
     pytest plugin_tests/h_narwhals
     exit 0
 fi
