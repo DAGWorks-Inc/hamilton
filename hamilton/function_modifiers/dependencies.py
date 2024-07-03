@@ -176,6 +176,9 @@ def _validate_group_params(
                     f"Dependency: {dependency} is not a valid dependency type for group(), must be "
                     f"a LiteralDependency or UpstreamDependency."
                 )
+    raise InvalidDecoratorException(
+        "Either dependency_args or dependency_kwargs must be non-empty for group()!"
+    )
 
 
 def group(
