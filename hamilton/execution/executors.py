@@ -66,7 +66,7 @@ def new_callable(*args, _callable=None, **kwargs):
 
 def _modify_callable(node_source: node.NodeType, callabl: Callable):
     """This is a bit of a shortcut -- we modify the callable here as
-    we want to allow `Parallelizable[]` nodes to return a generaot
+    we want to allow `Parallelizable[]` nodes to return a generator
 
     :param node_source:
     :param callabl:

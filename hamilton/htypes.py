@@ -283,6 +283,10 @@ class Parallelizable(typing.Generator[U, None, None], ABC):
     pass
 
 
+def is_parallelizable_type(type_: Type) -> bool:
+    return issubclass(type_, Parallelizable)
+
+
 class Collect(Generator[V, None, None], ABC):
     pass
 

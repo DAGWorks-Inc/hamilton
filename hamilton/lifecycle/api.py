@@ -520,6 +520,8 @@ class NodeExecutionMethod(BaseDoNodeExecute):
             node_callable=node_.callable,
             node_kwargs=kwargs,
             task_id=task_id,
+            is_expand=node_.node_role == node.NodeType.EXPAND,
+            is_collect=node_.node_role == node.NodeType.COLLECT,
         )
 
     @abc.abstractmethod
@@ -531,6 +533,8 @@ class NodeExecutionMethod(BaseDoNodeExecute):
         node_callable: Any,
         node_kwargs: Dict[str, Any],
         task_id: Optional[str],
+        is_expand: bool,
+        is_collect: bool,
         **future_kwargs: Any,
     ) -> Any:
         """This method is responsible for executing the node and returning the result.
@@ -540,6 +544,8 @@ class NodeExecutionMethod(BaseDoNodeExecute):
         :param node_callable: Callable of the node.
         :param node_kwargs: Keyword arguments to pass to the node.
         :param task_id: The ID of the task, none if not in a task-based environment
+        :param is_expand: Whether the node is parallelizable.
+        :param is_collect: Whether the node is a collect node.
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility
         :return: The result of the node execution -- up to you to return this.
         """
