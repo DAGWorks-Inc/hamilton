@@ -570,8 +570,19 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         self.sentinel_value = sentinel_value
 
     def run_to_execute_node(
-        self, *, node_callable: Any, node_kwargs: Dict[str, Any], **future_kwargs: Any
+        self,
+        *,
+        node_callable: Any,
+        node_kwargs: Dict[str, Any],
+        is_expand: bool,
+        is_collect: bool,
+        **future_kwargs: Any,
     ) -> Any:
+        # You can use the `is_expand` to see if the node is parallelizable
+        # You can use the `is_collect` to see if the node is a collect node
+        # TODO -- if it is parallelizable, run the generator in a special way (E.G. loop through the node callable
+        # and truncate it/provide sentinels for every failure)
+        # TODO -- decide what to do with collect
         """Executes a node. If the node fails, returns the sentinel value."""
         for key, value in node_kwargs.items():
             if value == self.sentinel_value:  # == versus is
