@@ -162,6 +162,7 @@ class HamiltonTracker(
             f"\nCapturing execution run. Results can be found at "
             f"{self.hamilton_ui_url}/dashboard/project/{self.project_id}/runs/{dw_run_id}\n"
         )
+        return dw_run_id
 
     def pre_node_execute(
         self, run_id: str, node_: node.Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
