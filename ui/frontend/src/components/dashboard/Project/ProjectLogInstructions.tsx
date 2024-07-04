@@ -9,19 +9,24 @@ import { CheckBox } from "../../common/Checkbox";
 const INSTALL_CODE = `# be sure to initialize any python environment you want to use first
 pip install "sf-hamilton[sdk]"`;
 
+const INSTALL_CODE_DW = `# be sure to initialize any python environment you want to use first
+pip install dagworks-sdk`;
+
 export const UsingHamiltonAlready = (props: {
   projectId: string | undefined;
   username: string;
+  useHamiltonSDK: boolean;
 }) => {
   const exampleCode = `
-from hamilton_sdk import adapters
+from ${props.useHamiltonSDK ? "hamilton_sdk" : "dagworks"} import adapters
 from hamilton import driver
 ...
-tracker = adapters.HamiltonTracker(
+tracker = adapters.${props.useHamiltonSDK ? "HamiltonTracker": "DAGWorksTracker"}(
    project_id=${props.projectId},  # modify this as needed
    username="${props.username}",
    dag_name="my_version_of_the_dag",
-   tags={"environment": "DEV", "team": "MY_TEAM", "version": "X"}
+   tags={"environment": "DEV", "team": "MY_TEAM", "version": "X"},
+${props.useHamiltonSDK ? "":   '   api_key="your_api_key"'}
 )
 dr = (
   driver.Builder()
@@ -64,14 +69,19 @@ dr = (
 export const NotUsingHamiltonYet = (props: {
   projectId: string | undefined;
   username: string;
+  useHamiltonSDK: boolean;
 }) => {
-  const initCode = `\
-git clone https://github.com/DAGWorks-Inc/hamilton.git
+  const initCode = props.useHamiltonSDK
+      ? `git clone https://github.com/DAGWorks-Inc/hamilton.git
 cd hamilton/examples/hamilton_ui
 # provide the project ID and username for run.py.
+`    : `git clone https://github.com/DAGWorks-Inc/dagworks-examples.git
+cd dagworks-examples/hello_world/
+# modify run.py -- change the username and project_id to your own
 `;
   const pipCode = `pip install -r requirements.txt`;
-  const runCode = `python run.py`;
+  const runCode = props.useHamiltonSDK ? `python run.py` : `python run.py --api-key YOUR_API_KEY`;
+
   return (
     <>
       <li className="flex flex-col gap-2">
@@ -133,6 +143,7 @@ export const ProjectLogInstructions = (props: {
 }) => {
   const NOT_USING_HAMILTON = "Not Using Hamilton (yet)";
   const USING_HAMILTON = "Using Hamilton";
+  const urlContainsDagworks = window.location.href.includes('app.dagworks.io');
 
   const tabs = [NOT_USING_HAMILTON, USING_HAMILTON];
   const [currentTab, setCurrentTab] = useState(tabs[1]);
@@ -171,11 +182,11 @@ export const ProjectLogInstructions = (props: {
           <div className="flex flex-row gap-2">
             <CheckBox />
             <p className="text-sm text-gray-500 items-center">
-              Install the Hamilton SDK:
+              Install the SDK:
             </p>
           </div>
           <SyntaxHighlighter language="bash" style={vscDarkPlus}>
-            {INSTALL_CODE}
+            {urlContainsDagworks ? INSTALL_CODE_DW : INSTALL_CODE}
           </SyntaxHighlighter>
         </li>
         <div>
@@ -220,11 +231,13 @@ export const ProjectLogInstructions = (props: {
             <UsingHamiltonAlready
               projectId={props.projectId?.toString()}
               username={props.username}
+              useHamiltonSDK={!urlContainsDagworks}
             />
           ) : (
             <NotUsingHamiltonYet
               projectId={props.projectId?.toString()}
               username={props.username}
+              useHamiltonSDK={!urlContainsDagworks}
             />
           )}
         </div>
