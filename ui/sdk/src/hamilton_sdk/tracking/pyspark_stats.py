@@ -1,7 +1,12 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pyspark.sql as ps
 from hamilton_sdk.tracking import stats
+
+try:
+    from hamilton.plugins import h_schema
+except (ImportError, ModuleNotFoundError):
+    h_schema = None
 
 """Module that houses functions to introspect a PySpark dataframe.
 """
@@ -69,17 +74,52 @@ def _introspect(df: ps.DataFrame) -> Dict[str, Any]:
 
 
 @stats.compute_stats.register
-def compute_stats_psdf(result: ps.DataFrame, node_name: str, node_tags: dict) -> Dict[str, Any]:
+def compute_stats_psdf(
+    result: ps.DataFrame, node_name: str, node_tags: dict
+) -> List[Dict[str, Any]]:
     # TODO: create custom type instead of dict for UI
     o_value = _introspect(result)
-    return {
-        "observability_type": "dict",
-        "observability_value": {
-            "type": str(type(result)),
-            "value": o_value,
+
+    results = [
+        {
+            "observability_type": "dict",
+            "observability_value": {
+                "type": str(type(result)),
+                "value": o_value["columns"],
+            },
+            "observability_schema_version": "0.0.2",
         },
-        "observability_schema_version": "0.0.2",
-    }
+        {
+            "observability_type": "primitive",
+            "observability_value": {
+                "type": str(str),
+                "value": o_value["cost_explain"],
+            },
+            "observability_schema_version": "0.0.1",
+            "name": "Cost Explain",
+        },
+        {
+            "observability_type": "primitive",
+            "observability_value": {
+                "type": str(str),
+                "value": o_value["extended_explain"],
+            },
+            "observability_schema_version": "0.0.1",
+            "name": "Extended Explain",
+        },
+    ]
+    if h_schema is not None:
+        schema = h_schema._get_arrow_schema(result)
+        schema.with_metadata(dict(name=node_name))
+        results.append(
+            {
+                "observability_type": "schema",
+                "observability_value": h_schema.pyarrow_schema_to_json(schema),
+                "observability_schema_version": "0.0.1",
+                "name": "Schema",
+            }
+        )
+    return results
 
 
 if __name__ == "__main__":

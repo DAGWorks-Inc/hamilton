@@ -524,6 +524,16 @@ export type AttributeDagworksDescribe3 = {
 export type AttributeHTML1 = {
   html: string;
 };
+
+export type ColSchema = {
+  name: string;
+  type: string;
+  nullable: boolean;
+  metadata: object;
+};
+export type AttributeSchema1 = {
+  [key: string]: ColSchema;
+};
 export type AllAttributeTypes = {
   documentation_loom__1: AttributeDocumentationLoom1;
   primitive__1: AttributePrimitive1;
@@ -534,6 +544,7 @@ export type AllAttributeTypes = {
   dict__2: AttributeDict2;
   dagworks_describe__3: AttributeDagworksDescribe3;
   html__1: AttributeHTML1;
+  schema__1: AttributeSchema1;
 };
 export type CodeVersionGit1 = {
   git_hash: string;
