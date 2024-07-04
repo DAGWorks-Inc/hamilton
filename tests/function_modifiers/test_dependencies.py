@@ -51,6 +51,7 @@ def test_validate_group_happy(args, kwargs):
         ([source("foo"), value("bar")], {"foo": source("foo")}),
         ([], {"foo": "foo", "bar": source("bar")}),
         (["bar"], {}),
+        ({}, {}),
     ],
 )
 def test_validate_group_sad(args, kwargs):

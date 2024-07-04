@@ -148,37 +148,38 @@ def source(dependency_on: Any) -> UpstreamDependency:
 
 def _validate_group_params(
     dependency_args: List[ParametrizedDependency],
-    dependecy_kwargs: Dict[str, ParametrizedDependency],
+    dependency_kwargs: Dict[str, ParametrizedDependency],
 ):
     """Validates the following for params to group(...):
     1. That either dependency_args or dependency_kwargs is non-empty, but not both.
     2. That all values in dependency_args are of type either LiteralDependency or UpstreamDependency.
 
     :param dependency_args: List of dependencies.
-    :param dependecy_kwargs: Dict of dependencies.
+    :param dependency_kwargs: Dict of dependencies.
     :raises: InvalidDecoratorException if the above conditions are not met.
     """
-    if dependency_args and dependecy_kwargs:
+    if dependency_args and dependency_kwargs:
         raise InvalidDecoratorException(
             "group() can either represent a dictionary or a list of dependencies, not both!"
         )
-    if dependency_args:
+    elif dependency_args:
         for dependency in dependency_args:
             if not isinstance(dependency, (LiteralDependency, UpstreamDependency)):
                 raise InvalidDecoratorException(
                     f"Dependency: {dependency} is not a valid dependency type for group(), must be "
                     f"a LiteralDependency or UpstreamDependency."
                 )
-    if dependecy_kwargs:
-        for dependency in dependecy_kwargs.values():
+    elif dependency_kwargs:
+        for dependency in dependency_kwargs.values():
             if not isinstance(dependency, (LiteralDependency, UpstreamDependency)):
                 raise InvalidDecoratorException(
                     f"Dependency: {dependency} is not a valid dependency type for group(), must be "
                     f"a LiteralDependency or UpstreamDependency."
                 )
-    raise InvalidDecoratorException(
-        "Either dependency_args or dependency_kwargs must be non-empty for group()!"
-    )
+    else:
+        raise InvalidDecoratorException(
+            "Either dependency_args or dependency_kwargs must be non-empty for group()!"
+        )
 
 
 def group(
