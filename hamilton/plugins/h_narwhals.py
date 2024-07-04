@@ -6,6 +6,33 @@ from hamilton.lifecycle import api
 
 
 class NarwhalsAdapter(api.NodeExecutionMethod):
+    """Adapter to make it simpler to use narwhals with Hamilton.
+
+    .. code-block:: python
+
+            from hamilton import base, driver
+            from hamilton.plugins import h_narwhals
+            import example
+
+            # pandas
+            dr = (
+                driver.Builder()
+                .with_config({"load": "pandas"})
+                .with_modules(example)
+                .with_adapters(
+                    h_narwhals.NarwhalsAdapter(),
+                    h_narwhals.NarwhalsDataFrameResultBuilder(
+                        base.PandasDataFrameResult()
+                    ),
+                )
+                .build()
+            )
+            result = dr.execute(
+                 [example.group_by_mean, example.example1],
+                 inputs={"col_name": "a"}
+            )
+
+    """
 
     def run_to_execute_node(
         self,
@@ -18,6 +45,9 @@ class NarwhalsAdapter(api.NodeExecutionMethod):
         **future_kwargs: Any,
     ) -> Any:
         """This method is responsible for executing the node and returning the result.
+
+        It uses `nw_kwargs` from the node tags to know if any special flags should be passed to the narwhals
+        decorator function.
 
         :param node_name: Name of the node.
         :param node_tags: Tags of the node.
@@ -35,7 +65,32 @@ class NarwhalsAdapter(api.NodeExecutionMethod):
 
 
 class NarwhalsDataFrameResultBuilder(api.ResultBuilder):
-    """Builds the result. It unwraps the narwhals parts of it and delegates."""
+    """Builds the result. It unwraps the narwhals parts of it and delegates to the passed in result builder.
+
+    .. code-block:: python
+
+        from hamilton import base, driver
+        from hamilton.plugins import h_narwhals, h_polars
+        import example
+
+        # polars
+        dr = (
+            driver.Builder()
+            .with_config({"load": "polars"})
+            .with_modules(example)
+            .with_adapters(
+                h_narwhals.NarwhalsAdapter(),
+                h_narwhals.NarwhalsDataFrameResultBuilder(
+                   h_polars.PolarsDataFrameResult()
+                ),
+            )
+            .build()
+        )
+        result = dr.execute(
+            ["group_by_mean", "example1"],
+            inputs={"col_name": "a"}
+        )
+    """
 
     def __init__(self, result_builder: Union[api.ResultBuilder, api.LegacyResultMixin]):
         self.result_builder = result_builder

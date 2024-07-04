@@ -56,3 +56,4 @@ Recall to add lifecycle adapters, you just need to call the ``with_adapters`` me
     SlackNotifierHook
     GracefulErrorAdapter
     SparkInputValidator
+    Narwhals

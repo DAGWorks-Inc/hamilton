@@ -16,6 +16,7 @@ lxml
 lz4
 mock==1.0.1 # read the docs pins
 myst-parser==2.0.0  # latest version of myst at this time
+narwhals
 numpy < 2.0.0
 pandera
 pillow
