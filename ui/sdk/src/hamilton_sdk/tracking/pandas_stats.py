@@ -1,10 +1,15 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import pandas as pd
 from hamilton_sdk.tracking import pandas_col_stats as pcs
 from hamilton_sdk.tracking import stats
 
 from hamilton import driver
+
+try:
+    from hamilton.plugins import h_schema
+except (ImportError, ModuleNotFoundError):
+    h_schema = None
 
 """Module that houses functions to compute statistics on pandas series/dataframes.
 Notes:
@@ -80,12 +85,30 @@ def _compute_stats(df: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
 
 
 @stats.compute_stats.register
-def compute_stats_df(result: pd.DataFrame, node_name: str, node_tags: dict) -> Dict[str, Any]:
-    return {
-        "observability_type": "dagworks_describe",
-        "observability_value": _compute_stats(result),
-        "observability_schema_version": "0.0.3",
-    }
+def compute_stats_df(
+    result: pd.DataFrame, node_name: str, node_tags: dict
+) -> List[stats.StatsType]:
+    summary_stats = _compute_stats(result)
+
+    results = [
+        {
+            "observability_type": "dagworks_describe",
+            "observability_value": summary_stats,
+            "observability_schema_version": "0.0.3",
+        },
+    ]
+    if h_schema is not None:
+        schema = h_schema._get_arrow_schema(result)
+        schema.with_metadata(dict(name=node_name))
+        results.append(
+            {
+                "observability_type": "schema",
+                "observability_value": h_schema.pyarrow_schema_to_json(schema),
+                "observability_schema_version": "0.0.1",
+                "name": "Schema",
+            }
+        )
+    return results
 
 
 @stats.compute_stats.register

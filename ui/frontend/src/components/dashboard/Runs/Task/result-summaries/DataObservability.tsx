@@ -5,7 +5,7 @@ import {
   AttributeDict2,
   AttributeHTML1,
   AttributePandasDescribe1,
-  AttributePrimitive1,
+  AttributePrimitive1, AttributeSchema1,
   AttributeUnsupported1,
 } from "../../../../../state/api/backendApiRaw";
 import {
@@ -20,6 +20,7 @@ import { PandasDescribe1View } from "./PandasDescribe";
 import { Dict1View, Dict2View } from "./DictView";
 import { DAGWorksDescribe3View } from "./DAGWorksDescribe";
 import { HTML1View } from "./HTMLView";
+import {Schema1View} from "./SchemaView";
 
 const Primitive1View = (props: {
   taskName: string;
@@ -299,6 +300,22 @@ export const ResultsSummaryView = (props: {
         runIds={pandasDescribe1View.map((i) => i.runId)}
         values={pandasDescribe1View.map((i) => i.value)}
         projectId={props.projectId}
+      />
+    );
+  }
+
+  const schema1View = getNodeRunAttributes<AttributeSchema1>(
+    props.runAttributes,
+    props.runIds,
+    "AttributeSchema1"
+  );
+
+  if (schema1View.length > 0) {
+    allViews.push(
+      <Schema1View
+          attributeSchemas={schema1View.map((i) => i.value)}
+        taskName={props.taskName || ""}
+        runIds={schema1View.map((i) => i.runId)}
       />
     );
   }
