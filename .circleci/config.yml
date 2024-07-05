@@ -119,12 +119,12 @@ workflows:
           name: spark-py311
           python-version: '3.11'
           task: pyspark
-#      - test: # TODO -- enable when install works on CircleCI
-#          requires:
-#            - check_for_changes
-#          name: spark-py312
-#          python-version: '3.12'
-#          task: pyspark
+      - test:
+          requires:
+            - check_for_changes
+          name: spark-py312
+          python-version: '3.12'
+          task: pyspark
       - test:
           requires:
             - check_for_changes

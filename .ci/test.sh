@@ -40,7 +40,7 @@ fi
 
 if [[ ${TASK} == "pyspark" ]]; then
     pip install -e '.[pyspark]'
-    pip install 'numpy<1.24.0' 'pyspark[connect]' # downgrade until spark fixes their bug
+    pip install 'numpy<2' 'pyspark[connect]' # downgrade until spark fixes their bug
     pytest plugin_tests/h_spark
     exit 0
 fi
