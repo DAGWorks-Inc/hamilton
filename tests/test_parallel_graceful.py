@@ -1,3 +1,5 @@
+from typing import List
+
 from hamilton import ad_hoc_utils, driver
 from hamilton.execution.executors import SynchronousLocalTaskExecutor
 from hamilton.function_modifiers import config, tag
@@ -49,16 +51,16 @@ def other_math(distro: int) -> float:
 
 
 @tag(allow_injection="allow")
-def gather_math(some_math: float, other_math: float) -> list[float]:
+def gather_math(some_math: float, other_math: float) -> List[float]:
     return [some_math, other_math]
 
 
-def distro_end(gather_math: Collect[list[float]]) -> list[float]:
+def distro_end(gather_math: Collect[List[float]]) -> List[float]:
     ans = [x for x in gather_math]
     return ans
 
 
-def distro_gather(some_math: Collect[float]) -> list[float]:
+def distro_gather(some_math: Collect[float]) -> List[float]:
     ans = [x for x in some_math]
     return ans
 
