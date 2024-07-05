@@ -11,6 +11,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from hamilton import graph_types, htypes
+from hamilton.function_modifiers.metadata import tag
 from hamilton.graph_types import HamiltonGraph
 from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook, NodeExecutionMethod
 
@@ -510,6 +511,49 @@ class FunctionInputOutputTypeChecker(NodeExecutionHook):
 
 
 SENTINEL_DEFAULT = None  # sentinel value -- lazy for now
+INJECTION_ALLOWED = "injection is requested"
+
+
+def accept_error_sentinels(func: Callable):
+    """Tag a function to allow passing in error sentinels.
+
+    For use with ``GracefulErrorAdapter``. The standard adapter behavior is to skip a node
+    when an error sentinel is one of its inputs. This decorator will cause the node to
+    run, and place the error sentinel into the appropriate input.
+
+    Take care to ensure your sentinels are easily distinguishable if you do this - see the
+    note in the GracefulErrorAdapater docstring.
+
+    A use case is any data or computation aggregation step that still wants partial results,
+    or considers a failure interesting enough to log or notify.
+
+    .. code-block:: python
+
+        SENTINEL = object()
+
+        ...
+
+        @accept_error_sentinels
+        def results_gathering(result_1: float, result_2: float) -> dict[str, Any]:
+            answer = {}
+            for name, res in zip(["result 1", "result 2"], [result_1, result_2])
+                answer[name] = res
+                if res is SENTINEL:
+                    answer[name] = "Node failure: no result"
+                    # You may want side-effects for a failure.
+                    _send_text_that_your_runs_errored()
+            return answer
+
+        ...
+        adapter = GracefulErrorAdapter(sentinel_value=SENTINEL)
+        ...
+
+
+    """
+    _the_tag = tag(
+        **{"hamilton.error_sentinel": INJECTION_ALLOWED}, bypass_reserved_namespaces_=True
+    )
+    return _the_tag(func)
 
 
 class GracefulErrorAdapter(NodeExecutionMethod):
@@ -518,7 +562,13 @@ class GracefulErrorAdapter(NodeExecutionMethod):
     required dependencies fail (including optional dependencies).
     """
 
-    def __init__(self, error_to_catch: Type[Exception], sentinel_value: Any = SENTINEL_DEFAULT):
+    def __init__(
+        self,
+        error_to_catch: Type[Exception],
+        sentinel_value: Any = SENTINEL_DEFAULT,
+        try_all_parallel: bool = True,
+        allow_injection: bool = True,
+    ):
         """Initializes the adapter. Allows you to customize the error to catch (which exception
         your graph will throw to indicate failure), as well as the sentinel value to use in place of
         a node's result if it fails (this defaults to ``None``).
@@ -563,11 +613,70 @@ class GracefulErrorAdapter(NodeExecutionMethod):
 
         Note you can customize the error you want it to fail on and the sentinel value to use in place of a node's result if it fails.
 
+        For Parallelizable nodes, this adapter will attempt to iterate over the node outputs.
+        If an error occurs, the sentinel value is returned and no more iterations over the node
+        will occur. Meaning if item (3) fails out of 1,2,3,4,5, 4/5 will not run. If you set
+        ``try_all_parallel`` to be False, it only sends one sentinel value into the parallelize sub-dag.
+
+        Here's an example for parallelizable to demonstrate try_all_parallel:
+
+        .. code-block:: python
+
+            # parallel_module.py
+            # custom exception
+            class DoNotProceed(Exception):
+                pass
+
+            def start_point() -> Parallelizable[int]:
+                for i in range(5):
+                    if i == 3:
+                        raise DoNotProceed()
+                    yield i
+
+            def inner(start_point: int) -> int:
+                return start_point
+
+            def gather(inner: Collect[int]) -> list[int]:
+                return inner
+
+            dr = (
+                driver.Builder()
+                .with_modules(parallel_module)
+                .with_adapters(
+                    default.GracefulErrorAdapter(
+                        error_to_catch=DoNotProceed,
+                        sentinel_value=None,
+                        try_all_parallel=True,
+                    )
+                )
+                .build()
+            )
+            dr.execute(["gather"])  # will return {'gather': [0,1,2,None]}
+
+            dr = (
+                driver.Builder()
+                .with_modules(parallel_module)
+                .with_adapters(
+                    default.GracefulErrorAdapter(
+                        error_to_catch=DoNotProceed,
+                        sentinel_value=None,
+                        try_all_parallel=False,
+                    )
+                )
+                .build()
+            )
+            dr.execute(["gather"])  # will return {'gather': [None]}
+
+
         :param error_to_catch: The error to catch
         :param sentinel_value: The sentinel value to use in place of a node's result if it fails
+        :param try_all_parallel: Gather parallelizable outputs until a failure, then add a Sentinel.
+        :param allow_injection: Flag for considering the ``accept_error_sentinels`` tag. Defaults to True.
         """
         self.error_to_catch = error_to_catch
         self.sentinel_value = sentinel_value
+        self.try_all_parallel = try_all_parallel
+        self.allow_injection = allow_injection
 
     def run_to_execute_node(
         self,
@@ -584,10 +693,38 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         # and truncate it/provide sentinels for every failure)
         # TODO -- decide what to do with collect
         """Executes a node. If the node fails, returns the sentinel value."""
-        for key, value in node_kwargs.items():
-            if value == self.sentinel_value:  # == versus is
-                return self.sentinel_value  # cascade it through
+        default_return = [self.sentinel_value] if is_expand else self.sentinel_value
+        _node_tags = future_kwargs["node_tags"]
+        can_inject = _node_tags.get("hamilton.error_sentinel", "") == INJECTION_ALLOWED
+        can_inject = can_inject and self.allow_injection
+
+        if not can_inject:
+            for key, value in node_kwargs.items():
+                if type(self.sentinel_value) is type(value):
+                    if self.sentinel_value == value:  # == versus is
+                        return default_return
+        if not is_expand:
+            try:
+                return node_callable(**node_kwargs)
+            except self.error_to_catch:
+                return self.sentinel_value
+
+        if not self.try_all_parallel:
+            gen_func = node_callable
+        else:
+            # Grab the partial-ized function that is a parallelizable.
+            gen_func = node_callable.keywords["_callable"]
         try:
-            return node_callable(**node_kwargs)
+            gen = gen_func(**node_kwargs)
         except self.error_to_catch:
-            return self.sentinel_value
+            return [self.sentinel_value]
+        results: list[Any] = []
+        try:
+            for _res in gen:
+                results.append(_res)
+        except self.error_to_catch:
+            if self.try_all_parallel:
+                results.append(self.sentinel_value)
+            else:
+                results = [self.sentinel_value]
+        return results

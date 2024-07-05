@@ -140,3 +140,6 @@ examples/dbt/logs/*
 
 # Ignore hamilton-env virtual envs
 examples/**/hamilton-env
+
+# vxcode
+.vscode
