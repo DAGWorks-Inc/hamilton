@@ -518,7 +518,12 @@ class GracefulErrorAdapter(NodeExecutionMethod):
     required dependencies fail (including optional dependencies).
     """
 
-    def __init__(self, error_to_catch: Type[Exception], sentinel_value: Any = SENTINEL_DEFAULT):
+    def __init__(
+        self,
+        error_to_catch: Type[Exception],
+        sentinel_value: Any = SENTINEL_DEFAULT,
+        fail_all_parallel: bool = False,
+    ):
         """Initializes the adapter. Allows you to customize the error to catch (which exception
         your graph will throw to indicate failure), as well as the sentinel value to use in place of
         a node's result if it fails (this defaults to ``None``).
@@ -565,9 +570,11 @@ class GracefulErrorAdapter(NodeExecutionMethod):
 
         :param error_to_catch: The error to catch
         :param sentinel_value: The sentinel value to use in place of a node's result if it fails
+        :param fail_all_parallel: If a parallel task fails midway, treat as 1 failure (True) or allow the successful ones to go through (False).
         """
         self.error_to_catch = error_to_catch
         self.sentinel_value = sentinel_value
+        self.fail_all_parallel = fail_all_parallel
 
     def run_to_execute_node(
         self,
@@ -587,7 +594,28 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         for key, value in node_kwargs.items():
             if value == self.sentinel_value:  # == versus is
                 return self.sentinel_value  # cascade it through
+        if not is_expand:
+            try:
+                return node_callable(**node_kwargs)
+            except self.error_to_catch:
+                return self.sentinel_value
+
+        # Grab the partial-ized function that is a parallelizable.
+        # Be very specific...
+        if len(node_callable.keywords) == 1 and "_callable" in node_callable.keywords:
+            gen_func = node_callable.keywords["_callable"]
+        else:
+            raise ValueError(
+                "Unexpected configuration for expandable node and GracefulErrorAdapter."
+            )
+        gen = gen_func(**node_kwargs)
+        results: list[Any] = []
         try:
-            return node_callable(**node_kwargs)
+            for _res in gen:
+                results.append(_res)
         except self.error_to_catch:
-            return self.sentinel_value
+            if self.fail_all_parallel:
+                results = [self.sentinel_value]
+            else:
+                results.append(self.sentinel_value)
+        return results
