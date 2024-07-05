@@ -568,9 +568,13 @@ class GracefulErrorAdapter(NodeExecutionMethod):
 
         Note you can customize the error you want it to fail on and the sentinel value to use in place of a node's result if it fails.
 
+        For Parallelizable nodes, this adapter will attempt to iterate over the node outputs. If an error occurs, the sentinel value is
+        returned and no more iterations over the node will occur. If you set ``fail_all_parallel`` to be True, it only sends on sentinel
+        value into the parallelize sub-dag.
+
         :param error_to_catch: The error to catch
         :param sentinel_value: The sentinel value to use in place of a node's result if it fails
-        :param fail_all_parallel: If a parallel task fails midway, treat as 1 failure (True) or allow the successful ones to go through (False).
+        :param fail_all_parallel: Treat a Parallelizable as 1 failure (True) or allow the successful ones to go through (False).
         """
         self.error_to_catch = error_to_catch
         self.sentinel_value = sentinel_value
@@ -604,11 +608,16 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         # Be very specific...
         if len(node_callable.keywords) == 1 and "_callable" in node_callable.keywords:
             gen_func = node_callable.keywords["_callable"]
+        elif self.fail_all_parallel:
+            gen_func = node_callable
         else:
             raise ValueError(
                 "Unexpected configuration for expandable node and GracefulErrorAdapter."
             )
-        gen = gen_func(**node_kwargs)
+        try:
+            gen = gen_func(**node_kwargs)
+        except self.error_to_catch:
+            return [self.sentinel_value]
         results: list[Any] = []
         try:
             for _res in gen:
