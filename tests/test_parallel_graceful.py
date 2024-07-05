@@ -48,7 +48,7 @@ def other_math(distro: int) -> float:
     return distro + 1
 
 
-@tag(injection=True)
+@tag(allow_injection="allow")
 def gather_math(some_math: float, other_math: float) -> list[float]:
     return [some_math, other_math]
 
@@ -176,7 +176,7 @@ def test_parallel_gather_injection() -> None:
         "pass",
         fail_parallel=False,
         fail_first=False,
-        injection_tags={"injection": True},
+        injection_tags={"allow_injection": "allow"},
     )
     ans = dr.execute(
         ["distro_end"],

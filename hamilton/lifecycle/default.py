@@ -523,7 +523,7 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         error_to_catch: Type[Exception],
         sentinel_value: Any = SENTINEL_DEFAULT,
         fail_all_parallel: bool = False,
-        sentinel_injection_tags: Optional[dict[str, Any]] = None,
+        sentinel_injection_tags: Optional[dict[str, str]] = None,
     ):
         """Initializes the adapter. Allows you to customize the error to catch (which exception
         your graph will throw to indicate failure), as well as the sentinel value to use in place of
