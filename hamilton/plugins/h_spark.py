@@ -8,8 +8,6 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, 
 import numpy as np
 import pandas as pd
 from pyspark.sql import SparkSession
-from pyspark.sql.connect.dataframe import DataFrame as CDataFrame
-from pyspark.sql.connect.session import SparkSession as CSparkSession
 
 try:
     import pyspark.pandas as ps
@@ -1374,6 +1372,17 @@ class SparkInputValidator(lifecycle_base.BaseDoValidateInput):
 
     def do_validate_input(self, *, node_type: type, input_value: Any) -> bool:
         """Validates the input. Treats connect/classic sessios/dataframe as interchangeable."""
+
+        try:
+            from pyspark.sql.connect.dataframe import DataFrame as CDataFrame
+            from pyspark.sql.connect.session import SparkSession as CSparkSession
+        except ImportError as e:
+            raise ImportError(
+                "You need to have the spark-connect package installed to use this adapter. That said,"
+                "you really shouldn't need this adapter if you don't have it installed (as you won't be able to "
+                "get a spark connect session/dataframe without it...). Probably best to remove this"
+                "adapter all together, but if you need to you can run pip install 'pyspark[connect]'"
+            ) from e
         node_type_is_df = isinstance(input_value, (CDataFrame, DataFrame))
         if node_type_is_df and issubclass(node_type, (DataFrame, CDataFrame)):
             return True

@@ -76,7 +76,7 @@ setup(
         "ray": ["ray>=2.0.0", "pyarrow"],
         "pyspark": [
             # we have to run these dependencies cause Spark does not check to ensure the right target was called
-            "pyspark[pandas_on_spark,sql,connect]",
+            "pyspark[pandas_on_spark,sql]",
         ],
         "pandera": ["pandera"],
         "slack": ["slack-sdk"],
