@@ -523,6 +523,7 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         error_to_catch: Type[Exception],
         sentinel_value: Any = SENTINEL_DEFAULT,
         fail_all_parallel: bool = False,
+        sentinel_injection_tags: Optional[dict[str, Any]] = None,
     ):
         """Initializes the adapter. Allows you to customize the error to catch (which exception
         your graph will throw to indicate failure), as well as the sentinel value to use in place of
@@ -575,10 +576,12 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         :param error_to_catch: The error to catch
         :param sentinel_value: The sentinel value to use in place of a node's result if it fails
         :param fail_all_parallel: Treat a Parallelizable as 1 failure (True) or allow the successful ones to go through (False).
+        :param sentinel_injection_tags: Node tag key:value pairs that allow sentinel injection
         """
         self.error_to_catch = error_to_catch
         self.sentinel_value = sentinel_value
         self.fail_all_parallel = fail_all_parallel
+        self.sentinel_injection_tags = sentinel_injection_tags or {}
 
     def run_to_execute_node(
         self,
@@ -595,9 +598,15 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         # and truncate it/provide sentinels for every failure)
         # TODO -- decide what to do with collect
         """Executes a node. If the node fails, returns the sentinel value."""
-        for key, value in node_kwargs.items():
-            if value == self.sentinel_value:  # == versus is
-                return self.sentinel_value  # cascade it through
+        default_return = [self.sentinel_value] if is_expand else self.sentinel_value
+        _node_tags = future_kwargs["node_tags"]
+        can_inject = any(
+            _node_tags.get(k, "") == v for k, v in self.sentinel_injection_tags.items()
+        )
+        if not can_inject:
+            for key, value in node_kwargs.items():
+                if value == self.sentinel_value:  # == versus is
+                    return default_return  # cascade it through
         if not is_expand:
             try:
                 return node_callable(**node_kwargs)
