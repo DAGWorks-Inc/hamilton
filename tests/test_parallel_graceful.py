@@ -207,4 +207,15 @@ def test_parallel_gather_injection() -> None:
         ["distro_end"],
         inputs={"n": 10},
     )
-    assert ans["distro_end"] == [None] * 10
+    assert ans["distro_end"] == [
+        None,
+        None,
+        None,
+        None,
+        [24.0, 13],
+        [30.0, 16],
+        None,
+        None,
+        None,
+        None,
+    ]
