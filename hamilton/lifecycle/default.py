@@ -605,8 +605,9 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         )
         if not can_inject:
             for key, value in node_kwargs.items():
-                if value == self.sentinel_value:  # == versus is
-                    return default_return  # cascade it through
+                if type(self.sentinel_value) is type(value):
+                    if self.sentinel_value == value:  # == versus is
+                        return default_return
         if not is_expand:
             try:
                 return node_callable(**node_kwargs)
