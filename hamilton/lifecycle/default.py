@@ -579,9 +579,60 @@ class GracefulErrorAdapter(NodeExecutionMethod):
 
         Note you can customize the error you want it to fail on and the sentinel value to use in place of a node's result if it fails.
 
-        For Parallelizable nodes, this adapter will attempt to iterate over the node outputs. If an error occurs, the sentinel value is
-        returned and no more iterations over the node will occur. If you set ``try_all_parallel`` to be False, it only sends one sentinel
-        value into the parallelize sub-dag.
+        For Parallelizable nodes, this adapter will attempt to iterate over the node outputs.
+        If an error occurs, the sentinel value is returned and no more iterations over the node
+        will occur. Meaning if item (3) fails out of 1,2,3,4,5, 4/5 will not run. If you set
+        ``try_all_parallel`` to be False, it only sends one sentinel value into the parallelize sub-dag.
+
+        Here's an example for parallelizable to demonstrate try_all_parallel:
+
+        .. code-block::python
+
+            # parallel_module.py
+            # custom exception
+            class DoNotProceed(Exception):
+                pass
+
+            def start_point() -> Parallelizable[int]:
+                for i in range(5):
+                    if i == 3:
+                        raise DoNotProceed()
+                    yield i
+
+            def inner(start_point: int) -> int:
+                return start_point
+
+            def gather(inner: Collect[int]) -> list[int]:
+                return inner
+
+            dr = (
+                driver.Builder()
+                .with_modules(parallel_module)
+                .with_adapters(
+                    default.GracefulErrorAdapter(
+                        error_to_catch=DoNotProceed,
+                        sentinel_value=None,
+                        try_all_parallel=True,
+                    )
+                )
+                .build()
+            )
+            dr.execute(["gather"])  # will return {'gather': [0,1,2,None]}
+
+            dr = (
+                driver.Builder()
+                .with_modules(parallel_module)
+                .with_adapters(
+                    default.GracefulErrorAdapter(
+                        error_to_catch=DoNotProceed,
+                        sentinel_value=None,
+                        try_all_parallel=False,
+                    )
+                )
+                .build()
+            )
+            dr.execute(["gather"])  # will return {'gather': [None]}
+
 
         :param error_to_catch: The error to catch
         :param sentinel_value: The sentinel value to use in place of a node's result if it fails
