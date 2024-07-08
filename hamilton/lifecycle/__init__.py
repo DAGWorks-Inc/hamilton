@@ -17,6 +17,7 @@ from .default import (  # noqa: F401
     PDBDebugger,
     PrintLn,
     SlowDownYouMoveTooFast,
+    accept_error_sentinels,
 )
 
 PrintLnHook = PrintLn  # for backwards compatibility -- this will be removed in 2.0

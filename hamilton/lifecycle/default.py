@@ -511,14 +511,48 @@ class FunctionInputOutputTypeChecker(NodeExecutionHook):
 
 
 SENTINEL_DEFAULT = None  # sentinel value -- lazy for now
+INJECTION_ALLOWED = "injection is requested"
 
 
 def accept_error_sentinels(func: Callable):
     """Tag a function to allow passing in error sentinels.
 
-    For use with ``GracefulErrorAdapter``.
+    For use with ``GracefulErrorAdapter``. The standard adapter behavior is to skip a node
+    when an error sentinel is one of its inputs. This decorator will cause the node to
+    run, and place the error sentinel into the appropriate input.
+
+    Take care to ensure your sentinels are easily distinguishable if you do this - see the
+    note in the GracefulErrorAdapater docstring.
+
+    A use case is any data or computation aggregation step that still wants partial results,
+    or considers a failure interesting enough to log or notify.
+
+    .. code-block:: python
+
+        SENTINEL = object()
+
+        ...
+
+        @accept_error_sentinels
+        def results_gathering(result_1: float, result_2: float) -> dict[str, Any]:
+            answer = {}
+            for name, res in zip(["result 1", "result 2"], [result_1, result_2])
+                answer[name] = res
+                if res is SENTINEL:
+                    answer[name] = "Node failure: no result"
+                    # You may want side-effects for a failure.
+                    _send_text_that_your_runs_errored()
+            return answer
+
+        ...
+        adapter = GracefulErrorAdapter(sentinel_value=SENTINEL)
+        ...
+
+
     """
-    _the_tag = tag(ERROR_SENTINEL="True", bypass_reserved_namespaces_=True)
+    _the_tag = tag(
+        **{"hamilton.error_sentinel": INJECTION_ALLOWED}, bypass_reserved_namespaces_=True
+    )
     return _the_tag(func)
 
 
@@ -586,7 +620,7 @@ class GracefulErrorAdapter(NodeExecutionMethod):
 
         Here's an example for parallelizable to demonstrate try_all_parallel:
 
-        .. code-block::python
+        .. code-block:: python
 
             # parallel_module.py
             # custom exception
@@ -661,7 +695,7 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         """Executes a node. If the node fails, returns the sentinel value."""
         default_return = [self.sentinel_value] if is_expand else self.sentinel_value
         _node_tags = future_kwargs["node_tags"]
-        can_inject = _node_tags.get("ERROR_SENTINEL", "false") == "True"
+        can_inject = _node_tags.get("hamilton.error_sentinel", "") == INJECTION_ALLOWED
         can_inject = can_inject and self.allow_injection
 
         if not can_inject:
