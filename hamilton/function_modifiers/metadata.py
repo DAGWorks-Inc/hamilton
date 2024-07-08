@@ -57,6 +57,7 @@ class tag(base.NodeDecorator):
         "ccpa",
         "dag",
         "module",
+        "ERROR_SENTINEL",
         RAY_REMOTE_TAG_NAMESPACE,
     ]  # Anything that starts with any of these is banned, the framework reserves the right to manage it
 

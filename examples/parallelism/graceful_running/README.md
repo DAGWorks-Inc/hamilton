@@ -8,13 +8,16 @@ This example divides a large dataframe into smaller frames, and runs the same an
 
 The user can define custom data splitting functions to process in the same sub-dag. In some ways, this is an example of how to do `@subdag` with `Parallelizable`.
 
+The DAG is shown below, which is a simple set of operations on a custom set of splits of a dataframe. Failures occur on purpose in this example in the `model_fit` portion.
+
+![image](dag.png)
+
 ## Take home
 
 This demonstrates these capabilities:
 
 1. Dynamically generating datasets from a larger one and analyzing them the same way - in parallel
 2. Skipping over nodes when a failure occurs and returning sentinel values on failure
-
 
 ## Running
 
