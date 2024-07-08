@@ -11,6 +11,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from hamilton import graph_types, htypes
+from hamilton.function_modifiers.metadata import tag
 from hamilton.graph_types import HamiltonGraph
 from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook, NodeExecutionMethod
 
@@ -512,6 +513,15 @@ class FunctionInputOutputTypeChecker(NodeExecutionHook):
 SENTINEL_DEFAULT = None  # sentinel value -- lazy for now
 
 
+def accept_error_sentinels(func: Callable):
+    """Tag a function to allow passing in error sentinels.
+
+    For use with ``GracefulErrorAdapter``.
+    """
+    _the_tag = tag(ERROR_SENTINEL="True", bypass_reserved_namespaces_=True)
+    return _the_tag(func)
+
+
 class GracefulErrorAdapter(NodeExecutionMethod):
     """Gracefully handles errors in a graph's execution. This allows you to proceed despite failure,
     dynamically pruning branches. While it still runs every node, it replaces them with no-ops if any upstream
@@ -522,8 +532,8 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         self,
         error_to_catch: Type[Exception],
         sentinel_value: Any = SENTINEL_DEFAULT,
-        fail_all_parallel: bool = False,
-        sentinel_injection_tags: Optional[Dict[str, str]] = None,
+        try_all_parallel: bool = True,
+        allow_injection: bool = True,
     ):
         """Initializes the adapter. Allows you to customize the error to catch (which exception
         your graph will throw to indicate failure), as well as the sentinel value to use in place of
@@ -570,18 +580,18 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         Note you can customize the error you want it to fail on and the sentinel value to use in place of a node's result if it fails.
 
         For Parallelizable nodes, this adapter will attempt to iterate over the node outputs. If an error occurs, the sentinel value is
-        returned and no more iterations over the node will occur. If you set ``fail_all_parallel`` to be True, it only sends on sentinel
+        returned and no more iterations over the node will occur. If you set ``try_all_parallel`` to be False, it only sends one sentinel
         value into the parallelize sub-dag.
 
         :param error_to_catch: The error to catch
         :param sentinel_value: The sentinel value to use in place of a node's result if it fails
-        :param fail_all_parallel: Treat a Parallelizable as 1 failure (True) or allow the successful ones to go through (False).
-        :param sentinel_injection_tags: Node tag key:value pairs that allow sentinel injection
+        :param try_all_parallel: Gather parallelizable outputs until a failure, then add a Sentinel.
+        :param allow_injection: Flag for considering the ``accept_error_sentinels`` tag. Defaults to True.
         """
         self.error_to_catch = error_to_catch
         self.sentinel_value = sentinel_value
-        self.fail_all_parallel = fail_all_parallel
-        self.sentinel_injection_tags = sentinel_injection_tags or {}
+        self.try_all_parallel = try_all_parallel
+        self.allow_injection = allow_injection
 
     def run_to_execute_node(
         self,
@@ -600,9 +610,9 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         """Executes a node. If the node fails, returns the sentinel value."""
         default_return = [self.sentinel_value] if is_expand else self.sentinel_value
         _node_tags = future_kwargs["node_tags"]
-        can_inject = any(
-            _node_tags.get(k, "") == v for k, v in self.sentinel_injection_tags.items()
-        )
+        can_inject = _node_tags.get("ERROR_SENTINEL", "false") == "True"
+        can_inject = can_inject and self.allow_injection
+
         if not can_inject:
             for key, value in node_kwargs.items():
                 if type(self.sentinel_value) is type(value):
@@ -616,10 +626,10 @@ class GracefulErrorAdapter(NodeExecutionMethod):
 
         # Grab the partial-ized function that is a parallelizable.
         # Be very specific...
-        if len(node_callable.keywords) == 1 and "_callable" in node_callable.keywords:
-            gen_func = node_callable.keywords["_callable"]
-        elif self.fail_all_parallel:
+        if not self.try_all_parallel:
             gen_func = node_callable
+        elif len(node_callable.keywords) == 1 and "_callable" in node_callable.keywords:
+            gen_func = node_callable.keywords["_callable"]
         else:
             raise ValueError(
                 "Unexpected configuration for expandable node and GracefulErrorAdapter."
@@ -633,8 +643,8 @@ class GracefulErrorAdapter(NodeExecutionMethod):
             for _res in gen:
                 results.append(_res)
         except self.error_to_catch:
-            if self.fail_all_parallel:
-                results = [self.sentinel_value]
-            else:
+            if self.try_all_parallel:
                 results.append(self.sentinel_value)
+            else:
+                results = [self.sentinel_value]
         return results

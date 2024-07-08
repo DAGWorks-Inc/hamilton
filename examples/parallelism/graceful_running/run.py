@@ -40,10 +40,7 @@ def main(mode: str, no_adapt: bool):
     adapter = GracefulErrorAdapter(
         error_to_catch=Exception,
         sentinel_value=None,
-        fail_all_parallel=False,
-        sentinel_injection_tags={
-            "keep_sentinels": "true",
-        },
+        try_all_parallel=True,
     )
 
     shutdown = None
@@ -66,10 +63,16 @@ def main(mode: str, no_adapt: bool):
     if not no_adapt:
         dr = dr.with_adapters(adapter)
     dr = dr.build()
+
+    the_funcs = [split_on_region, split_on_attrs, split_on_views]
+    dr.visualize_execution(
+        ["final_collect"], "./dag", {}, inputs={"funcs": the_funcs}, show_legend=False
+    )
+
     print(
         dr.execute(
             final_vars=["final_collect"],
-            inputs={"funcs": [split_on_region, split_on_attrs, split_on_views]},
+            inputs={"funcs": the_funcs},
         )["final_collect"]
     )
     if shutdown:
