@@ -624,16 +624,11 @@ class GracefulErrorAdapter(NodeExecutionMethod):
             except self.error_to_catch:
                 return self.sentinel_value
 
-        # Grab the partial-ized function that is a parallelizable.
-        # Be very specific...
         if not self.try_all_parallel:
             gen_func = node_callable
-        elif len(node_callable.keywords) == 1 and "_callable" in node_callable.keywords:
-            gen_func = node_callable.keywords["_callable"]
         else:
-            raise ValueError(
-                "Unexpected configuration for expandable node and GracefulErrorAdapter."
-            )
+            # Grab the partial-ized function that is a parallelizable.
+            gen_func = node_callable.keywords["_callable"]
         try:
             gen = gen_func(**node_kwargs)
         except self.error_to_catch:
