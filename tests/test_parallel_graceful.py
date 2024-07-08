@@ -2,9 +2,9 @@ from typing import List
 
 from hamilton import ad_hoc_utils, driver
 from hamilton.execution.executors import SynchronousLocalTaskExecutor
-from hamilton.function_modifiers import config, tag
+from hamilton.function_modifiers import config
 from hamilton.htypes import Collect, Parallelizable
-from hamilton.lifecycle import GracefulErrorAdapter
+from hamilton.lifecycle.default import GracefulErrorAdapter, accept_error_sentinels
 
 
 @config.when(test_front="good")
@@ -50,7 +50,7 @@ def other_math(distro: int) -> float:
     return distro + 1
 
 
-@tag(allow_injection="allow")
+@accept_error_sentinels
 def gather_math(some_math: float, other_math: float) -> List[float]:
     return [some_math, other_math]
 
@@ -93,7 +93,11 @@ temp_module = ad_hoc_utils.create_temporary_module(
 
 
 def _make_driver(
-    module, test_state: str, fail_parallel=False, fail_first=False, injection_tags=None
+    module,
+    test_state: str,
+    try_parallel=True,
+    fail_first=False,
+    allow_injection=True,
 ):
     local_executor = SynchronousLocalTaskExecutor()
     dr = (
@@ -105,8 +109,8 @@ def _make_driver(
             GracefulErrorAdapter(
                 error_to_catch=Exception,
                 sentinel_value=None,
-                fail_all_parallel=fail_parallel,
-                sentinel_injection_tags=injection_tags,
+                try_all_parallel=try_parallel,
+                allow_injection=allow_injection,
             )
         )
         .with_config(
@@ -147,7 +151,7 @@ def test_parallel_graceful_simple() -> None:
     dr = _make_driver(
         temp_module_simple,
         "middle",
-        fail_parallel=True,
+        try_parallel=False,
     )
     ans = dr.execute(
         ["distro_gather"],
@@ -164,7 +168,7 @@ def test_parallel_graceful_simple() -> None:
     assert ans["distro_gather"] == [0.0, 6.0, 12.0, 18.0, 24.0, 30.0, None, None, None, None]
 
     # Check what happens when the parallel block gets a failure.
-    dr = _make_driver(temp_module_simple, "pass", fail_parallel=True, fail_first=True)
+    dr = _make_driver(temp_module_simple, "pass", try_parallel=False, fail_first=True)
     ans = dr.execute(
         ["distro_gather"],
         inputs={"n": 10},
@@ -176,9 +180,8 @@ def test_parallel_gather_injection() -> None:
     dr = _make_driver(
         temp_module,
         "pass",
-        fail_parallel=False,
+        try_parallel=True,
         fail_first=False,
-        injection_tags={"allow_injection": "allow"},
     )
     ans = dr.execute(
         ["distro_end"],
@@ -201,9 +204,9 @@ def test_parallel_gather_injection() -> None:
     dr = _make_driver(
         temp_module,
         "pass",
-        fail_parallel=False,
+        try_parallel=True,
         fail_first=False,
-        injection_tags=None,
+        allow_injection=False,
     )
     ans = dr.execute(
         ["distro_end"],

@@ -5,8 +5,9 @@ import numpy as np
 import pandas as pd
 from scipy.stats import linregress
 
-from hamilton.function_modifiers import extract_fields, tag
+from hamilton.function_modifiers import extract_fields
 from hamilton.htypes import Collect, Parallelizable
+from hamilton.lifecycle.default import accept_error_sentinels
 
 Splitter = Callable[[pd.DataFrame], Iterable[tuple[str, pd.DataFrame]]]
 
@@ -59,7 +60,7 @@ def model_fit(data: pd.DataFrame, group_name: str) -> Tuple[float, float, float]
     return res.intercept, res.slope, res.rvalue
 
 
-@tag(keep_sentinels="true")
+@accept_error_sentinels
 def gather_metrics(
     group_name: Union[str, None],
     average: Union[float, None],
