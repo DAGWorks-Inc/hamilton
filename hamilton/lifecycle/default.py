@@ -11,7 +11,6 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from hamilton import graph_types, htypes
-from hamilton.function_modifiers.metadata import tag
 from hamilton.graph_types import HamiltonGraph
 from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook, NodeExecutionMethod
 
@@ -550,6 +549,11 @@ def accept_error_sentinels(func: Callable):
 
 
     """
+    # This inline import is not ideal -- we have to do this due to a circular reference
+    # See PR + comments here https://github.com/DAGWorks-Inc/hamilton/pull/1017
+    # TODO -- fix the circular reference -- we should be able to depend on this and no pull in lifecycle methods
+    from hamilton.function_modifiers.metadata import tag
+
     _the_tag = tag(
         **{"hamilton.error_sentinel": INJECTION_ALLOWED}, bypass_reserved_namespaces_=True
     )
