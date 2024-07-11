@@ -300,3 +300,27 @@ async def test_async_builder_result_builder_default():
     dr = await async_driver.Builder().with_modules(mod).build()
     assert (await dr.execute(final_vars=["foo"])) == {"foo": 1}
     # builder.result_builder = result_builder
+
+
+@pytest.mark.asyncio
+async def test_async_builder_without_init():
+    def foo() -> int:
+        return 1
+
+    class TestLifecycleMethod(BasePostGraphConstructAsync):
+        def __init__(self):
+            self.ran = False
+
+        async def post_graph_construct(self, **kwargs):
+            await asyncio.sleep(0.01)
+            self.ran = True
+
+    mod = ad_hoc_utils.create_temporary_module(foo)
+    hook = TestLifecycleMethod()
+    # non-async
+    async_driver.Builder().with_modules(mod).with_adapters(hook).build_without_init()
+    assert not hook.ran
+    await async_driver.Builder().with_modules(mod).with_adapters(hook).build()
+    assert hook.ran
+
+    # builder.result_builder = result_builder

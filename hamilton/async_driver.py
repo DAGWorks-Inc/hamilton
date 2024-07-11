@@ -470,7 +470,12 @@ class Builder(driver.Builder):
             "Use with_adapters instead to pass in the tracker (or other async hooks/methods)",
         )
 
-    async def build(self):
+    def build_without_init(self) -> AsyncDriver:
+        """Allows you to build the async driver without initialization. Use this at
+        your own risk -- we highly recommend calling `.ainit` on the final result.
+
+        :return:
+        """
         adapters = self.adapters if self.adapters is not None else []
         if self.legacy_graph_adapter is not None:
             adapters.append(self.legacy_graph_adapter)
@@ -481,7 +486,20 @@ class Builder(driver.Builder):
         # This will become the default API soon, so it's OK to put the complexity here
         result_builders = [adapter for adapter in adapters if isinstance(adapter, base.ResultMixin)]
         specified_result_builder = base.DictResult() if len(result_builders) == 0 else None
+        return AsyncDriver(
+            self.config,
+            *self.modules,
+            adapters=self.adapters,
+            result_builder=specified_result_builder,
+        )
 
-        return await AsyncDriver(
-            self.config, *self.modules, adapters=adapters, result_builder=specified_result_builder
-        ).ainit()
+    async def build(self):
+        """Builds the async driver. This also initializes it, hence the async definition.
+        If you don't want to use async, you can use `build_without_init` and call `ainit` later,
+        but we recommend using this in an asynchronous lifespan management function (E.G. in fastAPI),
+        or something similar.
+
+        :return: The fully
+        """
+        dr = self.build_without_init()
+        return await dr.ainit()
