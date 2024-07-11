@@ -67,7 +67,7 @@ def _build_ui():
     cmd = "npm run build --prefix ui/frontend"
     _command(cmd, capture_output=False)
     # wiping the old build if it exists
-    cmd = "rm -rf ui/backend/build"
+    cmd = "rm -rf ui/backend/server/build"
     _command(cmd, capture_output=False)
     cmd = "cp -R ui/frontend/build ui/backend/server/build"
     _command(cmd, capture_output=False)
