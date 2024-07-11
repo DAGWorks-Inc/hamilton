@@ -287,7 +287,7 @@ class AsyncDriver(driver.Driver):
             "-- the only reason you'd do this is to use materialize(), which is not supported yet.."
         )
         run_id = str(uuid.uuid4())
-        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs)
+        nodes, user_nodes = self.graph.get_upstream_nodes(final_vars, inputs, overrides)
         memoized_computation = dict()  # memoized storage
         if self.adapter.does_hook("pre_graph_execute"):
             await self.adapter.call_all_lifecycle_hooks_sync_and_async(
