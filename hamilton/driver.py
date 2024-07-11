@@ -1682,7 +1682,6 @@ class Builder:
         self.local_executor = None
         self.remote_executor = None
         self.grouping_strategy = None
-        self.result_builder = None
 
     def _require_v2(self, message: str):
         if not self.v2_executor:

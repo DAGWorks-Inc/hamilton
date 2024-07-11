@@ -278,3 +278,25 @@ async def test_async_driver_overrides():
     res = await dr.execute(final_vars=["will_be_run"], overrides={"overridden": 3})
     assert len(this_list_should_be_empty) == 0
     assert res == {"will_be_run": 4}
+
+
+@pytest.mark.asyncio
+async def test_async_builder_result_builder_custom():
+    def foo() -> int:
+        return 1
+
+    mod = ad_hoc_utils.create_temporary_module(foo)
+    result_builder = base.PandasDataFrameResult()
+    dr = await async_driver.Builder().with_adapters(result_builder).with_modules(mod).build()
+    assert isinstance(await dr.execute(final_vars=["foo"]), pd.DataFrame)
+
+
+@pytest.mark.asyncio
+async def test_async_builder_result_builder_default():
+    def foo() -> int:
+        return 1
+
+    mod = ad_hoc_utils.create_temporary_module(foo)
+    dr = await async_driver.Builder().with_modules(mod).build()
+    assert (await dr.execute(final_vars=["foo"])) == {"foo": 1}
+    # builder.result_builder = result_builder
