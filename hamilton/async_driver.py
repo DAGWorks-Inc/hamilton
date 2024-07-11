@@ -471,14 +471,17 @@ class Builder(driver.Builder):
         )
 
     async def build(self):
-        adapter = self.adapters if self.adapters is not None else []
+        adapters = self.adapters if self.adapters is not None else []
         if self.legacy_graph_adapter is not None:
-            adapter.append(self.legacy_graph_adapter)
+            adapters.append(self.legacy_graph_adapter)
 
-        result_builder = (
-            self.result_builder if self.result_builder is not None else base.DictResult()
-        )
+        # We should really be doing this in the constructor
+        # but the AsyncGraphAdapter originally used the pandas builder
+        # so we pass in the right one to ensure backwards compatibility
+        # This will become the default API soon, so it's OK to put the complexity here
+        result_builders = [adapter for adapter in adapters if isinstance(adapter, base.ResultMixin)]
+        specified_result_builder = base.DictResult() if len(result_builders) == 0 else None
 
         return await AsyncDriver(
-            self.config, *self.modules, adapters=adapter, result_builder=result_builder
+            self.config, *self.modules, adapters=adapters, result_builder=specified_result_builder
         ).ainit()
