@@ -4,7 +4,7 @@ from unittest import mock
 import pandas as pd
 import pytest
 
-from hamilton import async_driver, base
+from hamilton import ad_hoc_utils, async_driver, base
 from hamilton.lifecycle.base import (
     BasePostGraphConstruct,
     BasePostGraphConstructAsync,
@@ -249,3 +249,32 @@ async def test_async_driver_end_to_end_sync_lifecycle_methods():
         "simple_async_func": 2,
         "simple_non_async_func": 7,
     }
+
+
+@pytest.mark.asyncio
+async def test_async_driver_overrides():
+    # This specifically tests that raw execute does not return
+    # and does not compute the non-returned items
+    this_list_should_be_empty = []
+
+    async def never_run() -> int:
+        this_list_should_be_empty.append("never_run")
+        await asyncio.sleep(0.01)
+        return 1
+
+    async def overridden(never_run: int) -> int:
+        this_list_should_be_empty.append("overridden")
+        await asyncio.sleep(0.01)
+        return never_run + 1
+
+    async def will_be_run(overridden: int) -> int:
+        await asyncio.sleep(0.01)
+        return 1 + overridden
+
+    mod = ad_hoc_utils.create_temporary_module(never_run, will_be_run, overridden)
+    dr = await async_driver.Builder().with_modules(mod).build()
+    # Testing execute as it's a part of the contract and will remain so
+    # raw_execute is closer to the error, but don't want to test it instead
+    res = await dr.execute(final_vars=["will_be_run"], overrides={"overridden": 3})
+    assert len(this_list_should_be_empty) == 0
+    assert res == {"will_be_run": 4}
