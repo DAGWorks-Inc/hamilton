@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from hamilton_sdk.tracking import stats
+from hamilton_sdk.tracking import data_observation
 from ibis.expr.datatypes import core
 
 # import ibis.expr.types as ir
@@ -73,11 +73,11 @@ def _introspect(table: relations.Table) -> Dict[str, Any]:
     }
 
 
-@stats.compute_stats.register
+@data_observation.compute_schema.register
 def compute_stats_ibis_table(
     result: relations.Table, node_name: str, node_tags: dict
 ) -> Dict[str, Any]:
-    # TODO: create custom type instead of dict for UI
+    # TODO: use the schema type
     o_value = _introspect(result)
     return {
         "observability_type": "dict",

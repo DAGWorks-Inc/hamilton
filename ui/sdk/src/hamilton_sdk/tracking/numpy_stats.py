@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
-from hamilton_sdk.tracking import pandas_stats, stats
+from hamilton_sdk.tracking import data_observation, pandas_stats
 
 """Module that houses functions to compute statistics on numpy objects
 Notes:
@@ -10,7 +10,7 @@ Notes:
 """
 
 
-@stats.compute_stats.register
+@data_observation.compute_stats.register
 def compute_stats_numpy(result: np.ndarray, node_name: str, node_tags: dict) -> Dict[str, Any]:
     try:
         df = pd.DataFrame(result)  # hack - reuse pandas stuff

@@ -1,8 +1,8 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Optional, Union
 
 import pandas as pd
+from hamilton_sdk.tracking import data_observation
 from hamilton_sdk.tracking import pandas_col_stats as pcs
-from hamilton_sdk.tracking import stats
 
 from hamilton import driver
 
@@ -84,34 +84,36 @@ def _compute_stats(df: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     return stats
 
 
-@stats.compute_stats.register
+@data_observation.compute_stats.register
 def compute_stats_df(
     result: pd.DataFrame, node_name: str, node_tags: dict
-) -> List[stats.StatsType]:
+) -> data_observation.ObservationType:
     summary_stats = _compute_stats(result)
 
-    results = [
-        {
-            "observability_type": "dagworks_describe",
-            "observability_value": summary_stats,
-            "observability_schema_version": "0.0.3",
-        },
-    ]
+    return {
+        "observability_type": "dagworks_describe",
+        "observability_value": summary_stats,
+        "observability_schema_version": "0.0.3",
+    }
+
+
+@data_observation.compute_schema.register
+def compute_schema(
+    result: pd.DataFrame, node_name: str, node_tags: dict
+) -> Optional[data_observation.ObservationType]:
     if h_schema is not None:
         schema = h_schema._get_arrow_schema(result)
         schema.with_metadata(dict(name=node_name))
-        results.append(
-            {
-                "observability_type": "schema",
-                "observability_value": h_schema.pyarrow_schema_to_json(schema),
-                "observability_schema_version": "0.0.1",
-                "name": "Schema",
-            }
-        )
-    return results
+        return {
+            "observability_type": "schema",
+            "observability_value": h_schema.pyarrow_schema_to_json(schema),
+            "observability_schema_version": "0.0.1",
+            "name": "Schema",
+        }
+    return None
 
 
-@stats.compute_stats.register
+@data_observation.compute_stats.register
 def compute_stats_series(result: pd.Series, node_name: str, node_tags: dict) -> Dict[str, Any]:
     col_name = result.name if result.name else node_name
     return {

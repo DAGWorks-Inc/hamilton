@@ -1,7 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, Optional
 
 import pyspark.sql as ps
-from hamilton_sdk.tracking import stats
+from hamilton_sdk.tracking import data_observation
+from hamilton_sdk.tracking.data_observation import ObservationType
 
 try:
     from hamilton.plugins import h_schema
@@ -73,53 +74,35 @@ def _introspect(df: ps.DataFrame) -> Dict[str, Any]:
     }
 
 
-@stats.compute_stats.register
-def compute_stats_psdf(
-    result: ps.DataFrame, node_name: str, node_tags: dict
-) -> List[Dict[str, Any]]:
+@data_observation.compute_stats.register
+def compute_stats_psdf(result: ps.DataFrame, node_name: str, node_tags: dict) -> ObservationType:
     # TODO: create custom type instead of dict for UI
     o_value = _introspect(result)
 
-    results = [
-        {
-            "observability_type": "dict",
-            "observability_value": {
-                "type": str(type(result)),
-                "value": o_value["columns"],
-            },
-            "observability_schema_version": "0.0.2",
+    return {
+        "observability_type": "dict",
+        "observability_value": {
+            "type": str(type(result)),
+            "value": o_value,
         },
-        {
-            "observability_type": "primitive",
-            "observability_value": {
-                "type": str(str),
-                "value": o_value["cost_explain"],
-            },
-            "observability_schema_version": "0.0.1",
-            "name": "Cost Explain",
-        },
-        {
-            "observability_type": "primitive",
-            "observability_value": {
-                "type": str(str),
-                "value": o_value["extended_explain"],
-            },
-            "observability_schema_version": "0.0.1",
-            "name": "Extended Explain",
-        },
-    ]
+        "observability_schema_version": "0.0.2",
+    }
+
+
+@data_observation.compute_schema.register
+def compute_schema_psdf(
+    result: ps.DataFrame, node_name: str, node_tags: dict
+) -> Optional[ObservationType]:
     if h_schema is not None:
         schema = h_schema._get_arrow_schema(result)
         schema.with_metadata(dict(name=node_name))
-        results.append(
-            {
-                "observability_type": "schema",
-                "observability_value": h_schema.pyarrow_schema_to_json(schema),
-                "observability_schema_version": "0.0.1",
-                "name": "Schema",
-            }
-        )
-    return results
+        return {
+            "observability_type": "schema",
+            "observability_value": h_schema.pyarrow_schema_to_json(schema),
+            "observability_schema_version": "0.0.1",
+            "name": "Schema",
+        }
+    return None
 
 
 if __name__ == "__main__":

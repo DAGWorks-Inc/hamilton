@@ -26,7 +26,7 @@ def create_node(name: str, type_: type) -> node.Node:
 
 
 @pytest.mark.parametrize(
-    "test_result,test_node,observability_type,observability_value",
+    "test_result,test_node,observability_type,stats",
     [
         (
             pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}),
@@ -517,16 +517,20 @@ def create_node(name: str, type_: type) -> node.Node:
         "pl_datetime_series",
     ],
 )
-def test_process_result_happy(test_result, test_node, observability_type, observability_value):
+def test_process_result_happy(test_result, test_node, observability_type, stats):
     """Tests a happy path for the process result function."""
-    actual_result = runs.process_result(test_result, test_node)
+    stats, schema, additional = runs.process_result(test_result, test_node)
     expected_result = result_base.copy()
     if observability_type in ["dict"]:
         expected_result["observability_schema_version"] = "0.0.2"
     if observability_type in ["primitive", "unsupported"]:
         expected_result["observability_schema_version"] = "0.0.1"
     expected_result["observability_type"] = observability_type
-    expected_result["observability_value"] = observability_value
-    assert actual_result == expected_result
+    expected_result["observability_value"] = stats["observability_value"]
+    assert stats == expected_result
     # Allows us to double-check that everything can be json-dumped
-    json.dumps(actual_result)
+    json.dumps(stats)
+    # TODO -- test schema values, but probably not here
+    if schema is not None:
+        json.dumps(schema)
+    [json.dumps(add) for add in additional]

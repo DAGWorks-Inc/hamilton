@@ -6,9 +6,10 @@ import time as py_time
 import traceback
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from hamilton_sdk.tracking import stats
+from hamilton_sdk.tracking import data_observation
+from hamilton_sdk.tracking.data_observation import ObservationType
 from hamilton_sdk.tracking.trackingtypes import DAGRun, Status, TaskRun
 
 from hamilton import node as h_node
@@ -36,7 +37,9 @@ for module in _modules_to_import:
         pass
 
 
-def process_result(result: Any, node: h_node.Node) -> Any:
+def process_result(
+    result: Any, node: h_node.Node
+) -> Tuple[Optional[ObservationType], Optional[ObservationType], List[ObservationType]]:
     """Processes result -- this is purely a by-type mapping.
     Note that this doesn't actually do anything yet -- the idea is that we can return DQ
     results, and do other stuff with other results -- E.G. summary stats on dataframes,
@@ -53,16 +56,31 @@ def process_result(result: Any, node: h_node.Node) -> Any:
     :param node: The node that produced the result
     :return: The processed  result - it has to be JSON serializable!
     """
+    statistics = None
+    schema = None
+    additional = []
     try:
         start = py_time.time()
-        statistics = stats.compute_stats(result, node.name, node.tags)
+        statistics = data_observation.compute_stats(result, node.name, node.tags)
         end = py_time.time()
         logger.debug(f"Took {end - start} seconds to describe {node.name}")
-        return statistics
-    # TODO: introspect other nodes
-    # if it's a check_output node, then we want to process the pandera result/the result from it.
     except Exception as e:
-        logger.warning(f"Failed to introspect result for {node.name}. Error:\n{e}")
+        logger.warning(f"Failed to introspect statistics for {node.name}. Error:\n{e}")
+    try:
+        start = py_time.time()
+        schema = data_observation.compute_schema(result, node.name, node.tags)
+        end = py_time.time()
+        logger.debug(f"Took {end - start} seconds to introspect schema for {node.name}")
+    except Exception as e:
+        logger.warning(f"Failed to introspect schema for {node.name}. Error:\n{e}")
+    try:
+        start = py_time.time()
+        additional.extend(data_observation.compute_additional_results(result, node.name, node.tags))
+        end = py_time.time()
+        logger.debug(f"Took {end - start} seconds to introspect additional results for {node.name}")
+    except Exception as e:
+        logger.warning(f"Failed to introspect additional results for {node.name}. Error:\n{e}")
+    return statistics, schema, additional
 
 
 class TrackingState:
@@ -184,19 +202,11 @@ class RunTracker:
         try:
             result = original_do_node_execute(run_id, node_, kwargs, task_id)
 
-            # NOTE This is a temporary hack to make process_result() able to return
-            # more than one object that will be used as UI "task attributes".
-            # There's a conflict between `TaskRun.result_summary` that expect a single
-            # dict from process_result() and the `HamiltonTracker.post_node_execute()`
-            # that can more freely handle "stats" to create multiple "task attributes"
-            result_summary = process_result(result, node_)  # add node
-            if isinstance(result_summary, dict):
-                result_summary = result_summary
-            elif isinstance(result_summary, list):
-                result_summary = result_summary[0]
-            else:
-                raise TypeError("`process_result()` needs to return a dict or list of dict")
-
+            # In subsequent versions we will stop supporting the class-based approach
+            # If you find yourself relying on this, switch to use adapters
+            result_summary, *ignored_because_this_is_a_defunct_code_path = process_result(
+                result, node_
+            )  # add node
             task_run.status = Status.SUCCESS
             task_run.result_type = type(result)
             task_run.result_summary = result_summary
