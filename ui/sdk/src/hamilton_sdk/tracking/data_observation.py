@@ -1,15 +1,29 @@
 import json
 from functools import singledispatch
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from hamilton_sdk.tracking import sql_utils
 
-StatsType = Dict[str, Any]
+# Multiple observations per are allowed
+ObservationType = Dict[str, Any]
 
 
 @singledispatch
-def compute_stats(result, node_name: str, node_tags: dict) -> Union[StatsType, List[StatsType]]:
+def compute_schema(result, node_name: str, node_tags: dict) -> Optional[ObservationType]:
+    """The default schema will be None, and filtered out.
+    We can polymoorphically implement this for different types of results.
+
+    :param result:
+    :param node_name:
+    :param node_tags:
+    :return:
+    """
+    return None
+
+
+@singledispatch
+def compute_stats(result, node_name: str, node_tags: dict) -> Optional[ObservationType]:
     """This is the default implementation for computing stats on a result.
 
     All other implementations should be registered with the `@compute_stats.register` decorator.
@@ -29,11 +43,24 @@ def compute_stats(result, node_name: str, node_tags: dict) -> Union[StatsType, L
     }
 
 
+@singledispatch
+def compute_additional_results(result, node_name: str, node_tags: dict) -> List[ObservationType]:
+    """The default schema will be None, and filtered out.
+    We can polymoorphically implement this for different types of results.
+
+    :param result:
+    :param node_name:
+    :param node_tags:
+    :return:
+    """
+    return []
+
+
 @compute_stats.register(str)
 @compute_stats.register(int)
 @compute_stats.register(float)
 @compute_stats.register(bool)
-def compute_stats_primitives(result, node_name: str, node_tags: dict) -> StatsType:
+def compute_stats_primitives(result, node_name: str, node_tags: dict) -> ObservationType:
     return {
         "observability_type": "primitive",
         "observability_value": {
@@ -45,7 +72,7 @@ def compute_stats_primitives(result, node_name: str, node_tags: dict) -> StatsTy
 
 
 @compute_stats.register(dict)
-def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> StatsType:
+def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> ObservationType:
     """call summary stats on the values in the dict"""
     try:
         # if it's JSON serializable, take it.
@@ -94,7 +121,7 @@ def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> StatsTy
 
 
 @compute_stats.register(tuple)
-def compute_stats_tuple(result: tuple, node_name: str, node_tags: dict) -> StatsType:
+def compute_stats_tuple(result: tuple, node_name: str, node_tags: dict) -> ObservationType:
     if "hamilton.data_loader" in node_tags and node_tags["hamilton.data_loader"] is True:
         # assumption it's a tuple
         if isinstance(result[1], dict):
@@ -141,7 +168,7 @@ def compute_stats_tuple(result: tuple, node_name: str, node_tags: dict) -> Stats
 
 
 @compute_stats.register(list)
-def compute_stats_list(result: list, node_name: str, node_tags: dict) -> StatsType:
+def compute_stats_list(result: list, node_name: str, node_tags: dict) -> ObservationType:
     """call summary stats on the values in the list"""
     try:
         # if it's JSON serializable, take it.

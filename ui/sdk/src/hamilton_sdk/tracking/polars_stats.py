@@ -4,8 +4,8 @@ import polars as pl
 
 if not hasattr(pl, "Series"):
     raise ImportError("Polars is not installed")
+from hamilton_sdk.tracking import data_observation
 from hamilton_sdk.tracking import polars_col_stats as pls
-from hamilton_sdk.tracking import stats
 
 from hamilton import driver
 
@@ -83,7 +83,7 @@ def _compute_stats(df: pl.DataFrame) -> Dict[str, Dict[str, Any]]:
     return stats
 
 
-@stats.compute_stats.register
+@data_observation.compute_stats.register
 def compute_stats_df(result: pl.DataFrame, node_name: str, node_tags: dict) -> Dict[str, Any]:
     return {
         "observability_type": "dagworks_describe",
@@ -92,7 +92,7 @@ def compute_stats_df(result: pl.DataFrame, node_name: str, node_tags: dict) -> D
     }
 
 
-@stats.compute_stats.register
+@data_observation.compute_stats.register
 def compute_stats_series(result: pl.Series, node_name: str, node_tags: dict) -> Dict[str, Any]:
     return {
         "observability_type": "dagworks_describe",

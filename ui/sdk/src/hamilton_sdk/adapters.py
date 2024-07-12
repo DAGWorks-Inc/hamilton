@@ -260,7 +260,7 @@ class HamiltonTracker(
         if success:
             task_run.status = Status.SUCCESS
             task_run.result_type = type(result)
-            result_summary = runs.process_result(result, node_)
+            result_summary, schema, additional_attributes = runs.process_result(result, node_)
             if result_summary is None:
                 result_summary = {
                     "observability_type": "observability_failure",
@@ -270,18 +270,7 @@ class HamiltonTracker(
                         "value": "Failed to process result.",
                     },
                 }
-            # NOTE This is a temporary hack to make process_result() able to return
-            # more than one object that will be used as UI "task attributes".
-            # There's a conflict between `TaskRun.result_summary` that expect a single
-            # dict from process_result() and the `HamiltonTracker.post_node_execute()`
-            # that can more freely handle "stats" to create multiple "task attributes"
-            elif isinstance(result_summary, dict):
-                result_summary = result_summary
-            elif isinstance(result_summary, list):
-                other_results = [obj for obj in result_summary[1:]]
-                result_summary = result_summary[0]
-            else:
-                raise TypeError("`process_result()` needs to return a dict or sequence of dict")
+            other_results = ([schema] if schema is not None else []) + additional_attributes
 
             task_run.result_summary = result_summary
             task_attr = dict(
@@ -546,12 +535,13 @@ class AsyncHamiltonTracker(
         task_run = self.task_runs[run_id][node_.name]
         tracking_state = self.tracking_states[run_id]
         task_run.end_time = datetime.datetime.now(timezone.utc)
-
         other_results = []
+
         if success:
             task_run.status = Status.SUCCESS
             task_run.result_type = type(result)
-            result_summary = runs.process_result(result, node_)  # add node
+            result_summary, schema, additional = runs.process_result(result, node_)  # add node
+            other_results = ([schema] if schema is not None else []) + additional
             if result_summary is None:
                 result_summary = {
                     "observability_type": "observability_failure",
@@ -561,19 +551,6 @@ class AsyncHamiltonTracker(
                         "value": "Failed to process result.",
                     },
                 }
-            # NOTE This is a temporary hack to make process_result() able to return
-            # more than one object that will be used as UI "task attributes".
-            # There's a conflict between `TaskRun.result_summary` that expect a single
-            # dict from process_result() and the `HamiltonTracker.post_node_execute()`
-            # that can more freely handle "stats" to create multiple "task attributes"
-            elif isinstance(result_summary, dict):
-                result_summary = result_summary
-            elif isinstance(result_summary, list):
-                other_results = [obj for obj in result_summary[1:]]
-                result_summary = result_summary[0]
-            else:
-                raise TypeError("`process_result()` needs to return a dict or sequence of dict")
-
             task_run.result_summary = result_summary
             task_attr = dict(
                 node_name=get_node_name(node_, task_id),
@@ -603,7 +580,6 @@ class AsyncHamiltonTracker(
                 attribute_role="error",
             )
 
-        # `result_summary` or "error" is first because the order influences UI display order
         attributes = [task_attr]
         for i, other_result in enumerate(other_results):
             other_attr = dict(

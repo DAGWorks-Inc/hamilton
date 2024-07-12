@@ -1,10 +1,10 @@
 from typing import Any, Dict
 
 import pydantic
-from hamilton_sdk.tracking import stats
+from hamilton_sdk.tracking import data_observation
 
 
-@stats.compute_stats.register
+@data_observation.compute_stats.register
 def compute_stats_pydantic(
     result: pydantic.BaseModel, node_name: str, node_tags: dict
 ) -> Dict[str, Any]:

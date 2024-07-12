@@ -20,7 +20,7 @@ def test_compute_stats_df():
         }
     )
     actual = ps.compute_stats_df(df, "test", {})
-    expected = {
+    expected_stats = {
         "observability_schema_version": "0.0.3",
         "observability_type": "dagworks_describe",
         "observability_value": {
@@ -206,4 +206,4 @@ def test_compute_stats_df():
             },
         },
     }
-    assert actual == expected
+    assert actual == expected_stats
