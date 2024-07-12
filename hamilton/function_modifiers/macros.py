@@ -5,6 +5,7 @@ from collections import Counter
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
+import typing_inspect
 
 from hamilton import models, node
 from hamilton.dev_utils.deprecation import deprecated
@@ -12,6 +13,7 @@ from hamilton.function_modifiers import base
 from hamilton.function_modifiers.configuration import ConfigResolver
 from hamilton.function_modifiers.delayed import resolve as delayed_resolve
 from hamilton.function_modifiers.dependencies import (
+    InvalidDecoratorException,
     LiteralDependency,
     SingleDependency,
     UpstreamDependency,
@@ -870,3 +872,106 @@ class pipe(base.NodeInjector):
 #
 #     def __init__(self, *transforms: Applicable, collapse=False):
 #         super(flow, self).__init__(*transforms, collapse=collapse, _chain=False)
+
+
+class loader(base.NodeCreator):
+    """Class to capture metadata."""
+
+    # def __init__(self, og_function: Callable):
+    #     self.og_function = og_function
+    #     super(loader,self).__init__()
+
+    def validate(self, fn: Callable):
+        print("called validate loader")
+        return_annotation = inspect.signature(fn).return_annotation
+        if return_annotation is inspect.Signature.empty:
+            raise InvalidDecoratorException(
+                f"Function: {fn.__qualname__} must have a return annotation."
+            )
+        # check that the type is a tuple[TYPE, dict]:
+        if not typing_inspect.is_tuple_type(return_annotation):
+            raise InvalidDecoratorException(f"Function: {fn.__qualname__} must return a tuple.")
+        if len(typing_inspect.get_args(return_annotation)) != 2:
+            raise InvalidDecoratorException(
+                f"Function: {fn.__qualname__} must return a tuple of length 2."
+            )
+        if not typing_inspect.get_args(return_annotation)[1] == dict:
+            raise InvalidDecoratorException(
+                f"Function: {fn.__qualname__} must return a tuple of type (SOME_TYPE, dict)."
+            )
+
+    def generate_nodes(self, fn: Callable, config) -> List[node.Node]:
+        """
+        Generates two nodes.
+        The first one is just the fn - with a slightly different name,
+        the second one uses the proper function name, but only returns
+        the first part of the tuple that the first returns.
+        We have to add tags appropriately.
+        :param fn:
+        :param config:
+        :return:
+        """
+        _name = "loader"
+        og_node = node.Node.from_fn(fn, name=_name)
+        new_tags = og_node.tags.copy()
+        new_tags.update(
+            {
+                "hamilton.data_loader": True,
+                "hamilton.data_loader.has_metadata": True,
+                "hamilton.data_loader.source": f"{fn.__name__}",
+                "hamilton.data_loader.classname": f"{fn.__name__}()",
+                "hamilton.data_loader.node": _name,
+            }
+        )
+
+        def filter_function(**kwargs):
+            return kwargs[f"{fn.__name__}.{_name}"][0]
+
+        filter_node = node.Node(
+            name=fn.__name__,  # use original function name
+            callabl=filter_function,
+            typ=typing_inspect.get_args(og_node.type)[0],
+            input_types={f"{fn.__name__}.{_name}": og_node.type},
+            tags={
+                "hamilton.data_loader": True,
+                "hamilton.data_loader.has_metadata": False,
+                "hamilton.data_loader.source": f"{fn.__name__}",
+                "hamilton.data_loader.classname": f"{fn.__name__}()",
+                "hamilton.data_loader.node": fn.__name__,
+            },
+        )
+
+        return [og_node.copy_with(tags=new_tags, namespace=(fn.__name__,)), filter_node]
+
+
+class saver(base.NodeCreator):
+    """Class to capture metadata."""
+
+    def validate(self, fn: Callable):
+        print("called validate")
+        return_annotation = inspect.signature(fn).return_annotation
+        if return_annotation is inspect.Signature.empty:
+            raise InvalidDecoratorException(
+                f"Function: {fn.__qualname__} must have a return annotation."
+            )
+        # check that the return type is a dict
+        if return_annotation not in (dict, Dict):
+            raise InvalidDecoratorException(f"Function: {fn.__qualname__} must return a dict.")
+
+    def generate_nodes(self, fn: Callable, config) -> List[node.Node]:
+        """
+        All this does is add tags
+        :param fn:
+        :param config:
+        :return:
+        """
+        og_node = node.Node.from_fn(fn)
+        new_tags = og_node.tags.copy()
+        new_tags.update(
+            {
+                "hamilton.data_saver": True,
+                "hamilton.data_saver.sink": f"{og_node.name}",
+                "hamilton.data_saver.classname": f"{fn.__name__}()",
+            }
+        )
+        return [og_node.copy_with(tags=new_tags)]

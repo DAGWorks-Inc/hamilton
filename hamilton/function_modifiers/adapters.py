@@ -265,7 +265,6 @@ class LoadFromDecorator(NodeInjector):
     def inject_nodes(
         self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
     ) -> Tuple[Collection[node.Node], Dict[str, str]]:
-        pass
         """Generates two nodes:
         1. A node that loads the data from the data source, and returns that + metadata
         2. A node that takes the data from the data source, injects it into, and runs, the function.

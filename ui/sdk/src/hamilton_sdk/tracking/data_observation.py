@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from hamilton_sdk.tracking import sql_utils
-from hamilton.htypes import DataLoaderMetadata, DataSaverMetadata
+
 
 StatsType = Dict[str, Any]
 
@@ -74,13 +74,6 @@ def compute_stats_primitives(result, node_name: str, node_tags: dict) -> Observa
     }
 
 
-@compute_stats.register(DataSaverMetadata)
-def compute_state_saver(
-    result: DataSaverMetadata, node_name: str, node_tags: dict
-) -> Dict[str, Any]:
-    return compute_stats_dict(result.to_dict(), node_name, node_tags)
-
-
 @compute_stats.register(dict)
 def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> ObservationType:
     """call summary stats on the values in the dict"""
@@ -133,8 +126,8 @@ def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> Observa
 @compute_stats.register(tuple)
 def compute_stats_tuple(result: tuple, node_name: str, node_tags: dict) -> ObservationType:
     if "hamilton.data_loader" in node_tags and node_tags["hamilton.data_loader"] is True:
-        # assumption it's a tuple -- HACK to get metadata for dataloadermetadata -- TODO: create actual nodes.
-        if isinstance(result[1], dict) or isinstance(result[1], DataLoaderMetadata):
+        # assumption it's a tuple
+        if isinstance(result[1], dict):
             try:
                 # double check that it's JSON serializable
                 raw_data = (
