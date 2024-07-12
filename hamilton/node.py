@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import typing_inspect
 
-from hamilton.htypes import Collect, DataLoaderMetadata, DataSaverMetadata, Parallelizable
+from hamilton.htypes import Collect, Parallelizable
 
 """
 Module that contains the primitive components of the graph.
@@ -274,30 +274,6 @@ class Node(object):
         if typing_inspect.is_generic_type(return_type):
             if typing_inspect.get_origin(return_type) == Parallelizable:
                 node_source = NodeType.EXPAND
-        elif return_type == DataSaverMetadata:
-            tags.update(
-                {
-                    "hamilton.data_saver": True,
-                    "hamilton.data_saver.sink": fn.__name__,
-                    "hamilton.data_saver.classname": fn.__name__,
-                }
-            )
-        # check for tuple[DataLoaderMetadata, Any], or Tuple[DataLoaderMetadata, Any]
-        elif (
-            typing_inspect.get_origin(return_type) == tuple
-            and len(return_type.__args__) == 2
-            and return_type.__args__[1] == DataLoaderMetadata
-        ):
-            tags.update(
-                {
-                    "hamilton.data_loader": True,
-                    "hamilton.data_loader.has_metadata": True,
-                    "hamilton.data_loader.source": fn.__name__,
-                    "hamilton.data_loader.classname": fn.__name__,
-                }
-            )
-            # make return types match -- TODO: actually do the right data loader thing
-            return_type = return_type.__args__[0]
         for parameter in inspect.signature(fn).parameters.values():
             hint = parameter.annotation
             if typing_inspect.is_generic_type(hint):
