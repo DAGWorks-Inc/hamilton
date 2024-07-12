@@ -22,6 +22,7 @@ import { Dict1View, Dict2View } from "./DictView";
 import { DAGWorksDescribe3View } from "./DAGWorksDescribe";
 import { HTML1View } from "./HTMLView";
 import { Schema1View } from "./SchemaView";
+import { HiChevronDown, HiChevronUp } from "react-icons/hi";
 
 const Primitive1View = (props: {
   taskName: string;
@@ -149,6 +150,16 @@ export const MultiResultSummaryView = (props: {
   projectId: number;
   runIds: number[];
 }) => {
+  const [minimizedAttributes, setMinimizedAttributes] = useState<string[]>([]);
+  const toggleExpanded = (attributeName: string) => {
+    if (minimizedAttributes.includes(attributeName)) {
+      setMinimizedAttributes(
+        minimizedAttributes.filter((i) => i !== attributeName)
+      );
+    } else {
+      setMinimizedAttributes([...minimizedAttributes, attributeName]);
+    }
+  };
   const attributes = props.nodeRunData.flatMap((i) => i?.attributes || []);
   const attributesGroupedByName = attributes.reduce((acc, item) => {
     if (acc[item.name]) {
@@ -160,19 +171,33 @@ export const MultiResultSummaryView = (props: {
   }, {} as { [key: string]: NodeRunAttribute[] });
   return (
     <div className="flex flex-col gap-2">
-      {Object.entries(attributesGroupedByName).map(([key, value]) => (
-        <div key={key}>
-          <h2 className="text-lg font-semibold text-gray-800">
-            {snakeToTitle(key)}
-          </h2>
-          <ResultsSummaryView
-            runAttributes={value}
-            taskName={props.taskName}
-            projectId={props.projectId}
-            runIds={props.runIds}
-          />
-        </div>
-      ))}
+      {Object.entries(attributesGroupedByName).map(([key, value]) => {
+        const isExpanded = !minimizedAttributes.includes(key);
+        const Icon = isExpanded ? HiChevronUp : HiChevronDown;
+        return (
+          <div key={key}>
+            <div className="flex flex-row gap-2">
+              <h2 className="text-lg font-semibold text-gray-800">
+                {snakeToTitle(key)}
+              </h2>
+              <Icon
+                className="hover:scale-125 hover:cursor-pointer text-2xl text-gray-400 mr-1"
+                onClick={() => {
+                  toggleExpanded(key);
+                }}
+              />
+            </div>
+            {isExpanded && (
+              <ResultsSummaryView
+                runAttributes={value}
+                taskName={props.taskName}
+                projectId={props.projectId}
+                runIds={props.runIds}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -344,175 +369,4 @@ export const ResultsSummaryView = (props: {
       })}
     </div>
   );
-
-  // const task_name: string = props.taskName ? props.taskName : "?";
-  // // so yeah this code is messy - we should really massage things into a dict of run_id -> specific type...
-  // // else we're assuming that the order of run ids and results matches.
-  // const {
-  //   observability_value,
-  //   observability_type,
-  //   observability_schema_version,
-  // } = resultSummariesFiltered[0] as ResultsSummary;
-  // if (
-  //   observability_type === "pandas_describe" &&
-  //   observability_schema_version === "0.0.1"
-  // ) {
-  //   return (
-  //     <PandasDescribeV001View
-  //       // results={props.resultsSummaries.map(item => item as PandasDescribeV0_0_1)}
-  //       projectId={props.projectId}
-  //       runIds={props.runs.map((run) => run.id as number)}
-  //       results={resultSummariesFiltered.map(
-  //         (item) => item.observability_value as PandasDescribeV0_0_1
-  //       )}
-  //     />
-  //   );
-  // } else if (
-  //   observability_type === "primitive" &&
-  //   observability_schema_version === "0.0.1"
-  // ) {
-  //   type PrimitiveType = {
-  //     type: string;
-  //     value: string;
-  //   };
-  //   // for each observability_value in resultSummariesFiltered, cast it to PrimitiveType
-  //   // and put it into values
-  //   const values = resultSummariesFiltered.map((item) => {
-  //     return { runId: item.runId, ...item.observability_value };
-  //   }) as ({ runId: number } & PrimitiveType)[];
-  //   return (
-  //     <div className="m-8">
-  //       <GenericTable
-  //         data={values.map((item) => {
-  //           return [item.runId?.toString() || "", item];
-  //         })}
-  //         columns={[
-  //           {
-  //             displayName: "type",
-  //             Render: (item: PrimitiveType) => {
-  //               return (
-  //                 <div className="flex flex-col">
-  //                   <code className="text-sm">
-  //                     {parsePythonType({ typeName: item.type })}
-  //                   </code>
-  //                 </div>
-  //               );
-  //             },
-  //           },
-  //           {
-  //             displayName: "value",
-  //             Render: (item: PrimitiveType) => {
-  //               const [expanded, setExpanded] = useState(false);
-  //               return (
-  //                 <div className="flex flex-col w-144">
-  //                   <pre
-  //                     onClick={(e) => {
-  //                       setExpanded(!expanded);
-  //                       e.stopPropagation();
-  //                     }}
-  //                     className={`${
-  //                       expanded ? "break-word whitespace-pre-wrap" : "truncate"
-  //                     }  text-gray-500 cursor-cell`}
-  //                   >
-  //                     {item.value.toString()}
-  //                   </pre>
-  //                   {/* <code className="text-sm whitespace-pre-wrap">
-  //                     {item.value.toString()}
-  //                   </code> */}
-  //                 </div>
-  //               );
-  //             },
-  //           },
-  //         ]}
-  //         dataTypeName={"Run"}
-  //         dataTypeDisplay={(item: string) => {
-  //           return (
-  //             <RunLink
-  //               projectId={props.projectId}
-  //               runId={parseInt(item) as number}
-  //               setHighlightedRun={() => void 0}
-  //               highlightedRun={null}
-  //             ></RunLink>
-  //           );
-  //         }}
-  //       />
-  //     </div>
-  //   );
-  // } else if (
-  //   observability_type === "dict" &&
-  //   observability_schema_version === "0.0.2"
-  // ) {
-  //   return (
-  //     <DictView
-  //       runIds={props.runs.map((run) => run.id as number)}
-  //       results={resultSummariesFiltered.map(
-  //         (item) => (item.observability_value as any).value as object
-  //       )}
-  //     ></DictView>
-  //   );
-  // } else if (
-  //   observability_type === "dagworks_describe" &&
-  //   observability_schema_version === "0.0.3"
-  // ) {
-  //   return (
-  //     <DAGWorksDescribeV003View
-  //       projectId={props.projectId}
-  //       runIds={props.runs.map((run) => run.id as number)}
-  //       results={resultSummariesFiltered.map(
-  //         (item) => item.observability_value as DAGWorksDescribeV0_0_3
-  //       )}
-  //     />
-  //   );
-  // }
-  // type UnknownType = {
-  //   unsupported_type: string;
-  //   action: string;
-  // };
-  // const values = resultSummariesFiltered.map((item) => {
-  //   return {
-  //     value: item.observability_value as UnknownType,
-  //     runId: item.runId,
-  //   };
-  // });
-  // // TODO: this does not show all the outputs -- just the first one. This code is messy so not going to fix it now.
-  // return (
-  //   <div className="flex flex-col m-20">
-  //     <span className="text-lg text-gray-800">
-  //       We currently do not capture data summaries for run(s){" "}
-  //       <code>[{runIds.join(", ")}]</code>
-  //       for <code>{task_name}</code>. We are working on adding support for
-  //       everything -- reach out if you need it and we can prioritize!
-  //     </span>
-  //     <div className="m-8">
-  //       <GenericTable
-  //         data={values.map((item) => {
-  //           return [item.runId.toString() || "", item.value];
-  //         })}
-  //         columns={[
-  //           {
-  //             displayName: "type",
-  //             Render: (item: UnknownType) => {
-  //               return (
-  //                 <div className="flex flex-col">
-  //                   <code className="text-sm">{item.unsupported_type}</code>
-  //                 </div>
-  //               );
-  //             },
-  //           },
-  //           {
-  //             displayName: "action",
-  //             Render: (item: UnknownType) => {
-  //               return (
-  //                 <div className="flex flex-col">
-  //                   <span className="text-sm">{item.action}</span>
-  //                 </div>
-  //               );
-  //             },
-  //           },
-  //         ]}
-  //         dataTypeName={""}
-  //       />
-  //     </div>
-  //   </div>
-  // );
 };
