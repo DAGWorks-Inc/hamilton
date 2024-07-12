@@ -15,7 +15,10 @@ import {
   getNodeRunAttributes,
 } from "../../../../../state/api/friendlyApi";
 import { parsePythonType } from "../../../../../utils";
-import { GenericTable } from "../../../../common/GenericTable";
+import {
+  GenericGroupedTable,
+  GenericTable,
+} from "../../../../common/GenericTable";
 import { RunLink } from "../../../../common/CommonLinks";
 import { PandasDescribe1View } from "./PandasDescribe";
 import { Dict1View, Dict2View } from "./DictView";
@@ -23,68 +26,156 @@ import { DAGWorksDescribe3View } from "./DAGWorksDescribe";
 import { HTML1View } from "./HTMLView";
 import { Schema1View } from "./SchemaView";
 import { HiChevronDown, HiChevronUp } from "react-icons/hi";
+import ReactDiffViewer from "react-diff-viewer-continued";
+import { Field, Label, Switch } from "@headlessui/react";
 
+const DiffView = (props: { oldValue: string; newValue: string }) => {
+  const [splitView, setSplitView] = useState(false);
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-row gap-1">
+        <Field className="flex items-center">
+          <Switch
+            checked={splitView}
+            onChange={setSplitView}
+            onClick={(e) => {
+              setSplitView(!splitView);
+              e.stopPropagation();
+            }}
+            className="group relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-dwdarkblue focus:ring-offset-2 data-[checked]:bg-dwdarkblue"
+          >
+            <span
+              aria-hidden="true"
+              className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out group-data-[checked]:translate-x-5"
+            />
+          </Switch>
+          <Label as="span" className="ml-3 text-sm">
+            <span className="font-medium text-gray-500">Split view</span>{" "}
+          </Label>
+        </Field>
+      </div>
+      <ReactDiffViewer
+        oldValue={props.oldValue}
+        newValue={props.newValue}
+        splitView={splitView}
+        linesOffset={3}
+        extraLinesSurroundingDiff={1}
+        showDiffOnly={false}
+        hideLineNumbers
+        disableWordDiff
+        styles={{
+          diffContainer: {
+            backgroundColor: "transparent",
+          },
+        }}
+      />
+    </div>
+  );
+};
 const Primitive1View = (props: {
   taskName: string;
   runIds: number[];
   values: AttributePrimitive1[];
   projectId: number;
 }) => {
+  const valuesWithRunID = props.values.map((item, i) => {
+    return { ...item, runId: props.runIds[i] };
+  });
   return (
     <div className="m-8">
-      <GenericTable
-        data={props.values.map((item, i) => {
-          return [props.runIds[i].toString() || "", item];
+      <GenericGroupedTable
+        data={valuesWithRunID.map((item) => {
+          return ["", item];
         })}
         columns={[
           {
             displayName: "type",
-            Render: (item: AttributePrimitive1) => {
-              return (
+            Render: (
+              items: AttributePrimitive1[],
+              isSummaryRow: boolean,
+              isExpanded: boolean
+            ) => {
+              const uniqueTypes = Array.from(
+                new Set(
+                  items.map((item) => parsePythonType({ type_name: item.type }))
+                )
+              );
+              return isSummaryRow && isExpanded ? (
+                <></>
+              ) : (
                 <div className="flex flex-col">
-                  <code className="text-sm">
-                    {parsePythonType({ type_name: item.type })}
-                  </code>
+                  {uniqueTypes.map((type, i) => {
+                    return (
+                      <div key={i}>
+                        <code className="text-sm">{type}</code>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             },
           },
           {
             displayName: "value",
-            Render: (item: AttributePrimitive1) => {
+            Render: (
+              items: AttributePrimitive1[],
+              isSummaryRow: boolean,
+              isExpanded: boolean
+            ) => {
               const [expanded, setExpanded] = useState(false);
               return (
-                <div className="flex flex-col w-144">
-                  <pre
-                    onClick={(e) => {
-                      setExpanded(!expanded);
-                      e.stopPropagation();
-                    }}
-                    className={`${
-                      expanded ? "break-word whitespace-pre-wrap" : "truncate"
-                    }  text-gray-500 cursor-cell`}
-                  >
-                    {item.value.toString()}
-                  </pre>
-                  {/* <code className="text-sm whitespace-pre-wrap">
-                    {item.value.toString()}
-                  </code> */}
+                <div className="flex flex-col w-192">
+                  {isSummaryRow && isExpanded ? (
+                    <></>
+                  ) : isSummaryRow && !isExpanded ? (
+                    <DiffView
+                      oldValue={items[0].value.toString()}
+                      newValue={items[1].value.toString()}
+                    />
+                  ) : (
+                    <pre
+                      onClick={(e) => {
+                        setExpanded(!expanded);
+                        e.stopPropagation();
+                      }}
+                      className={`w- ${
+                        expanded ? "break-word whitespace-pre-wrap" : "truncate"
+                      }  text-gray-500 cursor-cell`}
+                    >
+                      {items[0].value.toString()}
+                    </pre>
+                  )}
+                </div>
+              );
+            },
+          },
+          {
+            displayName: "runs",
+            Render: (
+              value: AttributePrimitive1[],
+              isSummaryRow: boolean,
+              isExpanded: boolean
+            ) => {
+              if (isSummaryRow && isExpanded) {
+                return <></>;
+              }
+              return (
+                <div className="flex flex-row gap-1">
+                  {props.runIds.map((taskRun, i) => (
+                    <RunLink
+                      runId={props.runIds[i]}
+                      key={i}
+                      projectId={1}
+                      highlightedRun={null}
+                      setHighlightedRun={() => void 0}
+                    />
+                  ))}
                 </div>
               );
             },
           },
         ]}
         dataTypeName={"Run"}
-        dataTypeDisplay={(item: string) => {
-          return (
-            <RunLink
-              projectId={props.projectId}
-              runId={parseInt(item) as number}
-              setHighlightedRun={() => void 0}
-              highlightedRun={null}
-            ></RunLink>
-          );
-        }}
       />
     </div>
   );
