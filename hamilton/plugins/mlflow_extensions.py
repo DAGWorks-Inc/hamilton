@@ -1,5 +1,6 @@
 import dataclasses
 import pathlib
+from types import ModuleType
 from typing import Any, Collection, Dict, Literal, Optional, Tuple, Type, Union
 
 try:
@@ -24,7 +25,7 @@ class MLFlowModelSaver(DataSaver):
 
     path: Union[str, pathlib.Path] = "model"
     register_as: Optional[str] = None
-    flavor: Optional[str] = None
+    flavor: Optional[Union[str, ModuleType]] = None
     run_id: Optional[str] = None
     kwargs: Dict[str, Any] = None
 
@@ -47,11 +48,16 @@ class MLFlowModelSaver(DataSaver):
             # for example, extract `sklearn` from `sklearn.linear_model._base`
             flavor, _, _ = data.__module__.partition(".")
 
-        # retrieve the `mlflow.FLAVOR` submodule to `.log_model()`
-        try:
-            flavor_module = getattr(mlflow, flavor)
-        except ImportError:
-            raise ImportError(f"Flavor {flavor} is unsupported by MLFlow")
+        # pass flavor as module, this suports standard flavors `like mlflow.sklearn`
+        # but also supports custom flavors like `my_flavor` that implements save(), log(), load()
+        if isinstance(flavor, ModuleType):
+            flavor_module = flavor
+        else:
+            # retrieve the `mlflow.FLAVOR` submodule to `.log_model()`
+            try:
+                flavor_module = getattr(mlflow, flavor)
+            except ImportError:
+                raise ImportError(f"Flavor {flavor} is unsupported by MLFlow")
 
         # handle `run_id` and active run conflicts
         if mlflow.active_run() and self.run_id:
@@ -109,7 +115,7 @@ class MLFlowModelLoader(DataLoader):
     model_name: Optional[str] = None
     version: Optional[Union[str, int]] = None
     version_alias: Optional[str] = None
-    flavor: Optional[str] = None
+    flavor: Optional[Union[ModuleType, str]] = None
     kwargs: Dict[str, Any] = None
 
     # __post_init__ is required to set kwargs as empty dict because
@@ -163,11 +169,16 @@ class MLFlowModelLoader(DataLoader):
             except StopIteration:
                 flavor = "pyfunc"
 
-        # retrieve the `mlflow.FLAVOR` submodule to `.log_model()`
-        try:
-            flavor_module = getattr(mlflow, flavor)
-        except ImportError:
-            raise ImportError(f"Flavor {flavor} is unsupported by MLFlow")
+        # pass flavor as module, this suports standard flavors `like mlflow.sklearn`
+        # but also supports custom flavors like `my_flavor` that implements save(), log(), load()
+        if isinstance(flavor, ModuleType):
+            flavor_module = flavor
+        else:
+            # retrieve the `mlflow.FLAVOR` submodule to `.log_model()`
+            try:
+                flavor_module = getattr(mlflow, flavor)
+            except ImportError:
+                raise ImportError(f"Flavor {flavor} is unsupported by MLFlow")
 
         model = flavor_module.load_model(model_uri=self.model_uri)
         return model, metadata
