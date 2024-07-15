@@ -266,6 +266,9 @@ class Node(object):
         return_type = typing.get_type_hints(fn, **type_hint_kwargs).get("return")
         if return_type is None:
             raise ValueError(f"Missing type hint for return value in function {fn.__qualname__}.")
+        module = inspect.getmodule(fn).__name__
+        tags = {"module": module}
+
         node_source = NodeType.STANDARD
         # TODO - extract this into a function + clean up!
         if typing_inspect.is_generic_type(return_type):
@@ -277,8 +280,7 @@ class Node(object):
                 if typing_inspect.get_origin(hint) == Collect:
                     node_source = NodeType.COLLECT
                     break
-        module = inspect.getmodule(fn).__name__
-        tags = {"module": module}
+
         if hasattr(fn, "__config_decorated__"):
             tags["hamilton.config"] = ",".join(fn.__config_decorated__)
         return Node(

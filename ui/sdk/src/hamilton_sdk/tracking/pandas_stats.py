@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Union
 
 import pandas as pd
@@ -12,7 +13,11 @@ Notes:
  - for object types we should :shrug:
 """
 
+
 dr = driver.Builder().with_modules(pcs).with_config({"config_key": "config_value"}).build()
+logger = logging.getLogger(__name__)
+
+import time
 
 
 def _compute_stats(df: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
@@ -44,11 +49,16 @@ def _compute_stats(df: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     def execute_col(
         target_output: str, col: pd.Series, name: Union[str, int], position: int
     ) -> Dict[str, Any]:
-        """Get stats on a column."""
+        """Get stats on a column.
+        TODO: profile this and see where we can speed things up.
+        """
         try:
+            t1 = time.time()
             res = dr.execute(
                 [target_output], inputs={"col": col, "name": name, "position": position}
             )
+
+            logger.info(f"Computed stats for column {name}, time taken was {time.time() - t1}")
             res = res[target_output].to_dict()
         except Exception:
             # minimum that we want -- ideally we have hamilton handle errors and do best effort.
