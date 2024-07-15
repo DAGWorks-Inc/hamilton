@@ -145,12 +145,26 @@ def test_mlflow_load_registry_model(fitted_sklearn_model: BaseEstimator, tmp_pat
     assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
 
 
-def test_mlflow_infer_flavor(fitted_sklearn_model: BaseEstimator, tmp_path: Path):
+def test_mlflow_infer_flavor(fitted_sklearn_model: BaseEstimator):
     saver = MLFlowModelSaver(path="model")
 
     metadata = saver.save_data(fitted_sklearn_model)
 
     assert "sklearn" in metadata["flavors"].keys()
+
+
+def test_mlflow_specify_flavor_using_module(fitted_sklearn_model: BaseEstimator, tmp_path):
+    model_path = tmp_path / "sklearn_model"
+    saver = MLFlowModelSaver(flavor=mlflow.sklearn)
+
+    mlflow.set_tracking_uri(model_path.as_uri())
+    with mlflow.start_run():
+        # save model
+        metadata = saver.save_data(fitted_sklearn_model)
+    # reload model
+    loaded_model = mlflow.sklearn.load_model(metadata["model_uri"])
+
+    assert coefficients_are_equal(fitted_sklearn_model, loaded_model)
 
 
 def test_mlflow_handle_saver_kwargs():
