@@ -360,7 +360,7 @@ class HamiltonMagics(Magics):
         else:
             nodes = [n for n in dr.list_available_variables() if not n.is_external_input]
             final_vars = topological_sort(nodes)
-
+        display_config["show_legend"] = False
         # visualize
         if args.display:
             # try/except `display_config` or inputs/overrides may be invalid
