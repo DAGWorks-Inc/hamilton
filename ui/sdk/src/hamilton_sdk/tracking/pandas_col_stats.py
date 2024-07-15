@@ -1,5 +1,6 @@
 from typing import Dict, List, Union
 
+import numpy as np
 import pandas as pd
 from hamilton_sdk.tracking import dataframe_stats as dfs
 
@@ -45,19 +46,8 @@ def quantiles(col: pd.Series, quantile_cuts: List[float]) -> Dict[float, float]:
 
 
 def histogram(col: pd.Series, num_hist_bins: int = 10) -> Dict[str, int]:
-    try:
-        hist_counts = (
-            col.value_counts(
-                bins=num_hist_bins,
-            )
-            .sort_index()
-            .to_dict()
-        )
-    except ValueError:
-        return {}
-    except AttributeError:
-        return {}
-    return {str(interval): interval_value for interval, interval_value in hist_counts.items()}
+    hist, bins = np.histogram(col, bins=num_hist_bins)
+    return {str(interval): interval_value for interval, interval_value in zip(bins, hist)}
 
 
 def numeric_column_stats(

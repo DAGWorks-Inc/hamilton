@@ -1,10 +1,15 @@
+import logging
+
 import simple_etl
 from hamilton_sdk import adapters
 
 from hamilton import driver
+from hamilton.log_setup import setup_logging
+
+setup_logging(logging.DEBUG)
 
 tracker = adapters.HamiltonTracker(
-    project_id=7,  # modify this as needed
+    project_id=15,  # modify this as needed
     username="elijah@dagworks.io",
     dag_name="my_version_of_the_dag",
     tags={"environment": "DEV", "team": "MY_TEAM", "version": "X"},
