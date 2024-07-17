@@ -26,7 +26,7 @@ if pl_version < version.Version("1.0.0"):
         f"Current version: {pl_version}, minimum required version: 1.0.0."
     )
 else:
-    from hamilton.plugins.polars_post_1_0_0_extension import register_data_loaders
+    from hamilton.plugins.polars_post_1_0_0_extensions import register_data_loaders
 
 register_data_loaders()
 

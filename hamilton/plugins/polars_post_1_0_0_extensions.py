@@ -593,8 +593,8 @@ class PolarsSpreadsheetWriter(DataSaver):
     # importing here because this is where it's used. Can move later.
     # but yeah the polars type aliases weren't resolving well in python 3.9
     # so stripped/reduced them appropriately.
+    from polars._typing import ColumnTotalsDefinition, RowTotalsDefinition
     from polars.datatypes import DataType, DataTypeClass
-    from polars.type_aliases import ColumnTotalsDefinition, RowTotalsDefinition
 
     workbook: Union[Workbook, BytesIO, Path, str]
     worksheet: Union[str, None] = None

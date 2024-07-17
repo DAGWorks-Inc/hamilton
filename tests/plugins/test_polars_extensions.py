@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 import polars as pl  # isort: skip
 import pytest  # isort: skip
 
-from hamilton.plugins.polars_post_1_0_0_extension import (  # isort: skip
+from hamilton.plugins.polars_post_1_0_0_extensions import (  # isort: skip
     PolarsAvroReader,
     PolarsAvroWriter,
     PolarsCSVReader,
