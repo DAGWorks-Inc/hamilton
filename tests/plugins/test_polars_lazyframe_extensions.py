@@ -11,7 +11,7 @@ from hamilton.plugins.polars_lazyframe_extensions import (
     PolarsScanFeatherReader,
     PolarsScanParquetReader,
 )
-from hamilton.plugins.polars_post_1_0_0_extension import (
+from hamilton.plugins.polars_post_1_0_0_extensions import (
     PolarsAvroReader,
     PolarsAvroWriter,
     PolarsCSVWriter,
