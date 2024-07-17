@@ -57,3 +57,4 @@ Recall to add lifecycle adapters, you just need to call the ``with_adapters`` me
     GracefulErrorAdapter
     SparkInputValidator
     Narwhals
+    MLFlowTracker
