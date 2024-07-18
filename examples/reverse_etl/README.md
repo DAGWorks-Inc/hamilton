@@ -20,7 +20,7 @@ This example shows how to create a timesheet from time tracking data generated b
     ```
 
 ## Timewarrior extension
-Adding a [Timewarrior extension](https://timewarrior.net/docs/api/) means you can trigger arbitrary scripts with `timew report SCRIPT_FILE_NAME`. Even better, you can skip the `report` command and only type the `SCRIPT_FILE_NAME` partially if it's unambiguous. For example, you can trigger `upload_timesheet.py` with `timew upload`.
+Adding a [Timewarrior extension](https://timewarrior.net/docs/api/) means you can trigger arbitrary scripts with `timew report SCRIPT_FILE_NAME`. Even better, you can skip the `report` command and only type the `SCRIPT_FILE_NAME` partially if it's unambiguous. For example, you can trigger `upload_timesheet.py` with `timew upload`. See the (notebook)[./notebook.ipynb] for further context and explanations.
 
 To enable this, follow these steps:
 1. Identify your Timewarrior installation directory (we'll assume the default: `~/.timewarrior`)
@@ -53,9 +53,10 @@ To enable this, follow these steps:
     credentials.json No executable
     upload_timesheet.py Active
     ```
-6. Get the `spreadsheet_id` from the Google Sheets URL `https://docs.google.com/spreadsheets/d/$SPREADSHEET_ID/edit?gid=0#gid=0`
-7. Add the `spreadsheet_id` as a Timewarrior config point via `timew config spreadsheet_id $SPREADSHEET_ID`
-8. Use the command `timew report upload_timesheet.py` to test it out! You should be able to shorten it to `timew upload`
+6. Create a new Google Sheets spreadsheet and get its `spreadsheet_id` from the Google Sheets URL `https://docs.google.com/spreadsheets/d/$SPREADSHEET_ID/edit?gid=0#gid=0`
+7. Use the `Share` button to give access to the Google API service account that you created at Step 3
+8. Add the `spreadsheet_id` as a Timewarrior config point via `timew config spreadsheet_id $SPREADSHEET_ID`
+9. Use the command `timew report upload_timesheet.py` to test it out! You should be able to shorten it to `timew upload`
 
 > [!NOTE]
-> Try to run `python upload_timesheet.py` will hang because it will to read values from `sys.stdin` which would be provided by the Timewarrior CLI.
+> If you run `python upload_timesheet.py` will hang because it will try to read values from `sys.stdin` which should be provided by the Timewarrior CLI. That's why you need to run it via `timew report upload_timesheet.py`
