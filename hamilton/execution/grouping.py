@@ -396,9 +396,10 @@ def create_task_plan(
                     if task_containing_dependency is None and not node_.requires(dependency.name):
                         continue
                     if task_containing_dependency is None:
-                        import pdb
-
-                        pdb.set_trace()
+                        raise ValueError(
+                            f"Dependency is None and requires {dependency.name}."
+                            f"We're somehow in a bad state. Please reach out on slack."
+                        )
                     task_dependencies.add(task_containing_dependency.base_id)
         task_spec.base_dependencies = list(task_dependencies)
     return out
