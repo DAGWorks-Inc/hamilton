@@ -104,6 +104,7 @@ def test_create_hamilton_node():
         "output_type": "str",
         "required_dependencies": ["required_dep"],
         "optional_dependencies": ["optional_dep"],
+        "optional_input_values": {"optional_dep": 1},
         "source": (
             "    def node_to_create(required_dep: int, optional_dep: int = 1) -> str:\n"
             '        """Documentation"""\n'
