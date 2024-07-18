@@ -1,7 +1,7 @@
 """Decorators that attach metadata to nodes"""
 
 import json
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 from hamilton import htypes, node, registry
 from hamilton.function_modifiers import base
@@ -315,3 +315,102 @@ def ray_remote_options(**kwargs: Union[int, Dict[str, int]]) -> RayRemote:
         def example() -> pd.DataFrame: ...
     """
     return RayRemote(**kwargs)
+
+
+# materializers that have a `path` kwarg and are part of the core Hamilton library
+# parquet, csv, feather, orc, and excel are via the pandas extension because it's currently a Hamilton dependency
+CACHE_MATERIALIZERS = Literal[
+    "json",
+    "file",
+    "pickle",
+    "parquet",
+    "csv",
+    "feather",
+    "orc",
+    "excel",
+]
+
+# see hamilton.caching.adapter.CachingBehavior enum for details.
+# default: caching is enabled
+# recompute: always compute the node instead of retrieving
+# ignore: the data version won't be part of downstream keys
+# disable: act as if caching wasn't enabled.
+CACHE_BEHAVIORS = Literal["default", "recompute", "ignore", "disable"]
+
+
+class cache(base.NodeDecorator):
+    BEHAVIOR_KEY = "cache.behavior"
+    FORMAT_KEY = "cache.format"
+
+    def __init__(
+        self,
+        *,
+        behavior: Optional[CACHE_BEHAVIORS] = None,
+        format: Optional[Union[CACHE_MATERIALIZERS, str]] = None,
+        target_: base.TargetType = None,
+    ):
+        """The ``@cache`` decorator can define the behavior and format of a specific node.
+
+        This feature is implemented via tags, but that could change. Thus you should not
+        rely on these tags for other purposes.
+
+        .. code-block:: python
+
+            @cache(behavior="recompute", format="parquet")
+            def raw_data() -> pd.DataFrame: ...
+
+
+        If the function uses other function modifiers and define multiple nodes, you can
+        set ``target_`` to specify which nodes to cache. The following only caches the ``performance`` node.
+
+        .. code-block:: python
+
+            @cache(format="json", target_="performance")
+            @extract_fields(trained_model=LinearRegression, performance: dict)
+            def model_training() -> dict:
+                # ...
+                performance = {"rmse": 0.1, "mae": 0.2}
+                return {"trained_model": trained_model, "performance": performance}
+
+
+        :param behavior: The behavior of the cache. This can be one of the following:
+            * **default**: caching is enabled
+            * **recompute**: always compute the node instead of retrieving
+            * **ignore**: the data version won't be part of downstream keys
+            * **disable**: act as if caching wasn't enabled.
+        :param format: The format of the cache. This can be one of the following:
+            * **json**: JSON format
+            * **file**: file format
+            * **pickle**: pickle format
+            * **parquet**: parquet format
+            * **csv**: csv format
+            * **feather**: feather format
+            * **orc**: orc format
+            * **excel**: excel format
+        :param target\\_: Target nodes to decorate. This can be one of the following:
+            * **None**: tag all nodes outputted by this that are "final" (E.g. do not have a node\
+            outputted by this that depend on them)
+            * **Ellipsis (...)**: tag *all* nodes outputted by this
+            * **Collection[str]**: tag *only* the nodes with the specified names
+            * **str**: tag *only* the node with the specified name
+        """
+        super(cache, self).__init__(target=target_)
+
+        # don't provide default value for behavior and format if not provided by user
+        # the SmartCacheAdapter expects the field to be empty if not set
+        self.cache_tags = {}
+        if behavior:
+            self.cache_tags[cache.BEHAVIOR_KEY] = behavior
+
+        if format:
+            self.cache_tags[cache.FORMAT_KEY] = format
+
+    def decorate_node(self, node_: node.Node) -> node.Node:
+        """Decorates the nodes with the cache tags.
+
+        :param node_: Node to decorate
+        :return: Copy of the node, with tags assigned
+        """
+        node_tags = node_.tags.copy()
+        node_tags.update(self.cache_tags)
+        return node_.copy_with(tags=node_tags)

@@ -31,6 +31,7 @@ extensions = [
     "myst_parser",
     "sphinx_sitemap",
     "docs.data_adapters_extension",
+    "sphinxcontrib.mermaid",
 ]
 
 # for the sitemap extension ---
