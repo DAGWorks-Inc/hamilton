@@ -14,6 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 def _compact_hash(digest: bytes) -> str:
+    """Compact the hash to a string that's safe to pass around.
+
+    NOTE this is particularly relevant for th Hamilton UI and
+    passing hashes/fingerprints through web services.
+    """
     return base64.urlsafe_b64encode(digest).decode()
 
 
