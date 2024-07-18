@@ -1,12 +1,21 @@
+import sys
 from pathlib import Path
 
-import mlflow
+import pytest
+
+PY38_OR_BELOW = sys.version_info < (3, 9)
+pytestmark = pytest.mark.skipif(
+    PY38_OR_BELOW, reason="Breaks for python 3.8 and below due to backports dependency."
+)
+
+if not PY38_OR_BELOW:
+    import mlflow
+    from hamilton.plugins.mlflow_extensions import MLFlowModelLoader, MLFlowModelSaver
+
 import numpy as np
 import pytest
 from sklearn.base import BaseEstimator
 from sklearn.linear_model import LinearRegression
-
-from hamilton.plugins.mlflow_extensions import MLFlowModelLoader, MLFlowModelSaver
 
 # TODO move these tests to `plugin_tests` because the required read-writes can get
 # complicated and tests are time consuming.
