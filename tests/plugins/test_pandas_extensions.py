@@ -133,6 +133,8 @@ def test_pandas_xml_writer(tmp_path: pathlib.Path) -> None:
     assert file_path.exists()
     assert metadata["file_metadata"]["path"] == str(file_path)
     assert metadata["dataframe_metadata"]["column_names"] == ["foo"]
+    assert "__version__" in metadata["file_metadata"]
+    assert "__version__" in metadata["dataframe_metadata"]
 
 
 def test_pandas_html_reader(tmp_path: pathlib.Path) -> None:
@@ -193,6 +195,8 @@ def test_pandas_feather_writer(tmp_path: pathlib.Path) -> None:
     assert file_path.exists()
     assert metadata["file_metadata"]["path"] == str(file_path)
     assert metadata["dataframe_metadata"]["column_names"] == ["col1", "col2"]
+    assert "__version__" in metadata["file_metadata"]
+    assert "__version__" in metadata["dataframe_metadata"]
 
 
 def test_pandas_csv_reader(tmp_path: pathlib.Path) -> None:
