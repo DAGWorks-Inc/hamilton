@@ -118,7 +118,7 @@ def hash_pandas_dataframe(obj, *args, **kwargs) -> str:
 
 
 class FingerprintingAdapter(GraphExecutionHook, NodeExecutionHook):
-    def __init__(self, path: Optional[str] = None, strategy: Optional[Callable] = None):
+    def __init__(self, path: Optional[str] = None, fingerprint: Optional[Callable] = None):
         """Fingerprint node results. This is primarily an interval tool for developing
         and debugging caching features.
 
@@ -127,8 +127,8 @@ class FingerprintingAdapter(GraphExecutionHook, NodeExecutionHook):
         `@functools.single_dispatch`. See `hash_value()` for reference
         """
         self.path = path
-        self.fingerprint = strategy if strategy else hash_value
-        self.run_data_hashes = {}
+        self.fingerprint = fingerprint if fingerprint else hash_value
+        self.run_fingerprints = {}
 
     def run_before_graph_execution(
         self, *, run_id: str, inputs: Dict[str, Any], overrides: Dict[str, Any], **kwargs: Any
@@ -142,18 +142,18 @@ class FingerprintingAdapter(GraphExecutionHook, NodeExecutionHook):
 
         if inputs:
             for node_name, value in inputs.items():
-                self.run_data_hashes[node_name] = self.fingerprint(value)
+                self.run_fingerprints[node_name] = self.fingerprint(value)
 
         if overrides:
             for node_name, value in overrides.items():
-                self.run_data_hashes[node_name] = self.fingerprint(value)
+                self.run_fingerprints[node_name] = self.fingerprint(value)
 
     def run_after_node_execution(self, *, node_name: str, result: Any, **kwargs):
         """Get the fingerprint of the most recent node result"""
         # values passed as inputs or overrides will already have known hashes
-        data_hash = self.run_data_hashes.get(node_name)
+        data_hash = self.run_fingerprints.get(node_name)
         if data_hash is None:
-            self.run_data_hashes[node_name] = self.fingerprint(result)
+            self.run_fingerprints[node_name] = self.fingerprint(result)
 
     def run_before_node_execution(self, *args, **kwargs):
         """Placeholder required to subclass `NodeExecutionHook`"""
@@ -163,4 +163,4 @@ class FingerprintingAdapter(GraphExecutionHook, NodeExecutionHook):
         if self.path:
             file_path = pathlib.Path(self.path, "fingerprints", f"{self.run_id}.json")
             file_path.parent.mkdir(exist_ok=True)
-            file_path.write_text(json.dumps(self.run_data_hashes))
+            file_path.write_text(json.dumps(self.run_fingerprints))
