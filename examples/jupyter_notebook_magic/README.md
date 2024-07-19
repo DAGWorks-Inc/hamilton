@@ -4,6 +4,8 @@ One of the best part about notebooks is the ability to execute and immediately i
 
 We built the Hamilton notebook extension to tighten that loop and even give a better experience than the core notebook experience!
 
+For a [video overview click here](https://www.youtube.com/watch?v=Z3ZT2ur2jg8&t=288s).
+
 To load the magic:
 ```python
 %load_ext hamilton.plugins.jupyter_magic
