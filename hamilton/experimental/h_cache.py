@@ -172,7 +172,6 @@ def read_json_dict(data: dict, filepath: str) -> dict:
 @write_pickle.register(object)
 def write_pickle_object(data: object, filepath: str, name: str) -> None:
     if isinstance(data, object):
-        print(filepath)
         with open(filepath, "wb") as file:
             pickle.dump(data, file)
     else:
@@ -182,7 +181,6 @@ def write_pickle_object(data: object, filepath: str, name: str) -> None:
 @read_pickle.register(object)
 def read_pickle_object(data: object, filepath: str) -> object:
     """Reads a pickle file"""
-    print(filepath)
     with open(filepath, "rb") as file:
         return pickle.load(file)
 
