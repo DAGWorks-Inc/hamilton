@@ -5,7 +5,7 @@ import { ErrorView } from "./ErrorView";
 import { CodeSummaryView } from "./CodeView";
 import { BiChevronLeft } from "react-icons/bi";
 import { Fragment } from "react";
-import { Menu, Transition } from "@headlessui/react";
+import { Menu, MenuItem, MenuItems, Transition } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import ReactSelect from "react-select";
 import {
@@ -16,9 +16,7 @@ import {
   getNodeOutputType,
 } from "../../../../state/api/friendlyApi";
 import { NodeMetadataPythonType1 } from "../../../../state/api/backendApiRaw";
-import {
-  MultiResultSummaryView,
-} from "./result-summaries/DataObservability";
+import { MultiResultSummaryView } from "./result-summaries/DataObservability";
 import { RunLink } from "../../../common/CommonLinks";
 import { extractCodeContents } from "../../../../utils/codeExtraction";
 
@@ -208,7 +206,7 @@ export const NodeLinkMenu = (props: {
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items
+        <MenuItems
           className="absolute right-0 z-10 mt-2
          origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none w-max"
         >
@@ -222,7 +220,7 @@ export const NodeLinkMenu = (props: {
               const Icon = getPythonTypeIcon(pythonType);
               const multipleRuns = nodeLink.runIds.length > 1;
               return (
-                <Menu.Item key={i} disabled>
+                <MenuItem key={i} disabled={disabled}>
                   {() => (
                     <Link
                       to={
@@ -263,11 +261,11 @@ export const NodeLinkMenu = (props: {
                       </div>
                     </Link>
                   )}
-                </Menu.Item>
+                </MenuItem>
               );
             })}
           </div>
-        </Menu.Items>
+        </MenuItems>
       </Transition>
     </Menu>
   );
