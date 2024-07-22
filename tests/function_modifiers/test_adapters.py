@@ -9,8 +9,11 @@ from hamilton import ad_hoc_utils, base, driver, graph, node
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers import extract_fields, save_to, source, value
 from hamilton.function_modifiers.adapters import (
+    InvalidDecoratorException,
     LoadFromDecorator,
     SaveToDecorator,
+    dataloader,
+    datasaver,
     load_from,
     resolve_adapter_class,
     resolve_kwargs,
@@ -624,3 +627,67 @@ def test_load_from_with_multiple_inputs():
     )
     # One filter, one loader for each and the transform function
     assert len(fg) == 5
+
+
+# Mock functions for dataloader & datasaver testing
+def correct_dl_function() -> tuple[int, dict]:
+    return 1, {}
+
+
+def correct_ds_function() -> dict:
+    return {}
+
+
+def no_return_annotation_function():
+    return 1, {}
+
+
+def non_tuple_return_function() -> int:
+    return 1
+
+
+def incorrect_tuple_length_function() -> tuple[int]:
+    return (1,)
+
+
+def incorrect_second_element_function() -> tuple[int, list]:
+    return 1, []
+
+
+incorrect_funcs = [
+    no_return_annotation_function,
+    non_tuple_return_function,
+    incorrect_tuple_length_function,
+    incorrect_second_element_function,
+]
+
+
+@pytest.mark.parametrize("func", incorrect_funcs, ids=[f.__name__ for f in incorrect_funcs])
+def test_dl_validate_incorrect_functions(func):
+    dl = dataloader()
+    with pytest.raises(InvalidDecoratorException):
+        dl.validate(func)
+
+
+def test_dl_validate_with_correct_function():
+    dl = dataloader()
+    try:
+        dl.validate(correct_dl_function)
+    except InvalidDecoratorException:
+        # i.e. fail the test if there's an error
+        pytest.fail("validate() raised InvalidDecoratorException unexpectedly!")
+
+
+def test_ds_validate_with_correct_function():
+    dl = datasaver()
+    try:
+        dl.validate(correct_ds_function)
+    except InvalidDecoratorException:
+        # i.e. fail the test if there's an error
+        pytest.fail("validate() raised InvalidDecoratorException unexpectedly!")
+
+
+def test_ds_validate_incorrect_function():
+    dl = dataloader()
+    with pytest.raises(InvalidDecoratorException):
+        dl.validate(non_tuple_return_function)
