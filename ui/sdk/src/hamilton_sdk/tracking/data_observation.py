@@ -127,16 +127,10 @@ def compute_stats_tuple(result: tuple, node_name: str, node_tags: dict) -> Obser
         if isinstance(result[1], dict):
             try:
                 # double check that it's JSON serializable
-                raw_data = (
-                    json.dumps(result[1])
-                    if isinstance(result[1], dict)
-                    else json.dumps(result[1].to_dict())
-                )
+                raw_data = json.dumps(result[1])
                 _metadata = json.loads(raw_data)
             except Exception:
-                _metadata = (
-                    str(result[1]) if isinstance(result[1], dict) else str(result[1].to_dict())
-                )
+                _metadata = str(result[1])
                 if len(_metadata) > 1000:
                     _metadata = _metadata[:1000] + "..."
             else:
