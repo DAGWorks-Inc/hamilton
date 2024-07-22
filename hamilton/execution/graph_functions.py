@@ -218,7 +218,6 @@ def execute_subdag(
                     except Exception as e:
                         pre_node_execute_errored = True
                         raise e
-
                 if adapter.does_method("do_node_execute", is_async=False):
                     result = adapter.call_lifecycle_method_sync(
                         "do_node_execute",

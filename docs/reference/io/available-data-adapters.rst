@@ -6,9 +6,9 @@ This is an index of all the available data adapters, both savers and loaders.
 Note that some savers and loaders are the same (certain classes can handle both),
 but some are different. You will want to reference this when calling out to any of the following:
 
-1. Using :doc:`/reference/decorators/save_to/`.
-2. Using :doc:`/reference/decorators/load_from/`.
-3. Using :doc:`materializers </reference/drivers/Driver/>`
+1. Using :doc:`/reference/decorators/save_to/` [or for just exposing metadata :doc:`/reference/decorators/datasaver/`].
+2. Using :doc:`/reference/decorators/load_from/` [or for just exposing metadata  :doc:`/reference/decorators/dataloader/`].
+3. Using :doc:`materializers </reference/drivers/Driver/>`.
 
 To read these tables, you want to first look at the key to determine which format you want --
 these should be human-readable and familiar to you. Then you'll want to look at the `types` field
@@ -37,9 +37,29 @@ All together, we'd end up with:
     def my_data(...) -> pd.DataFrame:
         ...
 
-And we're good to go!
+For a less "abstracted" approach, where you just expose metadata from saving and loading, you can
+annotated your saving/loading functions to do so, e.g. analogous to the above you could do:
 
-If you want to extend these, see :doc:`/reference/io/available-data-adapters` for documentation,
+.. code-block:: python
+
+    import pandas as pd
+    from hamilton.function_modifiers import datasaver
+
+     def my_data(...) -> pd.DataFrame:
+        # your function
+        ...
+        return _df  # return some df
+
+    @datasaver
+    def my_data_saver(my_data: pd.DataFrame, path: str) -> dict:
+        # code to save my_data
+        return {"path": path, "type": "csv", ...} # add other metadata
+
+
+See :doc:`/reference/decorators/dataloader/` for more information on how to load data and expose metadata
+via this more lighter weight way.
+
+If you want to extend the `@save_to` or `@load_from` decorators, see :doc:`/reference/io/available-data-adapters` for documentation,
 and `the example <https://github.com/DAGWorks-Inc/hamilton/blob/main/examples/materialization/README.md>`_
 in the repository for an example of how to do so.
 
