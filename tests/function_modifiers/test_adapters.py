@@ -629,12 +629,22 @@ def test_load_from_with_multiple_inputs():
     assert len(fg) == 5
 
 
+import sys
+
+if sys.version_info >= (3, 9):
+    dl_type = tuple[int, dict]
+    ds_type = dict
+else:
+    dl_type = Tuple[int, Dict]
+    ds_type = Dict
+
+
 # Mock functions for dataloader & datasaver testing
-def correct_dl_function() -> tuple[int, dict]:
+def correct_dl_function() -> dl_type:
     return 1, {}
 
 
-def correct_ds_function() -> dict:
+def correct_ds_function() -> ds_type:
     return {}
 
 
@@ -646,11 +656,11 @@ def non_tuple_return_function() -> int:
     return 1
 
 
-def incorrect_tuple_length_function() -> tuple[int]:
+def incorrect_tuple_length_function() -> Tuple[int]:
     return (1,)
 
 
-def incorrect_second_element_function() -> tuple[int, list]:
+def incorrect_second_element_function() -> Tuple[int, list]:
     return 1, []
 
 
