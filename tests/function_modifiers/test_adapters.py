@@ -640,11 +640,11 @@ else:
 
 
 # Mock functions for dataloader & datasaver testing
-def correct_dl_function() -> dl_type:
+def correct_dl_function(foo: int) -> dl_type:
     return 1, {}
 
 
-def correct_ds_function() -> ds_type:
+def correct_ds_function(data: float) -> ds_type:
     return {}
 
 
@@ -701,3 +701,42 @@ def test_ds_validate_incorrect_function():
     dl = dataloader()
     with pytest.raises(InvalidDecoratorException):
         dl.validate(non_tuple_return_function)
+
+
+def test_dataloader():
+    annotation = dataloader()
+    (node1, node2) = annotation.generate_nodes(correct_dl_function, {})
+    assert node1.name == "correct_dl_function.loader"
+    assert node1.input_types["foo"][1] == node.DependencyType.REQUIRED
+    assert node1.callable(foo=0) == (1, {})
+    assert node1.tags == {
+        "hamilton.data_loader": True,
+        "hamilton.data_loader.classname": "correct_dl_function()",
+        "hamilton.data_loader.has_metadata": True,
+        "hamilton.data_loader.node": "loader",
+        "hamilton.data_loader.source": "correct_dl_function",
+        "module": "tests.function_modifiers.test_adapters",
+    }
+    assert node2.name == "correct_dl_function"
+    assert node2.callable(**{"correct_dl_function.loader": (1, {})}) == 1
+    assert node2.tags == {
+        "hamilton.data_loader": True,
+        "hamilton.data_loader.classname": "correct_dl_function()",
+        "hamilton.data_loader.has_metadata": False,
+        "hamilton.data_loader.node": "correct_dl_function",
+        "hamilton.data_loader.source": "correct_dl_function",
+    }
+
+
+def test_datasaver():
+    annotation = datasaver()
+    (node1,) = annotation.generate_nodes(correct_ds_function, {})
+    assert node1.name == "correct_ds_function"
+    assert node1.input_types["data"][1] == node.DependencyType.REQUIRED
+    assert node1.callable(data=0.0) == {}
+    assert node1.tags == {
+        "hamilton.data_saver": True,
+        "hamilton.data_saver.classname": "correct_ds_function()",
+        "hamilton.data_saver.sink": "correct_ds_function",
+        "module": "tests.function_modifiers.test_adapters",
+    }
