@@ -747,7 +747,7 @@ class dataloader(NodeCreator):
             )
         # check that the second is a dict
         second_arg = typing_inspect.get_args(return_annotation)[1]
-        if not second_arg == dict or not second_arg == Dict:
+        if not (second_arg == dict or second_arg == Dict):
             raise InvalidDecoratorException(
                 f"Function: {fn.__qualname__} must return a tuple of type (SOME_TYPE, dict)."
             )
