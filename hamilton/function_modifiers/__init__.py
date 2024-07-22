@@ -92,5 +92,5 @@ resolve_from_config = delayed.resolve_from_config
 # materialization stuff
 load_from = adapters.load_from
 save_to = adapters.save_to
-loader = macros.loader
-saver = macros.saver
+dataloader = adapters.dataloader
+datasaver = adapters.datasaver

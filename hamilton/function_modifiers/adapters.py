@@ -3,9 +3,12 @@ import logging
 import typing
 from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type
 
+import typing_inspect
+
 from hamilton import node
 from hamilton.function_modifiers.base import (
     InvalidDecoratorException,
+    NodeCreator,
     NodeInjector,
     SingleNodeNodeTransformer,
 )
@@ -684,3 +687,185 @@ class save_to(metaclass=save_to__meta__):
             return SaveToDecorator(__savers, **kwargs)
 
         return create_decorator
+
+
+class dataloader(NodeCreator):
+    """
+    Decorator for specifying a data loading function within the Hamilton framework. This decorator
+    is used to annotate functions that load data, allowing them to be treated specially in the Hamilton
+    DAG (Directed Acyclic Graph). The decorated function should return a tuple
+    containing the loaded data and a dictionary of metadata about the loading process.
+
+    The `dataloader` decorator captures loading data metadata and ensures the function's return
+    type is correctly annotated to be a tuple, where the first element is the loaded data and the
+    second element is a dictionary containing metadata about the data loading process.
+
+    **Downstream functions need only to depend on the type of data loaded.**
+
+    Example Usage:
+    --------------
+    Assuming you have a function that loads data from a JSON file and you want to expose the metadata in
+    your Hamilton DAG to be captured in the Hamilton UI / adapters:
+
+    .. code-block:: python
+
+        import pandas as pd
+        from hamilton.function_modifiers import dataloader
+
+        @dataloader
+        def load_json_data(json_path: str = 'data/my_data.json') -> tuple[pd.DataFrame, dict]:
+            '''Loads a dataframe from a JSON file.
+
+            :return: A tuple containing two dictionaries:
+                - The first dictionary contains the loaded JSON data as a dataframe
+                - The second dictionary contains metadata about the loading process.
+            '''
+            # Load the data
+            data = pd.read_json(json_path)
+
+            # Metadata about the loading process
+            metadata = {'source': json_path, 'format': 'json'}
+
+            return data, metadata
+
+    """
+
+    def validate(self, fn: Callable):
+        """Validates that the output type is correctly annotated."""
+        return_annotation = inspect.signature(fn).return_annotation
+        if return_annotation is inspect.Signature.empty:
+            raise InvalidDecoratorException(
+                f"Function: {fn.__qualname__} must have a return annotation."
+            )
+        # check that the type is a tuple[TYPE, dict]:
+        if not typing_inspect.is_tuple_type(return_annotation):
+            raise InvalidDecoratorException(f"Function: {fn.__qualname__} must return a tuple.")
+        # check that there are two
+        if len(typing_inspect.get_args(return_annotation)) != 2:
+            raise InvalidDecoratorException(
+                f"Function: {fn.__qualname__} must return a tuple of length 2."
+            )
+        # check that the second is a dict
+        if not typing_inspect.get_args(return_annotation)[1] == dict:
+            raise InvalidDecoratorException(
+                f"Function: {fn.__qualname__} must return a tuple of type (SOME_TYPE, dict)."
+            )
+
+    def generate_nodes(self, fn: Callable, config) -> List[node.Node]:
+        """Generates two nodes. We have to add tags appropriately.
+
+        The first one is just the fn - with a slightly different name.
+        The second one uses the proper function name, but only returns
+        the first part of the tuple that the first returns.
+
+        :param fn:
+        :param config:
+        :return:
+        """
+        _name = "loader"
+        og_node = node.Node.from_fn(fn, name=_name)
+        new_tags = og_node.tags.copy()
+        new_tags.update(
+            # we need this to be common with the loader tags above.
+            {
+                "hamilton.data_loader": True,
+                "hamilton.data_loader.has_metadata": True,
+                "hamilton.data_loader.source": f"{fn.__name__}",
+                "hamilton.data_loader.classname": f"{fn.__name__}()",
+                "hamilton.data_loader.node": _name,
+            }
+        )
+
+        def filter_function(**kwargs):
+            return kwargs[f"{fn.__name__}.{_name}"][0]
+
+        filter_node = node.Node(
+            name=fn.__name__,  # use original function name
+            callabl=filter_function,
+            typ=typing_inspect.get_args(og_node.type)[0],
+            input_types={f"{fn.__name__}.{_name}": og_node.type},
+            # we need this to be common with the loader tags above.
+            tags={
+                "hamilton.data_loader": True,
+                "hamilton.data_loader.has_metadata": False,
+                "hamilton.data_loader.source": f"{fn.__name__}",
+                "hamilton.data_loader.classname": f"{fn.__name__}()",
+                "hamilton.data_loader.node": fn.__name__,
+            },
+        )
+
+        return [og_node.copy_with(tags=new_tags, namespace=(fn.__name__,)), filter_node]
+
+
+class datasaver(NodeCreator):
+    """
+    Decorator for specifying a data saving function within the Hamilton framework. This decorator
+    is used to annotate functions that save data, allowing them to be treated specially in the Hamilton
+    DAG (Directed Acyclic Graph). The decorated function should return a dictionary containing metadata
+    about the saving process.
+
+    The `datasaver` decorator captures saving data metadata and ensures the function's return
+    type is correctly annotated to be a dictionary, where the dictionary contains metadata about
+    the data saving process, that then is exposed / captures for the Hamilton UI / adapters.
+
+    Example Usage:
+    --------------
+    Assuming you have a function that saves data to a JSON file and you want to expose the metadata in
+    your Hamilton DAG to be captured in the Hamilton UI / adapters:
+
+    .. code-block:: python
+
+        import pandas as pd
+        from hamilton.function_modifiers import datasaver
+
+        @datasaver
+        def save_json_data(data: pd.DataFrame, json_path: str = 'data/my_saved_data.json') -> dict:
+            '''Saves data to a JSON file and returns metadata about the saving process.
+
+            :param data: The data to save.
+            :param json_path: The path to save the data to.
+            :return: metadata about what was saved.
+            '''
+            # Save the data
+            with open(json_path, 'w') as file:
+                data.to_json(json_path)
+
+            # Metadata about the saving process
+            metadata = {'destination': json_path, 'format': 'json'}
+
+            return metadata
+
+    This function can now be used within the Hamilton framework as a node that saves data to
+    a JSON file. The metadata returned alongside the data can be used for logging, debugging, or
+    any other purpose that requires information about the data saving process as it can be pulled
+    out by the Hamilton Tracker for the Hamilton UI or other adapters.
+    """
+
+    def validate(self, fn: Callable):
+        """Validates that the function output is a dict type."""
+        return_annotation = inspect.signature(fn).return_annotation
+        if return_annotation is inspect.Signature.empty:
+            raise InvalidDecoratorException(
+                f"Function: {fn.__qualname__} must have a return annotation."
+            )
+        # check that the return type is a dict
+        if return_annotation not in (dict, Dict):
+            raise InvalidDecoratorException(f"Function: {fn.__qualname__} must return a dict.")
+
+    def generate_nodes(self, fn: Callable, config) -> List[node.Node]:
+        """Generates same node but all this does is add tags to it.
+        :param fn:
+        :param config:
+        :return:
+        """
+        og_node = node.Node.from_fn(fn)
+        new_tags = og_node.tags.copy()
+        new_tags.update(
+            # we need this to be common with the saver tags above.
+            {
+                "hamilton.data_saver": True,
+                "hamilton.data_saver.sink": f"{og_node.name}",
+                "hamilton.data_saver.classname": f"{fn.__name__}()",
+            }
+        )
+        return [og_node.copy_with(tags=new_tags)]

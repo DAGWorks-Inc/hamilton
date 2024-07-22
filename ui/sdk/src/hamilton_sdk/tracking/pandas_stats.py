@@ -49,9 +49,7 @@ def _compute_stats(df: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     def execute_col(
         target_output: str, col: pd.Series, name: Union[str, int], position: int
     ) -> Dict[str, Any]:
-        """Get stats on a column.
-        TODO: profile this and see where we can speed things up.
-        """
+        """Get stats on a column."""
         try:
             res = dr.execute(
                 [target_output], inputs={"col": col, "name": name, "position": position}

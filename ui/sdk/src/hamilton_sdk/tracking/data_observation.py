@@ -5,9 +5,6 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 from hamilton_sdk.tracking import sql_utils
 
-
-StatsType = Dict[str, Any]
-
 # Multiple observations per are allowed
 ObservationType = Dict[str, Any]
 
