@@ -17,7 +17,7 @@ was presented at the Feature Store Summit 2022:
 Otherwise here we present a high level overview and then direct users to the examples folder for more details. We suggest
 reading the Offline Feature Engineering section first, since it's the most common use case, and helps explain the
 python module structure you should be going for with Hamilton. If you need more guidance here, please reach out to us on
-`slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`__.
+`slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>`__.
 
 Offline Feature Engineering
 ---------------------------

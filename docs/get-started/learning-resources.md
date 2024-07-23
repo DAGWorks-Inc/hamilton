@@ -23,7 +23,7 @@ The [Hamilton Dataflow Hub](https://hub.dagworks.io/docs/) hosts user-created da
 The [DAGWorks Blog](https://blog.dagworks.io/) publishes articles on problems Hamilton helps solve, reference architectures, and new features.
 
 ## 👋 Slack
-The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) is the ideal place to ask questions, request features, and give feedback.
+The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g) is the ideal place to ask questions, request features, and give feedback.
 
 ## 📣 Talks
 * 2024-02 &nbsp;&nbsp; Hamilton Meet-up for February

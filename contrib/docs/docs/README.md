@@ -145,4 +145,4 @@ Do you have the following?
   - [ ] Added a dag.png that shows one possible configuration of my dataflow.
 
 # Got questions?
-Join our [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) community to chat/ask Qs/etc.
+Join our [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g) community to chat/ask Qs/etc.

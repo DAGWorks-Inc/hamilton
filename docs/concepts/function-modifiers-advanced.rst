@@ -4,7 +4,7 @@ Function modifiers (Advanced)
 
 .. warning::
 
-    This page is a work in progress. Refer to the API reference for more documentation and please ask a public question on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_ if you need help!
+    This page is a work in progress. Refer to the API reference for more documentation and please ask a public question on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>`_ if you need help!
 
 The page :doc:`function-modifiers` details how to use decorators to write expressive dataflows. The e presented function modifiers are highly expressive and should be sufficient in the large majority of cases.
 

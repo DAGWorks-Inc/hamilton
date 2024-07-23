@@ -161,7 +161,7 @@ The next snippet checks if the returned Series is of type ``np.int32``, which is
 
 
 - To see all available validators, go to the file ``hamilton/data_quality/default_validators.py`` and view the variable ``AVAILABLE_DEFAULT_VALIDATORS``.
-- The function modifier ``@check_output_custom`` allows you to define your own validator. Validators inherit the ``base.BaseDefaultValidator`` class and are essentially standardized Hamilton node definitions (instead of functions). See ``hamilton/data_quality/default_validators.py`` or reach out on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_ for help!
+- The function modifier ``@check_output_custom`` allows you to define your own validator. Validators inherit the ``base.BaseDefaultValidator`` class and are essentially standardized Hamilton node definitions (instead of functions). See ``hamilton/data_quality/default_validators.py`` or reach out on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>`_ for help!
 - Note: ``@check_output_custom`` decorators cannot be stacked, but they instead can take multiple validators.
 
 .. note::
@@ -366,7 +366,7 @@ Most dataflows require reading or writing data to external sources in some capac
 
 Nevertheless, adding one function per read/write becomes tedious and hard to maintain. Hamilton provides well-tested implementations for common formats (JSON, CSV, Parquet, etc.) available through ``@load_from`` and ``@save_to`` decorators and materializers (see :doc:`materialization`).
 
-More formats are available through Hamilton plugins, and you should be able to add your own custom loader/saver (reach out on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_ for help!)
+More formats are available through Hamilton plugins, and you should be able to add your own custom loader/saver (reach out on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>`_ for help!)
 
 @load_from
 ~~~~~~~~~~

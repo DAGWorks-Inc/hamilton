@@ -66,7 +66,7 @@ Under the Hamilton menu (the icon at the top), you can find a list of buttons. S
 
 Roadmap
 -------
-There are many features that we'd be interested in implementing. Let us know on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>`_ your favorite ones!
+There are many features that we'd be interested in implementing. Let us know on `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>`_ your favorite ones!
 
 - Go To Definition: jump to where the node defined
 - Go To References: jump to where the node is a dependency
