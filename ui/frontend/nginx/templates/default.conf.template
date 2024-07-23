@@ -1,5 +1,5 @@
 server {
-    listen       8242;
+    listen       ${NGINX_PORT};
     server_name  localhost;
 
     root   /usr/share/nginx/html;  # Common root for all files.

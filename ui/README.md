@@ -72,7 +72,7 @@ git clone https://github.com/dagworks-inc/hamilton
 # change into the UI directory
 cd hamilton/ui
 # run docker
-./deployment/run.sh
+./run.sh
 ```
 Once docker is running navigate to http://localhost:8242 and create an email and a project; then follow
 instructions on integrating with Hamilton.

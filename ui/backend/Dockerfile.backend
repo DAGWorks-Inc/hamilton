@@ -12,9 +12,7 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY backend/ /code/
-COPY backend/server/requirements.txt /code/
-
+COPY server/requirements.txt /code/
 RUN pip install -r /code/requirements.txt
 
-COPY ./backend /code/
+COPY . /code/

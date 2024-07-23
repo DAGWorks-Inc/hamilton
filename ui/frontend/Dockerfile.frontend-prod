@@ -7,15 +7,16 @@ WORKDIR /usr/src/app
 ARG REACT_APP_AUTH_MODE
 ARG REACT_APP_USE_POSTHOG
 ARG REACT_APP_API_URL
+ARG NGINX_PORT=8242
 
 # Install app dependencies by copying package.json and package-lock.json
-COPY frontend/package.json frontend/package-lock.json ./
+COPY package.json package-lock.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy the rest of the frontend directory
-COPY frontend .
+COPY . .
 
 # Environment variables
 ENV REACT_APP_AUTH_MODE=${REACT_APP_AUTH_MODE}
@@ -27,14 +28,22 @@ RUN npm run build
 
 FROM nginx:stable-alpine AS production-stage
 
+# Build Args to pass through to production-stage
+ARG NGINX_PORT
+
+ENV NGINX_PORT=${NGINX_PORT}
+
 # Copy the build output to replace the default nginx contents.
 COPY --from=build-stage /usr/src/app/build /usr/share/nginx/html
 
-# Expose port 80 to the outside once the container has launched
-EXPOSE 8242
+# Expose port to the outside once the container has launched
+EXPOSE ${NGINX_PORT}
 
+# Use envsubst to allow the frontend to find the backend from ${REACT_APP_API_URL}
 RUN mkdir /etc/nginx/templates
-COPY ./deployment/nginx/templates/default.conf.template /etc/nginx/templates/default.conf.template
+COPY nginx/templates/default.conf.template /etc/nginx/templates/default.conf.template
 
 # Start Nginx and keep the process from backgrounding and the container from quitting
+# This prevents envsubst from running! (nginx needs to be the 1st value of the command)
+#CMD ["sh", "-c", "echo \"Frontend running on port ${NGINX_PORT}, go to http://localhost:${NGINX_PORT} to view the app.\"; nginx -g 'daemon off;'"]
 CMD ["nginx", "-g", "daemon off;"]
