@@ -16,10 +16,11 @@ services:
       retries: 5
 
   backend:
+    container_name: ui-backend
     image: dagworks/ui-backend:latest
     build:
-        context: ./
-        dockerfile: deployment/Dockerfile.backend
+        context: backend
+        dockerfile: Dockerfile.backend
     entrypoint: ["/bin/bash", "-c", "cd /code/server && ls && ./entrypoint.sh"]
     volumes:
       - ./backend:/code
@@ -42,10 +43,11 @@ services:
       - db
 
   frontend:
+    container_name: ui-frontend
     image: dagworks/ui-frontend:latest
     build:
-      context: ./
-      dockerfile: deployment/Dockerfile.frontend
+      context: frontend
+      dockerfile: Dockerfile.frontend
       args:
         - REACT_APP_AUTH_MODE=local
         - REACT_APP_USE_POSTHOG=false

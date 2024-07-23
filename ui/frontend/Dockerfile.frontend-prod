@@ -9,13 +9,13 @@ ARG REACT_APP_USE_POSTHOG
 ARG REACT_APP_API_URL
 
 # Install app dependencies by copying package.json and package-lock.json
-COPY frontend/package.json frontend/package-lock.json ./
+COPY package.json package-lock.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy the rest of the frontend directory
-COPY frontend .
+COPY . .
 
 # Environment variables
 ENV REACT_APP_AUTH_MODE=${REACT_APP_AUTH_MODE}
@@ -34,7 +34,7 @@ COPY --from=build-stage /usr/src/app/build /usr/share/nginx/html
 EXPOSE 8242
 
 # Use the default nginx.conf provided by tiangolo/nginx-rtmp
-COPY ./deployment/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
 
 CMD ["echo", "Frontend running on port 8242, go to http://localhost:8242 to view the app."]
 
