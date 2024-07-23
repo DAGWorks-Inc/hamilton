@@ -26,7 +26,7 @@ from hamilton.lifecycle import base as lifecycle_base
 SLACK_ERROR_MESSAGE = (
     "-------------------------------------------------------------------\n"
     "Oh no an error! Need help with Hamilton?\n"
-    "Join our slack and ask for help! https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg\n"
+    "Join our slack and ask for help! https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g\n"
     "-------------------------------------------------------------------\n"
 )
 

@@ -6,7 +6,7 @@ there are MANY examples, that are mostly organized by a thematic topic that matc
 Note: [hub.dagworks.io](https://hub.dagworks.io/) is also a good spot to find Hamilton examples.
 
 If you have questions, or need help with these examples,
-join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg), and we'll try to help!
+join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g), and we'll try to help!
 
 
 ## Running examples through a docker image

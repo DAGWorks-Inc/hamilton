@@ -148,7 +148,7 @@ app.routes[-1].description += f"""<img src="data:image/png;base64,{base64_viz}"/
 
 # ... before `if __name__ == "__main__":`
 ```
-> 📞 If you are interested in a generic approach to add visualizations to all of your endpoints, please reach out to us on [Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg)!
+> 📞 If you are interested in a generic approach to add visualizations to all of your endpoints, please reach out to us on [Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g)!
 
 ![FastAPI Swagger](./fastapi_docs.png)
 

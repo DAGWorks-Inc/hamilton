@@ -26,7 +26,7 @@ Or run it in Google Colab:
 
 
 If you have questions, or need help with this example,
-join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg), and we'll try to help!
+join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g), and we'll try to help!
 
 # What is executed
 This is a simple DAG that we construct here. But for reference it looks like this:

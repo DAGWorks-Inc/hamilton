@@ -20,7 +20,7 @@ code-comparisons/index
 :caption: Community
 
 community/index
-Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg>
+Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>
 ```
 
 ```{toctree}

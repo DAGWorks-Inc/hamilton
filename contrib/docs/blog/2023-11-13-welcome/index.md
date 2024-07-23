@@ -26,6 +26,6 @@ We're excited to have you contribute to the Hamilton Dataflow Hub!
 
 Head on over to [github and read the instructions](https://github.com/DAGWorks-Inc/hamilton/tree/main/contrib#how-to-contribute).
 
-If you have questions, join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg).
+If you have questions, join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g).
 
 ## 🙏

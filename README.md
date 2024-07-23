@@ -15,7 +15,7 @@
    <a target="_blank" href="https://linkedin.com/showcase/dagster" style="background:none">
       <img src="https://img.shields.io/badge/DAGWorks-Follow-purple.svg?logo=linkedin" />
    </a>
-   <a href="https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg" target="_blank">
+   <a href="https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g" target="_blank">
       <img src="https://img.shields.io/badge/Hamilton-Join-purple.svg?logo=slack" alt="Hamilton Slack"/>
    </a>
    <a href="https://twitter.com/hamilton_os" target="_blank">
@@ -148,7 +148,7 @@ You can track the execution of your Hamilton DAG in the [Hamilton UI](https://ha
 
 * 📺 Find video tutorials on the [DAGWorks YouTube channel](https://www.youtube.com/@DAGWorks-Inc)
 
-* 📣 Reach out via the [Hamilton Slack community](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) for help and troubleshooting
+* 📣 Reach out via the [Hamilton Slack community](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g) for help and troubleshooting
 
 
 # How does Hamilton compare to X?

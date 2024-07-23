@@ -32,6 +32,6 @@ or a join, or a groupby, you will have to ensure that when you ask Hamilton to m
 order you expect.
 
 If you have questions, or need help with this example,
-join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg), and we'll try to help!
+join us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g), and we'll try to help!
 
 Otherwise if you have ideas on how to better make Hamilton work with Polars, please open an issue or start a discussion!

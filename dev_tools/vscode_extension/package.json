@@ -78,7 +78,7 @@
     "viewsWelcome": [
       {
         "view": "hamilton.linksTreeview",
-        "contents": "[$(book)Walkthrough](command:welcome.showAllWalkthroughs)\n[$(github)Hamilton docs](https://hamilton.readthedocs.io/en/latest/)\n[$(comment-discussion)Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg)"
+        "contents": "[$(book)Walkthrough](command:welcome.showAllWalkthroughs)\n[$(github)Hamilton docs](https://hamilton.readthedocs.io/en/latest/)\n[$(comment-discussion)Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g)"
       }
     ],
     "walkthroughs": [

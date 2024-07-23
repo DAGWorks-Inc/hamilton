@@ -83,6 +83,6 @@ This is just a start, and we think that Hamilton + DBT have a long/exciting futu
 3. Add more examples with different SQL dialects/different python dialects. _hint_: _we're looking for contributors..._
 
 If you're excited by any of this, drop on by! Some resources to get you help:
-- [Hamilton slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1ko5snvxt-7KFPTMJyZTw1T7_Gpxryvw)
+- [Hamilton slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g)
 - [DBT support](https://docs.getdbt.com/docs/dbt-support)
 - [xLaszlo's CQ4DS discord](https://discord.gg/8uUZNMCad2)

@@ -169,7 +169,7 @@ dr.display_all_functions("dag", {"format": "png", "view": False})
   - [ ] Commit the files we just added
   - [ ] Create a PR
   - [ ] Tag one of the maintainers [elijahbenizzy](https://github.com/elijahbenizzy), [skrawcz](https://github.com/skrawcz), or [zilto](https://github.com/zilto) for a review
-  - [ ] Ping us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) if you don't hear back within a few days
+  - [ ] Ping us on [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g) if you don't hear back within a few days
 
 #### Username Management
 
@@ -181,4 +181,4 @@ As usernames map to packages, we need to ensure that they are valid. To that end
 If the above apply, run the `init-dataflow` command with `-s` to specify a sanitized username.
 
 ## Got questions?
-Join our [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-1bjs72asx-wcUTgH7q7QX1igiQ5bbdcg) community to chat/ask Qs/etc.
+Join our [slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g) community to chat/ask Qs/etc.
