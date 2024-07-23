@@ -55,9 +55,7 @@ services:
       - NODE_ENV=development
       - REACT_APP_AUTH_MODE=local
       - REACT_APP_USE_POSTHOG=false
-# TODO -- use envsubst to replace the backend url in the nginx config
-# this is currently hardcoded in the nginx config
-#      - REACT_APP_API_URL=http://backend:8000
+      - REACT_APP_API_URL=http://backend:8241
     depends_on:
       - backend
 
