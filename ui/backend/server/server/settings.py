@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import socket
@@ -45,7 +46,14 @@ HAMILTON_PERMISSIVE_MODE_GLOBAL_KEY = get_from_env(
 PROPEL_AUTH_API_KEY = get_from_env("PROPEL_AUTH_API_KEY", allow_missing=True)
 PROPEL_AUTH_URL = get_from_env("PROPEL_AUTH_URL", allow_missing=True)
 
+
 ALLOWED_HOSTS = ["localhost", "backend", "0.0.0.0", "127.0.0.1"]
+DJANGO_ALLOWED_HOSTS = json.loads(os.environ.get("DJANGO_ALLOWED_HOSTS"))
+if DJANGO_ALLOWED_HOSTS is not None:
+    if isinstance(DJANGO_ALLOWED_HOSTS, list):
+        ALLOWED_HOSTS.extend(DJANGO_ALLOWED_HOSTS)
+    else:
+        ALLOWED_HOSTS.append(DJANGO_ALLOWED_HOSTS)
 
 HAMILTON_BLOB_STORE = get_from_env("HAMILTON_BLOB_STORE", ["local", "s3"])
 
