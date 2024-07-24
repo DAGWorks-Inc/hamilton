@@ -33,6 +33,7 @@ For production build you'll want to run
 cd hamilton/ui
 ./run.sh # to pull from docker and run
 ./run.sh --build # to rebuild images for prod
+
 ```
 ### Caveats:
 You'll want to clean the `backend/dist/` directory to not add unnecessary files to the docker image.
