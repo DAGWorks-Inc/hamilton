@@ -1,4 +1,3 @@
-# TODO: use extends to avoid duplication
 version: '3.8'
 
 services:
@@ -17,11 +16,15 @@ services:
       retries: 5
 
   backend:
+    container_name: ui-backend
     image: dagworks/ui-backend:latest
     build:
-        context: ./
-        dockerfile: deployment/Dockerfile.backend-prod
+        context: backend
+        dockerfile: Dockerfile.backend
     entrypoint: ["/bin/bash", "-c", "cd /code/server && ls && ./entrypoint.sh"]
+    volumes:
+      - ./backend:/code
+      - backend_data:/data/
     ports:
       - "8241:8241"
     environment:
@@ -29,35 +32,35 @@ services:
       - DB_PORT=5432
       - DB_NAME=postgres
       - DB_USER=postgres
-      - DB_PASSWORD=password # TODO: Change this to a secret
+      - DB_PASSWORD=password # Purely for local! Do not deploy to production!
       - HAMILTON_BLOB_STORE=local
       - HAMILTON_ENV=local # local env
       - HAMILTON_LOCAL_BLOB_DIR=/data/blobs # TODO -- set this up to be a better one
       - DJANGO_SECRET_KEY=do_not_use_in_production
-      - HAMILTON_TELEMETRY_ENABLED=${HAMILTON_TELEMETRY_ENABLED-true}
+      - HAMILTON_TELEMETRY_ENABLED=${HAMILTON_TELEMETRY_ENABLED}
       - HAMILTON_AUTH_MODE=permissive
     depends_on:
       - db
-    volumes:
-      - backend_data:/data/
 
   frontend:
+    container_name: ui-frontend
     image: dagworks/ui-frontend:latest
     build:
-      context: ./
-      dockerfile: deployment/Dockerfile.frontend-prod
+      context: frontend
+      dockerfile: Dockerfile.frontend
       args:
         - REACT_APP_AUTH_MODE=local
         - REACT_APP_USE_POSTHOG=false
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
     ports:
       - "8242:8242"
     environment:
       - NODE_ENV=development
       - REACT_APP_AUTH_MODE=local
       - REACT_APP_USE_POSTHOG=false
-# TODO -- use envsubst to replace the backend url in the nginx config
-# this is currently hardcoded in the nginx config
-#      - REACT_APP_API_URL=http://backend:8000
+      - REACT_APP_API_URL=http://backend:8241
     depends_on:
       - backend
 
