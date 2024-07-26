@@ -20,7 +20,7 @@ class MLFlowModelSaver(DataSaver):
     :param register_as: If not None, register the model under the specified name.
     :param flavor: Library format to save the model (sklearn, xgboost, etc.). Automatically inferred if None.
     :param run_id: Log model to a specific run. Leave to `None` if using the `MLFlowTracker`
-    :param kwargs: Arguments for `.log_model()`. Can be flavor-specific.
+    :param mlflow_kwargs: Arguments for `.log_model()`. Can be flavor-specific.
     """
 
     path: Union[str, pathlib.Path] = "model"
@@ -105,7 +105,7 @@ class MLFlowModelLoader(DataLoader):
     :param version: Version of the registered model. Can pass as string `v1` or integer `1`
     :param version_alias: Version alias of the registered model. Specify either this or `version`
     :param flavor: Library format to load the model (sklearn, xgboost, etc.). Automatically inferred if None.
-    :param kwargs: Arguments for `.load_model()`. Can be flavor-specific.
+    :param mlflow_kwargs: Arguments for `.load_model()`. Can be flavor-specific.
     """
 
     model_uri: Optional[str] = None
