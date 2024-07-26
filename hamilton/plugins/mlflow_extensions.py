@@ -180,7 +180,7 @@ class MLFlowModelLoader(DataLoader):
             except ImportError:
                 raise ImportError(f"Flavor {flavor} is unsupported by MLFlow")
 
-        model = flavor_module.load_model(model_uri=self.model_uri,**self.mlflow_kwargs)
+        model = flavor_module.load_model(model_uri=self.model_uri, **self.mlflow_kwargs)
         return model, metadata
 
 

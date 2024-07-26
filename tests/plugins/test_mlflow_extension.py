@@ -168,13 +168,20 @@ def test_mlflow_handle_saver_kwargs():
     assert saver.flavor == flavor
     assert saver.mlflow_kwargs.get("unknown_kwarg") is True
 
+
 def test_io_to_mlflow_handle_saver_kwargs_():
     path = "tmp/path"
     flavor = "sklearn"
     id = "saver_id"
     dependencies = ["tmp_node"]
-    saver = to.mlflow(path=path, flavor=flavor,id=id,dependencies=dependencies, mlflow_kwargs=dict(unknown_kwarg=True))
-    mlflow_saver = vars(saver)['data_saver_kwargs']
+    saver = to.mlflow(
+        path=path,
+        flavor=flavor,
+        id=id,
+        dependencies=dependencies,
+        mlflow_kwargs=dict(unknown_kwarg=True),
+    )
+    mlflow_saver = vars(saver)["data_saver_kwargs"]
 
     assert mlflow_saver["path"].value == path
     assert mlflow_saver["flavor"].value == flavor

@@ -41,7 +41,7 @@ def run(load_from_parquet: bool, username: str, project_id: int):
             "template": "machine_learning",
             "loading_data_from": "parquet" if load_from_parquet else "api",
             "TODO": "add_more_tags_to_find_your_run_later",
-            "custom_tag" : "adding custom tag"
+            "custom_tag": "adding custom tag",
         },
     )
 
