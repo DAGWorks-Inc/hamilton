@@ -6,6 +6,7 @@ import pytest
 from sklearn.base import BaseEstimator
 from sklearn.linear_model import LinearRegression
 
+from hamilton.io.materialization import to
 from hamilton.plugins.mlflow_extensions import MLFlowModelLoader, MLFlowModelSaver
 
 # TODO move these tests to `plugin_tests` because the required read-writes can get
@@ -161,11 +162,23 @@ def test_mlflow_specify_flavor_using_module(fitted_sklearn_model: BaseEstimator,
 def test_mlflow_handle_saver_kwargs():
     path = "tmp/path"
     flavor = "sklearn"
-    saver = MLFlowModelSaver(path=path, flavor=flavor, kwargs=dict(unknown_kwarg=True))
+    saver = MLFlowModelSaver(path=path, flavor=flavor, mlflow_kwargs=dict(unknown_kwarg=True))
 
     assert saver.path == path
     assert saver.flavor == flavor
-    assert saver.kwargs.get("unknown_kwarg") is True
+    assert saver.mlflow_kwargs.get("unknown_kwarg") is True
+
+def test_io_to_mlflow_handle_saver_kwargs_():
+    path = "tmp/path"
+    flavor = "sklearn"
+    id = "saver_id"
+    dependencies = ["tmp_node"]
+    saver = to.mlflow(path=path, flavor=flavor,id=id,dependencies=dependencies, mlflow_kwargs=dict(unknown_kwarg=True))
+    mlflow_saver = vars(saver)['data_saver_kwargs']
+
+    assert mlflow_saver["path"].value == path
+    assert mlflow_saver["flavor"].value == flavor
+    assert mlflow_saver["mlflow_kwargs"].value.get("unknown_kwarg") is True
 
 
 def test_mlflow_registered_model_metadata(fitted_sklearn_model: BaseEstimator, tmp_path: Path):
