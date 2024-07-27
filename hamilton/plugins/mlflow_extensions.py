@@ -20,17 +20,17 @@ class MLFlowModelSaver(DataSaver):
     :param register_as: If not None, register the model under the specified name.
     :param flavor: Library format to save the model (sklearn, xgboost, etc.). Automatically inferred if None.
     :param run_id: Log model to a specific run. Leave to `None` if using the `MLFlowTracker`
-    :param kwargs: Arguments for `.log_model()`. Can be flavor-specific.
+    :param mlflow_kwargs: Arguments for `.log_model()`. Can be flavor-specific.
     """
 
     path: Union[str, pathlib.Path] = "model"
     register_as: Optional[str] = None
     flavor: Optional[Union[str, ModuleType]] = None
     run_id: Optional[str] = None
-    kwargs: Dict[str, Any] = None
+    mlflow_kwargs: Dict[str, Any] = None
 
     def __post_init__(self):
-        self.kwargs = self.kwargs if self.kwargs else {}
+        self.mlflow_kwargs = self.mlflow_kwargs if self.mlflow_kwargs else {}
 
     @classmethod
     def name(cls) -> str:
@@ -69,11 +69,11 @@ class MLFlowModelSaver(DataSaver):
 
         # save to active run
         if mlflow.active_run():
-            model_info = flavor_module.log_model(data, self.path, **self.kwargs)
+            model_info = flavor_module.log_model(data, self.path, **self.mlflow_kwargs)
         # create a run with `run_id` and save to it
         else:
             with mlflow.start_run(run_id=self.run_id):
-                model_info = flavor_module.log_model(data, self.path, **self.kwargs)
+                model_info = flavor_module.log_model(data, self.path, **self.mlflow_kwargs)
 
         # create metadata from ModelInfo object
         metadata = {k.strip("_"): v for k, v in model_info.__dict__.items()}
@@ -105,7 +105,7 @@ class MLFlowModelLoader(DataLoader):
     :param version: Version of the registered model. Can pass as string `v1` or integer `1`
     :param version_alias: Version alias of the registered model. Specify either this or `version`
     :param flavor: Library format to load the model (sklearn, xgboost, etc.). Automatically inferred if None.
-    :param kwargs: Arguments for `.load_model()`. Can be flavor-specific.
+    :param mlflow_kwargs: Arguments for `.load_model()`. Can be flavor-specific.
     """
 
     model_uri: Optional[str] = None
@@ -116,14 +116,14 @@ class MLFlowModelLoader(DataLoader):
     version: Optional[Union[str, int]] = None
     version_alias: Optional[str] = None
     flavor: Optional[Union[ModuleType, str]] = None
-    kwargs: Dict[str, Any] = None
+    mlflow_kwargs: Dict[str, Any] = None
 
     # __post_init__ is required to set kwargs as empty dict because
     # can't set: kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
     # otherwise raises `InvalidDecoratorException` because materializer factory check
     # for all params being set and `kwargs` would be unset until instantiation.
     def __post_init__(self):
-        self.kwargs = self.kwargs if self.kwargs else {}
+        self.mlflow_kwargs = self.mlflow_kwargs if self.mlflow_kwargs else {}
 
         if self.model_uri:
             return
@@ -180,7 +180,7 @@ class MLFlowModelLoader(DataLoader):
             except ImportError:
                 raise ImportError(f"Flavor {flavor} is unsupported by MLFlow")
 
-        model = flavor_module.load_model(model_uri=self.model_uri)
+        model = flavor_module.load_model(model_uri=self.model_uri, **self.mlflow_kwargs)
         return model, metadata
 
 
