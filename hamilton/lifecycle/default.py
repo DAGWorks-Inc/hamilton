@@ -12,7 +12,12 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from hamilton import graph_types, htypes
 from hamilton.graph_types import HamiltonGraph
-from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook, NodeExecutionMethod
+from hamilton.lifecycle import (
+    EdgeConnectionHook,
+    GraphExecutionHook,
+    NodeExecutionHook,
+    NodeExecutionMethod,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -732,3 +737,34 @@ class GracefulErrorAdapter(NodeExecutionMethod):
             else:
                 results = [self.sentinel_value]
         return results
+
+
+class NoEdgeAndInputTypeChecking(EdgeConnectionHook):
+    """Permissive adapter to help you skip edge and input type checking.
+
+    Useful for development.
+
+    .. code-block:: python
+
+        from hamilton import driver
+        from hamilton.lifecycle import NoEdgeAndInputTypeChecking
+        dr = driver.Builder().with_adapters(NoEdgeAndInputTypeChecking()).build()
+
+        # now driver is built without any type checking
+        dr.execute([...], ...)
+
+    """
+
+    def check_edge_types_match(self, type_from: type, type_to: type, **kwargs: Any) -> bool:
+        """This is run to check if edge types match. Note that this is an OR functionality
+        -- this is run after we do some default checks, so this can only be permissive.
+        Return True - always
+        """
+        return True
+
+    def validate_input(self, node_type: type, input_value: Any, **kwargs: Any) -> bool:
+        """This is run to check if the input is valid for the node type. Note that this is an OR functionality
+        -- this is run after we do some default checks, so this can only be permissive.
+        Returns True - always.
+        """
+        return True
