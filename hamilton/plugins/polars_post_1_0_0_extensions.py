@@ -30,6 +30,13 @@ has_alias = False
 if hasattr(pl, "type_aliases"):
     has_alias = True
 
+
+import polars.selectors
+
+# for polars 1.3.0 we need to import selectors
+if hasattr(polars.selectors, "_selector_proxy_"):
+    from polars.selectors import _selector_proxy_  # noqa
+
 # for polars 0.18.0 we need to check what to do.
 from polars._typing import CsvEncoding, SchemaDefinition
 
