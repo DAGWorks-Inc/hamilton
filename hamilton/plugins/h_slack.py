@@ -7,7 +7,7 @@ from hamilton.lifecycle import NodeExecutionHook
 
 
 class SlackNotifier(NodeExecutionHook):
-    """This is a adapter that sends a message to a slack channel when a node is executed.
+    """This is a adapter that sends a message to a slack channel when a node is executed & fails.
 
     Note: you need to have slack_sdk installed for this to work.
     If you don't have it installed, you can install it with `pip install slack_sdk`
@@ -69,5 +69,8 @@ class SlackNotifier(NodeExecutionHook):
     ):
         """Sends a message to the slack channel after a node is executed."""
         if error is not None:
-            message = f"Error in Executing Node: {node_name}. Task ID: {task_id}. Run ID: {run_id}. Error: {error}.\n Stack Trace: {''.join(traceback.format_tb(error.__traceback__))}"
+            message = (
+                f"Error in Executing Node: {node_name}. Task ID: {task_id}. Run ID: {run_id}. "
+                f"Error: {error}.\n Stack Trace: {''.join(traceback.format_tb(error.__traceback__))}"
+            )
             self._send_message(message)
