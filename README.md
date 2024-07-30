@@ -85,7 +85,7 @@ Data teams write code to deliver business value, but few have the resources to s
 
 # Hamilton UI
 
-You can track the execution of your Hamilton DAG in the [Hamilton UI](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/). It automatically populates a data catalog with lineage and provides execution observability to inspect results and debug errors. You can run it as a [local server](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/#local-mode) or a [self-hosted application using Docker](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/#docker-deployed-mode).
+You can track the execution of your Hamilton DAG in the [Hamilton UI](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/). It automatically populates a data catalog with lineage / tracing and provides execution observability to inspect results and debug errors. You can run it as a [local server](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/#local-mode) or a [self-hosted application using Docker](https://hamilton.dagworks.io/en/latest/hamilton-ui/ui/#docker-deployed-mode).
 
 <p align="center">
   <img src="./docs/_static/hamilton_1.jpeg" alt="Description1" width="30%" style="margin-right: 20px;"/>
