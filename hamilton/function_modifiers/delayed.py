@@ -159,6 +159,20 @@ class resolve_from_config(resolve):
     This is a convenience decorator that is a subclass of `resolve` and passes
     `ResolveAt.CONFIG_AVAILABLE` to the `when` argument such that the decorator is resoled at
     compile time, E.G. when the driver is instantiated.
+
+    .. code-block:: python
+
+        from hamilton.function_modifiers import resolve, ResolveAt
+
+        @resolve_from_config(
+            decorate_with=lambda first_series_sum, second_series_sum: parameterize_sources(
+                series_sum_1={"s1": first_series_sum[0], "s2": second_series_sum[1]},
+                series_sum_2={"s1": second_series_sum[1], "s2": second_series_sum[2]},
+            )
+        )
+        def summation(s1: pd.Series, s2: pd.Series) -> pd.Series:
+            return s1 + s2
+
     """
 
     def __init__(self, *, decorate_with: Callable[..., NodeTransformLifecycle]):
