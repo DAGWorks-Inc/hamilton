@@ -1504,6 +1504,10 @@ class PandasExcelWriter(DataSaver):
     freeze_panes: Optional[Tuple[int, int]] = None
     storage_options: Optional[Dict[str, Any]] = None
     engine_kwargs: Optional[Dict[str, Any]] = None
+    mode: Optional[Literal["w", "a"]] = "w"
+    if_sheet_exists: Optional[Literal["error", "new", "replace", "overlay"]] = None
+    datetime_format: str = None
+    date_format: str = None
 
     @classmethod
     def applicable_types(cls) -> Collection[Type]:
@@ -1513,6 +1517,17 @@ class PandasExcelWriter(DataSaver):
         # Puts kwargs in a dict
         kwargs = dataclasses.asdict(self)
 
+        # Pass kwargs to ExcelWriter ONLY for kwargs which appear in both ExcelWriter and .to_excel()
+        writer_kwarg_names = [
+            "date_format",
+            "datetime_format",
+            "if_sheet_exists",
+            "mode",
+            "engine_kwargs",
+            "engine",
+            "storage_options",
+        ]
+
         # path corresponds to 'excel_writer' argument of pandas.DataFrame.to_excel,
         # but we send it separately
         del kwargs["path"]
@@ -1521,11 +1536,20 @@ class PandasExcelWriter(DataSaver):
         # For compatibility with pandas 2.0 we remove engine_kwargs from kwargs if it's empty.
         if kwargs["engine_kwargs"] is None:
             del kwargs["engine_kwargs"]
+            writer_kwarg_names.remove("engine_kwargs")
 
-        return kwargs
+        # seperate kwargs for ExcelWriter and to_excel() invocation
+        writer_kwargs = {k: kwargs[k] for k in writer_kwarg_names}
+        to_excel_kwargs = {k: kwargs[k] for k in (kwargs.keys() - set(writer_kwarg_names))}
+
+        return writer_kwargs, to_excel_kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-        data.to_excel(self.path, **self._get_saving_kwargs())
+
+        writer_kwargs, to_excel_kwargs = self._get_saving_kwargs()
+
+        with pd.ExcelWriter(self.path, **writer_kwargs) as writer:
+            data.to_excel(writer, **to_excel_kwargs)
         return utils.get_file_and_dataframe_metadata(self.path, data)
 
     @classmethod
