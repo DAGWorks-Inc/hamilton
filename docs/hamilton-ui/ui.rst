@@ -78,7 +78,7 @@ As prerequisites, you will need to have Docker installed -- you can follow instr
 
 .. code-block:: bash
 
-    ./deployment/run.sh
+    ./run.sh
 
 
 This will:
@@ -101,13 +101,13 @@ To build the images locally, you can run the following command:
 .. code-block:: bash
 
     # from the hamilton/ui directory
-    ./deployment/dev.sh --build
+    ./dev.sh --build
 
 This will build the containers from scratch. If you just want to mount the local code, you can run just
 
 .. code-block:: bash
 
-    ./deployment/dev.sh
+    ./dev.sh
 
 Self-Hosting
 -------------
@@ -144,7 +144,7 @@ Add the following adapter to your code if you have existing Hamilton code:
 
     tracker = adapters.HamiltonTracker(
        project_id=PROJECT_ID_FROM_ABOVE,
-       username="EMAIL_YOU_PUT_IN_THE_UI",
+       username="USERNAME/EMAIL_YOU_PUT_IN_THE_UI",
        dag_name="my_version_of_the_dag",
        tags={"environment": "DEV", "team": "MY_TEAM", "version": "X"}
     )
