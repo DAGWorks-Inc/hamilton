@@ -25,12 +25,19 @@ html_theme_options = {
         "color-announcement-text": "#091E42",
     },
 }
+
+rinoh_documents = [
+    dict(doc="index", target="manual")  # top-level file (index.rst)
+]  # output file (manual.pdf)
+
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "myst_parser",
     "sphinx_sitemap",
     "docs.data_adapters_extension",
+    "sphinx_simplepdf",
 ]
 
 # for the sitemap extension ---
