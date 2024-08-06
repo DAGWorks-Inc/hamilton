@@ -254,7 +254,7 @@ Hamilton was started at Stitch Fix before the original creators founded DAGWorks
 Thanks to our awesome community and their active involvement in the Hamilton library.
 
 [Nils Olsson](https://github.com/nilsso), [Michał Siedlaczek](https://github.com/elshize), [Alaa Abedrabbo](https://github.com/AAbedrabbo), [Shreya Datar](https://github.com/datarshreya), [Baldo Faieta](https://github.com/baldofaieta), [Anwar Brini](https://github.com/AnwarBrini), [Gourav Kumar](https://github.com/gms101), [Amos Aikman](https://github.com/amosaikman), [Ankush Kundaliya](https://github.com/akundaliya), [David Weselowski](https://github.com/j7zAhU), [Peter Robinson](https://github.com/Peter4137), [Seth Stokes](https://github.com/sT0v), [Louis Maddox](https://github.com/lmmx), [Stephen Bias](https://github.com/s-ducks), [Anup Joseph](https://github.com/AnupJoseph), [Jan Hurst](https://github.com/janhurst), [Flavia Santos](https://github.com/flaviassantos), [Nicolas Huray](https://github.com/nhuray), [Manabu Niseki](https://github.com/ninoseki), [Kyle Pounder](https://github.com/kpounder), [Alex Bustos](https://github.com/bustosalex1), [Andy Day](https://github.com/adayNU), [Alexander Cai](https://github.com/adzcai), [Nils Müller-Wendt](https://github.com/ChronoJon), [Paul Larsen](https://github.com/munichpavel), [
-Kemal Eren](https://github.com/kemaleren), [Jernej Frank](https://github.com/jernejfrank)
+Kemal Eren](https://github.com/kemaleren), [Jernej Frank](https://github.com/jernejfrank), [Noah Ridge](https://github.com/noahridge)
 
 # 🎓 Citations
 We'd appreciate citing Hamilton by referencing one of the following:
