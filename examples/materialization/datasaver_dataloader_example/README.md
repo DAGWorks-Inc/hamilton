@@ -1,7 +1,7 @@
 # @datasaver and @dataloader example
 
 This example shows you can use the
-`@datasaver` and `@dataloader` decorators to
+`@datasaver()` and `@dataloader()` decorators to
 annotated functions that save and load data so that they
 can also return metadata.
 
