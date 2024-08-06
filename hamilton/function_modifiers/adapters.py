@@ -712,7 +712,7 @@ class dataloader(NodeCreator):
         import pandas as pd
         from hamilton.function_modifiers import dataloader
 
-        @dataloader
+        @dataloader()  # you need ()
         def load_json_data(json_path: str = 'data/my_data.json') -> tuple[pd.DataFrame, dict]:
             '''Loads a dataframe from a JSON file.
 
@@ -819,7 +819,7 @@ class datasaver(NodeCreator):
         import pandas as pd
         from hamilton.function_modifiers import datasaver
 
-        @datasaver
+        @datasaver() # you need ()
         def save_json_data(data: pd.DataFrame, json_path: str = 'data/my_saved_data.json') -> dict:
             '''Saves data to a JSON file and returns metadata about the saving process.
 
