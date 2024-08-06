@@ -3,6 +3,7 @@ from types import ModuleType
 import cohere
 import numpy as np
 import openai
+from fastembed import TextEmbedding
 from sentence_transformers import SentenceTransformer
 
 from hamilton.function_modifiers import config, extract_fields
@@ -48,6 +49,20 @@ def embedding_config__sentence_transformer(model_name: str) -> dict:
         return dict(embedding_dimension=384, embedding_metric="cosine")
     # If you support more models, you would add that here
     raise ValueError(f"Invalid `model_name`[{model_name}] for SentenceTransformer was passed.")
+
+
+@config.when(embedding_service="fastembed")
+@extract_fields(
+    dict(
+        embedding_dimension=int,
+        embedding_metric=str,
+    )
+)
+def embedding_config__fastembed(model_name: str) -> dict:
+    for model in TextEmbedding.list_supported_models():
+        if model_name == model["model"]:
+            return dict(embedding_dimension=model["dim"], embedding_metric="cosine")
+    raise ValueError(f"Invalid `model_name`[{model_name}] for FastEmbed was passed.")
 
 
 def metadata(embedding_service: str, model_name: str) -> dict:
@@ -109,3 +124,14 @@ def embeddings__sentence_transformer(
     embedding_provider = SentenceTransformer(model_name)
     embeddings = embedding_provider.encode(text_contents, convert_to_numpy=True)
     return list(embeddings)
+
+
+@config.when(embedding_service="fastembed")
+def embeddings__fastembed(
+    text_contents: list[str], model_name: str = "BAAI/bge-small-en-v1.5"
+) -> list[np.ndarray]:
+    """CPU-first library for generating vector embeddings.
+    Reference: https://qdrant.github.io/fastembed/
+    """
+    model = TextEmbedding(model_name)
+    return list(model.embed(text_contents))

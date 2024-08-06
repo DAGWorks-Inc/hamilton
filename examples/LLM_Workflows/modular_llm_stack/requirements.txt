@@ -2,12 +2,14 @@
 click
 cohere
 datasets
+fastembed
 lancedb
 marqo
 numpy
 openai
 pandas
 pinecone-client
+qdrant-client
 sentence-transformers
 sf-hamilton
 sf-hamilton[visualization]
