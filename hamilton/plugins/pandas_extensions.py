@@ -1481,7 +1481,8 @@ class PandasExcelReader(DataLoader):
 @dataclasses.dataclass
 class PandasExcelWriter(DataSaver):
     """Class that handles saving Excel files with pandas.
-    Maps to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_excel.html
+    Maps to https://pandas.pydata.org/docs/reference/api/pandas.ExcelWriter.html
+    Additional parameters passed to https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_excel.html
     """
 
     path: Union[str, Path, BytesIO]
