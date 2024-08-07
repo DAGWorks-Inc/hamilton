@@ -12,7 +12,7 @@ from hamilton import base, driver
 @click.command()
 @click.option(
     "--vector_db",
-    type=click.Choice(["lancedb", "weaviate", "pinecone", "marqo"], case_sensitive=False),
+    type=click.Choice(["lancedb", "weaviate", "pinecone", "marqo", "qdrant"], case_sensitive=False),
     default="lancedb",
     help="Vector database service",
 )
@@ -25,7 +25,9 @@ from hamilton import base, driver
 )
 @click.option(
     "--embedding_service",
-    type=click.Choice(["openai", "cohere", "sentence_transformer", "marqo"], case_sensitive=False),
+    type=click.Choice(
+        ["openai", "cohere", "sentence_transformer", "marqo", "fastembed"], case_sensitive=False
+    ),
     default="sentence_transformer",
     help="Text embedding service.",
 )
@@ -64,6 +66,11 @@ def main(
         import marqo_module
 
         vector_db_module = marqo_module
+    elif vector_db == "qdrant":
+        import qdrant_module
+
+        vector_db_module = qdrant_module
+
     else:
         raise ValueError(f"Unknown vector_db {vector_db}")
 
@@ -74,6 +81,8 @@ def main(
             model_name = "embed-english-light-v2.0"
         elif embedding_service == "sentence_transformer":
             model_name = "multi-qa-MiniLM-L6-cos-v1"
+        elif embedding_service == "fastembed":
+            model_name = "BAAI/bge-small-en-v1.5"
 
     config = dict(
         vector_db_config=json.loads(vector_db_config),

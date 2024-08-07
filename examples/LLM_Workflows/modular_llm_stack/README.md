@@ -1,6 +1,6 @@
 # Flexibly change components of your LLM stack
 
-This example shows how to pull data from the HuggingFace datasets hub, create embeddings for text passage using Cohere / OpenAI / SentenceTransformer, and store them in a vector database using LanceDB / Weaviate / Pinecone.
+This example shows how to pull data from the HuggingFace datasets hub, create embeddings for text passage using Cohere / OpenAI / SentenceTransformer, and store them in a vector database using LanceDB / Weaviate / Pinecone / Qdrant.
 
 ![](./weaviate_openai_dag.png)
 
@@ -36,9 +36,10 @@ don't want before doing `pip install -r requirements.txt`.
 - For Marqo `docker pull marqoai/marqo:latest` followed by
 `docker run --name marqo -it --privileged -p 8882:8882 --add-host host.docker.internal:host-gateway marqoai/marqo:latest`.
 Note: this will require 10GB+ of disk space since the image is large...
-1. Run `python run.py --help` to learn about the options. You will options to:
-    - Select a vector database from: weaviate, pinecone
-    - Select an text embedding service from: openai, cohere, sentence_transformer
+- For Qdrant, run a local instance using `docker run -p 6333:6333 qdrant/qdrant`.
+1. Run `python run.py --help` to learn about the options. You will have options to:
+    - Select a vector database from: LanceDB, Marqo, Pinecone, Qdrant, Weaviate.
+    - Select a text embedding service from: openai, cohere, sentence_transformer
     - Select the text embedding model. There is a sensible default for each service.
     - Create a png visualization of the code execution.
 2. Run `python run.py` to execute the code with `lancedb` and `sentence_transformer`
@@ -48,12 +49,14 @@ To change embedding service, you can use the following:
 - OpenAI: `--embedding_service=openai --embedding_api_key=API_KEY`
 - Cohere: `--embedding_service=openai --embedding_api_key=API_KEY`
 - Marqo: `--embedding_service=marqo`  # note there is no function in embeddings_module.py for marqo.
+- FastEmbed: `--embedding_service=fastembed --model_name=MODEL_NAME`
 
 To change vector database you need to pass a JSON config argument:
 - LanceDB: `--vector_db=lancedb --vector_db_config='{"uri": "data/lancedb"}'`
 - Weaviate: `--vector_db=weaviate --vector_db_config='{"url": "http://locahost:8080/"}'`
 - Pinecone: `--vector_db=pinecone --vector_db_config='{"environment": "ENVIRONMENT", "api_key": "API_KEY"}'`
 - Marqo: `--vector_db=marqo --vector_db_config='{"url":"http://localhost:8882"}' --other_input_kwargs '{"index_name":"hamilton"}'`
+- Qdrant: `--vector_db=qdrant --vector_db_config='{"url":"http://localhost:6333"}'`
 
 # Next step / Exercises
 - Implement the code to read data from the vector database
