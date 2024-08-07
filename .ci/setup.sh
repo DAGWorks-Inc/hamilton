@@ -15,10 +15,9 @@ fi
 # setting up a virtualenv isn't necessary for the "pre-commit" task
 if [[ ${TASK} != "pre-commit" ]]; then
     mkdir -p "${HOME}/venvs/hamilton-venv"
-    python -m venv "${HOME}/venvs/hamilton-venv"
+    python -m venv "${HOME}/venvs/hamilton-venv" # TODO: add --upgrade-deps after dropping support for py3.8
     source "${HOME}/venvs/hamilton-venv/bin/activate"
-    pip install \
-        -r requirements-test.txt
+    pip install ".[test]"
 fi
 
 if [[ ${TASK} == "pyspark" ]]; then

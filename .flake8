@@ -1,6 +1,10 @@
 [flake8]
 max-line-length = 100
-exclude = build/,.git/,venv/
+exclude =
+  build/
+  .git/
+  venv/
+
 ignore =
     # whitespace before ':'
     E203,
@@ -14,15 +18,3 @@ ignore =
     W605
     # multiple statements on one line
     E704
-
-[isort]
-profile=black
-known_local_folder=tests
-known_first_party=hamilton
-skip=docs
-line_length=100
-
-[black]
-line-length = 100
-exclude = "docs/*.py"
-verbose = true

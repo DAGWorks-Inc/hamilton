@@ -1,0 +1,252 @@
+[build-system]
+requires = ["setuptools>=72.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sf-hamilton"
+dynamic = ["version"]
+description = "Hamilton, the micro-framework for creating dataframes."
+readme = "README.md"
+requires-python = ">=3.8, <4"
+license = {text = "BSD-3-Clause"}
+keywords = ["hamilton"]
+authors = [
+    { name = "Stefan Krawczyk", email = "stefan@dagworks.io" },
+    { name = "Elijah ben Izzy", email = "elijah@dagworks.io" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "numpy",
+    "pandas",
+    "typing_extensions > 4.0.0",
+    "typing_inspect",
+]
+
+[project.optional-dependencies]
+cli = ["typer"]
+dask = ["dask[complete]"]  # commonly you'll want everything.
+dask-array = ["dask[array]"]
+dask-core = ["dask-core"]
+dask-dataframe = ["dask[dataframe]"]
+dask-diagnostics = ["dask[diagnostics]"]
+dask-distributed = ["dask[distributed]"]
+datadog = ["ddtrace"]
+dev = ["pre-commit"]
+diskcache = ["diskcache"]
+docs = [
+  "sf-hamilton[dev]",
+  "alabaster>=0.7,<0.8,!=0.7.5", # read the docs pins
+  "commonmark==0.9.1", # read the docs pins
+  "dask-expr",
+  "dask[distributed]",
+  "ddtrace",
+  "diskcache",
+  # required for all the plugins
+  "dlt",
+  # furo -- install from main for now until the next release is out:
+  "furo @ git+https://github.com/pradyunsg/furo@main",
+  "gitpython", # Required for parsing git info for generation of data-adapter docs
+  "grpcio-status",
+  "lightgbm",
+  "lxml",
+  "lz4",
+  "mlflow",
+  "mock==1.0.1", # read the docs pins
+  "myst-parser==2.0.0", # latest version of myst at this time
+  "narwhals",
+  "numpy < 2.0.0",
+  "pandera",
+  "pillow",
+  "polars",
+  "pyarrow >= 1.0.0",
+  "pyspark",
+  "PyYAML",
+  "ray",
+  "readthedocs-sphinx-ext<2.3", # read the docs pins
+  "recommonmark==0.5.0", # read the docs pins
+  "scikit-learn",
+  "slack-sdk",
+  "sphinx", # unpinned because myst-parser doesn't break anymore
+  "sphinx-autobuild",
+  "sphinx-rtd-theme", # read the docs pins
+  "sphinx-sitemap",
+  "tqdm",
+  "xgboost",
+]
+experiments = [
+  "fastapi",
+  "fastui",
+  "uvicorn",
+]
+lsp = ["sf-hamilton-lsp"]
+packaging = [
+  "build",
+]
+pandera = ["pandera"]
+pyspark = [
+  # we have to run these dependencies because Spark does not check to ensure the right target was called
+  "pyspark[pandas_on_spark,sql]"
+]
+ray = ["ray>=2.0.0", "pyarrow"]
+sdk = ["sf-hamilton-sdk"]
+slack = ["slack-sdk"]
+test = [
+  "connectorx",
+  "dask",
+  "dask-expr; python_version >= '3.9'",
+  "datasets", # huggingface datasets
+  "diskcache",
+  "dlt",
+  "fsspec",
+  "graphviz",
+  "kaleido",
+  "kedro",
+  "lancedb",
+  "lightgbm",
+  "lxml",
+  "lz4",
+  "matplotlib",
+  "mlflow",
+  "networkx",
+  "openpyxl", # for excel data loader
+  "pandera",
+  "plotly",
+  "polars",
+  "pyarrow",
+  "pyreadstat", # for SPSS data loader
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "PyYAML",
+  "scikit-learn",
+  "sqlalchemy==1.4.49; python_version == '3.7.*'",
+  "sqlalchemy; python_version >= '3.8'",
+  "typer",
+  "xgboost",
+  "xlsx2csv", # for excel data loader
+  "xlsxwriter",  # Excel export requires 'xlsxwriter'
+]
+tqdm = ["tqdm"]
+ui = ["sf-hamilton-ui"]
+vaex = [
+  "pydantic<2.0", # because of https://github.com/vaexio/vaex/issues/2384
+  "vaex"
+]
+visualization = ["graphviz", "networkx"]
+
+[project.entry-points.console_scripts]
+h_experiments = "hamilton.plugins.h_experiments.__main__:main"
+hamilton = "hamilton.cli.__main__:cli"
+hamilton-admin-build-ui = "hamilton.admin:build_ui"
+hamilton-admin-build-and-publish = "hamilton.admin:build_and_publish"
+
+[project.urls]
+homepage = "https://www.tryhamilton.dev/"
+documentation = "https://hamilton.dagworks.io/en/latest/"
+changelog = "https://github.com/DAGWorks-Inc/hamilton/releases"
+issues = "https://github.com/dagworks-inc/hamilton/issues"
+source = "https://github.com/dagworks-inc/hamilton"
+slack = "https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g"
+
+[tool.black]
+line-length = 100
+exclude = "docs/*.py"
+verbose = true
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312', 'py313']  # Must include all supported versions
+
+[tool.isort]
+profile = "black"
+known_local_folder = "tests"
+known_first_party = "hamilton"
+skip = "docs"
+line_length = 100
+
+#[tool.mypy]
+#exclude = []
+
+#[tool.pytest.ini_options]
+#pythonpath = []
+#testpaths = []
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"  # Must include only the earliest supported version
+
+[tool.ruff.lint]
+extend-select = [
+    "B",   # flake8-bugbear rules
+    "C4",  # Helps you write better list/set/dict comprehensions.
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "FA",  # Verifies files use from __future__ import annotations if a type is used in the module that can be rewritten using PEP 563.
+    "FURB",# Refurbishing and modernizing Python codebases
+    "G",   # flake8-logging-format rules
+    "I",   # isort
+    "ISC", # Encourage correct string literal concatenation.
+    "LOG", # Checks for issues using the standard library logging module.
+    "N",   # Check PEP-8 naming conventions
+    "NPY", # Linting rules for numpy
+    "PERF",# Linting rules for performance
+    "PIE", # flake8-pie rules
+    "PT",  # flake8-pytest-style rules
+    "PYI", # Linting rules for type annotations.
+    "Q",   # Linting rules for quites
+    "RUF", # Unused noqa directive
+    "T20", # Check for Print statements in python files.
+    "TCH", # Move type-only imports to a type-checking block.
+    "TID", # Helps you write tidier imports.
+    "TRY", # Prevent exception handling anti-patterns
+    "UP",  # pyupgrade
+    "W",   # pycodestyle warnings
+]
+extend-ignore = [
+    "ISC001", # Checks for implicitly concatenated strings on a single line.
+    "T201",
+    "TRY003",
+    "E203", # whitespace before ':'
+    "E402", # module level import not at top of file
+    "E501", # line too long
+    "W605", # invalid escape sequence
+]
+exclude = [
+    "docs/*",
+]
+
+[tool.ruff.isort]
+known-local-folder = ["tests"]
+known-first-party = ["hamilton"]
+section-order = ["future", "standard-library", "third-party", "sdk", "hamilton", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+hamilton = ["hamilton"]
+sdk = ["hamilton_sdk"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    # at least this three should be fine in tests:
+    "S101", # asserts allowed in tests...
+    "ARG", # Unused function args -> fixtures nevertheless are functionally relevant...
+    "FBT", # Don't care about booleans as positional arguments in tests, e.g. via @pytest.mark.parametrize()
+]
+"__init__.py" = ["F401"]
+
+[tool.setuptools.dynamic]
+version = { attr = "hamilton.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["hamilton", "hamilton.*"]
+exclude = ["*tests*"]
+
+[tool.setuptools.package-data]
+hamilton = ["*.json", "*.md", "*.txt"]
