@@ -24,7 +24,7 @@ class Object:
             None,
         ),
         (
-            driver.Variable("A", int, {}, False, (), None, set(), set()),
+            driver.Variable("A", int, {}, False, (), None, set(), set(), {}),
             {"amodule"},
             "A",
             None,

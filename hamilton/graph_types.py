@@ -100,15 +100,20 @@ class HamiltonNode:
     documentation: typing.Optional[str]
     required_dependencies: typing.Set[str]
     optional_dependencies: typing.Set[str]
+    optional_input_values: typing.Dict[str, typing.Any]
 
     def as_dict(self):
-        """Create a dictionary representation of the Node that is JSON serializable"""
+        """Create a dictionary representation of the Node that is JSON serializable.
+
+        Note: optional values could be anything and might not be JSON serializable.
+        """
         return {
             "name": self.name,
             "tags": self.tags,
             "output_type": (get_type_as_string(self.type) if get_type_as_string(self.type) else ""),
             "required_dependencies": sorted(self.required_dependencies),
             "optional_dependencies": sorted(self.optional_dependencies),
+            "optional_input_values": self.optional_input_values,
             "source": (
                 inspect.getsource(self.originating_functions[0])
                 if self.originating_functions
@@ -142,6 +147,7 @@ class HamiltonNode:
                 for dep, (type_, dep_type) in n.input_types.items()
                 if dep_type == node.DependencyType.OPTIONAL
             },
+            optional_input_values={name: value for name, value in n.default_input_values.items()},
         )
 
     @functools.cached_property
