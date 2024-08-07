@@ -47,6 +47,7 @@ def get_file_metadata(path: Union[str, Path, PathLike]) -> Dict[str, Any]:
             "timestamp": timestamp,
             "scheme": scheme,
             "notes": notes,
+            "__version__": "1.0.0",
         }
     }
 
@@ -63,7 +64,7 @@ def get_dataframe_metadata(df: pd.DataFrame) -> Dict[str, Any]:
     - the column names
     - the data types
     """
-    metadata = {}
+    metadata = {"__version__": "1.0.0"}
     try:
         metadata["rows"] = len(df)
     except TypeError:
@@ -133,5 +134,6 @@ def get_sql_metadata(query_or_table: str, results: Union[int, pd.DataFrame]) -> 
             "query": query,
             "table_name": table_name,
             "timestamp": datetime.now().utcnow().timestamp(),
+            "__version__": "1.0.0",
         }
     }
