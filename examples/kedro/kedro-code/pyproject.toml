@@ -57,7 +57,7 @@ docstring-code-format = true
 [tool.ruff]
 line-length = 88
 show-fixes = true
-select = [
+lint.select = [
     "F",   # Pyflakes
     "W",   # pycodestyle
     "E",   # pycodestyle
@@ -66,4 +66,4 @@ select = [
     "PL",  # Pylint
     "T201", # Print Statement
 ]
-ignore = ["E501"]  # Ruff format takes care of line-too-long
+lint.ignore = ["E501"]  # Ruff format takes care of line-too-long
