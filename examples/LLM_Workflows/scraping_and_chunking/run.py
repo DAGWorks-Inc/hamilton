@@ -13,7 +13,6 @@ from hamilton import driver
 from hamilton.execution import executors
 
 if __name__ == "__main__":
-
     dr = (
         driver.Builder()
         .with_modules(doc_pipeline)

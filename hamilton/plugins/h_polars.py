@@ -17,9 +17,10 @@ class PolarsDataFrameResult(base.ResultMixin):
 
         from hamilton import base, driver
         from hamilton.plugins import polars_extensions
+
         polars_builder = polars_extensions.PolarsDataFrameResult()
         adapter = base.SimplePythonGraphAdapter(polars_builder)
-        dr =  driver.Driver(config, *modules, adapter=adapter)
+        dr = driver.Driver(config, *modules, adapter=adapter)
         df = dr.execute([...], inputs=...)  # returns polars dataframe
 
     Note: this is just a first attempt at something for Polars. Think it should handle more? Come chat/open a PR!

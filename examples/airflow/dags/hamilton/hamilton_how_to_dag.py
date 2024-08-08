@@ -1,4 +1,4 @@
-""" This file shows different usage pattern to integrate Hamilton with Apache Airflow
+"""This file shows different usage pattern to integrate Hamilton with Apache Airflow
 
 For the purpose of this example, we will read and write data from the Airflow
 installation location (${AIRFLOW_HOME}/plugins/data).

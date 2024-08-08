@@ -1546,7 +1546,6 @@ class PandasExcelWriter(DataSaver):
         return writer_kwargs, to_excel_kwargs
 
     def save_data(self, data: DATAFRAME_TYPE) -> Dict[str, Any]:
-
         writer_kwargs, to_excel_kwargs = self._get_saving_kwargs()
 
         with pd.ExcelWriter(self.path, **writer_kwargs) as writer:

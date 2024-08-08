@@ -92,7 +92,7 @@ class extractor_meta__(type):
 
 
 def process_kwargs(
-    data_saver_kwargs: Dict[str, Union[Any, SingleDependency]]
+    data_saver_kwargs: Dict[str, Union[Any, SingleDependency]],
 ) -> Dict[str, SingleDependency]:
     """Processes raw strings from the user, converting them into dependency specs.
     This goes according to the following rules.

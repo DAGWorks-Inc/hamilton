@@ -25,9 +25,10 @@ class VaexDataFrameResult(base.ResultMixin):
 
         from hamilton import base, driver
         from hamilton.plugins import h_vaex
+
         vaex_builder = h_vaex.VaexDataFrameResult()
         adapter = base.SimplePythonGraphAdapter(vaex_builder)
-        dr =  driver.Driver(config, *modules, adapter=adapter)
+        dr = driver.Driver(config, *modules, adapter=adapter)
         df = dr.execute([...], inputs=...)  # returns vaex dataframe
 
     Note: this is just a first attempt at something for Vaex.
@@ -79,7 +80,6 @@ class VaexDataFrameResult(base.ResultMixin):
         df = None
 
         if arrays:
-
             # Check if all arrays have correct and identical shapes.
             first_expression_shape = next(arrays.values().__iter__()).shape
             if len(first_expression_shape) > 1:
@@ -99,7 +99,6 @@ class VaexDataFrameResult(base.ResultMixin):
             df = vaex.from_arrays(**arrays)
 
         elif scalars:
-
             # There are not arrays in outputs,
             # so we construct Vaex DataFrame with one row consisting of scalars.
             df = vaex.from_arrays(**{name: np.array([value]) for name, value in scalars.items()})

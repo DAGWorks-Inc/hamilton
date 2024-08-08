@@ -70,7 +70,6 @@ def chunked_url_text(urls_from_sitemap: ps.DataFrame) -> ps.DataFrame:
 
 
 if __name__ == "__main__":
-
     import spark_pipeline
 
     from hamilton import driver

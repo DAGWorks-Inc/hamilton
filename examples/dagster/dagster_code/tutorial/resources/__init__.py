@@ -130,6 +130,7 @@ class DataGeneratorResource(ConfigurableResource):
             from dagster import Definitions, asset
             from dagster_data_generator import DataGeneratorResource, DataGeneratorConfig
 
+
             @asset
             def my_table(data_gen: DataGeneratorConfig):
                 return data_gen.get_signups()

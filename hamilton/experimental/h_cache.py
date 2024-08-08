@@ -221,12 +221,11 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
     .. code-block:: python
 
         @write_json.register(T)
-        def write_json_pd1(data: T, filepath: str, name: str) -> None:
-            ...
+        def write_json_pd1(data: T, filepath: str, name: str) -> None: ...
+
 
         @read_json.register(T)
-        def read_json_dict(data: T, filepath: str) -> T:
-            ...
+        def read_json_dict(data: T, filepath: str) -> T: ...
 
     Usage
     -----
@@ -240,15 +239,15 @@ class CachingGraphAdapter(SimplePythonGraphAdapter):
         import pandas as pd
         from hamilton.function_modifiers import tag
 
-        def data_a() -> pd.DataFrame:
-            ...
+
+        def data_a() -> pd.DataFrame: ...
+
 
         @tag(cache="parquet")
-        def data_b() -> pd.DataFrame:
-            ...
+        def data_b() -> pd.DataFrame: ...
 
-        def transformed(data_a: pd.DataFrame, data_b: pd.DataFrame) -> pd.DataFrame:
-            ...
+
+        def transformed(data_a: pd.DataFrame, data_b: pd.DataFrame) -> pd.DataFrame: ...
 
     Notice that `data_b` is configured to be cached in a parquet file.
 

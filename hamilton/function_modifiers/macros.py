@@ -531,7 +531,9 @@ class Applicable:
         return (
             (default_namespace,)
             if self.namespace is ...
-            else (self.namespace,) if self.namespace is not None else ()
+            else (self.namespace,)
+            if self.namespace is not None
+            else ()
         )
 
     def bind_function_args(
@@ -603,14 +605,18 @@ class pipe(base.NodeInjector):
 
         from hamilton.function_modifiers import step, pipe, value, source
 
+
         def _add_one(x: int) -> int:
             return x + 1
+
 
         def _sum(x: int, y: int) -> int:
             return x + y
 
-        def _multiply(x: int, y: int, z: int=10) -> int:
+
+        def _multiply(x: int, y: int, z: int = 10) -> int:
             return x * y * z
+
 
         @pipe(
             step(_add_one),
@@ -624,8 +630,8 @@ class pipe(base.NodeInjector):
     .. code-block:: python
         :name: Equivalent example with no @pipe, nested
 
-        upstream_int = ... # result from upstream
-        upstream_node_to_multiply = ... # result from upstream
+        upstream_int = ...  # result from upstream
+        upstream_node_to_multiply = ...  # result from upstream
 
         output = final_result(
             _multiply(
@@ -643,8 +649,8 @@ class pipe(base.NodeInjector):
     .. code-block:: python
         :name: Equivalent example with no @pipe, procedural
 
-        upstream_int = ... # result from upstream
-        upstream_node_to_multiply = ... # result from upstream
+        upstream_int = ...  # result from upstream
+        upstream_node_to_multiply = ...  # result from upstream
 
         one_added = _add_one(upstream_int)
         multiplied = _multiply(one_added, y=2)
@@ -713,8 +719,8 @@ class pipe(base.NodeInjector):
 
 
             @pipe(
-                step(_add_one).named("a", namespace="foo"), # foo.a
-                step(_add_two, y=source("upstream_node")).named("b", namespace=...), # final_result.b
+                step(_add_one).named("a", namespace="foo"),  # foo.a
+                step(_add_two, y=source("upstream_node")).named("b", namespace=...),  # final_result.b
             )
             def final_result(upstream_int: int) -> int:
                 return upstream_int

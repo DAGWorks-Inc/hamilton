@@ -9,7 +9,6 @@ from hamilton_functions import functions
 from hamilton import driver
 
 if __name__ == "__main__":
-
     args = getResolvedOptions(sys.argv, ["input-table", "output-table"])
 
     df = pd.read_csv(args["input_table"])

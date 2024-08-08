@@ -248,12 +248,13 @@ class Driver:
 
         # 2. we need to tell hamilton where to load function definitions from
         import my_functions
+
         # or programmatically (e.g. you can script module loading)
-        module_name = 'my_functions'
+        module_name = "my_functions"
         my_functions = importlib.import_module(module_name)
 
         # 3. Determine the return type -- default is a pandas.DataFrame.
-        adapter = base.SimplePythonDataFrameGraphAdapter() # See GraphAdapter docs for more details.
+        adapter = base.SimplePythonDataFrameGraphAdapter()  # See GraphAdapter docs for more details.
 
         # These all feed into creating the driver & thus DAG.
         dr = driver.Driver(config, module, adapter=adapter)
@@ -1398,6 +1399,7 @@ class Driver:
              from hamilton import driver, base
              from hamilton.function_modifiers import source
              from hamilton.io.materialization import to
+
              dr = driver.Driver(my_module, {})
              # foo, bar are pd.Series
              metadata, result = dr.Materialize(
@@ -1409,10 +1411,10 @@ class Driver:
                      path=source("save_path"),
                      id="foo_bar_csv",
                      dependencies=["foo", "bar"],
-                     combine=base.PandasDataFrameResult()
+                     combine=base.PandasDataFrameResult(),
                  ),
                  additional_vars=["foo", "bar"],
-                 inputs={"save_path" : "./output.csv"}
+                 inputs={"save_path": "./output.csv"},
              )
 
         While this is a contrived example, you could imagine something more powerful. Say, for
@@ -1446,17 +1448,21 @@ class Driver:
             from hamilton import driver, base
             from hamilton.function_modifiers import source
             from hamilton.io.materialization import to
+
             dr = driver.Driver(my_module, {})
             metadata, _ = dr.Materialize(
                 from_.model_registry(
                     target="input_model",
-                    query_tags={"training_date" : ..., model_version: ...}, # query based on run_id, model_version
+                    query_tags={
+                        "training_date": ...,
+                        model_version: ...,
+                    },  # query based on run_id, model_version
                 ),
                 to.csv(
                     path=source("save_path"),
                     id="save_inference_data",
                     dependencies=["inference_data"],
-                )
+                ),
             )
 
         Note that the "from" extractor has an interesting property -- it effectively functions as overrides. This
@@ -1923,9 +1929,8 @@ if __name__ == "__main__":
         module,
     )
     df = dr.execute(
-        ["date_index", "some_column"]
+        ["date_index", "some_column"],
         # ,overrides={'DATE': pd.Series(0)}
-        ,
         display_graph=False,
     )
     print(df)

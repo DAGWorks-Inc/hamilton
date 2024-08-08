@@ -4,7 +4,6 @@ from app import functions
 from hamilton import driver
 
 if __name__ == "__main__":
-
     df = pd.read_csv("/opt/ml/processing/input/data/input_table.csv")
 
     dr = driver.Driver({}, functions)

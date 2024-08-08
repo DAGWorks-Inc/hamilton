@@ -25,7 +25,7 @@ class KedroSaver(DataSaver):
                 id="my_dataset__kedro",
                 dependencies=["my_dataset"],
                 dataset_name="my_dataset",
-                catalog=catalog
+                catalog=catalog,
             )
         )
     """

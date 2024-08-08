@@ -1,4 +1,4 @@
-""""
+""" "
 This is a simple example of a FastAPI server that uses Hamilton on the request
 path to transform the data into features, and then uses a fake model to make
 a prediction.

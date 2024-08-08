@@ -11,7 +11,6 @@ def initialize_vector_db_indices(
     class_name: str,
     embedding_dimension: int,
 ) -> bool:
-
     if client_vector_db.collection_exists(class_name):
         client_vector_db.delete_collection(class_name)
 

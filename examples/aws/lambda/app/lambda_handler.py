@@ -6,7 +6,6 @@ from . import functions
 
 
 def lambda_handler(event, context):
-
     df = pd.DataFrame(**event["body"])
 
     dr = driver.Driver({}, functions)

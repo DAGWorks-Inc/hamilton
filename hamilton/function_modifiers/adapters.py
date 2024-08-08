@@ -631,7 +631,7 @@ class save_to(metaclass=save_to__meta__):
     .. code-block:: python
 
         dr = driver.Driver(my_module)
-        output = dr.execute(['final_output'], {'raw_data_path': '/path/my_data.json'})
+        output = dr.execute(["final_output"], {"raw_data_path": "/path/my_data.json"})
 
     You would *just* get the final result, and nothing would be saved.
 
@@ -640,7 +640,7 @@ class save_to(metaclass=save_to__meta__):
     .. code-block:: python
 
         dr = driver.Driver(my_module)
-        output = dr.execute(['data_save_output'], {'raw_data_path': '/path/my_data.json'})
+        output = dr.execute(["data_save_output"], {"raw_data_path": "/path/my_data.json"})
 
     You would get a dictionary of metadata (about the saving output), and the final result would
     be saved to a path.
@@ -649,7 +649,7 @@ class save_to(metaclass=save_to__meta__):
 
     .. code-block:: python
 
-        @save_to.json(path=value('/path/my_data.json'), output_name_="data_save_output")
+        @save_to.json(path=value("/path/my_data.json"), output_name_="data_save_output")
         def final_output(data: dict, valid_keys: List[str]) -> dict:
             return [item for item in data if item in valid_keys]
 
@@ -712,8 +712,9 @@ class dataloader(NodeCreator):
         import pandas as pd
         from hamilton.function_modifiers import dataloader
 
+
         @dataloader()  # you need ()
-        def load_json_data(json_path: str = 'data/my_data.json') -> tuple[pd.DataFrame, dict]:
+        def load_json_data(json_path: str = "data/my_data.json") -> tuple[pd.DataFrame, dict]:
             '''Loads a dataframe from a JSON file.
 
             :return: A tuple containing two dictionaries:
@@ -724,7 +725,7 @@ class dataloader(NodeCreator):
             data = pd.read_json(json_path)
 
             # Metadata about the loading process
-            metadata = {'source': json_path, 'format': 'json'}
+            metadata = {"source": json_path, "format": "json"}
 
             return data, metadata
 
@@ -819,8 +820,9 @@ class datasaver(NodeCreator):
         import pandas as pd
         from hamilton.function_modifiers import datasaver
 
-        @datasaver() # you need ()
-        def save_json_data(data: pd.DataFrame, json_path: str = 'data/my_saved_data.json') -> dict:
+
+        @datasaver()  # you need ()
+        def save_json_data(data: pd.DataFrame, json_path: str = "data/my_saved_data.json") -> dict:
             '''Saves data to a JSON file and returns metadata about the saving process.
 
             :param data: The data to save.
@@ -828,11 +830,11 @@ class datasaver(NodeCreator):
             :return: metadata about what was saved.
             '''
             # Save the data
-            with open(json_path, 'w') as file:
+            with open(json_path, "w") as file:
                 data.to_json(json_path)
 
             # Metadata about the saving process
-            metadata = {'destination': json_path, 'format': 'json'}
+            metadata = {"destination": json_path, "format": "json"}
 
             return metadata
 
