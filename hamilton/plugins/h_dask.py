@@ -141,7 +141,8 @@ class DaskGraphAdapter(base.HamiltonGraphAdapter):
         name = node.name + hash
         dask_key_name = str(node.name) + "_" + hash
         return delayed(node.callable, name=name)(
-            **kwargs, dask_key_name=dask_key_name  # this is what shows up in the dask console
+            **kwargs,
+            dask_key_name=dask_key_name,  # this is what shows up in the dask console
         )
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:

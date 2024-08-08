@@ -628,6 +628,7 @@ def copy(
         dataflow.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
         # copy from the installed library
         from hamilton.contrib.user.NAME_OF_USER import NAME_OF_DATAFLOW
+
         dataflow.copy(NAME_OF_DATAFLOW, destination_path="PATH_TO_DIRECTORY")
 
     :param dataflow: the module to copy.

@@ -98,9 +98,7 @@ def raw_data() -> str:
 43 weeks, 3 days	99.8%	0.1%	0.1%
 43 weeks, 4 days	99.9%	0.1%	< 0.1%
 43 weeks, 5 days	99.9%	< 0.1%	< 0.1%
-43 weeks, 6 days	> 99.9%	< 0.1%""".replace(
-            "weeks\t", "weeks, 0 days "
-        )
+43 weeks, 6 days	> 99.9%	< 0.1%""".replace("weeks\t", "weeks, 0 days ")
         .replace("\t", " ")
         .split("\n")
     )

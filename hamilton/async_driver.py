@@ -434,14 +434,14 @@ class Builder(driver.Builder):
     .. code-block:: python
 
         from hamilton_sdk import tracker
+
         tracker_async = adapters.AsyncHamiltonTracker(
             project_id=1,
             username="elijah",
             dag_name="async_tracker",
         )
         dr = (
-            await async_driver
-            .Builder()
+            await async_driver.Builder()
             .with_modules(async_module)
             .with_adapters(tracking_async)
             .build()

@@ -95,7 +95,8 @@ def test_dynamic_fails_without_power_mode_fails():
 def test_config_derivation():
     decorator = resolve(
         when=ResolveAt.CONFIG_AVAILABLE,
-        decorate_with=lambda cols_to_extract, some_cols_you_might_want_to_extract=[]: extract_columns(
+        decorate_with=lambda cols_to_extract,
+        some_cols_you_might_want_to_extract=[]: extract_columns(
             *cols_to_extract + some_cols_you_might_want_to_extract
         ),
     )
@@ -108,9 +109,10 @@ def test_config_derivation():
 def test_delayed_with_optional():
     decorator = resolve(
         when=ResolveAt.CONFIG_AVAILABLE,
-        decorate_with=lambda cols_to_extract, some_cols_you_might_want_to_extract=[
-            "c"
-        ]: extract_columns(*cols_to_extract + some_cols_you_might_want_to_extract),
+        decorate_with=lambda cols_to_extract,
+        some_cols_you_might_want_to_extract=["c"]: extract_columns(
+            *cols_to_extract + some_cols_you_might_want_to_extract
+        ),
     )
     resolved = decorator.resolve(
         {"cols_to_extract": ["a", "b"], **CONFIG_WITH_POWER_MODE_ENABLED},
@@ -131,9 +133,10 @@ def test_delayed_with_optional():
 def test_delayed_without_power_mode_fails():
     decorator = resolve(
         when=ResolveAt.CONFIG_AVAILABLE,
-        decorate_with=lambda cols_to_extract, some_cols_you_might_want_to_extract=[
-            "c"
-        ]: extract_columns(*cols_to_extract + some_cols_you_might_want_to_extract),
+        decorate_with=lambda cols_to_extract,
+        some_cols_you_might_want_to_extract=["c"]: extract_columns(
+            *cols_to_extract + some_cols_you_might_want_to_extract
+        ),
     )
     with pytest.raises(base.InvalidDecoratorException):
         decorator.resolve(

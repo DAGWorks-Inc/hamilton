@@ -49,12 +49,8 @@ class DDOGTracer(
         self.service = service
         self.include_causal_links = include_causal_links
         self.run_span_cache = {}  # Cache of run_id -> span tuples
-        self.task_span_cache = (
-            {}
-        )  # cache of run_iod -> task_id -> span. Note that we will prune this after task execution
-        self.node_span_cache = (
-            {}
-        )  # Cache of run_id -> [task_id, node_id] -> span. We use this to open/close general traces
+        self.task_span_cache = {}  # cache of run_iod -> task_id -> span. Note that we will prune this after task execution
+        self.node_span_cache = {}  # Cache of run_id -> [task_id, node_id] -> span. We use this to open/close general traces
 
     @staticmethod
     def _serialize_span_dict(span_dict: Dict[str, Span]):

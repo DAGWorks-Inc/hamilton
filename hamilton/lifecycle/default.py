@@ -598,14 +598,18 @@ class GracefulErrorAdapter(NodeExecutionMethod):
             class DoNotProceed(Exception):
                 pass
 
+
             def wont_proceed() -> int:
                 raise DoNotProceed()
+
 
             def will_proceed() -> int:
                 return 1
 
+
             def never_reached(wont_proceed: int) -> int:
                 return 1  # this should not be reached
+
 
             dr = (
                 driver.Builder()
@@ -618,7 +622,9 @@ class GracefulErrorAdapter(NodeExecutionMethod):
                 )
                 .build()
             )
-            dr.execute(["will_proceed", "never_reached"])  # will return {'will_proceed': 1, 'never_reached': None}
+            dr.execute(
+                ["will_proceed", "never_reached"]
+            )  # will return {'will_proceed': 1, 'never_reached': None}
 
         Note you can customize the error you want it to fail on and the sentinel value to use in place of a node's result if it fails.
 
@@ -636,17 +642,21 @@ class GracefulErrorAdapter(NodeExecutionMethod):
             class DoNotProceed(Exception):
                 pass
 
+
             def start_point() -> Parallelizable[int]:
                 for i in range(5):
                     if i == 3:
                         raise DoNotProceed()
                     yield i
 
+
             def inner(start_point: int) -> int:
                 return start_point
 
+
             def gather(inner: Collect[int]) -> list[int]:
                 return inner
+
 
             dr = (
                 driver.Builder()
@@ -748,6 +758,7 @@ class NoEdgeAndInputTypeChecking(EdgeConnectionHook):
 
         from hamilton import driver
         from hamilton.lifecycle import NoEdgeAndInputTypeChecking
+
         dr = driver.Builder().with_adapters(NoEdgeAndInputTypeChecking()).build()
 
         # now driver is built without any type checking

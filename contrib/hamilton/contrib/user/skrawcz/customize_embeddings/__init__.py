@@ -134,7 +134,8 @@ processed_dataset_schema = pa.DataFrameSchema(
 @config.when(source="snli")
 @check_output(schema=processed_dataset_schema, importance="fail")
 def processed_local_dataset__snli(
-    snli_dataset: pd.DataFrame, num_pairs_to_embed: int = 1000  # 1000 is arbitrary
+    snli_dataset: pd.DataFrame,
+    num_pairs_to_embed: int = 1000,  # 1000 is arbitrary
 ) -> pd.DataFrame:
     """Processes a raw dataset into a dataframe of text pairs to embed; and check that it matches the schema.
 

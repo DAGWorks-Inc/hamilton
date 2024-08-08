@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """The setup script."""
+
 import warnings
 
 from setuptools import setup

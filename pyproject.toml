@@ -181,7 +181,10 @@ line-length = 100
 target-version = "py38"  # Must include only the earliest supported version
 
 [tool.ruff.format]
-docstring-code-format = true
+docstring-code-format = false
+exclude = [
+    "docs/*",
+]
 
 [tool.ruff.lint]
 extend-select = [

@@ -313,9 +313,7 @@ def _format_pandas_udf(func_name: str, ordered_params: List[str]) -> str:
     func_string = """
 def {name}({params}) -> {return_type}:
     return partial_fn({param_call})
-""".format(
-        **formatting_params
-    )
+""".format(**formatting_params)
     return func_string
 
 
@@ -328,9 +326,7 @@ def _format_udf(func_name: str, ordered_params: List[str]) -> str:
     func_string = """
 def {name}({params}):
     return partial_fn({param_call})
-""".format(
-        **formatting_params
-    )
+""".format(**formatting_params)
     return func_string
 
 

@@ -280,7 +280,6 @@ def test_pandas_excel_reader(tmp_path: pathlib.Path) -> None:
 
 
 def test_pandas_table_reader(tmp_path: pathlib.Path) -> None:
-
     path_to_test = "tests/resources/data/test_load_from_data.csv"
     reader = PandasTableReader(filepath_or_buffer=path_to_test)
     df, metadata = reader.load_data(pd.DataFrame)

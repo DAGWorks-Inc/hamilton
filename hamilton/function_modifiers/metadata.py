@@ -285,7 +285,6 @@ class schema:
 
 
 class RayRemote(tag):
-
     def __init__(self, **options: Union[int, Dict[str, int]]):
         """Initializes RayRemote. See docs for `@ray_remote_options` for more details."""
 
@@ -313,7 +312,6 @@ def ray_remote_options(**kwargs: Union[int, Dict[str, int]]) -> RayRemote:
             num_gpus=1,
             resources={"my_custom_resource": 1},
         )
-        def example() -> pd.DataFrame:
-            ...
+        def example() -> pd.DataFrame: ...
     """
     return RayRemote(**kwargs)

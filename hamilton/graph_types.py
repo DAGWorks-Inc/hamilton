@@ -162,9 +162,7 @@ class HamiltonNode:
         try:
             # return hash of first function. It could be that others are Hamilton framework code.
             return hash_source_code(self.originating_functions[0], strip=True)
-        except (
-            OSError
-        ):  # TODO -- ensure we can get the node hash in a databricks environment when using jupyter magic
+        except OSError:  # TODO -- ensure we can get the node hash in a databricks environment when using jupyter magic
             logger.warning(
                 f"Failed to hash source code for node {self.name}. Certain environments (such as databricks) do not allow it."
                 " In this case, version will be None."

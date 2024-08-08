@@ -61,6 +61,8 @@ def create_model_input_table(
     """
     rated_shuttles = shuttles.merge(reviews, left_on="id", right_on="shuttle_id")
     rated_shuttles = rated_shuttles.drop("id", axis=1)
-    model_input_table = rated_shuttles.merge(companies, left_on="company_id", right_on="id")
+    model_input_table = rated_shuttles.merge(
+        companies, left_on="company_id", right_on="id"
+    )
     model_input_table = model_input_table.dropna()
     return model_input_table

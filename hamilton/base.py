@@ -44,9 +44,10 @@ class DictResult(ResultMixin):
     .. code-block:: python
 
         from hamilton import base, driver
+
         dict_builder = base.DictResult()
         adapter = base.SimplePythonGraphAdapter(dict_builder)
-        dr =  driver.Driver(config, *modules, adapter=adapter)
+        dr = driver.Driver(config, *modules, adapter=adapter)
         dict_result = dr.execute([...], inputs=...)
 
     Note, if you just want the dict result + the SimplePythonGraphAdapter, you can use the
@@ -90,7 +91,7 @@ class PandasDataFrameResult(ResultMixin):
 
     @staticmethod
     def pandas_index_types(
-        outputs: Dict[str, Any]
+        outputs: Dict[str, Any],
     ) -> Tuple[Dict[str, List[str]], Dict[str, List[str]], Dict[str, List[str]]]:
         """This function creates three dictionaries according to whether there is an index type or not.
 
@@ -332,6 +333,7 @@ class NumpyMatrixResult(ResultMixin):
     .. code-block:: python
 
         from hamilton import base, driver
+
         adapter = base.SimplePythonGraphAdapter(base.NumpyMatrixResult())
         dr = driver.Driver(config, *modules, adapter=adapter)
         numpy_matrix = dr.execute([...], inputs=...)

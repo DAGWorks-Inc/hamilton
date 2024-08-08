@@ -11,9 +11,11 @@ It is powerful when used with `@functools.singledispatch`
             raise NotImplementedError(f"Type {type(df)} is currently unsupported.")
         return from_dataframe(df, allow_copy=True).schema
 
+
     @get_arrow_schema.register
     def _(df: h_databackends.AbstractPandasDataFrame) -> pyarrow.Schema:
         return pyarrow.Table.from_pandas(df).schema
+
 
     @get_arrow_schema.register
     def _(df: h_databackends.AbstractIbisDataFrame) -> pyarrow.Schema:

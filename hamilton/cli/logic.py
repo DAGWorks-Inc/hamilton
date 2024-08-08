@@ -155,7 +155,6 @@ def diff_nodes_against_functions(
     nodes_origin_version = set(nodes_version.values())
     # iterate over origin functions from source code
     for origin_name, origin_version in origins_version.items():
-
         # if origin_version not found in nodes_version, the
         # origin function is not used by the built Driver
         if origin_version not in nodes_origin_version:

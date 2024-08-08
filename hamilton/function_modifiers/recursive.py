@@ -229,7 +229,7 @@ class subdag(base.NodeCreator):
 
     @staticmethod
     def collect_functions(
-        load_from: Union[Collection[ModuleType], Collection[Callable]]
+        load_from: Union[Collection[ModuleType], Collection[Callable]],
     ) -> List[Callable]:
         """Utility function to collect functions from a list of callables/modules.
 

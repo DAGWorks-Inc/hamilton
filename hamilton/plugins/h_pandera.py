@@ -36,15 +36,17 @@ class check_output(BaseDataValidationDecorator):
             from hamilton.plugins import h_pandera
             from pandera.typing.pandas import DataFrame
 
+
             class MySchema(pa.DataFrameModel):
                 a: int
                 b: float
                 c: str = pa.Field(nullable=True)  # For example, allow None values
-                d: float    # US dollars
+                d: float  # US dollars
+
 
             @h_pandera.check_output()
             def foo() -> DataFrame[MySchema]:
-                return pd.DataFrame() # will fail
+                return pd.DataFrame()  # will fail
 
         .. code-block:: python
             :name: "@check_output with passed in type"
@@ -58,9 +60,10 @@ class check_output(BaseDataValidationDecorator):
                 "d": pa.Column(pa.Float),
             })
 
+
             @function_modifiers.check_output(schema=schema)
             def foo() -> pd.DataFrame:
-                return pd.DataFrame() # will fail
+                return pd.DataFrame()  # will fail
 
         These two are functionally equivalent. Note that we do not (yet) support modification of the output.
         """
