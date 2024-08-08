@@ -1,4 +1,5 @@
 import logging
+from math import ceil
 
 import pandas as pd
 import pytest
@@ -33,11 +34,16 @@ def dummy_parameters():
 
 
 def test_split_data(dummy_data, dummy_parameters):
-    X_train, X_test, y_train, y_test = split_data(dummy_data, dummy_parameters["model_options"])
-    assert len(X_train) == 2
-    assert len(y_train) == 2
-    assert len(X_test) == 1
-    assert len(y_test) == 1
+    model_opts = dummy_parameters["model_options"]
+    n_rows = dummy_data.shape[0]
+    expected_test_size = ceil(model_opts["test_size"] * n_rows)
+    expected_train_size = n_rows - expected_test_size
+
+    X_train, X_test, y_train, y_test = split_data(dummy_data, model_opts)
+    assert len(X_train) == expected_train_size
+    assert len(y_train) == expected_train_size
+    assert len(X_test) == expected_test_size
+    assert len(y_test) == expected_test_size
 
 
 def test_split_data_missing_price(dummy_data, dummy_parameters):
@@ -51,7 +57,11 @@ def test_split_data_missing_price(dummy_data, dummy_parameters):
 
 
 def test_data_science_pipeline(caplog, dummy_data, dummy_parameters):
-    pipeline = create_ds_pipeline().from_nodes("split_data_node").to_nodes("evaluate_model_node")
+    pipeline = (
+        create_ds_pipeline()
+        .from_nodes("split_data_node")
+        .to_nodes("evaluate_model_node")
+    )
     catalog = DataCatalog()
     catalog.add_feed_dict(
         {
