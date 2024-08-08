@@ -162,13 +162,6 @@ issues = "https://github.com/dagworks-inc/hamilton/issues"
 source = "https://github.com/dagworks-inc/hamilton"
 slack = "https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g"
 
-[tool.isort]
-profile = "black"
-known_local_folder = "tests"
-known_first_party = "hamilton"
-skip = "docs"
-line_length = 100
-
 #[tool.mypy]
 #exclude = []
 
@@ -195,7 +188,7 @@ extend-select = [
 #    "FA",  # Verifies files use from __future__ import annotations if a type is used in the module that can be rewritten using PEP 563.
 #    "FURB",# Refurbishing and modernizing Python codebases
 #    "G",   # flake8-logging-format rules
-#    "I",   # isort
+    "I",   # isort
 #    "ISC", # Encourage correct string literal concatenation.
 #    "LOG", # Checks for issues using the standard library logging module.
 #    "N",   # Check PEP-8 naming conventions

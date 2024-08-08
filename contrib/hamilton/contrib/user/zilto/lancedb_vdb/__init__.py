@@ -7,10 +7,10 @@ logger = logging.getLogger(__name__)
 from hamilton import contrib
 
 with contrib.catch_import_errors(__name__, __file__, logger):
-    import pyarrow as pa
     import lancedb
     import numpy as np
     import pandas as pd
+    import pyarrow as pa
     from lancedb.pydantic import LanceModel
 
 from hamilton.function_modifiers import tag

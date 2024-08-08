@@ -38,7 +38,6 @@ def joke_response__chat(llm_client: openai.OpenAI, joke_messages: List[dict]) ->
 
 if __name__ == "__main__":
     import hamilton_completion
-
     from hamilton import driver
 
     dr = (

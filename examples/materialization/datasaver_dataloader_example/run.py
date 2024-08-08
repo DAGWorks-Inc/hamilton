@@ -1,7 +1,7 @@
 import simple_etl
-from hamilton_sdk import adapters
 
 from hamilton import driver
+from hamilton_sdk import adapters
 
 tracker = adapters.HamiltonTracker(
     project_id=7,  # modify this as needed

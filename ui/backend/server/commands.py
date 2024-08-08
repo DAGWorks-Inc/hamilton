@@ -9,9 +9,10 @@ from contextlib import contextmanager
 from enum import Enum
 from typing import Optional
 
-import hamilton_ui
 import requests
 from django.core.management import execute_from_command_line
+
+import hamilton_ui
 
 logger = logging.getLogger(__name__)
 

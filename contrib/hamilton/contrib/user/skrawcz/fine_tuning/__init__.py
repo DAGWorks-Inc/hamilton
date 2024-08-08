@@ -9,10 +9,11 @@ from hamilton import contrib
 
 with contrib.catch_import_errors(__name__, __file__, logger):
     import evaluate
-    from datasets.combine import DatasetType
-    from datasets import Dataset, concatenate_datasets
     import numpy as np
     import pandas as pd
+    import torch
+    from datasets import Dataset, concatenate_datasets
+    from datasets.combine import DatasetType
     from peft import (
         LoraConfig,
         PeftConfig,
@@ -22,15 +23,14 @@ with contrib.catch_import_errors(__name__, __file__, logger):
         prepare_model_for_int8_training,
     )
     from sklearn.model_selection import train_test_split
-    import torch
     from tqdm import tqdm
     from transformers import (
         AutoModelForSeq2SeqLM,
         AutoTokenizer,
         DataCollatorForSeq2Seq,
+        PreTrainedTokenizerBase,
         Seq2SeqTrainer,
         Seq2SeqTrainingArguments,
-        PreTrainedTokenizerBase,
     )
 
 from hamilton.function_modifiers import extract_fields

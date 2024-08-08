@@ -8,8 +8,10 @@ from typing import Set
 import pandas as pd
 
 # from sklearn.preprocessing import OneHotEncoder
-from sklearn import impute  # import KNNImputer
-from sklearn import preprocessing
+from sklearn import (
+    impute,  # import KNNImputer
+    preprocessing,
+)
 
 from hamilton.function_modifiers import check_output, config
 

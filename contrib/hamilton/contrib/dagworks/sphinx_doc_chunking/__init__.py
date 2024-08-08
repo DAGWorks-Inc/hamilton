@@ -152,7 +152,6 @@ def collect_chunked_url_text(url_result: Collect[dict]) -> list:
 if __name__ == "__main__":
     # code here for quickly testing the build of the code here.
     import __main__ as sphinx_doc_chunking
-
     from hamilton import driver
     from hamilton.execution import executors
 

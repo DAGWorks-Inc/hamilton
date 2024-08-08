@@ -2,7 +2,6 @@ import inspect
 import re
 from typing import Type
 
-from hamilton_lsp import __version__
 from lsprotocol.types import (
     TEXT_DOCUMENT_COMPLETION,
     TEXT_DOCUMENT_DID_CHANGE,
@@ -28,6 +27,7 @@ from pygls.server import LanguageServer
 from hamilton import ad_hoc_utils
 from hamilton.graph import FunctionGraph, create_graphviz_graph
 from hamilton.graph_types import HamiltonGraph
+from hamilton_lsp import __version__
 
 
 def _type_to_string(type_: Type):

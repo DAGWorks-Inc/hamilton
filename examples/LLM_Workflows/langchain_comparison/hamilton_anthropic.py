@@ -38,7 +38,6 @@ def joke_response__anthropic(llm_client: anthropic.Anthropic, joke_prompt: str) 
 
 if __name__ == "__main__":
     import hamilton_invoke_anthropic
-
     from hamilton import driver
 
     dr = (

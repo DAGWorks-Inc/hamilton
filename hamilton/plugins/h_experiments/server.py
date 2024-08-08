@@ -8,9 +8,8 @@ import pandas as pd
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastui import AnyComponent, FastUI
+from fastui import AnyComponent, FastUI, prebuilt_html
 from fastui import components as c
-from fastui import prebuilt_html
 from fastui.components.display import DisplayLookup, DisplayMode
 from fastui.events import GoToEvent
 from fastui.forms import SelectSearchResponse

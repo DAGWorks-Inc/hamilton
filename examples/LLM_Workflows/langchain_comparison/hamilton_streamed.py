@@ -28,7 +28,6 @@ def joke_response(llm_client: openai.OpenAI, joke_messages: List[dict]) -> Itera
 
 if __name__ == "__main__":
     import hamilton_streaming
-
     from hamilton import driver
 
     dr = driver.Builder().with_modules(hamilton_streaming).build()

@@ -4,9 +4,9 @@ import pandas as pd
 
 # awsglue is installed in the AWS Glue worker environment
 from awsglue.utils import getResolvedOptions
-from hamilton_functions import functions
 
 from hamilton import driver
+from hamilton_functions import functions
 
 if __name__ == "__main__":
     args = getResolvedOptions(sys.argv, ["input-table", "output-table"])

@@ -8,10 +8,10 @@ from hamilton import contrib
 
 with contrib.catch_import_errors(__name__, __file__, logger):
     import numpy as np
+    import optuna
     import pandas as pd
     import xgboost
-    import optuna
-    from optuna.distributions import IntDistribution, FloatDistribution
+    from optuna.distributions import FloatDistribution, IntDistribution
     from sklearn.metrics import accuracy_score, mean_squared_error
     from sklearn.model_selection import KFold, StratifiedKFold
 

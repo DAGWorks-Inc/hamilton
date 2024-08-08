@@ -17,6 +17,7 @@
 # limitations under the License.                                           #
 ############################################################################
 import pytest
+
 from hamilton_lsp.server import HamiltonLanguageServer, register_server_features
 
 from .ls_setup import NativeClientServer

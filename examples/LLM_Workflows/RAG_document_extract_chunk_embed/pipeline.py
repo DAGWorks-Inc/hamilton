@@ -159,7 +159,6 @@ def store(
 
 if __name__ == "__main__":
     import __main__ as doc_pipeline
-
     from hamilton import driver
 
     # create the driver

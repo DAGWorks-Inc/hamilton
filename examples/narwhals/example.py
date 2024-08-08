@@ -36,7 +36,6 @@ def group_by_mean(df: nw.DataFrame) -> nw.DataFrame:
 
 if __name__ == "__main__":
     import __main__ as example
-
     from hamilton import base, driver
     from hamilton.plugins import h_narwhals, h_polars
 
