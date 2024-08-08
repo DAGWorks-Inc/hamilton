@@ -13,7 +13,7 @@ from hamilton.experimental import h_databackends
 from hamilton.graph_types import HamiltonGraph, HamiltonNode
 from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class Diff(enum.Enum):

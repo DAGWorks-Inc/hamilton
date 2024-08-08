@@ -1,10 +1,9 @@
 from types import ModuleType
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import pytest
 
 from hamilton import ad_hoc_utils, driver, node
-from hamilton.graph import FunctionGraph
 from hamilton.io.materialization import to
 from hamilton.lifecycle.base import (
     BaseDoNodeExecute,
@@ -33,6 +32,9 @@ from .lifecycle_adapters_for_testing import (
     TrackingValidateGraphValidator,
     TrackingValidateNodeValidator,
 )
+
+if TYPE_CHECKING:
+    from hamilton.graph import FunctionGraph
 
 
 def _sample_driver(*lifecycle_adapters):

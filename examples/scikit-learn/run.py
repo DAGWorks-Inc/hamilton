@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import importlib
 import logging
-from types import ModuleType
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -13,6 +12,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from hamilton import base, driver, log_setup
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
 class HamiltonTransformer(BaseEstimator, TransformerMixin):

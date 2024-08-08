@@ -1,13 +1,16 @@
 import logging
 import sys
 import time
+from typing import TYPE_CHECKING
 
 import data_loaders
 import model_pipeline
-import pandas as pd
 import transforms
 
 from hamilton import driver
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 logger = logging.getLogger(__name__)
 
