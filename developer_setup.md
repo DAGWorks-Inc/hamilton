@@ -26,10 +26,7 @@ Install the project's dependencies in your preferred method for managing python 
 python -m venv ./venv
 . ./venv/bin/activate
 
-pip install \
-    -r ./requirements.txt \
-    -r ./requirements-dev.txt \
-    -r ./requirements-test.txt
+pip install .[dev,test]
 ```
 
 Set up `pre-commit`, which will run some lightweight formatting and linting tasks on every commit.
