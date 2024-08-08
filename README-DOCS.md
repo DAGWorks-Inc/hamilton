@@ -7,7 +7,7 @@ Instructions for managing documentation on read the docs.
 To build locally, you need to run the following -- make sure you're in the root of the repo:
 
 ```bash
-pip install -r requirements-docs.txt
+pip install .[docs]
 ```
 and then one of the following to build and view the documents:
 ```bash
