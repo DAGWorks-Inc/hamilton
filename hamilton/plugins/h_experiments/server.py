@@ -231,7 +231,7 @@ def dataframe_to_table(df: pd.DataFrame, **kwargs) -> AnyComponent:
     Table = create_table_model(**{str(k): v for k, v in df.iloc[0].to_dict().items()})
 
     page: int = 1 if kwargs.get("page") is None else kwargs.get("page", 1)
-    page_size = df.shape[0] if df.shape[0] < 20 else 20
+    page_size = min(20, df.shape[0])
     page_df = df.iloc[(page - 1) * page_size : page * page_size]
 
     # create a Pydantic objects for each row

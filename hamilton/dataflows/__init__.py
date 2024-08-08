@@ -337,11 +337,11 @@ def inspect(dataflow: str, user: str = None, version: str = "latest") -> Inspect
     }
 
     with open(os.path.join(local_file_path, "requirements.txt"), "r") as f:
-        file_contents = [line.strip() for line in f.readlines()]
+        file_contents = [line.strip() for line in f]
         info["python_dependencies"] = file_contents
 
     with open(os.path.join(local_file_path, "valid_configs.jsonl"), "r") as f:
-        file_contents = [line.strip() for line in f.readlines()]
+        file_contents = [line.strip() for line in f]
         info["configurations"] = file_contents
     return InspectResult(**info)
 
@@ -411,7 +411,7 @@ def inspect_module(module: ModuleType) -> InspectModuleResult:
         info["python_dependencies"] = file_contents
 
     with open(os.path.join(local_file_path, "valid_configs.jsonl"), "r") as f:
-        file_contents = [json.loads(s) for s in f.readlines()]
+        file_contents = [json.loads(s) for s in f]
         info["configurations"] = file_contents
 
     dr = driver.Driver(info["configurations"][0], module)

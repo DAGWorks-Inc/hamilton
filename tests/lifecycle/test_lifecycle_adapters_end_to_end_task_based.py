@@ -1,12 +1,11 @@
 from collections import Counter
 from types import ModuleType
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import pytest
 
 from hamilton import ad_hoc_utils, driver, node
 from hamilton.execution.executors import SynchronousLocalTaskExecutor
-from hamilton.graph import FunctionGraph
 from hamilton.htypes import Collect, Parallelizable
 from hamilton.lifecycle.base import (
     BaseDoNodeExecute,
@@ -29,6 +28,9 @@ from .lifecycle_adapters_for_testing import (
     TrackingPostTaskExecuteHook,
     TrackingPreNodeExecuteHook,
 )
+
+if TYPE_CHECKING:
+    from hamilton.graph import FunctionGraph
 
 
 def _sample_driver(*lifecycle_adapters):

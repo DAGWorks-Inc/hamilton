@@ -183,29 +183,29 @@ exclude = [
 extend-select = [
 #    "B",   # flake8-bugbear rules
 #    "C4",  # Helps you write better list/set/dict comprehensions.
-#    "E",   # pycodestyle errors
-#    "F",   # pyflakes
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
 #    "FA",  # Verifies files use from __future__ import annotations if a type is used in the module that can be rewritten using PEP 563.
-#    "FURB",# Refurbishing and modernizing Python codebases
+    "FURB",# Refurbishing and modernizing Python codebases
 #    "G",   # flake8-logging-format rules
     "I",   # isort
-#    "ISC", # Encourage correct string literal concatenation.
-#    "LOG", # Checks for issues using the standard library logging module.
+    "ISC", # Encourage correct string literal concatenation.
+    "LOG", # Checks for issues using the standard library logging module.
 #    "N",   # Check PEP-8 naming conventions
 #    "NPY", # Linting rules for numpy
 #    "PERF",# Linting rules for performance
 #    "PIE", # flake8-pie rules
 #    "PT",  # flake8-pytest-style rules
 #    "PYI", # Linting rules for type annotations.
-#    "Q",   # Linting rules for quites
+    "Q",   # Linting rules for quites
 #    "RUF", # Unused noqa directive
 #    "SIM", # Linting rules for simplicity
 #    "T20", # Check for Print statements in python files.
-#    "TCH", # Move type-only imports to a type-checking block.
-#    "TID", # Helps you write tidier imports.
+    "TCH", # Move type-only imports to a type-checking block.
+    "TID", # Helps you write tidier imports.
 #    "TRY", # Prevent exception handling anti-patterns
 #    "UP",  # pyupgrade
-#    "W",   # pycodestyle warnings
+    "W",   # pycodestyle warnings
 ]
 extend-ignore = [
     "ISC001", # Checks for implicitly concatenated strings on a single line.
