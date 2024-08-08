@@ -26,7 +26,6 @@ def joke_response(llm_client: openai.OpenAI, joke_messages: List[dict]) -> str:
 
 if __name__ == "__main__":
     import hamilton_invoke
-
     from hamilton import driver
 
     dr = driver.Builder().with_modules(hamilton_invoke).build()

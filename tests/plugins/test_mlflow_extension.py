@@ -10,6 +10,7 @@ pytestmark = pytest.mark.skipif(
 
 if not PY38_OR_BELOW:
     import mlflow
+
     from hamilton.plugins.mlflow_extensions import MLFlowModelLoader, MLFlowModelSaver
 
 import numpy as np

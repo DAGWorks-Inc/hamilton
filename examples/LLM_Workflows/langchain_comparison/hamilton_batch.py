@@ -38,7 +38,6 @@ def joke_responses(joke_response: Collect[str]) -> List[str]:
 
 if __name__ == "__main__":
     import hamilton_batch
-
     from hamilton import driver
 
     dr = (

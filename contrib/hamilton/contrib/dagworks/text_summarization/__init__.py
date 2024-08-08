@@ -8,11 +8,11 @@ logger = logging.getLogger(__name__)
 from hamilton import contrib
 
 with contrib.catch_import_errors(__name__, __file__, logger):
+    import litellm
     import tiktoken
     from pypdf import PdfReader
     from tenacity import retry, stop_after_attempt, wait_random_exponential
     from tqdm import tqdm
-    import litellm
 
 from hamilton.function_modifiers import config
 

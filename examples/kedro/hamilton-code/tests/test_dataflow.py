@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
-from hamilton_code import data_science
 
 from hamilton import driver
+from hamilton_code import data_science
 
 
 @pytest.fixture

@@ -1,10 +1,10 @@
 import click
 from components import feature_transforms, iris_loader, models
-from hamilton_sdk import adapters
 
 from hamilton import driver as h_driver
 from hamilton.io.materialization import to
 from hamilton.lifecycle import PrintLnHook
+from hamilton_sdk import adapters
 
 
 @click.command()

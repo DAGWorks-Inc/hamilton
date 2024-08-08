@@ -51,7 +51,6 @@ if __name__ == "__main__":
     import json
 
     import __main__
-
     from hamilton import driver
     from hamilton.plugins import h_schema
 

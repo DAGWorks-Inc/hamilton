@@ -6,9 +6,9 @@ logger = logging.getLogger(__name__)
 from hamilton import contrib
 
 with contrib.catch_import_errors(__name__, __file__, logger):
-    from bs4 import BeautifulSoup
     import lxml  # noqa: F401
     import requests
+    from bs4 import BeautifulSoup
     from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 import dataclasses

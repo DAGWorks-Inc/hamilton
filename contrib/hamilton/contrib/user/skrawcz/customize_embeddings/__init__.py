@@ -43,10 +43,10 @@ with contrib.catch_import_errors(__name__, __file__, logger):
     import plotly.express as px  # for plots
     import plotly.graph_objs as go  # for plot object type
     import requests
+    import torch  # for matrix optimization
     from sklearn.model_selection import (
         train_test_split,
     )  # for splitting train & test data
-    import torch  # for matrix optimization
     from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from hamilton.function_modifiers import (

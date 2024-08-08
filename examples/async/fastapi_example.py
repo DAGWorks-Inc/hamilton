@@ -5,9 +5,9 @@ import aiohttp
 import async_module
 import fastapi
 from aiohttp import client_exceptions
-from hamilton_sdk import adapters
 
 from hamilton import async_driver
+from hamilton_sdk import adapters
 
 logger = logging.getLogger(__name__)
 

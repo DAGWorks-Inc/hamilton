@@ -28,7 +28,6 @@ if __name__ == "__main__":
     import asyncio
 
     import hamilton_async
-
     from hamilton import base
     from hamilton.experimental import h_async
 

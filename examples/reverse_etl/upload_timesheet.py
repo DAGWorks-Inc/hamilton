@@ -310,9 +310,9 @@ def command_output(
 
 
 if __name__ == "__main__":
-    import __main__
     import pandas as pd
 
+    import __main__
     from hamilton import driver
 
     # build dataflow
