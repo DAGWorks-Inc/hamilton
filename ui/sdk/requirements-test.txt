@@ -1,5 +1,6 @@
 ibis-framework
 langchain_core
+numpy<2  # SPARK-48710
 polars
 pyarrow
 pydantic
