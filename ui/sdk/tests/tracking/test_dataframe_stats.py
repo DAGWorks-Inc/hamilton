@@ -3,7 +3,13 @@ import math
 import numpy as np
 import pandas as pd
 from hamilton_sdk.tracking import dataframe_stats
-from pytest import mark
+from pytest import mark, param
+
+
+skip_NAN_on_numpy_v2 = mark.skipif(
+    not hasattr(np, "NAN"),
+    reason="NAN is not available in numpy v2",
+)
 
 
 # Tests the type converter
@@ -21,7 +27,7 @@ from pytest import mark
         ({"a": 1, "b": 2, "c": {"d": np.int8(3), "e": 4}}, {"a": 1, "b": 2, "c": {"d": 3, "e": 4}}),
         (pd.NaT, None),
         (pd.NA, None),
-        (np.NAN, None),
+        param(getattr(np, "NAN", np.nan), None, marks=skip_NAN_on_numpy_v2),
         (np.nan, None),
         (math.nan, None),
         # (math.inf, None),

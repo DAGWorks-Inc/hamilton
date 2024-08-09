@@ -13,7 +13,7 @@ def type_converter(obj: Any) -> Any:
         result = int(obj)
     elif isinstance(obj, np.floating):
         result = float(obj)
-    elif isinstance(obj, np.complex_):
+    elif isinstance(obj, np.complexfloating) or isinstance(obj, getattr(np, "complex_", ())):
         result = complex(obj)
     elif isinstance(obj, dict):
         result = {}
