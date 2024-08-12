@@ -201,6 +201,7 @@ def test_get_type_as_string(type_):
         (str, 0),
         (typing.Union[int, pd.Series], pd.DataFrame({"a": [1, 2, 3]})),
         (typing.Union[int, pd.Series], 1.0),
+        (typing.Sequence, {"a", "b"}),
     ],
     ids=[
         "test-subclass",
@@ -213,6 +214,7 @@ def test_get_type_as_string(type_):
         "test-type-match-str",
         "test-union-mismatch-dataframe",
         "test-union-mismatch-float",
+        "test-sequence-set-mismatch",
     ],
 )
 def test_check_input_type_mismatch(node_type, input_value):
@@ -239,6 +241,14 @@ T = typing.TypeVar("T")
         (str, "abc"),
         (typing.Union[int, pd.Series], pd.Series([1, 2, 3])),
         (typing.Union[int, pd.Series], 1),
+        (typing.Literal["csv", "prq"], "csv"),
+        (typing.Sequence[str], ("a", "b")),
+        (typing.Sequence, ("a", "b")),
+        (typing.Iterable, ("a", "b")),
+        (typing.Iterable[str], ["a", "b"]),
+        (typing.Iterable[str], {"a", "b"}),
+        (typing.Iterable[int], range(0, 10)),
+        (typing.Sequence[int], range(0, 10)),
     ],
     ids=[
         "test-any",
@@ -253,6 +263,14 @@ T = typing.TypeVar("T")
         "test-type-match-str",
         "test-union-match-series",
         "test-union-match-int",
+        "test-literal-match-str",
+        "test-sequence-str-match-tuple-str",
+        "test-sequence-match-tuple-str",
+        "test-iterable-str-match-tuple-str",
+        "test-iterable-str-match-list-str",
+        "test-iterable-str-match-set-str",
+        "test-iterable-int-match-range",
+        "test-sequence-int-match-range",
     ],
 )
 def test_check_input_type_match(node_type, input_value):
