@@ -321,6 +321,35 @@ def check_input_type(node_type: Type, input_value: Any) -> bool:
         return any([check_input_type(ut, input_value) for ut in union_types])
     elif node_type == type(input_value):
         return True
+    # check for literal and that the value is in the literals listed.
+    elif typing_inspect.is_literal_type(node_type) and input_value in typing_inspect.get_args(
+        node_type
+    ):
+        return True
+    # iterable (set, dict) is super class over sequence (list, tuple)
+    elif (
+        typing_inspect.is_generic_type(node_type)
+        and typing_inspect.get_origin(node_type)
+        in (list, tuple, typing_inspect.get_origin(typing.Sequence))
+        and isinstance(input_value, (list, tuple, typing_inspect.get_origin(typing.Sequence)))
+    ):
+        if typing_inspect.get_args(node_type):
+            # check first value in sequence -- if the type is specified.
+            for i in input_value:  # this handles empty input case, e.g. [] or (), set()
+                return check_input_type(typing_inspect.get_args(node_type)[0], i)
+        return True
+    elif (
+        typing_inspect.is_generic_type(node_type)
+        and typing_inspect.get_origin(node_type)
+        in (set, typing_inspect.get_origin(typing.Iterable))
+        and isinstance(input_value, (set, typing_inspect.get_origin(typing.Iterable)))
+    ):
+        if typing_inspect.get_args(node_type):
+            # check first value in sequence -- if the type is specified.
+            for i in input_value:  # this handles empty input case, e.g. [] or (), set()
+                return check_input_type(typing_inspect.get_args(node_type)[0], i)
+        return True
+
     return False
 
 
