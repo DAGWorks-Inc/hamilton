@@ -554,7 +554,25 @@ class NodeExecutionMethod(BaseDoNodeExecute):
 
 class StaticValidator(BaseValidateGraph, BaseValidateNode):
     """Performs static validation of the DAG. Note that this has the option to perform default validation for each method --
-    this means that if you don't implement one of these it is OK."""
+    this means that if you don't implement one of these it is OK.
+
+    .. code-block:: python
+
+        class MyTagValidator(api.StaticValidator):
+            '''Validates tags on a node'''
+
+            def run_to_validate_node(
+                    self, *, node: HamiltonNode, **future_kwargs
+            ) -> tuple[bool, Optional[str]]:
+                if node.tags.get("node_type", "") == "output":
+                    table_name = node.tags.get("table_name")
+                    if not table_name:  # None or empty
+                        error_msg = (f"Node {node.tags['module']}.{node.name} "
+                                    "is an output node, but does not have a table_name tag.")
+                        return False, error_msg
+                return True, None
+
+    """
 
     def run_to_validate_node(
         self, *, node: HamiltonNode, **future_kwargs
