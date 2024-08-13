@@ -355,8 +355,9 @@ class AsyncDriver(driver.Driver):
         start_time = time.time()
         run_successful = True
         error = None
+        _final_vars = self._create_final_vars(final_vars)
         try:
-            outputs = await self.raw_execute(final_vars, overrides, display_graph, inputs=inputs)
+            outputs = await self.raw_execute(_final_vars, overrides, display_graph, inputs=inputs)
             # Currently we don't allow async build results, but we could.
             if self.adapter.does_method("do_build_result", is_async=False):
                 return self.adapter.call_lifecycle_method_sync("do_build_result", outputs=outputs)
