@@ -1,0 +1,4 @@
+openai
+opentelemetry-instrumentation-openai
+sf-hamilton
+traceloop-sdk
