@@ -1,7 +1,7 @@
 import json
 import logging
 from contextvars import ContextVar
-from typing import Any, Collection, List, Optional, Tuple
+from typing import Any, Collection, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -10,10 +10,14 @@ try:
     from opentelemetry import context, trace
     from opentelemetry.sdk.trace import Span
 except ImportError as e:
-    raise ImportError("Failed to import `opentelemetry`") from e
+    raise ImportError(
+        "Failed to import `opentelemetry` "
+        "Use `pip install sf-hamilton[opentelemetry]` to install "
+        "dependencies for the `h_opentelemetry` plugin."
+    ) from e
 
-from hamilton.graph_types import HamiltonGraph
-from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook
+from hamilton.graph_types import HamiltonGraph, HamiltonNode
+from hamilton.lifecycle import GraphExecutionHook, NodeExecutionHook, TaskExecutionHook
 
 # We have to keep track of tokens for the span
 # As OpenTel has some weird behavior around context managers, we have to account for the latest ones we started
@@ -54,9 +58,9 @@ def _enter_span(name: str, tracer: trace.Tracer):
     return span
 
 
-class OpenTelemetryTracer(NodeExecutionHook, GraphExecutionHook):
+class OpenTelemetryTracer(NodeExecutionHook, GraphExecutionHook, TaskExecutionHook):
     """Adapter to log Hamilton execution to OpenTelemetry. At a high level, this works as follows:
-    1. On any of the start/pre hooks (pre_run_execute_call, pre_run_step, pre_start_span), we start a new span
+    1. On any of the start/pre hooks (run_before_graph, run_before_node, run_before_task), we start a new span
     2. On any of the post ones we exit the span, accounting for the error (setting it if needed)
 
     This works by logging to OpenTelemetry, and setting the span processor to be the right one (that knows about the tracker).
@@ -73,9 +77,7 @@ class OpenTelemetryTracer(NodeExecutionHook, GraphExecutionHook):
         elif tracer_name:
             self.tracer = trace.get_tracer(tracer_name)
         else:
-            raise ValueError(
-                "Need to pass `tracer_name` or `tracer`, got: tracer_name=None and tracer=None"
-            )
+            self.tracer = trace.get_tracer(__name__)
 
         self.graph = None
 
@@ -109,7 +111,6 @@ class OpenTelemetryTracer(NodeExecutionHook, GraphExecutionHook):
         node_name: str,
         node_tags: dict,
         node_return_type: type,
-        task_id: Optional[str],
         **kwargs: Any,
     ):
         attributes = {
@@ -117,11 +118,29 @@ class OpenTelemetryTracer(NodeExecutionHook, GraphExecutionHook):
             "node_version": self.graph[node_name].version,
             "tags": json.dumps(node_tags),
         }
-        if task_id:
-            attributes.update(task_id=task_id)
 
         node_span = _enter_span(node_name, self.tracer)
         node_span.set_attributes(attributes)
+
+    def run_before_task_execution(
+        self,
+        *,
+        task_id: str,
+        nodes: List[HamiltonNode],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+        **kwargs,
+    ):
+        attributes = {
+            "nodes": [n.name for n in nodes],
+            "inputs": list(inputs.keys()) if inputs else [],
+            "overrides": list(overrides.keys()) if overrides else [],
+        }
+        task_span = _enter_span(task_id, self.tracer)
+        task_span.set_attributes(attributes)
+
+    def run_after_task_execution(self, *, error: Optional[Exception], **kwargs):
+        _exit_span(error)
 
     def run_after_node_execution(self, *, error: Optional[Exception], **kwargs):
         _exit_span(error)
