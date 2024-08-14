@@ -153,6 +153,8 @@ h_experiments = "hamilton.plugins.h_experiments.__main__:main"
 hamilton = "hamilton.cli.__main__:cli"
 hamilton-admin-build-ui = "hamilton.admin:build_ui"
 hamilton-admin-build-and-publish = "hamilton.admin:build_and_publish"
+hamilton-disable-autoload-extensions = "hamilton.registry:_config_disable_autoload"
+hamilton-enable-autoload-extensions = "hamilton.registry:_config_enable_autoload"
 
 [project.urls]
 homepage = "https://www.tryhamilton.dev/"

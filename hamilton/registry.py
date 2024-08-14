@@ -1,19 +1,129 @@
 import collections
+import configparser
 import functools
 import importlib
 import logging
-from typing import Any, Dict, Optional, Type
+import os
+import pathlib
+import sys
+from typing import Any, Dict, Literal, Optional, Tuple, Type, get_args
 
 logger = logging.getLogger(__name__)
 
 # Use this to ensure the registry is loaded only once.
 INITIALIZED = False
+ExtensionName = Literal[
+    "yaml",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "plotly",
+    "polars",
+    "polars_lazyframe",
+    "pyspark_pandas",
+    "spark",
+    "dask",
+    "geopandas",
+    "xgboost",
+    "lightgbm",
+    "sklearn_plot",
+    "vaex",
+    "ibis",
+    "dlt",
+    "kedro",
+    "huggingface",
+    "mlflow",
+]
+HAMILTON_EXTENSIONS: Tuple[ExtensionName, ...] = get_args(ExtensionName)
+HAMILTON_AUTOLOAD_CONFIG_KEY = "autoload_extensions"
+HAMILTON_AUTOLOAD_ENV = "HAMILTON_AUTOLOAD_EXTENSIONS"
+DEFAULT_CONFIG_LOCATION = pathlib.Path("~/.hamilton.conf").expanduser()
 
 # This is a dictionary of extension name -> dict with dataframe and column types.
 DF_TYPE_AND_COLUMN_TYPES: Dict[str, Dict[str, Type]] = {}
 
 COLUMN_TYPE = "column_type"
 DATAFRAME_TYPE = "dataframe_type"
+
+
+def load_extension(plugin_module: ExtensionName):
+    """Given a module name, loads it for Hamilton to use.
+
+    :param plugin_module: the module name sans .py. e.g. pandas, polars, pyspark_pandas.
+    """
+    mod = importlib.import_module(f"hamilton.plugins.{plugin_module}_extensions")
+    # We have various plugin extensions. We default to assuming it's a dataframe extension with columns,
+    # unless it explicitly says it's not.
+    # We need to check the following if we are to enable `@extract_columns` for example.
+    extractable = getattr(mod, "COLUMN_FRIENDLY_DF_TYPE", True)
+    if extractable:
+        assert hasattr(mod, "register_types"), "Error extension missing function register_types()"
+        assert hasattr(
+            mod, f"get_column_{plugin_module}"
+        ), f"Error extension missing get_column_{plugin_module}"
+        assert hasattr(
+            mod, f"fill_with_scalar_{plugin_module}"
+        ), f"Error extension missing fill_with_scalar_{plugin_module}"
+        logger.info(f"Detected {plugin_module} and successfully loaded Hamilton extensions.")
+
+
+def initialize():
+    load_autoload_config()
+    logger.debug(f"{HAMILTON_AUTOLOAD_ENV}={os.environ.get(HAMILTON_AUTOLOAD_ENV)}")
+    for extension_name in HAMILTON_EXTENSIONS:
+        # skip modules that aren't explicitly imported by the user
+        if os.environ.get(HAMILTON_AUTOLOAD_ENV) == "0" and extension_name not in sys.modules:
+            continue
+
+        try:
+            load_extension(extension_name)
+        except NotImplementedError as e:
+            logger.debug(f"Did not load {extension_name} extension because {str(e)}.")
+        except ModuleNotFoundError as e:
+            logger.debug(f"Did not load {extension_name} extension because {e.msg}.")
+        except ImportError as e:
+            logger.debug(f"Did not load {extension_name} extension because {str(e)}.")
+
+    global INITIALIZED
+    INITIALIZED = True
+
+
+def disable_autoload():
+    os.environ[HAMILTON_AUTOLOAD_ENV] = "0"
+
+
+def enable_autoload():
+    del os.environ[HAMILTON_AUTOLOAD_ENV]
+
+
+def load_autoload_config() -> configparser.ConfigParser:
+    config = configparser.ConfigParser()
+    config.read(DEFAULT_CONFIG_LOCATION)
+
+    if config.has_option("DEFAULT", HAMILTON_AUTOLOAD_CONFIG_KEY):
+        os.environ[HAMILTON_AUTOLOAD_ENV] = config.get("DEFAULT", HAMILTON_AUTOLOAD_CONFIG_KEY)
+
+    return config
+
+
+def _config_enable_autoload():
+    config = load_autoload_config()
+    if "DEFAULT" not in config:
+        config.add_section("DEFAULT")
+
+    config.remove_option("DEFAULT", HAMILTON_AUTOLOAD_CONFIG_KEY)
+    with DEFAULT_CONFIG_LOCATION.open("w") as f:
+        config.write(f)
+
+
+def _config_disable_autoload():
+    config = load_autoload_config()
+    if "DEFAULT" not in config:
+        config.add_section("DEFAULT")
+
+    config.set("DEFAULT", HAMILTON_AUTOLOAD_CONFIG_KEY, "0")
+    with DEFAULT_CONFIG_LOCATION.open("w") as f:
+        config.write(f)
 
 
 def register_types(extension_name: str, dataframe_type: Type, column_type: Optional[Type]):
@@ -71,27 +181,6 @@ def get_column_type_from_df_type(dataframe_type: Type) -> Type:
         f"Cannot get column type for [{dataframe_type}]. "
         f"Registered types are {DF_TYPE_AND_COLUMN_TYPES}"
     )
-
-
-def load_extension(plugin_module: str):
-    """Given a module name, loads it for Hamilton to use.
-
-    :param plugin_module: the module name sans .py. e.g. pandas, polars, pyspark_pandas.
-    """
-    mod = importlib.import_module(f"hamilton.plugins.{plugin_module}_extensions")
-    # We have various plugin extensions. We default to assuming it's a dataframe extension with columns,
-    # unless it explicitly says it's not.
-    # We need to check the following if we are to enable `@extract_columns` for example.
-    extractable = getattr(mod, "COLUMN_FRIENDLY_DF_TYPE", True)
-    if extractable:
-        assert hasattr(mod, "register_types"), "Error extension missing function register_types()"
-        assert hasattr(
-            mod, f"get_column_{plugin_module}"
-        ), f"Error extension missing get_column_{plugin_module}"
-        assert hasattr(
-            mod, f"fill_with_scalar_{plugin_module}"
-        ), f"Error extension missing fill_with_scalar_{plugin_module}"
-        logger.info(f"Detected {plugin_module} and successfully loaded Hamilton extensions.")
 
 
 LOADER_REGISTRY = collections.defaultdict(list)
