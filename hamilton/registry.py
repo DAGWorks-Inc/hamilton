@@ -35,7 +35,6 @@ ExtensionName = Literal[
     "mlflow",
 ]
 HAMILTON_EXTENSIONS: Tuple[ExtensionName, ...] = get_args(ExtensionName)
-HAMILTON_AUTOLOAD_CONFIG_KEY = "autoload_extensions"
 HAMILTON_AUTOLOAD_ENV = "HAMILTON_AUTOLOAD_EXTENSIONS"
 DEFAULT_CONFIG_LOCATION = pathlib.Path("~/.hamilton.conf").expanduser()
 
@@ -100,8 +99,8 @@ def load_autoload_config() -> configparser.ConfigParser:
     config = configparser.ConfigParser()
     config.read(DEFAULT_CONFIG_LOCATION)
 
-    if config.has_option("DEFAULT", HAMILTON_AUTOLOAD_CONFIG_KEY):
-        os.environ[HAMILTON_AUTOLOAD_ENV] = config.get("DEFAULT", HAMILTON_AUTOLOAD_CONFIG_KEY)
+    if config.has_option("DEFAULT", HAMILTON_AUTOLOAD_ENV):
+        os.environ[HAMILTON_AUTOLOAD_ENV] = config.get("DEFAULT", HAMILTON_AUTOLOAD_ENV)
 
     return config
 
@@ -111,7 +110,7 @@ def _config_enable_autoload():
     if "DEFAULT" not in config:
         config.add_section("DEFAULT")
 
-    config.remove_option("DEFAULT", HAMILTON_AUTOLOAD_CONFIG_KEY)
+    config.remove_option("DEFAULT", HAMILTON_AUTOLOAD_ENV)
     with DEFAULT_CONFIG_LOCATION.open("w") as f:
         config.write(f)
 
@@ -121,7 +120,7 @@ def _config_disable_autoload():
     if "DEFAULT" not in config:
         config.add_section("DEFAULT")
 
-    config.set("DEFAULT", HAMILTON_AUTOLOAD_CONFIG_KEY, "0")
+    config.set("DEFAULT", HAMILTON_AUTOLOAD_ENV, "0")
     with DEFAULT_CONFIG_LOCATION.open("w") as f:
         config.write(f)
 
