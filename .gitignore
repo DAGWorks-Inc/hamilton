@@ -143,3 +143,12 @@ examples/**/hamilton-env
 
 # vxcode
 .vscode
+
+# data formats
+**.dir
+**.bak
+**.dat
+**.dot
+**.pkl
+**.lance
+**.txn
