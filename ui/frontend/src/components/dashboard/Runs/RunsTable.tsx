@@ -11,6 +11,7 @@ import {
 import { RunLink, VersionLink } from "../../common/CommonLinks";
 import { DurationDisplay } from "../../common/Datetime";
 import { adjustStatusForDuration } from "../../../utils";
+import VisibilitySensor from "react-visibility-sensor";
 
 const MAX_COMPARE_RUNS = 5;
 
@@ -353,6 +354,11 @@ export const RunsTable: FC<{
                   .map((run, index) => {
                     const runID = run.id as number;
                     return (
+                      <VisibilitySensor
+                          key={index}
+                          offset={{ top: -1000, bottom: -1000 }}
+                          partialVisibility={true}
+                        >
                       <TableRow
                         projectId={projectId as number}
                         run={run}
@@ -382,6 +388,7 @@ export const RunsTable: FC<{
                           setRunsToCompare(Array.from(runsToCompare));
                         }}
                       />
+                      </VisibilitySensor>
                     );
                   })}
               </tbody>
