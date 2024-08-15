@@ -519,6 +519,26 @@ class BaseDoNodeExecute(abc.ABC):
         pass
 
 
+@lifecycle.base_method("do_remote_execute")
+class BaseDoRemoteExecute(abc.ABC):
+    @abc.abstractmethod
+    def do_remote_execute(
+        self,
+        *,
+        node: "node.Node",
+        kwargs: Dict[str, Any],
+        execute_lifecycle_for_node: Callable,
+    ) -> Any:
+        """Method that is called to implement correct remote execution of hooks. This makes sure that all the pre-node and post-node hooks get executed in the remote environment which is necessary for some adapters. Node execution is called the same as before through "do_node_execute".
+
+
+        :param node: Node that is being executed
+        :param kwargs: Keyword arguments that are being passed into the node
+        :param execute_lifecycle_for_node: Function executing lifecycle_hooks and lifecycle_methods
+        """
+        pass
+
+
 @lifecycle.base_method("do_node_execute")
 class BaseDoNodeExecuteAsync(abc.ABC):
     @abc.abstractmethod

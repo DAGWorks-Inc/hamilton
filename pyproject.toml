@@ -44,7 +44,7 @@ dask-distributed = ["dask[distributed]"]
 datadog = ["ddtrace"]
 dev = [
   "pre-commit",
-  "ruff",
+  "ruff==0.5.7", # this should match `.pre-commit-config.yaml`
 ]
 diskcache = ["diskcache"]
 docs = [
