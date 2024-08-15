@@ -496,7 +496,10 @@ class BasePreNodeExecuteAsync(abc.ABC):
         """
         pass
 
-
+# TODO -- copy this + name it `BaseDoRemoteExecute` and `do_remote_execute` (for the string/function)
+# Look at the comments in graph_functions.py for what parameters to add
+# Add the right parameters
+# Add some docstrings
 @lifecycle.base_method("do_node_execute")
 class BaseDoNodeExecute(abc.ABC):
     @abc.abstractmethod
