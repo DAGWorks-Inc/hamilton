@@ -49,7 +49,11 @@ def parse_ray_remote_options_from_tags(tags: typing.Dict[str, str]) -> typing.Di
 
     return ray_options
 
-
+# TODO -- change the base classes here to be the underlying ones in HamiltonGraphAdapter
+#     BaseDoRemoteExecute, # Change this one -- add it in
+#     BaseDoValidateInput,
+#     BaseDoCheckEdgeTypesMatch,
+# Then, implement do_remote_execute, kill do_node_execute
 class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
     """Class representing what's required to make Hamilton run on Ray.
 
