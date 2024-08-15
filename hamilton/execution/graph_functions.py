@@ -1,5 +1,6 @@
 import logging
 import pprint
+from functools import partial
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 from hamilton import node
@@ -201,59 +202,24 @@ def execute_subdag(
             for dependency in node_.dependencies:
                 if dependency.name in computed:
                     kwargs[dependency.name] = computed[dependency.name]
-            error = None
-            result = None
-            success = True
-            pre_node_execute_errored = False
-            try:
-                if adapter.does_hook("pre_node_execute", is_async=False):
-                    try:
-                        adapter.call_all_lifecycle_hooks_sync(
-                            "pre_node_execute",
-                            run_id=run_id,
-                            node_=node_,
-                            kwargs=kwargs,
-                            task_id=task_id,
-                        )
-                    except Exception as e:
-                        pre_node_execute_errored = True
-                        raise e
-                if adapter.does_method("do_node_execute", is_async=False):
-                    result = adapter.call_lifecycle_method_sync(
-                        "do_node_execute",
-                        run_id=run_id,
-                        node_=node_,
-                        kwargs=kwargs,
-                        task_id=task_id,
-                    )
-                else:
-                    result = node_(**kwargs)
-            except Exception as e:
-                success = False
-                error = e
-                step = "[pre-node-execute]" if pre_node_execute_errored else ""
-                message = create_error_message(kwargs, node_, step)
-                logger.exception(message)
-                raise
-            finally:
-                if not pre_node_execute_errored and adapter.does_hook(
-                    "post_node_execute", is_async=False
-                ):
-                    try:
-                        adapter.call_all_lifecycle_hooks_sync(
-                            "post_node_execute",
-                            run_id=run_id,
-                            node_=node_,
-                            kwargs=kwargs,
-                            success=success,
-                            error=error,
-                            result=result,
-                            task_id=task_id,
-                        )
-                    except Exception:
-                        message = create_error_message(kwargs, node_, "[post-node-execute]")
-                        logger.exception(message)
-                        raise
+
+            execute_lifecycle_for_node_partial = partial(
+                execute_lifecycle_for_node,
+                __node_=node_,
+                __adapter=adapter,
+                __run_id=run_id,
+                __task_id=task_id,
+            )
+
+            if adapter.does_method("do_remote_execute", is_async=False):
+                result = adapter.call_lifecycle_method_sync(
+                    "do_remote_execute",
+                    node=node_,
+                    execute_lifecycle_for_node=execute_lifecycle_for_node_partial,
+                    **kwargs,
+                )
+            else:
+                result = execute_lifecycle_for_node_partial(**kwargs)
 
         computed[node_.name] = result
         # > pruning the graph
@@ -283,6 +249,86 @@ def execute_subdag(
             dep_type = node.DependencyType.OPTIONAL
         dfs_traverse(final_var_node, dep_type)
     return computed
+
+
+# TODO: better function name
+def execute_lifecycle_for_node(
+    __node_: node.Node,
+    __adapter: LifecycleAdapterSet,
+    __run_id: str,
+    __task_id: str,
+    **__kwargs: Dict[str, Any],
+):
+    """Helper function to properly execute node lifecycle.
+
+    Firstly, we execute the pre-node-execute hooks if supplied adapters have any, then we execute the node function, and lastly, we execute the post-node-execute hooks if present in the adapters.
+
+    For local runtime gets execute directy. Otherwise, serves as a sandwich function that guarantees the pre_node and post_node lifecycle hooks are executed in the remote environment.
+
+    :param __node_:  Node that is being executed
+    :param __adapter:  Adapter to use to compute
+    :param __run_id: ID of the run, unique in scope of the driver.
+    :param __task_id: ID of the task, defaults to None if not in a task setting
+    :param ___kwargs: Keyword arguments that are being passed into the node
+    """
+
+    error = None
+    result = None
+    success = True
+    pre_node_execute_errored = False
+
+    try:
+        if __adapter.does_hook("pre_node_execute", is_async=False):
+            try:
+                __adapter.call_all_lifecycle_hooks_sync(
+                    "pre_node_execute",
+                    run_id=__run_id,
+                    node_=__node_,
+                    kwargs=__kwargs,
+                    task_id=__task_id,
+                )
+            except Exception as e:
+                pre_node_execute_errored = True
+                raise e
+        if __adapter.does_method("do_node_execute", is_async=False):
+            result = __adapter.call_lifecycle_method_sync(
+                "do_node_execute",
+                run_id=__run_id,
+                node_=__node_,
+                kwargs=__kwargs,
+                task_id=__task_id,
+            )
+        else:
+            result = __node_(**__kwargs)
+
+        return result
+
+    except Exception as e:
+        success = False
+        error = e
+        step = "[pre-node-execute]" if pre_node_execute_errored else ""
+        message = create_error_message(__kwargs, __node_, step)
+        logger.exception(message)
+        raise
+    finally:
+        if not pre_node_execute_errored and __adapter.does_hook(
+            "post_node_execute", is_async=False
+        ):
+            try:
+                __adapter.call_all_lifecycle_hooks_sync(
+                    "post_node_execute",
+                    run_id=__run_id,
+                    node_=__node_,
+                    kwargs=__kwargs,
+                    success=success,
+                    error=error,
+                    result=result,
+                    task_id=__task_id,
+                )
+            except Exception:
+                message = create_error_message(__kwargs, __node_, "[post-node-execute]")
+                logger.exception(message)
+                raise
 
 
 def nodes_between(

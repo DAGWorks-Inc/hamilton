@@ -1,5 +1,5 @@
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 import pytest
 
@@ -7,6 +7,7 @@ from hamilton import ad_hoc_utils, driver, node
 from hamilton.io.materialization import to
 from hamilton.lifecycle.base import (
     BaseDoNodeExecute,
+    BaseDoRemoteExecute,
     BasePostGraphConstruct,
     BasePostGraphExecute,
     BasePostNodeExecute,
@@ -22,6 +23,7 @@ from .lifecycle_adapters_for_testing import (
     SentinelException,
     TrackingDoBuildResultMethod,
     TrackingDoNodeExecuteHook,
+    TrackingDoRemoteExecuteHook,
     TrackingDoValidateInputMethod,
     TrackingPostGraphConstructHook,
     TrackingPostGraphExecuteHook,
@@ -343,6 +345,78 @@ def test_multi_hook():
     assert len(calls) == 16
 
 
+def test_multi_hook_remote():
+    class MultiHook(
+        BasePreDoAnythingHook,
+        BasePostGraphConstruct,
+        BasePreGraphExecute,
+        BasePreNodeExecute,
+        BaseDoRemoteExecute,
+        BasePostNodeExecute,
+        BasePostGraphExecute,
+        ExtendToTrackCalls,
+    ):
+        def do_remote_execute(
+            self,
+            node: node.Node,
+            execute_lifecycle_for_node: Callable,
+            **kwargs: Dict[str, Any],
+        ):
+            return execute_lifecycle_for_node(**kwargs)
+
+        def pre_do_anything(self):
+            pass
+
+        def post_graph_construct(
+            self, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+        ):
+            pass
+
+        def pre_graph_execute(
+            self,
+            run_id: str,
+            graph: "FunctionGraph",
+            final_vars: List[str],
+            inputs: Dict[str, Any],
+            overrides: Dict[str, Any],
+        ):
+            pass
+
+        def pre_node_execute(
+            self, run_id: str, node_: Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
+        ):
+            pass
+
+        def post_node_execute(
+            self,
+            run_id: str,
+            node_: node.Node,
+            kwargs: Dict[str, Any],
+            success: bool,
+            error: Optional[Exception],
+            result: Optional[Any],
+            task_id: Optional[str] = None,
+        ):
+            pass
+
+        def post_graph_execute(
+            self,
+            run_id: str,
+            graph: "FunctionGraph",
+            success: bool,
+            error: Optional[Exception],
+            results: Optional[Dict[str, Any]],
+        ):
+            pass
+
+    multi_hook = MultiHook(name="multi_hook")
+
+    dr = _sample_driver(multi_hook)
+    dr.execute(["d"], inputs={"input": 1})
+    calls = multi_hook.calls
+    assert len(calls) == 16
+
+
 def test_individual_do_validate_input_method():
     method_name = "do_validate_input"
     method = TrackingDoValidateInputMethod(name=method_name, valid=True)
@@ -371,6 +445,16 @@ def test_individual_do_validate_input_method_invalid():
 def test_individual_do_node_execute_method():
     method_name = "do_node_execute"
     method = TrackingDoNodeExecuteHook(name=method_name, additional_value=1)
+    dr = _sample_driver(method)
+    res = dr.execute(["d"], inputs={"input": 1})
+    relevant_calls = [item for item in method.calls if item.name == method_name]
+    assert len(relevant_calls) == 4
+    assert res == {"d": 17**3 + 1}  # adding one to each one
+
+
+def test_individual_do_remote_execute_method():
+    method_name = "do_remote_execute"
+    method = TrackingDoRemoteExecuteHook(name=method_name, additional_value=1)
     dr = _sample_driver(method)
     res = dr.execute(["d"], inputs={"input": 1})
     relevant_calls = [item for item in method.calls if item.name == method_name]

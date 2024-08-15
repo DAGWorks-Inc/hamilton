@@ -1,12 +1,14 @@
+import abc
 import functools
 import json
 import logging
+import time
 import typing
 
 import ray
 from ray import workflow
 
-from hamilton import base, htypes, node
+from hamilton import base, htypes, lifecycle, node
 from hamilton.execution import executors
 from hamilton.execution.executors import TaskFuture
 from hamilton.execution.grouping import TaskImplementation
@@ -50,7 +52,14 @@ def parse_ray_remote_options_from_tags(tags: typing.Dict[str, str]) -> typing.Di
     return ray_options
 
 
-class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
+class RayGraphAdapter(
+    lifecycle.base.BaseDoRemoteExecute,
+    lifecycle.base.BaseDoBuildResult,
+    lifecycle.base.BaseDoValidateInput,
+    lifecycle.base.BaseDoCheckEdgeTypesMatch,
+    lifecycle.base.BasePostGraphExecute,
+    abc.ABC,
+):
     """Class representing what's required to make Hamilton run on Ray.
 
     This walks the graph and translates it to run onto `Ray <https://ray.io/>`__.
@@ -86,13 +95,21 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
     DISCLAIMER -- this class is experimental, so signature changes are a possibility!
     """
 
-    def __init__(self, result_builder: base.ResultMixin):
+    def __init__(
+        self,
+        result_builder: base.ResultMixin,
+        ray_init_config: typing.Dict[str, typing.Any] = None,
+        shutdown_ray_on_completion: bool = False,
+    ):
         """Constructor
 
         You have the ability to pass in a ResultMixin object to the constructor to control the return type that gets \
         produce by running on Ray.
 
         :param result_builder: Required. An implementation of base.ResultMixin.
+        :param ray_init_config: allows to connect to an existing cluster or start a new one with custom configuration (https://docs.ray.io/en/latest/ray-core/api/doc/ray.init.html)
+        :param shutdown_ray_on_completion: by default we leave the cluster open, but we can also shut it down
+
         """
         self.result_builder = result_builder
         if not self.result_builder:
@@ -100,28 +117,39 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
                 "Error: ResultMixin object required. Please pass one in for `result_builder`."
             )
 
+        self.shutdown_ray_on_completion = shutdown_ray_on_completion
+
+        if ray_init_config is not None:
+            ray.init(**ray_init_config)
+
     @staticmethod
-    def check_input_type(node_type: typing.Type, input_value: typing.Any) -> bool:
+    def do_validate_input(node_type: typing.Type, input_value: typing.Any) -> bool:
         # NOTE: the type of a raylet is unknown until they are computed
         if isinstance(input_value, ray._raylet.ObjectRef):
             return True
         return htypes.check_input_type(node_type, input_value)
 
     @staticmethod
-    def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
-        return node_type == input_type
+    def do_check_edge_types_match(type_from: typing.Type, type_to: typing.Type) -> bool:
+        return type_from == type_to
 
-    def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def do_remote_execute(
+        self,
+        *,
+        execute_lifecycle_for_node: typing.Callable,
+        node: node.Node,
+        **kwargs: typing.Dict[str, typing.Any],
+    ) -> typing.Any:
         """Function that is called as we walk the graph to determine how to execute a hamilton function.
 
-        :param node: the node from the graph.
+        :param execute_lifecycle_for_node: wrapper function that executes lifecycle hooks and methods
         :param kwargs: the arguments that should be passed to it.
         :return: returns a ray object reference.
         """
         ray_options = parse_ray_remote_options_from_tags(node.tags)
-        return ray.remote(raify(node.callable)).options(**ray_options).remote(**kwargs)
+        return ray.remote(raify(execute_lifecycle_for_node)).options(**ray_options).remote(**kwargs)
 
-    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def do_build_result(self, outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
 
         :param outputs: the dictionary of key -> Union[ray object reference | value]
@@ -134,6 +162,14 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         remote_combine = ray.remote(self.result_builder.build_result).remote(**outputs)
         result = ray.get(remote_combine)  # this materializes the object locally
         return result
+
+    def post_graph_execute(self, *args, **kwargs):
+        """We have the option to close the cluster down after execution."""
+
+        if self.shutdown_ray_on_completion:
+            # In case we have Hamilton Tracker to have enough time to properly flush
+            time.sleep(5)
+            ray.shutdown()
 
 
 class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
