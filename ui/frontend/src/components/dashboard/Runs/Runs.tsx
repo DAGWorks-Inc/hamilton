@@ -8,7 +8,7 @@ import { Loading } from "../../common/Loading";
 import { RunSummary } from "./RunSummary";
 import { skipToken } from "@reduxjs/toolkit/dist/query";
 
-export const MAX_RUNS_QUERIED = 1000;
+export const MAX_RUNS_QUERIED = 100;
 
 const Runs: React.FC<{ project: Project }> = ({ project }) => {
   // TODO -- figure out what happens if the project hasn't loaded yet

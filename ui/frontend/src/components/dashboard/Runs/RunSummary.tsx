@@ -662,8 +662,7 @@ export const RunSummary = (props: {
       : null;
 
   // Quick buffer to ensure no runs are missed
-  console.log("minDate", minDate);
-  console.log("maxDate", maxDate);
+
   if (minDate !== null) {
     minDate.setDate(minDate.getDate() - 1);
   }
