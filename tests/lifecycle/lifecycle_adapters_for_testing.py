@@ -9,6 +9,7 @@ from hamilton.graph import FunctionGraph
 from hamilton.lifecycle.base import (
     BaseDoBuildResult,
     BaseDoNodeExecute,
+    BaseDoRemoteExecute,
     BaseDoValidateInput,
     BasePostGraphConstruct,
     BasePostGraphExecute,
@@ -185,6 +186,23 @@ class TrackingDoNodeExecuteHook(ExtendToTrackCalls, BaseDoNodeExecute):
         if node_.type == int and node_.name != "n_iters":
             return node_(**kwargs) + self._additional_value
         return node_(**kwargs)
+
+
+class TrackingDoRemoteExecuteHook(ExtendToTrackCalls, BaseDoRemoteExecute):
+    def __init__(self, name: str, additional_value: int):
+        super().__init__(name)
+        self._additional_value = additional_value
+
+    def do_remote_execute(
+        self,
+        node: "node.Node",
+        execute_lifecycle_for_node: Callable,
+        **kwargs: Dict[str, Any],
+    ) -> Any:
+        node_ = node
+        if node_.type == int and node_.name != "n_iters":
+            return execute_lifecycle_for_node(**kwargs) + self._additional_value
+        return execute_lifecycle_for_node(**kwargs)
 
 
 class TrackingDoBuildResultMethod(ExtendToTrackCalls, BaseDoBuildResult):

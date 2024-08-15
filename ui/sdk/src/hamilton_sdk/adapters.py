@@ -103,6 +103,10 @@ class HamiltonTracker(
         # if you're using a float value.
         self.seed = None
 
+    def stop(self):
+        """Initiates stop if run in remote environment"""
+        self.client.stop()
+
     def post_graph_construct(
         self, graph: h_graph.FunctionGraph, modules: List[ModuleType], config: Dict[str, Any]
     ):

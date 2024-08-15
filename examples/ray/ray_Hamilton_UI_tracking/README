@@ -1,0 +1,29 @@
+# Tracking telemetry in Hamilton UI for Ray clusters
+
+We show the ability to combine the [RayGraphAdapter](https://hamilton.dagworks.io/en/latest/reference/graph-adapters/RayGraphAdapter/) and [HamiltonTracker](https://hamilton.dagworks.io/en/latest/concepts/ui/) to run a dummy DAG.
+
+# ray_lineage.py
+Has three dummy functions:
+- waiting 5s
+- waiting 1s
+- raising an error
+
+That represent a basic DAG.
+
+# run_lineage.py
+Is where the driver code lives to create the DAG and exercise it.
+
+To exercise it:
+> Have an open instance of Hamilton UI: https://hamilton.dagworks.io/en/latest/concepts/ui/
+
+```bash
+python -m run_lineage.py
+Usage: python -m run_lineage.py [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  project_id      This command will select the created project in Hamilton UI
+  username  This command will input the correct username to access the selected project_id
+```

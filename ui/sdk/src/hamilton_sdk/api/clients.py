@@ -1,5 +1,6 @@
 import abc
 import asyncio
+import atexit
 import datetime
 import functools
 import logging
@@ -196,6 +197,9 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         ).start()
         self.worker_thread.start()
 
+        # Makes sure the process stops even if in remote environment
+        atexit.register(self.stop)
+
     def __getstate__(self):
         # Copy the object's state from self.__dict__ which contains
         # all our instance attributes. Always use the dict.copy()
@@ -217,6 +221,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
             target=lambda: threading.main_thread().join() or self.data_queue.put(None)
         ).start()
         self.worker_thread.start()
+        atexit.register(self.stop)
 
     def worker(self):
         """Worker thread to process the queue."""
