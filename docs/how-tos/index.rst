@@ -18,6 +18,7 @@ directory. If there's an example you want but don't see, reach out or open an is
    cache-nodes
    scale-up
    microservice
+   extensions-autoloading
    wrapping-driver
    cli-reference
    pre-commit-hooks

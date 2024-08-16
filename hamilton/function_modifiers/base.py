@@ -20,38 +20,7 @@ if not registry.INITIALIZED:
     # Trigger load of extensions here because decorators are the only thing that use the registry
     # right now. Side note: ray serializes things weirdly, so we need to do this here rather than in
     # in the other choice of hamilton/base.py.
-    plugins_modules = [
-        "yaml",
-        "matplotlib",
-        "numpy",
-        "pandas",
-        "plotly",
-        "polars",
-        "polars_lazyframe",
-        "pyspark_pandas",
-        "spark",
-        "dask",
-        "geopandas",
-        "xgboost",
-        "lightgbm",
-        "sklearn_plot",
-        "vaex",
-        "ibis",
-        "dlt",
-        "kedro",
-        "huggingface",
-        "mlflow",
-    ]
-    for plugin_module in plugins_modules:
-        try:
-            registry.load_extension(plugin_module)
-        except NotImplementedError as e:
-            logger.debug(f"Did not load {plugin_module} extension because {str(e)}.")
-        except ModuleNotFoundError as e:
-            logger.debug(f"Did not load {plugin_module} extension because {e.msg}.")
-        except ImportError as e:
-            logger.debug(f"Did not load {plugin_module} extension because {str(e)}.")
-    registry.INITIALIZED = True
+    registry.initialize()
 
 
 def sanitize_function_name(name: str) -> str:
