@@ -46,6 +46,20 @@ COLUMN_TYPE = "column_type"
 DATAFRAME_TYPE = "dataframe_type"
 
 
+def load_autoload_config() -> configparser.ConfigParser:
+    """Load the Hamilton config file and set the autoloading environment variable"""
+    config = configparser.ConfigParser()
+    config.read(DEFAULT_CONFIG_LOCATION)
+
+    if config.has_option("DEFAULT", HAMILTON_AUTOLOAD_ENV):
+        os.environ[HAMILTON_AUTOLOAD_ENV] = config.get("DEFAULT", HAMILTON_AUTOLOAD_ENV)
+
+    return config
+
+
+load_autoload_config()
+
+
 def load_extension(plugin_module: ExtensionName):
     """Given a module name, loads it for Hamilton to use.
 
@@ -69,11 +83,10 @@ def load_extension(plugin_module: ExtensionName):
 
 def initialize():
     """Iterate over all extensions and try to load them"""
-    load_autoload_config()
     logger.debug(f"{HAMILTON_AUTOLOAD_ENV}={os.environ.get(HAMILTON_AUTOLOAD_ENV)}")
     for extension_name in HAMILTON_EXTENSIONS:
         # skip modules that aren't explicitly imported by the user
-        if os.environ.get(HAMILTON_AUTOLOAD_ENV) == "0":
+        if str(os.environ.get(HAMILTON_AUTOLOAD_ENV)) == "0":
             continue
 
         try:
@@ -101,17 +114,6 @@ def enable_autoload():
     This needs to be done before hamilton.driver is imported.
     """
     del os.environ[HAMILTON_AUTOLOAD_ENV]
-
-
-def load_autoload_config() -> configparser.ConfigParser:
-    """Load the Hamilton config file and set the autoloading environment variable"""
-    config = configparser.ConfigParser()
-    config.read(DEFAULT_CONFIG_LOCATION)
-
-    if config.has_option("DEFAULT", HAMILTON_AUTOLOAD_ENV):
-        os.environ[HAMILTON_AUTOLOAD_ENV] = config.get("DEFAULT", HAMILTON_AUTOLOAD_ENV)
-
-    return config
 
 
 def config_enable_autoload():
