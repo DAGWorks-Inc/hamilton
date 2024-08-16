@@ -5,7 +5,6 @@ import importlib
 import logging
 import os
 import pathlib
-import sys
 from typing import Any, Dict, Literal, Optional, Tuple, Type, get_args
 
 logger = logging.getLogger(__name__)
@@ -36,6 +35,8 @@ ExtensionName = Literal[
 ]
 HAMILTON_EXTENSIONS: Tuple[ExtensionName, ...] = get_args(ExtensionName)
 HAMILTON_AUTOLOAD_ENV = "HAMILTON_AUTOLOAD_EXTENSIONS"
+# NOTE the variable DEFAULT_CONFIG_LOCAITON is redundant with `hamilton.telemetry`
+# but this `registry` module must avoid circular imports
 DEFAULT_CONFIG_LOCATION = pathlib.Path("~/.hamilton.conf").expanduser()
 
 # This is a dictionary of extension name -> dict with dataframe and column types.
@@ -67,11 +68,12 @@ def load_extension(plugin_module: ExtensionName):
 
 
 def initialize():
+    """Iterate over all extensions and try to load them"""
     load_autoload_config()
     logger.debug(f"{HAMILTON_AUTOLOAD_ENV}={os.environ.get(HAMILTON_AUTOLOAD_ENV)}")
     for extension_name in HAMILTON_EXTENSIONS:
         # skip modules that aren't explicitly imported by the user
-        if os.environ.get(HAMILTON_AUTOLOAD_ENV) == "0" and extension_name not in sys.modules:
+        if os.environ.get(HAMILTON_AUTOLOAD_ENV) == "0":
             continue
 
         try:
@@ -88,14 +90,21 @@ def initialize():
 
 
 def disable_autoload():
+    """Disable extension autoloading by setting an environment variable.
+    This needs to be done before hamilton.driver is imported.
+    """
     os.environ[HAMILTON_AUTOLOAD_ENV] = "0"
 
 
 def enable_autoload():
+    """Enable extension autoloading by deleting an environment variable.
+    This needs to be done before hamilton.driver is imported.
+    """
     del os.environ[HAMILTON_AUTOLOAD_ENV]
 
 
 def load_autoload_config() -> configparser.ConfigParser:
+    """Load the Hamilton config file and set the autoloading environment variable"""
     config = configparser.ConfigParser()
     config.read(DEFAULT_CONFIG_LOCATION)
 
@@ -105,7 +114,13 @@ def load_autoload_config() -> configparser.ConfigParser:
     return config
 
 
-def _config_enable_autoload():
+def config_enable_autoload():
+    """Modify the Hamilton config file to enable extension autoloading.
+    Autoloading can be disabled manually via `hamilton.registry.disable_autoload()`
+    before importing `hamilton.driver`.
+
+    NOTE the function name is tied to an entrypoint in `pyproject.toml`
+    """
     config = load_autoload_config()
     if "DEFAULT" not in config:
         config.add_section("DEFAULT")
@@ -115,7 +130,13 @@ def _config_enable_autoload():
         config.write(f)
 
 
-def _config_disable_autoload():
+def config_disable_autoload():
+    """Modify the Hamilton config file to disable extension autoloading.
+    Autoloading can be enabled manually via `hamilton.registry.enable_autoload()`
+    before importing `hamilton.driver`.
+
+    NOTE the function name is tied to an entrypoint in `pyproject.toml`
+    """
     config = load_autoload_config()
     if "DEFAULT" not in config:
         config.add_section("DEFAULT")
