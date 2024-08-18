@@ -19,6 +19,8 @@ import tests.resources.dummy_functions
 import tests.resources.dynamic_parallelism.parallel_linear_basic
 import tests.resources.tagging
 import tests.resources.test_default_args
+import tests.resources.test_driver_serde_mapper
+import tests.resources.test_driver_serde_worker
 import tests.resources.test_for_materialization
 import tests.resources.very_simple_dag
 
@@ -665,3 +667,29 @@ def test_variable_from_node():
     assert v.tags == n.tags
     assert v.documentation == n.documentation == "This is a doctstring"
     assert v.originating_functions == n.originating_functions
+
+
+def test_driver_setstate_getstate():
+    """This is an integration test testing serializability of the hamilton driver."""
+    from hamilton.execution import executors
+
+    drivers = []
+    inputs = []
+    for i in range(4):
+        dr = Builder().with_modules(tests.resources.test_driver_serde_worker).build()
+        drivers.append(dr)
+        inputs.append({"a": i})
+
+    dr = (
+        Builder()
+        .with_modules(tests.resources.test_driver_serde_mapper)
+        .enable_dynamic_execution(allow_experimental_mode=True)
+        # .with_local_executor(executors.SynchronousLocalTaskExecutor())
+        .with_remote_executor(executors.MultiProcessingExecutor(8))
+        .build()
+    )
+    r = dr.execute(
+        final_vars=["reducer"],
+        inputs={"drivers": drivers, "inputs": inputs, "final_vars": ["double"]},
+    )
+    assert r == {"reducer": [{"double": 0}, {"double": 2}, {"double": 4}, {"double": 6}]}
