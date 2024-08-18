@@ -27,7 +27,9 @@ def sitemap_text(sitemap_url: str = "https://hamilton.dagworks.io/en/latest/site
     try:
         sitemap = requests.get(sitemap_url)
     except Exception as e:
-        raise RuntimeError(f"Failed to fetch sitemap from {sitemap_url}. Original error: {str(e)}")
+        raise RuntimeError(
+            f"Failed to fetch sitemap from {sitemap_url}. Original error: {str(e)}"
+        ) from e
     return sitemap.text
 
 

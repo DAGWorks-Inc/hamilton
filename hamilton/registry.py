@@ -64,7 +64,7 @@ def get_column_type_from_df_type(dataframe_type: Type) -> Type:
     :return: the column type.
     :raises: NotImplementedError if we don't know what the column type is.
     """
-    for extension, type_map in DF_TYPE_AND_COLUMN_TYPES.items():
+    for _extension, type_map in DF_TYPE_AND_COLUMN_TYPES.items():
         if dataframe_type == type_map[DATAFRAME_TYPE]:
             return type_map[COLUMN_TYPE]
     raise NotImplementedError(

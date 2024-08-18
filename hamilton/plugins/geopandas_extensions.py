@@ -2,8 +2,8 @@ from typing import Any
 
 try:
     import geopandas as gpd
-except ImportError:
-    raise NotImplementedError("geopandas is not installed.")
+except ImportError as e:
+    raise NotImplementedError("geopandas is not installed.") from e
 
 from hamilton import registry
 

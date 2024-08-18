@@ -4,8 +4,8 @@ from typing import Any, Collection, Dict, Tuple, Type
 
 try:
     import pyspark.sql as ps
-except ImportError:
-    raise NotImplementedError("Pyspark is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Pyspark is not installed.") from e
 
 from pandas import DataFrame
 from pyspark.sql import SparkSession

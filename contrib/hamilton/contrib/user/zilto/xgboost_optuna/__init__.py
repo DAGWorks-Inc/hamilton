@@ -133,7 +133,7 @@ def cross_validation_folds(
 
 def study(
     higher_is_better: bool,
-    pruner: Optional[optuna.pruners.BasePruner] = optuna.pruners.MedianPruner(),
+    pruner: Optional[optuna.pruners.BasePruner] = None,
     sampler: Optional[optuna.samplers.BaseSampler] = None,
     study_storage: Optional[str] = None,
     study_name: Optional[str] = None,
@@ -142,6 +142,8 @@ def study(
     """Create an optuna study; use the XGBoost + Optuna integration for pruning
     ref: https://github.com/optuna/optuna-examples/blob/main/xgboost/xgboost_integration.py
     """
+    if pruner is None:
+        pruner = optuna.pruners.MedianPruner()
     return optuna.create_study(
         direction="maximize" if higher_is_better else "minimize",
         pruner=pruner,

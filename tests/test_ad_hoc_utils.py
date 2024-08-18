@@ -98,4 +98,4 @@ def _baz(bar: int) -> int:
     try:
         inspect.getsource(module.bar)
     except OSError as e:
-        assert False, f"module improperly added to linecache. {e}"
+        assert False, f"module improperly added to linecache. {e}"  # noqa

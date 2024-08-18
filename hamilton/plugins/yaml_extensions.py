@@ -1,7 +1,7 @@
 try:
     import yaml
-except ImportError:
-    raise NotImplementedError("yaml is not installed and is needed for yaml hamilton plugin")
+except ImportError as e:
+    raise NotImplementedError("yaml is not installed and is needed for yaml hamilton plugin") from e
 
 import dataclasses
 import pathlib

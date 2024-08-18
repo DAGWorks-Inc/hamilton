@@ -31,7 +31,7 @@ def most_frequent_words(title: pd.Series) -> dict[str, int]:
     word_counts = {}
     for raw_title in title:
         for word in raw_title.lower().split():
-            word = word.strip(".,-!?:;()[]'\"-")
+            word = word.strip(".,-!?:;()[]'\"-")  # noqa
             if len(word) == 0:
                 continue
 

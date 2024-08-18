@@ -498,10 +498,10 @@ def are_py_dependencies_satisfied(dataflow, user=None, version="latest"):
             else:
                 package_name = line
                 required_version = None
-            required_version  # here for now...
+            required_version  # noqa here for now...
             try:
                 installed_version = pkg_version(package_name)
-                installed_version  # here for now..
+                installed_version  # noqa here for now..
             except PackageNotFoundError:
                 logger.info(f"Package '{package_name}' is not installed.")
                 return False

@@ -55,7 +55,7 @@ def most_frequent_words() -> MaterializeResult:
     for raw_title in topstories["title"]:
         title = raw_title.lower()
         for word in title.split():
-            cleaned_word = word.strip(".,-!?:;()[]'\"-")
+            cleaned_word = word.strip(".,-!?:;()[]'\"-")  # noqa
             if cleaned_word not in stopwords and len(cleaned_word) > 0:
                 word_counts[cleaned_word] = word_counts.get(cleaned_word, 0) + 1
 

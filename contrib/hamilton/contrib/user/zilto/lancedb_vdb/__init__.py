@@ -61,7 +61,7 @@ def table_ref(
         table = client.open_table(table_name)
     except FileNotFoundError:
         if schema is None:
-            raise ValueError("`schema` must be provided to create table.")
+            raise ValueError("`schema` must be provided to create table.") from FileNotFoundError
 
         table = _create_table(
             client=client,

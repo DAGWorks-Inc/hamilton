@@ -11,7 +11,7 @@ try:
 
 except ImportError as e:
     # raise import error first
-    raise ImportError(f"Failed to import the DLT library. {e}")
+    raise ImportError(f"Failed to import the DLT library. {e}") from e
 except Exception as e:
     # raise import error with custom message
     raise ImportError("Failed to import the DLT library.") from e

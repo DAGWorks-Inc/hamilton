@@ -94,7 +94,7 @@ class DataGenerator:
         signups = []
         num_signups = self.random.randint(25, 100)
 
-        for i in range(num_signups):
+        for _ in range(num_signups):
             signup = self.generate_signup(date)
             signups.append(signup.to_dict())
 

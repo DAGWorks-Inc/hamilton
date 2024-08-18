@@ -125,9 +125,9 @@ def raw_probabilities(raw_data: str) -> pd.DataFrame:
 
 def resampled(raw_probabilities: pd.DataFrame) -> List[int]:
     sample_data = []
-    for index, row in raw_probabilities.iterrows():
+    for _, row in raw_probabilities.iterrows():
         count = row.probability * 1000
-        for i in range(int(count)):
+        for _i in range(int(count)):
             sample_data.append(row.days)
     return sample_data
 

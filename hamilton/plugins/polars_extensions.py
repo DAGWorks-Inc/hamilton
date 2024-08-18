@@ -14,8 +14,8 @@ except ImportError:
 
 try:
     import polars as pl
-except ImportError:
-    raise NotImplementedError("Polars is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Polars is not installed.") from e
 
 pl_version = version.Version(pl.__version__)
 if pl_version < version.Version("1.0.0"):

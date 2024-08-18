@@ -2,8 +2,8 @@ from typing import Any
 
 try:
     import pyspark.pandas as ps
-except ImportError:
-    raise NotImplementedError("Pyspark is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Pyspark is not installed.") from e
 
 from hamilton import registry
 

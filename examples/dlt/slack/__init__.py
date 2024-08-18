@@ -168,12 +168,7 @@ def slack_source(
         write_disposition=write_disposition,
     )
     def messages_resource(
-        created_at: dlt.sources.incremental[DateTime] = dlt.sources.incremental(
-            "ts",
-            initial_value=start_dt,
-            end_value=end_dt,
-            allow_external_schedulers=True,
-        ),
+        created_at: dlt.sources.incremental[DateTime] = None,
     ) -> Iterable[TDataItem]:
         """
         Yield all messages for a set of selected channels as a DLT resource. Keep blocks column without normalization.
@@ -184,6 +179,13 @@ def slack_source(
         Yields:
             Iterable[TDataItem]: A list of messages.
         """
+        if created_at is None:
+            created_at = dlt.sources.incremental(
+                "ts",
+                initial_value=start_dt,
+                end_value=end_dt,
+                allow_external_schedulers=True,
+            )
         start_date_ts = ensure_dt_type(created_at.last_value, to_ts=True)
         end_date_ts = ensure_dt_type(created_at.end_value, to_ts=True)
         for channel_data in fetched_selected_channels:
@@ -191,12 +193,7 @@ def slack_source(
 
     def per_table_messages_resource(
         channel_data: Dict[str, Any],
-        created_at: dlt.sources.incremental[DateTime] = dlt.sources.incremental(
-            "ts",
-            initial_value=start_dt,
-            end_value=end_dt,
-            allow_external_schedulers=True,
-        ),
+        created_at: dlt.sources.incremental[DateTime] = None,
     ) -> Iterable[TDataItem]:
         """Yield all messages for a given channel as a DLT resource. Keep blocks column without normalization.
 
@@ -207,6 +204,13 @@ def slack_source(
         Yields:
             Iterable[TDataItem]: A list of messages.
         """
+        if created_at is None:
+            created_at = dlt.sources.incremental(
+                "ts",
+                initial_value=start_dt,
+                end_value=end_dt,
+                allow_external_schedulers=True,
+            )
         start_date_ts = ensure_dt_type(created_at.last_value, to_ts=True)
         end_date_ts = ensure_dt_type(created_at.end_value, to_ts=True)
         yield from get_messages(channel_data, start_date_ts, end_date_ts)

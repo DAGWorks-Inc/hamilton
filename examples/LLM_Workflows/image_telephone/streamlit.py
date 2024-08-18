@@ -403,8 +403,8 @@ def explore_display():
         image_urls_to_display = image_urls[0 : len(projection)]
         if len(image_urls_to_display) != len(projection):
             image_url_length = len(image_urls_to_display)
-            for i in range(len(projection) - len(image_urls_to_display)):
-                image_urls_to_display.append(image_urls[image_url_length - 1])
+            # for i in range(len(projection) - len(image_urls_to_display)):
+            image_urls_to_display.append(image_urls[image_url_length - 1])
         embedding_path_plot(projection, image_urls_to_display, selected_entry, prompt_path)
         # highlight_point(projection, selected_entry)
 

@@ -59,7 +59,7 @@ class SummaryResponse(pydantic.BaseModel):
 
 
 @app.post("/store_arxiv", tags=["Ingestion"])
-async def store_arxiv(arxiv_ids: list[str] = fastapi.Form(...)) -> JSONResponse:
+async def store_arxiv(arxiv_ids: list[str] = fastapi.Form(...)) -> JSONResponse:  # noqa: B008
     """Retrieve PDF files of arxiv articles for arxiv_ids\n
     Read the PDF as text, create chunks, and embed them using OpenAI API\n
     Store chunks with embeddings in Weaviate.

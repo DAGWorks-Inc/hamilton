@@ -4,8 +4,8 @@ from typing import IO, Any, Collection, Dict, List, Optional, Type, Union
 
 try:
     import plotly.graph_objects
-except ImportError:
-    raise NotImplementedError("Plotly is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Plotly is not installed.") from e
 
 from hamilton import registry
 from hamilton.io import utils

@@ -105,7 +105,7 @@ async def get_latest_dag_runs(
 async def get_dag_runs(
     request,
     dag_run_ids: str,
-    attrs: List[str] = Query(default=None, alias="attr"),
+    attrs: List[str] = Query(default=None, alias="attr"),  # noqa
 ) -> List[DAGRunOutWithData]:
     """Queries a DAG run with all the data.
     Note that you must pass an attribute filter, indicating
@@ -169,7 +169,7 @@ async def update_dag_run(request, dag_run_id: int, dag_run: DAGRunUpdate) -> DAG
     try:
         dag_run_in_db = await DAGRun.objects.aget(id=dag_run_id)
     except DAGRun.DoesNotExist:
-        raise HttpError(404, f"DAG run with ID {dag_run_id} does not exist.")
+        raise HttpError(404, f"DAG run with ID {dag_run_id} does not exist.") from None
     for attr, value in dag_run.dict(exclude_unset=True).items():
         if attr == "upsert_tags":
             upsert_tags = {} if dag_run.upsert_tags is None else dag_run.upsert_tags
@@ -258,7 +258,7 @@ async def bulk_log(
     try:
         dag_run = await DAGRun.objects.aget(id=dag_run_id)
     except DAGRun.DoesNotExist:
-        raise HttpError(404, f"DAG run with ID {dag_run_id} does not exist.")
+        raise HttpError(404, f"DAG run with ID {dag_run_id} does not exist.") from None
 
     task_updates_to_save = process_task_updates(node_run_updates, dag_run_id=dag_run.id)
     # TODO -- determine if we can do this in one pass

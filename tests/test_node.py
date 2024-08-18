@@ -112,7 +112,7 @@ def test_from_parameter_default_override_equals():
         def __eq__(self, other):
             raise ValueError("I'm broken")
 
-    def foo(b: BrokenEquals = BrokenEquals()):
+    def foo(b: BrokenEquals = BrokenEquals()):  # noqa
         pass
 
     param = DependencyType.from_parameter(inspect.signature(foo).parameters["b"])

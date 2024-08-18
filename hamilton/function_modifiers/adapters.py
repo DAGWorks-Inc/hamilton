@@ -190,7 +190,7 @@ class LoadFromDecorator(NodeInjector):
             __load_type: Type[Type] = load_type,
             __resolved_kwargs=resolved_kwargs,
             __dependencies=dependencies_inverted,
-            __optional_params=loader_cls.get_optional_arguments(),
+            __optional_params=loader_cls.get_optional_arguments(),  # noqa: B008
             **input_kwargs: Any,
         ) -> Tuple[load_type, Dict[str, Any]]:
             input_args_with_fixed_dependencies = {

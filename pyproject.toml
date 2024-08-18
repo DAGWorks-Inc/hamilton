@@ -181,7 +181,7 @@ exclude = [
 
 [tool.ruff.lint]
 extend-select = [
-#    "B",   # flake8-bugbear rules
+    "B",   # flake8-bugbear rules
 #    "C4",  # Helps you write better list/set/dict comprehensions.
     "E",   # pycodestyle errors
     "F",   # pyflakes

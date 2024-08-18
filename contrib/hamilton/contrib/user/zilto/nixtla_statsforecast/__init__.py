@@ -125,7 +125,7 @@ def best_model_per_series(cross_validation_evaluation: pd.DataFrame) -> pd.Serie
 def inference_predictions(
     forecaster: StatsForecast,
     inference_forecast_steps: int = 12,
-    inference_confidence_percentile: list[float] = [90.0],
+    inference_confidence_percentile: list[float] = [90.0],  # noqa
 ) -> pd.DataFrame:
     """Infer values using the training harness. Fitted models aren't stored
 
@@ -141,7 +141,7 @@ def plotting_config(
     plot_uids: Optional[list[str]] = None,
     plot_models: Optional[list[str]] = None,
     plot_anomalies: bool = False,
-    plot_confidence_percentile: list[float] = [90.0],
+    plot_confidence_percentile: list[float] = [90.0],  # noqa: B006
     plot_engine: str = "matplotlib",
 ) -> dict:
     """Configuration for plotting functions"""

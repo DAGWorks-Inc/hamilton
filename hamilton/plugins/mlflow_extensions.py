@@ -5,8 +5,8 @@ from typing import Any, Collection, Dict, Literal, Optional, Tuple, Type, Union
 
 try:
     import mlflow
-except ImportError:
-    raise NotImplementedError("MLFlow is not installed.")
+except ImportError as e:
+    raise NotImplementedError("MLFlow is not installed.") from e
 
 from hamilton import registry
 from hamilton.io.data_adapters import DataLoader, DataSaver
@@ -56,8 +56,8 @@ class MLFlowModelSaver(DataSaver):
             # retrieve the `mlflow.FLAVOR` submodule to `.log_model()`
             try:
                 flavor_module = getattr(mlflow, flavor)
-            except ImportError:
-                raise ImportError(f"Flavor {flavor} is unsupported by MLFlow")
+            except ImportError as e:
+                raise ImportError(f"Flavor {flavor} is unsupported by MLFlow") from e
 
         # handle `run_id` and active run conflicts
         if mlflow.active_run() and self.run_id:
@@ -177,8 +177,8 @@ class MLFlowModelLoader(DataLoader):
             # retrieve the `mlflow.FLAVOR` submodule to `.log_model()`
             try:
                 flavor_module = getattr(mlflow, flavor)
-            except ImportError:
-                raise ImportError(f"Flavor {flavor} is unsupported by MLFlow")
+            except ImportError as e:
+                raise ImportError(f"Flavor {flavor} is unsupported by MLFlow") from e
 
         model = flavor_module.load_model(model_uri=self.model_uri, **self.mlflow_kwargs)
         return model, metadata

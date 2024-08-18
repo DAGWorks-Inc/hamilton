@@ -6,8 +6,8 @@ try:
     from matplotlib.artist import Artist
     from matplotlib.figure import Figure
     from matplotlib.transforms import Bbox
-except ImportError:
-    raise NotImplementedError("Matplotlib is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Matplotlib is not installed.") from e
 
 from hamilton import registry
 from hamilton.io import utils

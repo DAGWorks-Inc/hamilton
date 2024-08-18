@@ -10,7 +10,7 @@ try:
     with open("README.md") as readme_file:
         readme = readme_file.read()
 except Exception:
-    warnings.warn("README.md not found")
+    warnings.warn("README.md not found")  # noqa
     readme = None
 
 

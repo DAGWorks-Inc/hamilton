@@ -4,8 +4,8 @@ from typing import Any, Collection, Dict, Tuple, Type, Union
 
 try:
     import xgboost
-except ImportError:
-    raise NotImplementedError("XGBoost is not installed.")
+except ImportError as e:
+    raise NotImplementedError("XGBoost is not installed.") from e
 
 
 from hamilton import registry

@@ -13,8 +13,8 @@ try:
     import pyspark.pandas as ps
     from pyspark.sql import Column, DataFrame, dataframe, types
     from pyspark.sql.functions import column, lit, pandas_udf, udf
-except ImportError:
-    raise NotImplementedError("Pyspark is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Pyspark is not installed.") from e
 
 from hamilton import base, htypes, node
 from hamilton.execution import graph_functions
@@ -222,7 +222,7 @@ def get_spark_type(return_type: Any) -> types.DataType:
         return python_to_spark_type(return_type)
     elif return_type in _list:
         return types.ArrayType(python_to_spark_type(return_type.__args__[0]))
-    elif hasattr(return_type, "__module__") and getattr(return_type, "__module__") == "numpy":
+    elif hasattr(return_type, "__module__") and return_type.__module__ == "numpy":
         return numpy_to_spark_type(return_type)
     else:
         raise ValueError(
@@ -272,7 +272,7 @@ def _determine_parameters_to_bind(
     """
     params_from_df = {}
     bind_parameters = {}
-    for input_name, (type_, dep_type) in node_input_types.items():
+    for input_name, (type_, dep_type) in node_input_types.items():  # noqa
         if input_name in df_columns:
             params_from_df[input_name] = column(input_name)
         elif input_name in actual_kwargs and not isinstance(actual_kwargs[input_name], DataFrame):

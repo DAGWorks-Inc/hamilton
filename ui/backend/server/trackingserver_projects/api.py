@@ -125,7 +125,7 @@ async def get_project_by_id(
     try:
         project = await Project.objects.aget(id=project_id)
     except Project.DoesNotExist:
-        raise HttpError(404, f"Could not find project with ID: {project_id}")
+        raise HttpError(404, f"Could not find project with ID: {project_id}") from None
     role = await user_project_visibility(request, project=project)
     project_out = await ProjectOut.from_model(project, role)
     attributes = [

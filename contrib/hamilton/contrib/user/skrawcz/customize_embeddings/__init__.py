@@ -262,7 +262,7 @@ def construct_df(
     negatives_per_positive: int = 1,
     random_seed: int = 123,
 ) -> pd.DataFrame:
-    f"""Return dataframe of {base_df} paris with negatives added."""
+    """Return dataframe of {base_df} paris with negatives added."""
     return pd.concat(
         [
             base_df,

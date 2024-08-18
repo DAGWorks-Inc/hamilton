@@ -6,8 +6,8 @@ from hamilton import registry
 
 try:
     import vaex
-except ImportError:
-    raise NotImplementedError("Vaex is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Vaex is not installed.") from e
 
 DATAFRAME_TYPE = vaex.dataframe.DataFrame
 COLUMN_TYPE = vaex.expression.Expression

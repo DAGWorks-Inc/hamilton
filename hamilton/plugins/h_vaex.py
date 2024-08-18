@@ -7,8 +7,8 @@ from hamilton import base
 
 try:
     import vaex
-except ImportError:
-    raise NotImplementedError("Vaex is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Vaex is not installed.") from e
 
 
 class VaexDataFrameResult(base.ResultMixin):
@@ -86,7 +86,7 @@ class VaexDataFrameResult(base.ResultMixin):
                 raise NotImplementedError(
                     "VaexDataFrameResult supports only one-dimensional Expression results"
                 )
-            for name, a in arrays.items():
+            for _name, a in arrays.items():
                 if a.shape != first_expression_shape:
                     raise NotImplementedError(
                         "VaexDataFrameResult supports Expression results with same dimension only"
