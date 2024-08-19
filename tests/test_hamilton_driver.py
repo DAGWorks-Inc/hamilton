@@ -684,8 +684,7 @@ def test_driver_setstate_getstate():
         Builder()
         .with_modules(tests.resources.test_driver_serde_mapper)
         .enable_dynamic_execution(allow_experimental_mode=True)
-        # .with_local_executor(executors.SynchronousLocalTaskExecutor())
-        .with_remote_executor(executors.MultiProcessingExecutor(8))
+        .with_remote_executor(executors.MultiProcessingExecutor(4))
         .build()
     )
     r = dr.execute(
