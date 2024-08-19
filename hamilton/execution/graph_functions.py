@@ -144,6 +144,74 @@ def create_error_message(kwargs: dict, node_: node.Node, step: str) -> str:
     message = "\n" + border + "\n" + message + "\n" + border
     return message
 
+def apply_adapters(
+        adapter: LifecycleAdapterSet,
+        node_: node.Node,
+        run_id: str,
+        kwargs: Dict[str,Any],
+        task_id:str,
+
+        ):
+# TODO -- take everything from HERE to THERE
+        # Put it in a function
+        # That function should take an adapter as well as a node + other params (run_id, kwargs, etc...)
+        # And output result
+        # Then call the lifecycle method you created called do_remote_execute using the recipe below (call_lifecycle_method)
+        # And delegate to that
+        # only under if adapter.does_method("do_remote_execute")
+        # Otherwise just call the function we just defined
+        ##### HERE ######
+        try:
+            if adapter.does_hook("pre_node_execute", is_async=False):
+                try:
+                    adapter.call_all_lifecycle_hooks_sync(
+                        "pre_node_execute",
+                        run_id=run_id,
+                        node_=node_,
+                        kwargs=kwargs,
+                        task_id=task_id,
+                    )
+                except Exception as e:
+                    pre_node_execute_errored = True
+                    raise e
+            if adapter.does_method("do_node_execute", is_async=False):
+                result = adapter.call_lifecycle_method_sync(
+                    "do_node_execute",
+                    run_id=run_id,
+                    node_=node_,
+                    kwargs=kwargs,
+                    task_id=task_id,
+                )
+            else:
+                result = node_(**kwargs)
+        except Exception as e:
+            success = False
+            error = e
+            step = "[pre-node-execute]" if pre_node_execute_errored else ""
+            message = create_error_message(kwargs, node_, step)
+            logger.exception(message)
+            raise
+        finally:
+            if not pre_node_execute_errored and adapter.does_hook(
+                "post_node_execute", is_async=False
+            ):
+                try:
+                    adapter.call_all_lifecycle_hooks_sync(
+                        "post_node_execute",
+                        run_id=run_id,
+                        node_=node_,
+                        kwargs=kwargs,
+                        success=success,
+                        error=error,
+                        result=result,
+                        task_id=task_id,
+                    )
+                except Exception:
+                    message = create_error_message(kwargs, node_, "[post-node-execute]")
+                    logger.exception(message)
+                    raise
+        ##### THERE #####
+
 
 def execute_subdag(
     nodes: Collection[node.Node],
