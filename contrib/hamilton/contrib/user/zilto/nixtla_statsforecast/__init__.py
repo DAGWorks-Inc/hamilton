@@ -125,7 +125,7 @@ def best_model_per_series(cross_validation_evaluation: pd.DataFrame) -> pd.Serie
 def inference_predictions(
     forecaster: StatsForecast,
     inference_forecast_steps: int = 12,
-    inference_confidence_percentile: list[float] = [90.0],  # noqa
+    inference_confidence_percentile: list[float] = [90.0],  # noqa: B006
 ) -> pd.DataFrame:
     """Infer values using the training harness. Fitted models aren't stored
 

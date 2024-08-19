@@ -307,7 +307,7 @@ class ExecutionState:
             for dependency in new_task.base_dependencies:
                 new_dependencies[dependency] = []
                 if dependency in task_names_in_group:
-                    for _, name_map in name_maps.items():
+                    for _group_name, name_map in name_maps.items():
                         new_dependencies[dependency].append(name_map[dependency])
                 else:
                     new_dependencies[dependency].append(dependency)
