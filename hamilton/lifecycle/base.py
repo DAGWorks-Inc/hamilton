@@ -496,14 +496,36 @@ class BasePreNodeExecuteAsync(abc.ABC):
         """
         pass
 
-# TODO -- copy this + name it `BaseDoRemoteExecute` and `do_remote_execute` (for the string/function)
-# Look at the comments in graph_functions.py for what parameters to add
-# Add the right parameters
-# Add some docstrings
+
 @lifecycle.base_method("do_node_execute")
 class BaseDoNodeExecute(abc.ABC):
     @abc.abstractmethod
     def do_node_execute(
+        self,
+        *,
+        run_id: str,
+        node_: "node.Node",
+        kwargs: Dict[str, Any],
+        task_id: Optional[str] = None,
+    ) -> Any:
+        """Method that is called to implement node execution. This can replace the execution of a node
+        with something all together, augment it, or delegate it.
+
+        :param run_id: ID of the run, unique in scope of the driver.
+        :param node_: Node that is being executed
+        :param kwargs: Keyword arguments that are being passed into the node
+        :param task_id: ID of the task, defaults to None if not in a task setting
+        """
+        pass
+
+# TODO -- copy this + name it `BaseDoRemoteExecute` and `do_remote_execute` (for the string/function)
+# Look at the comments in graph_functions.py for what parameters to add
+# Add the right parameters
+# Add some docstrings
+@lifecycle.base_method("do_remote_execute")
+class BaseDoRemoteExecute(abc.ABC):
+    @abc.abstractmethod
+    def do_remote_execute(
         self,
         *,
         run_id: str,
