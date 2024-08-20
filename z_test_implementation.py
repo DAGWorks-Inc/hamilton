@@ -19,8 +19,8 @@ if __name__ == "__main__":
     from hamilton_sdk import adapters
     import ray
 
-    username = 'jernejfrank'
-
+    username = 'jf'
+    
     tracker_ray = adapters.HamiltonTracker(
         project_id=1,  # modify this as needed
         username=username,
@@ -35,21 +35,27 @@ if __name__ == "__main__":
             .with_adapters(rga,tracker_ray)
             .build()
             )
-        result_ray = dr_ray.execute(final_vars=['node_5s','node_5s_error'])
+        result_ray = dr_ray.execute(final_vars=[
+            'node_5s',
+            # 'node_5s_error'
+            ])
         print(result_ray)
         ray.shutdown()
     except ValueError:
         print("UI displays no problem")
-    finally:
-        tracker = adapters.HamiltonTracker(
-            project_id=1,  # modify this as needed
-            username=username,
-            dag_name="telemetry_okay",
-            )
-        dr_without_ray = ( driver.Builder()
-            .with_modules(__main__)
-            .with_adapters(tracker)
-            .build()
-            )
+    # finally:
+    #     tracker = adapters.HamiltonTracker(
+    #         project_id=1,  # modify this as needed
+    #         username=username,
+    #         dag_name="telemetry_okay",
+    #         )
+    #     dr_without_ray = ( driver.Builder()
+    #         .with_modules(__main__)
+    #         .with_adapters(tracker)
+    #         .build()
+    #         )
         
-        result_without_ray = dr_without_ray.execute(final_vars=['node_5s','node_5s_error'])
+    #     result_without_ray = dr_without_ray.execute(final_vars=[
+    #         'node_5s',
+    #         # 'node_5s_error'
+    #         ])
