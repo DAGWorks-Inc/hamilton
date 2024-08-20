@@ -1,3 +1,4 @@
+import abc
 import functools
 import json
 import logging
@@ -6,7 +7,7 @@ import typing
 import ray
 from ray import workflow
 
-from hamilton import base, htypes, node
+from hamilton import base, htypes, node, lifecycle
 from hamilton.execution import executors
 from hamilton.execution.executors import TaskFuture
 from hamilton.execution.grouping import TaskImplementation
@@ -54,7 +55,12 @@ def parse_ray_remote_options_from_tags(tags: typing.Dict[str, str]) -> typing.Di
 #     BaseDoValidateInput,
 #     BaseDoCheckEdgeTypesMatch,
 # Then, implement do_remote_execute, kill do_node_execute
-class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
+class RayGraphAdapter(
+    lifecycle.base.BaseDoRemoteExecute,
+    # base.LegacyResultMixin,
+    lifecycle.base.BaseDoValidateInput,
+    lifecycle.base.BaseDoCheckEdgeTypesMatch,
+    abc.ABC,):
     """Class representing what's required to make Hamilton run on Ray.
 
     This walks the graph and translates it to run onto `Ray <https://ray.io/>`__.
@@ -105,25 +111,36 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
             )
 
     @staticmethod
-    def check_input_type(node_type: typing.Type, input_value: typing.Any) -> bool:
+    def do_validate_input(node_type: typing.Type, input_value: typing.Any) -> bool:
         # NOTE: the type of a raylet is unknown until they are computed
         if isinstance(input_value, ray._raylet.ObjectRef):
             return True
         return htypes.check_input_type(node_type, input_value)
 
     @staticmethod
-    def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
-        return node_type == input_type
+    def do_check_edge_types_match(type_from: typing.Type, type_to: typing.Type) -> bool:
+        return type_from == type_to
 
-    def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
+    # def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
+    #     """Function that is called as we walk the graph to determine how to execute a hamilton function.
+
+    #     :param node: the node from the graph.
+    #     :param kwargs: the arguments that should be passed to it.
+    #     :return: returns a ray object reference.
+    #     """
+    #     ray_options = parse_ray_remote_options_from_tags(node.tags)
+    #     return ray.remote(raify(node.callable)).options(**ray_options).remote(**kwargs)
+    
+    def do_remote_execute(self, *, execute_lifecycle_for_node : typing.Callable, node: node.Node, kwargs: typing.Dict[str, typing.Any],**future_kwargs: typing.Any) -> typing.Any:
         """Function that is called as we walk the graph to determine how to execute a hamilton function.
 
-        :param node: the node from the graph.
+        :param execute_lifecycle_for_node: wrapper function that executes lifecycle hooks and methods
         :param kwargs: the arguments that should be passed to it.
         :return: returns a ray object reference.
         """
         ray_options = parse_ray_remote_options_from_tags(node.tags)
-        return ray.remote(raify(node.callable)).options(**ray_options).remote(**kwargs)
+        return ray.remote(raify(execute_lifecycle_for_node))#.options(**ray_options).remote()#**kwargs)
+        
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
