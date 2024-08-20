@@ -131,7 +131,15 @@ class RayGraphAdapter(
     #     ray_options = parse_ray_remote_options_from_tags(node.tags)
     #     return ray.remote(raify(node.callable)).options(**ray_options).remote(**kwargs)
     
-    def do_remote_execute(self, *, execute_lifecycle_for_node : typing.Callable, node: node.Node, kwargs: typing.Dict[str, typing.Any],**future_kwargs: typing.Any) -> typing.Any:
+    def do_remote_execute(
+            self, 
+            *, 
+            execute_lifecycle_for_node : typing.Callable, 
+            node: node.Node, 
+            kwargs: typing.Dict[str, typing.Any],
+            lifecycle_kwargs: typing.Dict[str, typing.Any],
+            **future_kwargs: typing.Any) -> typing.Any:
+
         """Function that is called as we walk the graph to determine how to execute a hamilton function.
 
         :param execute_lifecycle_for_node: wrapper function that executes lifecycle hooks and methods
@@ -139,7 +147,8 @@ class RayGraphAdapter(
         :return: returns a ray object reference.
         """
         ray_options = parse_ray_remote_options_from_tags(node.tags)
-        return ray.remote(raify(execute_lifecycle_for_node))#.options(**ray_options).remote()#**kwargs)
+        kwargs.update(lifecycle_kwargs)
+        return ray.remote(raify(execute_lifecycle_for_node)).options(**ray_options).remote(**kwargs)
         
 
     def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
