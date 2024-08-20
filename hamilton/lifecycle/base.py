@@ -43,6 +43,7 @@ from hamilton import htypes
 # python, which (our usage of) leans type-hinting trigger-happy, this will suffice.
 if TYPE_CHECKING:
     from hamilton import graph, node
+    from hamilton.lifecycle.base import LifecycleAdapterSet
 
 # All of these are internal APIs. Specifically, structure required to manage a set of
 # hooks/methods/validators that we will likely expand. We store them in constants (rather than, say, a more complex single object)
@@ -531,8 +532,9 @@ class BaseDoRemoteExecute(abc.ABC):
         run_id: str,
         node: "node.Node",
         kwargs: Dict[str, Any],
-        execute_lifecycle_for_node : Callable = None,
-        task_id: Optional[str] = None,
+        execute_lifecycle_for_node : Callable,
+        lifecycle_kwargs: Dict[str, Any],
+        task_id: Optional[str] = None
     ) -> Any:
         """Method that is called to implement correct remote execution of hooks. This makes sure that all the pre-node and post-node hooks get executed in the remote environment which is necessary for some adapters. Node execution is called the same as before through "do_node_execute".
 

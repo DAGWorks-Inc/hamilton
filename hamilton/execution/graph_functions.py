@@ -206,6 +206,14 @@ def execute_subdag(
             success = True
             pre_node_execute_errored = False
 
+            lifecycle_kwargs = {
+                     "adapter": adapter,
+                     "error" : error,
+                     "result" : result,
+                     "success": success,
+                     "pre_node_execute_errored": pre_node_execute_errored    
+                 }
+
             # TODO -- take everything from HERE to THERE
             # Put it in a function
             # That function should take an adapter as well as a node + other params (run_id, kwargs, etc...)
@@ -221,10 +229,10 @@ def execute_subdag(
                     run_id:str = run_id,
                     task_id: str = task_id,
                     kwargs:Dict[str,Any] = kwargs,
-                    success: bool = True,
-                    pre_node_execute_errored: bool = False,
                     error = None,
-                    result = None
+                    result = None,
+                    success: bool = True,
+                    pre_node_execute_errored: bool = False
             ):
                 try:
                     if adapter.does_hook("pre_node_execute", is_async=False):
@@ -250,7 +258,7 @@ def execute_subdag(
                     else:
                         result = node_(**kwargs)
                     
-                    return error, result, success, pre_node_execute_errored
+                    return result#, success, pre_node_execute_errored
                 
                 except Exception as e:
                     success = False
@@ -278,38 +286,28 @@ def execute_subdag(
                             message = create_error_message(kwargs, node_, "[post-node-execute]")
                             logger.exception(message)
                             raise
-                    return error, result, success, pre_node_execute_errored
+                    # return error, result, success, pre_node_execute_errored
 
                 ##### THERE #####
             if adapter.does_method("do_remote_execute", is_async=False):
-                 error, result, success, pre_node_execute_errored = adapter.call_lifecycle_method_sync(
+                #  error, result, success, pre_node_execute_errored = adapter.call_lifecycle_method_sync(
+                 result = adapter.call_lifecycle_method_sync(
                     "do_remote_execute",
-                    execute_lifecycle_for_node = execute_lifecycle_for_node(
-                        node_ = node_,
-                        adapter = adapter,
-                        run_id = run_id,
-                        task_id = task_id,
-                        kwargs = kwargs,
-                        success=success,
-                        pre_node_execute_errored=pre_node_execute_errored,
-                        error=error,
-                        result=result),
                     run_id=run_id,
                     node =node_,
                     kwargs=kwargs,
                     task_id=task_id,
+                    execute_lifecycle_for_node = execute_lifecycle_for_node,
+                    lifecycle_kwargs=lifecycle_kwargs
                 )
             else:
-                error, result, success, pre_node_execute_errored = execute_lifecycle_for_node(
-                        node_ = node_,
-                        adapter = adapter,
+                result = execute_lifecycle_for_node(
+                # error, result, success, pre_node_execute_errored = execute_lifecycle_for_node(
                         run_id = run_id,
-                        task_id = task_id,
+                        node_ = node_,
                         kwargs = kwargs,
-                        success=success,
-                        pre_node_execute_errored=pre_node_execute_errored,
-                        error=error,
-                        result=result)
+                        task_id = task_id,
+                        **lifecycle_kwargs)
                 
         computed[node_.name] = result
         # > pruning the graph
