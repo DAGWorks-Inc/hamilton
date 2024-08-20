@@ -54,8 +54,8 @@ def html_page(url: str) -> str:
 def parsed_html(
     url: str,
     html_page: str,
-    tags_to_extract: List[str] = ["p", "li", "div"],
-    tags_to_remove: List[str] = ["script", "style"],
+    tags_to_extract: List[str] = ["p", "li", "div"],  # noqa: B006
+    tags_to_remove: List[str] = ["script", "style"],  # noqa: B006
 ) -> ParsingResult:
     """Parse an HTML string using BeautifulSoup
 

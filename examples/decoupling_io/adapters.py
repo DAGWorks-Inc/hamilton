@@ -7,8 +7,8 @@ try:
     import sklearn.inspection
     import sklearn.metrics
     import sklearn.model_selection
-except ImportError:
-    raise NotImplementedError("scikit-learn is not installed.")
+except ImportError as e:
+    raise NotImplementedError("scikit-learn is not installed.") from e
 
 
 from hamilton import registry

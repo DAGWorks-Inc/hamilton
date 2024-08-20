@@ -390,7 +390,7 @@ def _set_materializer_attrs():
 
         # Combining old and new parameters
         # Checking for position of **kwargs and insert new params before
-        for idx, param in enumerate(original_parameters):
+        for idx, param in enumerate(original_parameters):  # noqa
             if param.kind == inspect.Parameter.VAR_KEYWORD:
                 break
         else:

@@ -159,7 +159,7 @@ if __name__ == "__main__":
         print("running my_func_parameterized_extract")
         return pd.concat([input1 * input2 * input3, input1 + input2 + input3], axis=1)
 
-    setattr(my_func_parameterized_extract, "decorated", "false")
+    my_func_parameterized_extract.decorated = "false"
 
     # Test by running the @parameterized_extract decorator
     from hamilton.ad_hoc_utils import create_temporary_module

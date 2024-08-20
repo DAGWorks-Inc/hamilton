@@ -313,8 +313,8 @@ def _spark_to_arrow(type_):
     else:
         try:
             arrow_type = _from_pyspark_dtypes[type(type_)]
-        except KeyError:
-            raise NotImplementedError(f"Can't convert {type_} to pyarrow type.")
+        except KeyError as e:
+            raise NotImplementedError(f"Can't convert {type_} to pyarrow type.") from e
 
     return arrow_type
 

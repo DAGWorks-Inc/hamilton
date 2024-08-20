@@ -12,10 +12,9 @@ def world_of_warcraft(spark_session: ps.SparkSession) -> ps.DataFrame:
 
 def zone_flags(world_of_warcraft: ps.DataFrame) -> ps.DataFrame:
     zone_flags = world_of_warcraft
-    for zone in ["durotar", "darkshore"]:
-        zone_flags = zone_flags.withColumn(
-            "darkshore_flag", sf.when(sf.col("zone") == " Darkshore", 1).otherwise(0)
-        ).withColumn("durotar_flag", sf.when(sf.col("zone") == " Durotar", 1).otherwise(0))
+    zone_flags = zone_flags.withColumn(
+        "darkshore_flag", sf.when(sf.col("zone") == " Darkshore", 1).otherwise(0)
+    ).withColumn("durotar_flag", sf.when(sf.col("zone") == " Durotar", 1).otherwise(0))
     return zone_flags
 
 

@@ -134,7 +134,7 @@ async def test_create_and_get_all_project_dag_templates(async_client: AsyncClien
     project_id, *_ = await _setup_sample_project(async_client, username)
     num_dag_templates = 4
     dag_templates_created = []
-    for i in range(num_dag_templates):
+    for _i in range(num_dag_templates):
         dag_template_to_generate = _generate_sample_dag_template(
             *_generate_some_sample_nodes(10, 5)
         )

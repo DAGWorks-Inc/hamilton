@@ -17,7 +17,7 @@ def raw_fighter_details() -> pd.DataFrame:
 
 def fighter(raw_fighter_details: pd.DataFrame) -> Parallelizable[pd.Series]:
     """We then want to do something for each record. That's what this code sets up"""
-    for idx, row in raw_fighter_details.iterrows():
+    for _, row in raw_fighter_details.iterrows():
         yield row
 
 

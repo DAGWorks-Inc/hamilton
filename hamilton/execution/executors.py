@@ -99,7 +99,7 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
     for node_ in task.nodes:
         if not getattr(node_, "callable_modified", False):
             node_._callable = _modify_callable(node_.node_role, node_.callable)
-        setattr(node_, "callable_modified", True)
+        node_.callable_modified = True
     if task.adapter.does_hook("pre_task_execute", is_async=False):
         task.adapter.call_all_lifecycle_hooks_sync(
             "pre_task_execute",

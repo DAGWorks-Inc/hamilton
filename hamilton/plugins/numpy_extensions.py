@@ -4,8 +4,8 @@ from typing import IO, Any, Collection, Dict, Optional, Tuple, Type, Union
 
 try:
     import numpy as np
-except ImportError:
-    raise NotImplementedError("Numpy is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Numpy is not installed.") from e
 
 from typing import Literal
 

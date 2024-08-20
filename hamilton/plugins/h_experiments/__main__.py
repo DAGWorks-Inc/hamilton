@@ -11,10 +11,10 @@ def main():
         import fastapi  # noqa: F401
         import fastui  # noqa: F401
         import uvicorn
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as e:
         raise ModuleNotFoundError(
             "Some dependencies are missing. Make sure to `pip install sf-hamilton[experiments]`"
-        )
+        ) from e
     if telemetry.is_telemetry_enabled():
         telemetry.create_and_send_expt_server_event("startup")
     parser = argparse.ArgumentParser(prog="hamilton-experiments")

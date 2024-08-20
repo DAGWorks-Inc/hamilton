@@ -165,7 +165,7 @@ def create_function_graph(
     functions = sum([find_functions(module) for module in modules], [])
 
     # create non-input nodes -- easier to just create this in one loop
-    for func_name, f in functions:
+    for _func_name, f in functions:
         for n in fm_base.resolve_nodes(f, config):
             if n.name in config:
                 continue  # This makes sure we overwrite things if they're in the config...

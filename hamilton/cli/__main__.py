@@ -127,7 +127,7 @@ def _try_command(cmd: Callable, **cmd_kwargs) -> Any:
             command=cmd_name, success=False, message={"error": str(type(e)), "details": str(e)}
         )
         logger.error(dataclasses.asdict(response))
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
     return result
 
@@ -297,12 +297,12 @@ def ui(
     """Runs the Hamilton UI on sqllite in port 8241"""
     try:
         from hamilton_ui import commands
-    except ImportError:
+    except ImportError as e:
         logger.error(
             "hamilton[ui] not installed -- you have to install this to run the UI. "
             'Run `pip install "sf-hamilton[ui]"` to install and get started with the UI!'
         )
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
     ctx.invoke(
         commands.run,

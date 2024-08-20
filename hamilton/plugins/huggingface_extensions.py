@@ -28,8 +28,8 @@ try:
         load_dataset,
     )
     from datasets.formatting.formatting import LazyBatch
-except ImportError:
-    raise NotImplementedError("huggingface datasets library is not installed.")
+except ImportError as e:
+    raise NotImplementedError("huggingface datasets library is not installed.") from e
 
 try:
     import lancedb

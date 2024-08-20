@@ -5,8 +5,8 @@ from hamilton import registry
 try:
     import ibis
     import ibis.expr.types as ir
-except ImportError:
-    raise NotImplementedError("Ibis is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Ibis is not installed.") from e
 
 from hamilton.data_quality import base, default_validators
 

@@ -18,8 +18,8 @@ from typing import (
 
 try:
     import polars as pl
-except ImportError:
-    raise NotImplementedError("Polars is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Polars is not installed.") from e
 
 
 # for polars <0.16.0 we need to determine whether type_aliases exist.

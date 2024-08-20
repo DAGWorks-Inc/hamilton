@@ -115,7 +115,7 @@ def stock_growth_rate_since_last_funding_round(
     df = pd.merge(left=stock_data, right=period_start, on="ticker", how="inner")
 
     stock_growth = dict()
-    for idx, row in df.iterrows():
+    for _, row in df.iterrows():
         history = pd.json_normalize(row["historical_price"]).astype({"date": "datetime64[ns]"})
 
         # skip ticker if history is empty

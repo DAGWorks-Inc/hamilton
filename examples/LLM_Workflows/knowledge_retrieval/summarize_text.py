@@ -56,7 +56,7 @@ def pdf_text(pdf_path: pd.Series) -> pd.Series:
     :return: Series of strings of the PDFs' contents
     """
     _pdf_text = []
-    for i, file_path in pdf_path.items():
+    for _i, file_path in pdf_path.items():
         # creating a pdf reader object
         reader = PdfReader(file_path)
         text = ""

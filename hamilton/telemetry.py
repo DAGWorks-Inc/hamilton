@@ -486,7 +486,7 @@ def get_result_builder_name(adapter: lifecycle_base.LifecycleAdapterSet) -> str:
     class_to_inspect = result_builders[0]
     # all_adapters = adapter.adapters
     if hasattr(class_to_inspect, "result_builder"):
-        class_to_inspect = getattr(class_to_inspect, "result_builder")
+        class_to_inspect = class_to_inspect.result_builder
     # Go by class itself
     if isinstance(class_to_inspect, base.StrictIndexTypePandasDataFrameResult):
         result_builder_name = "hamilton.base.StrictIndexTypePandasDataFrameResult"

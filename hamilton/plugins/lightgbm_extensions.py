@@ -4,8 +4,8 @@ from typing import Any, Collection, Dict, Literal, Optional, Tuple, Type, Union
 
 try:
     import lightgbm
-except ImportError:
-    raise NotImplementedError("LightGBM is not installed.")
+except ImportError as e:
+    raise NotImplementedError("LightGBM is not installed.") from e
 
 
 from hamilton import registry

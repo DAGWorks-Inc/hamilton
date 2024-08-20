@@ -10,8 +10,8 @@ from setuptools import find_packages, setup
 try:
     with open("README.md") as readme_file:
         readme = readme_file.read()
-except Exception:
-    warnings.warn("README.md not found")
+except FileNotFoundError:
+    warnings.warn("README.md not found")  # noqa
     readme = None
 
 REQUIREMENTS_FILES = ["requirements.txt"]

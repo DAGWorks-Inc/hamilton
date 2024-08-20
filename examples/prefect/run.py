@@ -72,7 +72,7 @@ def train_and_evaluate_model_task(
 )
 def absenteeism_prediction_flow(
     raw_data_location: str = "./data/Absenteeism_at_work.csv",
-    feature_set: list[str] = [
+    feature_set: list[str] = [  # noqa: B006
         "age_zero_mean_unit_variance",
         "has_children",
         "has_pet",
@@ -80,7 +80,7 @@ def absenteeism_prediction_flow(
         "service_time",
     ],
     label: str = "absenteeism_time_in_hours",
-    validation_user_ids: list[str] = [
+    validation_user_ids: list[str] = [  # noqa: B006
         "1",
         "2",
         "4",

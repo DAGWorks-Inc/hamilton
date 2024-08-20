@@ -718,7 +718,7 @@ class GracefulErrorAdapter(NodeExecutionMethod):
         can_inject = can_inject and self.allow_injection
 
         if not can_inject:
-            for key, value in node_kwargs.items():
+            for _key, value in node_kwargs.items():
                 if type(self.sentinel_value) is type(value):
                     if self.sentinel_value == value:  # == versus is
                         return default_return

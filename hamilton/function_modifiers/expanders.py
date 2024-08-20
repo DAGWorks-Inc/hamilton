@@ -113,8 +113,8 @@ class parameterize(base.NodeExpander):
             for key, value in parametrization.items()
         }
         bad_values = []
-        for assigned_output, mapping in self.parameterization.items():
-            for parameter, val in mapping.items():
+        for _assigned_output, mapping in self.parameterization.items():
+            for _parameter, val in mapping.items():
                 if not isinstance(val, ParametrizedDependency):
                     bad_values.append(val)
         if bad_values:
@@ -177,7 +177,7 @@ class parameterize(base.NodeExpander):
                 literal_dependencies=literal_dependencies,
                 grouped_list_dependencies=grouped_list_dependencies,
                 grouped_dict_dependencies=grouped_dict_dependencies,
-                former_inputs=list(node_.input_types.keys()),
+                former_inputs=list(node_.input_types.keys()),  # noqa
                 **kwargs,
             ):
                 """This function rewrites what is passed in kwargs to the right kwarg for the function.
@@ -284,7 +284,7 @@ class parameterize(base.NodeExpander):
         signature = inspect.signature(fn)
         func_param_names = set(signature.parameters.keys())
         try:
-            for output_name, mappings in self.parameterization.items():
+            for output_name, _mappings in self.parameterization.items():
                 # TODO -- separate out into the two dependency-types
                 if output_name == self.PLACEHOLDER_PARAM_NAME:
                     output_name = fn.__name__
@@ -310,7 +310,7 @@ class parameterize(base.NodeExpander):
                 f"Parametrization is invalid: the following parameters don't appear in the function itself: {', '.join(missing_parameters)}"
             )
         type_hints = typing.get_type_hints(fn)
-        for output_name, mapping in self.parameterization.items():
+        for _output_name, mapping in self.parameterization.items():
             # TODO -- look a the origin type and determine that its a sequence
             # We can just use the GroupedListDependency to do this
             invalid_types = []
@@ -596,12 +596,12 @@ class extract_columns(base.SingleNodeNodeTransformer):
         output_type = typing.get_type_hints(fn).get("return")
         try:
             registry.get_column_type_from_df_type(output_type)
-        except NotImplementedError:
+        except NotImplementedError as e:
             raise base.InvalidDecoratorException(
                 # TODO: capture was dataframe libraries are supported and print here.
                 f"Error {fn} does not output a type we know about. Is it a dataframe type we "
                 f"support? "
-            )
+            ) from e
 
     def validate(self, fn: Callable):
         """A function is invalid if it does not output a dataframe.

@@ -137,7 +137,7 @@ def call_arxiv_function(messages, full_message):
             return response
         except Exception as e:
             logger.error(type(e))
-            raise Exception("Function chat request failed")
+            raise Exception("Function chat request failed") from e
 
     elif full_message["message"]["function_call"]["name"] == "read_article_and_summarize":
         parsed_output = json.loads(full_message["message"]["function_call"]["arguments"])

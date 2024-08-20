@@ -320,12 +320,12 @@ class subdag(base.NodeCreator):
         for node_ in nodes:
             new_name = assign_namespace(node_.name, namespace)
             new_name_map[node_.name] = new_name
-        for dep, value in inputs.items():
+        for dep, _value in inputs.items():
             # We create nodes for both namespace assignment and source assignment
             # Why? Cause we need unique parameter names, and with source() some can share params
             new_name_map[dep] = assign_namespace(dep, namespace)
 
-        for dep, value in config.items():
+        for dep, _value in config.items():
             new_name_map[dep] = assign_namespace(dep, namespace)
 
         # Reassign sources
@@ -343,9 +343,9 @@ class subdag(base.NodeCreator):
             # around as sources can potentially serve multiple destinations (with the source()) decorator
             def fn(
                 _callabl=node_.callable,
-                _kwarg_mapping=dict(kwarg_mapping),
+                _kwarg_mapping=dict(kwarg_mapping),  # noqa: B006
                 _new_name=new_name,
-                _new_name_map=dict(new_name_map),
+                _new_name_map=dict(new_name_map),  # noqa: B006
                 **kwargs,
             ):
                 new_kwargs = {_kwarg_mapping[kwarg]: value for kwarg, value in kwargs.items()}
@@ -353,9 +353,9 @@ class subdag(base.NodeCreator):
 
             async def async_fn(
                 _callabl=node_.callable,
-                _kwarg_mapping=dict(kwarg_mapping),
+                _kwarg_mapping=dict(kwarg_mapping),  # noqa: B006
                 _new_name=new_name,
-                _new_name_map=dict(new_name_map),
+                _new_name_map=dict(new_name_map),  # noqa: B006
                 **kwargs,
             ):
                 new_kwargs = {_kwarg_mapping[kwarg]: value for kwarg, value in kwargs.items()}
@@ -438,7 +438,7 @@ class subdag(base.NodeCreator):
 
     def _validate_parameterization(self):
         invalid_values = []
-        for key, value in self.inputs.items():
+        for _key, value in self.inputs.items():
             if not isinstance(value, dependencies.ParametrizedDependency):
                 invalid_values.append(value)
         if invalid_values:

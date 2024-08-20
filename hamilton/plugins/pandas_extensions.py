@@ -9,8 +9,8 @@ from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Tu
 
 try:
     import pandas as pd
-except ImportError:
-    raise NotImplementedError("Pandas is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Pandas is not installed.") from e
 
 from typing import Literal
 

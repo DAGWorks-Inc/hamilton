@@ -27,8 +27,8 @@ def get_git_base_directory() -> str:
         else:
             print("Error:", result.stderr.strip())
             raise OSError(f"{result.stderr.strip()}")
-    except FileNotFoundError:
-        raise FileNotFoundError("Git command not found. Please make sure Git is installed.")
+    except FileNotFoundError as e:
+        raise FileNotFoundError("Git command not found. Please make sure Git is installed.") from e
 
 
 def get_git_reference(git_relative_path: Union[str, Path], git_reference: str) -> str:
@@ -51,8 +51,8 @@ def get_git_reference(git_relative_path: Union[str, Path], git_reference: str) -
             return
         else:
             return
-    except FileNotFoundError:
-        raise FileNotFoundError("Git command not found. Please make sure Git is installed.")
+    except FileNotFoundError as e:
+        raise FileNotFoundError("Git command not found. Please make sure Git is installed.") from e
 
 
 def version_hamilton_functions(module: ModuleType) -> Dict[str, str]:
@@ -184,7 +184,7 @@ def diff_versions(current_map: Dict[str, str], reference_map: Dict[str, str]) ->
         if v1 != v2:
             edit.append(node_name)
 
-    for node_name, v2 in reference_map.items():
+    for node_name, _ in reference_map.items():
         v1 = current_map.get(node_name)
         if v1 is None:
             reference_only.append(node_name)

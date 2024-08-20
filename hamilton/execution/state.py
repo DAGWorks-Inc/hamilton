@@ -307,7 +307,7 @@ class ExecutionState:
             for dependency in new_task.base_dependencies:
                 new_dependencies[dependency] = []
                 if dependency in task_names_in_group:
-                    for group_name, name_map in name_maps.items():
+                    for _group_name, name_map in name_maps.items():
                         new_dependencies[dependency].append(name_map[dependency])
                 else:
                     new_dependencies[dependency].append(dependency)
@@ -403,10 +403,10 @@ class ExecutionState:
 
             tasks_to_enqueue = []
             # not efficient, TODO -- use a reverse dependency map
-            for key, task in self.task_pool.items():
+            for _key, task in self.task_pool.items():
                 if self.task_states[task.task_id] == TaskState.INITIALIZED:
                     should_launch = True
-                    for base_dep_name, realized_dep_list in task.realized_dependencies.items():
+                    for _base_dep_name, realized_dep_list in task.realized_dependencies.items():
                         for dep in realized_dep_list:
                             if self.task_states[dep] != TaskState.SUCCESSFUL:
                                 should_launch = False

@@ -2,8 +2,8 @@ from typing import Any
 
 try:
     import dask.dataframe as dd
-except ImportError:
-    raise NotImplementedError("Dask is not installed.")
+except ImportError as e:
+    raise NotImplementedError("Dask is not installed.") from e
 
 from hamilton import registry
 

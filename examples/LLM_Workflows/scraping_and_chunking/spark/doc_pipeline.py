@@ -27,8 +27,8 @@ def article_text(url: str, article_regex: str) -> str:
     """
     try:
         html = requests.get(url)
-    except requests.exceptions.RequestException:
-        raise Exception(f"Failed to get URL: {url}")
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Failed to get URL: {url}") from e
     article = re.findall(article_regex, html.text, re.DOTALL)
     if not article:
         raise ValueError(f"No article found in {url}")
