@@ -1,5 +1,7 @@
 import abc
 import functools
+import importlib
+import importlib.util
 import json
 import logging
 import operator
@@ -259,6 +261,33 @@ class Driver:
         # These all feed into creating the driver & thus DAG.
         dr = driver.Driver(config, module, adapter=adapter)
     """
+
+    def __getstate__(self):
+        """Used for serialization."""
+        # Copy the object's state from self.__dict__
+        state = self.__dict__.copy()
+        # Remove the unpicklable entries -- right now it's the modules tracked.
+        state["__graph_module_names"] = [
+            importlib.util.find_spec(m.__name__).name for m in state["graph_modules"]
+        ]
+        del state["graph_modules"]  # remove from state
+        return state
+
+    def __setstate__(self, state):
+        """Used for deserialization."""
+        # Restore instance attributes
+        self.__dict__.update(state)
+        # Reinitialize the unpicklable entries
+        # assumption is that the modules are importable in the new process
+        self.graph_modules = []
+        for n in state["__graph_module_names"]:
+            try:
+                g_module = importlib.import_module(n)
+            except ImportError:
+                logger.error(f"Could not import module {n}")
+                continue
+            else:
+                self.graph_modules.append(g_module)
 
     @staticmethod
     def normalize_adapter_input(
