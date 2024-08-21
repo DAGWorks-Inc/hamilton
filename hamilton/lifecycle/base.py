@@ -519,10 +519,6 @@ class BaseDoNodeExecute(abc.ABC):
         """
         pass
 
-# TODO -- copy this + name it `BaseDoRemoteExecute` and `do_remote_execute` (for the string/function)
-# Look at the comments in graph_functions.py for what parameters to add
-# Add the right parameters
-# Add some docstrings
 @lifecycle.base_method("do_remote_execute")
 class BaseDoRemoteExecute(abc.ABC):
     @abc.abstractmethod
@@ -533,7 +529,6 @@ class BaseDoRemoteExecute(abc.ABC):
         node: "node.Node",
         kwargs: Dict[str, Any],
         execute_lifecycle_for_node : Callable,
-        lifecycle_kwargs: Dict[str, Any],
         task_id: Optional[str] = None
     ) -> Any:
         """Method that is called to implement correct remote execution of hooks. This makes sure that all the pre-node and post-node hooks get executed in the remote environment which is necessary for some adapters. Node execution is called the same as before through "do_node_execute".
