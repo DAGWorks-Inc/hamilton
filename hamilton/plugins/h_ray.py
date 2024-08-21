@@ -50,14 +50,8 @@ def parse_ray_remote_options_from_tags(tags: typing.Dict[str, str]) -> typing.Di
 
     return ray_options
 
-# TODO -- change the base classes here to be the underlying ones in HamiltonGraphAdapter
-#     BaseDoRemoteExecute, # Change this one -- add it in
-#     BaseDoValidateInput,
-#     BaseDoCheckEdgeTypesMatch,
-# Then, implement do_remote_execute, kill do_node_execute
 class RayGraphAdapter(
     lifecycle.base.BaseDoRemoteExecute,
-    # base.LegacyResultMixin,
     lifecycle.base.BaseDoBuildResult,
     lifecycle.base.BaseDoValidateInput,
     lifecycle.base.BaseDoCheckEdgeTypesMatch,
@@ -121,16 +115,6 @@ class RayGraphAdapter(
     @staticmethod
     def do_check_edge_types_match(type_from: typing.Type, type_to: typing.Type) -> bool:
         return type_from == type_to
-
-    # def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
-    #     """Function that is called as we walk the graph to determine how to execute a hamilton function.
-
-    #     :param node: the node from the graph.
-    #     :param kwargs: the arguments that should be passed to it.
-    #     :return: returns a ray object reference.
-    #     """
-    #     ray_options = parse_ray_remote_options_from_tags(node.tags)
-    #     return ray.remote(raify(node.callable)).options(**ray_options).remote(**kwargs)
     
     def do_remote_execute(
             self, 
@@ -138,8 +122,7 @@ class RayGraphAdapter(
             execute_lifecycle_for_node : typing.Callable, 
             node: node.Node, 
             kwargs: typing.Dict[str, typing.Any],
-            lifecycle_kwargs: typing.Dict[str, typing.Any],
-            **future_kwargs: typing.Any) -> typing.Any:
+            **other_kwargs: typing.Any) -> typing.Any:
 
         """Function that is called as we walk the graph to determine how to execute a hamilton function.
 
@@ -148,9 +131,6 @@ class RayGraphAdapter(
         :return: returns a ray object reference.
         """
         ray_options = parse_ray_remote_options_from_tags(node.tags)
-        # kwargs = {"kwargs":kwargs,
-        #           "adapter": lifecycle_kwargs["adapter"],}
-        # # kwargs.update(lifecycle_kwargs)
         return ray.remote(raify(execute_lifecycle_for_node)).options(**ray_options).remote(kwargs=kwargs)
         
 
