@@ -2,11 +2,13 @@ import time
 
 
 def node_5s()->float:
+    print("5s executed")
     start = time.time()
     time.sleep(5)
     return time.time() - start
 
 def node_5s_error()->float:
+    print("5s error executed")
     start = time.time()
     time.sleep(5)
     raise ValueError("Does not break telemetry if executed through ray")
@@ -36,7 +38,7 @@ if __name__ == "__main__":
             .build()
             )
         result_ray = dr_ray.execute(final_vars=[
-            'node_5s',
+            # 'node_5s',
             'node_5s_error'
             ])
         print(result_ray)

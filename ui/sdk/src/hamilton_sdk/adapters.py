@@ -250,6 +250,7 @@ class HamiltonTracker(
         result: Optional[Any],
         task_id: Optional[str] = None,
     ):
+        print("I got to hamilton tracker")
         """Captures end of node execution."""
         logger.debug("post_node_execute %s %s", run_id, task_id)
         task_run: TaskRun = self.task_runs[run_id][node_.name]
