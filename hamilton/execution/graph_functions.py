@@ -208,10 +208,10 @@ def execute_subdag(
 
             lifecycle_kwargs = {
                      "adapter": adapter,
-                     "error" : error,
-                     "result" : result,
-                     "success": success,
-                     "pre_node_execute_errored": pre_node_execute_errored    
+                    #  "error" : error,
+                    #  "result" : result,
+                    #  "success": success,
+                    #  "pre_node_execute_errored": pre_node_execute_errored    
                  }
 
             # TODO -- take everything from HERE to THERE
@@ -223,17 +223,18 @@ def execute_subdag(
             # only under if adapter.does_method("do_remote_execute")
             # Otherwise just call the function we just defined
             ##### HERE ######
+            # TODO: name better
             def execute_lifecycle_for_node(
                     node_: node.Node = node_,
                     adapter: LifecycleAdapterSet = adapter,
                     run_id:str = run_id,
                     task_id: str = task_id,
-                    kwargs:Dict[str,Any] = kwargs,
-                    error = None,
-                    result = None,
-                    success: bool = True,
-                    pre_node_execute_errored: bool = False
+                    kwargs:Dict[str,Any] = kwargs 
             ):
+                error = None,
+                result = None,
+                success = True,
+                pre_node_execute_errored = False
                 try:
                     if adapter.does_hook("pre_node_execute", is_async=False):
                         try:
@@ -258,7 +259,7 @@ def execute_subdag(
                     else:
                         result = node_(**kwargs)
                     
-                    return result#, success, pre_node_execute_errored
+                    return result
                 
                 except Exception as e:
                     success = False
@@ -268,9 +269,12 @@ def execute_subdag(
                     logger.exception(message)
                     raise
                 finally:
+                    print("finally called")
+                    
                     if not pre_node_execute_errored and adapter.does_hook(
                         "post_node_execute", is_async=False
                     ):
+                        print("running post hook")
                         try:
                             adapter.call_all_lifecycle_hooks_sync(
                                 "post_node_execute",
@@ -283,15 +287,16 @@ def execute_subdag(
                                 task_id=task_id,
                             )
                         except Exception:
+                            print("running post hook exception")
                             message = create_error_message(kwargs, node_, "[post-node-execute]")
                             logger.exception(message)
                             raise
-                    # return error, result, success, pre_node_execute_errored
+                        print("success post hook")
 
                 ##### THERE #####
+                # TODO: Catching correctly errors and knowing if the node function failed or ray
             if adapter.does_method("do_remote_execute", is_async=False):
-                #  error, result, success, pre_node_execute_errored = adapter.call_lifecycle_method_sync(
-                 result = adapter.call_lifecycle_method_sync(
+                remote_object = adapter.call_lifecycle_method_sync(
                     "do_remote_execute",
                     run_id=run_id,
                     node =node_,
@@ -300,14 +305,17 @@ def execute_subdag(
                     execute_lifecycle_for_node = execute_lifecycle_for_node,
                     lifecycle_kwargs=lifecycle_kwargs
                 )
+                #  if isinstance(remote_object, tuple):
+                #      error, result, success, pre_node_execute_errored = remote_object
+                #  else:
+                result = remote_object
             else:
                 result = execute_lifecycle_for_node(
-                # error, result, success, pre_node_execute_errored = execute_lifecycle_for_node(
-                        run_id = run_id,
-                        node_ = node_,
-                        kwargs = kwargs,
-                        task_id = task_id,
-                        **lifecycle_kwargs)
+                    run_id = run_id,
+                    node_ = node_,
+                    kwargs = kwargs,
+                    task_id = task_id,
+                    **lifecycle_kwargs)
                 
         computed[node_.name] = result
         # > pruning the graph

@@ -58,6 +58,7 @@ def parse_ray_remote_options_from_tags(tags: typing.Dict[str, str]) -> typing.Di
 class RayGraphAdapter(
     lifecycle.base.BaseDoRemoteExecute,
     # base.LegacyResultMixin,
+    lifecycle.base.BaseDoBuildResult,
     lifecycle.base.BaseDoValidateInput,
     lifecycle.base.BaseDoCheckEdgeTypesMatch,
     abc.ABC,):
@@ -147,11 +148,13 @@ class RayGraphAdapter(
         :return: returns a ray object reference.
         """
         ray_options = parse_ray_remote_options_from_tags(node.tags)
-        kwargs.update(lifecycle_kwargs)
-        return ray.remote(raify(execute_lifecycle_for_node)).options(**ray_options).remote(**kwargs)
+        # kwargs = {"kwargs":kwargs,
+        #           "adapter": lifecycle_kwargs["adapter"],}
+        # # kwargs.update(lifecycle_kwargs)
+        return ray.remote(raify(execute_lifecycle_for_node)).options(**ray_options).remote(kwargs=kwargs)
         
 
-    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def do_build_result(self, outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
 
         :param outputs: the dictionary of key -> Union[ray object reference | value]
