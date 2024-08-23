@@ -191,6 +191,10 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         ).start()
         self.worker_thread.start()
 
+        import atexit
+
+        atexit.register(self.stop)
+
     def __getstate__(self):
         # Copy the object's state from self.__dict__ which contains
         # all our instance attributes. Always use the dict.copy()
