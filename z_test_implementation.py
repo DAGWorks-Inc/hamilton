@@ -38,8 +38,8 @@ if __name__ == "__main__":
             .build()
             )
         result_ray = dr_ray.execute(final_vars=[
-            # 'node_5s',
-            'node_5s_error'
+            'node_5s',
+            # 'node_5s_error'
             ])
         print(result_ray)
         ray.shutdown()
