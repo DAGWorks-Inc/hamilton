@@ -1,5 +1,6 @@
 import abc
 import asyncio
+import atexit
 import datetime
 import functools
 import logging
@@ -196,8 +197,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         ).start()
         self.worker_thread.start()
 
-        import atexit
-
+        # Makes sure the process stops even if in remote environment
         atexit.register(self.stop)
 
     def __getstate__(self):

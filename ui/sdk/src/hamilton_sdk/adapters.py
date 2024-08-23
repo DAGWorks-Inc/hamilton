@@ -102,10 +102,11 @@ class HamiltonTracker(
         # set this to some constant value if you want to generate the same sample each time.
         # if you're using a float value.
         self.seed = None
-    
+
     def stop(self):
+        """Initiates stop if run in remote environment"""
         self.client.stop()
-    
+
     def post_graph_construct(
         self, graph: h_graph.FunctionGraph, modules: List[ModuleType], config: Dict[str, Any]
     ):
@@ -255,7 +256,6 @@ class HamiltonTracker(
         result: Optional[Any],
         task_id: Optional[str] = None,
     ):
-        print("I got to hamilton tracker")
         """Captures end of node execution."""
         logger.debug("post_node_execute %s %s", run_id, task_id)
         task_run: TaskRun = self.task_runs[run_id][node_.name]
