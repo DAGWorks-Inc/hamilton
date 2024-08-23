@@ -50,12 +50,14 @@ def parse_ray_remote_options_from_tags(tags: typing.Dict[str, str]) -> typing.Di
 
     return ray_options
 
+
 class RayGraphAdapter(
     lifecycle.base.BaseDoRemoteExecute,
     lifecycle.base.BaseDoBuildResult,
     lifecycle.base.BaseDoValidateInput,
     lifecycle.base.BaseDoCheckEdgeTypesMatch,
-    abc.ABC,):
+    abc.ABC,
+):
     """Class representing what's required to make Hamilton run on Ray.
 
     This walks the graph and translates it to run onto `Ray <https://ray.io/>`__.
@@ -115,15 +117,16 @@ class RayGraphAdapter(
     @staticmethod
     def do_check_edge_types_match(type_from: typing.Type, type_to: typing.Type) -> bool:
         return type_from == type_to
-    
-    def do_remote_execute(
-            self, 
-            *, 
-            execute_lifecycle_for_node : typing.Callable, 
-            node: node.Node, 
-            kwargs: typing.Dict[str, typing.Any],
-            **other_kwargs: typing.Any) -> typing.Any:
 
+    def do_remote_execute(
+        self,
+        *,
+        execute_lifecycle_for_node: typing.Callable,
+        node: node.Node,
+        kwargs: typing.Dict[str, typing.Any],
+        remote_execute: bool,
+        **other_kwargs: typing.Any,
+    ) -> typing.Any:
         """Function that is called as we walk the graph to determine how to execute a hamilton function.
 
         :param execute_lifecycle_for_node: wrapper function that executes lifecycle hooks and methods
@@ -131,8 +134,11 @@ class RayGraphAdapter(
         :return: returns a ray object reference.
         """
         ray_options = parse_ray_remote_options_from_tags(node.tags)
-        return ray.remote(raify(execute_lifecycle_for_node)).options(**ray_options).remote(kwargs=kwargs)
-        
+        return (
+            ray.remote(raify(execute_lifecycle_for_node))
+            .options(**ray_options)
+            .remote(kwargs=kwargs, remote_execute=remote_execute)
+        )
 
     def do_build_result(self, outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
