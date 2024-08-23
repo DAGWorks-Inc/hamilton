@@ -102,7 +102,10 @@ class HamiltonTracker(
         # set this to some constant value if you want to generate the same sample each time.
         # if you're using a float value.
         self.seed = None
-
+    
+    def stop(self):
+        self.client.stop()
+    
     def post_graph_construct(
         self, graph: h_graph.FunctionGraph, modules: List[ModuleType], config: Dict[str, Any]
     ):

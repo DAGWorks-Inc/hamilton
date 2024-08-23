@@ -288,6 +288,12 @@ def execute_subdag(
                             message = create_error_message(kwargs, node_, "[post-node-execute]")
                             logger.exception(message)
                             raise
+                        
+                        print("stopping adapters")
+                        for a in adapter._adapters:
+                            if hasattr(a, "stop"):
+                                print("stopping!")
+                                a.stop()
 
                 # TODO: Catching correctly errors and knowing if the node function failed or ray
             if adapter.does_method("do_remote_execute", is_async=False):
