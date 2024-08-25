@@ -11,7 +11,7 @@ def node_5s() -> float:
 def at_1_to_previous(node_5s: float) -> float:
     print("1s executed")
     start = time.time()
-    time.sleep(1)
+    time.sleep(10)
     return node_5s + (time.time() - start)
 
 

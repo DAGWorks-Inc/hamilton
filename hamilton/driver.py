@@ -583,7 +583,9 @@ class Driver:
         error = None
         _final_vars = self._create_final_vars(final_vars)
         try:
-            outputs = self.raw_execute(_final_vars, overrides, display_graph, inputs=inputs)
+            outputs, run_id, function_graph = self.raw_execute(
+                _final_vars, overrides, display_graph, inputs=inputs
+            )
             if self.adapter.does_method("do_build_result", is_async=False):
                 # Build the result if we have a result builder
                 return self.adapter.call_lifecycle_method_sync("do_build_result", outputs=outputs)
@@ -595,6 +597,15 @@ class Driver:
             error = telemetry.sanitize_error(*sys.exc_info())
             raise e
         finally:
+            if self.adapter.does_hook("post_graph_execute", is_async=False):
+                self.adapter.call_all_lifecycle_hooks_sync(
+                    "post_graph_execute",
+                    run_id=run_id,
+                    graph=function_graph,
+                    success=run_successful,
+                    error=error,
+                    results=outputs,
+                )
             duration = time.time() - start_time
             self.capture_execute_telemetry(
                 error, _final_vars, inputs, overrides, run_successful, duration
@@ -698,8 +709,8 @@ class Driver:
                 overrides=overrides,
             )
         results = None
-        error = None
-        success = False
+        # error = None
+        # success = False
         try:
             results = self.graph_executor.execute(
                 function_graph,
@@ -708,22 +719,22 @@ class Driver:
                 inputs if inputs is not None else {},
                 run_id,
             )
-            success = True
+            # success = True
         except Exception as e:
-            error = e
-            success = False
+            # error = e
+            # success = False
             raise e
-        finally:
-            if self.adapter.does_hook("post_graph_execute", is_async=False):
-                self.adapter.call_all_lifecycle_hooks_sync(
-                    "post_graph_execute",
-                    run_id=run_id,
-                    graph=function_graph,
-                    success=success,
-                    error=error,
-                    results=results,
-                )
-        return results
+        # finally:
+        #     if self.adapter.does_hook("post_graph_execute", is_async=False):
+        #         self.adapter.call_all_lifecycle_hooks_sync(
+        #             "post_graph_execute",
+        #             run_id=run_id,
+        #             graph=function_graph,
+        #             success=success,
+        #             error=error,
+        #             results=results,
+        #         )
+        return results, run_id, function_graph
 
     @capture_function_usage
     def list_available_variables(
