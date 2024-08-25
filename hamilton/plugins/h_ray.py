@@ -7,7 +7,7 @@ import typing
 import ray
 from ray import workflow
 
-from hamilton import base, htypes, node, lifecycle
+from hamilton import base, htypes, lifecycle, node
 from hamilton.execution import executors
 from hamilton.execution.executors import TaskFuture
 from hamilton.execution.grouping import TaskImplementation
@@ -123,9 +123,7 @@ class RayGraphAdapter(
         *,
         execute_lifecycle_for_node: typing.Callable,
         node: node.Node,
-        kwargs: typing.Dict[str, typing.Any],
-        remote_execute: bool,
-        **other_kwargs: typing.Any,
+        **kwargs: typing.Dict[str, typing.Any],
     ) -> typing.Any:
         """Function that is called as we walk the graph to determine how to execute a hamilton function.
 
@@ -134,11 +132,7 @@ class RayGraphAdapter(
         :return: returns a ray object reference.
         """
         ray_options = parse_ray_remote_options_from_tags(node.tags)
-        return (
-            ray.remote(raify(execute_lifecycle_for_node))
-            .options(**ray_options)
-            .remote(kwargs=kwargs, remote_execute=remote_execute)
-        )
+        return ray.remote(raify(execute_lifecycle_for_node)).options(**ray_options).remote(**kwargs)
 
     def do_build_result(self, outputs: typing.Dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.

@@ -204,12 +204,12 @@ def execute_subdag(
 
             # TODO: better function name
             def execute_lifecycle_for_node(
-                node_: node.Node = node_,
-                adapter: LifecycleAdapterSet = adapter,
-                run_id: str = run_id,
-                task_id: str = task_id,
-                kwargs: Dict[str, Any] = kwargs,
-                remote_execute=False,
+                __node_: node.Node = node_,
+                __adapter: LifecycleAdapterSet = adapter,
+                __run_id: str = run_id,
+                __task_id: str = task_id,
+                # __kwargs: Dict[str, Any] = kwargs,
+                **__kwargs: Dict[str, Any],
             ):
                 """Sandwich function that guarantees the pre_node and post_node lifecycle hooks are executed in the correct environment (local or remote)."""
 
@@ -223,10 +223,10 @@ def execute_subdag(
                         try:
                             adapter.call_all_lifecycle_hooks_sync(
                                 "pre_node_execute",
-                                run_id=run_id,
-                                node_=node_,
-                                kwargs=kwargs,
-                                task_id=task_id,
+                                run_id=__run_id,
+                                node_=__node_,
+                                kwargs=__kwargs,
+                                task_id=__task_id,
                             )
                         except Exception as e:
                             pre_node_execute_errored = True
@@ -234,13 +234,13 @@ def execute_subdag(
                     if adapter.does_method("do_node_execute", is_async=False):
                         result = adapter.call_lifecycle_method_sync(
                             "do_node_execute",
-                            run_id=run_id,
-                            node_=node_,
-                            kwargs=kwargs,
-                            task_id=task_id,
+                            run_id=__run_id,
+                            node_=__node_,
+                            kwargs=__kwargs,
+                            task_id=__task_id,
                         )
                     else:
-                        result = node_(**kwargs)
+                        result = node_(**__kwargs)
 
                     return result
 
@@ -258,9 +258,9 @@ def execute_subdag(
                         try:
                             adapter.call_all_lifecycle_hooks_sync(
                                 "post_node_execute",
-                                run_id=run_id,
-                                node_=node_,
-                                kwargs=kwargs,
+                                run_id=__run_id,
+                                node_=__node_,
+                                kwargs=__kwargs,
                                 success=success,
                                 error=error,
                                 result=result,
@@ -271,22 +271,16 @@ def execute_subdag(
                             logger.exception(message)
                             raise
 
-                        if remote_execute:
-                            for a in adapter._adapters:
-                                if hasattr(a, "stop"):
-                                    a.stop()
-
                 # TODO: Catching correctly errors and knowing if the node function failed or ray
 
             if adapter.does_method("do_remote_execute", is_async=False):
                 result = adapter.call_lifecycle_method_sync(
                     "do_remote_execute",
-                    run_id=run_id,
+                    __run_id=run_id,
                     node=node_,
-                    kwargs=kwargs,
-                    task_id=task_id,
+                    __task_id=task_id,
                     execute_lifecycle_for_node=execute_lifecycle_for_node,
-                    remote_execute=True,
+                    **kwargs,
                 )
             else:
                 result = execute_lifecycle_for_node()
