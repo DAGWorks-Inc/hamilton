@@ -11,24 +11,23 @@ def node_5s() -> float:
 def at_1_to_previous(node_5s: float) -> float:
     print("1s executed")
     start = time.time()
-    time.sleep(5)
-    return node_5s  # + (time.time()-start)
+    time.sleep(1)
+    return node_5s + (time.time() - start)
 
 
 def node_5s_error() -> float:
     print("5s error executed")
-    start = time.time()
     time.sleep(5)
     raise ValueError("Does not break telemetry if executed through ray")
-    return time.time() - start
 
 
 if __name__ == "__main__":
+    import ray
+
     import __main__
     from hamilton import base, driver
     from hamilton.plugins.h_ray import RayGraphAdapter
     from hamilton_sdk import adapters
-    import ray
 
     username = "jf"
 
@@ -46,7 +45,7 @@ if __name__ == "__main__":
             final_vars=[
                 "node_5s",
                 # 'node_5s_error'
-                # 'at_1_to_previous',
+                "at_1_to_previous",
             ]
         )
         print(result_ray)
@@ -54,12 +53,12 @@ if __name__ == "__main__":
         print(result_ray)
     except ValueError:
         print("UI displays no problem")
-    finally:
-        tracker = adapters.HamiltonTracker(
-            project_id=1,  # modify this as needed
-            username=username,
-            dag_name="telemetry_okay",
-        )
-        dr_without_ray = driver.Builder().with_modules(__main__).with_adapters(tracker).build()
+    # finally:
+    #     tracker = adapters.HamiltonTracker(
+    #         project_id=1,  # modify this as needed
+    #         username=username,
+    #         dag_name="telemetry_okay",
+    #     )
+    #     dr_without_ray = driver.Builder().with_modules(__main__).with_adapters(tracker).build()
 
-        result_without_ray = dr_without_ray.execute(final_vars=["node_5s", "node_5s_error"])
+    #     result_without_ray = dr_without_ray.execute(final_vars=["node_5s", "node_5s_error"])
