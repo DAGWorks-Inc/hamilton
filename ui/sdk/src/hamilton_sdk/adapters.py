@@ -45,7 +45,7 @@ class HamiltonTracker(
         dag_name: str,
         tags: Dict[str, str] = None,
         client_factory: Callable[
-            [str, str, str, str | bool], clients.HamiltonClient
+            [str, str, str, Union[str, bool]], clients.HamiltonClient
         ] = clients.BasicSynchronousHamiltonClient,
         api_key: str = None,
         hamilton_api_url=os.environ.get("HAMILTON_API_URL", constants.HAMILTON_API_URL),
@@ -389,7 +389,7 @@ class AsyncHamiltonTracker(
         dag_name: str,
         tags: Dict[str, str] = None,
         client_factory: Callable[
-            [str, str, str, str | bool], clients.BasicAsynchronousHamiltonClient
+            [str, str, str, Union[str, bool]], clients.BasicAsynchronousHamiltonClient
         ] = clients.BasicAsynchronousHamiltonClient,
         api_key: str = os.environ.get("HAMILTON_API_KEY", ""),
         hamilton_api_url=os.environ.get("HAMILTON_API_URL", constants.HAMILTON_API_URL),
