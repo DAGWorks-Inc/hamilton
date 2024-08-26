@@ -11,7 +11,10 @@
    <a href="https://pepy.tech/project/sf-hamilton" target="_blank">
       <img src="https://pepy.tech/badge/sf-hamilton" alt="Total Downloads"/>
    </a>
-
+   <a href="https://pepy.tech/project/sf-hamilton" target="_blank">
+      <img src="https://static.pepy.tech/badge/sf-hamilton/month" alt="Total Monthly Downloads"/>
+   </a>
+   <br/>
    <a target="_blank" href="https://linkedin.com/showcase/dagster" style="background:none">
       <img src="https://img.shields.io/badge/DAGWorks-Follow-purple.svg?logo=linkedin" />
    </a>
@@ -19,10 +22,10 @@
       <img src="https://img.shields.io/badge/Hamilton-Join-purple.svg?logo=slack" alt="Hamilton Slack"/>
    </a>
    <a href="https://twitter.com/hamilton_os" target="_blank">
-      <img src="https://img.shields.io/badge/HamiltonOS-Follow-purple.svg?logo=X"></src>
+      <img src="https://img.shields.io/badge/HamiltonOS-Follow-purple.svg?logo=X"/>
    </a>
    <a href="https://twitter.com/dagworks" target="_blank">
-      <img src="https://img.shields.io/badge/DAGWorks-Follow-purple.svg?logo=X"></src>
+      <img src="https://img.shields.io/badge/DAGWorks-Follow-purple.svg?logo=X"/>
    </a>
 </div>
 <br></br>
