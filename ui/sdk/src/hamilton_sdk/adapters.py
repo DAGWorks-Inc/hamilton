@@ -6,7 +6,7 @@ import random
 import traceback
 from datetime import timezone
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from hamilton_sdk import driver
 from hamilton_sdk.api import clients, constants
@@ -50,7 +50,7 @@ class HamiltonTracker(
         api_key: str = None,
         hamilton_api_url=os.environ.get("HAMILTON_API_URL", constants.HAMILTON_API_URL),
         hamilton_ui_url=os.environ.get("HAMILTON_UI_URL", constants.HAMILTON_UI_URL),
-        verify: str | bool = True,
+        verify: Union[str, bool] = True,
     ):
         """This hooks into Hamilton execution to track DAG runs in Hamilton UI.
 
@@ -394,7 +394,7 @@ class AsyncHamiltonTracker(
         api_key: str = os.environ.get("HAMILTON_API_KEY", ""),
         hamilton_api_url=os.environ.get("HAMILTON_API_URL", constants.HAMILTON_API_URL),
         hamilton_ui_url=os.environ.get("HAMILTON_UI_URL", constants.HAMILTON_UI_URL),
-        verify: str | bool = True,
+        verify: Union[str, bool] = True,
     ):
         self.project_id = project_id
         self.api_key = api_key
