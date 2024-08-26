@@ -8,7 +8,7 @@ import ssl
 import threading
 import time
 from collections import defaultdict
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Union
 from urllib.parse import urlencode
 
 import aiohttp
@@ -168,7 +168,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         username: str,
         h_api_url: str,
         base_path: str = "/api/v1",
-        verify: str | bool = True,
+        verify: Union[str, bool] = True,
     ):
         """Initializes a Hamilton API client
 
