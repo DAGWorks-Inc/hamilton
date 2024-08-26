@@ -530,7 +530,7 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
         username: str,
         h_api_url: str,
         base_path: str = "/api/v1",
-        verify: str | bool = True,
+        verify: Union[str, bool] = True,
     ):
         """Initializes an async Hamilton API client
 
