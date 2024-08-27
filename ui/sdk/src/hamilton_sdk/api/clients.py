@@ -193,6 +193,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         self.worker_thread.start()
 
         # Makes sure the process stops even if in remote environment
+        atexit.unregister(self.stop)
         atexit.register(self.stop)
 
     def __getstate__(self):
@@ -213,9 +214,13 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         self.running = True
         self.worker_thread = threading.Thread(target=self.worker)
         threading.Thread(
-            target=lambda: threading.main_thread().join() or self.data_queue.put(None)
+            target=lambda: threading.main_thread().join()
+            or self.data_queue.put(None)
+            or time.sleep(1)
         ).start()
         self.worker_thread.start()
+        atexit.unregister(self.stop)
+        atexit.register(self.stop)
 
     def worker(self):
         """Worker thread to process the queue."""
@@ -278,12 +283,18 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
 
         # Process any events that might have been added to the queue
         # after the worker thread stopped
+        batch = []
         while not self.data_queue.empty():
             try:
                 item = self.data_queue.get_nowait()
-                self.flush([item])
+                batch.append(item)
             except queue.Empty:
                 break
+        if batch:
+            self.flush(batch)
+
+    def __del__(self):
+        self.stop()
 
     def _common_headers(self) -> Dict[str, Any]:
         """Yields the common headers for all requests.
