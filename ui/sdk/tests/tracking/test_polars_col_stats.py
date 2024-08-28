@@ -66,10 +66,9 @@ def test_quantiles(example_df):
 
 def test_histogram(example_df):
     assert pcs.histogram(example_df["a"], num_hist_bins=3) == {
-        "(-inf, 0.0]": 0,
-        "(0.0, 2.0]": 2,
-        "(2.0, 4.0]": 2,
-        "(4.0, inf]": 1,
+        "(0.996, 2.333333]": 2,
+        "(2.333333, 3.666667]": 1,
+        "(3.666667, 5.0]": 2,
     }
 
 
