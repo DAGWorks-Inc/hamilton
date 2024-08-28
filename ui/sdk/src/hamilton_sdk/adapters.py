@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import hashlib
 import logging
@@ -6,7 +8,7 @@ import random
 import traceback
 from datetime import timezone
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable
 
 from hamilton_sdk import driver
 from hamilton_sdk.api import clients, constants
@@ -22,7 +24,7 @@ from hamilton.lifecycle import base
 logger = logging.getLogger(__name__)
 
 
-def get_node_name(node_: node.Node, task_id: Optional[str]) -> str:
+def get_node_name(node_: node.Node, task_id: str | None) -> str:
     if task_id is not None:
         return f"{task_id}-{node_.name}"
     return node_.name
@@ -43,14 +45,14 @@ class HamiltonTracker(
         project_id: int,
         username: str,
         dag_name: str,
-        tags: Dict[str, str] = None,
+        tags: dict[str, str] = None,
         client_factory: Callable[
-            [str, str, str, Union[str, bool]], clients.HamiltonClient
+            [str, str, str, str | bool], clients.HamiltonClient
         ] = clients.BasicSynchronousHamiltonClient,
         api_key: str = None,
         hamilton_api_url=os.environ.get("HAMILTON_API_URL", constants.HAMILTON_API_URL),
         hamilton_ui_url=os.environ.get("HAMILTON_UI_URL", constants.HAMILTON_UI_URL),
-        verify: Union[str, bool] = True,
+        verify: str | bool = True,
     ):
         """This hooks into Hamilton execution to track DAG runs in Hamilton UI.
 
@@ -104,7 +106,7 @@ class HamiltonTracker(
         self.seed = None
 
     def post_graph_construct(
-        self, graph: h_graph.FunctionGraph, modules: List[ModuleType], config: Dict[str, Any]
+        self, graph: h_graph.FunctionGraph, modules: list[ModuleType], config: dict[str, Any]
     ):
         """Registers the DAG to get an ID."""
         if self.seed is None:
@@ -138,9 +140,9 @@ class HamiltonTracker(
         self,
         run_id: str,
         graph: h_graph.FunctionGraph,
-        final_vars: List[str],
-        inputs: Dict[str, Any],
-        overrides: Dict[str, Any],
+        final_vars: list[str],
+        inputs: dict[str, Any],
+        overrides: dict[str, Any],
     ):
         """Creates a DAG run."""
         logger.debug("pre_graph_execute %s", run_id)
@@ -167,7 +169,7 @@ class HamiltonTracker(
         return dw_run_id
 
     def pre_node_execute(
-        self, run_id: str, node_: node.Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
+        self, run_id: str, node_: node.Node, kwargs: dict[str, Any], task_id: str | None = None
     ):
         """Captures start of node execution."""
         logger.debug("pre_node_execute %s %s", run_id, task_id)
@@ -200,8 +202,8 @@ class HamiltonTracker(
 
     def get_hash(self, block_value: int):
         """Creates a deterministic hash."""
-        full_salt = "%s.%s%s" % (self.seed, "DAGWORKS", ".")
-        hash_str = "%s%s" % (full_salt, str(block_value))
+        full_salt = "{}.{}{}".format(self.seed, "DAGWORKS", ".")
+        hash_str = f"{full_salt}{str(block_value)}"
         hash_str = hash_str.encode("ascii")
         return int(hashlib.sha1(hash_str).hexdigest()[:15], 16)
 
@@ -246,11 +248,11 @@ class HamiltonTracker(
         self,
         run_id: str,
         node_: node.Node,
-        kwargs: Dict[str, Any],
+        kwargs: dict[str, Any],
         success: bool,
-        error: Optional[Exception],
-        result: Optional[Any],
-        task_id: Optional[str] = None,
+        error: Exception | None,
+        result: Any | None,
+        task_id: str | None = None,
     ):
         """Captures end of node execution."""
         logger.debug("post_node_execute %s %s", run_id, task_id)
@@ -339,8 +341,8 @@ class HamiltonTracker(
         run_id: str,
         graph: h_graph.FunctionGraph,
         success: bool,
-        error: Optional[Exception],
-        results: Optional[Dict[str, Any]],
+        error: Exception | None,
+        results: dict[str, Any] | None,
     ):
         """Captures end of DAG execution."""
         logger.debug("post_graph_execute %s", run_id)
@@ -387,14 +389,14 @@ class AsyncHamiltonTracker(
         project_id: int,
         username: str,
         dag_name: str,
-        tags: Dict[str, str] = None,
+        tags: dict[str, str] = None,
         client_factory: Callable[
-            [str, str, str, Union[str, bool]], clients.BasicAsynchronousHamiltonClient
+            [str, str, str, str | bool], clients.BasicAsynchronousHamiltonClient
         ] = clients.BasicAsynchronousHamiltonClient,
         api_key: str = os.environ.get("HAMILTON_API_KEY", ""),
         hamilton_api_url=os.environ.get("HAMILTON_API_URL", constants.HAMILTON_API_URL),
         hamilton_ui_url=os.environ.get("HAMILTON_UI_URL", constants.HAMILTON_UI_URL),
-        verify: Union[str, bool] = True,
+        verify: str | bool = True,
     ):
         self.project_id = project_id
         self.api_key = api_key
@@ -441,7 +443,7 @@ class AsyncHamiltonTracker(
         return self
 
     async def post_graph_construct(
-        self, graph: h_graph.FunctionGraph, modules: List[ModuleType], config: Dict[str, Any]
+        self, graph: h_graph.FunctionGraph, modules: list[ModuleType], config: dict[str, Any]
     ):
         logger.debug("post_graph_construct")
         fg_id = id(graph)
@@ -472,9 +474,9 @@ class AsyncHamiltonTracker(
         self,
         run_id: str,
         graph: h_graph.FunctionGraph,
-        final_vars: List[str],
-        inputs: Dict[str, Any],
-        overrides: Dict[str, Any],
+        final_vars: list[str],
+        inputs: dict[str, Any],
+        overrides: dict[str, Any],
     ):
         logger.debug("pre_graph_execute %s", run_id)
         fg_id = id(graph)
@@ -496,7 +498,7 @@ class AsyncHamiltonTracker(
         self.task_runs[run_id] = {}
 
     async def pre_node_execute(
-        self, run_id: str, node_: node.Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
+        self, run_id: str, node_: node.Node, kwargs: dict[str, Any], task_id: str | None = None
     ):
         logger.debug("pre_node_execute %s", run_id)
         tracking_state = self.tracking_states[run_id]
@@ -529,9 +531,9 @@ class AsyncHamiltonTracker(
         run_id: str,
         node_: node.Node,
         success: bool,
-        error: Optional[Exception],
+        error: Exception | None,
         result: Any,
-        task_id: Optional[str] = None,
+        task_id: str | None = None,
         **future_kwargs,
     ):
         logger.debug("post_node_execute %s", run_id)
@@ -616,8 +618,8 @@ class AsyncHamiltonTracker(
         run_id: str,
         graph: h_graph.FunctionGraph,
         success: bool,
-        error: Optional[Exception],
-        results: Optional[Dict[str, Any]],
+        error: Exception | None,
+        results: dict[str, Any] | None,
     ):
         logger.debug("post_graph_execute %s", run_id)
         dw_run_id = self.dw_run_ids[run_id]

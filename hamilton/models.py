@@ -1,7 +1,10 @@
-import abc
-from typing import Any, Dict, List
+from __future__ import annotations
 
-import pandas as pd
+import abc
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class DynamicTransformBase(abc.ABC):
@@ -19,7 +22,7 @@ class DynamicTransformBase(abc.ABC):
         self._name = name
 
     @abc.abstractmethod
-    def get_dependents(self) -> List[str]:
+    def get_dependents(self) -> list[str]:
         """Gets the names/types of the inputs to this transform.
         :return: A list of columns on which this model depends.
         """
@@ -34,7 +37,7 @@ class DynamicTransformBase(abc.ABC):
         pass
 
     @property
-    def config_parameters(self) -> Dict[str, Any]:
+    def config_parameters(self) -> dict[str, Any]:
         """Accessor for configuration parameters"""
         return self._config_parameters
 

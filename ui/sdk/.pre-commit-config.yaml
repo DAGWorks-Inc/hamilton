@@ -16,6 +16,11 @@ repos:
     hooks:
     - id: black
       args: [--line-length=100]
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.17.0
+    hooks:
+    - id: pyupgrade
+      args: [--py38-plus]
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:

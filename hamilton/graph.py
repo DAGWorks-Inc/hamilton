@@ -6,14 +6,15 @@ It should only house the graph & things required to create and traverse one.
 Note: one should largely consider the code in this module to be "private".
 """
 
+from __future__ import annotations
+
 import inspect
 import logging
 import os.path
 import pathlib
 import uuid
 from enum import Enum
-from types import ModuleType
-from typing import Any, Callable, Collection, Dict, FrozenSet, List, Optional, Set, Tuple, Type
+from typing import TYPE_CHECKING, Any, Callable, Collection
 
 import hamilton.lifecycle.base as lifecycle_base
 from hamilton import graph_types, node
@@ -22,7 +23,11 @@ from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers.metadata import schema
 from hamilton.graph_utils import find_functions
 from hamilton.htypes import get_type_as_string, types_match
-from hamilton.node import Node
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    from hamilton.node import Node
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +44,9 @@ class VisualizationNodeModifiers(Enum):
 def add_dependency(
     func_node: node.Node,
     func_name: str,
-    nodes: Dict[str, node.Node],
+    nodes: dict[str, node.Node],
     param_name: str,
-    param_type: Type,
+    param_type: type,
     adapter: lifecycle_base.LifecycleAdapterSet,
 ):
     """Adds dependencies to the node objects.
@@ -114,7 +119,7 @@ def add_dependency(
 
 
 def update_dependencies(
-    nodes: Dict[str, node.Node],
+    nodes: dict[str, node.Node],
     adapter: lifecycle_base.LifecycleAdapterSet,
     reset_dependencies: bool = True,
 ):
@@ -143,10 +148,10 @@ def update_dependencies(
 
 def create_function_graph(
     *modules: ModuleType,
-    config: Dict[str, Any],
+    config: dict[str, Any],
     adapter: lifecycle_base.LifecycleAdapterSet = None,
-    fg: Optional["FunctionGraph"] = None,
-) -> Dict[str, node.Node]:
+    fg: FunctionGraph | None = None,
+) -> dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
     :param modules: A set of modules over which one wants to compute the function graph
     :param config: Dictionary that we will inspect to get values from in building the function graph.
@@ -197,10 +202,10 @@ def _check_keyword_args_only(func: Callable) -> bool:
 
 
 def create_graphviz_graph(
-    nodes: Set[node.Node],
+    nodes: set[node.Node],
     comment: str,
     graphviz_kwargs: dict,
-    node_modifiers: Dict[str, Set[VisualizationNodeModifiers]],
+    node_modifiers: dict[str, set[VisualizationNodeModifiers]],
     strictly_display_only_nodes_passed_in: bool,
     show_legend: bool = True,
     orient: str = "LR",
@@ -209,7 +214,7 @@ def create_graphviz_graph(
     display_fields: bool = True,
     custom_style_function: Callable = None,
     config: dict = None,
-) -> "graphviz.Digraph":  # noqa: F821
+) -> graphviz.Digraph:  # noqa: F821
     """Helper function to create a graphviz graph.
 
     :param nodes: The set of computational nodes
@@ -255,8 +260,8 @@ def create_graphviz_graph(
 
     def _get_node_label(
         n: node.Node,
-        name: Optional[str] = None,
-        type_string: Optional[str] = None,
+        name: str | None = None,
+        type_string: str | None = None,
     ) -> str:
         """Get a graphviz HTML-like node label. It uses the DAG node
         name and type but values can be overridden. Overriding is currently
@@ -270,7 +275,7 @@ def create_graphviz_graph(
 
         return f"<<b>{name}</b><br /><br /><i>{type_string}</i>>"
 
-    def _get_input_label(input_nodes: FrozenSet[node.Node]) -> str:
+    def _get_input_label(input_nodes: frozenset[node.Node]) -> str:
         """Get a graphviz HTML-like node label formatted aspyer a table.
         Each row is a different input node with one column containing
         the name and the other the type.
@@ -301,7 +306,7 @@ def create_graphviz_graph(
         else:
             return "function"
 
-    def _get_node_style(node_type: str) -> Dict[str, str]:
+    def _get_node_style(node_type: str) -> dict[str, str]:
         """Get the style of a node type.
         Graphviz needs values to be strings.
         """
@@ -338,7 +343,7 @@ def create_graphviz_graph(
 
         return node_style
 
-    def _get_function_modifier_style(modifier: str) -> Dict[str, str]:
+    def _get_function_modifier_style(modifier: str) -> dict[str, str]:
         """Get the style of a modifier. The dictionary returned
         is used to overwrite values of the base node style.
         Graphviz needs values to be strings.
@@ -364,7 +369,7 @@ def create_graphviz_graph(
 
         return modifier_style
 
-    def _get_edge_style(from_type: str, to_type: str) -> Dict:
+    def _get_edge_style(from_type: str, to_type: str) -> dict:
         """
 
         Graphviz needs values to be strings.
@@ -384,7 +389,7 @@ def create_graphviz_graph(
         return edge_style
 
     def _get_legend(
-        node_types: Set[str], extra_legend_nodes: Dict[Tuple[str, str], Dict[str, str]]
+        node_types: set[str], extra_legend_nodes: dict[tuple[str, str], dict[str, str]]
     ):
         """Create a visualization legend as a graphviz subgraph. The legend includes the
         node types and modifiers presente in the visualization.
@@ -547,7 +552,7 @@ def create_graphviz_graph(
             seen_node_types.add("cluster")
             seen_node_types.add("field")
 
-            def _create_equal_length_cols(schema_tag: str) -> List[str]:
+            def _create_equal_length_cols(schema_tag: str) -> list[str]:
                 cols = schema_tag.split(",")
                 for i in range(len(cols)):
 
@@ -653,8 +658,8 @@ def create_graphviz_graph(
 
 
 def create_networkx_graph(
-    nodes: Set[node.Node], user_nodes: Set[node.Node], name: str
-) -> "networkx.DiGraph":  # noqa: F821
+    nodes: set[node.Node], user_nodes: set[node.Node], name: str
+) -> networkx.DiGraph:  # noqa: F821
     """Helper function to create a networkx graph.
 
     :param nodes: The set of computational nodes
@@ -684,8 +689,8 @@ class FunctionGraph:
 
     def __init__(
         self,
-        nodes: Dict[str, Node],
-        config: Dict[str, Any],
+        nodes: dict[str, Node],
+        config: dict[str, Any],
         adapter: lifecycle_base.LifecycleAdapterSet = None,
     ):
         """Initializes a function graph from specified nodes. See note on `from_modules` if you
@@ -705,7 +710,7 @@ class FunctionGraph:
     @staticmethod
     def from_modules(
         *modules: ModuleType,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         adapter: lifecycle_base.LifecycleAdapterSet = None,
     ):
         """Initializes a function graph from the specified modules. Note that this was the old
@@ -723,7 +728,7 @@ class FunctionGraph:
         nodes = create_function_graph(*modules, config=config, adapter=adapter)
         return FunctionGraph(nodes, config, adapter)
 
-    def with_nodes(self, nodes: Dict[str, Node]) -> "FunctionGraph":
+    def with_nodes(self, nodes: dict[str, Node]) -> FunctionGraph:
         """Creates a new function graph with the additional specified nodes.
         Note that if there is a duplication in the node definitions,
         it will error out.
@@ -743,10 +748,10 @@ class FunctionGraph:
         return self._config
 
     @property
-    def decorator_counter(self) -> Dict[str, int]:
+    def decorator_counter(self) -> dict[str, int]:
         return fm_base.DECORATOR_COUNTER
 
-    def get_nodes(self) -> List[node.Node]:
+    def get_nodes(self) -> list[node.Node]:
         return list(self.nodes.values())
 
     def display_all(
@@ -761,7 +766,7 @@ class FunctionGraph:
         display_fields: bool = True,
         custom_style_function: Callable = None,
         keep_dot: bool = False,
-    ) -> Optional["graphviz.Digraph"]:  # noqa F821
+    ) -> graphviz.Digraph | None:  # noqa F821
         """Displays & saves a dot file of the entire DAG structure constructed.
 
         :param output_file_path: the place to save the files.
@@ -807,7 +812,7 @@ class FunctionGraph:
             keep_dot=keep_dot,
         )
 
-    def has_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> bool:
+    def has_cycles(self, nodes: set[node.Node], user_nodes: set[node.Node]) -> bool:
         """Checks that the graph created does not contain cycles.
 
         :param nodes: the set of nodes that need to be computed.
@@ -817,7 +822,7 @@ class FunctionGraph:
         cycles = self.get_cycles(nodes, user_nodes)
         return True if cycles else False
 
-    def get_cycles(self, nodes: Set[node.Node], user_nodes: Set[node.Node]) -> List[List[str]]:
+    def get_cycles(self, nodes: set[node.Node], user_nodes: set[node.Node]) -> list[list[str]]:
         """Returns cycles found in the graph.
 
         :param nodes: the set of nodes that need to be computed.
@@ -838,11 +843,11 @@ class FunctionGraph:
 
     @staticmethod
     def display(
-        nodes: Set[node.Node],
-        output_file_path: Optional[str] = None,
+        nodes: set[node.Node],
+        output_file_path: str | None = None,
         render_kwargs: dict = None,
         graphviz_kwargs: dict = None,
-        node_modifiers: Dict[str, Set[VisualizationNodeModifiers]] = None,
+        node_modifiers: dict[str, set[VisualizationNodeModifiers]] = None,
         strictly_display_only_passed_in_nodes: bool = False,
         show_legend: bool = True,
         orient: str = "LR",
@@ -852,7 +857,7 @@ class FunctionGraph:
         custom_style_function: Callable = None,
         config: dict = None,
         keep_dot: bool = False,
-    ) -> Optional["graphviz.Digraph"]:  # noqa F821
+    ) -> graphviz.Digraph | None:  # noqa F821
         """Function to display the graph represented by the passed in nodes.
 
         The output file format is determined through the following steps, each one overwriting the previous one:
@@ -932,7 +937,7 @@ class FunctionGraph:
                 pathlib.Path(output_file_path).write_bytes(dot.pipe(**kwargs))
         return dot
 
-    def get_impacted_nodes(self, var_changes: List[str]) -> Set[node.Node]:
+    def get_impacted_nodes(self, var_changes: list[str]) -> set[node.Node]:
         """DEPRECATED - use `get_downstream_nodes` instead."""
         logger.warning(
             "FunctionGraph.get_impacted_nodes is deprecated. "
@@ -941,7 +946,7 @@ class FunctionGraph:
         )
         return self.get_downstream_nodes(var_changes)
 
-    def get_downstream_nodes(self, var_changes: List[str]) -> Set[node.Node]:
+    def get_downstream_nodes(self, var_changes: list[str]) -> set[node.Node]:
         """Given our function graph, and a list of nodes that are changed,
         returns the subgraph that they will impact.
 
@@ -955,10 +960,10 @@ class FunctionGraph:
 
     def get_upstream_nodes(
         self,
-        final_vars: List[str],
-        runtime_inputs: Dict[str, Any] = None,
-        runtime_overrides: Dict[str, Any] = None,
-    ) -> Tuple[Set[node.Node], Set[node.Node]]:
+        final_vars: list[str],
+        runtime_inputs: dict[str, Any] = None,
+        runtime_overrides: dict[str, Any] = None,
+    ) -> tuple[set[node.Node], set[node.Node]]:
         """Given our function graph, and a list of desired output variables, returns the subgraph
         required to compute them.
 
@@ -972,7 +977,7 @@ class FunctionGraph:
         :return: a tuple of sets: - set of all nodes. - subset of nodes that human input is required for.
         """
 
-        def next_nodes_function(n: node.Node) -> List[node.Node]:
+        def next_nodes_function(n: node.Node) -> list[node.Node]:
             deps = []
             if runtime_overrides is not None and n.name in runtime_overrides:
                 return deps
@@ -996,7 +1001,7 @@ class FunctionGraph:
             next_nodes_function, starting_nodes=final_vars, runtime_inputs=runtime_inputs
         )
 
-    def nodes_between(self, start: str, end: str) -> Set[node.Node]:
+    def nodes_between(self, start: str, end: str) -> set[node.Node]:
         """Given our function graph, and a list of desired output variables, returns the subgraph
         required to compute them. Note that this returns an empty set if no path exists.
 
@@ -1018,8 +1023,8 @@ class FunctionGraph:
     def directional_dfs_traverse(
         self,
         next_nodes_fn: Callable[[node.Node], Collection[node.Node]],
-        starting_nodes: List[str],
-        runtime_inputs: Dict[str, Any] = None,
+        starting_nodes: list[str],
+        runtime_inputs: dict[str, Any] = None,
     ):
         """Traverses the DAG directionally using a DFS.
 
@@ -1061,11 +1066,11 @@ class FunctionGraph:
     def execute(
         self,
         nodes: Collection[node.Node] = None,
-        computed: Dict[str, Any] = None,
-        overrides: Dict[str, Any] = None,
-        inputs: Dict[str, Any] = None,
+        computed: dict[str, Any] = None,
+        overrides: dict[str, Any] = None,
+        inputs: dict[str, Any] = None,
         run_id: str = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Executes the DAG, given potential inputs/previously computed components.
 
         :param nodes: Nodes to compute

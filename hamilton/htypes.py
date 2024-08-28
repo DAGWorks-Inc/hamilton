@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import inspect
 import sys
 import typing
 from abc import ABC
-from typing import Any, Generator, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Generator, TypeVar, Union
 
 import typing_inspect
 
@@ -15,7 +17,7 @@ from hamilton.registry import COLUMN_TYPE, DF_TYPE_AND_COLUMN_TYPES
 BASE_ARGS_FOR_GENERICS = (typing.T,)
 
 
-def _safe_subclass(candidate_type: Type, base_type: Type) -> bool:
+def _safe_subclass(candidate_type: type, base_type: type) -> bool:
     """Safely checks subclass, returning False if python's subclass does not work.
     This is *not* a true subclass check, and will not tell you whether hamilton
     considers the types to be equivalent. Rather, it is used to short-circuit further
@@ -36,7 +38,7 @@ def _safe_subclass(candidate_type: Type, base_type: Type) -> bool:
     return False
 
 
-def custom_subclass_check(requested_type: Type, param_type: Type):
+def custom_subclass_check(requested_type: type, param_type: type):
     """This is a custom check around generics & classes. It probably misses a few edge cases.
 
     We will likely need to revisit this in the future (perhaps integrate with graphadapter?)
@@ -92,7 +94,7 @@ def custom_subclass_check(requested_type: Type, param_type: Type):
     return False
 
 
-def get_type_as_string(type_: Type) -> Optional[str]:
+def get_type_as_string(type_: type) -> str | None:
     """Get a string representation of a type.
 
     The logic supports the evolution of the type system between 3.8 and 3.10.
@@ -113,7 +115,7 @@ def get_type_as_string(type_: Type) -> Optional[str]:
     return type_string
 
 
-def types_match(param_type: Type[Type], required_node_type: Any) -> bool:
+def types_match(param_type: type[type], required_node_type: Any) -> bool:
     """Checks that we have "types" that "match".
 
     Matching can be loose here -- and depends on the adapter being used as to what is
@@ -165,26 +167,21 @@ if _version_tuple < (3, 9, 0):
     # Before 3.9 we use typing_extensions
     import typing_extensions
 
-    column = typing_extensions.Annotated
+    _get_origin = typing_extensions.get_origin
+    _get_args = typing_extensions.get_args
 
+    column = typing_extensions.Annotated
 
 else:
     ANNOTATE_ALLOWED = True
-    from typing import Annotated, Type
-
-    column = Annotated
-
-if _version_tuple < (3, 9, 0):
-    import typing_extensions
-
-    _get_origin = typing_extensions.get_origin
-    _get_args = typing_extensions.get_args
-else:
+    from typing import Annotated
     from typing import get_args as _get_args
     from typing import get_origin as _get_origin
 
+    column = Annotated
 
-def _is_annotated_type(type_: Type[Type]) -> bool:
+
+def _is_annotated_type(type_: type[type]) -> bool:
     """Utility function to tell if a type is Annotated"""
     return _get_origin(type_) == column
 
@@ -204,7 +201,7 @@ _valid_series_annotations = (
 )
 
 
-def _is_valid_series_type(candidate_type: Type[Type]) -> bool:
+def _is_valid_series_type(candidate_type: type[type]) -> bool:
     """Tells if something is a valid series type, using the registry we have.
 
     :param candidate_type: Type to check
@@ -218,7 +215,7 @@ def _is_valid_series_type(candidate_type: Type[Type]) -> bool:
     return False
 
 
-def validate_type_annotation(annotation: Type[Type]):
+def validate_type_annotation(annotation: type[type]):
     """Validates a type annotation for a hamilton function.
     If it is not an Annotated type, it will be fine.
     If it is the Annotated type, it will check that
@@ -253,7 +250,7 @@ def validate_type_annotation(annotation: Type[Type]):
         )
 
 
-def get_type_information(some_type: Any) -> Tuple[Type[Type], list]:
+def get_type_information(some_type: Any) -> tuple[type[type], list]:
     """Gets the type information for a given type.
 
     If it is an annotated type, it will return the original type and the annotation.
@@ -283,7 +280,7 @@ class Parallelizable(typing.Generator[U, None, None], ABC):
     pass
 
 
-def is_parallelizable_type(type_: Type) -> bool:
+def is_parallelizable_type(type_: type) -> bool:
     return issubclass(type_, Parallelizable)
 
 
@@ -291,7 +288,7 @@ class Collect(Generator[V, None, None], ABC):
     pass
 
 
-def check_input_type(node_type: Type, input_value: Any) -> bool:
+def check_input_type(node_type: type, input_value: Any) -> bool:
     """Checks an input value against the declare input type. This is a utility function to be
     used for checking types against values. Note we are looser here than in custom_subclass_check,
     as runtime-typing is less specific.
