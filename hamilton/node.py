@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import inspect
 import sys
 import typing
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable
 
 import typing_inspect
 
@@ -41,20 +43,20 @@ class DependencyType(Enum):
         return DependencyType.OPTIONAL
 
 
-class Node(object):
+class Node:
     """Object representing a node of computation."""
 
     def __init__(
         self,
         name: str,
-        typ: Type,
+        typ: type,
         doc_string: str = "",
         callabl: Callable = None,
         node_source: NodeType = NodeType.STANDARD,
-        input_types: Dict[str, Union[Type, Tuple[Type, DependencyType]]] = None,
-        tags: Dict[str, Any] = None,
-        namespace: Tuple[str, ...] = (),
-        originating_functions: Optional[Tuple[Callable, ...]] = None,
+        input_types: dict[str, type | tuple[type, DependencyType]] = None,
+        tags: dict[str, Any] = None,
+        namespace: tuple[str, ...] = (),
+        originating_functions: tuple[Callable, ...] | None = None,
     ):
         """Constructor for our Node object.
 
@@ -128,7 +130,7 @@ class Node(object):
                 return key
 
     @property
-    def namespace(self) -> Tuple[str, ...]:
+    def namespace(self) -> tuple[str, ...]:
         return self._namespace
 
     @property
@@ -136,7 +138,7 @@ class Node(object):
         return self._doc
 
     @property
-    def input_types(self) -> Dict[Any, Tuple[Any, DependencyType]]:
+    def input_types(self) -> dict[Any, tuple[Any, DependencyType]]:
         return self._input_types
 
     def requires(self, dependency: str) -> bool:
@@ -177,19 +179,19 @@ class Node(object):
         return self._node_source
 
     @property
-    def dependencies(self) -> List["Node"]:
+    def dependencies(self) -> list[Node]:
         return self._dependencies
 
     @property
-    def depended_on_by(self) -> List["Node"]:
+    def depended_on_by(self) -> list[Node]:
         return self._depended_on_by
 
     @property
-    def tags(self) -> Dict[str, str]:
+    def tags(self) -> dict[str, str]:
         return self._tags
 
     @property
-    def originating_functions(self) -> Optional[Tuple[Callable, ...]]:
+    def originating_functions(self) -> tuple[Callable, ...] | None:
         """Gives all functions from which this node was created. None if the data
         is not available (it is user-defined, or we have not added it yet). Note that this can be
         multiple in the case of subdags (the subdag function + the other function). In that case,
@@ -222,7 +224,7 @@ class Node(object):
     def __repr__(self):
         return f"<{self.name} {self._tags}>"
 
-    def __eq__(self, other: "Node"):
+    def __eq__(self, other: Node):
         """Want to deeply compare nodes in a custom way.
 
         Current user is just unit tests. But you never know :)
@@ -241,7 +243,7 @@ class Node(object):
             and self.node_role == other.node_role
         )
 
-    def __ne__(self, other: "Node"):
+    def __ne__(self, other: Node):
         return not self.__eq__(other)
 
     def __call__(self, *args, **kwargs):
@@ -249,7 +251,7 @@ class Node(object):
         return self.callable(*args, **kwargs)
 
     @staticmethod
-    def from_fn(fn: Callable, name: str = None) -> "Node":
+    def from_fn(fn: Callable, name: str = None) -> Node:
         """Generates a node from a function. Optionally overrides the name.
 
         Note that currently, the `originating_function` is externally passed in -- this
@@ -292,7 +294,7 @@ class Node(object):
             node_source=node_source,
         )
 
-    def copy_with(self, include_refs: bool = True, **overrides) -> "Node":
+    def copy_with(self, include_refs: bool = True, **overrides) -> Node:
         """Copies a node with the specified overrides for the constructor arguments.
         Utility function for creating a node -- useful for modifying it.
 
@@ -317,7 +319,7 @@ class Node(object):
             out._depended_on_by = self._depended_on_by
         return out
 
-    def copy(self, include_refs: bool = True) -> "Node":
+    def copy(self, include_refs: bool = True) -> Node:
         """Copies a node, not modifying anything (except for the references
         /dependencies if specified).
 
@@ -330,8 +332,8 @@ class Node(object):
         return self.copy_with(include_refs)
 
     def reassign_inputs(
-        self, input_names: Dict[str, Any] = None, input_values: Dict[str, Any] = None
-    ) -> "Node":
+        self, input_names: dict[str, Any] = None, input_values: dict[str, Any] = None
+    ) -> Node:
         """Reassigns the input names of a node. Useful for applying
         a node to a separate input if needed. Note that things can get a
         little strange if you have multiple inputs with the same name, so
@@ -357,8 +359,8 @@ class Node(object):
         return out
 
     def transform_output(
-        self, __transform: Callable[[Dict[str, Any], Any], Any], __output_type: Type[Any]
-    ) -> "Node":
+        self, __transform: Callable[[dict[str, Any], Any], Any], __output_type: type[Any]
+    ) -> Node:
         """Applies a transformation on the output of the node, returning a new node.
         Also modifies the type.
 
@@ -375,7 +377,7 @@ class Node(object):
 
 
 def matches_query(
-    tags: Dict[str, Union[str, List[str]]], query_dict: Dict[str, Optional[Union[str, List[str]]]]
+    tags: dict[str, str | list[str]], query_dict: dict[str, str | list[str] | None]
 ) -> bool:
     """Check whether a set of node tags matches the query based on tags.
 

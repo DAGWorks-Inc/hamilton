@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import inspect
 import logging
@@ -5,18 +7,21 @@ import sys
 import time
 import typing
 import uuid
-from types import ModuleType
-from typing import Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
 import hamilton.lifecycle.base as lifecycle_base
 from hamilton import base, driver, graph, lifecycle, node, telemetry
 from hamilton.execution.graph_functions import create_error_message
-from hamilton.io.materialization import ExtractorFactory, MaterializerFactory
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    from hamilton.io.materialization import ExtractorFactory, MaterializerFactory
 
 logger = logging.getLogger(__name__)
 
 
-async def await_dict_of_tasks(task_dict: Dict[str, typing.Awaitable]) -> Dict[str, Any]:
+async def await_dict_of_tasks(task_dict: dict[str, typing.Awaitable]) -> dict[str, Any]:
     """Util to await a dictionary of tasks as asyncio.gather is kind of garbage"""
     keys = sorted(task_dict.keys())
     coroutines = [task_dict[key] for key in keys]
@@ -42,7 +47,7 @@ class AsyncGraphAdapter(lifecycle_base.BaseDoNodeExecute, lifecycle.ResultBuilde
     def __init__(
         self,
         result_builder: base.ResultMixin = None,
-        async_lifecycle_adapters: Optional[lifecycle_base.LifecycleAdapterSet] = None,
+        async_lifecycle_adapters: lifecycle_base.LifecycleAdapterSet | None = None,
     ):
         """Creates an AsyncGraphAdapter class. Note this will *only* work with the AsyncDriver class.
 
@@ -52,7 +57,7 @@ class AsyncGraphAdapter(lifecycle_base.BaseDoNodeExecute, lifecycle.ResultBuilde
             2. This does *not* work with decorators when the async function is being decorated. That is\
             because that function is called directly within the decorator, so we cannot await it.
         """
-        super(AsyncGraphAdapter, self).__init__()
+        super().__init__()
         self.adapter = (
             async_lifecycle_adapters
             if async_lifecycle_adapters is not None
@@ -66,8 +71,8 @@ class AsyncGraphAdapter(lifecycle_base.BaseDoNodeExecute, lifecycle.ResultBuilde
         *,
         run_id: str,
         node_: node.Node,
-        kwargs: typing.Dict[str, typing.Any],
-        task_id: Optional[str] = None,
+        kwargs: dict[str, typing.Any],
+        task_id: str | None = None,
     ) -> typing.Any:
         """Executes a node. Note this doesn't actually execute it -- rather, it returns a task.
         This does *not* use async def, as we want it to be awaited on later -- this await is done
@@ -159,8 +164,8 @@ class AsyncGraphAdapter(lifecycle_base.BaseDoNodeExecute, lifecycle.ResultBuilde
 
 
 def separate_sync_from_async(
-    adapters: typing.List[lifecycle.LifecycleAdapter],
-) -> Tuple[typing.List[lifecycle.LifecycleAdapter], typing.List[lifecycle.LifecycleAdapter]]:
+    adapters: list[lifecycle.LifecycleAdapter],
+) -> tuple[list[lifecycle.LifecycleAdapter], list[lifecycle.LifecycleAdapter]]:
     """Separates the sync and async adapters from a list of adapters.
     Note this only works with hooks -- we'll be dealing with methods later.
 
@@ -196,8 +201,8 @@ class AsyncDriver(driver.Driver):
         self,
         config,
         *modules,
-        result_builder: Optional[base.ResultMixin] = None,
-        adapters: typing.List[lifecycle.LifecycleAdapter] = None,
+        result_builder: base.ResultMixin | None = None,
+        adapters: list[lifecycle.LifecycleAdapter] = None,
     ):
         """Instantiates an asynchronous driver.
 
@@ -229,7 +234,7 @@ class AsyncDriver(driver.Driver):
             )
         # it will be defaulted by the graph adapter
         result_builder = result_builders[0] if len(result_builders) == 1 else None
-        super(AsyncDriver, self).__init__(
+        super().__init__(
             config,
             *modules,
             adapter=[
@@ -246,7 +251,7 @@ class AsyncDriver(driver.Driver):
         )
         self.initialized = False
 
-    async def ainit(self) -> "AsyncDriver":
+    async def ainit(self) -> AsyncDriver:
         """Initializes the driver when using async. This only exists for backwards compatibility.
         In Hamilton 2.0, we will be using an asynchronous constructor.
         See https://dev.to/akarshan/asynchronous-python-magic-how-to-create-awaitable-constructors-with-asyncmixin-18j5.
@@ -267,12 +272,12 @@ class AsyncDriver(driver.Driver):
 
     async def raw_execute(
         self,
-        final_vars: typing.List[str],
-        overrides: Dict[str, Any] = None,
+        final_vars: list[str],
+        overrides: dict[str, Any] = None,
         display_graph: bool = False,  # don't care
-        inputs: Dict[str, Any] = None,
+        inputs: dict[str, Any] = None,
         _fn_graph: graph.FunctionGraph = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Executes the graph, returning a dictionary of strings (node keys) to final results.
 
         :param final_vars: Variables to execute (+ upstream)
@@ -332,10 +337,10 @@ class AsyncDriver(driver.Driver):
 
     async def execute(
         self,
-        final_vars: typing.List[str],
-        overrides: Dict[str, Any] = None,
+        final_vars: list[str],
+        overrides: dict[str, Any] = None,
         display_graph: bool = False,
-        inputs: Dict[str, Any] = None,
+        inputs: dict[str, Any] = None,
     ) -> Any:
         """Executes computation.
 
@@ -386,9 +391,9 @@ class AsyncDriver(driver.Driver):
 
     def capture_constructor_telemetry(
         self,
-        error: Optional[str],
-        modules: Tuple[ModuleType],
-        config: Dict[str, Any],
+        error: str | None,
+        modules: tuple[ModuleType],
+        config: dict[str, Any],
         adapter: base.HamiltonGraphAdapter,
     ):
         """Ensures we capture constructor telemetry the right way in an async context.
@@ -407,7 +412,7 @@ class AsyncDriver(driver.Driver):
                 if loop.is_running():
                     loop.run_in_executor(
                         None,
-                        super(AsyncDriver, self).capture_constructor_telemetry,
+                        super().capture_constructor_telemetry,
                         error,
                         modules,
                         config,
@@ -450,22 +455,20 @@ class Builder(driver.Builder):
     """
 
     def __init__(self):
-        super(Builder, self).__init__()
+        super().__init__()
 
     def _not_supported(self, method_name: str, additional_message: str = ""):
         raise ValueError(
             f"Builder().{method_name}() is not supported for the async driver. {additional_message}"
         )
 
-    def enable_dynamic_execution(self, *, allow_experimental_mode: bool = False) -> "Builder":
+    def enable_dynamic_execution(self, *, allow_experimental_mode: bool = False) -> Builder:
         self._not_supported("enable_dynamic_execution")
 
-    def with_materializers(
-        self, *materializers: typing.Union[ExtractorFactory, MaterializerFactory]
-    ) -> "Builder":
+    def with_materializers(self, *materializers: ExtractorFactory | MaterializerFactory) -> Builder:
         self._not_supported("with_materializers")
 
-    def with_adapter(self, adapter: base.HamiltonGraphAdapter) -> "Builder":
+    def with_adapter(self, adapter: base.HamiltonGraphAdapter) -> Builder:
         self._not_supported(
             "with_adapter",
             "Use with_adapters instead to pass in the tracker (or other async hooks/methods)",

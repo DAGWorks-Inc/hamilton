@@ -1,16 +1,21 @@
+from __future__ import annotations
+
 import functools
 import json
 import logging
 import typing
+from typing import TYPE_CHECKING
 
 import ray
 from ray import workflow
 
 from hamilton import base, htypes, node
 from hamilton.execution import executors
-from hamilton.execution.executors import TaskFuture
-from hamilton.execution.grouping import TaskImplementation
 from hamilton.function_modifiers.metadata import RAY_REMOTE_TAG_NAMESPACE
+
+if TYPE_CHECKING:
+    from hamilton.execution.executors import TaskFuture
+    from hamilton.execution.grouping import TaskImplementation
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +36,7 @@ def raify(fn):
     return fn
 
 
-def parse_ray_remote_options_from_tags(tags: typing.Dict[str, str]) -> typing.Dict[str, typing.Any]:
+def parse_ray_remote_options_from_tags(tags: dict[str, str]) -> dict[str, typing.Any]:
     """DRY helper to parse ray.remote(**options) from Hamilton Tags
 
     Tags are added to nodes via the @ray_remote_options decorator
@@ -101,17 +106,17 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
             )
 
     @staticmethod
-    def check_input_type(node_type: typing.Type, input_value: typing.Any) -> bool:
+    def check_input_type(node_type: type, input_value: typing.Any) -> bool:
         # NOTE: the type of a raylet is unknown until they are computed
         if isinstance(input_value, ray._raylet.ObjectRef):
             return True
         return htypes.check_input_type(node_type, input_value)
 
     @staticmethod
-    def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
+    def check_node_type_equivalence(node_type: type, input_type: type) -> bool:
         return node_type == input_type
 
-    def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def execute_node(self, node: node.Node, kwargs: dict[str, typing.Any]) -> typing.Any:
         """Function that is called as we walk the graph to determine how to execute a hamilton function.
 
         :param node: the node from the graph.
@@ -121,7 +126,7 @@ class RayGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         ray_options = parse_ray_remote_options_from_tags(node.tags)
         return ray.remote(raify(node.callable)).options(**ray_options).remote(**kwargs)
 
-    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def build_result(self, **outputs: dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
 
         :param outputs: the dictionary of key -> Union[ray object reference | value]
@@ -195,17 +200,17 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
             )
 
     @staticmethod
-    def check_input_type(node_type: typing.Type, input_value: typing.Any) -> bool:
+    def check_input_type(node_type: type, input_value: typing.Any) -> bool:
         # NOTE: the type of a raylet is unknown until they are computed
         if isinstance(input_value, ray._raylet.ObjectRef):
             return True
         return htypes.check_input_type(node_type, input_value)
 
     @staticmethod
-    def check_node_type_equivalence(node_type: typing.Type, input_type: typing.Type) -> bool:
+    def check_node_type_equivalence(node_type: type, input_type: type) -> bool:
         return node_type == input_type
 
-    def execute_node(self, node: node.Node, kwargs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def execute_node(self, node: node.Node, kwargs: dict[str, typing.Any]) -> typing.Any:
         """Function that is called as we walk the graph to determine how to execute a hamilton function.
 
         :param node: the node from the graph.
@@ -215,7 +220,7 @@ class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):
         ray_options = parse_ray_remote_options_from_tags(node.tags)
         return ray.remote(raify(node.callable)).options(**ray_options).bind(**kwargs)
 
-    def build_result(self, **outputs: typing.Dict[str, typing.Any]) -> typing.Any:
+    def build_result(self, **outputs: dict[str, typing.Any]) -> typing.Any:
         """Builds the result and brings it back to this running process.
 
         :param outputs: the dictionary of key -> Union[ray object reference | value]
@@ -240,7 +245,7 @@ class RayTaskExecutor(executors.TaskExecutor):
     def __init__(
         self,
         num_cpus: int = None,
-        ray_init_config: typing.Dict[str, typing.Any] = None,
+        ray_init_config: dict[str, typing.Any] = None,
         skip_init: bool = False,
     ):
         """Creates a ray task executor. Note this will likely take in more parameters. This is

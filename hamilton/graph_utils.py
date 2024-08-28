@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 import inspect
-from types import ModuleType
-from typing import Callable, List, Tuple
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
 def is_submodule(child: ModuleType, parent: ModuleType):
     return parent.__name__ in child.__name__
 
 
-def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
+def find_functions(function_module: ModuleType) -> list[tuple[str, Callable]]:
     """Function to determine the set of functions we want to build a graph from.
 
     This iterates through the function module and grabs all function definitions.

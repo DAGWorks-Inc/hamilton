@@ -1,5 +1,7 @@
 """A suite of tools for ad-hoc use"""
 
+from __future__ import annotations
+
 import atexit
 import importlib.util
 import linecache
@@ -9,7 +11,7 @@ import tempfile
 import types
 import uuid
 from types import ModuleType
-from typing import Callable, Optional
+from typing import Callable
 
 
 def _copy_func(f):
@@ -64,7 +66,7 @@ def create_temporary_module(*functions: Callable, module_name: str = None) -> Mo
     return module
 
 
-def module_from_source(source: str, module_name: Optional[str] = None) -> ModuleType:
+def module_from_source(source: str, module_name: str | None = None) -> ModuleType:
     """Create a temporary module from source code."""
     module_name = module_name if module_name else _generate_unique_temp_module_name()
     module_object = ModuleType(module_name)
