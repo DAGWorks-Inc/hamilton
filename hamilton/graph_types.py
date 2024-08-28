@@ -100,10 +100,15 @@ class HamiltonNode:
     documentation: typing.Optional[str]
     required_dependencies: typing.Set[str]
     optional_dependencies: typing.Set[str]
+    optional_dependencies_default_values: typing.Dict[str, typing.Any]
 
-    def as_dict(self):
-        """Create a dictionary representation of the Node that is JSON serializable"""
-        return {
+    def as_dict(self, include_optional_dependencies_default_values: bool = False) -> dict:
+        """Create a dictionary representation of the Node that is JSON serializable.
+
+        :param include_optional_dependencies_default_values: Include optional dependencies default values in the output.
+            Note: optional values could be anything and might not be JSON serializable.
+        """
+        dict_representation = {
             "name": self.name,
             "tags": self.tags,
             "output_type": (get_type_as_string(self.type) if get_type_as_string(self.type) else ""),
@@ -117,6 +122,11 @@ class HamiltonNode:
             "documentation": self.documentation,
             "version": self.version,
         }
+        if include_optional_dependencies_default_values:
+            dict_representation["optional_dependencies_default_values"] = (
+                self.optional_dependencies_default_values
+            )
+        return dict_representation
 
     @staticmethod
     def from_node(n: node.Node) -> "HamiltonNode":
@@ -141,6 +151,9 @@ class HamiltonNode:
                 dep
                 for dep, (type_, dep_type) in n.input_types.items()
                 if dep_type == node.DependencyType.OPTIONAL
+            },
+            optional_dependencies_default_values={
+                name: value for name, value in n.default_parameter_values.items()
             },
         )
 

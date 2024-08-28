@@ -55,6 +55,7 @@ class Node(object):
         tags: Dict[str, Any] = None,
         namespace: Tuple[str, ...] = (),
         originating_functions: Optional[Tuple[Callable, ...]] = None,
+        optional_values: Optional[Dict[str, Any]] = None,
     ):
         """Constructor for our Node object.
 
@@ -81,6 +82,7 @@ class Node(object):
         self._namespace = namespace
         self._input_types = {}
         self._originating_functions = originating_functions
+        self._default_parameter_values = {}
 
         if self._node_source in (
             NodeType.STANDARD,
@@ -96,6 +98,8 @@ class Node(object):
                             key: (value, DependencyType.REQUIRED)
                             for key, value in input_types.items()
                         }
+                # assume optional values passed
+                self._default_parameter_values = optional_values if optional_values else {}
             else:
                 # TODO -- remove this when we no longer support 3.8 -- 10/14/2024
                 type_hint_kwargs = {} if sys.version_info < (3, 9) else {"include_extras": True}
@@ -106,10 +110,14 @@ class Node(object):
                         raise ValueError(
                             f"Missing type hint for {key} in function {name}. Please add one to fix."
                         )
+                    dep_type = DependencyType.from_parameter(value)
                     self._input_types[key] = (
                         input_types[key],
-                        DependencyType.from_parameter(value),
+                        dep_type,
                     )
+                    if dep_type == DependencyType.OPTIONAL:
+                        # capture optional value
+                        self._default_parameter_values[key] = value.default
         elif self.user_defined:
             if len(self._input_types) > 0:
                 raise ValueError(
@@ -138,6 +146,11 @@ class Node(object):
     @property
     def input_types(self) -> Dict[Any, Tuple[Any, DependencyType]]:
         return self._input_types
+
+    @property
+    def default_parameter_values(self) -> Dict[str, Any]:
+        """Only returns parameters for which we have optional values."""
+        return self._default_parameter_values
 
     def requires(self, dependency: str) -> bool:
         """Returns whether or not this node requires the given dependency.
@@ -309,6 +322,9 @@ class Node(object):
             input_types=self.input_types.copy(),
             tags=self.tags.copy(),
             originating_functions=self.originating_functions,
+            optional_values=self.default_parameter_values.copy()
+            if self.default_parameter_values
+            else {},
         )
         constructor_args.update(**overrides)
         out = Node(**constructor_args)

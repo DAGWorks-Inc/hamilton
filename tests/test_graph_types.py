@@ -98,12 +98,13 @@ def test_create_hamilton_node():
     assert hamilton_node.optional_dependencies == {"optional_dep"}
     assert hamilton_node.version == graph_types.hash_source_code(node_to_create, strip=True)
 
-    assert hamilton_node.as_dict() == {
+    assert hamilton_node.as_dict(include_optional_dependencies_default_values=True) == {
         "name": "node_to_create",
         "tags": {"tag_key": "tag_value"},
         "output_type": "str",
         "required_dependencies": ["required_dep"],
         "optional_dependencies": ["optional_dep"],
+        "optional_dependencies_default_values": {"optional_dep": 1},
         "source": (
             "    def node_to_create(required_dep: int, optional_dep: int = 1) -> str:\n"
             '        """Documentation"""\n'
