@@ -245,7 +245,7 @@ def test_get_dataframe_schema():
         originating_functions=(foo,),
         required_dependencies=set(),
         optional_dependencies=set(),
-        optional_input_values={},
+        optional_dependencies_default_values={},
     )
     df = pd.DataFrame({"a": [0, 1], "b": [True, False]})
 
@@ -281,7 +281,7 @@ def test_schema_validator_after_node_execution(tmp_path):
         originating_functions=(foo,),
         required_dependencies=set(),
         optional_dependencies=set(),
-        optional_input_values={},
+        optional_dependencies_default_values={},
     )
     h_graph = graph_types.HamiltonGraph([node])
     df = pd.DataFrame({"a": [0, 1], "b": [True, False]})

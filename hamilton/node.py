@@ -148,8 +148,8 @@ class Node(object):
         return self._input_types
 
     @property
-    def default_input_values(self) -> Dict[str, Any]:
-        """Only returns keys for which we have optional values."""
+    def default_parameter_values(self) -> Dict[str, Any]:
+        """Only returns parameters for which we have optional values."""
         return self._default_parameter_values
 
     def requires(self, dependency: str) -> bool:
@@ -322,7 +322,9 @@ class Node(object):
             input_types=self.input_types.copy(),
             tags=self.tags.copy(),
             originating_functions=self.originating_functions,
-            optional_values=self.default_input_values.copy() if self.default_input_values else {},
+            optional_values=self.default_parameter_values.copy()
+            if self.default_parameter_values
+            else {},
         )
         constructor_args.update(**overrides)
         out = Node(**constructor_args)
