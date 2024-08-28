@@ -49,7 +49,7 @@ if __name__ == "__main__":
             ]
         )
         print(result_ray)
-        time.sleep(2)
+        time.sleep(5)
         result_ray = dr_ray.execute(
             final_vars=[
                 "node_5s",
@@ -57,6 +57,7 @@ if __name__ == "__main__":
                 "at_1_to_previous",
             ]
         )
+        time.sleep(5)
         ray.shutdown()
         print(result_ray)
     except ValueError:
