@@ -2,6 +2,7 @@ import abc
 import functools
 import json
 import logging
+import time
 import typing
 
 import ray
@@ -56,6 +57,7 @@ class RayGraphAdapter(
     lifecycle.base.BaseDoBuildResult,
     lifecycle.base.BaseDoValidateInput,
     lifecycle.base.BaseDoCheckEdgeTypesMatch,
+    lifecycle.base.BasePostGraphExecute,
     abc.ABC,
 ):
     """Class representing what's required to make Hamilton run on Ray.
@@ -93,19 +95,38 @@ class RayGraphAdapter(
     DISCLAIMER -- this class is experimental, so signature changes are a possibility!
     """
 
-    def __init__(self, result_builder: base.ResultMixin):
+    def __init__(
+        self,
+        result_builder: base.ResultMixin,
+        ray_init_config: typing.Dict[str, typing.Any] = None,
+        keep_cluster_open: bool = False,
+    ):
         """Constructor
 
         You have the ability to pass in a ResultMixin object to the constructor to control the return type that gets \
         produce by running on Ray.
 
         :param result_builder: Required. An implementation of base.ResultMixin.
+        :param ray_init_config: allows to connect to an existing cluster or start a new one with custom configuration (https://docs.ray.io/en/latest/ray-core/api/doc/ray.init.html)
+        :param keep_cluster_open: to access Ray dashboard and logs for the cluster run
+
         """
         self.result_builder = result_builder
         if not self.result_builder:
             raise ValueError(
                 "Error: ResultMixin object required. Please pass one in for `result_builder`."
             )
+
+        self.keep_cluster_open = keep_cluster_open
+
+        if ray_init_config:
+            ray.init(**ray_init_config)
+
+            # If the cluster is already open we don't want to close it with Hamilton
+            if "address" in ray_init_config:
+                self.keep_cluster_open = True
+        else:
+            ray.init()
 
     @staticmethod
     def do_validate_input(node_type: typing.Type, input_value: typing.Any) -> bool:
@@ -147,6 +168,14 @@ class RayGraphAdapter(
         remote_combine = ray.remote(self.result_builder.build_result).remote(**outputs)
         result = ray.get(remote_combine)  # this materializes the object locally
         return result
+
+    def post_graph_execute(self, *args, **kwargs):
+        """When we create a Ray cluster with Hamilton we tear it down after execution, unless manual overwrite."""
+
+        if not self.keep_cluster_open:
+            # In case we have Hamilton Tracker to have enough time to properly flush
+            time.sleep(5)
+            ray.shutdown()
 
 
 class RayWorkflowGraphAdapter(base.HamiltonGraphAdapter, base.ResultMixin):

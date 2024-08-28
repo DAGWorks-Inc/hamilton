@@ -709,8 +709,6 @@ class Driver:
                 overrides=overrides,
             )
         results = None
-        # error = None
-        # success = False
         try:
             results = self.graph_executor.execute(
                 function_graph,
@@ -719,21 +717,8 @@ class Driver:
                 inputs if inputs is not None else {},
                 run_id,
             )
-            # success = True
         except Exception as e:
-            # error = e
-            # success = False
             raise e
-        # finally:
-        #     if self.adapter.does_hook("post_graph_execute", is_async=False):
-        #         self.adapter.call_all_lifecycle_hooks_sync(
-        #             "post_graph_execute",
-        #             run_id=run_id,
-        #             graph=function_graph,
-        #             success=success,
-        #             error=error,
-        #             results=results,
-        #         )
         return results, run_id, function_graph
 
     @capture_function_usage
