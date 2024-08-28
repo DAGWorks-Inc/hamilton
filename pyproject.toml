@@ -206,7 +206,7 @@ extend-select = [
     "TCH", # Move type-only imports to a type-checking block.
     "TID", # Helps you write tidier imports.
 #    "TRY", # Prevent exception handling anti-patterns
-#    "UP",  # pyupgrade
+    "UP",  # pyupgrade
     "W",   # pycodestyle warnings
 ]
 extend-ignore = [
