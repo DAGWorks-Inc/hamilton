@@ -8,22 +8,20 @@ def node_5s() -> float:
     return time.time() - start
 
 
-def at_1_to_previous(node_5s: float) -> float:
+def add_1_to_previous(node_5s: float) -> float:
     print("1s executed")
     start = time.time()
-    time.sleep(10)
+    time.sleep(1)
     return node_5s + (time.time() - start)
 
 
-def node_5s_error() -> float:
+def node_1s_error() -> float:
     print("5s error executed")
-    time.sleep(5)
+    time.sleep(1)
     raise ValueError("Does not break telemetry if executed through ray")
 
 
 if __name__ == "__main__":
-    import ray
-
     import __main__
     from hamilton import base, driver
     from hamilton.plugins.h_ray import RayGraphAdapter
@@ -38,19 +36,20 @@ if __name__ == "__main__":
     )
 
     try:
-        ray.init()
+        # ray.init()
         rga = RayGraphAdapter(result_builder=base.PandasDataFrameResult())
         dr_ray = driver.Builder().with_modules(__main__).with_adapters(rga, tracker_ray).build()
         result_ray = dr_ray.execute(
             final_vars=[
                 "node_5s",
-                # 'node_5s_error'
-                "at_1_to_previous",
+                # "node_1s_error",
+                "add_1_to_previous",
             ]
         )
         print(result_ray)
-        ray.shutdown()
-        print(result_ray)
+        time.sleep(5)
+        # ray.shutdown()
+
     except ValueError:
         print("UI displays no problem")
     # finally:

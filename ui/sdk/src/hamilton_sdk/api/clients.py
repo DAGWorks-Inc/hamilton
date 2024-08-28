@@ -221,6 +221,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
             target=lambda: threading.main_thread().join() or self.data_queue.put(None)
         ).start()
         self.worker_thread.start()
+        atexit.register(self.stop)
 
     def worker(self):
         """Worker thread to process the queue."""
