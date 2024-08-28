@@ -4,10 +4,11 @@ import datetime
 import functools
 import logging
 import queue
+import ssl
 import threading
 import time
 from collections import defaultdict
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Union
 from urllib.parse import urlencode
 
 import aiohttp
@@ -167,6 +168,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         username: str,
         h_api_url: str,
         base_path: str = "/api/v1",
+        verify: Union[str, bool] = True,
     ):
         """Initializes a Hamilton API client
 
@@ -174,10 +176,13 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         :param api_key: API key to save to
         :param username: Username to authenticate against
         :param h_api_url: API URL for Hamilton API.
+        :param base_path:
+        :param verify: SSL verification to pass-through to requests
         """
         self.api_key = api_key
         self.username = username
         self.base_url = h_api_url + base_path
+        self.verify = verify
 
         self.max_batch_size = 100
         self.flush_interval = 5
@@ -256,6 +261,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
                     "task_updates": make_json_safe(task_updates_list),
                 },
                 headers=self._common_headers(),
+                verify=self.verify,
             )
             try:
                 response.raise_for_status()
@@ -290,7 +296,9 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
 
     def validate_auth(self):
         logger.debug(f"Validating auth against {self.base_url}/phone_home")
-        response = requests.get(f"{self.base_url}/phone_home", headers=self._common_headers())
+        response = requests.get(
+            f"{self.base_url}/phone_home", headers=self._common_headers(), verify=self.verify
+        )
         try:
             response.raise_for_status()
             logger.debug(f"Successfully validated auth against {self.base_url}/phone_home")
@@ -311,6 +319,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         response = requests.get(
             f"{self.base_url}/project_versions/exists?project_id={project_id}&code_hash={code_hash}",
             headers=self._common_headers(),
+            verify=self.verify,
         )
         try:
             response.raise_for_status()
@@ -343,6 +352,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
                 "version_info_schema": 1,  # TODO -- wire this through appropriately
                 "code_log": {"files": code_slurped},
             },
+            verify=self.verify,
         )
         try:
             code_version_created.raise_for_status()
@@ -358,7 +368,9 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
     def project_exists(self, project_id: int) -> bool:
         logger.debug(f"Checking if project {project_id} exists")
         response = requests.get(
-            f"{self.base_url}/projects/{project_id}", headers=self._common_headers()
+            f"{self.base_url}/projects/{project_id}",
+            headers=self._common_headers(),
+            verify=self.verify,
         )
         try:
             response.raise_for_status()
@@ -401,6 +413,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
         response = requests.get(
             f"{self.base_url}/dag_templates/exists/?dag_hash={dag_hash}&{params}",
             headers=self._common_headers(),
+            verify=self.verify,
         )
         response.raise_for_status()
         logger.debug(f"DAG template {dag_hash} exists for project {project_id}")
@@ -430,6 +443,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
                 "code_version_info_schema": 1,
             },
             headers=self._common_headers(),
+            verify=self.verify,
         )
         try:
             dag_template_created.raise_for_status()
@@ -458,6 +472,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
                     "run_status": "RUNNING",
                 }
             ),
+            verify=self.verify,
         )
         try:
             response.raise_for_status()
@@ -498,6 +513,7 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
             f"{self.base_url}/dag_runs/{dag_run_id}/",
             json=make_json_safe({"run_status": status, "run_end_time": datetime.datetime.utcnow()}),
             headers=self._common_headers(),
+            verify=self.verify,
         )
         try:
             response.raise_for_status()
@@ -508,17 +524,32 @@ class BasicSynchronousHamiltonClient(HamiltonClient):
 
 
 class BasicAsynchronousHamiltonClient(HamiltonClient):
-    def __init__(self, api_key: str, username: str, h_api_url: str, base_path: str = "/api/v1"):
+    def __init__(
+        self,
+        api_key: str,
+        username: str,
+        h_api_url: str,
+        base_path: str = "/api/v1",
+        verify: Union[str, bool] = True,
+    ):
         """Initializes an async Hamilton API client
 
          project: Project to save to
         :param api_key: API key to save to
         :param username: Username to authenticate against
         :param h_api_url: API URL for Hamilton API.
+        :param base_path:
+        :param verify: SSL verification options in requests format
         """
         self.api_key = api_key
         self.username = username
         self.base_url = h_api_url + base_path
+        if verify is True:
+            self.ssl = True
+        elif verify is False:
+            self.ssl = False
+        else:
+            self.ssl = ssl.create_default_context(cafile=verify)
         self.flush_interval = 5
         self.data_queue = asyncio.Queue()
         self.running = True
@@ -542,6 +573,7 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
                         "task_updates": make_json_safe(task_updates_list),
                     },
                     headers=self._common_headers(),
+                    ssl=self.ssl,
                 ) as response:
                     try:
                         response.raise_for_status()
@@ -590,7 +622,9 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
         logger.debug(f"Validating auth against {self.base_url}/phone_home")
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f"{self.base_url}/phone_home", headers=self._common_headers()
+                f"{self.base_url}/phone_home",
+                headers=self._common_headers(),
+                ssl=self.ssl,
             ) as response:
                 try:
                     response.raise_for_status()
@@ -613,6 +647,7 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
             async with session.get(
                 f"{self.base_url}/project_versions/exists?project_id={project_id}&code_hash={code_hash}",
                 headers=self._common_headers(),
+                ssl=self.ssl,
             ) as response:
                 try:
                     response.raise_for_status()
@@ -648,6 +683,7 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
                     "version_info_schema": 1,  # TODO -- wire this through appropriately
                     "code_log": {"files": code_slurped},
                 },
+                ssl=self.ssl,
             ) as response:
                 try:
                     response.raise_for_status()
@@ -664,7 +700,9 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
         logger.debug(f"Checking if project {project_id} exists")
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f"{self.base_url}/projects/{project_id}", headers=self._common_headers()
+                f"{self.base_url}/projects/{project_id}",
+                headers=self._common_headers(),
+                ssl=self.ssl,
             ) as response:
                 try:
                     response.raise_for_status()
@@ -706,6 +744,7 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
             async with session.get(
                 f"{self.base_url}/dag_templates/exists/?dag_hash={dag_hash}&{params}",
                 headers=self._common_headers(),
+                ssl=self.ssl,
             ) as response:
                 try:
                     response.raise_for_status()
@@ -741,6 +780,7 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
                     "code_version_info_schema": 1,
                 },
                 headers=self._common_headers(),
+                ssl=self.ssl,
             ) as response:
                 try:
                     response.raise_for_status()
@@ -770,6 +810,7 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
                     }
                 ),
                 headers=self._common_headers(),
+                ssl=self.ssl,
             ) as response:
                 try:
                     response.raise_for_status()
@@ -802,7 +843,7 @@ class BasicAsynchronousHamiltonClient(HamiltonClient):
         data = make_json_safe({"run_status": status, "run_end_time": datetime.datetime.utcnow()})
         headers = self._common_headers()
         async with aiohttp.ClientSession() as session:
-            async with session.put(url, json=data, headers=headers) as response:
+            async with session.put(url, json=data, headers=headers, ssl=self.ssl) as response:
                 try:
                     response.raise_for_status()
                     logger.debug(f"Logged end of DAG run {dag_run_id}")

@@ -6,7 +6,7 @@ import random
 import traceback
 from datetime import timezone
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from hamilton_sdk import driver
 from hamilton_sdk.api import clients, constants
@@ -45,11 +45,12 @@ class HamiltonTracker(
         dag_name: str,
         tags: Dict[str, str] = None,
         client_factory: Callable[
-            [str, str, str], clients.HamiltonClient
+            [str, str, str, Union[str, bool]], clients.HamiltonClient
         ] = clients.BasicSynchronousHamiltonClient,
         api_key: str = None,
         hamilton_api_url=os.environ.get("HAMILTON_API_URL", constants.HAMILTON_API_URL),
         hamilton_ui_url=os.environ.get("HAMILTON_UI_URL", constants.HAMILTON_UI_URL),
+        verify: Union[str, bool] = True,
     ):
         """This hooks into Hamilton execution to track DAG runs in Hamilton UI.
 
@@ -61,11 +62,12 @@ class HamiltonTracker(
         :param api_key: the API key to use. See us if you want to use this.
         :param hamilton_api_url: API endpoint.
         :param hamilton_ui_url: UI Endpoint.
+        :param verify: SSL verification to pass-through to requests
         """
         self.project_id = project_id
         self.api_key = api_key
         self.username = username
-        self.client = client_factory(api_key, username, hamilton_api_url)
+        self.client = client_factory(api_key, username, hamilton_api_url, verify=verify)
         self.initialized = False
         self.project_version = None
         self.base_tags = tags if tags is not None else {}
@@ -387,16 +389,17 @@ class AsyncHamiltonTracker(
         dag_name: str,
         tags: Dict[str, str] = None,
         client_factory: Callable[
-            [str, str, str], clients.BasicAsynchronousHamiltonClient
+            [str, str, str, Union[str, bool]], clients.BasicAsynchronousHamiltonClient
         ] = clients.BasicAsynchronousHamiltonClient,
         api_key: str = os.environ.get("HAMILTON_API_KEY", ""),
         hamilton_api_url=os.environ.get("HAMILTON_API_URL", constants.HAMILTON_API_URL),
         hamilton_ui_url=os.environ.get("HAMILTON_UI_URL", constants.HAMILTON_UI_URL),
+        verify: Union[str, bool] = True,
     ):
         self.project_id = project_id
         self.api_key = api_key
         self.username = username
-        self.client = client_factory(api_key, username, hamilton_api_url)
+        self.client = client_factory(api_key, username, hamilton_api_url, verify=verify)
         self.initialized = False
         self.project_version = None
         self.base_tags = tags if tags is not None else {}
