@@ -6,7 +6,10 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
+from hamilton import node
 from hamilton.node import DependencyType, Node, matches_query
+
+from tests.resources import nodes_with_future_annotation
 
 
 def test_node_from_fn_happy():
@@ -117,3 +120,20 @@ def test_from_parameter_default_override_equals():
 
     param = DependencyType.from_parameter(inspect.signature(foo).parameters["b"])
     assert param == DependencyType.OPTIONAL
+
+
+# Tests parsing for future annotations
+# TODO -- we should generalize this but doing this for specific points is OK for now
+def test_node_from_future_annotation_parallelizable():
+    parallelized = nodes_with_future_annotation.parallelized
+    assert node.Node.from_fn(parallelized).node_role == node.NodeType.EXPAND
+
+
+def test_node_from_future_annotation_standard():
+    standard = nodes_with_future_annotation.standard
+    assert node.Node.from_fn(standard).node_role == node.NodeType.STANDARD
+
+
+def test_node_from_future_annotation_collected():
+    collected = nodes_with_future_annotation.collected
+    assert node.Node.from_fn(collected).node_role == node.NodeType.COLLECT
