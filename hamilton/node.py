@@ -287,8 +287,7 @@ class Node(object):
         if typing_inspect.is_generic_type(return_type):
             if typing_inspect.get_origin(return_type) == Parallelizable:
                 node_source = NodeType.EXPAND
-        for parameter in inspect.signature(fn).parameters.values():
-            hint = parameter.annotation
+        for hint in typing.get_type_hints(fn, **type_hint_kwargs).values():
             if typing_inspect.is_generic_type(hint):
                 if typing_inspect.get_origin(hint) == Collect:
                     node_source = NodeType.COLLECT
