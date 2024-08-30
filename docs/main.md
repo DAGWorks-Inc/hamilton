@@ -3,6 +3,7 @@
     <a href="https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g" target="_blank"><img src="https://img.shields.io/badge/Join-Hamilton_Slack-brightgreen?logo=slack" alt="Hamilton Slack"/></a>
     <a href="https://twitter.com/hamilton_os" target="_blank"><img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Twitter"/></a>
     <a href="https://pepy.tech/project/sf-hamilton" target="_blank"><img src="https://pepy.tech/badge/sf-hamilton" alt="Total Downloads"/></a>
+    <a href="https://pepy.tech/project/sf-hamilton" target="_blank"><img src="https://static.pepy.tech/badge/sf-hamilton/month" alt="Total Monthly Downloads"/></a>
 </div>
 
 Hamilton is a general-purpose framework to write dataflows using regular Python functions. At the core, each function defines a transformation and its parameters indicates its dependencies. Hamilton automatically connects individual functions into a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) (DAG) that can be executed, visualized, optimized, and reported on.
@@ -73,3 +74,4 @@ Multiple companies are doing cool stuff with Hamilton! Come chat with members of
 * **Lexis Nexis** - Feature processing and lineage
 * **Opendoor** - Manage PySpark pipelines
 * **KI** - Feature engineering
+* **Kora Money** - DS/ML Workflows
