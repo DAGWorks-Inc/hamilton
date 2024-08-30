@@ -218,6 +218,7 @@ extend-ignore = [
     "E501", # line too long
     "E721", # Use `is` and `is not` for type comparisons, or `isinstance()` for isinstance checks
     "W605", # invalid escape sequence
+    "TCH001" # TYPE_CHECKING block for first-class imports -- this is a bit ugly for the hamilton codebase
 ]
 exclude = [
     "docs/*",
