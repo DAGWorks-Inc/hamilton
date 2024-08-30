@@ -247,6 +247,7 @@ Hamilton was started at Stitch Fix before the original creators founded DAGWorks
 * [Everstream.ai](https://www.everstream.ai/)
 * [Flectere](https://flectere.net/)
 * [F33.ai](https://f33.ai/)
+* [Kora Money](https://www.koramoney.com)
 
 ## 🤝 Code Contributors
 [![Contributors](https://contrib.rocks/image?repo=dagworks-inc/hamilton)](https://github.com/DAGWorks-Inc/hamilton/graphs/contributors)
