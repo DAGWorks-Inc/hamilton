@@ -120,13 +120,16 @@ class RayGraphAdapter(
         self.keep_cluster_open = keep_cluster_open
 
         if ray_init_config:
-            ray.init(**ray_init_config)
-
+            # Ray breaks if you try to open the cluster twice without this flag
+            if "ignore_reinit_error" not in ray_init_config:
+                ray_init_config["ignore_reinit_error"] = True
             # If the cluster is already open we don't want to close it with Hamilton
             if "address" in ray_init_config:
                 self.keep_cluster_open = True
+
+            ray.init(**ray_init_config)
         else:
-            ray.init()
+            ray.init(ignore_reinit_error=True)
 
     @staticmethod
     def do_validate_input(node_type: typing.Type, input_value: typing.Any) -> bool:
