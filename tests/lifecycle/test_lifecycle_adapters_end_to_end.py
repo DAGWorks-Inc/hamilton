@@ -22,6 +22,7 @@ from .lifecycle_adapters_for_testing import (
     SentinelException,
     TrackingDoBuildResultMethod,
     TrackingDoNodeExecuteHook,
+    TrackingDoRemoteExecuteHook,
     TrackingDoValidateInputMethod,
     TrackingPostGraphConstructHook,
     TrackingPostGraphExecuteHook,
@@ -371,6 +372,16 @@ def test_individual_do_validate_input_method_invalid():
 def test_individual_do_node_execute_method():
     method_name = "do_node_execute"
     method = TrackingDoNodeExecuteHook(name=method_name, additional_value=1)
+    dr = _sample_driver(method)
+    res = dr.execute(["d"], inputs={"input": 1})
+    relevant_calls = [item for item in method.calls if item.name == method_name]
+    assert len(relevant_calls) == 4
+    assert res == {"d": 17**3 + 1}  # adding one to each one
+
+
+def test_individual_do_remote_execute_method():
+    method_name = "do_remote_execute"
+    method = TrackingDoRemoteExecuteHook(name=method_name, additional_value=1)
     dr = _sample_driver(method)
     res = dr.execute(["d"], inputs={"input": 1})
     relevant_calls = [item for item in method.calls if item.name == method_name]

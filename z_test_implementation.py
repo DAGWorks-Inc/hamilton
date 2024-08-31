@@ -16,7 +16,7 @@ def add_1_to_previous(node_5s: float) -> float:
 
 
 def node_1s_error() -> float:
-    print("5s error executed")
+    print("1s error executed")
     time.sleep(1)
     raise ValueError("Does not break telemetry if executed through ray")
 
@@ -42,7 +42,7 @@ if __name__ == "__main__":
         result_ray = dr_ray.execute(
             final_vars=[
                 "node_5s",
-                # "node_1s_error",
+                "node_1s_error",
                 "add_1_to_previous",
             ]
         )
