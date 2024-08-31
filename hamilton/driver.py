@@ -580,12 +580,12 @@ class Driver:
             )
         start_time = time.time()
         run_successful = True
-        error = None
+        telemetry_error = None
+        execution_error = None
+        outputs = None
         _final_vars = self._create_final_vars(final_vars)
         try:
-            outputs, run_id, function_graph = self.raw_execute(
-                _final_vars, overrides, display_graph, inputs=inputs
-            )
+            outputs = self.raw_execute(_final_vars, overrides, display_graph, inputs=inputs)
             if self.adapter.does_method("do_build_result", is_async=False):
                 # Build the result if we have a result builder
                 return self.adapter.call_lifecycle_method_sync("do_build_result", outputs=outputs)
@@ -594,21 +594,22 @@ class Driver:
         except Exception as e:
             run_successful = False
             logger.error(SLACK_ERROR_MESSAGE)
-            error = telemetry.sanitize_error(*sys.exc_info())
+            execution_error = e
+            telemetry_error = telemetry.sanitize_error(*sys.exc_info())
             raise e
         finally:
             if self.adapter.does_hook("post_graph_execute", is_async=False):
                 self.adapter.call_all_lifecycle_hooks_sync(
                     "post_graph_execute",
-                    run_id=run_id,
-                    graph=function_graph,
+                    run_id=self.run_id,
+                    graph=self.function_graph,
                     success=run_successful,
-                    error=error,
+                    error=execution_error,
                     results=outputs,
                 )
             duration = time.time() - start_time
             self.capture_execute_telemetry(
-                error, _final_vars, inputs, overrides, run_successful, duration
+                telemetry_error, _final_vars, inputs, overrides, run_successful, duration
             )
 
     def _create_final_vars(self, final_vars: List[Union[str, Callable, Variable]]) -> List[str]:
@@ -681,11 +682,11 @@ class Driver:
         :param inputs: Runtime inputs to the DAG
         :return:
         """
-        function_graph = _fn_graph if _fn_graph is not None else self.graph
-        run_id = str(uuid.uuid4())
-        nodes, user_nodes = function_graph.get_upstream_nodes(final_vars, inputs, overrides)
+        self.function_graph = _fn_graph if _fn_graph is not None else self.graph
+        self.run_id = str(uuid.uuid4())
+        nodes, user_nodes = self.function_graph.get_upstream_nodes(final_vars, inputs, overrides)
         Driver.validate_inputs(
-            function_graph, self.adapter, user_nodes, inputs, nodes
+            self.function_graph, self.adapter, user_nodes, inputs, nodes
         )  # TODO -- validate within the function graph itself
         if display_graph:  # deprecated flow.
             logger.warning(
@@ -694,7 +695,7 @@ class Driver:
             )
             self.visualize_execution(final_vars, "test-output/execute.gv", {"view": True})
             if self.has_cycles(
-                final_vars, function_graph
+                final_vars, self.function_graph
             ):  # here for backwards compatible driver behavior.
                 raise ValueError("Error: cycles detected in your graph.")
         all_nodes = nodes | user_nodes
@@ -702,8 +703,8 @@ class Driver:
         if self.adapter.does_hook("pre_graph_execute", is_async=False):
             self.adapter.call_all_lifecycle_hooks_sync(
                 "pre_graph_execute",
-                run_id=run_id,
-                graph=function_graph,
+                run_id=self.run_id,
+                graph=self.function_graph,
                 final_vars=final_vars,
                 inputs=inputs,
                 overrides=overrides,
@@ -711,15 +712,15 @@ class Driver:
         results = None
         try:
             results = self.graph_executor.execute(
-                function_graph,
+                self.function_graph,
                 final_vars,
                 overrides if overrides is not None else {},
                 inputs if inputs is not None else {},
-                run_id,
+                self.run_id,
             )
         except Exception as e:
             raise e
-        return results, run_id, function_graph
+        return results
 
     @capture_function_usage
     def list_available_variables(
@@ -1513,6 +1514,8 @@ class Driver:
         start_time = time.time()
         run_successful = True
         error = None
+        execution_error = None
+        raw_results_output = None
 
         final_vars = self._create_final_vars(additional_vars)
         # This is so the finally logging statement does not accidentally die
@@ -1559,9 +1562,19 @@ class Driver:
         except Exception as e:
             run_successful = False
             logger.error(SLACK_ERROR_MESSAGE)
+            execution_error = e
             error = telemetry.sanitize_error(*sys.exc_info())
             raise e
         finally:
+            if self.adapter.does_hook("post_graph_execute", is_async=False):
+                self.adapter.call_all_lifecycle_hooks_sync(
+                    "post_graph_execute",
+                    run_id=self.run_id,
+                    graph=self.function_graph,
+                    success=run_successful,
+                    error=execution_error,
+                    results=raw_results_output,
+                )
             duration = time.time() - start_time
             self.capture_execute_telemetry(
                 error, final_vars + materializer_vars, inputs, overrides, run_successful, duration
