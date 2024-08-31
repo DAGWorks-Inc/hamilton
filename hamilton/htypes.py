@@ -136,7 +136,11 @@ def types_match(param_type: Type[Type], required_node_type: Any) -> bool:
 
 
 _sys_version_info = sys.version_info
-_version_tuple = (_sys_version_info.major, _sys_version_info.minor, _sys_version_info.micro)
+_version_tuple = (
+    _sys_version_info.major,
+    _sys_version_info.minor,
+    _sys_version_info.micro,
+)
 
 """
 The following is purely for backwards compatibility
@@ -278,14 +282,16 @@ V = TypeVar("V", covariant=True)
 #     pass
 
 
-class Parallelizable(Iterable[U], Protocol[U]): ...
+class Parallelizable(Iterable[U], Protocol[U]):
+    pass
 
 
 def is_parallelizable_type(type_: Type) -> bool:
     return _get_origin(type_) == Parallelizable
 
 
-class Collect(Iterable[V], Protocol[V]): ...
+class Collect(Iterable[V], Protocol[V]):
+    pass
 
 
 def check_input_type(node_type: Type, input_value: Any) -> bool:
