@@ -1,8 +1,7 @@
 import inspect
 import sys
 import typing
-from abc import ABC
-from typing import Any, Generator, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Iterable, Optional, Protocol, Tuple, Type, TypeVar, Union
 
 import typing_inspect
 
@@ -270,8 +269,8 @@ def get_type_information(some_type: Any) -> Tuple[Type[Type], list]:
 
 # Type variables for annotations below
 T = TypeVar("T")
-U = TypeVar("U")
-V = TypeVar("V")
+U = TypeVar("U", covariant=True)
+V = TypeVar("V", covariant=True)
 
 
 # TODO -- support sequential operation
@@ -279,16 +278,14 @@ V = TypeVar("V")
 #     pass
 
 
-class Parallelizable(Generator[U, None, None], ABC):
-    pass
+class Parallelizable(Iterable[U], Protocol[U]): ...
 
 
 def is_parallelizable_type(type_: Type) -> bool:
-    return issubclass(type_, Parallelizable)
+    return _get_origin(type_) == Parallelizable
 
 
-class Collect(Generator[V, None, None], ABC):
-    pass
+class Collect(Iterable[V], Protocol[V]): ...
 
 
 def check_input_type(node_type: Type, input_value: Any) -> bool:
