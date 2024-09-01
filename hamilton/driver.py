@@ -663,7 +663,7 @@ class Driver:
                     logger.debug(f"Error caught in processing telemetry: \n{e}")
 
     @deprecation.deprecated(
-        warn_starting=(1, 0, 0),
+        warn_starting=(1, 75, 0),
         fail_starting=(2, 0, 0),
         use_this=None,
         explanation="This has become a private method and does not guarantee that all the adapters work correctly.",
