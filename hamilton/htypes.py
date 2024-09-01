@@ -272,17 +272,27 @@ def get_type_information(some_type: Any) -> Tuple[Type[Type], list]:
 
 
 # Type variables for annotations below
-T = TypeVar("T")
-U = TypeVar("U", covariant=True)
-V = TypeVar("V", covariant=True)
+SequentialElement = TypeVar("SequentialElement", covariant=True)
+ParallelizableElement = TypeVar("ParallelizableElement", covariant=True)
+CollectElement = TypeVar("CollectElement", covariant=True)
 
 
 # TODO -- support sequential operation
-# class Sequential(Generator[T, None, None], ABC):
+# class Sequential(Iterable[SequentialElement], Protocol[SequentialElement]):
 #     pass
 
 
-class Parallelizable(Iterable[U], Protocol[U]):
+class Parallelizable(Iterable[ParallelizableElement], Protocol[ParallelizableElement]):
+    """Marks the output of a function node as parallelizable.
+
+    Parallelizable outputs are expected to be iterable, where each element dynamically
+    generates a node. When using dynamic execution, each of these dynamic nodes can be
+    executed in parallel.
+
+    Because this uses dynamic execution, the builder method `enable_dynamic_execution`
+    must be called with `allow_experimental_mode=True`.
+    """
+
     pass
 
 
@@ -290,8 +300,15 @@ def is_parallelizable_type(type_: Type) -> bool:
     return _get_origin(type_) == Parallelizable
 
 
-class Collect(Iterable[V], Protocol[V]):
-    pass
+class Collect(Iterable[CollectElement], Protocol[CollectElement]):
+    """Marks a function node parameter as collectable.
+
+    Collectable inputs are expected to be iterable, where each element is populated with
+    the results of dynamic nodes derived from parallelizable outputs.
+
+    Because this uses dynamic execution, the builder method `enable_dynamic_execution`
+    must be called with `allow_experimental_mode=True`.
+    """
 
 
 def check_input_type(node_type: Type, input_value: Any) -> bool:
