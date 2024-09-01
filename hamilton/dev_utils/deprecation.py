@@ -48,8 +48,8 @@ class deprecated:
     @deprecate(
         warn_starting=(1,10,0)
         fail_starting=(2,0,0),
-        use_instead=parameterize_values,
-        reason='We have redefined the parameterization decorators to consist of `parametrize`, `parametrize_inputs`, and `parametrize_values`
+        use_this=parameterize_values,
+        explanation='We have redefined the parameterization decorators to consist of `parametrize`, `parametrize_inputs`, and `parametrize_values`
         migration_guide="https://github.com/dagworks-inc/hamilton/..."
     )
     class parameterized(...):
@@ -66,7 +66,7 @@ class deprecated:
     explanation: str
     migration_guide: Optional[
         str
-    ]  # If this is None, this means that the use_instead is a drop in replacement
+    ]  # If this is None, this means that the use_this is a drop in replacement
     current_version: Union[Tuple[int, int, int], Version] = dataclasses.field(
         default_factory=lambda: CURRENT_VERSION
     )

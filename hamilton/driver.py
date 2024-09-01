@@ -19,6 +19,7 @@ from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, 
 import pandas as pd
 
 from hamilton import common, graph_types, htypes
+from hamilton.dev_utils import deprecation
 from hamilton.execution import executors, graph_functions, grouping, state
 from hamilton.graph_types import HamiltonNode
 from hamilton.io import materialization
@@ -585,7 +586,7 @@ class Driver:
         outputs = None
         _final_vars = self._create_final_vars(final_vars)
         try:
-            outputs = self.raw_execute(_final_vars, overrides, display_graph, inputs=inputs)
+            outputs = self.__raw_execute(_final_vars, overrides, display_graph, inputs=inputs)
             if self.adapter.does_method("do_build_result", is_async=False):
                 # Build the result if we have a result builder
                 return self.adapter.call_lifecycle_method_sync("do_build_result", outputs=outputs)
@@ -661,7 +662,48 @@ class Driver:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(f"Error caught in processing telemetry: \n{e}")
 
+    @deprecation.deprecated(
+        warn_starting=(1, 0, 0),
+        fail_starting=(2, 0, 0),
+        use_this=None,
+        explanation="This has become a private method and does not guarantee that all the adapters work correctly.",
+        migration_guide="Don't use this entry point for execution directly. Always go through `.execute()`.",
+    )
     def raw_execute(
+        self,
+        final_vars: List[str],
+        overrides: Dict[str, Any] = None,
+        display_graph: bool = False,
+        inputs: Dict[str, Any] = None,
+        _fn_graph: graph.FunctionGraph = None,
+    ) -> Dict[str, Any]:
+        """Don't use this entry point for execution directly. Always go through `.execute()`.
+        In case you are using `.raw_execute()` directly, please switch to `.execute()` using a
+        `base.DictResult()`. Note: `base.DictResult()` is the default return of execute if you are
+        using the `driver.Builder()` class to create a `Driver()` object.
+        """
+        success = True
+        error = None
+        results = None
+        try:
+            return self.__raw_execute(final_vars, overrides, display_graph, inputs=inputs)
+        except Exception as e:
+            success = False
+            logger.error(SLACK_ERROR_MESSAGE)
+            error = e
+            raise e
+        finally:
+            if self.adapter.does_hook("post_graph_execute", is_async=False):
+                self.adapter.call_all_lifecycle_hooks_sync(
+                    "post_graph_execute",
+                    run_id=self.run_id,
+                    graph=self.function_graph,
+                    success=success,
+                    error=error,
+                    results=results,
+                )
+
+    def __raw_execute(
         self,
         final_vars: List[str],
         overrides: Dict[str, Any] = None,
@@ -671,10 +713,7 @@ class Driver:
     ) -> Dict[str, Any]:
         """Raw execute function that does the meat of execute.
 
-        Don't use this entry point for execution directly. Always go through `.execute()`.
-        In case you are using `.raw_execute()` directly, please switch to `.execute()` using a
-        `base.DictResult()`. Note: `base.DictResult()` is the default return of execute if you are
-        using the `driver.Builder()` class to create a `Driver()` object.
+        Private method since the result building and post_graph_execute lifecycle hooks are performed outside and so this returns an incomplete result.
 
         :param final_vars: Final variables to compute
         :param overrides: Overrides to run.
@@ -1549,7 +1588,7 @@ class Driver:
             Driver.validate_inputs(function_graph, self.adapter, user_nodes, inputs, nodes)
             all_nodes = nodes | user_nodes
             self.graph_executor.validate(list(all_nodes))
-            raw_results = self.raw_execute(
+            raw_results = self.__raw_execute(
                 final_vars=final_vars + materializer_vars,
                 inputs=inputs,
                 overrides=overrides,
