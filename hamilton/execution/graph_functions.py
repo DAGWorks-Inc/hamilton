@@ -205,10 +205,10 @@ def execute_subdag(
 
             execute_lifecycle_for_node_partial = partial(
                 execute_lifecycle_for_node,
-                node_=node_,
-                adapter=adapter,
-                run_id=run_id,
-                task_id=task_id,
+                __node_=node_,
+                __adapter=adapter,
+                __run_id=run_id,
+                __task_id=task_id,
             )
 
             if adapter.does_method("do_remote_execute", is_async=False):
@@ -253,11 +253,11 @@ def execute_subdag(
 
 # TODO: better function name
 def execute_lifecycle_for_node(
-    node_: node.Node,
-    adapter: LifecycleAdapterSet,
-    run_id: str,
-    task_id: str,
-    **kwargs: Dict[str, Any],
+    __node_: node.Node,
+    __adapter: LifecycleAdapterSet,
+    __run_id: str,
+    __task_id: str,
+    **__kwargs: Dict[str, Any],
 ):
     """Helper function to properly execute node lifecycle.
 
@@ -265,11 +265,11 @@ def execute_lifecycle_for_node(
 
     For local runtime gets execute directy. Otherwise, serves as a sandwich function that guarantees the pre_node and post_node lifecycle hooks are executed in the remote environment.
 
-    :param node_:  Node that is being executed
-    :param adapter:  Adapter to use to compute
-    :param run_id: ID of the run, unique in scope of the driver.
-    :param task_id: ID of the task, defaults to None if not in a task setting
-    :param kwargs: Keyword arguments that are being passed into the node
+    :param __node_:  Node that is being executed
+    :param __adapter:  Adapter to use to compute
+    :param __run_id: ID of the run, unique in scope of the driver.
+    :param __task_id: ID of the task, defaults to None if not in a task setting
+    :param ___kwargs: Keyword arguments that are being passed into the node
     """
 
     error = None
@@ -278,28 +278,28 @@ def execute_lifecycle_for_node(
     pre_node_execute_errored = False
 
     try:
-        if adapter.does_hook("pre_node_execute", is_async=False):
+        if __adapter.does_hook("pre_node_execute", is_async=False):
             try:
-                adapter.call_all_lifecycle_hooks_sync(
+                __adapter.call_all_lifecycle_hooks_sync(
                     "pre_node_execute",
-                    run_id=run_id,
-                    node_=node_,
-                    kwargs=kwargs,
-                    task_id=task_id,
+                    run_id=__run_id,
+                    node_=__node_,
+                    kwargs=__kwargs,
+                    task_id=__task_id,
                 )
             except Exception as e:
                 pre_node_execute_errored = True
                 raise e
-        if adapter.does_method("do_node_execute", is_async=False):
-            result = adapter.call_lifecycle_method_sync(
+        if __adapter.does_method("do_node_execute", is_async=False):
+            result = __adapter.call_lifecycle_method_sync(
                 "do_node_execute",
-                run_id=run_id,
-                node_=node_,
-                kwargs=kwargs,
-                task_id=task_id,
+                run_id=__run_id,
+                node_=__node_,
+                kwargs=__kwargs,
+                task_id=__task_id,
             )
         else:
-            result = node_(**kwargs)
+            result = __node_(**__kwargs)
 
         return result
 
@@ -307,24 +307,26 @@ def execute_lifecycle_for_node(
         success = False
         error = e
         step = "[pre-node-execute]" if pre_node_execute_errored else ""
-        message = create_error_message(kwargs, node_, step)
+        message = create_error_message(__kwargs, __node_, step)
         logger.exception(message)
         raise
     finally:
-        if not pre_node_execute_errored and adapter.does_hook("post_node_execute", is_async=False):
+        if not pre_node_execute_errored and __adapter.does_hook(
+            "post_node_execute", is_async=False
+        ):
             try:
-                adapter.call_all_lifecycle_hooks_sync(
+                __adapter.call_all_lifecycle_hooks_sync(
                     "post_node_execute",
-                    run_id=run_id,
-                    node_=node_,
-                    kwargs=kwargs,
+                    run_id=__run_id,
+                    node_=__node_,
+                    kwargs=__kwargs,
                     success=success,
                     error=error,
                     result=result,
-                    task_id=task_id,
+                    task_id=__task_id,
                 )
             except Exception:
-                message = create_error_message(kwargs, node_, "[post-node-execute]")
+                message = create_error_message(__kwargs, __node_, "[post-node-execute]")
                 logger.exception(message)
                 raise
 
