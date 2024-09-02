@@ -8,6 +8,7 @@ import pprint
 import random
 import shelve
 import time
+from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from hamilton import graph_types, htypes
@@ -377,7 +378,7 @@ class CacheAdapter(NodeExecutionHook, NodeExecutionMethod, GraphExecutionHook):
             return node_callable(**node_kwargs)
 
         source_of_node_callable = node_callable
-        while hasattr(source_of_node_callable, "func"):  # handle partials
+        while isinstance(source_of_node_callable, partial):  # handle partials
             source_of_node_callable = source_of_node_callable.func
         node_hash = graph_types.hash_source_code(source_of_node_callable, strip=True)
         cache_key = CacheAdapter.create_key(node_hash, node_kwargs)
