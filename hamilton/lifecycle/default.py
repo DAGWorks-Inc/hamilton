@@ -359,7 +359,7 @@ class CacheAdapter(NodeExecutionHook, NodeExecutionMethod, GraphExecutionHook):
     def run_before_graph_execution(self, *, graph: HamiltonGraph, **kwargs):
         """Set `cache_vars` to all nodes if received None during `__init__`"""
         self.cache = shelve.open(self.cache_path)
-        if self.cache_vars == []:
+        if len(self.cache_vars) == 0:
             self.cache_vars = [n.name for n in graph.nodes]
 
     def run_to_execute_node(
