@@ -168,7 +168,7 @@ def test_commit_nodes_history(hook: CacheAdapter):
 
 
 def test_partial_handling(hook: CacheAdapter, node_a_partial: node.Node):
-    """Partial functions are not supported"""
+    """Tests partial functions are handled properly"""
     hook.cache_vars = [node_a_partial.name]
     hook.run_before_graph_execution(graph=graph_types.HamiltonGraph([]))  # needed to open cache
     node_kwargs = dict(external_input=7)
@@ -191,7 +191,7 @@ def test_partial_handling(hook: CacheAdapter, node_a_partial: node.Node):
 
 
 def test_nested_partial_handling(hook: CacheAdapter, node_a_nested_partial: node.Node):
-    """Partial functions are not supported"""
+    """Tests nested partial functions are handled properly"""
     hook.cache_vars = [node_a_nested_partial.name]
     hook.run_before_graph_execution(graph=graph_types.HamiltonGraph([]))  # needed to open cache
     node_kwargs = dict(external_input=7)
