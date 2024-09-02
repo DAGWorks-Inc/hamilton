@@ -1,5 +1,5 @@
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 import pytest
 
@@ -7,6 +7,7 @@ from hamilton import ad_hoc_utils, driver, node
 from hamilton.io.materialization import to
 from hamilton.lifecycle.base import (
     BaseDoNodeExecute,
+    BaseDoRemoteExecute,
     BasePostGraphConstruct,
     BasePostGraphExecute,
     BasePostNodeExecute,
@@ -290,6 +291,78 @@ def test_multi_hook():
             task_id: Optional[str] = None,
         ):
             return node_(**kwargs)
+
+        def pre_do_anything(self):
+            pass
+
+        def post_graph_construct(
+            self, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
+        ):
+            pass
+
+        def pre_graph_execute(
+            self,
+            run_id: str,
+            graph: "FunctionGraph",
+            final_vars: List[str],
+            inputs: Dict[str, Any],
+            overrides: Dict[str, Any],
+        ):
+            pass
+
+        def pre_node_execute(
+            self, run_id: str, node_: Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
+        ):
+            pass
+
+        def post_node_execute(
+            self,
+            run_id: str,
+            node_: node.Node,
+            kwargs: Dict[str, Any],
+            success: bool,
+            error: Optional[Exception],
+            result: Optional[Any],
+            task_id: Optional[str] = None,
+        ):
+            pass
+
+        def post_graph_execute(
+            self,
+            run_id: str,
+            graph: "FunctionGraph",
+            success: bool,
+            error: Optional[Exception],
+            results: Optional[Dict[str, Any]],
+        ):
+            pass
+
+    multi_hook = MultiHook(name="multi_hook")
+
+    dr = _sample_driver(multi_hook)
+    dr.execute(["d"], inputs={"input": 1})
+    calls = multi_hook.calls
+    assert len(calls) == 16
+
+
+def test_multi_hook_remote():
+    class MultiHook(
+        BasePreDoAnythingHook,
+        BasePostGraphConstruct,
+        BasePreGraphExecute,
+        BasePreNodeExecute,
+        BaseDoRemoteExecute,
+        BasePostNodeExecute,
+        BasePostGraphExecute,
+        ExtendToTrackCalls,
+    ):
+        def do_remote_execute(
+            self,
+            node: node.Node,
+            execute_lifecycle_for_node: Callable,
+            **kwargs: Dict[str, Any],
+        ):
+            return execute_lifecycle_for_node(**kwargs)
 
         def pre_do_anything(self):
             pass
