@@ -376,7 +376,10 @@ class CacheAdapter(NodeExecutionHook, NodeExecutionMethod, GraphExecutionHook):
         if node_name not in self.cache_vars:
             return node_callable(**node_kwargs)
 
-        node_hash = graph_types.hash_source_code(node_callable, strip=True)
+        source_of_node_callable = node_callable
+        while hasattr(source_of_node_callable, "func"):  # handle partials
+            source_of_node_callable = source_of_node_callable.func
+        node_hash = graph_types.hash_source_code(source_of_node_callable, strip=True)
         cache_key = CacheAdapter.create_key(node_hash, node_kwargs)
 
         from_cache = self.cache.get(cache_key, None)
