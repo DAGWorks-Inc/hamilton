@@ -19,6 +19,8 @@ def node_1s_error() -> float:
 
 
 if __name__ == "__main__":
+    import ray
+
     import __main__
     from hamilton import base, driver
     from hamilton.plugins.h_ray import RayGraphAdapter
@@ -27,6 +29,8 @@ if __name__ == "__main__":
     username = "admin"
 
     try:
+        # ray.init()
+        ray.shutdown()
         tracker_ray = adapters.HamiltonTracker(
             project_id=1,  # modify this as needed
             username=username,
@@ -37,7 +41,7 @@ if __name__ == "__main__":
         result_ray = dr_ray.execute(
             final_vars=[
                 "node_5s",
-                "node_1s_error",
+                # "node_1s_error",
                 "add_1_to_previous",
             ]
         )
@@ -53,5 +57,5 @@ if __name__ == "__main__":
         )
         dr_without_ray = driver.Builder().with_modules(__main__).with_adapters(tracker).build()
 
-        result_without_ray = dr_without_ray.raw_execute(final_vars=["node_5s", "add_1_to_previous"])
+        result_without_ray = dr_without_ray.execute(final_vars=["node_5s", "add_1_to_previous"])
         print(result_without_ray)

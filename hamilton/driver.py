@@ -580,29 +580,52 @@ class Driver:
                 "Please use visualize_execution()."
             )
         start_time = time.time()
+        run_id = str(uuid.uuid4())
         run_successful = True
-        telemetry_error = None
+        error_execution = None
+        error_telemetry = None
         outputs = None
         _final_vars = self._create_final_vars(final_vars)
+        if self.adapter.does_hook("pre_graph_execute", is_async=False):
+            self.adapter.call_all_lifecycle_hooks_sync(
+                "pre_graph_execute",
+                run_id=run_id,
+                graph=self.graph,
+                final_vars=_final_vars,
+                inputs=inputs,
+                overrides=overrides,
+            )
         try:
             outputs = self.__raw_execute(
-                _final_vars,
-                overrides,
-                display_graph,
-                inputs=inputs,
-                materialize=False,
+                _final_vars, overrides, display_graph, inputs=inputs, _run_id=run_id
             )
-            return outputs
+            if self.adapter.does_method("do_build_result", is_async=False):
+                # Build the result if we have a result builder
+                outputs = self.adapter.call_lifecycle_method_sync(
+                    "do_build_result", outputs=outputs
+                )
+            # Otherwise just return a dict
         except Exception as e:
             run_successful = False
             logger.error(SLACK_ERROR_MESSAGE)
-            telemetry_error = telemetry.sanitize_error(*sys.exc_info())
+            error_execution = e
+            error_telemetry = telemetry.sanitize_error(*sys.exc_info())
             raise e
         finally:
+            if self.adapter.does_hook("post_graph_execute", is_async=False):
+                self.adapter.call_all_lifecycle_hooks_sync(
+                    "post_graph_execute",
+                    run_id=run_id,
+                    graph=self.graph,
+                    success=run_successful,
+                    error=error_execution,
+                    results=outputs,
+                )
             duration = time.time() - start_time
             self.capture_execute_telemetry(
-                telemetry_error, _final_vars, inputs, overrides, run_successful, duration
+                error_telemetry, _final_vars, inputs, overrides, run_successful, duration
             )
+        return outputs
 
     def _create_final_vars(self, final_vars: List[Union[str, Callable, Variable]]) -> List[str]:
         """Creates the final variables list - converting functions names as required.
@@ -654,7 +677,7 @@ class Driver:
                     logger.debug(f"Error caught in processing telemetry: \n{e}")
 
     @deprecation.deprecated(
-        warn_starting=(1, 75, 0),
+        warn_starting=(1, 0, 0),
         fail_starting=(2, 0, 0),
         use_this=None,
         explanation="This has become a private method and does not guarantee that all the adapters work correctly.",
@@ -668,30 +691,12 @@ class Driver:
         inputs: Dict[str, Any] = None,
         _fn_graph: graph.FunctionGraph = None,
     ) -> Dict[str, Any]:
-        """Don't use this entry point for execution directly. Always go through `.execute()` or `.materialize()`.
+        """Raw execute function that does the meat of execute.
+
+        Don't use this entry point for execution directly. Always go through `.execute()` or `.materialize()`.
         In case you are using `.raw_execute()` directly, please switch to `.execute()` using a
         `base.DictResult()`. Note: `base.DictResult()` is the default return of execute if you are
         using the `driver.Builder()` class to create a `Driver()` object.
-        """
-
-        try:
-            return self.__raw_execute(final_vars, overrides, display_graph, inputs=inputs)
-        except Exception as e:
-            logger.error(SLACK_ERROR_MESSAGE)
-            raise e
-
-    def __raw_execute(
-        self,
-        final_vars: List[str],
-        overrides: Dict[str, Any] = None,
-        display_graph: bool = False,
-        inputs: Dict[str, Any] = None,
-        _fn_graph: graph.FunctionGraph = None,
-        materialize: bool = True,
-    ) -> Dict[str, Any]:
-        """Raw execute function that does the meat of execute.
-
-        Private method since the result building and post_graph_execute lifecycle hooks are performed outside and so this returns an incomplete result.
 
         :param final_vars: Final variables to compute
         :param overrides: Overrides to run.
@@ -726,9 +731,9 @@ class Driver:
                 inputs=inputs,
                 overrides=overrides,
             )
-        success = True
-        error = None
         results = None
+        error = None
+        success = False
         try:
             results = self.graph_executor.execute(
                 function_graph,
@@ -737,15 +742,10 @@ class Driver:
                 inputs if inputs is not None else {},
                 run_id,
             )
-            if self.adapter.does_method("do_build_result", is_async=False) and not materialize:
-                results = self.adapter.call_lifecycle_method_sync(
-                    "do_build_result", outputs=results
-                )
+            success = True
         except Exception as e:
-            success = False
             error = e
-            # With this the correct node display the error
-            _ = telemetry.sanitize_error(*sys.exc_info())
+            success = False
             raise e
         finally:
             if self.adapter.does_hook("post_graph_execute", is_async=False):
@@ -758,6 +758,56 @@ class Driver:
                     results=results,
                 )
         return results
+
+    def __raw_execute(
+        self,
+        final_vars: List[str],
+        overrides: Dict[str, Any] = None,
+        display_graph: bool = False,
+        inputs: Dict[str, Any] = None,
+        _fn_graph: graph.FunctionGraph = None,
+        _run_id: str = None,
+    ) -> Dict[str, Any]:
+        """Raw execute function that does the meat of execute.
+
+        Private method since the result building and post_graph_execute lifecycle hooks are performed outside and so this returns an incomplete result.
+
+        :param final_vars: Final variables to compute
+        :param overrides: Overrides to run.
+        :param display_graph: DEPRECATED. DO NOT USE. Whether or not to display the graph when running it
+        :param inputs: Runtime inputs to the DAG
+        :return:
+        """
+        function_graph = _fn_graph if _fn_graph is not None else self.graph
+        run_id = _run_id
+        nodes, user_nodes = function_graph.get_upstream_nodes(final_vars, inputs, overrides)
+        Driver.validate_inputs(
+            function_graph, self.adapter, user_nodes, inputs, nodes
+        )  # TODO -- validate within the function graph itself
+        if display_graph:  # deprecated flow.
+            logger.warning(
+                "display_graph=True is deprecated. It will be removed in the 2.0.0 release. "
+                "Please use visualize_execution()."
+            )
+            self.visualize_execution(final_vars, "test-output/execute.gv", {"view": True})
+            if self.has_cycles(
+                final_vars, function_graph
+            ):  # here for backwards compatible driver behavior.
+                raise ValueError("Error: cycles detected in your graph.")
+        all_nodes = nodes | user_nodes
+        self.graph_executor.validate(list(all_nodes))
+        results = None
+        try:
+            results = self.graph_executor.execute(
+                function_graph,
+                final_vars,
+                overrides if overrides is not None else {},
+                inputs if inputs is not None else {},
+                run_id,
+            )
+            return results
+        except Exception as e:
+            raise e
 
     @capture_function_usage
     def list_available_variables(
@@ -1550,9 +1600,10 @@ class Driver:
             additional_vars = []
         start_time = time.time()
         run_successful = True
-        error = None
-        raw_results_output = None
-
+        error_execution = None
+        error_telemetry = None
+        run_id = str(uuid.uuid4())
+        outputs = (None, None)
         final_vars = self._create_final_vars(additional_vars)
         # This is so the finally logging statement does not accidentally die
         materializer_vars = []
@@ -1579,6 +1630,16 @@ class Driver:
             # Note we will not run the loaders if they're not upstream of the
             # materializers or additional_vars
             materializer_vars = [m.id for m in materializer_factories]
+            if self.adapter.does_hook("pre_graph_execute", is_async=False):
+                self.adapter.call_all_lifecycle_hooks_sync(
+                    "pre_graph_execute",
+                    run_id=run_id,
+                    graph=function_graph,
+                    final_vars=final_vars + materializer_vars,
+                    inputs=inputs,
+                    overrides=overrides,
+                )
+
             nodes, user_nodes = function_graph.get_upstream_nodes(
                 final_vars + materializer_vars, inputs, overrides
             )
@@ -1590,22 +1651,37 @@ class Driver:
                 inputs=inputs,
                 overrides=overrides,
                 _fn_graph=function_graph,
-                materialize=True,
+                _run_id=run_id,
             )
             materialization_output = {key: raw_results[key] for key in materializer_vars}
             raw_results_output = {key: raw_results[key] for key in final_vars}
-
-            return materialization_output, raw_results_output
+            outputs = materialization_output, raw_results_output
         except Exception as e:
             run_successful = False
             logger.error(SLACK_ERROR_MESSAGE)
-            error = telemetry.sanitize_error(*sys.exc_info())
+            error_telemetry = telemetry.sanitize_error(*sys.exc_info())
+            error_execution = e
             raise e
         finally:
+            if self.adapter.does_hook("post_graph_execute", is_async=False):
+                self.adapter.call_all_lifecycle_hooks_sync(
+                    "post_graph_execute",
+                    run_id=run_id,
+                    graph=function_graph,
+                    success=run_successful,
+                    error=error_execution,
+                    results=outputs[1],
+                )
             duration = time.time() - start_time
             self.capture_execute_telemetry(
-                error, final_vars + materializer_vars, inputs, overrides, run_successful, duration
+                error_telemetry,
+                final_vars + materializer_vars,
+                inputs,
+                overrides,
+                run_successful,
+                duration,
             )
+        return outputs
 
     @capture_function_usage
     def visualize_materialization(
