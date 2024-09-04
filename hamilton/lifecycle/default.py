@@ -8,6 +8,7 @@ import pprint
 import random
 import shelve
 import time
+from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from hamilton import graph_types, htypes
@@ -359,7 +360,7 @@ class CacheAdapter(NodeExecutionHook, NodeExecutionMethod, GraphExecutionHook):
     def run_before_graph_execution(self, *, graph: HamiltonGraph, **kwargs):
         """Set `cache_vars` to all nodes if received None during `__init__`"""
         self.cache = shelve.open(self.cache_path)
-        if self.cache_vars == []:
+        if len(self.cache_vars) == 0:
             self.cache_vars = [n.name for n in graph.nodes]
 
     def run_to_execute_node(
@@ -376,7 +377,10 @@ class CacheAdapter(NodeExecutionHook, NodeExecutionMethod, GraphExecutionHook):
         if node_name not in self.cache_vars:
             return node_callable(**node_kwargs)
 
-        node_hash = graph_types.hash_source_code(node_callable, strip=True)
+        source_of_node_callable = node_callable
+        while isinstance(source_of_node_callable, partial):  # handle partials
+            source_of_node_callable = source_of_node_callable.func
+        node_hash = graph_types.hash_source_code(source_of_node_callable, strip=True)
         cache_key = CacheAdapter.create_key(node_hash, node_kwargs)
 
         from_cache = self.cache.get(cache_key, None)

@@ -1,4 +1,4 @@
-import inspect
+import functools
 import pathlib
 import shelve
 
@@ -8,12 +8,8 @@ from hamilton import graph_types, node
 from hamilton.lifecycle.default import CacheAdapter
 
 
-def _callable_to_node(callable) -> node.Node:
-    return node.Node(
-        name=callable.__name__,
-        typ=inspect.signature(callable).return_annotation,
-        callabl=callable,
-    )
+def _callable_to_node(callable, name=None) -> node.Node:
+    return node.Node.from_fn(callable, name)
 
 
 @pytest.fixture()
@@ -50,6 +46,37 @@ def node_a_docstring():
         return external_input % 7
 
     return _callable_to_node(A)
+
+
+@pytest.fixture()
+def node_a_partial():
+    """The function A() is a partial"""
+
+    def A(external_input: int, remainder: int) -> int:
+        return external_input % remainder
+
+    base_node: node.Node = _callable_to_node(A)
+
+    A = functools.partial(A, remainder=7)
+    base_node._callable = A
+    del base_node.input_types["remainder"]
+    return base_node
+
+
+@pytest.fixture()
+def node_a_nested_partial():
+    """The function A() is a partial"""
+
+    def A(external_input: int, remainder: int, extra: int) -> int:
+        return external_input % remainder
+
+    base_node: node.Node = _callable_to_node(A)
+    A = functools.partial(A, remainder=7)
+    A = functools.partial(A, extra=7)
+    base_node._callable = A
+    del base_node.input_types["remainder"]
+    del base_node.input_types["extra"]
+    return base_node
 
 
 def test_set_result(hook: CacheAdapter, node_a: node.Node):
@@ -138,3 +165,49 @@ def test_commit_nodes_history(hook: CacheAdapter):
     # need to reopen the hook cache
     with shelve.open(hook.cache_path) as cache:
         assert cache.get(CacheAdapter.nodes_history_key) == hook.nodes_history
+
+
+def test_partial_handling(hook: CacheAdapter, node_a_partial: node.Node):
+    """Tests partial functions are handled properly"""
+    hook.cache_vars = [node_a_partial.name]
+    hook.run_before_graph_execution(graph=graph_types.HamiltonGraph([]))  # needed to open cache
+    node_kwargs = dict(external_input=7)
+    result = hook.run_to_execute_node(
+        node_name=node_a_partial.name,
+        node_kwargs=node_kwargs,
+        node_callable=node_a_partial.callable,
+    )
+    hook.run_after_node_execution(
+        node_name=node_a_partial.name,
+        node_kwargs=node_kwargs,
+        result=result,
+    )
+    result2 = hook.run_to_execute_node(
+        node_name=node_a_partial.name,
+        node_kwargs=node_kwargs,
+        node_callable=node_a_partial.callable,
+    )
+    assert result2 == result
+
+
+def test_nested_partial_handling(hook: CacheAdapter, node_a_nested_partial: node.Node):
+    """Tests nested partial functions are handled properly"""
+    hook.cache_vars = [node_a_nested_partial.name]
+    hook.run_before_graph_execution(graph=graph_types.HamiltonGraph([]))  # needed to open cache
+    node_kwargs = dict(external_input=7)
+    result = hook.run_to_execute_node(
+        node_name=node_a_nested_partial.name,
+        node_kwargs=node_kwargs,
+        node_callable=node_a_nested_partial.callable,
+    )
+    hook.run_after_node_execution(
+        node_name=node_a_nested_partial.name,
+        node_kwargs=node_kwargs,
+        result=result,
+    )
+    result2 = hook.run_to_execute_node(
+        node_name=node_a_nested_partial.name,
+        node_kwargs=node_kwargs,
+        node_callable=node_a_nested_partial.callable,
+    )
+    assert result2 == result
