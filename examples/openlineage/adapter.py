@@ -209,27 +209,107 @@ class OpenLineageAdapter(
         print(metadata)
         inputs = []
         outputs = []
+        sql_facet = None
+        storage_facet = None
+        datasource_facet = None
+        schema_facet = None
         if saved_or_loaded == "loaded":
             if "file_metadata" in metadata:
                 name = node_.name
+                if ".loader" in name:
+                    name = name.split(".loader")[0]
+                path = metadata["file_metadata"]["path"]
+                format = path.split(".")[-1] if "." in name else "unknown"
+                storage_facet = facet_v2.storage_dataset.StorageDatasetFacet(
+                    storageLayer="FileSystem",
+                    fileFormat=format,
+                )
+                datasource_facet = facet_v2.datasource_dataset.DatasourceDatasetFacet(
+                    name=name,
+                    uri=path,
+                )
             elif "sql_metadata" in metadata:
                 name = metadata["sql_metadata"]["table_name"]
+                sql_facet = facet_v2.sql_job.SQLJobFacet(
+                    query=metadata["sql_metadata"]["query"],
+                )
             else:
                 name = "--UNKNOWN--"
-            inputs = [event_v2.InputDataset(self.namespace, name)]
+
+            if "dataframe_metadata" in metadata:
+                schema_datatypes = [
+                    facet_v2.schema_dataset.SchemaDatasetFacetFields(
+                        name=k,
+                        type=v,
+                    )
+                    for k, v in zip(
+                        metadata["dataframe_metadata"]["column_names"],
+                        metadata["dataframe_metadata"]["datatypes"],
+                    )
+                ]
+                schema_facet = facet_v2.schema_dataset.SchemaDatasetFacet(
+                    fields=schema_datatypes,
+                )
+            inputFacets = {}
+            if storage_facet:
+                inputFacets["storage"] = storage_facet
+            if datasource_facet:
+                inputFacets["dataSource"] = datasource_facet
+            if schema_facet:
+                inputFacets["schema"] = schema_facet
+            if len(inputFacets) == 0:
+                inputFacets = None
+            inputs = [event_v2.InputDataset(self.namespace, name, facets=inputFacets)]
         else:
             if "file_metadata" in metadata:
                 name = metadata["file_metadata"]["path"]
+                format = name.split(".")[-1] if "." in name else "unknown"
+                storage_facet = facet_v2.storage_dataset.StorageDatasetFacet(
+                    storageLayer="FileSystem",
+                    fileFormat=format,
+                )
+                datasource_facet = facet_v2.datasource_dataset.DatasourceDatasetFacet(
+                    name=node_.name,
+                    uri=name,
+                )
             elif "sql_metadata" in metadata:
                 name = metadata["sql_metadata"]["table_name"]
             else:
                 name = "--UNKNOWN--"
-            outputs = [event_v2.OutputDataset(self.namespace, name)]
+
+            if "dataframe_metadata" in metadata:
+                schema_datatypes = [
+                    facet_v2.schema_dataset.SchemaDatasetFacetFields(
+                        name=k,
+                        type=v,
+                    )
+                    for k, v in zip(
+                        metadata["dataframe_metadata"]["column_names"],
+                        metadata["dataframe_metadata"]["datatypes"],
+                    )
+                ]
+                schema_facet = facet_v2.schema_dataset.SchemaDatasetFacet(
+                    fields=schema_datatypes,
+                )
+            outputFacets = {}
+            if storage_facet:
+                outputFacets["storage"] = storage_facet
+            if datasource_facet:
+                outputFacets["dataSource"] = datasource_facet
+            if schema_facet:
+                outputFacets["schema"] = schema_facet
+            if len(outputFacets) == 0:
+                outputFacets = None
+            outputs = [event_v2.OutputDataset(self.namespace, name, facets=outputFacets)]
 
         run = event_v2.Run(
             runId=run_id,
         )
-        job = event_v2.Job(namespace=self.namespace, name=self.job_name, facets={})
+        job_facets = {}
+        if sql_facet:
+            job_facets["sql"] = sql_facet
+        job = event_v2.Job(namespace=self.namespace, name=self.job_name, facets=job_facets)
+        print(inputs, outputs)
         run_event = event_v2.RunEvent(
             eventType=event_v2.RunState.RUNNING,
             eventTime=datetime.now(timezone.utc).isoformat(),

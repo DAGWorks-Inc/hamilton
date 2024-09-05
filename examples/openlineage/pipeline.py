@@ -21,15 +21,18 @@ TODO:
 def file_dataset(file_ds_path: str) -> Tuple[pd.DataFrame, dict]:
     # TODO: metadata
     df = pd.read_csv(file_ds_path)
-    return df, utils.get_file_metadata(file_ds_path)
+    return df, utils.get_file_and_dataframe_metadata(file_ds_path, df)
 
 
 @dataloader()
 def db_dataset(db_client: object) -> Tuple[pd.DataFrame, dict]:
     query = "SELECT * FROM purchase_data"
-    return pd.read_sql(query, con=db_client), {
+    df = pd.read_sql(query, con=db_client)
+    metadata = {
         "sql_metadata": {"query": query, "table_name": "purchase_data", "database": "sqlite"}
     }
+    metadata.update(utils.get_dataframe_metadata(df))
+    return df, metadata
 
 
 def transformed_file_dataset(file_dataset: pd.DataFrame) -> pd.DataFrame:
@@ -69,7 +72,10 @@ def saved_file(fit_model: ModelObject, file_path: str) -> dict:
 @datasaver()
 def saved_to_db(joined_dataset: pd.DataFrame, db_client: object, joined_table_name: str) -> dict:
     # joined_dataset.to_sql(joined_table_name, con=db_client, index=False)
-    return utils.get_sql_metadata(joined_table_name, joined_dataset)
+    # raise ValueError("Hi")
+    metadata = utils.get_sql_metadata(joined_table_name, joined_dataset)
+    metadata.update(utils.get_dataframe_metadata(joined_dataset))
+    return metadata
 
 
 if __name__ == "__main__":
@@ -77,7 +83,7 @@ if __name__ == "__main__":
 
     from adapter import OpenLineageAdapter
     from openlineage.client import OpenLineageClient
-    from openlineage.client.transport.file import FileConfig, FileTransport
+    from openlineage.client.transport.file import FileConfig
 
     import __main__ as pipeline
     from hamilton import driver
@@ -87,9 +93,10 @@ if __name__ == "__main__":
         append=True,
     )
 
-    client = OpenLineageClient(transport=FileTransport(file_config))
+    client = OpenLineageClient(url="http://localhost:9000")
+    # client = OpenLineageClient(transport=FileTransport(file_config))
 
-    ola = OpenLineageAdapter(client, "my_namespace", "test_job")
+    ola = OpenLineageAdapter(client, "my_namespace2", "test_job2")
 
     db_client = sqlite3.connect("purchase_data.db")
 
