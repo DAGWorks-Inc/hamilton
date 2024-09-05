@@ -205,6 +205,15 @@ def execute_subdag(
             result = None
             success = True
             pre_node_execute_errored = False
+            # TODO -- take everything from HERE to THERE
+            # Put it in a function
+            # That function should take an adapter as well as a node + other params (run_id, kwargs, etc...)
+            # And output result
+            # Then call the lifecycle method you created called do_remote_execute using the recipe below (call_lifecycle_method)
+            # And delegate to that
+            # only under if adapter.does_method("do_remote_execute")
+            # Otherwise just call the function we just defined
+            ##### HERE ######
             try:
                 if adapter.does_hook("pre_node_execute", is_async=False):
                     try:
@@ -254,6 +263,7 @@ def execute_subdag(
                         message = create_error_message(kwargs, node_, "[post-node-execute]")
                         logger.exception(message)
                         raise
+            ##### THERE #####
 
         computed[node_.name] = result
         # > pruning the graph
