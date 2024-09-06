@@ -74,6 +74,7 @@ docs = [
   "polars",
   "pyarrow >= 1.0.0",
   "pyspark",
+    "openlineage-python",
   "PyYAML",
   "ray",
   "readthedocs-sphinx-ext<2.3", # read the docs pins
@@ -93,6 +94,7 @@ experiments = [
   "uvicorn",
 ]
 lsp = ["sf-hamilton-lsp"]
+openlineage = ["openlineage-python"]
 packaging = [
   "build",
 ]
