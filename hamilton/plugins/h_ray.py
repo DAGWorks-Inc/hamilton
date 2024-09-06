@@ -99,7 +99,7 @@ class RayGraphAdapter(
         self,
         result_builder: base.ResultMixin,
         ray_init_config: typing.Dict[str, typing.Any] = None,
-        keep_cluster_open: bool = False,
+        shutdown_ray_on_completion: bool = False,
     ):
         """Constructor
 
@@ -108,7 +108,7 @@ class RayGraphAdapter(
 
         :param result_builder: Required. An implementation of base.ResultMixin.
         :param ray_init_config: allows to connect to an existing cluster or start a new one with custom configuration (https://docs.ray.io/en/latest/ray-core/api/doc/ray.init.html)
-        :param keep_cluster_open: to access Ray dashboard and logs for the cluster run
+        :param shutdown_ray_on_completion: by default we leave the cluster open, but we can also shut it down
 
         """
         self.result_builder = result_builder
@@ -117,19 +117,10 @@ class RayGraphAdapter(
                 "Error: ResultMixin object required. Please pass one in for `result_builder`."
             )
 
-        self.keep_cluster_open = keep_cluster_open
+        self.shutdown_ray_on_completion = shutdown_ray_on_completion
 
-        if ray_init_config:
-            # Ray breaks if you try to open the cluster twice without this flag
-            if "ignore_reinit_error" not in ray_init_config:
-                ray_init_config["ignore_reinit_error"] = True
-            # If the cluster is already open we don't want to close it with Hamilton
-            if "address" in ray_init_config:
-                self.keep_cluster_open = True
-
+        if ray_init_config is not None:
             ray.init(**ray_init_config)
-        else:
-            ray.init(ignore_reinit_error=True)
 
     @staticmethod
     def do_validate_input(node_type: typing.Type, input_value: typing.Any) -> bool:
@@ -173,9 +164,9 @@ class RayGraphAdapter(
         return result
 
     def post_graph_execute(self, *args, **kwargs):
-        """When we create a Ray cluster with Hamilton we tear it down after execution, unless manual overwrite."""
+        """We have the option to close the cluster down after execution."""
 
-        if not self.keep_cluster_open:
+        if not self.shutdown_ray_on_completion:
             # In case we have Hamilton Tracker to have enough time to properly flush
             time.sleep(5)
             ray.shutdown()
