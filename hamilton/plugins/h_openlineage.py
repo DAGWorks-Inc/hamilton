@@ -13,6 +13,8 @@ from hamilton.lifecycle import base
 
 @attr.s
 class HamiltonFacet(facet_v2.RunFacet):
+    """Class for Hamilton Facet."""
+
     hamilton_run_id: str = attr.ib()
     graph_version: str = attr.ib()
     final_vars: List[str] = attr.ib()
@@ -28,6 +30,99 @@ def get_stack_trace(exception):
     )
 
 
+def extract_schema_facet(metadata):
+    """Extracts the schema facet from the metadata."""
+    if "dataframe_metadata" in metadata:
+        schema_datatypes = [
+            facet_v2.schema_dataset.SchemaDatasetFacetFields(
+                name=k,
+                type=v,
+            )
+            for k, v in zip(
+                metadata["dataframe_metadata"]["column_names"],
+                metadata["dataframe_metadata"]["datatypes"],
+            )
+        ]
+        schema_facet = facet_v2.schema_dataset.SchemaDatasetFacet(
+            fields=schema_datatypes,
+        )
+        return schema_facet
+    return None
+
+
+def create_input_dataset(namespace: str, metadata: dict, node_) -> list[event_v2.InputDataset]:
+    """Creates the open lineage input dataset."""
+    datasource_facet = None
+    storage_facet = None
+    sql_facet = None
+    if "file_metadata" in metadata:
+        name = node_.name
+        if ".loader" in name:
+            name = name.split(".loader")[0]
+        path = metadata["file_metadata"]["path"]
+        format = path.split(".")[-1] if "." in name else "unknown"
+        storage_facet = facet_v2.storage_dataset.StorageDatasetFacet(
+            storageLayer="FileSystem",
+            fileFormat=format,
+        )
+        datasource_facet = facet_v2.datasource_dataset.DatasourceDatasetFacet(
+            name=name,
+            uri=path,
+        )
+    elif "sql_metadata" in metadata:
+        name = metadata["sql_metadata"]["table_name"]
+        sql_facet = facet_v2.sql_job.SQLJobFacet(
+            query=metadata["sql_metadata"]["query"],
+        )
+    else:
+        name = "--UNKNOWN--"
+    schema_facet = extract_schema_facet(metadata)
+    inputFacets = {}
+    if storage_facet:
+        inputFacets["storage"] = storage_facet
+    if datasource_facet:
+        inputFacets["dataSource"] = datasource_facet
+    if schema_facet:
+        inputFacets["schema"] = schema_facet
+    if len(inputFacets) == 0:
+        inputFacets = None
+    inputs = [event_v2.InputDataset(namespace, name, facets=inputFacets)]
+    return inputs, sql_facet
+
+
+def create_output_dataset(namespace: str, metadata: dict, node_) -> list[event_v2.OutputDataset]:
+    """Creates the open lineage output dataset."""
+    datasource_facet = None
+    storage_facet = None
+    if "file_metadata" in metadata:
+        name = metadata["file_metadata"]["path"]
+        format = name.split(".")[-1] if "." in name else "unknown"
+        storage_facet = facet_v2.storage_dataset.StorageDatasetFacet(
+            storageLayer="FileSystem",
+            fileFormat=format,
+        )
+        datasource_facet = facet_v2.datasource_dataset.DatasourceDatasetFacet(
+            name=node_.name,
+            uri=name,
+        )
+    elif "sql_metadata" in metadata:
+        name = metadata["sql_metadata"]["table_name"]
+    else:
+        name = "--UNKNOWN--"
+    schema_facet = extract_schema_facet(metadata)
+    outputFacets = {}
+    if storage_facet:
+        outputFacets["storage"] = storage_facet
+    if datasource_facet:
+        outputFacets["dataSource"] = datasource_facet
+    if schema_facet:
+        outputFacets["schema"] = schema_facet
+    if len(outputFacets) == 0:
+        outputFacets = None
+    outputs = [event_v2.OutputDataset(namespace, name, facets=outputFacets)]
+    return outputs
+
+
 class OpenLineageAdapter(
     base.BasePreGraphExecute,
     base.BasePreNodeExecute,
@@ -37,30 +132,37 @@ class OpenLineageAdapter(
     """
     This adapter emits OpenLineage events.
 
-    1. We need to use materializer metadata to capture data inputs and outputs.
-    2. The "job" emitted will be the graph.
+    .. code-block:: python
 
-    A Run will be emitted for each graph execution.
-     - pre_graph_execute will emit a START event.
-     - post_graph_execute will emit a COMPLETE event  (or others https://openlineage.io/docs/spec/run-cycle#run-states)
-      - adding errorMessage facet if the graph execution failed.
-     - post_node_execute will emit a RUNNING event with updates on input/outputs.
+        # create the openlineage client
+        from openlineage.client import OpenLineageClient
 
-    A Job Event will be emitted for graph execution:
-     - pre_graph_execute will:
-      - emit the sourceCode Facet for the entire DAG as the job.
-      - emit the sourceCodeLocation Facet for the entire DAG as the job.
-     - post_node_execute will:
-       - emit the SQLJob facet if data was loaded from a SQL source.
-     it should emit a job type facet indicating Hamilton
+        # write to file
+        from openlineage.client.transport.file import FileConfig, FileTransport
+        file_config = FileConfig(
+            log_file_path="/path/to/your/file",
+            append=False,
+        )
+        client = OpenLineageClient(transport=FileTransport(file_config))
 
-    A Dataset Event will be emitted for:
-     - post_node_execute will:
-       - emit dataset event with schema facet, dataSource facet, lifecyclestate change facet,version facet,
-       - input data sets when loading data - will have dataQualityMetrics facet, dataQualityAssertions facet (optional)
-       - output data sets will have outputStatistics facet
+        # write to HTTP, e.g. marquez
+        client = OpenLineageClient(url="http://localhost:5000")
 
+        # create the adapter
+        adapter = OpenLineageAdapter(client, "my_namespace", "my_job_name")
 
+        # add to Hamilton
+        # import your pipeline code
+        dr = driver.Builder().with_modules(YOUR_MODULES).with_adapters(adapter).build()
+        # execute as normal -- and openlineage events will be emitted
+        dr.execute(...)
+
+    Note for data lineage to be emitted, you must use the "materializer" abstraction to provide
+    metadata. See https://hamilton.dagworks.io/en/latest/concepts/materialization/.
+    This can be done via the `@datasaver()` and `@dataloader()` decorators, or
+    using the `@load_from` or `@save_to` decorators, as well as passing in data savers
+    and data loaders via `.with_materializers()` on the Driver Builder, or via `.materialize()`
+    on the driver object.
     """
 
     def __init__(self, client: OpenLineageClient, namespace: str, job_name: str):
@@ -183,6 +285,7 @@ class OpenLineageAdapter(
         :return:
         """
         if not success:
+            # do not emit anything
             return
         metadata = {}
         saved_or_loaded = ""
@@ -199,108 +302,16 @@ class OpenLineageAdapter(
             metadata = result[1]
             saved_or_loaded = "loaded"
         if not metadata:
+            # no metadata to emit
             return
 
-        """
-        TODO: create input dataset if appropriate
-        create output dataset if appropriate
-        Do the correct thing based on whether it was SQL or not...
-        """
-        print(metadata)
         inputs = []
         outputs = []
         sql_facet = None
-        storage_facet = None
-        datasource_facet = None
-        schema_facet = None
         if saved_or_loaded == "loaded":
-            if "file_metadata" in metadata:
-                name = node_.name
-                if ".loader" in name:
-                    name = name.split(".loader")[0]
-                path = metadata["file_metadata"]["path"]
-                format = path.split(".")[-1] if "." in name else "unknown"
-                storage_facet = facet_v2.storage_dataset.StorageDatasetFacet(
-                    storageLayer="FileSystem",
-                    fileFormat=format,
-                )
-                datasource_facet = facet_v2.datasource_dataset.DatasourceDatasetFacet(
-                    name=name,
-                    uri=path,
-                )
-            elif "sql_metadata" in metadata:
-                name = metadata["sql_metadata"]["table_name"]
-                sql_facet = facet_v2.sql_job.SQLJobFacet(
-                    query=metadata["sql_metadata"]["query"],
-                )
-            else:
-                name = "--UNKNOWN--"
-
-            if "dataframe_metadata" in metadata:
-                schema_datatypes = [
-                    facet_v2.schema_dataset.SchemaDatasetFacetFields(
-                        name=k,
-                        type=v,
-                    )
-                    for k, v in zip(
-                        metadata["dataframe_metadata"]["column_names"],
-                        metadata["dataframe_metadata"]["datatypes"],
-                    )
-                ]
-                schema_facet = facet_v2.schema_dataset.SchemaDatasetFacet(
-                    fields=schema_datatypes,
-                )
-            inputFacets = {}
-            if storage_facet:
-                inputFacets["storage"] = storage_facet
-            if datasource_facet:
-                inputFacets["dataSource"] = datasource_facet
-            if schema_facet:
-                inputFacets["schema"] = schema_facet
-            if len(inputFacets) == 0:
-                inputFacets = None
-            inputs = [event_v2.InputDataset(self.namespace, name, facets=inputFacets)]
+            inputs, sql_facet = create_input_dataset(self.namespace, metadata, node_)
         else:
-            if "file_metadata" in metadata:
-                name = metadata["file_metadata"]["path"]
-                format = name.split(".")[-1] if "." in name else "unknown"
-                storage_facet = facet_v2.storage_dataset.StorageDatasetFacet(
-                    storageLayer="FileSystem",
-                    fileFormat=format,
-                )
-                datasource_facet = facet_v2.datasource_dataset.DatasourceDatasetFacet(
-                    name=node_.name,
-                    uri=name,
-                )
-            elif "sql_metadata" in metadata:
-                name = metadata["sql_metadata"]["table_name"]
-            else:
-                name = "--UNKNOWN--"
-
-            if "dataframe_metadata" in metadata:
-                schema_datatypes = [
-                    facet_v2.schema_dataset.SchemaDatasetFacetFields(
-                        name=k,
-                        type=v,
-                    )
-                    for k, v in zip(
-                        metadata["dataframe_metadata"]["column_names"],
-                        metadata["dataframe_metadata"]["datatypes"],
-                    )
-                ]
-                schema_facet = facet_v2.schema_dataset.SchemaDatasetFacet(
-                    fields=schema_datatypes,
-                )
-            outputFacets = {}
-            if storage_facet:
-                outputFacets["storage"] = storage_facet
-            if datasource_facet:
-                outputFacets["dataSource"] = datasource_facet
-            if schema_facet:
-                outputFacets["schema"] = schema_facet
-            if len(outputFacets) == 0:
-                outputFacets = None
-            outputs = [event_v2.OutputDataset(self.namespace, name, facets=outputFacets)]
+            outputs = create_output_dataset(self.namespace, metadata, node_)
 
         run = event_v2.Run(
             runId=run_id,
@@ -309,7 +320,6 @@ class OpenLineageAdapter(
         if sql_facet:
             job_facets["sql"] = sql_facet
         job = event_v2.Job(namespace=self.namespace, name=self.job_name, facets=job_facets)
-        print(inputs, outputs)
         run_event = event_v2.RunEvent(
             eventType=event_v2.RunState.RUNNING,
             eventTime=datetime.now(timezone.utc).isoformat(),

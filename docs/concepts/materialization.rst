@@ -49,7 +49,7 @@ Observations:
 Limitations
 ~~~~~~~~~~~~
 
-Materializations aims to solve 3 limitations:
+Hamilton's approach to "materializations" aims to solve 3 limitations:
 
 1. **Redundancy**: deduplicate loading & saving code to improve maintainability and debugging
 2. **Observability**: include loading & saving in the dataflow for full observability and allow hooks
@@ -62,15 +62,25 @@ With materialization
 .. table::
    :align: left
 
-   +-------------------------------------------------------------+-------------------------------------------------------------+-------------------------------------------------+
-   | 3) Static materializers                                     | 4) Dynamic materializers                                    | 5) Function modifiers                           |
-   +=============================================================+=============================================================+=================================================+
-   | .. literalinclude:: _snippets/static_materializer_ctx.py    | .. literalinclude:: _snippets/dynamic_materializer_ctx.py   | .. literalinclude:: _snippets/decorator_ctx.py  |
-   |                                                             |                                                             |                                                 |
-   +-------------------------------------------------------------+-------------------------------------------------------------+-------------------------------------------------+
-   | .. image:: _snippets/static_materializer_ctx.png            | .. image:: _snippets/dynamic_materializer_ctx.png           | .. image:: _snippets/decorator_ctx.png          |
-   |    :width: 500px                                            |    :width: 500px                                            |    :width: 500px                                |
-   +-------------------------------------------------------------+-------------------------------------------------------------+-------------------------------------------------+
+   +-------------------------------------------------------------+-------------------------------------------------------------+-------------------------------------------------------------+-------------------------------------------------+
+   | 3) Simple Materialization                                   | 4) Static materializers                                     | 5) Dynamic materializers                                    | 6) Function modifiers                           |
+   +=============================================================+=============================================================+=============================================================+=================================================+
+   | .. literalinclude:: _snippets/simple_materializer_ctx.py    | .. literalinclude:: _snippets/static_materializer_ctx.py    | .. literalinclude:: _snippets/dynamic_materializer_ctx.py   | .. literalinclude:: _snippets/decorator_ctx.py  |
+   |                                                             |                                                             |                                                             |                                                 |
+   +-------------------------------------------------------------+-------------------------------------------------------------+-------------------------------------------------------------+-------------------------------------------------+
+   | .. image:: _snippets/simple_materializer_ctx.png            | .. image:: _snippets/static_materializer_ctx.png            | .. image:: _snippets/dynamic_materializer_ctx.png           | .. image:: _snippets/decorator_ctx.png          |
+   |    :width: 500px                                            |    :width: 500px                                            |    :width: 500px                                            |    :width: 500px                                |
+   +-------------------------------------------------------------+-------------------------------------------------------------+-------------------------------------------------------------+-------------------------------------------------+
+
+Simple Materialization
+~~~~~~~~~~~~~~~~~~~~~~~
+When you don't need to hide the implementation details of how you read and write, but you
+want to track what was read and written, you need to expose extra metadata. This is where
+the `@datasaver()` and `@dataloader()` decorators come in. They allow you to return
+metadata about what was read and written, and this metadata is then used to track what
+was read and written.
+
+This is our recommended first step when you're starting to use materialization in Hamilton.
 
 
 Static materializers

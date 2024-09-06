@@ -1,3 +1,7 @@
+"""
+Module to help generate fake data for testing purposes.
+"""
+
 import pandas as pd
 from faker import Faker
 

@@ -59,3 +59,4 @@ Recall to add lifecycle adapters, you just need to call the ``with_adapters`` me
     Narwhals
     MLFlowTracker
     NoEdgeAndInputTypeChecking
+    OpenLineageAdapter
