@@ -166,8 +166,7 @@ class OpenLineageAdapter(
     """
 
     def __init__(self, client: OpenLineageClient, namespace: str, job_name: str):
-        """
-        You pass in the OLClient.
+        """Constructor. You pass in the OLClient.
 
         :param self:
         :param client:
@@ -189,8 +188,8 @@ class OpenLineageAdapter(
         overrides: Dict[str, Any],
     ):
         """
-        emits a Run START event.
-        emits a Job Event with the sourceCode Facet for the entire DAG as the job.
+        Emits a Run START event.
+        Emits a Job Event with the sourceCode Facet for the entire DAG as the job.
 
         :param run_id:
         :param graph:
@@ -240,14 +239,7 @@ class OpenLineageAdapter(
     def pre_node_execute(
         self, run_id: str, node_: node.Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
     ):
-        """
-
-        :param run_id:
-        :param node_:
-        :param kwargs:
-        :param task_id:
-        :return:
-        """
+        """No event emitted."""
         pass
 
     def post_node_execute(
@@ -261,19 +253,18 @@ class OpenLineageAdapter(
         task_id: Optional[str] = None,
     ):
         """
-        Run Event:
-          - post_node_execute will emit a RUNNING event with updates on input/outputs.
+        Run Event: will emit a RUNNING event with updates on input/outputs.
 
-        A Job Event will be emitted for graph execution:
-         - post_node_execute will:
-           - emit the SQLJob facet if data was loaded from a SQL source.
-         it should emit a job type facet indicating Hamilton
+        A Job Event will be emitted for graph execution, and additional SQLJob facet if data was loaded
+        from a SQL source.
 
-        A Dataset Event will be emitted for:
-         - post_node_execute will:
-           - emit dataset event with schema facet, dataSource facet, lifecyclestate change facet,version facet,
-           - input data sets when loading data - will have dataQualityMetrics facet, dataQualityAssertions facet (optional)
-           - output data sets will have outputStatistics facet
+        A Dataset Event will be emitted if a dataloader or datasaver was used:
+
+           - input data set if loader
+           - output data set if saver
+           - appropriate facets will be added to the dataset where it makes sense.
+
+        TODO: attach statistics facets
 
         :param run_id:
         :param node_:
@@ -338,7 +329,7 @@ class OpenLineageAdapter(
         error: Optional[Exception],
         results: Optional[Dict[str, Any]],
     ):
-        """
+        """Emits a Run COMPLETE or FAIL event.
 
         :param run_id:
         :param graph:
