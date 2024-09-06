@@ -15,14 +15,14 @@ On this page, you'll learn:
 Different ways to write the same dataflow
 -----------------------------------------
 
-Below are 5 ways to write a dataflow that:
+Below are 6 ways to write a dataflow that:
 
 1. loads a dataframe from a parquet file
 2. preprocesses the dataframe
 3. trains a machine learning model
 4. saves the trained model
 
-The first two options don't use the concept of materialization and the next three do.
+The first two options don't use the concept of materialization and the next four do.
 
 Without materialization
 -----------------------
@@ -76,7 +76,7 @@ Simple Materialization
 ~~~~~~~~~~~~~~~~~~~~~~~
 When you don't need to hide the implementation details of how you read and write, but you
 want to track what was read and written, you need to expose extra metadata. This is where
-the `@datasaver()` and `@dataloader()` decorators come in. They allow you to return
+the :doc:`@datasaver() <../reference/decorators/datasaver/>` and :doc:`@dataloader() <../reference/decorators/dataloader/>` decorators come in. They allow you to return
 metadata about what was read and written, and this metadata is then used to track what
 was read and written.
 
