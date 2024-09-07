@@ -166,7 +166,7 @@ class RayGraphAdapter(
     def post_graph_execute(self, *args, **kwargs):
         """We have the option to close the cluster down after execution."""
 
-        if not self.shutdown_ray_on_completion:
+        if self.shutdown_ray_on_completion:
             # In case we have Hamilton Tracker to have enough time to properly flush
             time.sleep(5)
             ray.shutdown()
