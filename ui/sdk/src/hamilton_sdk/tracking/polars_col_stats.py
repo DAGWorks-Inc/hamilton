@@ -147,7 +147,7 @@ def datetime_column_stats(
 
 
 def str_len(col: pl.Series) -> pl.Series:
-    return col.str.lengths()
+    return col.str.len_chars()
 
 
 def avg_str_len(str_len: pl.Series) -> float:
