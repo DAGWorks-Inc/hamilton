@@ -290,3 +290,10 @@ We'd appreciate citing Hamilton by referencing one of the following:
   year      = {2022}
 }
 ```
+
+# 📚 Libraries built on / for Hamilton
+* [Hypster](https://github.com/gilad-rubin/hypster) - hyperparameter management
+* [DSP Decision Engine](https://github.com/capitec/dsp-decision-engine) - decision trees
+* [NaturF](https://github.com/IMMM-SFA/naturf/) - library for data transformation for weather forecasting
+* [WrenAI](https://github.com/Canner/WrenAI) - RAG
+* [FlowerPower](https://github.com/legout/flowerpower/) - Scheduler for Hamilton
