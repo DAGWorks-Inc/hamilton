@@ -28,7 +28,13 @@ if __name__ == "__main__":
             path=f"{model_dir}/model.json",
         ),
     ]
-    dr = driver.Builder().with_modules(__main__).with_materializers(*materializers).build()
+    dr = (
+        driver.Builder()
+        .with_modules(__main__)
+        .with_materializers(*materializers)
+        .build()
+    )
+
     results = dr.execute(["model", "model__json"])
     # results["model"]  <- the model
     # results["model__json"] <- metadata from saving the model

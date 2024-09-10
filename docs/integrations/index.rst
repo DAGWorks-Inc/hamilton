@@ -27,3 +27,4 @@ This section showcases how Hamilton integrates with popular frameworks.
     Spark <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/spark>
     Vaex <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/vaex>
     Narwhals <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/narwhals>
+    OpenLineage <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/openlineage>
