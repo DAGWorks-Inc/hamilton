@@ -342,7 +342,7 @@ class Extract(metaclass=extractor_meta__):
 
 class from_(Extract):
     """This is the entry point for Extraction. Note that this is coupled
-    with the driver's materialiez function -- properties are dynamically assigned
+    with the driver's materialize function -- properties are dynamically assigned
     based on data loaders that have been registered, allowing you to call `from_.csv`/`from_.json`.
     For full documentation, see the documentation for the `materialize` function in the hamilton
     driver.
