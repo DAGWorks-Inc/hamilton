@@ -108,3 +108,6 @@ def test_min_string(example_df_string):
 
 def test_max_string(example_df_string):
     assert pcs.max(example_df_string["a"]) == "e"
+
+def test_str_len(example_df_string):
+    assert pcs.str_len(example_df_string["a"]).to_list() == [1, 1, 1, 1, 1]
