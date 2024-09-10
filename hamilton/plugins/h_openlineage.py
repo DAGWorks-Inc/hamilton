@@ -1,4 +1,5 @@
 import json
+import sys
 import traceback
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -23,11 +24,13 @@ class HamiltonFacet(facet_v2.RunFacet):
 
 
 def get_stack_trace(exception):
-    return "".join(
-        traceback.format_exception(
+    # Python changed this API in 3.10
+    if sys.version_info < (3, 10, 0):
+        return traceback.format_exception(
             etype=type(exception), value=exception, tb=exception.__traceback__
         )
-    )
+
+    return "".join(traceback.format_exception(exception))
 
 
 def extract_schema_facet(metadata):
