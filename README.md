@@ -248,6 +248,7 @@ Hamilton was started at Stitch Fix before the original creators founded DAGWorks
 * [Flectere](https://flectere.net/)
 * [F33.ai](https://f33.ai/)
 * [Kora Money](https://www.koramoney.com)
+* [Capitec Bank](https://www.capitecbank.co.za/)
 
 ## 🤝 Code Contributors
 [![Contributors](https://contrib.rocks/image?repo=dagworks-inc/hamilton)](https://github.com/DAGWorks-Inc/hamilton/graphs/contributors)
@@ -289,3 +290,10 @@ We'd appreciate citing Hamilton by referencing one of the following:
   year      = {2022}
 }
 ```
+
+# 📚 Libraries built on / for Hamilton
+* [Hypster](https://github.com/gilad-rubin/hypster) - hyperparameter management
+* [DSP Decision Engine](https://github.com/capitec/dsp-decision-engine) - decision trees
+* [NaturF](https://github.com/IMMM-SFA/naturf/) - library for data transformation for weather forecasting
+* [WrenAI](https://github.com/Canner/WrenAI) - RAG
+* [FlowerPower](https://github.com/legout/flowerpower/) - Scheduler for Hamilton

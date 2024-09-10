@@ -75,3 +75,4 @@ Multiple companies are doing cool stuff with Hamilton! Come chat with members of
 * **Opendoor** - Manage PySpark pipelines
 * **KI** - Feature engineering
 * **Kora Money** - DS/ML Workflows
+* **Capitec Bank** - Financial decisions
