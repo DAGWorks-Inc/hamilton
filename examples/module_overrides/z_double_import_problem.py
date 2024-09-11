@@ -14,6 +14,7 @@ if __name__ == "__main__":
 
     # This produces an error
     dr = dr.with_modules(main)
-
-    dr = dr.build()
-    print(dr.execute(inputs={}, final_vars=["bar"]))
+    print(dr.modules)
+    print(list(set(dr.modules)))
+    # dr = dr.build()
+    # print(dr.execute(inputs={}, final_vars=["bar"]))

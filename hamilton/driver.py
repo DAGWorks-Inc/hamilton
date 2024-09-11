@@ -391,6 +391,7 @@ class Driver:
         adapter: Optional[
             Union[lifecycle_base.LifecycleAdapter, List[lifecycle_base.LifecycleAdapter]]
         ] = None,
+        allow_module_overrides: bool = False,
         _materializers: typing.Sequence[Union[ExtractorFactory, MaterializerFactory]] = None,
         _graph_executor: GraphExecutor = None,
         _use_legacy_adapter: bool = True,
@@ -417,8 +418,15 @@ class Driver:
             adapter.call_all_lifecycle_hooks_sync("pre_do_anything")
         error = None
         self.graph_modules = modules
+        # Feels like this should be public class attribute.
+        self.allow_module_overrides = allow_module_overrides
         try:
-            self.graph = graph.FunctionGraph.from_modules(*modules, config=config, adapter=adapter)
+            self.graph = graph.FunctionGraph.from_modules(
+                *modules,
+                config=config,
+                adapter=adapter,
+                allow_module_overrides=allow_module_overrides,
+            )
             if _materializers:
                 materializer_factories, extractor_factories = self._process_materializers(
                     _materializers
@@ -1818,6 +1826,8 @@ class Builder:
         # common fields
         self.config = {}
         self.modules = []
+        # Allow later modules to override nodes of the same name
+        self.module_overrides = False
         self.materializers = []
 
         self.legacy_graph_adapter = None
@@ -1868,7 +1878,7 @@ class Builder:
 
     def with_modules(self, *modules: ModuleType) -> "Builder":
         """Adds the specified modules to the modules list.
-        This can be called multiple times -- later calls will take precedence.
+        This can be called multiple times.
 
         :param modules: Modules to use.
         :return: self
@@ -1979,6 +1989,17 @@ class Builder:
         self.grouping_strategy = grouping_strategy
         return self
 
+    # I think we need this here or similarly .with_modules(allow_overrides=True),
+    # because if we call .build() we will run into an error.
+    def allow_module_overrides(self):
+        """Same named nodes between modules get overwritten.
+        If multiple modules have same named functions, the later module overwrites the previous one(s).
+
+        :return: self
+        """
+        self.module_overrides = True
+        return self
+
     def build(self) -> Driver:
         """Builds the driver -- note that this can return a different class, so you'll likely
         want to have a sense of what it returns.
@@ -2017,6 +2038,7 @@ class Builder:
             _materializers=self.materializers,
             _graph_executor=graph_executor,
             _use_legacy_adapter=False,
+            allow_module_overrides=self.module_overrides,
         )
 
     def copy(self) -> "Builder":

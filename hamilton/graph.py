@@ -146,6 +146,7 @@ def create_function_graph(
     config: Dict[str, Any],
     adapter: lifecycle_base.LifecycleAdapterSet = None,
     fg: Optional["FunctionGraph"] = None,
+    allow_module_overrides: bool = False,
 ) -> Dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
     :param modules: A set of modules over which one wants to compute the function graph
@@ -169,7 +170,7 @@ def create_function_graph(
         for n in fm_base.resolve_nodes(f, config):
             if n.name in config:
                 continue  # This makes sure we overwrite things if they're in the config...
-            if n.name in nodes:
+            if n.name in nodes and not allow_module_overrides:
                 raise ValueError(
                     f"Cannot define function {n.name} more than once."
                     f" Already defined by function {f}"
@@ -707,6 +708,7 @@ class FunctionGraph:
         *modules: ModuleType,
         config: Dict[str, Any],
         adapter: lifecycle_base.LifecycleAdapterSet = None,
+        allow_module_overrides: bool = False,
     ):
         """Initializes a function graph from the specified modules. Note that this was the old
         way we constructed FunctionGraph -- this is not a public-facing API, so we replaced it
@@ -720,7 +722,9 @@ class FunctionGraph:
         :return: a function graph.
         """
 
-        nodes = create_function_graph(*modules, config=config, adapter=adapter)
+        nodes = create_function_graph(
+            *modules, config=config, adapter=adapter, allow_module_overrides=allow_module_overrides
+        )
         return FunctionGraph(nodes, config, adapter)
 
     def with_nodes(self, nodes: Dict[str, Node]) -> "FunctionGraph":
