@@ -2031,6 +2031,16 @@ class Builder:
                 adapter=lifecycle_base.LifecycleAdapterSet(*adapter),
             )
 
+        # In case we import same module twice it doesn't bark at us that functions are duplicated
+        # I ran into that issue during a live demo writing functions into the same jupyter "module" cell
+        # But we want to keep the order preserved due to the override possibility and set is by default unordered
+        module_set = set()
+        self.modules = [
+            module
+            for module in self.modules
+            if not (module in module_set or module_set.add(module))
+        ]
+
         return Driver(
             self.config,
             *self.modules,
