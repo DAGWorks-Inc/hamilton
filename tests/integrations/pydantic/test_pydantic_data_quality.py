@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict, List
 
 import pytest
 from pydantic import BaseModel, ValidationError
@@ -23,7 +23,7 @@ def test_basic_pydantic_check_output_passes():
         value: float
 
     @check_output(model=DummyModel, importance="warn")
-    def dummy() -> dict[str, float]:
+    def dummy() -> Dict[str, float]:
         return {"value": 15.0}
 
     node = Node.from_fn(dummy)
@@ -49,7 +49,7 @@ def test_basic_pydantic_check_output_fails():
         value: float
 
     @check_output(model=DummyModel, importance="warn")
-    def dummy() -> dict[str, float]:
+    def dummy() -> Dict[str, float]:
         return {"value": "fifteen"}  # type: ignore
 
     node = Node.from_fn(dummy)
@@ -80,7 +80,7 @@ def test_complex_pydantic_validator_passes():
     class Repo(BaseModel):
         name: str
         owner: Owner
-        versions: list[Version]
+        versions: List[Version]
 
     data = {
         "name": "hamilton",
@@ -104,7 +104,7 @@ def test_complex_pydantic_validator_fails():
     class Repo(BaseModel):
         name: str
         owner: Owner
-        versions: list[Version]
+        versions: List[Version]
 
     data = {
         "name": "hamilton",
@@ -128,10 +128,10 @@ def test_complex_pydantic_check_output_passes():
     class Repo(BaseModel):
         name: str
         owner: Owner
-        versions: list[Version]
+        versions: List[Version]
 
     @check_output(model=Repo, importance="warn")
-    def dummy() -> dict[str, Any]:
+    def dummy() -> Dict[str, Any]:
         return {
             "name": "hamilton",
             "owner": {"name": "DAGWorks-Inc"},
@@ -157,10 +157,10 @@ def test_complex_pydantic_check_output_fails():
     class Repo(BaseModel):
         name: str
         owner: Owner
-        versions: list[Version]
+        versions: List[Version]
 
     @check_output(model=Repo, importance="warn")
-    def dummy() -> dict[str, Any]:
+    def dummy() -> Dict[str, Any]:
         return {
             "name": "hamilton",
             "owner": {"name": "DAGWorks-Inc"},
@@ -221,7 +221,7 @@ def test_complex_pydantic_plugin_check_output_passes():
     class Repo(BaseModel):
         name: str
         owner: Owner
-        versions: list[Version]
+        versions: List[Version]
 
     def dummy() -> Repo:
         return Repo(
@@ -249,7 +249,7 @@ def test_complex_pydantic_plugin_check_output_fails():
     class Repo(BaseModel):
         name: str
         owner: Owner
-        versions: list[Version]
+        versions: List[Version]
 
     def dummy() -> Repo:
         return Repo(
