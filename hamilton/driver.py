@@ -403,6 +403,7 @@ class Driver:
         :param modules: Python module objects you want to inspect for Hamilton Functions.
         :param adapter: Optional. A way to wire in another way of "executing" a hamilton graph.
             Defaults to using original Hamilton adapter which is single threaded in memory python.
+        :param allow_module_overrides: Same named functions get overridden by later modules.
         :param _materializers: Not public facing, do not use this parameter. This is injected by the builder.
         :param _graph_executor: Not public facing, do not use this parameter. This is injected by the builder.
             If you need to tune execution, use the builder to do so.
@@ -1991,8 +1992,8 @@ class Builder:
 
     # I think we need this here or similarly .with_modules(allow_overrides=True),
     # because if we call .build() we will run into an error.
-    def allow_module_overrides(self):
-        """Same named nodes between modules get overwritten.
+    def allow_module_overrides(self) -> "Builder":
+        """Same named functions in different modules get overwritten.
         If multiple modules have same named functions, the later module overwrites the previous one(s).
 
         :return: self
