@@ -73,6 +73,22 @@ It encourages organizing code into logical modules (e.g., feature processing, mo
         .build()
     )
 
+.. note::
+
+    Your modules may have same named functions which will raise an error when using ``.build()`` since we cannot have two functions with the same name. You can use the method ``.allow_module_overrides()`` and Hamilton will choose the function from the later imported module.
+
+
+
+    .. code-block:: python
+
+        dr = (
+            driver.Builder()
+            .with_modules(module_A, module_B)
+            .allow_module_overrides()
+            .build()
+        )
+
+    If ``module_A`` and ``module_B`` both have the function ``foo()``, Hamilton will use ``module_B.foo()`` when constructing the DAG.
 
 with_config()
 -------------
