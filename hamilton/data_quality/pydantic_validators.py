@@ -19,10 +19,9 @@ class PydanticModelValidator(base.BaseDefaultValidator):
     :param arbitrary_types_allowed: Whether arbitrary types are allowed in the model
     """
 
-    def __init__(self, model: type[BaseModel], importance: str):
+    def __init__(self, model: Type[BaseModel], importance: str):
         super(PydanticModelValidator, self).__init__(importance)
         self.model = model
-
         self._model_adapter = TypeAdapter(model)
 
     @classmethod
@@ -32,7 +31,7 @@ class PydanticModelValidator(base.BaseDefaultValidator):
         return custom_subclass_check(datatype, BaseModel) or custom_subclass_check(datatype, dict)
 
     def description(self) -> str:
-        return "Validates that the returned object is compatible with a pydantic model"
+        return "Validates that the returned object is compatible with the specified pydantic model"
 
     def validate(self, data: Any) -> base.ValidationResult:
         try:
