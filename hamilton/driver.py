@@ -403,7 +403,7 @@ class Driver:
         :param modules: Python module objects you want to inspect for Hamilton Functions.
         :param adapter: Optional. A way to wire in another way of "executing" a hamilton graph.
             Defaults to using original Hamilton adapter which is single threaded in memory python.
-        :param allow_module_overrides: Same named functions get overridden by later modules.
+        :param allow_module_overrides: Same named functions get overridden by later modules. The order of listing the modules is important, since later ones will overwrite the previous ones.
         :param _materializers: Not public facing, do not use this parameter. This is injected by the builder.
         :param _graph_executor: Not public facing, do not use this parameter. This is injected by the builder.
             If you need to tune execution, use the builder to do so.
@@ -419,8 +419,6 @@ class Driver:
             adapter.call_all_lifecycle_hooks_sync("pre_do_anything")
         error = None
         self.graph_modules = modules
-        # Feels like this should be public class attribute.
-        self.allow_module_overrides = allow_module_overrides
         try:
             self.graph = graph.FunctionGraph.from_modules(
                 *modules,
@@ -1827,9 +1825,10 @@ class Builder:
         # common fields
         self.config = {}
         self.modules = []
-        # Allow later modules to override nodes of the same name
-        self.module_overrides = False
         self.materializers = []
+
+        # Allow later modules to override nodes of the same name
+        self._allow_module_overrides = False
 
         self.legacy_graph_adapter = None
         # Standard execution fields
@@ -1990,15 +1989,14 @@ class Builder:
         self.grouping_strategy = grouping_strategy
         return self
 
-    # I think we need this here or similarly .with_modules(allow_overrides=True),
-    # because if we call .build() we will run into an error.
     def allow_module_overrides(self) -> "Builder":
         """Same named functions in different modules get overwritten.
-        If multiple modules have same named functions, the later module overwrites the previous one(s).
+        If multiple modules have same named functions, the later module overrides the previous one(s).
+        The order of listing the modules is important, since later ones will overwrite the previous ones.
 
         :return: self
         """
-        self.module_overrides = True
+        self._allow_module_overrides = True
         return self
 
     def build(self) -> Driver:
@@ -2032,10 +2030,7 @@ class Builder:
                 adapter=lifecycle_base.LifecycleAdapterSet(*adapter),
             )
 
-        if not self.module_overrides:  # if override on than this doesn't matter
-            # In case we import same module twice it doesn't bark at us that functions are duplicated
-            # I ran into that issue during a live demo writing functions into the same jupyter "module" cell
-            # But we want to keep the order preserved due to the override possibility and set is by default unordered
+        if not self._allow_module_overrides:  # if override on than this doesn't matter
             module_set = set()
             self.modules = [
                 module
@@ -2050,7 +2045,7 @@ class Builder:
             _materializers=self.materializers,
             _graph_executor=graph_executor,
             _use_legacy_adapter=False,
-            allow_module_overrides=self.module_overrides,
+            allow_module_overrides=self._allow_module_overrides,
         )
 
     def copy(self) -> "Builder":

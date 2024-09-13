@@ -75,7 +75,7 @@ It encourages organizing code into logical modules (e.g., feature processing, mo
 
 .. note::
 
-    Your modules may have same named functions which will raise an error when using ``.build()`` since we cannot have two functions with the same name. You can use the method ``.allow_module_overrides()`` and Hamilton will choose the function from the later imported module.
+    Your modules may have same named functions which will raise an error when using ``.build()`` since we cannot have two nodes with the same name. You can use the method ``.allow_module_overrides()`` and Hamilton will choose the function from the later imported module.
 
 
 
@@ -88,7 +88,7 @@ It encourages organizing code into logical modules (e.g., feature processing, mo
             .build()
         )
 
-    If ``module_A`` and ``module_B`` both have the function ``foo()``, Hamilton will use ``module_B.foo()`` when constructing the DAG.
+    If ``module_A`` and ``module_B`` both have the function ``foo()``, Hamilton will use ``module_B.foo()`` when constructing the DAG. See this {\field{\*\fldinst HYPERLINK "https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/module_overrides"}{\fldrslt example}} for more info.
 
 with_config()
 -------------
