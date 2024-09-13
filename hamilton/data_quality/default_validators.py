@@ -511,9 +511,9 @@ _append_pandera_to_default_validators()
 def _append_pydantic_to_default_validators():
     """Utility method to append pydantic validators as needed"""
     try:
-        from pydantic import BaseModel  # noqa: F401
+        import pydantic  # noqa: F401
     except ModuleNotFoundError:
-        logger.info(
+        logger.debug(
             "Cannot import pydantic from pydantic_validators. Run pip install sf-hamilton[pydantic] if needed."
         )
         return
