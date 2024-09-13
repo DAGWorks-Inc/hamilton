@@ -29,6 +29,14 @@ python -m venv ./venv
 pip install .[dev,test]
 ```
 
+Please be informed to use the command below as the square bracket might not be recognized as a pattern.
+
+```shell
+pip install .\[dev,test\]
+
+pip install '.[dev,test]'
+```
+
 Set up `pre-commit`, which will run some lightweight formatting and linting tasks on every commit.
 
 ```shell
