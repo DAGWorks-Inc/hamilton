@@ -413,27 +413,9 @@ def test_add_dependency_user_nodes():
 def create_testing_nodes():
     """Helper function for creating the nodes represented in dummy_functions.py."""
     nodes = {
-        "A": node.Node(
-            "A",
-            inspect.signature(tests.resources.dummy_functions.A).return_annotation,
-            "Function that should become part of the graph - A",
-            tests.resources.dummy_functions.A,
-            tags={"module": "tests.resources.dummy_functions"},
-        ),
-        "B": node.Node(
-            "B",
-            inspect.signature(tests.resources.dummy_functions.B).return_annotation,
-            "Function that should become part of the graph - B",
-            tests.resources.dummy_functions.B,
-            tags={"module": "tests.resources.dummy_functions"},
-        ),
-        "C": node.Node(
-            "C",
-            inspect.signature(tests.resources.dummy_functions.C).return_annotation,
-            "",
-            tests.resources.dummy_functions.C,
-            tags={"module": "tests.resources.dummy_functions"},
-        ),
+        "A": node.Node.from_fn(fn=tests.resources.dummy_functions.A, name="A"),
+        "B": node.Node.from_fn(fn=tests.resources.dummy_functions.B, name="B"),
+        "C": node.Node.from_fn(fn=tests.resources.dummy_functions.C, name="C"),
         "b": node.Node(
             "b",
             inspect.signature(tests.resources.dummy_functions.A).parameters["b"].annotation,
@@ -460,27 +442,9 @@ def create_testing_nodes_override_B():
     """Helper function for creating the nodes represented in dummy_functions.py
     with node B overridden by dummy_functions_module_override.py."""
     nodes = {
-        "A": node.Node(
-            "A",
-            inspect.signature(tests.resources.dummy_functions.A).return_annotation,
-            "Function that should become part of the graph - A",
-            tests.resources.dummy_functions.A,
-            tags={"module": "tests.resources.dummy_functions"},
-        ),
-        "B": node.Node(
-            "B",
-            inspect.signature(tests.resources.dummy_functions_module_override.B).return_annotation,
-            "Function that should override function B.",
-            tests.resources.dummy_functions_module_override.B,
-            tags={"module": "tests.resources.dummy_functions_module_override"},
-        ),
-        "C": node.Node(
-            "C",
-            inspect.signature(tests.resources.dummy_functions.C).return_annotation,
-            "",
-            tests.resources.dummy_functions.C,
-            tags={"module": "tests.resources.dummy_functions"},
-        ),
+        "A": node.Node.from_fn(fn=tests.resources.dummy_functions.A, name="A"),
+        "B": node.Node.from_fn(fn=tests.resources.dummy_functions_module_override.B, name="B"),
+        "C": node.Node.from_fn(fn=tests.resources.dummy_functions.C, name="C"),
         "b": node.Node(
             "b",
             inspect.signature(tests.resources.dummy_functions.A).parameters["b"].annotation,
