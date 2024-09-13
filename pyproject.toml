@@ -147,10 +147,7 @@ test = [
 ]
 tqdm = ["tqdm"]
 ui = ["sf-hamilton-ui"]
-vaex = [
-  "pydantic<2.0", # because of https://github.com/vaexio/vaex/issues/2384
-  "vaex"
-]
+vaex = ["vaex"]
 visualization = ["graphviz", "networkx"]
 
 [project.entry-points.console_scripts]
