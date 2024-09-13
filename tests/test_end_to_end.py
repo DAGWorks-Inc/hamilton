@@ -18,6 +18,7 @@ import tests.resources.data_quality
 import tests.resources.dynamic_config
 import tests.resources.example_module
 import tests.resources.overrides
+import tests.resources.overrides_from_module
 import tests.resources.test_for_materialization
 
 
@@ -451,6 +452,17 @@ def test_driver_validate_with_overrides_2():
         .build()
     )
     assert dr.execute(["d"], overrides={"b": 1})["d"] == 3
+
+
+def test_driver_validate_module_overrides():
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.overrides, tests.resources.overrides_from_module)
+        .with_adapter(base.DefaultAdapter())
+        .allow_module_overrides()
+        .build()
+    )
+    assert dr.execute(["d"], overrides={"b": 1})["d"] == 15
 
 
 def test_driver_extra_inputs_can_be_outputs():
