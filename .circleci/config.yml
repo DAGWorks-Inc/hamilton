@@ -9,7 +9,7 @@ jobs:
           name: Check for changes in specific paths
           command: |
             set +e
-            git diff --name-only HEAD^ HEAD | grep '^.ci\|^.circleci\|^graph_adapter_tests\|^hamilton\|^plugin_tests\|^tests\|^requirements\|setup' > /dev/null
+            git diff --name-only origin/main...HEAD | grep '^.ci\|^.circleci\|^graph_adapter_tests\|^hamilton\|^plugin_tests\|^tests\|^requirements\|setup' > /dev/null
             if [ $? -eq 0 ]; then
               echo "Changes found in target paths."
               echo 'true' > /tmp/changes_detected
