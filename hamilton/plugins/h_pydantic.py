@@ -17,6 +17,69 @@ class check_output(BaseDataValidationDecorator):
         importance: str = dq_base.DataValidationLevel.WARN.value,
         target: fm_base.TargetType = None,
     ):
+        """Specific output-checker for pydantic models. This decorator utilizes the output type of
+        the function, which can be any subclass of pydantic.BaseModel. The function output must
+        be declared with a type hint.
+
+        :param model: The pydantic model to use for validation. If this is not provided, then the output type of the function is used.
+        :param importance: Importance level (either "warn" or "fail") -- see documentation for check_output for more details.
+        :param target: The target of the decorator -- see documentation for check_output for more details.
+
+        Here is an example of how to use this decorator with a function that returns a pydantic model:
+
+        .. code-block:: python
+            :name: "@check_output using pydantic model output"
+
+            from pydantic import BaseModel
+            from hamilton.plugins import h_pydantic
+
+            class MyModel(BaseModel):
+                a: int
+                b: float
+                c: str
+
+            @h_pydantic.check_output()
+            def foo() -> MyModel:
+                return MyModel(a=1, b=2.0, c="hello")
+
+        Alternatively, you can return a dictionary from the function (type checkers will probably
+        complain about this):
+
+        .. code-block:: python
+            :name: "@check_output using dict output"
+
+            from pydantic import BaseModel
+            from hamilton.plugins import h_pydantic
+
+            class MyModel(BaseModel):
+                a: int
+                b: float
+                c: str
+
+            @h_pydantic.check_output()
+            def foo() -> MyModel:
+                return {"a": 1, "b": 2.0, "c": "hello"}
+
+        Note, that because we do not (yet) support modification of the output, the validation is
+        performed in strict mode, meaning that no data coercion is performed. For example, the
+        following function will *fail* validation:
+
+        .. code-block:: python
+            :name: "@check_output invalid output in strict mode"
+
+            from pydantic import BaseModel
+            from hamilton.plugins import h_pydantic
+
+            class MyModel(BaseModel):
+                a: int  # Defined as an int
+
+            @h_pydantic.check_output()  # This will fail validation!
+            def foo() -> MyModel:
+                return MyModel(a="1")  # Assigned as a string
+
+        For more information about strict mode see the pydantic docs: https://docs.pydantic.dev/latest/concepts/strict_mode/
+
+        """
         super(check_output, self).__init__(target)
         self.importance = importance
         self.target = target
