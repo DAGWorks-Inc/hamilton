@@ -29,11 +29,9 @@ python -m venv ./venv
 pip install .[dev,test]
 ```
 
-Please be informed to use the command below as the square bracket might not be recognized as a pattern.
+Please be informed to use escape characters or wrap the argument in quote as shown in the command below since the "[]" or "." may be treated as special characters leading to failure in finding matching files.
 
 ```shell
-pip install .\[dev,test\]
-
 pip install '.[dev,test]'
 ```
 
