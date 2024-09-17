@@ -29,8 +29,8 @@ class check_output(BaseDataValidationDecorator):
 
         .. code-block:: python
 
-            from pydantic import BaseModel
             from hamilton.plugins import h_pydantic
+            from pydantic import BaseModel
 
             class MyModel(BaseModel):
                 a: int
@@ -46,8 +46,8 @@ class check_output(BaseDataValidationDecorator):
 
         .. code-block:: python
 
-            from pydantic import BaseModel
             from hamilton.plugins import h_pydantic
+            from pydantic import BaseModel
 
             class MyModel(BaseModel):
                 a: int
@@ -58,14 +58,33 @@ class check_output(BaseDataValidationDecorator):
             def foo() -> MyModel:
                 return {"a": 1, "b": 2.0, "c": "hello"}
 
+        You can also use pydantic validation through ``function_modifiers.check_output`` by
+        providing the model as an argument:
+
+        .. code-block:: python
+
+            from typing import Any
+
+            from hamilton import function_modifiers
+            from pydantic import BaseModel
+
+            class MyModel(BaseModel):
+                a: int
+                b: float
+                c: str
+
+            @function_modifiers.check_output(model=MyModel)
+            def foo() -> dict[str, Any]:
+                return {"a": 1, "b": 2.0, "c": "hello"}
+
         Note, that because we do not (yet) support modification of the output, the validation is
         performed in strict mode, meaning that no data coercion is performed. For example, the
         following function will *fail* validation:
 
         .. code-block:: python
 
-            from pydantic import BaseModel
             from hamilton.plugins import h_pydantic
+            from pydantic import BaseModel
 
             class MyModel(BaseModel):
                 a: int  # Defined as an int
