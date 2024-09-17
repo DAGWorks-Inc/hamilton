@@ -27,9 +27,10 @@ Note that you can also specify custom decorators using the ``@check_output_custo
 See `data_quality <https://github.com/dagworks-inc/hamilton/blob/main/data\_quality.md>`_ for more information on
 available validators and how to build custom ones.
 
-Note we also have a plugin that allows you to use pandera. There are two ways to access it:
-1. `@check_output(schema=pandera_schema)`
-2. `@h_pandera.check_output()` on a function that declares a typed pandera dataframe as an output
+Note we also have a plugins that allow for validation with the pandera and pydantic libraries. There are two ways to access these:
+
+1. ``@check_output(schema=pandera_schema)`` or ``@check_output(model=pydantic_model)``
+2. ``@h_pandera.check_output()`` or ``@h_pydantic.check_output()`` on the function that declares either a typed dataframe or a pydantic model.
 
 ----
 
@@ -42,4 +43,7 @@ Note we also have a plugin that allows you to use pandera. There are two ways to
    :special-members: __init__
 
 .. autoclass:: hamilton.plugins.h_pandera.check_output
+   :special-members: __init__
+
+.. autoclass:: hamilton.plugins.h_pydantic.check_output
    :special-members: __init__

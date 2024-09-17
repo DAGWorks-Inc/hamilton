@@ -508,6 +508,23 @@ def _append_pandera_to_default_validators():
 _append_pandera_to_default_validators()
 
 
+def _append_pydantic_to_default_validators():
+    """Utility method to append pydantic validators as needed"""
+    try:
+        import pydantic  # noqa: F401
+    except ModuleNotFoundError:
+        logger.debug(
+            "Cannot import pydantic from pydantic_validators. Run pip install sf-hamilton[pydantic] if needed."
+        )
+        return
+    from hamilton.data_quality import pydantic_validators
+
+    AVAILABLE_DEFAULT_VALIDATORS.extend(pydantic_validators.PYDANTIC_VALIDATORS)
+
+
+_append_pydantic_to_default_validators()
+
+
 def resolve_default_validators(
     output_type: Type[Type],
     importance: str,

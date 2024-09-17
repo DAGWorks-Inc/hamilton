@@ -73,6 +73,7 @@ docs = [
   "pillow",
   "polars",
   "pyarrow >= 1.0.0",
+  "pydantic >=2.0",
   "pyspark",
     "openlineage-python",
   "PyYAML",
@@ -99,6 +100,7 @@ packaging = [
   "build",
 ]
 pandera = ["pandera"]
+pydantic = ["pydantic>=2.0"]
 pyspark = [
   # we have to run these dependencies because Spark does not check to ensure the right target was called
   "pyspark[pandas_on_spark,sql]"
@@ -129,6 +131,7 @@ test = [
   "plotly",
   "polars",
   "pyarrow",
+  "pydantic >=2.0",
   "pyreadstat", # for SPSS data loader
   "pytest",
   "pytest-asyncio",
@@ -144,10 +147,7 @@ test = [
 ]
 tqdm = ["tqdm"]
 ui = ["sf-hamilton-ui"]
-vaex = [
-  "pydantic<2.0", # because of https://github.com/vaexio/vaex/issues/2384
-  "vaex"
-]
+vaex = ["vaex"]
 visualization = ["graphviz", "networkx"]
 
 [project.entry-points.console_scripts]
