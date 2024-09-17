@@ -29,8 +29,6 @@ class check_output(BaseDataValidationDecorator):
 
         .. code-block:: python
 
-            :name: "@check_output using pydantic model output"
-
             from pydantic import BaseModel
             from hamilton.plugins import h_pydantic
 
@@ -47,8 +45,6 @@ class check_output(BaseDataValidationDecorator):
         complain about this):
 
         .. code-block:: python
-
-            :name: "@check_output using dict output"
 
             from pydantic import BaseModel
             from hamilton.plugins import h_pydantic
@@ -67,8 +63,6 @@ class check_output(BaseDataValidationDecorator):
         following function will *fail* validation:
 
         .. code-block:: python
-
-            :name: "@check_output invalid output in strict mode"
 
             from pydantic import BaseModel
             from hamilton.plugins import h_pydantic
