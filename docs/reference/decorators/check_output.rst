@@ -29,8 +29,8 @@ available validators and how to build custom ones.
 
 Note we also have a plugins that allow for validation with the pandera and pydantic libraries. There are two ways to access these:
 
-1. `@check_output(schema=pandera_schema)` or `@check_output(model=pydantic_model)`
-2. `@h_pandera.check_output()` or `@h_pydantic.check_output()` on the function that declares either a typed dataframe or a pydantic model.
+1. ``@check_output(schema=pandera_schema)`` or ``@check_output(model=pydantic_model)``
+2. ``@h_pandera.check_output()`` or ``@h_pydantic.check_output()`` on the function that declares either a typed dataframe or a pydantic model.
 
 ----
 
