@@ -8,10 +8,17 @@ import hamilton.function_modifiers
 from hamilton import base, driver, function_modifiers, models, node
 from hamilton.function_modifiers import does
 from hamilton.function_modifiers.dependencies import source, value
-from hamilton.function_modifiers.macros import Applicable, ensure_function_empty, pipe, step
+from hamilton.function_modifiers.macros import (
+    Applicable,
+    ensure_function_empty,
+    pipe,
+    post_pipe,
+    step,
+)
 from hamilton.node import DependencyType
 
 import tests.resources.pipe
+import tests.resources.post_pipe
 
 
 def test_no_code_validator():
@@ -336,23 +343,24 @@ def test_pipe_decorator_positional_variable_args():
     assert final_node(node_1=1) == 1
 
 
-def test_pipe_decorator_no_collapse_single_node():
-    n = node.Node.from_fn(general_downstream_function)
+# Is this duplicate?
+# def test_pipe_decorator_no_collapse_single_node():
+#     n = node.Node.from_fn(general_downstream_function)
 
-    decorator = pipe(
-        step(_test_apply_function, bar=source("bar_upstream"), baz=value(1000)).named("node_1"),
-        namespace=None,
-    )
-    nodes = decorator.transform_dag([n], {}, general_downstream_function)
-    nodes_by_name = {item.name: item for item in nodes}
-    chain_node = nodes_by_name["node_1"]
-    assert chain_node(result=1, bar_upstream=10) == 1011  # This chains it through
-    assert sorted(chain_node.input_types) == ["bar_upstream", "result"]
-    final_node = nodes_by_name["general_downstream_function"]
-    assert final_node(node_1=1) == 1
+#     decorator = pipe(
+#         step(_test_apply_function, bar=source("bar_upstream"), baz=value(1000)).named("node_1"),
+#         namespace=None,
+#     )
+#     nodes = decorator.transform_dag([n], {}, general_downstream_function)
+#     nodes_by_name = {item.name: item for item in nodes}
+#     chain_node = nodes_by_name["node_1"]
+#     assert chain_node(result=1, bar_upstream=10) == 1011  # This chains it through
+#     assert sorted(chain_node.input_types) == ["bar_upstream", "result"]
+#     final_node = nodes_by_name["general_downstream_function"]
+#     assert final_node(node_1=1) == 1
 
-    # It should take in the value result, and cascade it through to this
-    # result -> "1" -> general_downstream_function
+# It should take in the value result, and cascade it through to this
+# result -> "1" -> general_downstream_function
 
 
 def test_pipe_decorator_no_collapse_multi_node():
@@ -469,3 +477,88 @@ def test_pipe_end_to_end_2():
     )
     assert result["chain_1_using_pipe"] == result["chain_1_not_using_pipe"]
     assert result["chain_2_using_pipe"] == result["chain_2_not_using_pipe"]
+
+
+def result_from_downstream_function() -> int:
+    return 2
+
+
+def test_post_pipe_decorator_positional_single_node():
+    n = node.Node.from_fn(result_from_downstream_function)
+
+    decorator = post_pipe(
+        step(_test_apply_function, source("bar_upstream"), baz=value(100)).named("node_1"),
+        namespace=None,
+    )
+    nodes = decorator.transform_dag([n], {}, result_from_downstream_function)
+    nodes_by_name = {item.name: item for item in nodes}
+    chain_node = nodes_by_name["node_1"]
+    assert chain_node(result_from_downstream_function_raw=2, bar_upstream=10) == 112
+    assert sorted(chain_node.input_types) == ["bar_upstream", "result_from_downstream_function_raw"]
+    final_node = nodes_by_name["result_from_downstream_function"]
+    assert final_node(foo=112) == 112  # original arg name
+    assert final_node(node_1=112) == 112  # renamed to match the last node
+
+
+def test_post_pipe_decorator_no_collapse_multi_node():
+    n = node.Node.from_fn(result_from_downstream_function)
+
+    decorator = post_pipe(
+        step(_test_apply_function, bar=source("bar_upstream"), baz=100).named("node_1"),
+        step(_test_apply_function, bar=value(10), baz=value(100)).named("node_2"),
+        namespace=None,
+    )
+    nodes = decorator.transform_dag([n], {}, result_from_downstream_function)
+    nodes_by_name = {item.name: item for item in nodes}
+    final_node = nodes_by_name["result_from_downstream_function"]
+    assert len(nodes_by_name) == 4  # We add fn_raw and identity
+    assert nodes_by_name["node_1"](result_from_downstream_function_raw=1, bar_upstream=10) == 111
+    assert nodes_by_name["node_2"](node_1=4) == 114
+    assert final_node(node_2=13) == 13
+
+
+def test_validate_post_pipe_fails_with_conflicting_namespace():
+    decorator = post_pipe(
+        step(_test_apply_function, bar=source("bar_upstream"), baz=100).named(
+            "node_1", namespace="custom"
+        ),
+        namespace=None,  # Not allowed to have custom namespacess if the namespace is None
+    )
+    with pytest.raises(hamilton.function_modifiers.base.InvalidDecoratorException):
+        decorator.validate(result_from_downstream_function)
+
+
+def test_post_pipe_inherits_null_namespace():
+    n = node.Node.from_fn(result_from_downstream_function)
+    decorator = post_pipe(
+        step(_test_apply_function, bar=source("bar_upstream"), baz=100).named(
+            "node_1", namespace=...
+        ),
+        namespace=None,  # Not allowed to have custom namespacess if the namespace is None
+    )
+    decorator.validate(result_from_downstream_function)
+    nodes = decorator.transform_dag([n], {}, result_from_downstream_function)
+    assert "node_1" in {item.name for item in nodes}
+    assert "result_from_downstream_function_raw" in {item.name for item in nodes}
+    assert "result_from_downstream_function" in {item.name for item in nodes}
+
+
+def test_post_pipe_end_to_end_1():
+    dr = driver.Builder().with_config({"calc_c": True}).build()
+
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.post_pipe)
+        .with_adapter(base.DefaultAdapter())
+        .build()
+    )
+
+    inputs = {}
+    result = dr.execute(
+        [
+            "downstream_f",
+            "chain_not_using_post_pipe",
+        ],
+        inputs=inputs,
+    )
+    assert result["downstream_f"] == result["chain_not_using_post_pipe"]

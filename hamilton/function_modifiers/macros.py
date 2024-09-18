@@ -2,7 +2,7 @@ import inspect
 import logging
 import typing
 from collections import Counter
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
@@ -876,3 +876,134 @@ class pipe(base.NodeInjector):
 #
 #     def __init__(self, *transforms: Applicable, collapse=False):
 #         super(flow, self).__init__(*transforms, collapse=collapse, _chain=False)
+
+
+class post_pipe(base.NodeInjector):
+    def __init__(
+        self,
+        *transforms: Applicable,
+        namespace: NamespaceType = ...,
+        collapse=False,
+        _chain=False,
+    ):
+        """Instantiates a `@post_pipe` decorator.
+
+        :param transforms: step transformations to be applied, in order
+        :param namespace: namespace to apply to all nodes in the pipe. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string). Note that you can either use this *or* namespaces inside pipe()...
+        :param collapse: Whether to collapse this into a single node. This is not currently supported.
+        :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. @flow will make use of this.
+        """
+        self.transforms = transforms
+        self.collapse = collapse
+        self.chain = _chain
+        self.namespace = namespace
+
+        if self.collapse:
+            raise NotImplementedError(
+                "Collapsing step() functions as one node is not yet implemented for pipe(). Please reach out if you want this feature."
+            )
+
+        if self.chain:
+            raise NotImplementedError("@flow() is not yet supported -- this is ")
+
+    def transform_dag(
+        self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
+        """Transforms the subDAG by getting the injectable parameters (anything not
+        produced by nodes inside it), then calling the inject_nodes function on it.
+
+        :param nodes:
+        :param config:
+        :param fn:
+        :return:
+        """
+
+        # We want the output of post-pipe to connect downstream, so the output needs to be named the
+        # same as the original function. We rename the first function to fn_raw and bind it as the
+        # first parameter. When the pipe nodes are wired through we rename the last node as the
+        # original function name
+        original_node = nodes[-1].copy_with(name=f"{nodes[-1].name}_raw")
+        nodes_to_inject = self.inject_nodes({original_node.name: original_node.type}, config, fn)
+        last_node = nodes_to_inject[-1].copy_with(name=f"{nodes[-1].name}")
+
+        # This is a problem since we loose the typehinting of the last node
+        print(last_node.type)
+        out = nodes[:-1]
+        out.append(original_node)
+        out.extend(nodes_to_inject[:-1])
+        out.append(last_node)
+        return out
+
+    def inject_nodes(
+        self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
+    ) -> List[node.Node]:
+        """Injects nodes into the graph. This creates a node for each pipe() step,
+        then reassigns the inputs to pass it in."""
+
+        # I think the better approach would be to draw from the last node another `identity` node
+        # that has the correct name but just passes the value of the last pipe node through. This
+        # would allow us to display all pipe transforms in the DAG, otherwise the last one gets
+        # re-named and we effectively hide a node, but I am stuck at how to dynamically add the
+        # correct typehints
+        def __identity(foo: Any) -> Any:
+            return foo
+
+        self.transforms = self.transforms + (step(__identity).named(fn.__name__),)
+
+        # since the dict is always length 1 just gets single value out
+        current_param = next(iter(params))
+        fn_count = Counter()
+        nodes = []
+        for applicable in self.transforms:
+            if self.namespace is not ...:
+                applicable = applicable.namespaced(
+                    namespace=self.namespace
+                )  # we reassign the global namespace
+            if applicable.resolves(config):
+                fn_name = applicable.fn.__name__
+                postfix = "" if fn_count[fn_name] == 0 else f"_{fn_count[fn_name]}"
+                node_name = (
+                    applicable.name
+                    if applicable.name is not None
+                    else f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}"
+                )
+                raw_node = node.Node.from_fn(
+                    applicable.fn,
+                    f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}",
+                )
+                node_namespace = applicable.resolve_namespace(fn.__name__)
+                raw_node = raw_node.copy_with(namespace=node_namespace, name=node_name)
+                # TODO -- validate that the first parameter is the right type/all the same
+                fn_count[fn_name] += 1
+                upstream_inputs, literal_inputs = applicable.bind_function_args(current_param)
+                nodes.append(
+                    raw_node.reassign_inputs(
+                        input_names=upstream_inputs,
+                        input_values=literal_inputs,
+                    )
+                )
+                current_param = raw_node.name
+        return nodes
+
+    def validate(self, fn: Callable):
+        """Validates the the individual steps work together."""
+        for applicable in self.transforms:
+            applicable.validate(
+                chain_first_param=True, allow_custom_namespace=self.namespace is ...
+            )
+        # TODO -- validate that the types match on the chain (this is de-facto done later)
+
+    def optional_config(self) -> Dict[str, Any]:
+        """Declares the optional configuration keys for this decorator.
+        These are configuration keys that can be used by the decorator, but are not required.
+        Along with these we have *defaults*, which we will use to pass to the config.
+
+        :return: The optional configuration keys with defaults. Note that this will return None
+        if we have no idea what they are, which bypasses the configuration filtering we use entirely.
+        This is mainly for the legacy API.
+        """
+        out = {}
+        for applicable in self.transforms:
+            for resolver in applicable.resolvers:
+                out.update(resolver.optional_config)
+        return out
