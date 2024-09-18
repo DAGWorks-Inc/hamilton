@@ -52,6 +52,25 @@ Once you're happy with the functions you've developed, you can then write them o
 %%writefile hello_world.py
 ```
 
+#### Importing specific functions into cell modules
+
+If you import parts of modules in a Hamilton Jupyter Magic cell, these will need to be reloaded when changes are made to their source. This can be done either by restarting the kernel or with the help of importlib.reload:
+
+```python
+%%cell_to_module MODULE_NAME
+
+# first import the module itself, so it can be reloaded
+import my_common_functions
+
+# reload the module
+import importlib
+importlib.reload(my_common_functions)
+# now import the specific function from the module
+from my_common_functions import commonfunction
+
+# use the imported function
+commonfunction()
+```
 
 ### Using ad_hoc_utils to create a temporary module (e.g. use in google colab)
 You have the ability to inline define functions with your driver that can be used to build a DAG. _We strongly recommend only using this approach when absolutely necessary_ — it’s very easy to build spaghetti code this way.
