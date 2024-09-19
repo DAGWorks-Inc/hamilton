@@ -878,7 +878,7 @@ class pipe(base.NodeInjector):
 #         super(flow, self).__init__(*transforms, collapse=collapse, _chain=False)
 
 
-class post_pipe(base.NodeInjector):
+class post_pipe(base.SingleNodeNodeTransformer):
     def __init__(
         self,
         *transforms: Applicable,
@@ -893,6 +893,7 @@ class post_pipe(base.NodeInjector):
         :param collapse: Whether to collapse this into a single node. This is not currently supported.
         :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. @flow will make use of this.
         """
+        super(post_pipe, self).__init__()
         self.transforms = transforms
         self.collapse = collapse
         self.chain = _chain
@@ -906,30 +907,16 @@ class post_pipe(base.NodeInjector):
         if self.chain:
             raise NotImplementedError("@flow() is not yet supported -- this is ")
 
-    def transform_dag(
-        self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
+    def transform_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
-        """Transforms the subDAG by getting the injectable parameters (anything not
-        produced by nodes inside it), then calling the inject_nodes function on it.
-
-        :param nodes:
-        :param config:
-        :param fn:
-        :return:
-        """
-
-        # We want the output of post-pipe to connect downstream, so the output needs to be named the
-        # same as the original function. We rename the first function to fn_raw and bind it as the
-        # first parameter. When the pipe nodes are wired through we rename the last node as the
-        # original function name
-        original_node = nodes[-1].copy_with(name=f"{nodes[-1].name}_raw")
+        original_node = node_.copy_with(name=f"{node_.name}_raw")
         nodes_to_inject = self.inject_nodes({original_node.name: original_node.type}, config, fn)
-        last_node = nodes_to_inject[-1].copy_with(name=f"{nodes[-1].name}")
+        last_node = nodes_to_inject[-1].copy_with(
+            name=f"{node_.name}", typ=nodes_to_inject[-2].type
+        )
 
-        # This is a problem since we loose the typehinting of the last node
-        print(last_node.type)
-        out = nodes[:-1]
-        out.append(original_node)
+        out = [original_node]
         out.extend(nodes_to_inject[:-1])
         out.append(last_node)
         return out
