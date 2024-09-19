@@ -343,26 +343,6 @@ def test_pipe_decorator_positional_variable_args():
     assert final_node(node_1=1) == 1
 
 
-# Is this duplicate?
-# def test_pipe_decorator_no_collapse_single_node():
-#     n = node.Node.from_fn(general_downstream_function)
-
-#     decorator = pipe(
-#         step(_test_apply_function, bar=source("bar_upstream"), baz=value(1000)).named("node_1"),
-#         namespace=None,
-#     )
-#     nodes = decorator.transform_dag([n], {}, general_downstream_function)
-#     nodes_by_name = {item.name: item for item in nodes}
-#     chain_node = nodes_by_name["node_1"]
-#     assert chain_node(result=1, bar_upstream=10) == 1011  # This chains it through
-#     assert sorted(chain_node.input_types) == ["bar_upstream", "result"]
-#     final_node = nodes_by_name["general_downstream_function"]
-#     assert final_node(node_1=1) == 1
-
-# It should take in the value result, and cascade it through to this
-# result -> "1" -> general_downstream_function
-
-
 def test_pipe_decorator_no_collapse_multi_node():
     n = node.Node.from_fn(general_downstream_function)
 
@@ -543,7 +523,7 @@ def test_post_pipe_inherits_null_namespace():
     assert "result_from_downstream_function" in {item.name for item in nodes}
 
 
-def test_post_pipe_end_to_end_1():
+def test_post_pipe_end_to_end_simple():
     dr = driver.Builder().with_config({"calc_c": True}).build()
 
     dr = (
@@ -562,3 +542,56 @@ def test_post_pipe_end_to_end_1():
         inputs=inputs,
     )
     assert result["downstream_f"] == result["chain_not_using_post_pipe"]
+
+
+def test_post_pipe_end_to_end_1():
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.post_pipe)
+        .with_adapter(base.DefaultAdapter())
+        .with_config({"calc_c": True})
+        .build()
+    )
+
+    inputs = {
+        "input_1": 10,
+        "input_2": 20,
+        "input_3": 30,
+    }
+    result = dr.execute(
+        [
+            "chain_1_using_post_pipe",
+            "chain_2_using_post_pipe",
+            "chain_1_not_using_post_pipe",
+            "chain_2_not_using_post_pipe",
+        ],
+        inputs=inputs,
+    )
+    assert result["chain_1_using_post_pipe"] == result["chain_1_not_using_post_pipe"]
+    assert result["chain_2_using_post_pipe"] == result["chain_2_not_using_post_pipe"]
+
+
+def test_post_pipe_end_to_end_2():
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.post_pipe)
+        .with_adapter(base.DefaultAdapter())
+        .build()
+    )
+
+    inputs = {
+        "input_1": 10,
+        "input_2": 20,
+        "input_3": 30,
+    }
+    result = dr.execute(
+        [
+            "chain_1_using_post_pipe",
+            "chain_2_using_post_pipe",
+            "chain_1_not_using_post_pipe",
+            "chain_2_not_using_post_pipe",
+        ],
+        inputs=inputs,
+    )
+    assert result["chain_1_using_post_pipe"] == result["chain_1_not_using_post_pipe"]
+    assert result["chain_2_using_post_pipe"] == result["chain_2_not_using_post_pipe"]
