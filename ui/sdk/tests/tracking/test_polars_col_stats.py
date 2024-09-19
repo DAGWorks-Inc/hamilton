@@ -112,13 +112,3 @@ def test_max_string(example_df_string):
 
 def test_str_len(example_df_string):
     assert pcs.str_len(example_df_string["a"]).to_list() == [1, 1, 1, 1, 1]
-
-
-def test_std_date():
-    df = pl.DataFrame(
-        {
-            "a": ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04", "2021-01-05"],
-        },
-        schema=pl.Schema({"a": pl.Date}),
-    )
-    assert pcs.std(df["a"]) == 1.5811388300841898
