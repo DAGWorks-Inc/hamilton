@@ -238,6 +238,16 @@ export const Quantiles = (props: {
     // If index is undefined, then we are not in a grouped row
     const index = props.index === undefined ? i : props.index;
     const range = Array.from(Array(100).keys()).map((i) => i / 100);
+    if (quantileData.length === 0) {
+      return {
+        rawData: [],
+        rangeStart: 0,
+        rangeEnd: 1,
+        dataExpanded: [],
+        datasets: [],
+        labels: [],
+      };
+    }
     const minValue = quantileData[0].value;
     const dataExpanded = range.map((fineGrainedPercentile) => {
       const lowestPercentileAbove = quantileData.find(
