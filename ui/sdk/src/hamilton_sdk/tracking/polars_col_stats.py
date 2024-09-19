@@ -118,7 +118,6 @@ def datetime_column_stats(
     min: Union[float, int],
     max: Union[float, int],
     mean: float,
-    std: float,
     quantiles: Dict[float, float],
     histogram: Dict[str, int],
 ) -> dfs.DatetimeColumnStatistics:
@@ -126,7 +125,6 @@ def datetime_column_stats(
     min = min.isoformat() if isinstance(min, (pl.Date, pl.Datetime, datetime.date)) else min
     max = max.isoformat() if isinstance(max, (pl.Date, pl.Datetime, datetime.date)) else max
     mean = mean.isoformat() if isinstance(mean, (pl.Date, pl.Datetime, datetime.date)) else mean
-    std = std.isoformat() if isinstance(std, (pl.Date, pl.Datetime, datetime.date)) else std
     quantiles = {
         q: v if not isinstance(v, pl.Datetime) else v.isoformat() for q, v in quantiles.items()
     }
@@ -140,7 +138,7 @@ def datetime_column_stats(
         min=min,
         max=max,
         mean=mean,
-        std=std,
+        std=0.0,
         quantiles=quantiles,
         histogram=histogram,
     )
@@ -163,13 +161,25 @@ def empty(col: pl.Series) -> int:
 
 
 def value_counts(col: pl.Series) -> pl.DataFrame:
-    return col.value_counts().sort(by="counts", descending=True)
+    v_counts = col.value_counts()
+    if "counts" in v_counts.columns:
+        return v_counts.sort(by="counts", descending=True)
+    elif "count" in v_counts.columns:
+        return v_counts.sort(by="count", descending=True)
+    else:
+        return v_counts
 
 
 def domain(value_counts: pl.DataFrame) -> Dict[str, int]:
     result = value_counts.to_dict(as_series=False)
-    col_name = [k for k in result.keys() if k != "counts"][0]
-    return dict(zip(result[col_name], result["counts"]))
+    if "counts" in result:
+        counter_column = "counts"
+    elif "count" in result:
+        counter_column = "count"
+    else:
+        counter_column = None
+    col_name = [k for k in result.keys() if k != counter_column][0]
+    return dict(zip(result[col_name], result.get(counter_column)))
 
 
 def top_value(domain: Dict[str, int]) -> str:
