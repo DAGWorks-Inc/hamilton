@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import logging
 import typing
@@ -790,38 +792,16 @@ class pipe(base.NodeInjector):
                 f"@pipe requires the parameter names to match the function parameters. "
                 f"Thus it might not be compatible with some other decorators"
             )
-        current_param = first_parameter
-        fn_count = Counter()
-        nodes = []
-        for applicable in self.transforms:
-            if self.namespace is not ...:
-                applicable = applicable.namespaced(
-                    namespace=self.namespace
-                )  # we reassign the global namespace
-            if applicable.resolves(config):
-                fn_name = applicable.fn.__name__
-                postfix = "" if fn_count[fn_name] == 0 else f"_{fn_count[fn_name]}"
-                node_name = (
-                    applicable.name
-                    if applicable.name is not None
-                    else f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}"
-                )
-                raw_node = node.Node.from_fn(
-                    applicable.fn,
-                    f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}",
-                )
-                node_namespace = applicable.resolve_namespace(fn.__name__)
-                raw_node = raw_node.copy_with(namespace=node_namespace, name=node_name)
-                # TODO -- validate that the first parameter is the right type/all the same
-                fn_count[fn_name] += 1
-                upstream_inputs, literal_inputs = applicable.bind_function_args(current_param)
-                nodes.append(
-                    raw_node.reassign_inputs(
-                        input_names=upstream_inputs,
-                        input_values=literal_inputs,
-                    )
-                )
-                current_param = raw_node.name
+
+        # Chaining gets done by linking the first argument of each node
+        nodes, current_param = chain_nodes(
+            _first_arg=first_parameter,
+            _transforms=self.transforms,
+            _namespace=self.namespace,
+            _config=config,
+            _fn=fn,
+        )
+
         return nodes, {first_parameter: current_param}  # rename to ensure it all works
 
     def validate(self, fn: Callable):
@@ -911,21 +891,6 @@ class post_pipe(base.SingleNodeNodeTransformer):
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
         original_node = node_.copy_with(name=f"{node_.name}_raw")
-        nodes_to_inject = self.inject_nodes({original_node.name: original_node.type}, config, fn)
-        last_node = nodes_to_inject[-1].copy_with(
-            name=f"{node_.name}", typ=nodes_to_inject[-2].type
-        )
-
-        out = [original_node]
-        out.extend(nodes_to_inject[:-1])
-        out.append(last_node)
-        return out
-
-    def inject_nodes(
-        self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
-    ) -> List[node.Node]:
-        """Injects nodes into the graph. This creates a node for each pipe() step,
-        then reassigns the inputs to pass it in."""
 
         # I think the better approach would be to draw from the last node another `identity` node
         # that has the correct name but just passes the value of the last pipe node through. This
@@ -935,42 +900,22 @@ class post_pipe(base.SingleNodeNodeTransformer):
         def __identity(foo: Any) -> Any:
             return foo
 
-        self.transforms = self.transforms + (step(__identity).named(fn.__name__),)
+        transforms = self.transforms + (step(__identity).named(fn.__name__),)
 
-        # since the dict is always length 1 just gets single value out
-        current_param = next(iter(params))
-        fn_count = Counter()
-        nodes = []
-        for applicable in self.transforms:
-            if self.namespace is not ...:
-                applicable = applicable.namespaced(
-                    namespace=self.namespace
-                )  # we reassign the global namespace
-            if applicable.resolves(config):
-                fn_name = applicable.fn.__name__
-                postfix = "" if fn_count[fn_name] == 0 else f"_{fn_count[fn_name]}"
-                node_name = (
-                    applicable.name
-                    if applicable.name is not None
-                    else f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}"
-                )
-                raw_node = node.Node.from_fn(
-                    applicable.fn,
-                    f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}",
-                )
-                node_namespace = applicable.resolve_namespace(fn.__name__)
-                raw_node = raw_node.copy_with(namespace=node_namespace, name=node_name)
-                # TODO -- validate that the first parameter is the right type/all the same
-                fn_count[fn_name] += 1
-                upstream_inputs, literal_inputs = applicable.bind_function_args(current_param)
-                nodes.append(
-                    raw_node.reassign_inputs(
-                        input_names=upstream_inputs,
-                        input_values=literal_inputs,
-                    )
-                )
-                current_param = raw_node.name
-        return nodes
+        nodes, _ = chain_nodes(
+            _first_arg=original_node.name,
+            _transforms=transforms,
+            _namespace=self.namespace,
+            _config=config,
+            _fn=fn,
+        )
+
+        last_node = nodes[-1].copy_with(name=f"{node_.name}", typ=nodes[-2].type)
+
+        out = [original_node]
+        out.extend(nodes[:-1])
+        out.append(last_node)
+        return out
 
     def validate(self, fn: Callable):
         """Validates the the individual steps work together."""
@@ -994,3 +939,46 @@ class post_pipe(base.SingleNodeNodeTransformer):
             for resolver in applicable.resolvers:
                 out.update(resolver.optional_config)
         return out
+
+
+# Should this become an abstract class for pipe
+# Or better question, when do you decide to make an abstract factory?
+def chain_nodes(
+    _first_arg: str,
+    _transforms: List[Applicable],
+    _namespace: str,
+    _config: Dict[str, Any],
+    _fn: Callable,
+):
+    fn_count = Counter()
+    nodes = []
+    for applicable in _transforms:
+        if _namespace is not ...:
+            applicable = applicable.namespaced(
+                namespace=_namespace
+            )  # we reassign the global namespace
+        if applicable.resolves(_config):
+            fn_name = applicable.fn.__name__
+            postfix = "" if fn_count[fn_name] == 0 else f"_{fn_count[fn_name]}"
+            node_name = (
+                applicable.name
+                if applicable.name is not None
+                else f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}"
+            )
+            raw_node = node.Node.from_fn(
+                applicable.fn,
+                f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}",
+            )
+            node_namespace = applicable.resolve_namespace(_fn.__name__)
+            raw_node = raw_node.copy_with(namespace=node_namespace, name=node_name)
+            # TODO -- validate that the first parameter is the right type/all the same
+            fn_count[fn_name] += 1
+            upstream_inputs, literal_inputs = applicable.bind_function_args(_first_arg)
+            nodes.append(
+                raw_node.reassign_inputs(
+                    input_names=upstream_inputs,
+                    input_values=literal_inputs,
+                )
+            )
+            _first_arg = raw_node.name
+    return nodes, _first_arg
