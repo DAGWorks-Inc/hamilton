@@ -918,28 +918,9 @@ class post_pipe(base.SingleNodeNodeTransformer):
         def run_function(upstream_int: int) -> int:
             return upstream_int
 
-    .. code-block:: python
-        :name: Equivalent example with no @post_pipe, nested
-
-        upstream_int = ...  # result from upstream
-        upstream_node_to_multiply = ...  # result from upstream
-
-        output =
-            _multiply(
-                _sum(
-                    _multiply(
-                        _add_one(
-                            run_function(upstream_int)),
-                        y=2
-                    ),
-                    y=3
-                ),
-                y=upstream_node_to_multiply
-            )
-        )
 
     .. code-block:: python
-        :name: Equivalent example with no @post_pipe, procedural
+        :name: Example with no @post_pipe, procedural
 
         upstream_int = ...  # result from upstream
         upstream_node_to_multiply = ...  # result from upstream
