@@ -463,6 +463,14 @@ def result_from_downstream_function() -> int:
     return 2
 
 
+def test_post_pipe_shortcircuit():
+    n = node.Node.from_fn(result_from_downstream_function)
+    decorator = post_pipe()
+    nodes = decorator.transform_dag([n], {}, result_from_downstream_function)
+    assert len(nodes) == 1
+    assert n == nodes[0]
+
+
 def test_post_pipe_decorator_positional_single_node():
     n = node.Node.from_fn(result_from_downstream_function)
 

@@ -794,12 +794,12 @@ class pipe(base.NodeInjector):
             )
 
         # Chaining gets done by linking the first argument of each node
-        nodes, current_param = chain_nodes(
-            _first_arg=first_parameter,
-            _transforms=self.transforms,
-            _namespace=self.namespace,
-            _config=config,
-            _fn=fn,
+        nodes, current_param = chain_transforms(
+            first_arg=first_parameter,
+            transforms=self.transforms,
+            namespace=self.namespace,
+            config=config,
+            fn=fn,
         )
 
         return nodes, {first_parameter: current_param}  # rename to ensure it all works
@@ -1058,6 +1058,10 @@ class post_pipe(base.SingleNodeNodeTransformer):
         represent an exit point of `post_pipe`.
         """
 
+        if len(self.transforms) < 1:
+            # in case no functions in pipeline we short-circuit and return the original node
+            return [node_]
+
         original_node = node_.copy_with(name=f"{node_.name}_raw")
 
         def __identity(foo: Any) -> Any:
@@ -1065,12 +1069,12 @@ class post_pipe(base.SingleNodeNodeTransformer):
 
         transforms = self.transforms + (step(__identity).named(fn.__name__),)
 
-        nodes, _ = chain_nodes(
-            _first_arg=original_node.name,
-            _transforms=transforms,
-            _namespace=self.namespace,
-            _config=config,
-            _fn=fn,
+        nodes, _ = chain_transforms(
+            first_arg=original_node.name,
+            transforms=transforms,
+            namespace=self.namespace,
+            config=config,
+            fn=fn,
         )
 
         last_node = nodes[-1].copy_with(name=f"{node_.name}", typ=nodes[-2].type)
@@ -1104,34 +1108,32 @@ class post_pipe(base.SingleNodeNodeTransformer):
         return out
 
 
-# Should this become an abstract class for pipe
-# Or better question, when do you decide to make an abstract factory?
-def chain_nodes(
-    _first_arg: str,
-    _transforms: List[Applicable],
-    _namespace: str,
-    _config: Dict[str, Any],
-    _fn: Callable,
+def chain_transforms(
+    first_arg: str,
+    transforms: List[Applicable],
+    namespace: str,
+    config: Dict[str, Any],
+    fn: Callable,
 ):
     """Chaining nodes together sequentially through the first argument.
 
-    :param _first_arg: assigning the name of the first argument of the first node in chain
-    :param _transforms: step transformations to be applied, in order
-    :param _namespace: namespace to apply to all nodes. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string)
-    :param _config: Configuration to use -- this can be specified in the decorator
-    :param _fn: initial function that was decorated
+    :param first_arg: assigning the name of the first argument of the first node in chain
+    :param transforms: step transformations to be applied, in order
+    :param namespace: namespace to apply to all nodes. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string)
+    :param config: Configuration to use -- this can be specified in the decorator
+    :param fn: initial function that was decorated
 
     :return: A list of nodes that have been chained together through the first argument.
     """
 
     fn_count = Counter()
     nodes = []
-    for applicable in _transforms:
-        if _namespace is not ...:
+    for applicable in transforms:
+        if namespace is not ...:
             applicable = applicable.namespaced(
-                namespace=_namespace
+                namespace=namespace
             )  # we reassign the global namespace
-        if applicable.resolves(_config):
+        if applicable.resolves(config):
             fn_name = applicable.fn.__name__
             postfix = "" if fn_count[fn_name] == 0 else f"_{fn_count[fn_name]}"
             node_name = (
@@ -1143,16 +1145,16 @@ def chain_nodes(
                 applicable.fn,
                 f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}",
             )
-            node_namespace = applicable.resolve_namespace(_fn.__name__)
+            node_namespace = applicable.resolve_namespace(fn.__name__)
             raw_node = raw_node.copy_with(namespace=node_namespace, name=node_name)
             # TODO -- validate that the first parameter is the right type/all the same
             fn_count[fn_name] += 1
-            upstream_inputs, literal_inputs = applicable.bind_function_args(_first_arg)
+            upstream_inputs, literal_inputs = applicable.bind_function_args(first_arg)
             nodes.append(
                 raw_node.reassign_inputs(
                     input_names=upstream_inputs,
                     input_values=literal_inputs,
                 )
             )
-            _first_arg = raw_node.name
-    return nodes, _first_arg
+            first_arg = raw_node.name
+    return nodes, first_arg
