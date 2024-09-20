@@ -72,7 +72,7 @@ class AdapterCommon(abc.ABC):
         return {
             field.name: type_hints.get(field.name)
             for field in dataclasses.fields(cls)
-            if field.default == dataclasses.MISSING
+            if field.default == dataclasses.MISSING and field.default_factory == dataclasses.MISSING
         }
 
     @classmethod
@@ -87,7 +87,7 @@ class AdapterCommon(abc.ABC):
         return {
             field.name: type_hints.get(field.name)
             for field in dataclasses.fields(cls)
-            if field.default != dataclasses.MISSING
+            if field.default != dataclasses.MISSING or field.default_factory != dataclasses.MISSING
         }
 
     @classmethod

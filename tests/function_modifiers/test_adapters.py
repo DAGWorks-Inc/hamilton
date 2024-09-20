@@ -573,7 +573,7 @@ def test_loader_default_factory_field():
         ad_hoc_utils.create_temporary_module(foo),
         config={},
     )
-    assert len(fg) == 4
+    assert len(fg) == 3
     assert "foo" in fg
 
 
@@ -605,7 +605,7 @@ def test_saver_default_factory_field():
         ad_hoc_utils.create_temporary_module(foo),
         config={},
     )
-    assert len(fg) == 4
+    assert len(fg) == 3
     assert "foo" in fg
 
 
