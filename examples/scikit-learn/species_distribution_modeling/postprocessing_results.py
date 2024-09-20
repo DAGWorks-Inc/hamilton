@@ -9,13 +9,13 @@ from hamilton.function_modifiers import pipe_input, source, step
 
 
 def _normalize(
-    _data: npt.NDArray[np.float64], land_reference_: npt.NDArray[np.float64]
+    _data: npt.NDArray[np.float64], _land_reference: npt.NDArray[np.float64]
 ) -> npt.NDArray[np.float64]:
-    _data[land_reference_ == -9999] = -9999
+    _data[_land_reference == -9999] = -9999
     return _data
 
 
-@pipe_input(step(_normalize, land_reference_=source("land_reference")))
+@pipe_input(step(_normalize, _land_reference=source("land_reference")))
 def prediction_background(
     prediction_train: npt.NDArray[np.float64], background_points: npt.NDArray[np.float64]
 ) -> npt.NDArray[np.float64]:

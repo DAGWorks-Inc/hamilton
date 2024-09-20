@@ -8,14 +8,14 @@ from sklearn.utils._bunch import Bunch
 from hamilton.function_modifiers import extract_fields, pipe_input, source, step
 
 
-def _create_species_bunch_(
+def _create_species_bunch(
     species_name: str,
-    data: Bunch,
-    data_grid_: Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+    _data: Bunch,
+    _data_grid: Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
 ) -> npt.NDArray[np.float64]:
     """Our wrapper around and external function to integrate it as a node in the DAG."""
     return create_species_bunch(
-        species_name, data.train, data.test, data.coverages, data_grid_[0], data_grid_[1]
+        species_name, _data.train, _data.test, _data.coverages, _data_grid[0], _data_grid[1]
     )
 
 
@@ -41,7 +41,7 @@ def _standardize_features(
     }
 )
 @pipe_input(
-    step(_create_species_bunch_, data=source("data"), data_grid_=source("data_grid_")),
+    step(_create_species_bunch, _data=source("data"), _data_grid=source("data_grid_")),
     step(_standardize_features),
 )
 def species(

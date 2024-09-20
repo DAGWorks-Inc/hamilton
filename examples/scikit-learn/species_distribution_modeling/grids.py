@@ -8,12 +8,12 @@ from sklearn.utils._bunch import Bunch
 from hamilton.function_modifiers import pipe_input, step
 
 
-def _construct_grids_(batch: Bunch) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+def _construct_grids(batch: Bunch) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Our wrapper around and external function to integrate it as a node in the DAG."""
     return construct_grids(batch=batch)
 
 
-@pipe_input(step(_construct_grids_))
+@pipe_input(step(_construct_grids))
 def data_grid_(
     data: Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
