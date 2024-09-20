@@ -1,3 +1,4 @@
+import dataclasses
 import inspect
 import logging
 import typing
@@ -49,9 +50,18 @@ class AdapterFactory:
 
         :raises InvalidDecoratorException: If the arguments are invalid.
         """
+        # get_required_arguments won't catch dataclasses.field(default_factory=...)
         required_args = self.adapter_cls.get_required_arguments()
         optional_args = self.adapter_cls.get_optional_arguments()
         missing_params = set(required_args.keys()) - set(self.kwargs.keys())
+
+        SENTINEL = object()
+        fields = getattr(self.adapter_cls, "__dataclass_fields__", SENTINEL)
+        if fields is not SENTINEL:
+            for field_name, field in fields.items():
+                if (field.default_factory != dataclasses.MISSING) and field_name in missing_params:
+                    missing_params.remove(field_name)
+
         extra_params = (
             set(self.kwargs.keys()) - set(required_args.keys()) - set(optional_args.keys())
         )
