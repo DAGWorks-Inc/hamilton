@@ -5,15 +5,15 @@ import numpy.typing as npt
 from original_script import construct_grids
 from sklearn.utils._bunch import Bunch
 
-from hamilton.function_modifiers import pipe, step
+from hamilton.function_modifiers import pipe_input, step
 
 
-def construct_grids_(batch: Bunch) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+def _construct_grids_(batch: Bunch) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Our wrapper around and external function to integrate it as a node in the DAG."""
     return construct_grids(batch=batch)
 
 
-@pipe(step(construct_grids_))
+@pipe_input(step(_construct_grids_))
 def data_grid_(
     data: Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:

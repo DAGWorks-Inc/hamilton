@@ -51,6 +51,11 @@ if __name__ == "__main__":
         .with_modules(grids, load_data, postprocessing_results, preprocessing, train_and_predict)
         .build()
     )
+    dr.visualize_execution(
+        inputs={"chosen_species": "aaa"},
+        final_vars=["plot_species_distribution"],
+        output_file_path="my_dag.png",
+    )
 
     species = ("bradypus_variegatus_0", "microryzomys_minutus_0")
     fig = plt.figure(figsize=(3, 6))

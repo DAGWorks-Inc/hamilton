@@ -584,7 +584,7 @@ def step(
     return Applicable(fn=fn, _resolvers=[], args=args, kwargs=kwargs)
 
 
-class pipe(base.NodeInjector):
+class pipe_input(base.NodeInjector):
     """Decorator to represent a chained set of transformations. This specifically solves the "node redefinition"
     problem, and is meant to represent a pipeline of chaining/redefinitions. This is similar (and can happily be
     used in conjunction with) `pipe` in pandas. In Pyspark this is akin to the common operation of redefining a dataframe
@@ -828,6 +828,31 @@ class pipe(base.NodeInjector):
         return out
 
 
+@deprecated(
+    warn_starting=(1, 20, 0),
+    fail_starting=(2, 0, 0),
+    use_this=pipe_input,
+    explanation="pipe has been replaced with pipe_input -- a clearer name since "
+    "we also added pipe_output with complimentary functionality.",
+    current_version=(1, 77, 0),
+    migration_guide="https://hamilton.dagworks.io/en/latest/reference/decorators/",
+)
+class pipe(pipe_input):
+    def __init__(
+        self,
+        *transforms: Applicable,
+        namespace: NamespaceType = ...,
+        collapse=False,
+        _chain=False,
+    ):
+        super(pipe, self).__init__(
+            *transforms,
+            namespace=namespace,
+            collapse=False,
+            _chain=False,
+        )
+
+
 # # TODO -- implement flow!
 # class flow(pipe):
 #     """flow() is a more flexible, power-user version of `pipe`. The rules are largely similar, with a few key differences:
@@ -858,15 +883,15 @@ class pipe(base.NodeInjector):
 #         super(flow, self).__init__(*transforms, collapse=collapse, _chain=False)
 
 
-class post_pipe(base.SingleNodeNodeTransformer):
+class pipe_output(base.SingleNodeNodeTransformer):
     """Running a series of transformation on the output of the function.
 
     The decorated function declares the dependency, the body of the function gets executed, and then
-    we run a series of transformations on the result of the function specified by `post_pipe`.
+    we run a series of transformations on the result of the function specified by `pipe_output`.
 
-    If we have nodes A --> B --> C in the DAG and decorate B with `post_pipe` like
+    If we have nodes A --> B --> C in the DAG and decorate B with `pipe_output` like
 
-    @post_pipe(step(B1),step(B2))
+    @pipe_output(step(B1),step(B2))
     def B(...):
         return ...
 
@@ -878,7 +903,7 @@ class post_pipe(base.SingleNodeNodeTransformer):
     B1, takes the output of B1 applies to it B2 and then gets renamed to B to re-connect to the rest of the DAG.
 
     While it is generally reasonable to contain these constructs within a node's function,
-    you should consider `post_pipe` for similar reasons as `pipe`, namely, for any of the following reasons:
+    you should consider `pipe_output` for similar reasons as `pipe`, namely, for any of the following reasons:
 
     1.  You want the transformations to display as nodes in the DAG, with the possibility of storing or visualizing
     the result
@@ -892,9 +917,9 @@ class post_pipe(base.SingleNodeNodeTransformer):
 
 
     .. code-block:: python
-        :name: Simple @post_pipe example
+        :name: Simple @pipe_output example
 
-        from hamilton.function_modifiers import step, post_pipe, value, source
+        from hamilton.function_modifiers import step, pipe_output, value, source
 
 
         def _add_one(x: int) -> int:
@@ -909,7 +934,7 @@ class post_pipe(base.SingleNodeNodeTransformer):
             return x * y * z
 
 
-        @post_pipe(
+        @pipe_output(
             step(_add_one),
             step(_multiply, y=2),
             step(_sum, y=value(3)),
@@ -920,7 +945,7 @@ class post_pipe(base.SingleNodeNodeTransformer):
 
 
     .. code-block:: python
-        :name: Example with no @post_pipe, procedural
+        :name: Example with no @pipe_output, procedural
 
         upstream_int = ...  # result from upstream
         upstream_node_to_multiply = ...  # result from upstream
@@ -952,7 +977,7 @@ class post_pipe(base.SingleNodeNodeTransformer):
 
         .. code-block:: python
 
-            @post_pipe(
+            @pipe_output(
                 step(_add_one).when(foo="bar"),
                 step(_add_two, y=source("other_node_to_add").when(foo="baz"),
             )
@@ -971,7 +996,7 @@ class post_pipe(base.SingleNodeNodeTransformer):
 
         .. code-block:: python
 
-            @post_pipe(
+            @pipe_output(
                 step(_add_one).named("a"),
                 step(_add_two, y=source("upstream_node")).named("b"),
             )
@@ -992,20 +1017,20 @@ class post_pipe(base.SingleNodeNodeTransformer):
           :name: Namespaced step
 
 
-            @post_pipe(
+            @pipe_output(
                 step(_add_one).named("a", namespace="foo"),  # foo.a
                 step(_add_two, y=source("upstream_node")).named("b", namespace=...),  # final_result.b
             )
             def final_result(upstream_int: int) -> int:
                 return upstream_int
 
-        Note that if you pass a namespace argument to the `post_pipe` function, it will set the namespace on each step operation.
-        This is useful if you want to ensure that all the nodes in a post_pipe have a common namespace, but you want to rename them.
+        Note that if you pass a namespace argument to the `pipe_output` function, it will set the namespace on each step operation.
+        This is useful if you want to ensure that all the nodes in a pipe_output have a common namespace, but you want to rename them.
 
         .. code-block:: python
-            :name: post_pipe with globally applied namespace
+            :name: pipe_output with globally applied namespace
 
-            @post_pipe(
+            @pipe_output(
                 step(_add_one).named("a"), # a
                 step(_add_two, y=source("upstream_node")).named("b"), # foo.b
                 namespace=..., # default -- final_result.a and final_result.b, OR
@@ -1016,7 +1041,7 @@ class post_pipe(base.SingleNodeNodeTransformer):
                 return upstream_int
 
         In all likelihood, you should not be using this, and this is only here in case you want to expose a node for
-        consumption/output later. Setting the namespace in individual nodes as well as in `post_pipe` is not yet supported.
+        consumption/output later. Setting the namespace in individual nodes as well as in `pipe_output` is not yet supported.
     """
 
     def __init__(
@@ -1026,14 +1051,14 @@ class post_pipe(base.SingleNodeNodeTransformer):
         collapse=False,
         _chain=False,
     ):
-        """Instantiates a `@post_pipe` decorator.
+        """Instantiates a `@pipe_output` decorator.
 
         :param transforms: step transformations to be applied, in order
         :param namespace: namespace to apply to all nodes in the pipe. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string). Note that you can either use this *or* namespaces inside pipe()...
         :param collapse: Whether to collapse this into a single node. This is not currently supported.
         :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. @flow will make use of this.
         """
-        super(post_pipe, self).__init__()
+        super(pipe_output, self).__init__()
         self.transforms = transforms
         self.collapse = collapse
         self.chain = _chain
@@ -1055,7 +1080,7 @@ class post_pipe(base.SingleNodeNodeTransformer):
         We create a copy of the original function and rename it to `function_name_raw` to be the
         initial node. Then we create a node for each step in `post-pipe` and chain them together.
         The last node is an identity to the previous one with the original name `function_name` to
-        represent an exit point of `post_pipe`.
+        represent an exit point of `pipe_output`.
         """
 
         if len(self.transforms) < 1:

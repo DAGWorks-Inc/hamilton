@@ -129,7 +129,7 @@ class deprecated:
         elif self._should_warn():
             warn_message = " ".join(
                 [
-                    f"{fn.__qualname__} will be deprecated by of hamilton version: {self.fail_starting}.",
+                    f"{fn.__qualname__} will be deprecated by hamilton version: {self.fail_starting}.",
                     f"{self.explanation}",
                 ]
                 + (

@@ -11,14 +11,14 @@ from hamilton.function_modifiers.dependencies import source, value
 from hamilton.function_modifiers.macros import (
     Applicable,
     ensure_function_empty,
-    pipe,
-    post_pipe,
+    pipe_input,
+    pipe_output,
     step,
 )
 from hamilton.node import DependencyType
 
-import tests.resources.pipe
-import tests.resources.post_pipe
+import tests.resources.pipe_input
+import tests.resources.pipe_output
 
 
 def test_no_code_validator():
@@ -330,7 +330,7 @@ def general_downstream_function(result: int) -> int:
 def test_pipe_decorator_positional_variable_args():
     n = node.Node.from_fn(general_downstream_function)
 
-    decorator = pipe(
+    decorator = pipe_input(
         step(_test_apply_function, source("bar_upstream"), baz=value(1000)).named("node_1"),
         namespace=None,
     )
@@ -346,7 +346,7 @@ def test_pipe_decorator_positional_variable_args():
 def test_pipe_decorator_no_collapse_multi_node():
     n = node.Node.from_fn(general_downstream_function)
 
-    decorator = pipe(
+    decorator = pipe_input(
         step(_test_apply_function, bar=source("bar_upstream"), baz=100).named("node_1"),
         step(_test_apply_function, bar=value(10), baz=value(100)).named("node_2"),
         namespace=None,
@@ -382,7 +382,7 @@ def test_resolve_namespace_replaced():
 
 
 def test_validate_pipe_fails_with_conflicting_namespace():
-    decorator = pipe(
+    decorator = pipe_input(
         step(_test_apply_function, bar=source("bar_upstream"), baz=100).named(
             "node_1", namespace="custom"
         ),
@@ -394,7 +394,7 @@ def test_validate_pipe_fails_with_conflicting_namespace():
 
 def test_inherits_null_namespace():
     n = node.Node.from_fn(general_downstream_function)
-    decorator = pipe(
+    decorator = pipe_input(
         step(_test_apply_function, bar=source("bar_upstream"), baz=100).named(
             "node_1", namespace=...
         ),
@@ -409,7 +409,7 @@ def test_inherits_null_namespace():
 def test_pipe_end_to_end_1():
     dr = (
         driver.Builder()
-        .with_modules(tests.resources.pipe)
+        .with_modules(tests.resources.pipe_input)
         .with_adapter(base.DefaultAdapter())
         .with_config({"calc_c": True})
         .build()
@@ -436,7 +436,7 @@ def test_pipe_end_to_end_1():
 def test_pipe_end_to_end_2():
     dr = (
         driver.Builder()
-        .with_modules(tests.resources.pipe)
+        .with_modules(tests.resources.pipe_input)
         .with_adapter(base.DefaultAdapter())
         .build()
     )
@@ -463,18 +463,18 @@ def result_from_downstream_function() -> int:
     return 2
 
 
-def test_post_pipe_shortcircuit():
+def test_pipe_output_shortcircuit():
     n = node.Node.from_fn(result_from_downstream_function)
-    decorator = post_pipe()
+    decorator = pipe_output()
     nodes = decorator.transform_dag([n], {}, result_from_downstream_function)
     assert len(nodes) == 1
     assert n == nodes[0]
 
 
-def test_post_pipe_decorator_positional_single_node():
+def test_pipe_output_decorator_positional_single_node():
     n = node.Node.from_fn(result_from_downstream_function)
 
-    decorator = post_pipe(
+    decorator = pipe_output(
         step(_test_apply_function, source("bar_upstream"), baz=value(100)).named("node_1"),
         namespace=None,
     )
@@ -488,10 +488,10 @@ def test_post_pipe_decorator_positional_single_node():
     assert final_node(node_1=112) == 112  # renamed to match the last node
 
 
-def test_post_pipe_decorator_no_collapse_multi_node():
+def test_pipe_output_decorator_no_collapse_multi_node():
     n = node.Node.from_fn(result_from_downstream_function)
 
-    decorator = post_pipe(
+    decorator = pipe_output(
         step(_test_apply_function, bar=source("bar_upstream"), baz=100).named("node_1"),
         step(_test_apply_function, bar=value(10), baz=value(100)).named("node_2"),
         namespace=None,
@@ -505,8 +505,8 @@ def test_post_pipe_decorator_no_collapse_multi_node():
     assert final_node(node_2=13) == 13
 
 
-def test_validate_post_pipe_fails_with_conflicting_namespace():
-    decorator = post_pipe(
+def test_validate_pipe_output_fails_with_conflicting_namespace():
+    decorator = pipe_output(
         step(_test_apply_function, bar=source("bar_upstream"), baz=100).named(
             "node_1", namespace="custom"
         ),
@@ -516,9 +516,9 @@ def test_validate_post_pipe_fails_with_conflicting_namespace():
         decorator.validate(result_from_downstream_function)
 
 
-def test_post_pipe_inherits_null_namespace():
+def test_pipe_output_inherits_null_namespace():
     n = node.Node.from_fn(result_from_downstream_function)
-    decorator = post_pipe(
+    decorator = pipe_output(
         step(_test_apply_function, bar=source("bar_upstream"), baz=100).named(
             "node_1", namespace=...
         ),
@@ -531,12 +531,12 @@ def test_post_pipe_inherits_null_namespace():
     assert "result_from_downstream_function" in {item.name for item in nodes}
 
 
-def test_post_pipe_end_to_end_simple():
+def test_pipe_output_end_to_end_simple():
     dr = driver.Builder().with_config({"calc_c": True}).build()
 
     dr = (
         driver.Builder()
-        .with_modules(tests.resources.post_pipe)
+        .with_modules(tests.resources.pipe_output)
         .with_adapter(base.DefaultAdapter())
         .build()
     )
@@ -545,17 +545,17 @@ def test_post_pipe_end_to_end_simple():
     result = dr.execute(
         [
             "downstream_f",
-            "chain_not_using_post_pipe",
+            "chain_not_using_pipe_output",
         ],
         inputs=inputs,
     )
-    assert result["downstream_f"] == result["chain_not_using_post_pipe"]
+    assert result["downstream_f"] == result["chain_not_using_pipe_output"]
 
 
-def test_post_pipe_end_to_end_1():
+def test_pipe_output_end_to_end_1():
     dr = (
         driver.Builder()
-        .with_modules(tests.resources.post_pipe)
+        .with_modules(tests.resources.pipe_output)
         .with_adapter(base.DefaultAdapter())
         .with_config({"calc_c": True})
         .build()
@@ -568,21 +568,21 @@ def test_post_pipe_end_to_end_1():
     }
     result = dr.execute(
         [
-            "chain_1_using_post_pipe",
-            "chain_2_using_post_pipe",
-            "chain_1_not_using_post_pipe",
-            "chain_2_not_using_post_pipe",
+            "chain_1_using_pipe_output",
+            "chain_2_using_pipe_output",
+            "chain_1_not_using_pipe_output",
+            "chain_2_not_using_pipe_output",
         ],
         inputs=inputs,
     )
-    assert result["chain_1_using_post_pipe"] == result["chain_1_not_using_post_pipe"]
-    assert result["chain_2_using_post_pipe"] == result["chain_2_not_using_post_pipe"]
+    assert result["chain_1_using_pipe_output"] == result["chain_1_not_using_pipe_output"]
+    assert result["chain_2_using_pipe_output"] == result["chain_2_not_using_pipe_output"]
 
 
-def test_post_pipe_end_to_end_2():
+def test_pipe_output_end_to_end_2():
     dr = (
         driver.Builder()
-        .with_modules(tests.resources.post_pipe)
+        .with_modules(tests.resources.pipe_output)
         .with_adapter(base.DefaultAdapter())
         .build()
     )
@@ -594,12 +594,12 @@ def test_post_pipe_end_to_end_2():
     }
     result = dr.execute(
         [
-            "chain_1_using_post_pipe",
-            "chain_2_using_post_pipe",
-            "chain_1_not_using_post_pipe",
-            "chain_2_not_using_post_pipe",
+            "chain_1_using_pipe_output",
+            "chain_2_using_pipe_output",
+            "chain_1_not_using_pipe_output",
+            "chain_2_not_using_pipe_output",
         ],
         inputs=inputs,
     )
-    assert result["chain_1_using_post_pipe"] == result["chain_1_not_using_post_pipe"]
-    assert result["chain_2_using_post_pipe"] == result["chain_2_not_using_post_pipe"]
+    assert result["chain_1_using_pipe_output"] == result["chain_1_not_using_pipe_output"]
+    assert result["chain_2_using_pipe_output"] == result["chain_2_not_using_pipe_output"]

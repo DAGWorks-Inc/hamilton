@@ -1,15 +1,15 @@
-from hamilton.function_modifiers import post_pipe, source, step, value
+from hamilton.function_modifiers import pipe_output, source, step, value
 
 
-def _post_pipe0(x: str) -> str:
+def _pipe_output0(x: str) -> str:
     return x + "-post pipe 0-"
 
 
-def _post_pipe1(x: str, upstream: str) -> str:
+def _pipe_output1(x: str, upstream: str) -> str:
     return x + f"-post pipe 1 with {upstream}-"
 
 
-def _post_pipe2(x: str, some_val: int) -> str:
+def _pipe_output2(x: str, some_val: int) -> str:
     return x + f"-post pipe 2 with value {some_val}-"
 
 
@@ -21,10 +21,10 @@ def user_input() -> str:
     return "-user input-"
 
 
-@post_pipe(
-    step(_post_pipe0),
-    step(_post_pipe1, upstream=source("upstream")).named("random"),
-    step(_post_pipe2, some_val=value(1000)),
+@pipe_output(
+    step(_pipe_output0),
+    step(_pipe_output1, upstream=source("upstream")).named("random"),
+    step(_pipe_output2, some_val=value(1000)),
 )
 def f_of_interest(user_input: str) -> str:
     return user_input + "-raw function-"
@@ -34,9 +34,9 @@ def downstream_f(f_of_interest: str) -> str:
     return f_of_interest + "-downstream."
 
 
-def chain_not_using_post_pipe() -> str:
+def chain_not_using_pipe_output() -> str:
     t = downstream_f(
-        _post_pipe2(_post_pipe1(_post_pipe0(f_of_interest(user_input())), upstream()), 1000)
+        _pipe_output2(_pipe_output1(_pipe_output0(f_of_interest(user_input())), upstream()), 1000)
     )
     return t
 
@@ -65,18 +65,18 @@ def v() -> int:
     return 10
 
 
-@post_pipe(
+@pipe_output(
     step(_add_one).named("a"),
     step(_add_two).named("b"),
     step(_add_n, n=3).named("c").when(calc_c=True),
     step(_add_n, n=source("input_1")).named("d"),
     step(_multiply_n, n=source("input_2")).named("e"),
 )
-def chain_1_using_post_pipe(v: int) -> int:
+def chain_1_using_pipe_output(v: int) -> int:
     return v * 10
 
 
-def chain_1_not_using_post_pipe(v: int, input_1: int, input_2: int, calc_c: bool = False) -> int:
+def chain_1_not_using_pipe_output(v: int, input_1: int, input_2: int, calc_c: bool = False) -> int:
     start = v * 10
     a = _add_one(start)
     b = _add_two(a)
@@ -86,18 +86,18 @@ def chain_1_not_using_post_pipe(v: int, input_1: int, input_2: int, calc_c: bool
     return e
 
 
-@post_pipe(
+@pipe_output(
     step(_square).named("a"),
     step(_multiply_n, n=value(2)).named("b"),
     step(_add_n, n=10).named("c").when(calc_c=True),
     step(_add_n, n=source("input_3")).named("d"),
     step(_add_two).named("e"),
 )
-def chain_2_using_post_pipe(v: int) -> int:
+def chain_2_using_pipe_output(v: int) -> int:
     return v + 10
 
 
-def chain_2_not_using_post_pipe(v: int, input_3: int, calc_c: bool = False) -> int:
+def chain_2_not_using_pipe_output(v: int, input_3: int, calc_c: bool = False) -> int:
     start = v + 10
     a = _square(start)
     b = _multiply_n(a, n=2)

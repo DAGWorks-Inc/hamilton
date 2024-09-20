@@ -5,10 +5,10 @@ import numpy.typing as npt
 from original_script import create_species_bunch
 from sklearn.utils._bunch import Bunch
 
-from hamilton.function_modifiers import extract_fields, pipe, source, step
+from hamilton.function_modifiers import extract_fields, pipe_input, source, step
 
 
-def create_species_bunch_(
+def _create_species_bunch_(
     species_name: str,
     data: Bunch,
     data_grid_: Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
@@ -19,7 +19,7 @@ def create_species_bunch_(
     )
 
 
-def standardize_features(
+def _standardize_features(
     species_bunch: npt.NDArray[np.float64],
 ) -> Tuple[
     npt.NDArray[np.float64],
@@ -40,9 +40,9 @@ def standardize_features(
         "test_cover_std": npt.NDArray[np.float64],
     }
 )
-@pipe(
-    step(create_species_bunch_, data=source("data"), data_grid_=source("data_grid_")),
-    step(standardize_features),
+@pipe_input(
+    step(_create_species_bunch_, data=source("data"), data_grid_=source("data_grid_")),
+    step(_standardize_features),
 )
 def species(
     chosen_species: Tuple[
