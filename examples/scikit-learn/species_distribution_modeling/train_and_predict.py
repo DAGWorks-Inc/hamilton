@@ -18,17 +18,17 @@ def _OneClassSVM_model(
 def _decision_function(
     model: svm.OneClassSVM,
     underlying_data: npt.NDArray[np.float64],
-    _mean: npt.NDArray[np.float64],
-    _std: npt.NDArray[np.float64],
+    mean: npt.NDArray[np.float64],
+    std: npt.NDArray[np.float64],
 ) -> npt.NDArray[np.float64]:
-    return model.decision_function((underlying_data - _mean) / _std)
+    return model.decision_function((underlying_data - mean) / std)
 
 
 def _prediction_step(
-    decision: npt.NDArray[np.float64], _idx: npt.NDArray[np.float64], _data: Bunch
+    decision: npt.NDArray[np.float64], idx: npt.NDArray[np.float64], data: Bunch
 ) -> npt.NDArray[np.float64]:
-    Z = decision.min() * np.ones((_data.Ny, _data.Nx), dtype=np.float64)
-    Z[_idx[0], _idx[1]] = decision
+    Z = decision.min() * np.ones((data.Ny, data.Nx), dtype=np.float64)
+    Z[idx[0], idx[1]] = decision
     return Z
 
 
@@ -37,10 +37,10 @@ def _prediction_step(
     step(
         _decision_function,
         underlying_data=source("coverages_land"),
-        _mean=source("mean"),
-        _std=source("std"),
+        mean=source("mean"),
+        std=source("std"),
     ),
-    step(_prediction_step, _idx=source("idx"), _data=source("data")),
+    step(_prediction_step, idx=source("idx"), data=source("data")),
 )
 def prediction_train(train_cover_std: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     return train_cover_std
@@ -51,8 +51,8 @@ def prediction_train(train_cover_std: npt.NDArray[np.float64]) -> npt.NDArray[np
     step(
         _decision_function,
         underlying_data=source("test_cover_std"),
-        _mean=source("mean"),
-        _std=source("std"),
+        mean=source("mean"),
+        std=source("std"),
     ),
 )
 def prediction_test(train_cover_std: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
