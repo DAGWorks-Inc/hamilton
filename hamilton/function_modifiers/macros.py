@@ -838,6 +838,9 @@ class pipe_input(base.NodeInjector):
     migration_guide="https://hamilton.dagworks.io/en/latest/reference/decorators/",
 )
 class pipe(pipe_input):
+    """.. deprecated:: 2.0.0
+    We renamed it to pipe_input instead."""
+
     def __init__(
         self,
         *transforms: Applicable,
