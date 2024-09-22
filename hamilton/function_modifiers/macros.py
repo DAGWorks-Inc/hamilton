@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import inspect
 import logging
 import typing
 from collections import Counter
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
@@ -582,7 +584,7 @@ def step(
     return Applicable(fn=fn, _resolvers=[], args=args, kwargs=kwargs)
 
 
-class pipe(base.NodeInjector):
+class pipe_input(base.NodeInjector):
     """Decorator to represent a chained set of transformations. This specifically solves the "node redefinition"
     problem, and is meant to represent a pipeline of chaining/redefinitions. This is similar (and can happily be
     used in conjunction with) `pipe` in pandas. In Pyspark this is akin to the common operation of redefining a dataframe
@@ -790,38 +792,16 @@ class pipe(base.NodeInjector):
                 f"@pipe requires the parameter names to match the function parameters. "
                 f"Thus it might not be compatible with some other decorators"
             )
-        current_param = first_parameter
-        fn_count = Counter()
-        nodes = []
-        for applicable in self.transforms:
-            if self.namespace is not ...:
-                applicable = applicable.namespaced(
-                    namespace=self.namespace
-                )  # we reassign the global namespace
-            if applicable.resolves(config):
-                fn_name = applicable.fn.__name__
-                postfix = "" if fn_count[fn_name] == 0 else f"_{fn_count[fn_name]}"
-                node_name = (
-                    applicable.name
-                    if applicable.name is not None
-                    else f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}"
-                )
-                raw_node = node.Node.from_fn(
-                    applicable.fn,
-                    f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}",
-                )
-                node_namespace = applicable.resolve_namespace(fn.__name__)
-                raw_node = raw_node.copy_with(namespace=node_namespace, name=node_name)
-                # TODO -- validate that the first parameter is the right type/all the same
-                fn_count[fn_name] += 1
-                upstream_inputs, literal_inputs = applicable.bind_function_args(current_param)
-                nodes.append(
-                    raw_node.reassign_inputs(
-                        input_names=upstream_inputs,
-                        input_values=literal_inputs,
-                    )
-                )
-                current_param = raw_node.name
+
+        # Chaining gets done by linking the first argument of each node
+        nodes, current_param = chain_transforms(
+            first_arg=first_parameter,
+            transforms=self.transforms,
+            namespace=self.namespace,
+            config=config,
+            fn=fn,
+        )
+
         return nodes, {first_parameter: current_param}  # rename to ensure it all works
 
     def validate(self, fn: Callable):
@@ -846,6 +826,31 @@ class pipe(base.NodeInjector):
             for resolver in applicable.resolvers:
                 out.update(resolver.optional_config)
         return out
+
+
+@deprecated(
+    warn_starting=(1, 20, 0),
+    fail_starting=(2, 0, 0),
+    use_this=pipe_input,
+    explanation="pipe has been replaced with pipe_input -- a clearer name since "
+    "we also added pipe_output with complimentary functionality.",
+    current_version=(1, 77, 0),
+    migration_guide="https://hamilton.dagworks.io/en/latest/reference/decorators/",
+)
+class pipe(pipe_input):
+    def __init__(
+        self,
+        *transforms: Applicable,
+        namespace: NamespaceType = ...,
+        collapse=False,
+        _chain=False,
+    ):
+        super(pipe, self).__init__(
+            *transforms,
+            namespace=namespace,
+            collapse=False,
+            _chain=False,
+        )
 
 
 # # TODO -- implement flow!
@@ -876,3 +881,177 @@ class pipe(base.NodeInjector):
 #
 #     def __init__(self, *transforms: Applicable, collapse=False):
 #         super(flow, self).__init__(*transforms, collapse=collapse, _chain=False)
+
+
+class pipe_output(base.SingleNodeNodeTransformer):
+    """Running a series of transformation on the output of the function.
+
+    The decorated function declares the dependency, the body of the function gets executed, and then
+    we run a series of transformations on the result of the function specified by `pipe_output`.
+
+    If we have nodes **A --> B --> C** in the DAG and decorate `B` with `pipe_output` like
+
+    .. code-block:: python
+        :name: Simple @pipe_output example
+
+        @pipe_output(
+            step(B1),
+            step(B2)
+        )
+        def B(...):
+            return ...
+
+    we obtain the new DAG **A --> B_raw --> B1 --> B2 --> B --> C**, where we can think of the **B_raw --> B1 --> B2 --> B** as a "pipe" that takes the raw output of B, applies to it
+    B1, takes the output of B1 applies to it B2 and then gets renamed to B to re-connect to the rest of the DAG.
+
+    While it is generally reasonable to contain these constructs within a node's function,
+    you should consider `pipe_output` for similar reasons as `pipe`, namely, for any of the following reasons:
+
+    1.  You want the transformations to display as nodes in the DAG, with the possibility of storing or visualizing
+    the result
+    2. You want to pull in functions from an external repository, and build the DAG a little more procedurally
+    3. You want to use the same function multiple times, but with different parameters -- while `@does`/`@parameterize` can
+    do this, this presents an easier way to do this, especially in a chain.
+
+    The rules for chaining nodes as the same as for pipe.
+    """
+
+    def __init__(
+        self,
+        *transforms: Applicable,
+        namespace: NamespaceType = ...,
+        collapse=False,
+        _chain=False,
+    ):
+        """Instantiates a `@pipe_output` decorator.
+
+        :param transforms: step transformations to be applied, in order
+        :param namespace: namespace to apply to all nodes in the pipe. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string). Note that you can either use this *or* namespaces inside pipe()...
+        :param collapse: Whether to collapse this into a single node. This is not currently supported.
+        :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. @flow will make use of this.
+        """
+        super(pipe_output, self).__init__()
+        self.transforms = transforms
+        self.collapse = collapse
+        self.chain = _chain
+        self.namespace = namespace
+
+        if self.collapse:
+            raise NotImplementedError(
+                "Collapsing step() functions as one node is not yet implemented for pipe(). Please reach out if you want this feature."
+            )
+
+        if self.chain:
+            raise NotImplementedError("@flow() is not yet supported -- this is ")
+
+    def transform_node(
+        self, node_: node.Node, config: Dict[str, Any], fn: Callable
+    ) -> Collection[node.Node]:
+        """Injects nodes into the graph.
+
+        We create a copy of the original function and rename it to `function_name_raw` to be the
+        initial node. Then we create a node for each step in `post-pipe` and chain them together.
+        The last node is an identity to the previous one with the original name `function_name` to
+        represent an exit point of `pipe_output`.
+        """
+
+        if len(self.transforms) < 1:
+            # in case no functions in pipeline we short-circuit and return the original node
+            return [node_]
+
+        original_node = node_.copy_with(name=f"{node_.name}_raw")
+
+        def __identity(foo: Any) -> Any:
+            return foo
+
+        transforms = self.transforms + (step(__identity).named(fn.__name__),)
+
+        nodes, _ = chain_transforms(
+            first_arg=original_node.name,
+            transforms=transforms,
+            namespace=self.namespace,
+            config=config,
+            fn=fn,
+        )
+
+        last_node = nodes[-1].copy_with(name=f"{node_.name}", typ=nodes[-2].type)
+
+        out = [original_node]
+        out.extend(nodes[:-1])
+        out.append(last_node)
+        return out
+
+    def validate(self, fn: Callable):
+        """Validates the the individual steps work together."""
+        for applicable in self.transforms:
+            applicable.validate(
+                chain_first_param=True, allow_custom_namespace=self.namespace is ...
+            )
+        # TODO -- validate that the types match on the chain (this is de-facto done later)
+
+    def optional_config(self) -> Dict[str, Any]:
+        """Declares the optional configuration keys for this decorator.
+        These are configuration keys that can be used by the decorator, but are not required.
+        Along with these we have *defaults*, which we will use to pass to the config.
+
+        :return: The optional configuration keys with defaults. Note that this will return None
+        if we have no idea what they are, which bypasses the configuration filtering we use entirely.
+        This is mainly for the legacy API.
+        """
+        out = {}
+        for applicable in self.transforms:
+            for resolver in applicable.resolvers:
+                out.update(resolver.optional_config)
+        return out
+
+
+def chain_transforms(
+    first_arg: str,
+    transforms: List[Applicable],
+    namespace: str,
+    config: Dict[str, Any],
+    fn: Callable,
+):
+    """Chaining nodes together sequentially through the first argument.
+
+    :param first_arg: assigning the name of the first argument of the first node in chain
+    :param transforms: step transformations to be applied, in order
+    :param namespace: namespace to apply to all nodes. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string)
+    :param config: Configuration to use -- this can be specified in the decorator
+    :param fn: initial function that was decorated
+
+    :return: A list of nodes that have been chained together through the first argument.
+    """
+
+    fn_count = Counter()
+    nodes = []
+    for applicable in transforms:
+        if namespace is not ...:
+            applicable = applicable.namespaced(
+                namespace=namespace
+            )  # we reassign the global namespace
+        if applicable.resolves(config):
+            fn_name = applicable.fn.__name__
+            postfix = "" if fn_count[fn_name] == 0 else f"_{fn_count[fn_name]}"
+            node_name = (
+                applicable.name
+                if applicable.name is not None
+                else f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}"
+            )
+            raw_node = node.Node.from_fn(
+                applicable.fn,
+                f"with{('_' if not fn_name.startswith('_') else '') + fn_name}{postfix}",
+            )
+            node_namespace = applicable.resolve_namespace(fn.__name__)
+            raw_node = raw_node.copy_with(namespace=node_namespace, name=node_name)
+            # TODO -- validate that the first parameter is the right type/all the same
+            fn_count[fn_name] += 1
+            upstream_inputs, literal_inputs = applicable.bind_function_args(first_arg)
+            nodes.append(
+                raw_node.reassign_inputs(
+                    input_names=upstream_inputs,
+                    input_values=literal_inputs,
+                )
+            )
+            first_arg = raw_node.name
+    return nodes, first_arg
