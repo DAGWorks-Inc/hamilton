@@ -838,9 +838,6 @@ class pipe_input(base.NodeInjector):
     migration_guide="https://hamilton.dagworks.io/en/latest/reference/decorators/",
 )
 class pipe(pipe_input):
-    """.. deprecated:: 2.0.0
-    We renamed it to pipe_input instead."""
-
     def __init__(
         self,
         *transforms: Applicable,
@@ -892,17 +889,19 @@ class pipe_output(base.SingleNodeNodeTransformer):
     The decorated function declares the dependency, the body of the function gets executed, and then
     we run a series of transformations on the result of the function specified by `pipe_output`.
 
-    If we have nodes A --> B --> C in the DAG and decorate B with `pipe_output` like
+    If we have nodes `A --> B --> C` in the DAG and decorate `B` with `pipe_output` like
+    .. code-block:: python
+        :name: Simple @pipe_output example
 
-    @pipe_output(step(B1),step(B2))
-    def B(...):
-        return ...
+        @pipe_output(step(B1),step(B2))
+        def B(...):
+            return ...
 
     we obtain the new DAG
 
-    A --> B_raw --> B1 --> B2 --> B --> C,
+    `A --> B_raw --> B1 --> B2 --> B --> C`,
 
-    where we can think of the B_raw --> B1 --> B2 --> B as a "pipe" that takes the raw output of B, applies to it
+    where we can think of the `B_raw --> B1 --> B2 --> B` as a "pipe" that takes the raw output of B, applies to it
     B1, takes the output of B1 applies to it B2 and then gets renamed to B to re-connect to the rest of the DAG.
 
     While it is generally reasonable to contain these constructs within a node's function,
