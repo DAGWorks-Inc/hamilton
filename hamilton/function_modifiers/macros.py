@@ -889,19 +889,19 @@ class pipe_output(base.SingleNodeNodeTransformer):
     The decorated function declares the dependency, the body of the function gets executed, and then
     we run a series of transformations on the result of the function specified by `pipe_output`.
 
-    If we have nodes `A --> B --> C` in the DAG and decorate `B` with `pipe_output` like
+    If we have nodes **A --> B --> C** in the DAG and decorate `B` with `pipe_output` like
+
     .. code-block:: python
         :name: Simple @pipe_output example
 
-        @pipe_output(step(B1),step(B2))
+        @pipe_output(
+            step(B1),
+            step(B2)
+        )
         def B(...):
             return ...
 
-    we obtain the new DAG
-
-    `A --> B_raw --> B1 --> B2 --> B --> C`,
-
-    where we can think of the `B_raw --> B1 --> B2 --> B` as a "pipe" that takes the raw output of B, applies to it
+    we obtain the new DAG **A --> B_raw --> B1 --> B2 --> B --> C**, where we can think of the **B_raw --> B1 --> B2 --> B** as a "pipe" that takes the raw output of B, applies to it
     B1, takes the output of B1 applies to it B2 and then gets renamed to B to re-connect to the rest of the DAG.
 
     While it is generally reasonable to contain these constructs within a node's function,
@@ -913,137 +913,7 @@ class pipe_output(base.SingleNodeNodeTransformer):
     3. You want to use the same function multiple times, but with different parameters -- while `@does`/`@parameterize` can
     do this, this presents an easier way to do this, especially in a chain.
 
-    To demonstrate the rules for chaining nodes, we'll be using the following example. This is
-    using primitives to demonstrate, but as hamilton is just functions of any python objects, this works perfectly with
-    dataframes, series, etc...
-
-
-    .. code-block:: python
-        :name: Simple @pipe_output example
-
-        from hamilton.function_modifiers import step, pipe_output, value, source
-
-
-        def _add_one(x: int) -> int:
-            return x + 1
-
-
-        def _sum(x: int, y: int) -> int:
-            return x + y
-
-
-        def _multiply(x: int, y: int, z: int = 10) -> int:
-            return x * y * z
-
-
-        @pipe_output(
-            step(_add_one),
-            step(_multiply, y=2),
-            step(_sum, y=value(3)),
-            step(_multiply, y=source("upstream_node_to_multiply")),
-        )
-        def run_function(upstream_int: int) -> int:
-            return upstream_int
-
-
-    .. code-block:: python
-        :name: Example with no @pipe_output, procedural
-
-        upstream_int = ...  # result from upstream
-        upstream_node_to_multiply = ...  # result from upstream
-
-        starting_result = run_function(upstream_int)
-        one_added = _add_one(starting_result)
-        multiplied = _multiply(one_added, y=2)
-        summed = _sum(multiplied, y=3)
-        multiplied_again = _multiply(summed, y=upstream_node_to_multiply)
-        output = multiplied_again)
-
-
-    Note that functions must have no position-only arguments (this is rare in python, but hamilton does not handle these).
-    This basically means that the functions must be defined similarly to `def fn(x, y, z=10)` and not `def fn(x, y, /, z=10)`.
-    In fact, all arguments must be named and "kwarg-friendly", meaning that the function can happily be called with `**kwargs`,
-    where kwargs are some set of resolved upstream values. So, no `*args` are allowed, and `**kwargs` (variable keyword-only) are not
-    permitted. Note that this is not a design limitation, rather an implementation detail -- if you feel like you need this, please
-    reach out.
-
-    Furthermore, the function should be typed, as a Hamilton function would be.
-
-    One has two ways to tune the shape/implementation of the subsequent nodes:
-
-    1. `when`/`when_not`/`when_in`/`when_not_in` -- these are used to filter the application of the function. This is valuable to reflect
-        if/else conditions in the structure of the DAG, pulling it out of functions, rather than buried within the logic itself. It is functionally
-        equivalent to `@config.when`.
-
-        For instance, if you want to include a function in the chain only when a config parameter is set to a certain value, you can do:
-
-        .. code-block:: python
-
-            @pipe_output(
-                step(_add_one).when(foo="bar"),
-                step(_add_two, y=source("other_node_to_add").when(foo="baz"),
-            )
-            def final_result(upstream_int: int) -> int:
-                return upstream_int
-
-        This will only apply the first function when the config parameter `foo` is set to `bar`, and the second when it is set to `baz`.
-
-    2. `named` -- this is used to name the node. This is useful if you want to refer to intermediate results. If this is left out,
-        hamilton will automatically name the functions in a globally unique manner. The names of
-        these functions will not necessarily be stable/guaranteed by the API, so if you want to refer to them, you should use `named`.
-        The default namespace will always be the name of the decorated function (which will be the last node in the chain).
-
-        `named` takes in two parameters -- required is the `name` -- this will assign the nodes with a single name and *no* global namespace.
-        For instance:
-
-        .. code-block:: python
-
-            @pipe_output(
-                step(_add_one).named("a"),
-                step(_add_two, y=source("upstream_node")).named("b"),
-            )
-            def final_result(upstream_int: int) -> int:
-                return upstream_int
-
-        The above will create two nodes, `a` and `b`. `a` will be the result of `_add_one`, and `b` will be the result of `_add_two`.
-        `final_result` gets renamed into `final_result_raw` and is fed as the first argument into `a`. Note that, if these are part of a namespaced operation (a subdag, in particular),
-        they *will* get the same namespace as the subdag.
-
-        The second parameter is `namespace`. This is used to specify a namespace for the node. This is useful if you want
-        to either (a) ensure that the nodes are namespaced but share a common one to avoid name clashes (usual case), or (b)
-        if you want a custom namespace (unusual case). To indicate a custom namespace, one need simply pass in a string.
-
-        To indicate that a node should share a namespace with the rest of the step(...) operations in a pipe, one can pass in `...` (the ellipsis).
-
-        .. code-block:: python
-          :name: Namespaced step
-
-
-            @pipe_output(
-                step(_add_one).named("a", namespace="foo"),  # foo.a
-                step(_add_two, y=source("upstream_node")).named("b", namespace=...),  # final_result.b
-            )
-            def final_result(upstream_int: int) -> int:
-                return upstream_int
-
-        Note that if you pass a namespace argument to the `pipe_output` function, it will set the namespace on each step operation.
-        This is useful if you want to ensure that all the nodes in a pipe_output have a common namespace, but you want to rename them.
-
-        .. code-block:: python
-            :name: pipe_output with globally applied namespace
-
-            @pipe_output(
-                step(_add_one).named("a"), # a
-                step(_add_two, y=source("upstream_node")).named("b"), # foo.b
-                namespace=..., # default -- final_result.a and final_result.b, OR
-                namespace=None, # no namespace -- a and b are exposed as that, OR
-                namespace="foo", # foo.a and foo.b
-            )
-            def final_result(upstream_int: int) -> int:
-                return upstream_int
-
-        In all likelihood, you should not be using this, and this is only here in case you want to expose a node for
-        consumption/output later. Setting the namespace in individual nodes as well as in `pipe_output` is not yet supported.
+    The rules for chaining nodes as the same as for pipe.
     """
 
     def __init__(
