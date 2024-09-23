@@ -49,7 +49,6 @@ class AdapterFactory:
 
         :raises InvalidDecoratorException: If the arguments are invalid.
         """
-        # get_required_arguments won't catch dataclasses.field(default_factory=...)
         required_args = self.adapter_cls.get_required_arguments()
         optional_args = self.adapter_cls.get_optional_arguments()
         missing_params = set(required_args.keys()) - set(self.kwargs.keys())
