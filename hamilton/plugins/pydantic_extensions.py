@@ -1,13 +1,28 @@
 from typing import Any, Type
 
-from pydantic import BaseModel, TypeAdapter, ValidationError
-
-from hamilton.data_quality import base
+from hamilton.data_quality import base, default_validators
 from hamilton.htypes import custom_subclass_check
+
+try:
+    import pydantic  # noqa: F401
+except ModuleNotFoundError as e:
+    raise NotImplementedError(
+        "Cannot import `pydantic` from `pydantic_validators`. Run pip install 'sf-hamilton[pydantic]' if needed."
+    ) from e
+
+try:
+    from pydantic import BaseModel, TypeAdapter, ValidationError
+except ImportError as e:
+    raise NotImplementedError(
+        "`pydantic>=2.0` required to use `pydantic_validators`. Run pip install 'sf-hamilton[pydantic]' if needed."
+    ) from e
+
+
+COLUMN_FRIENDLY_DF_TYPE = False
 
 
 class PydanticModelValidator(base.BaseDefaultValidator):
-    """Pydantic model compatibility validator
+    """Pydantic model compatibility validator (requires ``pydantic>=2.0``)
 
     Note that this validator uses pydantic's strict mode, which does not allow for
     coercion of data. This means that if an object does not exactly match the reference
@@ -57,4 +72,10 @@ class PydanticModelValidator(base.BaseDefaultValidator):
         return "pydantic_validator"
 
 
-PYDANTIC_VALIDATORS = [PydanticModelValidator]
+def register_validators():
+    """Utility method to append pydantic validators as needed"""
+    validators = [PydanticModelValidator]
+    default_validators.AVAILABLE_DEFAULT_VALIDATORS.extend(validators)
+
+
+register_validators()
