@@ -53,7 +53,7 @@ qux(baz(foo(bar)))
 ```
 
 This can be particularly useful when:
-1. Ensuring consi
+1. Ensuring consistency between transforms/data processing steps across different nodes.
 2. Re-using the same function on multiple nodes. For example, needing to do different pre-processing, but than passing data to the same `model`, aka feature engineering hyper-tuning.
 3. We can also use `step(...).when(...)` and can choose at execution time which transformation will be applied to the output of a particular node. For example, each `step` represents a different `model` and we switch between them with a config dictionary in the Hamilton driver.
 
@@ -70,7 +70,7 @@ so that it does not run when imported into other scripts.
 This script can be run as is for comparison. Actually the external functions `construct_grids()` and `create_species_bunch()` we will directly import and use as external functions to showcase how you can use our `pipe` and `pipe_output` functionality to "Hamiltonise" external modules.
 
 ## hamilton_notebook.ipynb
-Is a nodebook that contains all the modules and has the execution cells to run the complete code. It also gives you the ability to visualize the DAG.
+Is a notebook that contains all the modules and has the execution cells to run the complete code. It also gives you the ability to visualize the DAG.
 
 ## run.py
 If you prefer to run code through a shell the same code is also available as a python script.
