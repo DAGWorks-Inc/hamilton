@@ -3,10 +3,10 @@ from typing import Any, Dict, List
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from hamilton.data_quality.pydantic_validators import PydanticModelValidator
 from hamilton.function_modifiers import check_output
 from hamilton.node import Node
 from hamilton.plugins import h_pydantic
+from hamilton.plugins.pydantic_extensions import PydanticModelValidator
 
 
 def test_basic_pydantic_validator_passes():
