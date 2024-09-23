@@ -32,6 +32,7 @@ ExtensionName = Literal[
     "kedro",
     "huggingface",
     "mlflow",
+    "pydantic",
 ]
 HAMILTON_EXTENSIONS: Tuple[ExtensionName, ...] = get_args(ExtensionName)
 HAMILTON_AUTOLOAD_ENV = "HAMILTON_AUTOLOAD_EXTENSIONS"
