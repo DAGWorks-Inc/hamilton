@@ -905,7 +905,7 @@ class pipe_output(base.SingleNodeNodeTransformer):
     B1, takes the output of B1 applies to it B2 and then gets renamed to B to re-connect to the rest of the DAG.
 
     While it is generally reasonable to contain these constructs within a node's function,
-    you should consider `pipe_output` for similar reasons as `pipe`, namely, for any of the following reasons:
+    you should consider `pipe_output` for similar reasons as `pipe_input`, namely, for any of the following reasons:
 
     1.  You want the transformations to display as nodes in the DAG, with the possibility of storing or visualizing
     the result
