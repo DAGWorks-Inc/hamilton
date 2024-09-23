@@ -17,9 +17,9 @@ class check_output(BaseDataValidationDecorator):
         importance: str = dq_base.DataValidationLevel.WARN.value,
         target: fm_base.TargetType = None,
     ):
-        """Specific output-checker for pydantic models. This decorator utilizes the output type of
-        the function, which can be any subclass of pydantic.BaseModel. The function output must
-        be declared with a type hint.
+        """Specific output-checker for pydantic models (requires ``pydantic>=2.0``).
+        This decorator utilizes the output type of the function, which can be any subclass of pydantic.BaseModel.
+        The function output must be declared with a type hint.
 
         :param model: The pydantic model to use for validation. If this is not provided, then the output type of the function is used.
         :param importance: Importance level (either "warn" or "fail") -- see documentation for check_output for more details.

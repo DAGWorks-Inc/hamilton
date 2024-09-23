@@ -22,7 +22,7 @@ COLUMN_FRIENDLY_DF_TYPE = False
 
 
 class PydanticModelValidator(base.BaseDefaultValidator):
-    """Pydantic model compatibility validator
+    """Pydantic model compatibility validator (requires ``pydantic>=2.0``)
 
     Note that this validator uses pydantic's strict mode, which does not allow for
     coercion of data. This means that if an object does not exactly match the reference
