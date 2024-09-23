@@ -546,6 +546,70 @@ def test_save_to_decorator_with_target():
 
 
 @dataclasses.dataclass
+class DefaultFactoryLoader(DataLoader):
+    field_with_factory: int = dataclasses.field(default_factory=int)
+
+    def __post_init__(self):
+        self.param2 = self.field_with_factory + 1
+
+    def load_data(self, type_: Type[int]) -> Tuple[int, Dict[str, Any]]:
+        return self.param2, {}
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [int]
+
+    @classmethod
+    def name(cls) -> str:
+        return "factory"
+
+
+def test_loader_default_factory_field():
+    @LoadFromDecorator([DefaultFactoryLoader])
+    def foo(param: int) -> int:
+        return param
+
+    fg = graph.create_function_graph(
+        ad_hoc_utils.create_temporary_module(foo),
+        config={},
+    )
+    assert len(fg) == 3
+    assert "foo" in fg
+
+
+@dataclasses.dataclass
+class DefaultFactorySaver(DataSaver):
+    field_with_factory: int = dataclasses.field(default_factory=int)
+
+    def __post_init__(self):
+        self.param2 = self.field_with_factory + 1
+
+    def save_data(self, data: int) -> Dict[str, Any]:
+        return {}
+
+    @classmethod
+    def applicable_types(cls) -> Collection[Type]:
+        return [int]
+
+    @classmethod
+    def name(cls) -> str:
+        return "factory"
+
+
+def test_saver_default_factory_field():
+    @SaveToDecorator([DefaultFactorySaver])
+    def foo(param: int) -> int:
+        return param
+
+    fg = graph.create_function_graph(
+        ad_hoc_utils.create_temporary_module(foo),
+        config={},
+    )
+    assert len(fg) == 3
+    assert "foo" in fg
+
+
+@dataclasses.dataclass
 class OptionalParamDataLoader(DataLoader):
     param: int = 1
 
