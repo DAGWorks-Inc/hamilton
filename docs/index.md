@@ -34,7 +34,6 @@ reference/graph-adapters/index
 reference/lifecycle-hooks/index
 reference/result-builders/index
 reference/io/index
-reference/stores/index
 reference/dataflows/index
 reference/disabling-telemetry.md
 ```

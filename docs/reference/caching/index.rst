@@ -10,3 +10,4 @@ Reference
 
     caching-logic
     data-versioning
+    stores

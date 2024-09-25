@@ -2,18 +2,9 @@
 Caching
 ========
 
-In Hamilton, the term *caching* broadly refers to "reusing results from previous executions to skip redundant computation". When caching is enabled, node results are stored in a **result store** and where they can be retrieved by subsequent runs.
+Caching enables storing execution results to be reused in later executions, effectively skipping redundant computations. This speeds up execution and saves resources (computation, API credits, GPU time, etc.), and has applications both for development and production.
 
-By default, results are stored based on the **code** that defines the node and its input **data** by default. Consequently, running a node with the "same code + same input data" multiple times should lead to a single execution.
-
-.. important::
-
-    Caching being a new core feature, please reach out via GitHub or Slack for requests or issues.
-
-Basics
--------
-
-To get started, add ``.with_cache()`` to the ``Builder()``. This will create the subdirectory ``hamilton_cache/`` in the current directory. Calling ``Driver.execute()`` will execute the dataflow as usual, but it will also store **metadata** and **results** under ``hamilton_cache/``. When calling ``.execute()`` a second time, the ``Driver`` will use the **metadata** to determine if **results** can be loaded, effectively skipping execution!
+To get started, simply add ``.with_cache()`` to your ``Builder()`` to enable caching.
 
 .. code-block:: python
 
@@ -28,6 +19,54 @@ To get started, add ``.with_cache()`` to the ``Builder()``. This will create the
     )
 
     dr.execute([...])
+    dr.execute([...])
+
+
+The first execution will store **metadata** and **results** under the subdirectory ``hamilton_cache/``, next to the current directory. The next execution will skip computation by leveraging the cache!
+
+
+.. important::
+
+    Caching being a new core feature, please reach out via GitHub or Slack for requests or issues.
+
+
+Setting the cache path
+------------------------
+
+By default, the **metadata** and **results** are stored under a new subdirectory ``hamilton_cache/``. The location can be set via ``.with_cache(path=...)``.
+
+
+By project
+~~~~~~~~~~~~~~
+Centralizing your cache by project is useful when you have nodes that are reused across multiple dataflows (e.g., training and inference ML pipelines, feature engineering).
+
+
+.. code-block:: python
+
+    from hamilton import driver
+    import training
+    import inference
+
+    cache_path = "/path/to/project/hamilton_cache"
+
+    train_dr = driver.Builder().with_modules(training).with_cache(path=cache_path).build()
+    # ...
+    predict_dr = driver.Builder().with_modules(inference).with_cache(path=cache_path).build()
+
+
+Globally
+~~~~~~~~~~
+
+The primary benefit of using a global cache is easier storage management. Since the metadata and the results for *all* your Hamilton dataflows are in one place, it can be easier to cleanup disk space.
+
+.. code-block:: python
+
+    from hamilton import driver
+    import my_dataflow
+
+    # set the cache under the user's global directory
+    cache_path = "~/.hamilton_cache"
+    dr = driver.Builder().with_module(my_dataflow).with_cache(path=cache_path).build()
 
 
 .. _cache-result-format:
@@ -388,14 +427,6 @@ A useful pattern is using the ``Driver.cache`` state or `structured logs <cachin
     stored_result = dr.cache.result_store(data_version)
 
 
-Additional ``result_store`` and ``metadata_store`` backends
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The initial release of the caching feature included an ``sqlite``-backed metadata store and a ``shelve``-backed result store because both only depend on the standard library and work great for a single machine.
-
-Support for ``AWS S3`` as a **result store** in on the roadmap. If you're interested in implementing a specific backend, please reach out via `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>`_ since these API are currently unstable.
-
-
 Code version
 --------------
 
@@ -473,13 +504,9 @@ Additional types can be supported by registering a hashing function via the modu
 Roadmap
 -----------
 
-Caching is a significant Hamilton feature and there are plans to expand it. Here are some ideas and areas for development. Feel free comment on them or make other suggestions via Slack or GitHub!
+Caching is a significant Hamilton feature and there are plans to expand it. Here are some ideas and areas for development. Feel free comment on them or make other suggestions via `Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>`_ or GitHub!
 
 - **async support**: Support caching with ``AsyncDriver``. This requires a significant amount of code, but the core logic shouldn't change much.
-
 - **cache eviction**: Allow to set up a max storage (in size or number of items) or time-based policy to delete data from the metadata and result stores. This would help with managing the cache size.
-
-- **more store backends**: The initial release includes backend supported by the Python standard library (SQLite metadata and file-based results). Could support more backends via `fsspec
-<https://filesystem-spec.readthedocs.io/en/latest/?badge=latest>`_ (AWS, Azure, GCP, Databricks, etc.)
-
+- **more store backends**: The initial release includes backend supported by the Python standard library (SQLite metadata and file-based results). Could support more backends via `fsspec <https://filesystem-spec.readthedocs.io/en/latest/?badge=latest>`_ (AWS, Azure, GCP, Databricks, etc.)
 - **support more types**: Include specialized hashing functions for complex objects from popular libraries. This can be done through Hamilton extensions.

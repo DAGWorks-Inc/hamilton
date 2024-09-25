@@ -3,6 +3,7 @@ import functools
 import hashlib
 import logging
 from collections.abc import Mapping, Sequence, Set
+from types import NoneType
 from typing import Dict
 
 from hamilton.experimental import h_databackends
@@ -10,7 +11,9 @@ from hamilton.experimental import h_databackends
 logger = logging.getLogger(__name__)
 
 
-MAX_DEPTH = 2
+MAX_DEPTH = 4
+UNHASHABLE = "<unhashable>"
+NONE_HASH = "<none>"
 
 
 def set_max_depth(depth: int) -> None:
@@ -43,14 +46,21 @@ def hash_value(obj, *args, depth=0, **kwargs) -> str:
         depth += 1
         return hash_value(obj.__dict__, depth=depth)
 
-    logger.warning(
-        f"Currently versioning object of type `{type(obj)}` and hiting recursion depth {depth}. "
-        f"To avoid data version collisions, register a data versioning function for type `{type(obj)}` "
-        "or increase the module constant `hamilton.io.fingeprinting.MAX_DEPTH`. "
-        "See the Hamilton documentation Concepts page about caching for details."
-    )
-    hash_object = hashlib.md5("<unhashable>".encode())
-    return _compact_hash(hash_object.digest())
+    if depth >= MAX_DEPTH:
+        logger.warning(
+            f"Currently versioning object of type `{type(obj)}` and hiting recursion depth {depth}. "
+            f"To avoid data version collisions, register a data versioning function for type `{type(obj)}` "
+            "or increase the module constant `hamilton.io.fingeprinting.MAX_DEPTH`. "
+            "See the Hamilton documentation Concepts page about caching for details."
+        )
+
+    return UNHASHABLE
+
+
+@hash_value.register(NoneType)
+def hash_none(obj, *args, **kwargs) -> str:
+    """Hash for None is <none>"""
+    return NONE_HASH
 
 
 @hash_value.register(str)

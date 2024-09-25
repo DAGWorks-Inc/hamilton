@@ -35,6 +35,11 @@ def test_hash_sequence(obj, expected_hash):
     assert fingerprint == expected_hash
 
 
+def test_hash_none():
+    fingerprint = fingerprinting.hash_value(None)
+    assert fingerprint == "<none>"
+
+
 def test_hash_equals_for_different_sequence_types():
     list_obj = [0, True, "hello-world"]
     tuple_obj = (0, True, "hello-world")
@@ -47,7 +52,7 @@ def test_hash_equals_for_different_sequence_types():
 
 def test_hash_ordered_mapping():
     obj = {0: True, "key": "value", 17.0: None}
-    expected_hash = "a6kiZ3pD0g9vOp1XD_CViVJ9fHYM3ct_oItyJQ=="
+    expected_hash = "1zH9TfTu0-nlWXXXYo0vigFFSQajWXov2w4AZQ=="
     fingerprint = fingerprinting.hash_mapping(obj, ignore_order=False)
     assert fingerprint == expected_hash
 
@@ -62,7 +67,7 @@ def test_hash_mapping_where_order_matters():
 
 def test_hash_unordered_mapping():
     obj = {0: True, "key": "value", 17.0: None}
-    expected_hash = "4BCjST4ftDLuBsuNTMgIOOkCy5pV79fCERP9hw=="
+    expected_hash = "uw0dfSAEgE9nOK3bHgmJ4TR3-VFRqOAoogdRmw=="
     fingerprint = fingerprinting.hash_mapping(obj, ignore_order=True)
     assert fingerprint == expected_hash
 
@@ -77,6 +82,6 @@ def test_hash_mapping_where_order_doesnt_matter():
 
 def test_hash_set():
     obj = {0, True, "key", "value", 17.0, None}
-    expected_hash = "4sA1r4wny7AvoG1wzEN6nHdQjpE2V-AodJ9dEQ=="
+    expected_hash = "dKyAE-ob4_GD-Mb5Lu2R-VJAxGctY4L8JDwc2g=="
     fingerprint = fingerprinting.hash_set(obj)
     assert fingerprint == expected_hash

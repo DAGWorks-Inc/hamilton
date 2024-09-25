@@ -2,5 +2,5 @@
 Data versioning
 =================
 
-.. automodule:: hamilton.io.fingerprinting
+.. automodule:: hamilton.caching.fingerprinting
     :members:

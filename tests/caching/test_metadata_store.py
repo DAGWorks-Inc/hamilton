@@ -28,10 +28,10 @@ def test_initialize_empty(metadata_store):
 def test_not_empty_after_set(metadata_store):
     code_version = "FOO-1"
     data_version = "foo-a"
-    context_key = create_cache_key(code_version=code_version, dep_data_versions={})
+    cache_key = create_cache_key(code_version=code_version, dep_data_versions={})
 
     metadata_store.set(
-        context_key=context_key,
+        cache_key=cache_key,
         node_name="foo",
         code_version=code_version,
         data_version=data_version,
@@ -45,9 +45,9 @@ def test_not_empty_after_set(metadata_store):
 def test_set_doesnt_produce_duplicates(metadata_store):
     code_version = "FOO-1"
     data_version = "foo-a"
-    context_key = create_cache_key(code_version=code_version, dep_data_versions={})
+    cache_key = create_cache_key(code_version=code_version, dep_data_versions={})
     metadata_store.set(
-        context_key=context_key,
+        cache_key=cache_key,
         node_name="foo",
         code_version=code_version,
         data_version=data_version,
@@ -56,7 +56,7 @@ def test_set_doesnt_produce_duplicates(metadata_store):
     assert metadata_store.size == 1
 
     metadata_store.set(
-        context_key=context_key,
+        cache_key=cache_key,
         node_name="foo",
         code_version=code_version,
         data_version=data_version,
@@ -67,8 +67,8 @@ def test_set_doesnt_produce_duplicates(metadata_store):
 
 @pytest.mark.parametrize("metadata_store", [SQLiteMetadataStore], indirect=True)
 def test_get_miss_returns_none(metadata_store):
-    context_key = create_cache_key(code_version="FOO-1", dep_data_versions={"bar": "bar-a"})
-    data_version = metadata_store.get(context_key=context_key)
+    cache_key = create_cache_key(code_version="FOO-1", dep_data_versions={"bar": "bar-a"})
+    data_version = metadata_store.get(cache_key=cache_key)
     assert data_version is None
 
 
@@ -76,14 +76,14 @@ def test_get_miss_returns_none(metadata_store):
 def test_set_get_without_dependencies(metadata_store):
     code_version = "FOO-1"
     data_version = "foo-a"
-    context_key = create_cache_key(code_version=code_version, dep_data_versions={})
+    cache_key = create_cache_key(code_version=code_version, dep_data_versions={})
     metadata_store.set(
-        context_key=context_key,
+        cache_key=cache_key,
         node_name="foo",
         code_version=code_version,
         data_version=data_version,
         run_id="...",
     )
-    retrieved_data_version = metadata_store.get(context_key=context_key)
+    retrieved_data_version = metadata_store.get(cache_key=cache_key)
 
     assert retrieved_data_version == data_version

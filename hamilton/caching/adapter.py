@@ -905,7 +905,7 @@ class SmartCacheAdapter(
         To enable caching, input values must be versioned. Since inputs have no associated code,
         set a constant "code version" ``f"{node_name}__input"`` that uniquely identifies this input.
         """
-        data_version = fingerprinting.hash_value(value)
+        data_version = self.version_data(value)
         self.code_versions[run_id][node_name] = f"{node_name}__input"
         self.data_versions[run_id][node_name] = data_version
         self._log_event(
@@ -924,7 +924,7 @@ class SmartCacheAdapter(
         code and data versions for overrides are not stored because their value is user provided
         and isn't necessarily tied to the code.
         """
-        data_version = fingerprinting.hash_value(value)
+        data_version = self.version_data(value)
         self.data_versions[run_id][node_name] = data_version
         self._log_event(
             run_id=run_id,
@@ -993,13 +993,13 @@ class SmartCacheAdapter(
 
         Collecting ``data_version`` for upstream dependencies requires handling special cases when
         task-based execution is used:
-            - If the current node is ``COLLECT`` , the dependency annotated with ``Collect[]`` needs to
-            be versioned item by item instead of versioning the full container. This is because the
-            collect order is inconsistent.
-            - If the current node is ``INSIDE`` and the dependency is ``EXPAND``, this means the
-            ``kwargs`` dictionary contains a single item. We need to version this individual item because
-            it will not be available from "inside" the branch for some executors (multiprocessing, multithreading)
-            because they lose access to the data_versions of ``OUTSIDE`` nodes stored in ``self.data_versions``.
+        - If the current node is ``COLLECT`` , the dependency annotated with ``Collect[]`` needs to
+        be versioned item by item instead of versioning the full container. This is because the
+        collect order is inconsistent.
+        - If the current node is ``INSIDE`` and the dependency is ``EXPAND``, this means the
+        ``kwargs`` dictionary contains a single item. We need to version this individual item because
+        it will not be available from "inside" the branch for some executors (multiprocessing, multithreading)
+        because they lose access to the data_versions of ``OUTSIDE`` nodes stored in ``self.data_versions``.
 
         """
         node_name = node_.name
@@ -1036,20 +1036,20 @@ class SmartCacheAdapter(
 
             if dep_name == collected_name:
                 # the collected value should be hashed based on the items, not the container
-                items_data_versions = [fingerprinting.hash_value(item) for item in dep_value]
+                items_data_versions = [self.version_data(item) for item in dep_value]
                 dep_data_version = fingerprinting.hash_sequence(sorted(items_data_versions))
 
             elif dep_role == NodeRoleInTaskExecution.EXPAND:
                 # if the dependency is `EXPAND`, the kwarg received is a single item yielded by the iterator
                 # rather than the full iterable. We must version it directly, similar to a top-level input
-                dep_data_version = fingerprinting.hash_value(dep_value)
+                dep_data_version = self.version_data(dep_value)
 
             else:
                 tasks_data_versions = self._get_memory_data_version(
                     run_id=run_id, node_name=dep_name, task_id=None
                 )
                 if tasks_data_versions is SENTINEL:
-                    tasks_data_versions = fingerprinting.hash_value(dep_value)
+                    dep_data_version = self.version_data(dep_value)
                 elif isinstance(tasks_data_versions, dict):
                     dep_data_version = tasks_data_versions.get(task_id)
                 else:
@@ -1102,7 +1102,7 @@ class SmartCacheAdapter(
                 CachingBehavior.IGNORE,
             ):
                 cache_key = self.get_cache_key(run_id=run_id, node_name=node_name, task_id=task_id)
-                data_version = fingerprinting.hash_value(result)
+                data_version = self.version_data(result)
                 self._set_memory_metadata(
                     run_id=run_id, node_name=node_name, task_id=task_id, data_version=data_version
                 )
@@ -1170,7 +1170,7 @@ class SmartCacheAdapter(
                 node_kwargs=node_kwargs,
                 task_id=task_id,
             )
-            data_version = fingerprinting.hash_value(result)
+            data_version = self.version_data(result)
             self._set_memory_metadata(
                 run_id=run_id, node_name=node_name, task_id=task_id, data_version=data_version
             )

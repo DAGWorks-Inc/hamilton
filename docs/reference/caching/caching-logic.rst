@@ -5,7 +5,7 @@ Caching logic
 Caching Behavior
 ----------------
 
-.. autoclass:: hamilton.lifecycle.caching.CachingBehavior
+.. autoclass:: hamilton.caching.adapter.CachingBehavior
    :exclude-members: __init__, from_string
    :members:
 
@@ -15,9 +15,7 @@ Caching Behavior
 ``@cache`` decorator
 ----------------------
 
-.. autofunction:: hamilton.function_modifiers.metadata.cache
-
-.. autoclass:: hamilton.function_modifiers.metadata.Cache
+.. autoclass:: hamilton.function_modifiers.metadata.cache
    :special-members: __init__
    :private-members:
    :members:
@@ -31,13 +29,13 @@ Caching Behavior
 Logging
 -----------
 
-.. autoclass:: hamilton.lifecycle.caching.CachingEvent
+.. autoclass:: hamilton.caching.adapter.CachingEvent
    :special-members: __init__
    :members:
    :inherited-members:
 
 
-.. autoclass:: hamilton.lifecycle.caching.CachingEventType
+.. autoclass:: hamilton.caching.adapter.CachingEventType
    :special-members: __init__
    :members:
    :inherited-members:
@@ -46,7 +44,7 @@ Logging
 Adapter
 --------
 
-.. autoclass:: hamilton.lifecycle.caching.SmartCacheAdapter
+.. autoclass:: hamilton.caching.adapter.SmartCacheAdapter
    :special-members: __init__
    :members:
    :inherited-members:
