@@ -31,9 +31,9 @@ from typing import (
 import pandas as pd
 
 from hamilton import common, graph_types, htypes
-from hamilton.dev_utils import deprecation
 from hamilton.caching.adapter import SmartCacheAdapter
 from hamilton.caching.stores.base import MetadataStore, ResultStore
+from hamilton.dev_utils import deprecation
 from hamilton.execution import executors, graph_functions, grouping, state
 from hamilton.graph_types import HamiltonNode
 from hamilton.io import materialization
