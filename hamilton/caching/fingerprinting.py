@@ -3,10 +3,16 @@ import functools
 import hashlib
 import logging
 from collections.abc import Mapping, Sequence, Set
-from types import NoneType
 from typing import Dict
 
 from hamilton.experimental import h_databackends
+
+# NoneType is introduced in Python 3.10
+try:
+    from types import NoneType
+except ImportError:
+    NoneType = type(None)
+
 
 logger = logging.getLogger(__name__)
 
