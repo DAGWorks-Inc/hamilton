@@ -120,6 +120,13 @@ def node_B_raises():
     return B
 
 
+def node_C_depends_on_B():
+    def C(B: int) -> int:
+        return B + 1
+
+    return C
+
+
 def test_code_change_same_result_do_recompute(tmp_path):
     cache = SmartCacheAdapter(path=tmp_path)
     module_1 = ad_hoc_utils.create_temporary_module(node_A())
@@ -393,35 +400,38 @@ def test_recompute_behavior(tmp_path):
 
 def test_disable_behavior(tmp_path):
     cache = SmartCacheAdapter(path=tmp_path)
-    module = ad_hoc_utils.create_temporary_module(node_A(), node_B_depends_on_A())
-    final_vars = ["B"]
+    module = ad_hoc_utils.create_temporary_module(
+        node_A(), node_B_depends_on_A(), node_C_depends_on_B()
+    )
+    final_vars = ["C"]
 
     # execution 1: populate cache
     results_1 = execute_dataflow(module=module, cache=cache, final_vars=final_vars)
-    check_execution(cache=cache, did=["A", "B"])
-    check_metadata_store_size(cache=cache, size=2)
-    check_results_exist_in_store(cache, ["A", "B"])
+    check_execution(cache=cache, did=["A", "B", "C"])
+    check_metadata_store_size(cache=cache, size=3)
+    check_results_exist_in_store(cache, ["A", "B", "C"])
 
     # execution 2: retrieve under the same condition
     results_2 = execute_dataflow(module=module, cache=cache, final_vars=final_vars)
-    check_execution(cache=cache, did_not=["A", "B"])
-    check_metadata_store_size(cache=cache, size=2)
-    check_results_exist_in_store(cache, ["A", "B"])
+    check_execution(cache=cache, did_not=["A", "B", "C"])
+    check_metadata_store_size(cache=cache, size=3)
+    check_results_exist_in_store(cache, ["A", "B", "C"])
     assert results_2 == results_1
 
     cache._disable = ["A"]
     # execution 3: disable A means it forces reexecution of dependent nodes
     # A doesn't produce any metadata or result
+    # metadata size grows for each rexecution of B
     execute_dataflow(module=module, cache=cache, final_vars=final_vars)
-    check_execution(cache=cache, did=["A", "B"])
-    check_metadata_store_size(cache=cache, size=3)
-    check_results_exist_in_store(cache, ["A", "B"])
+    check_execution(cache=cache, did=["A", "B"], did_not=["C"])
+    check_metadata_store_size(cache=cache, size=4)
+    check_results_exist_in_store(cache, ["A", "B", "C"])
 
     # execution 4: keeps forcing re-execution of A and B as long as A is DISABLE
     execute_dataflow(module=module, cache=cache, final_vars=final_vars)
-    check_execution(cache=cache, did=["A"], did_not=["B"])
-    check_metadata_store_size(cache=cache, size=3)
-    check_results_exist_in_store(cache, ["A", "B"])
+    check_execution(cache=cache, did=["A", "B"], did_not=["C"])
+    check_metadata_store_size(cache=cache, size=5)
+    check_results_exist_in_store(cache, ["A", "B", "C"])
 
 
 def test_ignore_behavior(tmp_path):

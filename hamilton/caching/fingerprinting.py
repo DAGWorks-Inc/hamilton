@@ -14,7 +14,7 @@ except ImportError:
     NoneType = type(None)
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("hamilton.caching")
 
 
 MAX_DEPTH = 4
@@ -56,7 +56,7 @@ def hash_value(obj, *args, depth=0, **kwargs) -> str:
         logger.warning(
             f"Currently versioning object of type `{type(obj)}` and hiting recursion depth {depth}. "
             f"To avoid data version collisions, register a data versioning function for type `{type(obj)}` "
-            "or increase the module constant `hamilton.io.fingeprinting.MAX_DEPTH`. "
+            "or increase the module constant `hamilton.caching.fingerprinting.set_max_depth()`. "
             "See the Hamilton documentation Concepts page about caching for details."
         )
 

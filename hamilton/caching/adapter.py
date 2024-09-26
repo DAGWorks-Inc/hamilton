@@ -5,6 +5,7 @@ import functools
 import json
 import logging
 import pathlib
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Callable, Collection, Dict, List, Literal, Optional, TypeVar, Union
 
@@ -24,7 +25,7 @@ from hamilton.lifecycle.base import (
     BasePreNodeExecute,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("hamilton.caching")
 
 SENTINEL = object()
 S = TypeVar("S", object, object)
@@ -115,6 +116,7 @@ class CachingEventType(enum.Enum):
     EXECUTE_NODE = "execute_node"
     FAILED_EXECUTION = "failed_execution"
     RESOLVE_BEHAVIOR = "resolve_behavior"
+    UNHASHABLE_DATA_VERSION = "unhashable_data_version"
     IS_OVERRIDE = "is_override"
     IS_INPUT = "is_input"
     IS_FINAL_VAR = "is_final_var"
@@ -514,7 +516,7 @@ class SmartCacheAdapter(
             is a unique identifier.
         :return: The cache key if it exists, otherwise return a sentinel value.
 
-        ..code-block:: python
+        .. code-block:: python
 
             from hamilton import driver
             import my_dataflow
@@ -741,9 +743,29 @@ class SmartCacheAdapter(
             value=data_version,
         )
 
-    def version_data(self, result: Any) -> str:
+    def _version_data(
+        self, node_name: str, run_id: str, result: Any, task_id: Optional[str] = None
+    ) -> str:
         """Create a unique data version for the result"""
-        return fingerprinting.hash_value(result)
+        data_version = fingerprinting.hash_value(result)
+        if data_version == fingerprinting.UNHASHABLE:
+            self._log_event(
+                run_id=run_id,
+                node_name=node_name,
+                task_id=task_id,
+                actor="adapter",
+                event_type=CachingEventType.UNHASHABLE_DATA_VERSION,
+                value=data_version,
+            )
+        return data_version
+
+    def version_data(self, result: Any) -> str:
+        """Create a unique data version for the result
+
+        This is a user-facing method.
+        """
+        # stuff the internal function call to not log event
+        return self._version_data(result=result, run_id=None, node_name=None)
 
     def version_code(self, node_name: str, run_id: Optional[str] = None) -> str:
         """Create a unique code version for the source code defining the node"""
@@ -905,7 +927,7 @@ class SmartCacheAdapter(
         To enable caching, input values must be versioned. Since inputs have no associated code,
         set a constant "code version" ``f"{node_name}__input"`` that uniquely identifies this input.
         """
-        data_version = self.version_data(value)
+        data_version = self._version_data(node_name=node_name, run_id=run_id, result=value)
         self.code_versions[run_id][node_name] = f"{node_name}__input"
         self.data_versions[run_id][node_name] = data_version
         self._log_event(
@@ -924,7 +946,7 @@ class SmartCacheAdapter(
         code and data versions for overrides are not stored because their value is user provided
         and isn't necessarily tied to the code.
         """
-        data_version = self.version_data(value)
+        data_version = self._version_data(node_name=node_name, run_id=run_id, result=value)
         self.data_versions[run_id][node_name] = data_version
         self._log_event(
             run_id=run_id,
@@ -1019,13 +1041,19 @@ class SmartCacheAdapter(
 
         dependencies_data_versions = {}
         for dep_name, dep_value in node_kwargs.items():
-            if self.behaviors[run_id][dep_name] in (
-                CachingBehavior.IGNORE,
-                CachingBehavior.DISABLE,
-            ):
-                # an ignored node won't be part of the cache_key
+            # resolve caching behaviors
+            if self.behaviors[run_id][dep_name] == CachingBehavior.IGNORE:
+                # setting the data_version to "<ignore>" in the cache_key means that
+                # the value of the dependency appears constant to this node
+                dependencies_data_versions[dep_name] = "<ignore>"
+                continue
+            elif self.behaviors[run_id][dep_name] == CachingBehavior.DISABLE:
+                # setting the data_version to "<disable>" with a random suffix in the
+                # cache_key means the current node will be a cache miss and forced to recompute
+                dependencies_data_versions[dep_name] = "<disable>" + f"_{uuid.uuid4()}"
                 continue
 
+            # resolve NodeRoleInTaskExecution
             if task_id is None:
                 dep_role = NodeRoleInTaskExecution.STANDARD
             else:
@@ -1054,6 +1082,11 @@ class SmartCacheAdapter(
                     dep_data_version = tasks_data_versions.get(task_id)
                 else:
                     dep_data_version = tasks_data_versions
+
+            if dep_data_version == fingerprinting.UNHASHABLE:
+                # if the data version is unhashable, we need to set a random suffix to the cache_key
+                # to prevent the cache from thinking this value is constant, causing a cache hit.
+                dep_data_version = "<unhashable>" + f"_{uuid.uuid4()}"
 
             dependencies_data_versions[dep_name] = dep_data_version
 
@@ -1102,7 +1135,7 @@ class SmartCacheAdapter(
                 CachingBehavior.IGNORE,
             ):
                 cache_key = self.get_cache_key(run_id=run_id, node_name=node_name, task_id=task_id)
-                data_version = self.version_data(result)
+                data_version = self._version_data(node_name=node_name, run_id=run_id, result=result)
                 self._set_memory_metadata(
                     run_id=run_id, node_name=node_name, task_id=task_id, data_version=data_version
                 )
@@ -1126,6 +1159,9 @@ class SmartCacheAdapter(
         need_to_compute_node = False
         if data_version is SENTINEL:
             # must execute: data_version not found in memory or in metadata_store
+            need_to_compute_node = True
+        elif data_version == fingerprinting.UNHASHABLE:
+            # must execute: the retrieved data_version is UNHASHABLE, therefore it isn't stored.
             need_to_compute_node = True
         elif self.result_store.exists(data_version) is False:
             # must execute: data_version retrieved, but result store can't find result
@@ -1170,7 +1206,7 @@ class SmartCacheAdapter(
                 node_kwargs=node_kwargs,
                 task_id=task_id,
             )
-            data_version = self.version_data(result)
+            data_version = self._version_data(node_name=node_name, run_id=run_id, result=result)
             self._set_memory_metadata(
                 run_id=run_id, node_name=node_name, task_id=task_id, data_version=data_version
             )
@@ -1222,6 +1258,7 @@ class SmartCacheAdapter(
                 run_id=run_id, node_name=node_name, task_id=task_id, cache_key=cache_key
             )
             assert data_version is not SENTINEL
+
             if self.result_store.exists(data_version) is False:
                 self.result_store.set(data_version=data_version, result=result)
                 self._log_event(
