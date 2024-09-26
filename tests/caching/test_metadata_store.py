@@ -28,11 +28,14 @@ def test_initialize_empty(metadata_store):
 def test_not_empty_after_set(metadata_store):
     code_version = "FOO-1"
     data_version = "foo-a"
-    cache_key = create_cache_key(code_version=code_version, dep_data_versions={})
+    node_name = "foo"
+    cache_key = create_cache_key(
+        node_name=node_name, code_version=code_version, dep_data_versions={}
+    )
 
     metadata_store.set(
         cache_key=cache_key,
-        node_name="foo",
+        node_name=node_name,
         code_version=code_version,
         data_version=data_version,
         run_id="...",
@@ -45,10 +48,13 @@ def test_not_empty_after_set(metadata_store):
 def test_set_doesnt_produce_duplicates(metadata_store):
     code_version = "FOO-1"
     data_version = "foo-a"
-    cache_key = create_cache_key(code_version=code_version, dep_data_versions={})
+    node_name = "foo"
+    cache_key = create_cache_key(
+        node_name=node_name, code_version=code_version, dep_data_versions={}
+    )
     metadata_store.set(
         cache_key=cache_key,
-        node_name="foo",
+        node_name=node_name,
         code_version=code_version,
         data_version=data_version,
         run_id="...",
@@ -57,7 +63,7 @@ def test_set_doesnt_produce_duplicates(metadata_store):
 
     metadata_store.set(
         cache_key=cache_key,
-        node_name="foo",
+        node_name=node_name,
         code_version=code_version,
         data_version=data_version,
         run_id="...",
@@ -67,7 +73,9 @@ def test_set_doesnt_produce_duplicates(metadata_store):
 
 @pytest.mark.parametrize("metadata_store", [SQLiteMetadataStore], indirect=True)
 def test_get_miss_returns_none(metadata_store):
-    cache_key = create_cache_key(code_version="FOO-1", dep_data_versions={"bar": "bar-a"})
+    cache_key = create_cache_key(
+        node_name="foo", code_version="FOO-1", dep_data_versions={"bar": "bar-a"}
+    )
     data_version = metadata_store.get(cache_key=cache_key)
     assert data_version is None
 
@@ -76,10 +84,13 @@ def test_get_miss_returns_none(metadata_store):
 def test_set_get_without_dependencies(metadata_store):
     code_version = "FOO-1"
     data_version = "foo-a"
-    cache_key = create_cache_key(code_version=code_version, dep_data_versions={})
+    node_name = "foo"
+    cache_key = create_cache_key(
+        node_name=node_name, code_version=code_version, dep_data_versions={}
+    )
     metadata_store.set(
         cache_key=cache_key,
-        node_name="foo",
+        node_name=node_name,
         code_version=code_version,
         data_version=data_version,
         run_id="...",
