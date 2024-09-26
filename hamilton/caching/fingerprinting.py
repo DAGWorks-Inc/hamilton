@@ -17,7 +17,7 @@ except ImportError:
 logger = logging.getLogger("hamilton.caching")
 
 
-MAX_DEPTH = 4
+MAX_DEPTH = 6
 UNHASHABLE = "<unhashable>"
 NONE_HASH = "<none>"
 
@@ -48,17 +48,11 @@ def hash_value(obj, *args, depth=0, **kwargs) -> str:
     The default case hashes the `__dict__` attribute of the
     object (recursive).
     """
-    if hasattr(obj, "__dict__") and depth < MAX_DEPTH:
-        depth += 1
-        return hash_value(obj.__dict__, depth=depth)
+    if depth > MAX_DEPTH:
+        return UNHASHABLE
 
-    if depth >= MAX_DEPTH:
-        logger.warning(
-            f"Currently versioning object of type `{type(obj)}` and hiting recursion depth {depth}. "
-            f"To avoid data version collisions, register a data versioning function for type `{type(obj)}` "
-            "or increase the module constant `hamilton.caching.fingerprinting.set_max_depth()`. "
-            "See the Hamilton documentation Concepts page about caching for details."
-        )
+    if hasattr(obj, "__dict__"):
+        return hash_value(obj.__dict__, depth=depth + 1)
 
     return UNHASHABLE
 
@@ -87,19 +81,19 @@ def hash_bytes(obj, *args, **kwargs) -> str:
 
 
 @hash_value.register(Sequence)
-def hash_sequence(obj, *args, **kwargs) -> str:
+def hash_sequence(obj, *args, depth: int = 0, **kwargs) -> str:
     """Hash each object of the sequence.
 
     Orders matters for the hash since orders matters in a sequence.
     """
     hash_object = hashlib.sha224()
     for elem in obj:
-        hash_object.update(hash_value(elem).encode())
+        hash_object.update(hash_value(elem, depth=depth + 1).encode())
 
     return _compact_hash(hash_object.digest())
 
 
-def hash_unordered_mapping(obj, *args, **kwargs) -> str:
+def hash_unordered_mapping(obj, *args, depth: int = 0, **kwargs) -> str:
     """
 
     When hashing an unordered mapping, the two following dict have the same hash.
@@ -112,9 +106,9 @@ def hash_unordered_mapping(obj, *args, **kwargs) -> str:
         hash_mapping(foo) == hash_mapping(bar)
     """
 
-    hashed_mapping: Dict[str, str] = {
-        hash_value(key): hash_value(value) for key, value in obj.items()
-    }
+    hashed_mapping: Dict[str, str] = {}
+    for key, value in obj.items():
+        hashed_mapping[hash_value(key, depth=depth + 1)] = hash_value(value, depth=depth + 1)
 
     hash_object = hashlib.sha224()
     for key, value in sorted(hashed_mapping.items()):
@@ -125,7 +119,7 @@ def hash_unordered_mapping(obj, *args, **kwargs) -> str:
 
 
 @hash_value.register(Mapping)
-def hash_mapping(obj, *, ignore_order: bool = True, **kwargs) -> str:
+def hash_mapping(obj, *, ignore_order: bool = True, depth: int = 0, **kwargs) -> str:
     """Hash each key then its value.
 
     The mapping is always sorted first because order shouldn't matter
@@ -148,21 +142,21 @@ def hash_mapping(obj, *, ignore_order: bool = True, **kwargs) -> str:
 
     hash_object = hashlib.sha224()
     for key, value in obj.items():
-        hash_object.update(hash_value(key).encode())
-        hash_object.update(hash_value(value).encode())
+        hash_object.update(hash_value(key, depth=depth + 1).encode())
+        hash_object.update(hash_value(value, depth=depth + 1).encode())
 
     return _compact_hash(hash_object.digest())
 
 
 @hash_value.register(Set)
-def hash_set(obj, *args, **kwargs) -> str:
+def hash_set(obj, *args, depth: int = 0, **kwargs) -> str:
     """Hash each element of the set, then sort hashes, and
     create a hash of hashes.
 
     For the same objects in the set, the hashes will be the
     same.
     """
-    hashes = [hash_value(elem) for elem in obj]
+    hashes = [hash_value(elem, depth=depth + 1) for elem in obj]
     sorted_hashes = sorted(hashes)
 
     hash_object = hashlib.sha224()
@@ -201,3 +195,8 @@ def hash_polars_dataframe(obj, *args, **kwargs) -> str:
 def hash_polars_column(obj, *args, **kwargs) -> str:
     """Promote the single Series to a dataframe and hash it"""
     return hash_polars_dataframe(obj.to_frame())
+
+
+@hash_value.register(h_databackends.AbstractNumpyArray)
+def hash_numpy_array(obj, *args, **kwargs) -> str:
+    return hash_bytes(obj.tobytes())

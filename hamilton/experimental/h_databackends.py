@@ -130,6 +130,11 @@ class AbstractModinDataFrame(AbstractBackend):
     _backends = [("modin.pandas", "DataFrame")]
 
 
+# numpy
+class AbstractNumpyArray(AbstractBackend):
+    _backends = [("numpy", "ndarray")]
+
+
 def register_backends() -> Tuple[Tuple[type], Tuple[type]]:
     """Register databackends defined in this module that
     include `DataFrame` and `Column` in their class name

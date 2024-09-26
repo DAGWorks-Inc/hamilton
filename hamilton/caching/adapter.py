@@ -107,8 +107,8 @@ class CachingEventType(enum.Enum):
 
     GET_DATA_VERSION = "get_data_version"
     SET_DATA_VERSION = "set_data_version"
-    GET_cache_key = "get_cache_key"
-    SET_cache_key = "set_cache_key"
+    GET_CACHE_KEY = "get_cache_key"
+    SET_CACHE_KEY = "set_cache_key"
     GET_RESULT = "get_result"
     SET_RESULT = "set_result"
     MISSING_RESULT = "missing_result"
@@ -540,7 +540,7 @@ class SmartCacheAdapter(
             node_name=node_name,
             task_id=task_id,
             actor="adapter",
-            event_type=CachingEventType.GET_cache_key,
+            event_type=CachingEventType.GET_CACHE_KEY,
             msg="hit" if cache_key is not SENTINEL else "miss",
             value=cache_key,
         )
@@ -576,7 +576,7 @@ class SmartCacheAdapter(
             node_name=node_name,
             task_id=task_id,
             actor="adapter",
-            event_type=CachingEventType.SET_cache_key,
+            event_type=CachingEventType.SET_CACHE_KEY,
             value=cache_key,
         )
 
@@ -755,8 +755,18 @@ class SmartCacheAdapter(
                 task_id=task_id,
                 actor="adapter",
                 event_type=CachingEventType.UNHASHABLE_DATA_VERSION,
+                msg=f"unhashable type {type(result)}; set CachingBehavior.IGNORE to silence warning",
                 value=data_version,
             )
+            logger.warning(
+                f"Node `{node_name}` has unhashable result of type `{type(result)}`. "
+                "Set `CachingBehavior.IGNORE` or register a versioning function to silence warning. "
+                "Learn more: https://hamilton.dagworks.io/en/latest/concepts/caching/#caching-behavior\n"
+            )
+            # if the data version is unhashable, we need to set a random suffix to the cache_key
+            # to prevent the cache from thinking this value is constant, causing a cache hit.
+            data_version = "<unhashable>" + f"_{uuid.uuid4()}"
+
         return data_version
 
     def version_data(self, result: Any) -> str:
@@ -782,6 +792,7 @@ class SmartCacheAdapter(
         task_id: Optional[str] = None,
     ) -> Any:
         """Simple wrapper that logs the regular execution of a node."""
+        logger.debug(node_name)
         result = node_callable(**node_kwargs)
         self._log_event(
             run_id=run_id,
@@ -925,10 +936,10 @@ class SmartCacheAdapter(
         """Process input nodes to version data and code.
 
         To enable caching, input values must be versioned. Since inputs have no associated code,
-        set a constant "code version" ``f"{node_name}__input"`` that uniquely identifies this input.
+        set a constant "code version" ``f"input__{node_name}"`` that uniquely identifies this input.
         """
         data_version = self._version_data(node_name=node_name, run_id=run_id, result=value)
-        self.code_versions[run_id][node_name] = f"{node_name}__input"
+        self.code_versions[run_id][node_name] = f"input__{node_name}"
         self.data_versions[run_id][node_name] = data_version
         self._log_event(
             run_id=run_id,
@@ -1062,10 +1073,12 @@ class SmartCacheAdapter(
                     run_id=run_id, node_name=dep_name, task_id="<placeholder>"
                 )
 
+            # if dep_role == NodeRoleInTaskExecution.STANDARD:
+
             if dep_name == collected_name:
                 # the collected value should be hashed based on the items, not the container
                 items_data_versions = [self.version_data(item) for item in dep_value]
-                dep_data_version = fingerprinting.hash_sequence(sorted(items_data_versions))
+                dep_data_version = fingerprinting.hash_value(sorted(items_data_versions))
 
             elif dep_role == NodeRoleInTaskExecution.EXPAND:
                 # if the dependency is `EXPAND`, the kwarg received is a single item yielded by the iterator
@@ -1092,6 +1105,7 @@ class SmartCacheAdapter(
 
         # create cache_key before execution; will be reused during and after execution
         cache_key = create_cache_key(
+            node_name=node_name,
             code_version=self.code_versions[run_id][node_name],
             dep_data_versions=dependencies_data_versions,
         )

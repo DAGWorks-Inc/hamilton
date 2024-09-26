@@ -24,20 +24,24 @@ def _decode_str_dict(s: str) -> Mapping:
     return d
 
 
-def decode_key(cache_key: str) -> tuple:
-    code_and_data_string = _decompress_string(cache_key)
-    code_version, _, data_stringified = code_and_data_string.partition(",")
+def decode_key(cache_key: str) -> dict:
+    node_name, _, code_and_data_string = cache_key.partition("-")
+    code_version, _, dep_encoded = code_and_data_string.partition("-")
+    data_stringified = _decompress_string(dep_encoded)
+
     if data_stringified == "<none>":
         dep_data_versions = {}
     else:
         dep_data_versions = _decode_str_dict(data_stringified)
-    return code_version, dep_data_versions
+    return dict(node_name=node_name, code_version=code_version, dep_data_versions=dep_data_versions)
 
 
-def create_cache_key(code_version: str, dep_data_versions: Dict[str, str]) -> str:
+def create_cache_key(node_name: str, code_version: str, dep_data_versions: Dict[str, str]) -> str:
     if len(dep_data_versions.keys()) > 0:
         dependencies_stringified = _encode_str_dict(dep_data_versions)
     else:
         dependencies_stringified = "<none>"
 
-    return _compress_string(f"{code_version},{dependencies_stringified}")
+    safe_node_name = "".join(c for c in node_name if c.isalnum() or c in ("_",)).rstrip()
+
+    return f"{safe_node_name}-{code_version}-{_compress_string(dependencies_stringified)}"
