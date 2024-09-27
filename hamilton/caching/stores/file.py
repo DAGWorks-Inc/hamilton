@@ -31,7 +31,7 @@ class FileResultStore(ResultStore):
 
     def _materialized_path(self, data_version: str, saver_cls: DataSaver) -> Path:
         # TODO allow a more flexible mechanism to specify file path extension
-        return self._path_from_data_version(data_version).with_suffix(f".{saver_cls.name}")
+        return self._path_from_data_version(data_version).with_suffix(f".{saver_cls.name()}")
 
     def exists(self, data_version: str) -> bool:
         result_path = self._path_from_data_version(data_version)
@@ -50,11 +50,12 @@ class FileResultStore(ResultStore):
                 "Must pass both `saver` and `loader` or neither. Currently received: "
                 f"`saver`: `{saver_cls}`; `loader`: `{loader_cls}`"
             )
-        elif saver_cls is not None and loader_cls is not None:
+
+        if saver_cls is not None:
             # materialized_path
             materialized_path = self._materialized_path(data_version, saver_cls)
-            saver = saver_cls(path=materialized_path)
-            loader = loader_cls(path=materialized_path)
+            saver = saver_cls(path=str(materialized_path.absolute()))
+            loader = loader_cls(path=str(materialized_path.absolute()))
         else:
             saver = None
             loader = None

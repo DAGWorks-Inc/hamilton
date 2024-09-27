@@ -107,10 +107,12 @@ def test_delete_all(result_store):
 def test_save_and_load_materializer(format, value, result_store):
     saver_cls, loader_cls = search_data_adapter_registry(name=format, type_=type(value))
     data_version = "foo"
+    materialized_path = result_store._materialized_path(data_version, saver_cls)
 
     result_store.set(
         data_version=data_version, result=value, saver_cls=saver_cls, loader_cls=loader_cls
     )
     retrieved_value = result_store.get(data_version)
 
+    assert materialized_path.exists()
     assert fingerprinting.hash_value(value) == fingerprinting.hash_value(retrieved_value)

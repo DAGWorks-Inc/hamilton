@@ -13,7 +13,12 @@ import hamilton.node
 from hamilton import graph_types
 from hamilton.caching import fingerprinting
 from hamilton.caching.cache_key import create_cache_key
-from hamilton.caching.stores.base import MetadataStore, ResultRetrievalError, ResultStore
+from hamilton.caching.stores.base import (
+    MetadataStore,
+    ResultRetrievalError,
+    ResultStore,
+    search_data_adapter_registry,
+)
 from hamilton.caching.stores.file import FileResultStore
 from hamilton.caching.stores.sqlite import SQLiteMetadataStore
 from hamilton.function_modifiers.metadata import cache as cache_decorator
@@ -210,8 +215,12 @@ class SmartCacheAdapter(
         :param log_to_file: If True, append cache event logs as they happen in JSONL format.
         """
         self._path = path
-        self.metadata_store = metadata_store if metadata_store else SQLiteMetadataStore(path=path)
-        self.result_store = result_store if result_store else FileResultStore(path=str(path))
+        self.metadata_store = (
+            metadata_store if metadata_store is not None else SQLiteMetadataStore(path=path)
+        )
+        self.result_store = (
+            result_store if result_store is not None else FileResultStore(path=str(path))
+        )
         self.log_to_file = log_to_file
 
         if sum([recompute is True, disable is True, ignore is True]) > 1:
@@ -395,12 +404,16 @@ class SmartCacheAdapter(
         """
         from hamilton.driver import Driver  # avoid circular import
 
-        def _visualization_styling_function(*, node, node_class, lgs):
+        def _visualization_styling_function(*, node, node_class, logs):
             """Custom style function for the visualization."""
             if any(
                 event.event_type == CachingEventType.GET_RESULT for event in logs.get(node.name, [])
             ):
-                style = ({"penwidth": "3", "color": "#F06449"}, node_class, "from cache")
+                style = (
+                    {"penwidth": "3", "color": "#F06449", "fillcolor": "#ffffff"},
+                    node_class,
+                    "from cache",
+                )
             else:
                 style = ({}, node_class, None)
 
@@ -418,6 +431,8 @@ class SmartCacheAdapter(
             custom_style_function=functools.partial(_visualization_styling_function, logs=logs),
         )
 
+    # TODO make this work directly from the metadata_store too
+    # visualization from logs is convenient when debugging someone else's issue
     def view_run(self, run_id: Optional[str] = None, output_file_path: Optional[str] = None):
         """View the dataflow execution, including cache hits/misses.
 
@@ -816,6 +831,14 @@ class SmartCacheAdapter(
         If the node is `Parallelizable` enforce the ``RECOMPUTE`` behavior to ensure
         yielded items are versioned individually.
         """
+        behavior_for_dataloader = node.tags.get("hamilton.data_loader", SENTINEL)
+        if behavior_for_dataloader is not SENTINEL:
+            behavior_for_dataloader = CachingBehavior.RECOMPUTE
+
+        behavior_for_datasaver = node.tags.get("hamilton.saver", SENTINEL)
+        if behavior_for_datasaver is not SENTINEL:
+            behavior_for_datasaver = CachingBehavior.RECOMPUTE
+
         if node.node_role == hamilton.node.NodeType.EXPAND:
             return CachingBehavior.RECOMPUTE
 
@@ -840,7 +863,11 @@ class SmartCacheAdapter(
                     )
                 behavior_from_driver = behavior
 
-        if behavior_from_driver is not SENTINEL:
+        if behavior_for_dataloader is not SENTINEL:
+            return behavior_for_dataloader
+        elif behavior_for_datasaver is not SENTINEL:
+            return behavior_for_datasaver
+        elif behavior_from_driver is not SENTINEL:
             return behavior_from_driver
         elif behavior_from_tag is not SENTINEL:
             return behavior_from_tag
@@ -1273,8 +1300,31 @@ class SmartCacheAdapter(
             )
             assert data_version is not SENTINEL
 
-            if self.result_store.exists(data_version) is False:
-                self.result_store.set(data_version=data_version, result=result)
+            # TODO clean up this logic
+            # check for materialized file when using `@cache(format="json")`
+            cache_format = (
+                self._fn_graphs[run_id]
+                .nodes[node_name]
+                .tags.get(cache_decorator.FORMAT_KEY, SENTINEL)
+            )
+            if cache_format is not SENTINEL:
+                saver_cls, loader_cls = search_data_adapter_registry(
+                    name=cache_format, type_=type(result)
+                )  # type: ignore
+                materialized_path = self.result_store._materialized_path(data_version, saver_cls)
+                materialized_path_missing = not materialized_path.exists()
+            else:
+                saver_cls, loader_cls = None, None
+                materialized_path_missing = False
+
+            result_missing = not self.result_store.exists(data_version)
+            if result_missing or materialized_path_missing:
+                self.result_store.set(
+                    data_version=data_version,
+                    result=result,
+                    saver_cls=saver_cls,
+                    loader_cls=loader_cls,
+                )
                 self._log_event(
                     run_id=run_id,
                     node_name=node_name,
