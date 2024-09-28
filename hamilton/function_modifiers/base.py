@@ -221,26 +221,6 @@ class SubDAGModifier(NodeTransformLifecycle, abc.ABC):
         pass
 
 
-# TODO -- delete this/replace with the version that will be added by
-# https://github.com/DAGWorks-Inc/hamilton/pull/249/ as part of the Node class
-def _reassign_inputs(node_: node.Node, input_names: Dict[str, Any]) -> node.Node:
-    """Reassigns the input names of a node. Useful for applying
-    a node to a separate input if needed. Note that things can get a
-    little strange if you have multiple inputs with the same name, so
-    be careful about how you use this.
-    :param input_names: Input name map to reassign
-    :return: A node with the input names reassigned
-    """
-
-    def new_callable(**kwargs) -> Any:
-        reverse_input_names = {v: k for k, v in input_names.items()}
-        return node_.callable(**{reverse_input_names.get(k, k): v for k, v in kwargs.items()})
-
-    new_input_types = {input_names.get(k, k): v for k, v in node_.input_types.items()}
-    out = node_.copy_with(callabl=new_callable, input_types=new_input_types)
-    return out
-
-
 class NodeInjector(SubDAGModifier, abc.ABC):
     """Injects a value as a source node in the DAG. This is a special case of the SubDAGModifier,
     which gets all the upstream (required) nodes from the subdag and gives the decorator a chance
@@ -293,7 +273,7 @@ class NodeInjector(SubDAGModifier, abc.ABC):
         for node_ in nodes:
             # if there's an intersection then we want to rename the input
             if set(node_.input_types.keys()) & set(rename_map.keys()):
-                out.append(_reassign_inputs(node_, rename_map))
+                out.append(node_.reassign_inputs(input_names=rename_map))
             else:
                 out.append(node_)
         out.extend(nodes_to_inject)
