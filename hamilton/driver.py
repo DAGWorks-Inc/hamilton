@@ -1965,7 +1965,7 @@ class Builder:
 
     def with_cache(
         self,
-        path: Union[str, pathlib.Path] = "hamilton_cache",
+        path: Union[str, pathlib.Path] = ".hamilton_cache",
         metadata_store: Optional[MetadataStore] = None,
         result_store: Optional[ResultStore] = None,
         default: Optional[Union[Literal[True], Sequence[str]]] = None,
