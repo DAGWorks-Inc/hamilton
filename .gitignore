@@ -154,4 +154,4 @@ examples/**/hamilton-env
 **.txn
 
 # hamilton default caching directory
-**/hamilton_cache/
+**/.hamilton_cache/
