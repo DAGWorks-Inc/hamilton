@@ -1968,6 +1968,7 @@ class Builder:
         path: Union[str, pathlib.Path] = "hamilton_cache",
         metadata_store: Optional[MetadataStore] = None,
         result_store: Optional[ResultStore] = None,
+        default: Optional[Union[Literal[True], Sequence[str]]] = None,
         recompute: Optional[Union[Literal[True], Sequence[str]]] = None,
         ignore: Optional[Union[Literal[True], Sequence[str]]] = None,
         disable: Optional[Union[Literal[True], Sequence[str]]] = None,
@@ -1978,6 +1979,7 @@ class Builder:
         :param path: path where the cache metadata and results will be stored
         :param metadata_store: BaseStore handling metadata for the cache adapter
         :param result_store: BaseStore caching dataflow execution results
+        :param default: Set caching behavior to DEFAULT for specified node names. If True, apply to all nodes.
         :param recompute: Set caching behavior to RECOMPUTE for specified node names. If True, apply to all nodes.
         :param ignore: Set caching behavior to IGNORE for specified node names. If True, apply to all nodes.
         :param disable: Set caching behavior to DISABLE for specified node names. If True, apply to all nodes.
@@ -2014,6 +2016,7 @@ class Builder:
             path=path,
             metadata_store=metadata_store,
             result_store=result_store,
+            default=default,
             recompute=recompute,
             ignore=ignore,
             disable=disable,

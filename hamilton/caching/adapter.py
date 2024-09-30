@@ -198,6 +198,7 @@ class SmartCacheAdapter(
         path: Union[str, pathlib.Path] = "hamilton_cache",
         metadata_store: Optional[MetadataStore] = None,
         result_store: Optional[ResultStore] = None,
+        default: Optional[Union[Literal[True], Collection[str]]] = None,
         recompute: Optional[Union[Literal[True], Collection[str]]] = None,
         disable: Optional[Union[Literal[True], Collection[str]]] = None,
         ignore: Optional[Union[Literal[True], Collection[str]]] = None,
@@ -209,9 +210,10 @@ class SmartCacheAdapter(
         :param path: path where the cache metadata and results will be stored
         :param metadata_store: BaseStore handling metadata for the cache adapter
         :param result_store: BaseStore caching dataflow execution results
-        :param recompute: Set caching behavior to RECOMPUTE for specified node names. If True, apply to all nodes."
+        :param default: Set caching behavior to DEFAULT for specified node names. If True, apply to all nodes.
+        :param recompute: Set caching behavior to RECOMPUTE for specified node names. If True, apply to all nodes.
         :param disable: Set caching behavior to DISABLE for specified node names. If True, apply to all nodes.
-        :param ignore: Set caching behavior to IGNORE for specified node names. If True, apply to all nodes."
+        :param ignore: Set caching behavior to IGNORE for specified node names. If True, apply to all nodes.
         :param log_to_file: If True, append cache event logs as they happen in JSONL format.
         """
         self._path = path
@@ -223,10 +225,11 @@ class SmartCacheAdapter(
         )
         self.log_to_file = log_to_file
 
-        if sum([recompute is True, disable is True, ignore is True]) > 1:
+        if sum([default is True, recompute is True, disable is True, ignore is True]) > 1:
             raise ValueError(
-                "Can only set one of (`recompute`, `disable`, `ignore`) to True. Please pass mutually exclusive sets of node names"
+                "Can only set one of (`default`, `recompute`, `disable`, `ignore`) to True. Please pass mutually exclusive sets of node names"
             )
+        self._default = default
         self._recompute = recompute
         self._disable = disable
         self._ignore = ignore
@@ -784,13 +787,13 @@ class SmartCacheAdapter(
 
         return data_version
 
-    def version_data(self, result: Any) -> str:
+    def version_data(self, result: Any, run_id: str = None) -> str:
         """Create a unique data version for the result
 
         This is a user-facing method.
         """
         # stuff the internal function call to not log event
-        return self._version_data(result=result, run_id=None, node_name=None)
+        return self._version_data(result=result, run_id=run_id, node_name=None)
 
     def version_code(self, node_name: str, run_id: Optional[str] = None) -> str:
         """Create a unique code version for the source code defining the node"""
@@ -821,6 +824,7 @@ class SmartCacheAdapter(
     @staticmethod
     def _resolve_node_behavior(
         node: hamilton.node.Node,
+        default: Optional[Collection[str]] = None,
         disable: Optional[Collection[str]] = None,
         recompute: Optional[Collection[str]] = None,
         ignore: Optional[Collection[str]] = None,
@@ -848,6 +852,7 @@ class SmartCacheAdapter(
 
         behavior_from_driver = SENTINEL
         for behavior, node_set in (
+            (CachingBehavior.DEFAULT, default),
             (CachingBehavior.DISABLE, disable),
             (CachingBehavior.RECOMPUTE, recompute),
             (CachingBehavior.IGNORE, ignore),
@@ -891,11 +896,14 @@ class SmartCacheAdapter(
         """
         graph = self._fn_graphs[run_id]
 
+        _default = self._default
         _disable = self._disable
         _recompute = self._recompute
         _ignore = self._ignore
 
-        if _disable is True:
+        if _default is True:
+            _default = [n.name for n in graph.get_nodes()]
+        elif _disable is True:
             _disable = [n.name for n in graph.get_nodes()]
         elif _recompute is True:
             _recompute = [n.name for n in graph.get_nodes()]
@@ -906,6 +914,7 @@ class SmartCacheAdapter(
         for node in graph.get_nodes():
             behavior = SmartCacheAdapter._resolve_node_behavior(
                 node=node,
+                default=_default,
                 disable=_disable,
                 recompute=_recompute,
                 ignore=_ignore,
@@ -1104,20 +1113,20 @@ class SmartCacheAdapter(
 
             if dep_name == collected_name:
                 # the collected value should be hashed based on the items, not the container
-                items_data_versions = [self.version_data(item) for item in dep_value]
+                items_data_versions = [self.version_data(item, run_id=run_id) for item in dep_value]
                 dep_data_version = fingerprinting.hash_value(sorted(items_data_versions))
 
             elif dep_role == NodeRoleInTaskExecution.EXPAND:
                 # if the dependency is `EXPAND`, the kwarg received is a single item yielded by the iterator
                 # rather than the full iterable. We must version it directly, similar to a top-level input
-                dep_data_version = self.version_data(dep_value)
+                dep_data_version = self.version_data(dep_value, run_id=run_id)
 
             else:
                 tasks_data_versions = self._get_memory_data_version(
                     run_id=run_id, node_name=dep_name, task_id=None
                 )
                 if tasks_data_versions is SENTINEL:
-                    dep_data_version = self.version_data(dep_value)
+                    dep_data_version = self.version_data(dep_value, run_id=run_id)
                 elif isinstance(tasks_data_versions, dict):
                     dep_data_version = tasks_data_versions.get(task_id)
                 else:
@@ -1134,7 +1143,7 @@ class SmartCacheAdapter(
         cache_key = create_cache_key(
             node_name=node_name,
             code_version=self.code_versions[run_id][node_name],
-            dep_data_versions=dependencies_data_versions,
+            dependencies_data_versions=dependencies_data_versions,
         )
         self._set_cache_key(
             run_id=run_id, node_name=node_name, task_id=task_id, cache_key=cache_key
