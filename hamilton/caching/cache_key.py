@@ -30,15 +30,21 @@ def decode_key(cache_key: str) -> dict:
     data_stringified = _decompress_string(dep_encoded)
 
     if data_stringified == "<none>":
-        dep_data_versions = {}
+        dependencies_data_versions = {}
     else:
-        dep_data_versions = _decode_str_dict(data_stringified)
-    return dict(node_name=node_name, code_version=code_version, dep_data_versions=dep_data_versions)
+        dependencies_data_versions = _decode_str_dict(data_stringified)
+    return dict(
+        node_name=node_name,
+        code_version=code_version,
+        dependencies_data_versions=dependencies_data_versions,
+    )
 
 
-def create_cache_key(node_name: str, code_version: str, dep_data_versions: Dict[str, str]) -> str:
-    if len(dep_data_versions.keys()) > 0:
-        dependencies_stringified = _encode_str_dict(dep_data_versions)
+def create_cache_key(
+    node_name: str, code_version: str, dependencies_data_versions: Dict[str, str]
+) -> str:
+    if len(dependencies_data_versions.keys()) > 0:
+        dependencies_stringified = _encode_str_dict(dependencies_data_versions)
     else:
         dependencies_stringified = "<none>"
 

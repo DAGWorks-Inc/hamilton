@@ -30,7 +30,7 @@ def test_not_empty_after_set(metadata_store):
     data_version = "foo-a"
     node_name = "foo"
     cache_key = create_cache_key(
-        node_name=node_name, code_version=code_version, dep_data_versions={}
+        node_name=node_name, code_version=code_version, dependencies_data_versions={}
     )
 
     metadata_store.set(
@@ -50,7 +50,7 @@ def test_set_doesnt_produce_duplicates(metadata_store):
     data_version = "foo-a"
     node_name = "foo"
     cache_key = create_cache_key(
-        node_name=node_name, code_version=code_version, dep_data_versions={}
+        node_name=node_name, code_version=code_version, dependencies_data_versions={}
     )
     metadata_store.set(
         cache_key=cache_key,
@@ -74,7 +74,7 @@ def test_set_doesnt_produce_duplicates(metadata_store):
 @pytest.mark.parametrize("metadata_store", [SQLiteMetadataStore], indirect=True)
 def test_get_miss_returns_none(metadata_store):
     cache_key = create_cache_key(
-        node_name="foo", code_version="FOO-1", dep_data_versions={"bar": "bar-a"}
+        node_name="foo", code_version="FOO-1", dependencies_data_versions={"bar": "bar-a"}
     )
     data_version = metadata_store.get(cache_key=cache_key)
     assert data_version is None
@@ -86,7 +86,7 @@ def test_set_get_without_dependencies(metadata_store):
     data_version = "foo-a"
     node_name = "foo"
     cache_key = create_cache_key(
-        node_name=node_name, code_version=code_version, dep_data_versions={}
+        node_name=node_name, code_version=code_version, dependencies_data_versions={}
     )
     metadata_store.set(
         cache_key=cache_key,
