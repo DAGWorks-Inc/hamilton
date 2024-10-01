@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from hamilton import base, node
-from hamilton.caching.adapter import SmartCacheAdapter
+from hamilton.caching.adapter import HamiltonCacheAdapter
 from hamilton.driver import (
     Builder,
     Driver,
@@ -633,10 +633,10 @@ def test_cache_raise_if_setting_twice(tmp_path):
         builder.with_cache(path=tmp_path)
     # case 2: .with_cache() then adding SmartCacheAdapter()
     with pytest.raises(ValueError):
-        builder.with_adapters(SmartCacheAdapter(path=tmp_path))
+        builder.with_adapters(HamiltonCacheAdapter(path=tmp_path))
     # case 3: add SmartCacheAdapter() then .with_cache()
     builder = Builder()
-    builder.with_adapters(SmartCacheAdapter(path=tmp_path))
+    builder.with_adapters(HamiltonCacheAdapter(path=tmp_path))
     with pytest.raises(ValueError):
         builder.with_cache()
 

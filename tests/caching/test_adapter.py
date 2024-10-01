@@ -5,7 +5,7 @@ from hamilton.caching import fingerprinting
 from hamilton.caching.adapter import (
     CachingBehavior,
     CachingEventType,
-    SmartCacheAdapter,
+    HamiltonCacheAdapter,
 )
 from hamilton.function_modifiers.metadata import cache as cache_decorator
 from hamilton.graph import FunctionGraph
@@ -17,7 +17,7 @@ def cache_adapter(tmp_path):
         return "hello-world"
 
     run_id = "my-run-id"
-    adapter = SmartCacheAdapter(path=tmp_path)
+    adapter = HamiltonCacheAdapter(path=tmp_path)
     adapter.metadata_store.initialize(run_id)
     adapter._fn_graphs[run_id] = FunctionGraph(
         nodes={"foo": hamilton.node.Node.from_fn(foo)},
@@ -116,13 +116,13 @@ def test_run_to_execute_repo_cache_desync(cache_adapter):
 def test_cache_tag_resolved(cache_adapter, behavior):
     node = cache_adapter._fn_graphs[cache_adapter.last_run_id].nodes["foo"]
     node._tags = {cache_decorator.BEHAVIOR_KEY: behavior}
-    resolved_behavior = SmartCacheAdapter._resolve_node_behavior(node)
+    resolved_behavior = HamiltonCacheAdapter._resolve_node_behavior(node)
     assert resolved_behavior == CachingBehavior.from_string(behavior)
 
 
 def test_default_behavior(cache_adapter):
     h_node = cache_adapter._fn_graphs[cache_adapter.last_run_id].nodes["foo"]
-    resolved_behavior = SmartCacheAdapter._resolve_node_behavior(h_node)
+    resolved_behavior = HamiltonCacheAdapter._resolve_node_behavior(h_node)
     assert resolved_behavior == CachingBehavior.DEFAULT
 
 
@@ -131,7 +131,7 @@ def test_driver_behavior_overrides_cache_tag(cache_adapter):
     node = cache_adapter._fn_graphs[cache_adapter.last_run_id].nodes[node_name]
     node._tags = {cache_decorator.BEHAVIOR_KEY: "recompute"}
 
-    resolved_behavior = SmartCacheAdapter._resolve_node_behavior(node=node, disable=[node_name])
+    resolved_behavior = HamiltonCacheAdapter._resolve_node_behavior(node=node, disable=[node_name])
 
     assert resolved_behavior == CachingBehavior.DISABLE
 
@@ -141,7 +141,7 @@ def test_raise_if_multiple_driver_behavior_for_same_node(cache_adapter):
     node = cache_adapter._fn_graphs[cache_adapter.last_run_id].nodes[node_name]
 
     with pytest.raises(ValueError):
-        SmartCacheAdapter._resolve_node_behavior(
+        HamiltonCacheAdapter._resolve_node_behavior(
             node,
             disable=[node_name],
             recompute=[node_name],

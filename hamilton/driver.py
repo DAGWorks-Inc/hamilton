@@ -31,7 +31,7 @@ from typing import (
 import pandas as pd
 
 from hamilton import common, graph_types, htypes
-from hamilton.caching.adapter import SmartCacheAdapter
+from hamilton.caching.adapter import HamiltonCacheAdapter
 from hamilton.caching.stores.base import MetadataStore, ResultStore
 from hamilton.dev_utils import deprecation
 from hamilton.execution import executors, graph_functions, grouping, state
@@ -1833,11 +1833,11 @@ class Driver:
         self.graph_executor.validate(list(all_nodes))
 
     @property
-    def cache(self) -> SmartCacheAdapter:
+    def cache(self) -> HamiltonCacheAdapter:
         """Directly access the cache adapter"""
         if self.adapter:
             for adapter in self.adapter.adapters:
-                if isinstance(adapter, SmartCacheAdapter):
+                if isinstance(adapter, HamiltonCacheAdapter):
                     return adapter
         else:
             raise KeyError(
@@ -1931,7 +1931,7 @@ class Builder:
         :param adapter: Adapter to use.
         :return: self
         """
-        if any(isinstance(adapter, SmartCacheAdapter) for adapter in adapters):
+        if any(isinstance(adapter, HamiltonCacheAdapter) for adapter in adapters):
             self._require_field_unset(
                 "cache", "Cannot use `.with_cache()` or with `.with_adapters(SmartCacheAdapter())`."
             )
@@ -2012,7 +2012,7 @@ class Builder:
         self._require_field_unset(
             "cache", "Cannot use `.with_cache()` or with `.with_adapters(SmartCacheAdapter())`."
         )
-        adapter = SmartCacheAdapter(
+        adapter = HamiltonCacheAdapter(
             path=path,
             metadata_store=metadata_store,
             result_store=result_store,
@@ -2026,7 +2026,7 @@ class Builder:
         return self
 
     @property
-    def cache(self) -> Optional[SmartCacheAdapter]:
+    def cache(self) -> Optional[HamiltonCacheAdapter]:
         """Attribute to check if a cache was set, either via `.with_cache()` or
         `.with_adapters(SmartCacheAdapter())`
 
@@ -2034,7 +2034,7 @@ class Builder:
         """
         if self.adapters:
             for adapter in self.adapters:
-                if isinstance(adapter, SmartCacheAdapter):
+                if isinstance(adapter, HamiltonCacheAdapter):
                     return adapter
 
     def with_execution_manager(self, execution_manager: executors.ExecutionManager) -> "Builder":

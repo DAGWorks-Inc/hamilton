@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from hamilton import ad_hoc_utils, driver
-from hamilton.caching.adapter import CachingEventType, SmartCacheAdapter
+from hamilton.caching.adapter import CachingEventType, HamiltonCacheAdapter
 from hamilton.execution.executors import (
     MultiProcessingExecutor,
     MultiThreadingExecutor,
@@ -128,7 +128,7 @@ def node_C_depends_on_B():
 
 
 def test_code_change_same_result_do_recompute(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module_1 = ad_hoc_utils.create_temporary_module(node_A())
     module_2 = ad_hoc_utils.create_temporary_module(node_A_code_change_same_result())
     final_vars = ["A"]
@@ -154,7 +154,7 @@ def test_code_change_same_result_do_recompute(tmp_path):
 
 
 def test_code_change_different_result_do_recompute(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module_1 = ad_hoc_utils.create_temporary_module(node_A())
     module_2 = ad_hoc_utils.create_temporary_module(node_A_code_change_different_result())
     final_vars = ["A"]
@@ -180,7 +180,7 @@ def test_code_change_different_result_do_recompute(tmp_path):
 
 
 def test_input_data_change_do_recompute(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module = ad_hoc_utils.create_temporary_module(node_B_depends_on_A())
     final_vars = ["B"]
     inputs1 = {"A": 1}
@@ -207,7 +207,7 @@ def test_input_data_change_do_recompute(tmp_path):
 
 
 def test_dependency_code_change_same_result_dont_recompute(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module_1 = ad_hoc_utils.create_temporary_module(node_A(), node_B_depends_on_A())
     module_2 = ad_hoc_utils.create_temporary_module(
         node_A_code_change_same_result(), node_B_depends_on_A()
@@ -235,7 +235,7 @@ def test_dependency_code_change_same_result_dont_recompute(tmp_path):
 
 
 def test_dependency_code_change_different_result_do_recompute(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module_1 = ad_hoc_utils.create_temporary_module(node_A(), node_B_depends_on_A())
     module_2 = ad_hoc_utils.create_temporary_module(
         node_A_code_change_different_result(), node_B_depends_on_A()
@@ -263,7 +263,7 @@ def test_dependency_code_change_different_result_do_recompute(tmp_path):
 
 
 def test_override_with_same_value_dont_recompute(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module = ad_hoc_utils.create_temporary_module(node_A(), node_B_depends_on_A())
     overrides = {"A": 1}
     final_vars = ["B"]
@@ -289,7 +289,7 @@ def test_override_with_same_value_dont_recompute(tmp_path):
 
 
 def test_override_with_different_value_do_recompute(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module = ad_hoc_utils.create_temporary_module(node_A(), node_B_depends_on_A())
     overrides = {"A": 13}
     final_vars = ["B"]
@@ -315,7 +315,7 @@ def test_override_with_different_value_do_recompute(tmp_path):
 
 
 def test_node_that_raises_error(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module_1 = ad_hoc_utils.create_temporary_module(node_A(), node_B_depends_on_A())
     module_2 = ad_hoc_utils.create_temporary_module(node_A(), node_B_raises())
     final_vars = ["B"]
@@ -354,7 +354,7 @@ def test_caching_pandas_dataframe(tmp_path):
         A["baz"] = pd.Series([True, False])
         return A
 
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module = ad_hoc_utils.create_temporary_module(A, B)
     final_vars = ["B"]
 
@@ -372,7 +372,7 @@ def test_caching_pandas_dataframe(tmp_path):
 
 
 def test_recompute_behavior(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module = ad_hoc_utils.create_temporary_module(node_A(), node_B_depends_on_A())
     final_vars = ["B"]
 
@@ -399,7 +399,7 @@ def test_recompute_behavior(tmp_path):
 
 
 def test_disable_behavior(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module = ad_hoc_utils.create_temporary_module(
         node_A(), node_B_depends_on_A(), node_C_depends_on_B()
     )
@@ -435,7 +435,7 @@ def test_disable_behavior(tmp_path):
 
 
 def test_ignore_behavior(tmp_path):
-    cache = SmartCacheAdapter(path=tmp_path)
+    cache = HamiltonCacheAdapter(path=tmp_path)
     module = ad_hoc_utils.create_temporary_module(node_A(), node_B_depends_on_A())
     final_vars = ["B"]
 

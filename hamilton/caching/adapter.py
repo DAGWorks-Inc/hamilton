@@ -171,7 +171,7 @@ class CachingEvent:
 
 
 # TODO we could add a "driver-level" kwarg to specify the cache format (e.g., parquet, JSON, etc.)
-class SmartCacheAdapter(
+class HamiltonCacheAdapter(
     BaseDoNodeExecute, BasePreGraphExecute, BasePostNodeExecute, BasePreNodeExecute
 ):
     """Adapter enabling Hamilton's caching feature through ``Builder.with_cache()``
@@ -835,14 +835,6 @@ class SmartCacheAdapter(
         If the node is `Parallelizable` enforce the ``RECOMPUTE`` behavior to ensure
         yielded items are versioned individually.
         """
-        behavior_for_dataloader = node.tags.get("hamilton.data_loader", SENTINEL)
-        if behavior_for_dataloader is not SENTINEL:
-            behavior_for_dataloader = CachingBehavior.RECOMPUTE
-
-        behavior_for_datasaver = node.tags.get("hamilton.saver", SENTINEL)
-        if behavior_for_datasaver is not SENTINEL:
-            behavior_for_datasaver = CachingBehavior.RECOMPUTE
-
         if node.node_role == hamilton.node.NodeType.EXPAND:
             return CachingBehavior.RECOMPUTE
 
@@ -868,11 +860,7 @@ class SmartCacheAdapter(
                     )
                 behavior_from_driver = behavior
 
-        if behavior_for_dataloader is not SENTINEL:
-            return behavior_for_dataloader
-        elif behavior_for_datasaver is not SENTINEL:
-            return behavior_for_datasaver
-        elif behavior_from_driver is not SENTINEL:
+        if behavior_from_driver is not SENTINEL:
             return behavior_from_driver
         elif behavior_from_tag is not SENTINEL:
             return behavior_from_tag
@@ -912,7 +900,7 @@ class SmartCacheAdapter(
 
         behaviors = {}
         for node in graph.get_nodes():
-            behavior = SmartCacheAdapter._resolve_node_behavior(
+            behavior = HamiltonCacheAdapter._resolve_node_behavior(
                 node=node,
                 default=_default,
                 disable=_disable,
