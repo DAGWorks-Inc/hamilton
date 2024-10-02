@@ -10,7 +10,7 @@ directory. If there's an example you want but don't see, reach out or open an is
 .. toctree::
    use-in-jupyter-notebook
    load-data
-   caching
+   caching-tutorial
    use-for-feature-engineering
    ml-training
    llm-workflows
