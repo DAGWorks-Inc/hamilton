@@ -777,8 +777,8 @@ def test_dataloader():
         "hamilton.data_loader": True,
         "hamilton.data_loader.classname": "correct_dl_function()",
         "hamilton.data_loader.has_metadata": True,
-        "hamilton.data_loader.node": "loader",
-        "hamilton.data_loader.source": "correct_dl_function",
+        "hamilton.data_loader.node": "correct_dl_function",
+        "hamilton.data_loader.source": "loader",
         "module": "tests.function_modifiers.test_adapters",
     }
     assert node2.name == "correct_dl_function"
