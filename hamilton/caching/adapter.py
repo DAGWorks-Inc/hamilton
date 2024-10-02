@@ -36,6 +36,9 @@ SENTINEL = object()
 S = TypeVar("S", object, object)
 
 
+CACHING_BEHAVIORS = Literal["default", "recompute", "disable", "ignore"]
+
+
 class CachingBehavior(enum.Enum):
     """Behavior applied by the caching adapter
 
@@ -125,8 +128,7 @@ class CachingEventType(enum.Enum):
     IS_OVERRIDE = "is_override"
     IS_INPUT = "is_input"
     IS_FINAL_VAR = "is_final_var"
-    APPLY_DATA_SAVER = "apply_data_saver"
-    APPLY_DATA_LOADER = "apply_data_loader"
+    IS_DEFAULT_PARAMETER_VALUE = "is_default_parameter_value"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -200,8 +202,11 @@ class HamiltonCacheAdapter(
         result_store: Optional[ResultStore] = None,
         default: Optional[Union[Literal[True], Collection[str]]] = None,
         recompute: Optional[Union[Literal[True], Collection[str]]] = None,
-        disable: Optional[Union[Literal[True], Collection[str]]] = None,
         ignore: Optional[Union[Literal[True], Collection[str]]] = None,
+        disable: Optional[Union[Literal[True], Collection[str]]] = None,
+        default_behavior: Optional[CACHING_BEHAVIORS] = None,
+        default_loader_behavior: Optional[CACHING_BEHAVIORS] = None,
+        default_saver_behavior: Optional[CACHING_BEHAVIORS] = None,
         log_to_file: bool = False,
         **kwargs,
     ):
@@ -212,8 +217,11 @@ class HamiltonCacheAdapter(
         :param result_store: BaseStore caching dataflow execution results
         :param default: Set caching behavior to DEFAULT for specified node names. If True, apply to all nodes.
         :param recompute: Set caching behavior to RECOMPUTE for specified node names. If True, apply to all nodes.
-        :param disable: Set caching behavior to DISABLE for specified node names. If True, apply to all nodes.
         :param ignore: Set caching behavior to IGNORE for specified node names. If True, apply to all nodes.
+        :param disable: Set caching behavior to DISABLE for specified node names. If True, apply to all nodes.
+        :param default_behavior: Set the default caching behavior.
+        :param default_loader_behavior: Set the default caching behavior `DataLoader` nodes.
+        :param default_saver_behavior: Set the default caching behavior `DataSaver` nodes.
         :param log_to_file: If True, append cache event logs as they happen in JSONL format.
         """
         self._path = path
@@ -233,10 +241,15 @@ class HamiltonCacheAdapter(
         self._recompute = recompute
         self._disable = disable
         self._ignore = ignore
+        self.default_behavior = default_behavior
+        self.default_loader_behavior = default_loader_behavior
+        self.default_saver_behavior = default_saver_behavior
 
         # attributes populated at execution time
         self.run_ids: List[str] = []
         self._fn_graphs: Dict[str, FunctionGraph] = {}  # {run_id: graph}
+        self._data_savers: Dict[str, Collection[str]] = {}  # {run_id: list[node_name]}
+        self._data_loaders: Dict[str, Collection[str]] = {}  # {run_id: list[node_name]}
         self.behaviors: Dict[
             str, Dict[str, CachingBehavior]
         ] = {}  # {run_id: {node_name: behavior}}
@@ -828,6 +841,9 @@ class HamiltonCacheAdapter(
         disable: Optional[Collection[str]] = None,
         recompute: Optional[Collection[str]] = None,
         ignore: Optional[Collection[str]] = None,
+        default_behavior: CACHING_BEHAVIORS = "default",
+        default_loader_behavior: CACHING_BEHAVIORS = "default",
+        default_saver_behavior: CACHING_BEHAVIORS = "default",
     ) -> CachingBehavior:
         """Determine the cache behavior of a node.
         Behavior specified via the ``Builder`` has precedence over the ``@cache`` decorator.
@@ -856,7 +872,7 @@ class HamiltonCacheAdapter(
             if node.name in node_set:
                 if behavior_from_driver is not SENTINEL:
                     raise ValueError(
-                        f"Multiple caching behaviors specifiself.resolve_behaviors(run_id=run_id, graph=graph)ed by Driver for node: {node.name}"
+                        f"Multiple caching behaviors specified by Driver for node: {node.name}"
                     )
                 behavior_from_driver = behavior
 
@@ -864,8 +880,12 @@ class HamiltonCacheAdapter(
             return behavior_from_driver
         elif behavior_from_tag is not SENTINEL:
             return behavior_from_tag
+        elif node.tags.get("hamilton.data_loader"):
+            return CachingBehavior.from_string(default_loader_behavior)
+        elif node.tags.get("hamilton.data_saver"):
+            return CachingBehavior.from_string(default_saver_behavior)
         else:
-            return CachingBehavior.DEFAULT
+            return CachingBehavior.from_string(default_behavior)
 
     def resolve_behaviors(self, run_id: str) -> Dict[str, CachingBehavior]:
         """Resolve the caching behavior for each node based on the ``@cache`` decorator
@@ -898,6 +918,18 @@ class HamiltonCacheAdapter(
         elif _ignore is True:
             _ignore = [n.name for n in graph.get_nodes()]
 
+        default_behavior = "default"
+        if self.default_behavior is not None:
+            default_behavior = self.default_behavior
+
+        default_loader_behavior = default_behavior
+        if self.default_loader_behavior is not None:
+            default_loader_behavior = self.default_loader_behavior
+
+        default_saver_behavior = default_behavior
+        if self.default_saver_behavior is not None:
+            default_saver_behavior = self.default_saver_behavior
+
         behaviors = {}
         for node in graph.get_nodes():
             behavior = HamiltonCacheAdapter._resolve_node_behavior(
@@ -906,6 +938,9 @@ class HamiltonCacheAdapter(
                 disable=_disable,
                 recompute=_recompute,
                 ignore=_ignore,
+                default_behavior=default_behavior,
+                default_loader_behavior=default_loader_behavior,
+                default_saver_behavior=default_saver_behavior,
             )
             behaviors[node.name] = behavior
 
@@ -917,6 +952,41 @@ class HamiltonCacheAdapter(
                 event_type=CachingEventType.RESOLVE_BEHAVIOR,
                 value=behavior,
             )
+
+        # need to handle materializers via a second pass to copy the behavior
+        # of their "main node"
+        for node in graph.get_nodes():
+            if node.tags.get("hamilton.data_loader") is True:
+                main_node = node.tags["hamilton.data_loader.node"]
+                if main_node == node.name:
+                    continue
+
+                # solution for `@dataloader` and `from_`
+                if behaviors.get(main_node, None) is not None:
+                    behaviors[node.name] = behaviors[main_node]
+                # this hacky section is required to support @load_from and provide
+                # a unified pattern to specify behavior from the module or the driver
+                else:
+                    behaviors[node.name] = HamiltonCacheAdapter._resolve_node_behavior(
+                        # we create a fake node, only its name matters
+                        node=hamilton.node.Node(
+                            name=main_node,
+                            typ=str,
+                            callabl=lambda: None,
+                            tags=node.tags.copy(),
+                        ),
+                        default=_default,
+                        disable=_disable,
+                        recompute=_recompute,
+                        ignore=_ignore,
+                        default_behavior=default_loader_behavior,
+                    )
+
+                self._data_loaders[run_id].append(main_node)
+
+            if node.tags.get("hamilton.data_saver", None) is not None:
+                self._data_savers[run_id].append(node.name)
+
         return behaviors
 
     def resolve_code_versions(
@@ -992,6 +1062,24 @@ class HamiltonCacheAdapter(
             value=data_version,
         )
 
+    @staticmethod
+    def _resolve_default_parameter_values(
+        node_: hamilton.node.Node, node_kwargs: dict[str, Any]
+    ) -> dict[str, Any]:
+        """
+        If a node uses the function's default parameter values, they won't be part of the
+        node_kwargs. To ensure a consistent `cache_key` we want to retrieve default parameter
+        values if they're used
+        """
+        resolved_kwargs = node_kwargs.copy()
+        for param_name, param_value in node_.default_parameter_values.items():
+            # if the `param_name` not in `node_kwargs`, it means the node uses the default
+            # parameter value
+            if param_name not in node_kwargs.keys():
+                resolved_kwargs.update(**{param_name: param_value})
+
+        return resolved_kwargs
+
     def pre_graph_execute(
         self,
         *,
@@ -1016,6 +1104,10 @@ class HamiltonCacheAdapter(
         self.code_versions[run_id] = self.resolve_code_versions(
             run_id=run_id, final_vars=final_vars, inputs=inputs, overrides=overrides
         )
+        # the empty `._data_loaders` and `._data_savers` need to be instantiated before calling
+        # `self.resolve_behaviors` because it appends to them
+        self._data_loaders[run_id] = []
+        self._data_savers[run_id] = []
         self.behaviors[run_id] = self.resolve_behaviors(run_id=run_id)
 
         # final vars are logged to be retrieved by the ``.view_run()`` method
@@ -1060,7 +1152,7 @@ class HamiltonCacheAdapter(
 
         """
         node_name = node_.name
-        node_kwargs = kwargs
+        node_kwargs = HamiltonCacheAdapter._resolve_default_parameter_values(node_, kwargs)
 
         if self.behaviors[run_id][node_name] == CachingBehavior.IGNORE:
             return
@@ -1154,7 +1246,7 @@ class HamiltonCacheAdapter(
         """
         node_name = node_.name
         node_callable = node_.callable
-        node_kwargs = kwargs
+        node_kwargs = HamiltonCacheAdapter._resolve_default_parameter_values(node_, kwargs)
 
         if self.behaviors[run_id][node_name] in (
             CachingBehavior.DISABLE,
@@ -1173,7 +1265,23 @@ class HamiltonCacheAdapter(
                 CachingBehavior.IGNORE,
             ):
                 cache_key = self.get_cache_key(run_id=run_id, node_name=node_name, task_id=task_id)
+
+                # nodes collected in `._data_loaders` return tuples of (result, metadata)
+                # where metadata often includes a timestamp. To ensure we provide a consistent
+                # `data_version` / hash, we only hash the result part of the materializer return
+                # value and discard the metadata.
+                if node_name in self._data_loaders[run_id] and isinstance(result, tuple):
+                    result = result[0]
+
                 data_version = self._version_data(node_name=node_name, run_id=run_id, result=result)
+
+                # nodes collected in `._data_savers` return a dictionary of metadata
+                # this metadata often includes a timestamp, leading to an unstable hash.
+                # we do not version nor store the metadata. This node is executed for its
+                # external effect of saving a file
+                if node_name in self._data_savers[run_id]:
+                    data_version = f"{node_name}__metadata"
+
                 self._set_memory_metadata(
                     run_id=run_id, node_name=node_name, task_id=task_id, data_version=data_version
                 )
@@ -1244,7 +1352,23 @@ class HamiltonCacheAdapter(
                 node_kwargs=node_kwargs,
                 task_id=task_id,
             )
+
+            # nodes collected in `._data_loaders` return tuples of (result, metadata)
+            # where metadata often includes a timestamp. To ensure we provide a consistent
+            # `data_version` / hash, we only hash the result part of the materializer return
+            # value and discard the metadata.
+            if node_name in self._data_loaders[run_id] and isinstance(result, tuple):
+                result = result[0]
+
             data_version = self._version_data(node_name=node_name, run_id=run_id, result=result)
+
+            # nodes collected in `._data_savers` return a dictionary of metadata
+            # this metadata often includes a timestamp, leading to an unstable hash.
+            # we do not version nor store the metadata. This node is executed for its
+            # external effect of saving a file
+            if node_name in self._data_savers[run_id]:
+                data_version = f"{node_name}__metadata"
+
             self._set_memory_metadata(
                 run_id=run_id, node_name=node_name, task_id=task_id, data_version=data_version
             )
@@ -1298,7 +1422,8 @@ class HamiltonCacheAdapter(
             assert data_version is not SENTINEL
 
             # TODO clean up this logic
-            # check for materialized file when using `@cache(format="json")`
+            # check if a materialized file exist before writing results
+            # when using `@cache(format="json")`
             cache_format = (
                 self._fn_graphs[run_id]
                 .nodes[node_name]

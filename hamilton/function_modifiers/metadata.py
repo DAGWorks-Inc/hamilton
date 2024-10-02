@@ -347,7 +347,7 @@ class cache(base.NodeDecorator):
         *,
         behavior: Optional[CACHE_BEHAVIORS] = None,
         format: Optional[Union[CACHE_MATERIALIZERS, str]] = None,
-        target_: base.TargetType = None,
+        target_: base.TargetType = ...,
     ):
         """The ``@cache`` decorator can define the behavior and format of a specific node.
 

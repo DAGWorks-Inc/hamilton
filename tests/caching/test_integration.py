@@ -594,3 +594,26 @@ def test_materialize_parallel_branches(tmp_path, executor):
     check_results_exist_in_store(
         cache=dr.cache, expected_nodes=["expand_node", "inside_branch", "collect_node"]
     )
+
+
+def test_consistent_cache_key_with_or_without_defaut_parameter(tmp_path):
+    def foo(external_dep: int = 3) -> int:
+        return external_dep + 1
+
+    cache = HamiltonCacheAdapter(path=tmp_path)
+    module = ad_hoc_utils.create_temporary_module(foo)
+    final_vars = ["foo"]
+    inputs_1 = {}
+    inputs_2 = {"external_dep": 3}
+
+    # execution 1: populate cache
+    execute_dataflow(module=module, cache=cache, final_vars=final_vars, inputs=inputs_1)
+    check_execution(cache=cache, did=["foo"])
+    cache_key_1 = cache.cache_keys[cache.last_run_id]["foo"]
+
+    # execution 2: retrieve under the same condition
+    execute_dataflow(module=module, cache=cache, final_vars=final_vars, inputs=inputs_2)
+    check_execution(cache=cache, did_not=["foo"])
+    cache_key_2 = cache.cache_keys[cache.last_run_id]["foo"]
+
+    assert cache_key_1 == cache_key_2

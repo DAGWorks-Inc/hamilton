@@ -1,9 +1,26 @@
+"""
+This module contains hashing functions for Python objects. It uses
+functools.singledispatch to allow specialized implementations based on type.
+Singledispatch automatically applies the most specific implementation
+
+This module houses implementations for the Python standard library. Supporting
+all types is considerable endeavor, so we'll add support as types are requested
+by users.
+
+Otherwise, 3rd party types can be supported via the `h_databackends` module.
+This registers abstract types that can be checked without having to import the
+3rd party library. For instance, there are implementations for pandas.DataFrame
+and polars.DataFrame despite these libraries not being imported here.
+"""
+
 import base64
+import datetime
 import functools
 import hashlib
 import logging
+import sys
 from collections.abc import Mapping, Sequence, Set
-from typing import Dict
+from typing import Dict, Union
 
 from hamilton.experimental import h_databackends
 
@@ -54,6 +71,19 @@ def hash_value(obj, *args, depth=0, **kwargs) -> str:
     if hasattr(obj, "__dict__"):
         return hash_value(obj.__dict__, depth=depth + 1)
 
+    # check if the object comes from a module part of the standard library
+    # if it's the case, hash it's __repr__(), which is a string representation of the object
+    # __repr__() from the standard library should be well-formed and offer a reliable basis
+    # for fingerprinting.
+    # for example, this will catch: pathlib.Path, enum.Enum, argparse.Namespace
+    elif getattr(obj, "__module__", False):
+        if obj.__module__.partition(".")[0] in sys.builtin_module_names:
+            return hash_repr(obj)
+
+    # cover the datetime module, which doesn't have a __module__ attribute
+    elif type(obj) in vars(datetime).values():
+        return hash_repr(obj)
+
     return UNHASHABLE
 
 
@@ -63,25 +93,32 @@ def hash_none(obj, *args, **kwargs) -> str:
     return NONE_HASH
 
 
-@hash_value.register(str)
-@hash_value.register(int)
-@hash_value.register(float)
-@hash_value.register(bool)
-def hash_primitive(obj, *args, **kwargs) -> str:
+def hash_repr(obj, *args, **kwargs) -> str:
+    """Use the built-in repr() to get a string representation of the object
+    and hash it.
+
+    While `.__repr__()` might not be implemented for all classes, the function
+    `repr()` will handle it, along with exceptions, to always return a value.
+    """
+    return hash_primitive(repr(obj))
+
+
+@hash_value.register
+def hash_primitive(obj: Union[str, int, float, bool], *args, **kwargs) -> str:
     """Convert the primitive to a string and hash it"""
     hash_object = hashlib.md5(str(obj).encode())
     return _compact_hash(hash_object.digest())
 
 
-@hash_value.register(bytes)
-def hash_bytes(obj, *args, **kwargs) -> str:
+@hash_value.register
+def hash_bytes(obj: bytes, *args, **kwargs) -> str:
     """Convert the primitive to a string and hash it"""
     hash_object = hashlib.md5(obj)
     return _compact_hash(hash_object.digest())
 
 
-@hash_value.register(Sequence)
-def hash_sequence(obj, *args, depth: int = 0, **kwargs) -> str:
+@hash_value.register
+def hash_sequence(obj: Sequence, *args, depth: int = 0, **kwargs) -> str:
     """Hash each object of the sequence.
 
     Orders matters for the hash since orders matters in a sequence.
@@ -118,8 +155,8 @@ def hash_unordered_mapping(obj, *args, depth: int = 0, **kwargs) -> str:
     return _compact_hash(hash_object.digest())
 
 
-@hash_value.register(Mapping)
-def hash_mapping(obj, *, ignore_order: bool = True, depth: int = 0, **kwargs) -> str:
+@hash_value.register
+def hash_mapping(obj: Mapping, *, ignore_order: bool = True, depth: int = 0, **kwargs) -> str:
     """Hash each key then its value.
 
     The mapping is always sorted first because order shouldn't matter
@@ -148,8 +185,8 @@ def hash_mapping(obj, *, ignore_order: bool = True, depth: int = 0, **kwargs) ->
     return _compact_hash(hash_object.digest())
 
 
-@hash_value.register(Set)
-def hash_set(obj, *args, depth: int = 0, **kwargs) -> str:
+@hash_value.register
+def hash_set(obj: Set, *args, depth: int = 0, **kwargs) -> str:
     """Hash each element of the set, then sort hashes, and
     create a hash of hashes.
 
@@ -166,9 +203,12 @@ def hash_set(obj, *args, depth: int = 0, **kwargs) -> str:
     return _compact_hash(hash_object.digest())
 
 
-@hash_value.register(h_databackends.AbstractPandasColumn)
-@hash_value.register(h_databackends.AbstractPandasDataFrame)
-def hash_pandas_obj(obj, *args, **kwargs) -> str:
+@hash_value.register
+def hash_pandas_obj(
+    obj: Union[h_databackends.AbstractPandasDataFrame, h_databackends.AbstractPandasColumn],
+    *args,
+    **kwargs,
+) -> str:
     """Convert a pandas dataframe, series, or index to
     a dictionary of {index: row_hash} then hash it.
 
@@ -182,8 +222,8 @@ def hash_pandas_obj(obj, *args, **kwargs) -> str:
     return hash_mapping(hash_per_row.to_dict(), ignore_order=False)
 
 
-@hash_value.register(h_databackends.AbstractPolarsDataFrame)
-def hash_polars_dataframe(obj, *args, **kwargs) -> str:
+@hash_value.register
+def hash_polars_dataframe(obj: h_databackends.AbstractPolarsDataFrame, *args, **kwargs) -> str:
     """Convert a polars dataframe, series, or index to
     a list of hashes then hash it.
     """
@@ -191,12 +231,12 @@ def hash_polars_dataframe(obj, *args, **kwargs) -> str:
     return hash_sequence(hash_per_row.to_list())
 
 
-@hash_value.register(h_databackends.AbstractPolarsColumn)
-def hash_polars_column(obj, *args, **kwargs) -> str:
+@hash_value.register
+def hash_polars_column(obj: h_databackends.AbstractPolarsColumn, *args, **kwargs) -> str:
     """Promote the single Series to a dataframe and hash it"""
     return hash_polars_dataframe(obj.to_frame())
 
 
-@hash_value.register(h_databackends.AbstractNumpyArray)
-def hash_numpy_array(obj, *args, **kwargs) -> str:
+@hash_value.register
+def hash_numpy_array(obj: h_databackends.AbstractNumpyArray, *args, **kwargs) -> str:
     return hash_bytes(obj.tobytes())

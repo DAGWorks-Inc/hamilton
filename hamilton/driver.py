@@ -1972,6 +1972,9 @@ class Builder:
         recompute: Optional[Union[Literal[True], Sequence[str]]] = None,
         ignore: Optional[Union[Literal[True], Sequence[str]]] = None,
         disable: Optional[Union[Literal[True], Sequence[str]]] = None,
+        default_behavior: Literal["default", "recompute", "disable", "ignore"] = "default",
+        default_loader_behavior: Literal["default", "recompute", "disable", "ignore"] = "default",
+        default_saver_behavior: Literal["default", "recompute", "disable", "ignore"] = "default",
         log_to_file: bool = False,
     ) -> "Builder":
         """Add the caching adapter to the `Driver`
@@ -1983,6 +1986,9 @@ class Builder:
         :param recompute: Set caching behavior to RECOMPUTE for specified node names. If True, apply to all nodes.
         :param ignore: Set caching behavior to IGNORE for specified node names. If True, apply to all nodes.
         :param disable: Set caching behavior to DISABLE for specified node names. If True, apply to all nodes.
+        :param default_behavior: Set the default caching behavior.
+        :param default_loader_behavior: Set the default caching behavior `DataLoader` nodes.
+        :param default_saver_behavior: Set the default caching behavior `DataSaver` nodes.
         :log_to_file: If True, the cache adapter logs will be stored in JSONL format under the metadata_store directory
         :return: self
 
@@ -2020,6 +2026,9 @@ class Builder:
             recompute=recompute,
             ignore=ignore,
             disable=disable,
+            default_behavior=default_behavior,
+            default_loader_behavior=default_loader_behavior,
+            default_saver_behavior=default_saver_behavior,
             log_to_file=log_to_file,
         )
         self.adapters.append(adapter)

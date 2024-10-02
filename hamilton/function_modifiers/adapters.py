@@ -772,9 +772,9 @@ class dataloader(NodeCreator):
             {
                 "hamilton.data_loader": True,
                 "hamilton.data_loader.has_metadata": True,
-                "hamilton.data_loader.source": f"{fn.__name__}",
+                "hamilton.data_loader.node": f"{fn.__name__}",
                 "hamilton.data_loader.classname": f"{fn.__name__}()",
-                "hamilton.data_loader.node": _name,
+                "hamilton.data_loader.source": _name,
             }
         )
 
@@ -790,9 +790,9 @@ class dataloader(NodeCreator):
             tags={
                 "hamilton.data_loader": True,
                 "hamilton.data_loader.has_metadata": False,
-                "hamilton.data_loader.source": f"{fn.__name__}",
+                "hamilton.data_loader.node": f"{fn.__name__}",
                 "hamilton.data_loader.classname": f"{fn.__name__}()",
-                "hamilton.data_loader.node": fn.__name__,
+                "hamilton.data_loader.source": fn.__name__,
             },
         )
 

@@ -24,6 +24,8 @@ def cache_adapter(tmp_path):
         config={},
     )
     adapter.behaviors = {run_id: {"foo": CachingBehavior.DEFAULT}}
+    adapter._data_savers = {run_id: []}
+    adapter._data_loaders = {run_id: []}
     adapter.run_ids.append(run_id)
     adapter.data_versions = {run_id: {}}
     adapter.code_versions = {run_id: {"foo": "0", "bar": "0"}}
