@@ -84,13 +84,13 @@ def test_max_recursion_depth():
     fingerprint0 = fingerprinting.hash_value(foo0)
     assert fingerprint0 == fingerprinting.hash_value(foo0_dict)
 
-    fingerprinting.set_max_depth(0)
+    fingerprinting.set_max_depth(1)
     # equivalent after reaching max depth
     fingerprint1 = fingerprinting.hash_value(foo1)
     fingerprint2 = fingerprinting.hash_value(foo2)
     assert fingerprint1 == fingerprint2
 
-    fingerprinting.set_max_depth(1)
+    fingerprinting.set_max_depth(2)
     # no longer equivalent after increasing max depth
     fingerprint1 = fingerprinting.hash_value(foo1)
     fingerprint2 = fingerprinting.hash_value(foo2)
