@@ -31,7 +31,6 @@ extensions = [
     "myst_nb",
     "sphinx_sitemap",
     "docs.data_adapters_extension",
-    "sphinxcontrib.mermaid",
 ]
 
 nb_execution_mode = "off"
