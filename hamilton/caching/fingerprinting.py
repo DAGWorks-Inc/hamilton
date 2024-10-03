@@ -11,6 +11,9 @@ Otherwise, 3rd party types can be supported via the `h_databackends` module.
 This registers abstract types that can be checked without having to import the
 3rd party library. For instance, there are implementations for pandas.DataFrame
 and polars.DataFrame despite these libraries not being imported here.
+
+IMPORTANT all container types that make a recursive call to `hash_value` or a specific
+implementation should pass the `depth` parameter to prevent `RecursionError`.
 """
 
 import base64
@@ -78,18 +81,21 @@ def hash_value(obj, *args, depth=0, **kwargs) -> str:
     # for example, this will catch: pathlib.Path, enum.Enum, argparse.Namespace
     elif getattr(obj, "__module__", False):
         if obj.__module__.partition(".")[0] in sys.builtin_module_names:
-            return hash_repr(obj)
+            return hash_repr(obj, depth=depth)
 
     # cover the datetime module, which doesn't have a __module__ attribute
     elif type(obj) in vars(datetime).values():
-        return hash_repr(obj)
+        return hash_repr(obj, depth=depth)
 
     return UNHASHABLE
 
 
 @hash_value.register(NoneType)
 def hash_none(obj, *args, **kwargs) -> str:
-    """Hash for None is <none>"""
+    """Hash for None is <none>
+
+    Primitive type returns a hash and doesn't have to handle depth.
+    """
     return NONE_HASH
 
 
@@ -99,6 +105,8 @@ def hash_repr(obj, *args, **kwargs) -> str:
 
     While `.__repr__()` might not be implemented for all classes, the function
     `repr()` will handle it, along with exceptions, to always return a value.
+
+    Primitive type returns a hash and doesn't have to handle depth.
     """
     return hash_primitive(repr(obj))
 
@@ -110,14 +118,20 @@ def hash_repr(obj, *args, **kwargs) -> str:
 @hash_value.register(float)
 @hash_value.register(bool)
 def hash_primitive(obj, *args, **kwargs) -> str:
-    """Convert the primitive to a string and hash it"""
+    """Convert the primitive to a string and hash it
+
+    Primitive type returns a hash and doesn't have to handle depth.
+    """
     hash_object = hashlib.md5(str(obj).encode())
     return _compact_hash(hash_object.digest())
 
 
 @hash_value.register(bytes)
 def hash_bytes(obj, *args, **kwargs) -> str:
-    """Convert the primitive to a string and hash it"""
+    """Convert the primitive to a string and hash it
+
+    Primitive type returns a hash and doesn't have to handle depth.
+    """
     hash_object = hashlib.md5(obj)
     return _compact_hash(hash_object.digest())
 
@@ -180,7 +194,8 @@ def hash_mapping(obj, *, ignore_order: bool = True, depth: int = 0, **kwargs) ->
 
     """
     if ignore_order:
-        return hash_unordered_mapping(obj)
+        # use the same depth because we're simply dispatching to another implementation
+        return hash_unordered_mapping(obj, depth=depth)
 
     hash_object = hashlib.sha224()
     for key, value in obj.items():
@@ -210,7 +225,7 @@ def hash_set(obj, *args, depth: int = 0, **kwargs) -> str:
 
 @hash_value.register(h_databackends.AbstractPandasDataFrame)
 @hash_value.register(h_databackends.AbstractPandasColumn)
-def hash_pandas_obj(obj, *args, **kwargs) -> str:
+def hash_pandas_obj(obj, *args, depth: int = 0, **kwargs) -> str:
     """Convert a pandas dataframe, series, or index to
     a dictionary of {index: row_hash} then hash it.
 
@@ -221,24 +236,32 @@ def hash_pandas_obj(obj, *args, **kwargs) -> str:
     from pandas.util import hash_pandas_object
 
     hash_per_row = hash_pandas_object(obj)
-    return hash_mapping(hash_per_row.to_dict(), ignore_order=False)
+    return hash_mapping(hash_per_row.to_dict(), ignore_order=False, depth=depth + 1)
 
 
 @hash_value.register(h_databackends.AbstractPolarsDataFrame)
-def hash_polars_dataframe(obj, *args, **kwargs) -> str:
+def hash_polars_dataframe(obj, *args, depth: int = 0, **kwargs) -> str:
     """Convert a polars dataframe, series, or index to
     a list of hashes then hash it.
     """
     hash_per_row = obj.hash_rows()
-    return hash_sequence(hash_per_row.to_list())
+    return hash_sequence(hash_per_row.to_list(), depth=depth + 1)
 
 
 @hash_value.register(h_databackends.AbstractPolarsColumn)
-def hash_polars_column(obj, *args, **kwargs) -> str:
+def hash_polars_column(obj, *args, depth: int = 0, **kwargs) -> str:
     """Promote the single Series to a dataframe and hash it"""
-    return hash_polars_dataframe(obj.to_frame())
+    # use the same depth because we're simply dispatching to another implementation
+    return hash_polars_dataframe(obj.to_frame(), depth=depth)
 
 
 @hash_value.register(h_databackends.AbstractNumpyArray)
-def hash_numpy_array(obj, *args, **kwargs) -> str:
-    return hash_bytes(obj.tobytes())
+def hash_numpy_array(obj, *args, depth: int = 0, **kwargs) -> str:
+    """Get the bytes representation of the array raw data and hash it.
+
+    Might not be ideal because different higher-level numpy objects could have
+    the same underlying array representation (e.g., masked arrays).
+    Unsure, but it's an area to investigate.
+    """
+    # use the same depth because we're simply dispatching to another implementation
+    return hash_bytes(obj.tobytes(), depth=depth)
