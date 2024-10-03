@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from hamilton import base, node
+from hamilton.caching.adapter import HamiltonCacheAdapter
 from hamilton.driver import (
     Builder,
     Driver,
@@ -621,6 +622,23 @@ def test_materialize_checks_required_input(tmp_path):
         dr.materialize(
             to.pickle(id="1", path=f"{tmp_path}/foo.pkl", dependencies=["C"]), inputs={"c": 1}
         )
+
+
+def test_cache_raise_if_setting_twice(tmp_path):
+    builder = Builder()
+
+    builder.with_cache(path=tmp_path)
+    # case 1: .with_cache() then .with_cache()
+    with pytest.raises(ValueError):
+        builder.with_cache(path=tmp_path)
+    # case 2: .with_cache() then adding SmartCacheAdapter()
+    with pytest.raises(ValueError):
+        builder.with_adapters(HamiltonCacheAdapter(path=tmp_path))
+    # case 3: add SmartCacheAdapter() then .with_cache()
+    builder = Builder()
+    builder.with_adapters(HamiltonCacheAdapter(path=tmp_path))
+    with pytest.raises(ValueError):
+        builder.with_cache()
 
 
 def test_validate_execution_happy():

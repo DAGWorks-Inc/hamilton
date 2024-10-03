@@ -29,6 +29,7 @@ Slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-D
 
 reference/decorators/index
 reference/drivers/index
+reference/caching/index
 reference/graph-adapters/index
 reference/lifecycle-hooks/index
 reference/result-builders/index

@@ -505,7 +505,7 @@ def create_graphviz_graph(
         # we use tags to identify what is a data loader
         # but we have two ways that we need to capture, hence the clauses.
         if n.tags.get("hamilton.data_loader") and (
-            "load_data." in n.name or "loader" == n.tags.get("hamilton.data_loader.node")
+            "load_data." in n.name or "loader" == n.tags.get("hamilton.data_loader.source")
         ):
             materializer_type = n.tags["hamilton.data_loader.classname"]
             label = _get_node_label(n, type_string=materializer_type)

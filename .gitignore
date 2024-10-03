@@ -152,3 +152,6 @@ examples/**/hamilton-env
 **.pkl
 **.lance
 **.txn
+
+# hamilton default caching directory
+**/.hamilton_cache/

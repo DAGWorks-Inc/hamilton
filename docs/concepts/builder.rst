@@ -179,6 +179,24 @@ Adds `DataSaver` and `DataLoader` nodes to your dataflow. This allows to visuali
     :align: center
 
 
+with_cache()
+--------------
+
+This enables Hamilton's caching feature, which allows to automatically store intermediary results and reuse them in subsequent executions to skip computations. Learn more in the :doc:`/concepts/caching` section.
+
+.. code-block:: python
+
+    from hamilton import driver
+    import my_dataflow
+
+    dr = (
+        driver.Builder()
+        .with_modules(my_dataflow)
+        .with_cache()
+        .build()
+    )
+
+
 with_adapters()
 ---------------
 
