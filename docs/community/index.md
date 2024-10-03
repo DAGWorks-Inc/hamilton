@@ -5,6 +5,20 @@ We have an active global meet up group that meets virtually once a month.
 You can [sign up for the group here](https://www.meetup.com/global-hamilton-open-source-user-group-meetup/).
 
 ## Past Meet-ups
+The below will be out of date. Please [see our youtube](https://www.youtube.com/@dagworks-inc) for the latest recordings on past meetups.
+
+
+### August 2024
+-[Recording](https://youtu.be/3LREcaewZbo?feature=shared)
+
+### June 2024
+-[Recording](https://youtu.be/SsrIIM1ed4w?feature=shared)
+
+### April 2024
+-[Recording](https://youtu.be/_-yXfnBtrlg?feature=shared)
+
+### March 2024
+-[Recording](https://youtu.be/IJByeN41xHs?feature=shared).
 
 ### February 2024
 - [Recording](https://www.youtube.com/watch?v=ks672Lm0CJo).

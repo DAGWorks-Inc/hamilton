@@ -76,3 +76,5 @@ Multiple companies are doing cool stuff with Hamilton! Come chat with members of
 * **KI** - Feature engineering
 * **Kora Money** - DS/ML Workflows
 * **Capitec Bank** - Financial decisions
+* **Best Egg** - Feature engineering
+* **RTV Euro AGD** - General feature engineering & machine learning
