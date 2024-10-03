@@ -131,6 +131,9 @@ Write once, run anywhere blog post:
 For a comprehensive post on writing a feature once and using it anywhere see `this blog <https://blog.dagworks.io/p/feature-engineering-with-hamilton>`__.
 The companion example code can be found `here <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/feature_engineering/write_once_run_everywhere_blog_post>`__.
 
+Best Egg Platform Blog Post:
+----------------------------
+For an overview of how Best Egg built their feature platform on Hamilton see `this blog <https://blog.dagworks.io/p/building-a-better-feature-platform?r=2cg5z1&utm_campaign=post&utm_medium=web>`__.
 
 FAQ
 ----

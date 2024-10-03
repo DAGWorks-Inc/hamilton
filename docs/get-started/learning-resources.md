@@ -26,6 +26,8 @@ The [DAGWorks Blog](https://blog.dagworks.io/) publishes articles on problems Ha
 The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g) is the ideal place to ask questions, request features, and give feedback.
 
 ## 📣 Talks
+See [our youtube for the most up to date recordings](https://www.youtube.com/@DAGWorks-Inc/playlists) - we are slow to list them here.
+
 * 2024-02 &nbsp;&nbsp; Hamilton Meet-up for February
     * [Recording](https://www.youtube.com/watch?v=ks672Lm0CJo.)
     * [Slides](https://github.com/skrawcz/talks/files/14351139/Hamilton.February.2024.Meetup.pdf)
@@ -103,6 +105,7 @@ The [Slack channel](https://join.slack.com/t/hamilton-opensource/shared_invite/z
 
 
 ## 📰 External Blogs
+For the latest blog posts, see the [DAGWorks's Blog](https://blog.dagworks.io/).
 
 * 2024-03 &nbsp;&nbsp; [RAG: ingestion and chunking using Hamilton and scaling to Ray, Dask, or PySpark](https://blog.dagworks.io/p/rag-ingestion-and-chunking-using)
 * 2024-02 &nbsp;&nbsp; [A command line tool to improve your development workflow](https://blog.dagworks.io/p/a-command-line-tool-to-improve-your)
