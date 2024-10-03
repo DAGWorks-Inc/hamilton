@@ -74,10 +74,9 @@ Understanding the ``cache_key`` is important to understand why a node is recompu
 
 By traversing the cache keys' ``dependencies_data_versions``, we can actually reconstruct the dataflow structure!
 
-.. note::
+.. warning::
 
-    The :doc:`../how-tos/caching-tutorial` tutorial will help you build an intuition and deepen your understanding.
-
+    Cache keys could be unstable across Python and Hamilton versions (because of new features, bug fixes, etc.). Upgrading Python or Hamilton could require starting with a new empty cache for reliable behavior.
 
 Observing the cache
 -------------------
