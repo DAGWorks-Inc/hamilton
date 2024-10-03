@@ -59,6 +59,8 @@ The following diagram gives a simplified overview of the main components of Hami
 
 Multiple companies are doing cool stuff with Hamilton! Come chat with members of the community and the development team on [Slack](https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g):
 
+* **Wealth.com** - Async Python LLM document processing pipelines
+* **Wren.ai** - Async RAG pipelines
 * **Stitch Fix** — Time series forecasting
 * **British cycling** — Telemetry analysis
 * **Joby** - Flight data processing
