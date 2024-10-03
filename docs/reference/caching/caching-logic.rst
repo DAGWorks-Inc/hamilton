@@ -57,7 +57,6 @@ Caching is a large and complex feature. This section is an attempt to list quirk
 
 - The standard library includes a lot of types which are not primitives. Thus, Hamilton might not be supporting them explicitly. It should be simple to add, so ping us if you need it.
 - The ``ResultStore`` could be architectured better to support custom formats. Right now, we use a ``DataSaver`` to produce the ``.parquet`` file and we pickle the ``DataLoader`` for later retrieval. Then, the metadata and result stores are completely unaware of the ``.parquet`` file making it difficult to handle cache eviction.
-- Instead of using
 - When a function with default parameter values passes through lifecycle hooks, the default values are not part of the ``node_kwargs``. They need to be retrieved manually from the ``node.Node`` object.
 - supporting the Hamilton ``AsyncDriver`` would require making the adapter async, but also the stores. A potential challenge is ensuring that you can use the same cache (i.e., same SQLite db and filesystem) for both sync and async drivers.
 - If the ``@cache`` allows to specify the ``format`` (e.g., ``json``, ``parquet``), we probably want ``.with_cache()`` to support the same feature.

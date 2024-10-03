@@ -86,7 +86,6 @@ docs = [
   "sphinx-autobuild",
   "sphinx-rtd-theme", # read the docs pins
   "sphinx-sitemap",
-  "sphinxcontrib-mermaid",
   "tqdm",
   "xgboost",
 ]

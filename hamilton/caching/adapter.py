@@ -1064,8 +1064,8 @@ class HamiltonCacheAdapter(
 
     @staticmethod
     def _resolve_default_parameter_values(
-        node_: hamilton.node.Node, node_kwargs: dict[str, Any]
-    ) -> dict[str, Any]:
+        node_: hamilton.node.Node, node_kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         If a node uses the function's default parameter values, they won't be part of the
         node_kwargs. To ensure a consistent `cache_key` we want to retrieve default parameter
