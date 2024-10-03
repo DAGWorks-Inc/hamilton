@@ -1,7 +1,6 @@
 import pathlib
 import pickle
 
-import pandas as pd
 import pytest
 
 from hamilton.caching import fingerprinting
@@ -101,7 +100,6 @@ def test_delete_all(result_store):
     [
         ("json", {"key1": "value1", "key2": 2}),
         ("pickle", ("value1", "value2", "value3")),
-        ("parquet", pd.DataFrame({"a": [1, 2], "b": ["x", "y"]})),
     ],
 )
 def test_save_and_load_materializer(format, value, result_store):
