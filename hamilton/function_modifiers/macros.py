@@ -329,6 +329,7 @@ class Applicable:
         _resolvers: List[ConfigResolver] = None,
         _name: Optional[str] = None,
         _namespace: Union[str, None, EllipsisType] = ...,
+        _target: base.TargetType = None,
     ):
         """Instantiates an Applicable.
 
@@ -338,6 +339,8 @@ class Applicable:
         :param _resolvers: Resolvers to use for the function
         :param _name: Name of the node to be created
         :param _namespace: Namespace of the node to be created -- currently only single-level namespaces are supported
+        :param _target: Selects which target nodes it will be appended onto. By default all.
+        :param kwargs: Kwargs (**kwargs) to pass to the function
         """
         self.fn = fn
         if "_name" in kwargs:
@@ -349,6 +352,7 @@ class Applicable:
         self.resolvers = _resolvers if _resolvers is not None else []
         self.name = _name
         self.namespace = _namespace
+        self.target = _target
 
     def _with_resolvers(self, *additional_resolvers: ConfigResolver) -> "Applicable":
         """Helper function for the .when* group"""
@@ -448,6 +452,26 @@ class Applicable:
             ),
             args=self.args,
             kwargs=self.kwargs,
+        )
+
+    def on_output(self, target: base.TargetType) -> "Applicable":
+        """Add Target on a single function level.
+
+        This determines to which node(s) it will applies. Should match the same naming convention
+        as the NodeTransorfmLifecycle child class (for example NodeTransformer).
+
+        :param target: Which node(s) to apply on top of
+        :return: The Applicable with specified target
+        """
+        return Applicable(
+            fn=self.fn,
+            _resolvers=self.resolvers,
+            _name=self.name,
+            _namespace=self.namespace,
+            _target=target if target is not None else self.target,
+            args=self.args,
+            kwargs=self.kwargs,
+            target_fn=self.target_fn,
         )
 
     def get_config_elements(self) -> List[str]:
@@ -883,7 +907,11 @@ class pipe(pipe_input):
 #         super(flow, self).__init__(*transforms, collapse=collapse, _chain=False)
 
 
-class pipe_output(base.SingleNodeNodeTransformer):
+class SingleTargetError(Exception):
+    pass
+
+
+class pipe_output(base.NodeTransformer):
     """Running a series of transformation on the output of the function.
 
     The decorated function declares the dependency, the body of the function gets executed, and then
@@ -913,24 +941,88 @@ class pipe_output(base.SingleNodeNodeTransformer):
     3. You want to use the same function multiple times, but with different parameters -- while `@does`/`@parameterize` can
     do this, this presents an easier way to do this, especially in a chain.
 
-    The rules for chaining nodes as the same as for pipe.
+    The rules for chaining nodes are the same as for pipe_input.
+
+    For extra control in case of multiple output nodes, for example after extract_field / extract_columns we can also specify the output node that we wish to mutate.
+    The following apply *A* to all fields while *B* only to "field_1"
+
+    .. code-block:: python
+        :name: Simple @pipe_output example targeting specific nodes
+
+        @extract_columns("col_1", "col_2")
+        def A(...):
+            return ...
+
+        def B(...):
+            return ...
+
+
+         @pipe_output(
+            step(A),
+            step(B).on_output("field_1"),
+        )
+        @extract_fields(
+                {"field_1":int, "field_2":int, "field_3":int}
+        )
+        def foo(a:int)->Dict[str,int]:
+            return {"field_1":1, "field_2":2, "field_3":3}
+
+    We can also do this on the global level (but cannot do on both levels at the same time). The following would apply function *A* and function *B* to only "field_1" and "field_2"
+
+    .. code-block:: python
+        :name: Simple @pipe_output targeting specific nodes local
+
+        @pipe_output(
+            step(A),
+            step(B),
+            on_output = ["field_1","field_2]
+        )
+        @extract_fields(
+                {"field_1":int, "field_2":int, "field_3":int}
+        )
+        def foo(a:int)->Dict[str,int]:
+            return {"field_1":1, "field_2":2, "field_3":3}
     """
+
+    @classmethod
+    def _validate_single_target_level(cls, target: base.TargetType, transforms: Tuple[Applicable]):
+        """We want to make sure that target gets applied on a single level.
+        Either choose for each step individually what it targets or set it on the global level where
+        all steps will target the same node(s).
+        """
+        if target is not None:
+            for transform in transforms:
+                if transform.target is not None:
+                    raise SingleTargetError("Cannot have target set on pipe_output and step level.")
 
     def __init__(
         self,
         *transforms: Applicable,
         namespace: NamespaceType = ...,
+        on_output: base.TargetType = None,
         collapse=False,
         _chain=False,
     ):
         """Instantiates a `@pipe_output` decorator.
 
+        Warning: if there is a global pipe_output target, the individual Applicable.target only chooses
+        from the subset pre-selected from the global pipe_output target. Leave global pipe_output target
+        empty if you want to choose between all the nodes on the individual Applicable level.
+
         :param transforms: step transformations to be applied, in order
         :param namespace: namespace to apply to all nodes in the pipe. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string). Note that you can either use this *or* namespaces inside pipe()...
+        :param on_output: setting the target node for all steps in the pipe. Leave empty to select all the output nodes.
         :param collapse: Whether to collapse this into a single node. This is not currently supported.
         :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. @flow will make use of this.
         """
-        super(pipe_output, self).__init__()
+        pipe_output._validate_single_target_level(target=on_output, transforms=transforms)
+
+        if on_output == ...:
+            raise ValueError(
+                "Cannot apply Elipsis(...) to on_output. Use None, single string or list of strings."
+            )
+
+        super(pipe_output, self).__init__(target=on_output)
         self.transforms = transforms
         self.collapse = collapse
         self.chain = _chain
@@ -944,6 +1036,27 @@ class pipe_output(base.SingleNodeNodeTransformer):
         if self.chain:
             raise NotImplementedError("@flow() is not yet supported -- this is ")
 
+    def _check_individual_target(self, node_):
+        """Resolves target option on the transform level.
+        Adds option that we can decide for each applicable which output node it will target.
+
+        :param node_: The current output node.
+        :return: The set of transforms that target this node
+        """
+        selected_transforms = []
+        for transform in self.transforms:
+            target = transform.target
+            if isinstance(target, str):
+                if node_.name == target:
+                    selected_transforms.append(transform)
+            elif isinstance(target, Collection):
+                if node_.name in target:
+                    selected_transforms.append(transform)
+            else:
+                selected_transforms.append(transform)
+
+        return tuple(selected_transforms)
+
     def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
@@ -954,22 +1067,28 @@ class pipe_output(base.SingleNodeNodeTransformer):
         The last node is an identity to the previous one with the original name `function_name` to
         represent an exit point of `pipe_output`.
         """
-
-        if len(self.transforms) < 1:
+        transforms = self._check_individual_target(node_)
+        if len(transforms) < 1:
             # in case no functions in pipeline we short-circuit and return the original node
             return [node_]
+
+        if self.namespace is None:
+            _namespace = None
+        elif self.namespace is ...:
+            _namespace = node_.name
+        else:
+            _namespace = self.namespace
 
         original_node = node_.copy_with(name=f"{node_.name}_raw")
 
         def __identity(foo: Any) -> Any:
             return foo
 
-        transforms = self.transforms + (step(__identity).named(fn.__name__),)
-
+        transforms = transforms + (step(__identity).named(fn.__name__),)
         nodes, _ = chain_transforms(
             first_arg=original_node.name,
             transforms=transforms,
-            namespace=self.namespace,
+            namespace=_namespace,  # self.namespace,
             config=config,
             fn=fn,
         )

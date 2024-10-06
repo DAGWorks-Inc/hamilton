@@ -237,10 +237,6 @@ def _test_apply_function(foo: int, bar: int, baz: int = 100) -> int:
     return foo + bar + baz
 
 
-def _test_apply_function_2(foo: int) -> int:
-    return foo + 1
-
-
 @pytest.mark.parametrize(
     "args,kwargs,chain_first_param",
     [
@@ -463,6 +459,16 @@ def result_from_downstream_function() -> int:
     return 2
 
 
+def test_pipe_output_single_target_level_error():
+    with pytest.raises(hamilton.function_modifiers.macros.SingleTargetError):
+        pipe_output(
+            step(_test_apply_function, source("bar_upstream"), baz=value(100)).on_output(
+                "some_node"
+            ),
+            on_output="some_other_node",
+        )
+
+
 def test_pipe_output_shortcircuit():
     n = node.Node.from_fn(result_from_downstream_function)
     decorator = pipe_output()
@@ -531,6 +537,97 @@ def test_pipe_output_inherits_null_namespace():
     assert "result_from_downstream_function" in {item.name for item in nodes}
 
 
+def test_pipe_output_global_on_output_all():
+    n1 = node.Node.from_fn(result_from_downstream_function, name="node_1")
+    n2 = node.Node.from_fn(result_from_downstream_function, name="node_2")
+
+    decorator = pipe_output(
+        step(_test_apply_function, source("bar_upstream"), baz=value(100)),
+    )
+    nodes = decorator.select_nodes(decorator.target, [n1, n2])
+    assert len(nodes) == 2
+    assert [node_.name for node_ in nodes] == ["node_1", "node_2"]
+
+
+def test_pipe_output_global_on_output_string():
+    n1 = node.Node.from_fn(result_from_downstream_function, name="node_1")
+    n2 = node.Node.from_fn(result_from_downstream_function, name="node_2")
+
+    decorator = pipe_output(
+        step(_test_apply_function, source("bar_upstream"), baz=value(100)), on_output="node_2"
+    )
+    nodes = decorator.select_nodes(decorator.target, [n1, n2])
+    assert len(nodes) == 1
+    assert nodes[0].name == "node_2"
+
+
+def test_pipe_output_global_on_output_list_strings():
+    n1 = node.Node.from_fn(result_from_downstream_function, name="node_1")
+    n2 = node.Node.from_fn(result_from_downstream_function, name="node_2")
+    n3 = node.Node.from_fn(result_from_downstream_function, name="node_3")
+
+    decorator = pipe_output(
+        step(_test_apply_function, source("bar_upstream"), baz=value(100)),
+        on_output=["node_1", "node_2"],
+    )
+    nodes = decorator.select_nodes(decorator.target, [n1, n2, n3])
+    assert len(nodes) == 2
+    assert [node_.name for node_ in nodes] == ["node_1", "node_2"]
+
+
+def test_pipe_output_elipsis_error():
+    with pytest.raises(ValueError):
+        pipe_output(
+            step(_test_apply_function, source("bar_upstream"), baz=value(100)), on_output=...
+        )
+
+
+def test_pipe_output_local_on_output_string():
+    n1 = node.Node.from_fn(result_from_downstream_function, name="node_1")
+    n2 = node.Node.from_fn(result_from_downstream_function, name="node_2")
+
+    decorator = pipe_output(
+        step(_test_apply_function, source("bar_upstream"), baz=value(100))
+        .named("correct_transform")
+        .on_output("node_2"),
+        step(_test_apply_function, source("bar_upstream"), baz=value(100))
+        .named("wrong_transform")
+        .on_output("node_3"),
+    )
+    steps = decorator._check_individual_target(n1)
+    assert len(steps) == 0
+    steps = decorator._check_individual_target(n2)
+    assert len(steps) == 1
+    assert steps[0].name == "correct_transform"
+
+
+def test_pipe_output_local_on_output_list_string():
+    n1 = node.Node.from_fn(result_from_downstream_function, name="node_1")
+    n2 = node.Node.from_fn(result_from_downstream_function, name="node_2")
+    n3 = node.Node.from_fn(result_from_downstream_function, name="node_3")
+
+    decorator = pipe_output(
+        step(_test_apply_function, source("bar_upstream"), baz=value(100))
+        .named("correct_transform_list")
+        .on_output(["node_2", "node_3"]),
+        step(_test_apply_function, source("bar_upstream"), baz=value(100))
+        .named("correct_transform_string")
+        .on_output("node_2"),
+        step(_test_apply_function, source("bar_upstream"), baz=value(100))
+        .named("wrong_transform")
+        .on_output("node_5"),
+    )
+    steps = decorator._check_individual_target(n1)
+    assert len(steps) == 0
+    steps = decorator._check_individual_target(n2)
+    assert len(steps) == 2
+    assert steps[0].name == "correct_transform_list"
+    assert steps[1].name == "correct_transform_string"
+    steps = decorator._check_individual_target(n3)
+    assert len(steps) == 1
+    assert steps[0].name == "correct_transform_list"
+
+
 def test_pipe_output_end_to_end_simple():
     dr = driver.Builder().with_config({"calc_c": True}).build()
 
@@ -552,7 +649,7 @@ def test_pipe_output_end_to_end_simple():
     assert result["downstream_f"] == result["chain_not_using_pipe_output"]
 
 
-def test_pipe_output_end_to_end_1():
+def test_pipe_output_end_to_end():
     dr = (
         driver.Builder()
         .with_modules(tests.resources.pipe_output)
