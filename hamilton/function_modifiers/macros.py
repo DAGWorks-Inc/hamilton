@@ -624,17 +624,7 @@ def step(
 
 
 class pipe_input(base.NodeInjector):
-    """Decorator to represent a chained set of transformations. This specifically solves the "node redefinition"
-    problem, and is meant to represent a pipeline of chaining/redefinitions. This is similar (and can happily be
-    used in conjunction with) `pipe` in pandas. In Pyspark this is akin to the common operation of redefining a dataframe
-    with new columns. While it is generally reasonable to contain these constructs within a node's function,
-    you should consider `pipe` for any of the following reasons:
-
-    1.  You want the transformations to display as nodes in the DAG, with the possibility of storing or visualizing
-    the result
-    2. You want to pull in functions from an external repository, and build the DAG a little more procedurally
-    3. You want to use the same function multiple times, but with different parameters -- while `@does`/`@parameterize` can
-    do this, this presents an easier way to do this, especially in a chain.
+    """Running a series of transformation on the input of the function.
 
     To demonstrate the rules for chaining nodes, we'll be using the following example. This is
     using primitives to demonstrate, but as hamilton is just functions of any python objects, this works perfectly with
@@ -701,9 +691,9 @@ class pipe_input(base.NodeInjector):
 
 
     Note that functions must have no position-only arguments (this is rare in python, but hamilton does not handle these).
-    This basically means that the functions must be defined similarly to `def fn(x, y, z=10)` and not `def fn(x, y, /, z=10)`.
-    In fact, all arguments must be named and "kwarg-friendly", meaning that the function can happily be called with `**kwargs`,
-    where kwargs are some set of resolved upstream values. So, no `*args` are allowed, and `**kwargs` (variable keyword-only) are not
+    This basically means that the functions must be defined similarly to ``def fn(x, y, z=10)`` and not ``def fn(x, y, /, z=10)``.
+    In fact, all arguments must be named and "kwarg-friendly", meaning that the function can happily be called with ``**kwargs``,
+    where kwargs are some set of resolved upstream values. So, no ``*args`` are allowed, and ``**kwargs`` (variable keyword-only) are not
     permitted. Note that this is not a design limitation, rather an implementation detail -- if you feel like you need this, please
     reach out.
 
@@ -711,9 +701,9 @@ class pipe_input(base.NodeInjector):
 
     One has two ways to tune the shape/implementation of the subsequent nodes:
 
-    1. `when`/`when_not`/`when_in`/`when_not_in` -- these are used to filter the application of the function. This is valuable to reflect
+    1. ``when``/``when_not``/``when_in``/``when_not_in`` -- these are used to filter the application of the function. This is valuable to reflect
         if/else conditions in the structure of the DAG, pulling it out of functions, rather than buried within the logic itself. It is functionally
-        equivalent to `@config.when`.
+        equivalent to ``@config.when``.
 
         For instance, if you want to include a function in the chain only when a config parameter is set to a certain value, you can do:
 
@@ -726,14 +716,14 @@ class pipe_input(base.NodeInjector):
             def final_result(upstream_int: int) -> int:
                 return upstream_int
 
-        This will only apply the first function when the config parameter `foo` is set to `bar`, and the second when it is set to `baz`.
+        This will only apply the first function when the config parameter ``foo`` is set to ``bar``, and the second when it is set to ``baz``.
 
-    2. `named` -- this is used to name the node. This is useful if you want to refer to intermediate results. If this is left out,
+    2. ``named`` -- this is used to name the node. This is useful if you want to refer to intermediate results. If this is left out,
         hamilton will automatically name the functions in a globally unique manner. The names of
-        these functions will not necessarily be stable/guaranteed by the API, so if you want to refer to them, you should use `named`.
+        these functions will not necessarily be stable/guaranteed by the API, so if you want to refer to them, you should use ``named``.
         The default namespace will always be the name of the decorated function (which will be the last node in the chain).
 
-        `named` takes in two parameters -- required is the `name` -- this will assign the nodes with a single name and *no* global namespace.
+        ``named`` takes in two parameters -- required is the ``name`` -- this will assign the nodes with a single name and *no* global namespace.
         For instance:
 
         .. code-block:: python
@@ -745,15 +735,15 @@ class pipe_input(base.NodeInjector):
             def final_result(upstream_int: int) -> int:
                 return upstream_int
 
-        The above will create two nodes, `a` and `b`. `a` will be the result of `_add_one`, and `b` will be the result of `_add_two`.
-        `final_result` will then be called with the output of `b`. Note that, if these are part of a namespaced operation (a subdag, in particular),
+        The above will create two nodes, ``a`` and ``b``. ``a`` will be the result of ``_add_one``, and ``b`` will be the result of ``_add_two``.
+        ``final_result`` will then be called with the output of ``b``. Note that, if these are part of a namespaced operation (a subdag, in particular),
         they *will* get the same namespace as the subdag.
 
-        The second parameter is `namespace`. This is used to specify a namespace for the node. This is useful if you want
+        The second parameter is ``namespace``. This is used to specify a namespace for the node. This is useful if you want
         to either (a) ensure that the nodes are namespaced but share a common one to avoid name clashes (usual case), or (b)
         if you want a custom namespace (unusual case). To indicate a custom namespace, one need simply pass in a string.
 
-        To indicate that a node should share a namespace with the rest of the step(...) operations in a pipe, one can pass in `...` (the ellipsis).
+        To indicate that a node should share a namespace with the rest of the step(...) operations in a pipe, one can pass in ``...`` (the ellipsis).
 
         .. code-block:: python
           :name: Namespaced step
@@ -766,7 +756,7 @@ class pipe_input(base.NodeInjector):
             def final_result(upstream_int: int) -> int:
                 return upstream_int
 
-        Note that if you pass a namespace argument to the `pipe` function, it will set the namespace on each step operation.
+        Note that if you pass a namespace argument to the ``pipe`` function, it will set the namespace on each step operation.
         This is useful if you want to ensure that all the nodes in a pipe have a common namespace, but you want to rename them.
 
         .. code-block:: python
@@ -783,7 +773,7 @@ class pipe_input(base.NodeInjector):
                 return upstream_int
 
         In all likelihood, you should not be using this, and this is only here in case you want to expose a node for
-        consumption/output later. Setting the namespace in individual nodes as well as in `pipe` is not yet supported.
+        consumption/output later. Setting the namespace in individual nodes as well as in ``pipe`` is not yet supported.
     """
 
     def __init__(
@@ -793,12 +783,12 @@ class pipe_input(base.NodeInjector):
         collapse=False,
         _chain=False,
     ):
-        """Instantiates a `@pipe` decorator.
+        """Instantiates a ``@pipe_input`` decorator.
 
         :param transforms: step transformations to be applied, in order
-        :param namespace: namespace to apply to all nodes in the pipe. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string). Note that you can either use this *or* namespaces inside pipe()...
+        :param namespace: namespace to apply to all nodes in the pipe. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string). Note that you can either use this *or* namespaces inside ``pipe_input()``...
         :param collapse: Whether to collapse this into a single node. This is not currently supported.
-        :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. @flow will make use of this.
+        :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. ``@flow`` will make use of this.
         """
         self.transforms = transforms
         self.collapse = collapse
@@ -923,6 +913,18 @@ class pipe(pipe_input):
 
 
 class SingleTargetError(Exception):
+    """We prohibit the target to be raise both globally and locally.
+
+    Decorators that transform the output of a node can be set to transform only
+    a certain output node (useful with extract_columns / extract_fields). Some decorators
+    can group multiple transforms and we can set that certain output node either for all of them
+    or for each individually.
+
+    This is a safeguard, because when you set the global target it creates a subset of those nodes and
+    if the local target is outside of that subset it gets ignore (opposed to the logical assumption that
+    it can override the global one). So we disable that case.
+    """
+
     pass
 
 
@@ -930,9 +932,9 @@ class pipe_output(base.NodeTransformer):
     """Running a series of transformation on the output of the function.
 
     The decorated function declares the dependency, the body of the function gets executed, and then
-    we run a series of transformations on the result of the function specified by `pipe_output`.
+    we run a series of transformations on the result of the function specified by ``pipe_output``.
 
-    If we have nodes **A --> B --> C** in the DAG and decorate `B` with `pipe_output` like
+    If we have nodes **A --> B --> C** in the DAG and decorate **B** with ``pipe_output`` like
 
     .. code-block:: python
         :name: Simple @pipe_output example
@@ -944,22 +946,13 @@ class pipe_output(base.NodeTransformer):
         def B(...):
             return ...
 
-    we obtain the new DAG **A --> B_raw --> B1 --> B2 --> B --> C**, where we can think of the **B_raw --> B1 --> B2 --> B** as a "pipe" that takes the raw output of B, applies to it
-    B1, takes the output of B1 applies to it B2 and then gets renamed to B to re-connect to the rest of the DAG.
+    we obtain the new DAG **A --> B_raw --> B1 --> B2 --> B --> C**, where we can think of the **B_raw --> B1 --> B2 --> B** as a "pipe" that takes the raw output of **B**, applies to it
+    **B1**, takes the output of **B1** applies to it **B2** and then gets renamed to **B** to re-connect to the rest of the DAG.
 
-    While it is generally reasonable to contain these constructs within a node's function,
-    you should consider `pipe_output` for similar reasons as `pipe_input`, namely, for any of the following reasons:
+    The rules for chaining nodes are the same as for ``pipe_input``.
 
-    1.  You want the transformations to display as nodes in the DAG, with the possibility of storing or visualizing
-    the result
-    2. You want to pull in functions from an external repository, and build the DAG a little more procedurally
-    3. You want to use the same function multiple times, but with different parameters -- while `@does`/`@parameterize` can
-    do this, this presents an easier way to do this, especially in a chain.
-
-    The rules for chaining nodes are the same as for pipe_input.
-
-    For extra control in case of multiple output nodes, for example after extract_field / extract_columns we can also specify the output node that we wish to mutate.
-    The following apply *A* to all fields while *B* only to "field_1"
+    For extra control in case of multiple output nodes, for example after ``extract_field``/ ``extract_columns`` we can also specify the output node that we wish to mutate.
+    The following apply *A* to all fields while *B* only to ``field_1``
 
     .. code-block:: python
         :name: Simple @pipe_output example targeting specific nodes
@@ -982,7 +975,7 @@ class pipe_output(base.NodeTransformer):
         def foo(a:int)->Dict[str,int]:
             return {"field_1":1, "field_2":2, "field_3":3}
 
-    We can also do this on the global level (but cannot do on both levels at the same time). The following would apply function *A* and function *B* to only "field_1" and "field_2"
+    We can also do this on the global level (but cannot do on both levels at the same time). The following would apply function *A* and function *B* to only ``field_1`` and ``field_2``
 
     .. code-block:: python
         :name: Simple @pipe_output targeting specific nodes local
@@ -1018,17 +1011,17 @@ class pipe_output(base.NodeTransformer):
         collapse=False,
         _chain=False,
     ):
-        """Instantiates a `@pipe_output` decorator.
+        """Instantiates a ``@pipe_output`` decorator.
 
-        Warning: if there is a global pipe_output target, the individual Applicable.target only chooses
-        from the subset pre-selected from the global pipe_output target. Leave global pipe_output target
-        empty if you want to choose between all the nodes on the individual Applicable level.
+        Warning: if there is a global pipe_output target, the individual ``step(...).target`` would only choose
+        from the subset pre-selected from the global pipe_output target. We have disabled this for now to avoid
+        confusion. Leave global pipe_output target empty if you want to choose between all the nodes on the individual step level.
 
         :param transforms: step transformations to be applied, in order
-        :param namespace: namespace to apply to all nodes in the pipe. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string). Note that you can either use this *or* namespaces inside pipe()...
+        :param namespace: namespace to apply to all nodes in the pipe. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string). Note that you can either use this *or* namespaces inside ``pipe_output()``...
         :param on_output: setting the target node for all steps in the pipe. Leave empty to select all the output nodes.
         :param collapse: Whether to collapse this into a single node. This is not currently supported.
-        :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. @flow will make use of this.
+        :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. ``@flow`` will make use of this.
         """
         pipe_output._validate_single_target_level(target=on_output, transforms=transforms)
 
@@ -1051,7 +1044,7 @@ class pipe_output(base.NodeTransformer):
         if self.chain:
             raise NotImplementedError("@flow() is not yet supported -- this is ")
 
-    def _check_individual_target(self, node_):
+    def _filter_individual_target(self, node_):
         """Resolves target option on the transform level.
         Adds option that we can decide for each applicable which output node it will target.
 
@@ -1061,13 +1054,13 @@ class pipe_output(base.NodeTransformer):
         selected_transforms = []
         for transform in self.transforms:
             target = transform.target
-            if isinstance(target, str):
+            if isinstance(target, str):  # user selects single target via string
                 if node_.name == target:
                     selected_transforms.append(transform)
-            elif isinstance(target, Collection):
+            elif isinstance(target, Collection):  # user inputs a list of targets
                 if node_.name in target:
                     selected_transforms.append(transform)
-            else:
+            else:  # for target=None (default) we include all sink nodes
                 selected_transforms.append(transform)
 
         return tuple(selected_transforms)
@@ -1082,7 +1075,7 @@ class pipe_output(base.NodeTransformer):
         The last node is an identity to the previous one with the original name `function_name` to
         represent an exit point of `pipe_output`.
         """
-        transforms = self._check_individual_target(node_)
+        transforms = self._filter_individual_target(node_)
         if len(transforms) < 1:
             # in case no functions in pipeline we short-circuit and return the original node
             return [node_]
@@ -1193,7 +1186,7 @@ def chain_transforms(
 
 def apply_to(fn_: Union[Callable, str], **mutating_fn_kwargs: Union[SingleDependency, Any]):
     """Creates an applicable placeholder with potential kwargs that will be applied to a node (or a subcomponent of a node).
-    See documentation for `mutate` to see how this is used. It de facto allows a postponed `step`.
+    See documentation for ``mutate`` to see how this is used. It de facto allows a postponed ``step``.
 
     We pass fn=None here as this will be the function we are decorating and need to delay passing it in. The target
     function is the one we wish to mutate and we store it for later access.
@@ -1206,6 +1199,12 @@ def apply_to(fn_: Union[Callable, str], **mutating_fn_kwargs: Union[SingleDepend
 
 
 class NotSameModuleError(Exception):
+    """Limit the use of a decorator on functions from the same module.
+
+    Some decorators have the ability to transform also other functions than the one they are decorating (for example mutate).
+    This ensures that all the functions are located within the same module.
+    """
+
     def __init__(self, fn: Callable, target_fn: Callable):
         super().__init__(
             f"The functions have to be in the same module... "
@@ -1218,12 +1217,14 @@ class NotSameModuleError(Exception):
 class mutate:
     """Running a transformation on the outputs of a series of functions.
 
-    This is closely related to `pipe_output` as it effectively allows you to run transformations on the output of a node without touching that node.
+    This is closely related to ``pipe_output`` as it effectively allows you to run transformations on the output of a node without touching that node.
     We choose which target functions we wish to mutate by the transformation we are decorating. For now, the target functions, that will be mutated,
     have to be in the same module (come speak to us if you need this capability over multiple modules).
 
-    If we wish to apply `_transform1` to the output of A and B and `_transform2` only to the output
-    of node B, we can do this like
+    We suggest you define them with an prefixed underscore to only have them displayed in the `transform pipeline` of the target node.
+
+    If we wish to apply ``_transform1`` to the output of **A** and **B** and ``_transform2`` only to the output
+    of node **B**, we can do this like
 
     .. code-block:: python
         :name: Simple @mutate example
@@ -1234,7 +1235,7 @@ class mutate:
         def B(...):
             return ...
 
-        @mutate(A,B)
+        @mutate(A, B)
         def _transform1(...):
             return ...
 
@@ -1243,40 +1244,39 @@ class mutate:
             return ...
 
     we obtain the new pipe-like subDAGs **A_raw --> _transform1 --> A** and **B_raw --> _transform1 --> _transform2 --> B**,
-    where the behavior is the same as `pipe_output`.
+    where the behavior is the same as ``pipe_output``.
 
-    While it is generally reasonable to contain these constructs within a node's function,
-    you should consider `mutate` in the following scenarios:
+    While it is generally reasonable to use ``pipe_output``, you should consider ``mutate`` in the following scenarios:
 
     1. Loading data and applying pre-cleaning step.
     2. Feature engineering via joining, filtering, sorting, etc.
     3. Experimenting with different transformations across nodes by selectively turning transformations on / off.
 
     We assume the first argument of the decorated function to be the output of the function we are targeting.
-    For transformations with multiple arguments you can use key word arguments coupled with `step` or `value`
-    the same as with other `pipe`-family decorators
+    For transformations with multiple arguments you can use key word arguments coupled with ``step`` or ``value``
+    the same as with other ``pipe``-family decorators
 
     .. code-block:: python
         :name: Simple @mutate example with multiple arguments
 
-        @mutate(A,B,arg2=step('upstream_node'),arg3=value(some_literal),...)
+        @mutate(A, B, arg2=step('upstream_node'), arg3=value(some_literal), ...)
         def _transform1(output_from_target:correct_type, arg2:arg2_type, arg3:arg3_type,...):
             return ...
 
-    You can also select individual args that will be applied to each target node by adding `apply_to(...)`
+    You can also select individual args that will be applied to each target node by adding ``apply_to(...)``
 
     .. code-block:: python
         :name: Simple @mutate example with multiple arguments allowing individual actions
 
         @mutate(
-                apply_to(A,arg2=step('upstream_node_1'),arg3=value(some_literal_1)),
-                apply_to(B,arg2=step('upstream_node_2'),arg3=value(some_literal_2)),
+                apply_to(A, arg2=step('upstream_node_1'), arg3=value(some_literal_1)),
+                apply_to(B, arg2=step('upstream_node_2'), arg3=value(some_literal_2)),
                 )
-        def _transform1(output_from_target:correct_type, arg2:arg2_type, arg3:arg3_type,...):
+        def _transform1(output_from_target:correct_type, arg2:arg2_type, arg3:arg3_type, ...):
             return ...
 
-    In case of multiple output nodes, for example after extract_field / extract_columns we can also specify the output node that we wish to mutate.
-    The following would mutate all columns of *A* individually while in the case of function *B* only "field_1"
+    In case of multiple output nodes, for example after ``extract_field`` / ``extract_columns`` we can also specify the output node that we wish to mutate.
+    The following would mutate all columns of *A* individually while in the case of function *B* only ``field_1``
 
     .. code-block:: python
         :name: @mutate example targeting specific nodes local
@@ -1307,14 +1307,14 @@ class mutate:
         _chain: bool = False,
         **mutating_function_kwargs: Union[SingleDependency, Any],
     ):
-        """Instantiates a `\@mutate` decorator.
+        """Instantiates a ``mutate`` decorator.
 
         We assume the first argument of the decorated function to be the output of the function we are targeting.
 
         :param target_functions: functions we wish to mutate the output of
         :param collapse: Whether to collapse this into a single node. This is not currently supported.
-        :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. @flow will make use of this.
-        :param \*\*mutating_function_kwargs: other kwargs that the decorated function has. Must be validly called as f(kwargs), and have a 1-to-1 mapping of kwargs to parameters. This will be applied for all `target_function`, unless `apply_to` already has the mutator function kwargs, in which case it takes those.
+        :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. ``@flow`` will make use of this.
+        :param \*\*mutating_function_kwargs: other kwargs that the decorated function has. Must be validly called as ``f(**kwargs)``, and have a 1-to-1 mapping of kwargs to parameters. This will be applied for all ``target_functions``, unless ``apply_to`` already has the mutator function kwargs, in which case it takes those.
         """
         self.collapse = collapse
         self.chain = _chain
@@ -1358,7 +1358,7 @@ class mutate:
     def __call__(self, mutating_fn: Callable):
         """Adds to an existing pipe_output or creates a new pipe_output.
 
-        This is a new type of decorator that builds `pipe_output` for multiple nodes in the DAG. It does
+        This is a new type of decorator that builds ``pipe_output`` for multiple nodes in the DAG. It does
         not fit in the current decorator framework since it does not decorate the node function in the DAG
         but allows us to "remotely decorate" multiple nodes at once, which needs to happen before the
         NodeTransformLifecycle gets applied / resolved.
@@ -1367,18 +1367,24 @@ class mutate:
         :return: mutating_fn, to guarantee function works even when Hamilton driver is not used
         """
 
-        if not mutating_fn.__name__.startswith("_"):
-            mutating_fn.__name__ = "".join(("_", mutating_fn.__name__))
+        # TODO: We want to hide such helper function from the DAG by default, since we are manually
+        # adding them to the DAG in a different place
+        # Suggestion: ignore decorator - https://github.com/DAGWorks-Inc/hamilton/issues/1168
+        # if not mutating_fn.__name__.startswith("_"):
+        #     mutating_fn.__name__ = "".join(("_", mutating_fn.__name__))
 
         if self.restrict_to_single_module:
             self.validate_same_module(mutating_fn=mutating_fn)
 
+        # TODO:  If @mutate runs once it's good
+        #       If you run that again, it might double-up
+        # In the juptyer notebook/cross-module case we'll want to guard against it.
         for remote_applicable in self.remote_applicables:
             new_pipe_step = self._create_step(
                 mutating_fn=mutating_fn, remote_applicable_builder=remote_applicable
             )
             found_pipe_output = False
-            if hasattr(remote_applicable.target_fn, "transform"):
+            if hasattr(remote_applicable.target_fn, base.NodeTransformer.get_lifecycle_name()):
                 for decorator in remote_applicable.target_fn.transform:
                     if isinstance(decorator, pipe_output):
                         decorator.transforms = decorator.transforms + (new_pipe_step,)
