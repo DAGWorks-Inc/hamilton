@@ -10,13 +10,16 @@ from hamilton.function_modifiers import does
 from hamilton.function_modifiers.dependencies import source, value
 from hamilton.function_modifiers.macros import (
     Applicable,
+    apply_to,
     ensure_function_empty,
+    mutate,
     pipe_input,
     pipe_output,
     step,
 )
 from hamilton.node import DependencyType
 
+import tests.resources.mutate
 import tests.resources.pipe_input
 import tests.resources.pipe_output
 
@@ -594,9 +597,9 @@ def test_pipe_output_local_on_output_string():
         .named("wrong_transform")
         .on_output("node_3"),
     )
-    steps = decorator._check_individual_target(n1)
+    steps = decorator._filter_individual_target(n1)
     assert len(steps) == 0
-    steps = decorator._check_individual_target(n2)
+    steps = decorator._filter_individual_target(n2)
     assert len(steps) == 1
     assert steps[0].name == "correct_transform"
 
@@ -617,13 +620,13 @@ def test_pipe_output_local_on_output_list_string():
         .named("wrong_transform")
         .on_output("node_5"),
     )
-    steps = decorator._check_individual_target(n1)
+    steps = decorator._filter_individual_target(n1)
     assert len(steps) == 0
-    steps = decorator._check_individual_target(n2)
+    steps = decorator._filter_individual_target(n2)
     assert len(steps) == 2
     assert steps[0].name == "correct_transform_list"
     assert steps[1].name == "correct_transform_string"
-    steps = decorator._check_individual_target(n3)
+    steps = decorator._filter_individual_target(n3)
     assert len(steps) == 1
     assert steps[0].name == "correct_transform_list"
 
@@ -676,11 +679,96 @@ def test_pipe_output_end_to_end():
     assert result["chain_2_using_pipe_output"] == result["chain_2_not_using_pipe_output"]
 
 
-def test_pipe_output_end_to_end_2():
+# Mutate will mark the modules (and leave a mark).
+# Thus calling it a second time (for instance through pmultiple tests) might mess it up slightly...
+# Using fixtures just to be sure.
+
+
+@pytest.fixture(scope="function")
+def _downstream_result_to_mutate():
+    def downstream_result_to_mutate() -> int:
+        return 2
+
+    yield downstream_result_to_mutate
+
+
+@pytest.fixture(scope="function")
+def import_mutate_module():
+    import importlib
+
+    mod = importlib.import_module("tests.resources.mutate")
+    yield mod
+
+
+# This doesn't change so no need to have it as fixture
+def mutator_function(input_1: int, input_2: int) -> int:
+    return input_1 + input_2
+
+
+def test_mutate_convert_callable_to_applicable(_downstream_result_to_mutate):
+    decorator = mutate(_downstream_result_to_mutate)
+
+    assert len(decorator.remote_applicables) == 1
+    remote_applicable = decorator.remote_applicables[0]
+    assert isinstance(remote_applicable, Applicable)
+    assert remote_applicable.fn is None
+    assert remote_applicable.target_fn == _downstream_result_to_mutate
+
+
+def test_mutate_restricted_to_same_module():
+    decorator = mutate(tests.resources.mutate.f_of_interest)
+
+    with pytest.raises(hamilton.function_modifiers.macros.NotSameModuleError):
+        decorator.validate_same_module(mutator_function)
+
+
+def test_mutate_global_kwargs(_downstream_result_to_mutate):
+    decorator = mutate(apply_to(_downstream_result_to_mutate), input_2=17)
+    remote_applicable = decorator.remote_applicables[0]
+
+    pipe_step = decorator._create_step(
+        mutating_fn=mutator_function, remote_applicable_builder=remote_applicable
+    )
+    assert pipe_step.kwargs["input_2"] == 17
+
+
+def test_mutate_local_kwargs_override_global_ones(_downstream_result_to_mutate):
+    decorator = mutate(apply_to(_downstream_result_to_mutate, input_2=13), input_2=17)
+    remote_applicable = decorator.remote_applicables[0]
+
+    pipe_step = decorator._create_step(
+        mutating_fn=mutator_function, remote_applicable_builder=remote_applicable
+    )
+    assert pipe_step.kwargs["input_2"] == 13
+
+
+def test_mutate_end_to_end_simple(import_mutate_module):
+    dr = driver.Builder().with_config({"calc_c": True}).build()
+
     dr = (
         driver.Builder()
-        .with_modules(tests.resources.pipe_output)
+        .with_modules(import_mutate_module)
         .with_adapter(base.DefaultAdapter())
+        .build()
+    )
+
+    inputs = {}
+    result = dr.execute(
+        [
+            "downstream_f",
+            "chain_not_using_mutate",
+        ],
+        inputs=inputs,
+    )
+    assert result["downstream_f"] == result["chain_not_using_mutate"]
+
+
+def test_mutate_end_to_end_1(import_mutate_module):
+    dr = (
+        driver.Builder()
+        .with_modules(import_mutate_module)
+        .with_adapter(base.DefaultAdapter())
+        .with_config({"calc_c": True})
         .build()
     )
 
@@ -691,12 +779,12 @@ def test_pipe_output_end_to_end_2():
     }
     result = dr.execute(
         [
-            "chain_1_using_pipe_output",
-            "chain_2_using_pipe_output",
-            "chain_1_not_using_pipe_output",
-            "chain_2_not_using_pipe_output",
+            "chain_1_using_mutate",
+            "chain_2_using_mutate",
+            "chain_1_not_using_mutate",
+            "chain_2_not_using_mutate",
         ],
         inputs=inputs,
     )
-    assert result["chain_1_using_pipe_output"] == result["chain_1_not_using_pipe_output"]
-    assert result["chain_2_using_pipe_output"] == result["chain_2_not_using_pipe_output"]
+    assert result["chain_1_using_mutate"] == result["chain_1_not_using_mutate"]
+    assert result["chain_2_using_mutate"] == result["chain_2_not_using_mutate"]
