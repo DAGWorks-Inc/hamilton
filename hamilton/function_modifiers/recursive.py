@@ -499,10 +499,10 @@ class parameterized_subdag(base.NodeCreator):
 
         @parameterized_subdag(
             feature_modules,
-            from_datasource_1={"inputs" : {"data" : value("datasource_1.csv"}},
-            from_datasource_2={"inputs" : {"data" : value("datasource_2.csv"}},
+            from_datasource_1={"inputs" : {"data" : value("datasource_1.csv")}},
+            from_datasource_2={"inputs" : {"data" : value("datasource_2.csv")}},
             from_datasource_3={
-                "inputs" : {"data" : value("datasource_3.csv"},
+                "inputs" : {"data" : value("datasource_3.csv")},
                 "config" : {"filter" : "only_even_client_ids"}
             }
         )
@@ -522,10 +522,10 @@ class parameterized_subdag(base.NodeCreator):
             inputs={"data" : value("datasource_1.csv")},
             from_datasource_1={},
             from_datasource_2={
-                    "inputs" : {"data" : value("datasource_2.csv"}
+                    "inputs" : {"data" : value("datasource_2.csv")}
             },
             from_datasource_3={
-                    "inputs" : {"data" : value("datasource_3.csv"},
+                    "inputs" : {"data" : value("datasource_3.csv")},
                     "config" : {"filter" : "only_even_client_ids"},
             }
         )
