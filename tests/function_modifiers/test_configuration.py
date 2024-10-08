@@ -111,3 +111,14 @@ def test_config_base_resolve_nodes_end_to_end():
     config_fn = annotation(config_fn)
     nodes = base.resolve_nodes(config_fn, {})
     assert len(nodes) == 0
+
+
+def test_ignore():
+    def fn_to_ignore() -> int:
+        pass
+
+    decorator = function_modifiers.ignore
+    hidden_fn = decorator(fn_to_ignore)
+    nodes = base.resolve_nodes(hidden_fn, {})
+    assert decorator.resolve(fn_to_ignore, {"key": "value"}) is None
+    assert len(nodes) == 0

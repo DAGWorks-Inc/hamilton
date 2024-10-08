@@ -11,7 +11,7 @@ import pandas as pd
 from hamilton import models, node
 from hamilton.dev_utils.deprecation import deprecated
 from hamilton.function_modifiers import base
-from hamilton.function_modifiers.configuration import ConfigResolver
+from hamilton.function_modifiers.configuration import ConfigResolver, hamilton_skip
 from hamilton.function_modifiers.delayed import resolve as delayed_resolve
 from hamilton.function_modifiers.dependencies import (
     LiteralDependency,
@@ -1367,11 +1367,8 @@ class mutate:
         :return: mutating_fn, to guarantee function works even when Hamilton driver is not used
         """
 
-        # TODO: We want to hide such helper function from the DAG by default, since we are manually
-        # adding them to the DAG in a different place
-        # Suggestion: ignore decorator - https://github.com/DAGWorks-Inc/hamilton/issues/1168
-        # if not mutating_fn.__name__.startswith("_"):
-        #     mutating_fn.__name__ = "".join(("_", mutating_fn.__name__))
+        # This function will be excluded from the DAG as a node since we are inserting it manually
+        mutating_fn = hamilton_skip()(mutating_fn)
 
         if self.restrict_to_single_module:
             self.validate_same_module(mutating_fn=mutating_fn)
