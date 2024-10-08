@@ -255,3 +255,37 @@ class config(base.NodeResolver):
 
         resolver = ConfigResolver.when_not_in(**key_value_group_pairs)
         return config(resolver, config_used=list(resolver.optional_config))
+
+
+class hamilton_skip(base.NodeResolver):
+    """Decorator class that excludes a function from the DAG.
+
+    This is useful for decorating helper functions without the need to prefix them with "_" and
+    use them either inside other nodes or in conjunction with ``step`` or ``apply_to``.
+
+    .. code-block:: python
+
+        @hamilton_skip
+        def helper(...) -> ...:
+            '''This will not be part of the DAG'''
+            ...
+
+    You may also want to use this decorator for excluding functions in legacy code that would raise
+    and error in Hamilton (for example missing type hints).
+    """
+
+    def __init__(self):
+        pass
+
+    def resolve(self, *args, **kwargs) -> Optional[Callable]:
+        """Returning None defaults to not be included in the DAG.
+
+        :param fn: Function to resolve
+        :param config: DAG config
+        :return: None to not be included in the DAG
+        """
+        return None
+
+    def validate(self, fn):
+        """Any function should work."""
+        pass
