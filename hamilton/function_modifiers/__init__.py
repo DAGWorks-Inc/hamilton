@@ -63,7 +63,9 @@ does = macros.does
 pipe = macros.pipe
 pipe_input = macros.pipe_input
 pipe_output = macros.pipe_output
+mutate = macros.mutate
 step = macros.step
+apply_to = macros.apply_to
 
 # resolve transform/model decorator
 dynamic_transform = macros.dynamic_transform
@@ -73,6 +75,7 @@ model = macros.model
 tag = metadata.tag
 tag_outputs = metadata.tag_outputs
 schema = metadata.schema
+cache = metadata.cache
 
 # data quality + associated tags
 check_output = validation.check_output

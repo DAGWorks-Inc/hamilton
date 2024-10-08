@@ -163,16 +163,16 @@ def _derive_version_control_info(module_hash: str) -> GitInfo:
 
     try:
         commit = repo.head.commit
-    except ValueError:
+    except Exception:
         return default
     try:
         repo_url = repo.remote().url
-    except ValueError:
+    except Exception:
         # TODO: change this to point to our docs on what to do.
         repo_url = "Error: No repository to link to."
     try:
         branch_name = repo.active_branch.name
-    except TypeError:
+    except Exception:
         branch_name = "unknown"  # detached head
         logger.warning(
             "Warning: we are unable to determine the branch name. "

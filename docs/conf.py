@@ -28,10 +28,12 @@ html_theme_options = {
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "myst_parser",
+    "myst_nb",
     "sphinx_sitemap",
     "docs.data_adapters_extension",
 ]
+
+nb_execution_mode = "off"
 
 # for the sitemap extension ---
 # check if the current commit is tagged as a release (vX.Y.Z) and set the version

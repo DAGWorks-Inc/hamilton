@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 
 from slack_sdk import WebClient
 
+from hamilton.execution.graph_functions import create_input_string
 from hamilton.lifecycle import NodeExecutionHook
 
 
@@ -68,9 +69,15 @@ class SlackNotifier(NodeExecutionHook):
         **future_kwargs: Any,
     ):
         """Sends a message to the slack channel after a node is executed."""
-        if error is not None:
+        if error:
             message = (
-                f"Error in Executing Node: {node_name}. Task ID: {task_id}. Run ID: {run_id}. "
-                f"Error: {error}.\n Stack Trace: {''.join(traceback.format_tb(error.__traceback__))}"
+                f"*Error Executing Node: `{node_name}`*\n"
+                f"> *Run ID:* {run_id}\n"
+                f"> *Task ID:* {task_id}\n"
+                f"> *Error:* {str(error)}\n"
+                f"> *Stack Trace:*\n> ```\n{''.join(traceback.format_exception(type(error), error, error.__traceback__))}```\n"
+                f"> *Node Tags:* `{node_tags}`\n"
+                f"> *Node Kwargs:* ```{create_input_string(node_kwargs)}```\n"
+                f"> *Return Type:* `{node_return_type}`\n"
             )
             self._send_message(message)

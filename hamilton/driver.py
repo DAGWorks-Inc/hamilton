@@ -5,20 +5,34 @@ import importlib.util
 import json
 import logging
 import operator
+import pathlib
 import sys
 import time
 
 # required if we want to run this code stand alone.
 import typing
 import uuid
-from collections.abc import Sequence  # typing.Sequence is deprecated in >=3.9
 from datetime import datetime
 from types import ModuleType
-from typing import Any, Callable, Collection, Dict, List, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Collection,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 import pandas as pd
 
 from hamilton import common, graph_types, htypes
+from hamilton.caching.adapter import HamiltonCacheAdapter
+from hamilton.caching.stores.base import MetadataStore, ResultStore
 from hamilton.dev_utils import deprecation
 from hamilton.execution import executors, graph_functions, grouping, state
 from hamilton.graph_types import HamiltonNode
@@ -1818,6 +1832,18 @@ class Driver:
         all_nodes = nodes | user_nodes
         self.graph_executor.validate(list(all_nodes))
 
+    @property
+    def cache(self) -> HamiltonCacheAdapter:
+        """Directly access the cache adapter"""
+        if self.adapter:
+            for adapter in self.adapter.adapters:
+                if isinstance(adapter, HamiltonCacheAdapter):
+                    return adapter
+        else:
+            raise KeyError(
+                "Cache not yet set. Add a cache by using ``Builder().with_cache()`` when building the ``Driver``."
+            )
+
 
 class Builder:
     def __init__(self):
@@ -1905,6 +1931,11 @@ class Builder:
         :param adapter: Adapter to use.
         :return: self
         """
+        if any(isinstance(adapter, HamiltonCacheAdapter) for adapter in adapters):
+            self._require_field_unset(
+                "cache", "Cannot use `.with_cache()` or with `.with_adapters(SmartCacheAdapter())`."
+            )
+
         self.adapters.extend(adapters)
         return self
 
@@ -1931,6 +1962,89 @@ class Builder:
 
         self.materializers.extend(materializers)
         return self
+
+    def with_cache(
+        self,
+        path: Union[str, pathlib.Path] = ".hamilton_cache",
+        metadata_store: Optional[MetadataStore] = None,
+        result_store: Optional[ResultStore] = None,
+        default: Optional[Union[Literal[True], Sequence[str]]] = None,
+        recompute: Optional[Union[Literal[True], Sequence[str]]] = None,
+        ignore: Optional[Union[Literal[True], Sequence[str]]] = None,
+        disable: Optional[Union[Literal[True], Sequence[str]]] = None,
+        default_behavior: Literal["default", "recompute", "disable", "ignore"] = "default",
+        default_loader_behavior: Literal["default", "recompute", "disable", "ignore"] = "default",
+        default_saver_behavior: Literal["default", "recompute", "disable", "ignore"] = "default",
+        log_to_file: bool = False,
+    ) -> "Builder":
+        """Add the caching adapter to the `Driver`
+
+        :param path: path where the cache metadata and results will be stored
+        :param metadata_store: BaseStore handling metadata for the cache adapter
+        :param result_store: BaseStore caching dataflow execution results
+        :param default: Set caching behavior to DEFAULT for specified node names. If True, apply to all nodes.
+        :param recompute: Set caching behavior to RECOMPUTE for specified node names. If True, apply to all nodes.
+        :param ignore: Set caching behavior to IGNORE for specified node names. If True, apply to all nodes.
+        :param disable: Set caching behavior to DISABLE for specified node names. If True, apply to all nodes.
+        :param default_behavior: Set the default caching behavior.
+        :param default_loader_behavior: Set the default caching behavior `DataLoader` nodes.
+        :param default_saver_behavior: Set the default caching behavior `DataSaver` nodes.
+        :log_to_file: If True, the cache adapter logs will be stored in JSONL format under the metadata_store directory
+        :return: self
+
+
+        Learn more on the :doc:`/concepts/caching` Concepts page.
+
+        .. code-block:: python
+
+            from hamilton import driver
+            import my_dataflow
+
+            dr = (
+                driver.Builder()
+                .with_module(my_dataflow)
+                .with_cache()
+                .build()
+            )
+
+            # execute twice
+            dr.execute([...])
+            dr.execute([...])
+
+            # view cache logs
+            dr.cache.logs()
+
+        """
+        self._require_field_unset(
+            "cache", "Cannot use `.with_cache()` or with `.with_adapters(SmartCacheAdapter())`."
+        )
+        adapter = HamiltonCacheAdapter(
+            path=path,
+            metadata_store=metadata_store,
+            result_store=result_store,
+            default=default,
+            recompute=recompute,
+            ignore=ignore,
+            disable=disable,
+            default_behavior=default_behavior,
+            default_loader_behavior=default_loader_behavior,
+            default_saver_behavior=default_saver_behavior,
+            log_to_file=log_to_file,
+        )
+        self.adapters.append(adapter)
+        return self
+
+    @property
+    def cache(self) -> Optional[HamiltonCacheAdapter]:
+        """Attribute to check if a cache was set, either via `.with_cache()` or
+        `.with_adapters(SmartCacheAdapter())`
+
+        Required for the check  `._require_field_unset()`
+        """
+        if self.adapters:
+            for adapter in self.adapters:
+                if isinstance(adapter, HamiltonCacheAdapter):
+                    return adapter
 
     def with_execution_manager(self, execution_manager: executors.ExecutionManager) -> "Builder":
         """Sets the execution manager to use. Note that this cannot be used if local_executor
