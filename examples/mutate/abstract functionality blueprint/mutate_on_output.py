@@ -54,7 +54,7 @@ def feat_D(field_2: pd.Series, col_2: pd.Series) -> pd.DataFrame:
 
 # data1 and data2
 @mutate(apply_to(data_1).when_in(a=[1, 2, 3]), apply_to(data_2).when_not_in(a=[1, 2, 3]))
-def _filter(some_data: pd.DataFrame) -> pd.DataFrame:
+def filter_(some_data: pd.DataFrame) -> pd.DataFrame:
     """Remove NAN values.
 
     Mutate accepts a `config.*` family conditional where we can choose when the transform will be applied
@@ -66,7 +66,7 @@ def _filter(some_data: pd.DataFrame) -> pd.DataFrame:
 # data 2
 # this is for value
 @mutate(apply_to(data_2), missing_row=value(["c", 145]))
-def _add_missing_value(some_data: pd.DataFrame, missing_row: List[Any]) -> pd.DataFrame:
+def add_missing_value(some_data: pd.DataFrame, missing_row: List[Any]) -> pd.DataFrame:
     """Add row to dataframe.
 
     The functions decorated with mutate can be viewed as steps in pipe_output in the order they

@@ -24,7 +24,7 @@ def data_3() -> pd.DataFrame:
 
 # data1 and data2
 @mutate(data_1, data_2)
-def _filter(some_data: pd.DataFrame) -> pd.DataFrame:
+def filter_(some_data: pd.DataFrame) -> pd.DataFrame:
     """Remove NAN values.
 
     Decorated with mutate this will be applied to both data_1 and data_2.
@@ -35,7 +35,7 @@ def _filter(some_data: pd.DataFrame) -> pd.DataFrame:
 # data 2
 # this is for value
 @mutate(data_2, missing_row=value(["c", 145]))
-def _add_missing_value(some_data: pd.DataFrame, missing_row: List[Any]) -> pd.DataFrame:
+def add_missing_value(some_data: pd.DataFrame, missing_row: List[Any]) -> pd.DataFrame:
     """Add row to dataframe.
 
     The functions decorated with mutate can be viewed as steps in pipe_output in the order they
@@ -49,7 +49,7 @@ def _add_missing_value(some_data: pd.DataFrame, missing_row: List[Any]) -> pd.Da
 # data 2
 # this is for source
 @mutate(data_2, other_data=source("data_3"))
-def _join(some_data: pd.DataFrame, other_data: pd.DataFrame) -> pd.DataFrame:
+def join(some_data: pd.DataFrame, other_data: pd.DataFrame) -> pd.DataFrame:
     """Join two dataframes.
 
     We can use results from other nodes in the DAG by using the `source` functionality. Here we join
@@ -60,7 +60,7 @@ def _join(some_data: pd.DataFrame, other_data: pd.DataFrame) -> pd.DataFrame:
 
 # data1 and data2
 @mutate(data_1, data_2)
-def _sort(some_data: pd.DataFrame) -> pd.DataFrame:
+def sort(some_data: pd.DataFrame) -> pd.DataFrame:
     """Sort dataframes by first column.
 
     This is the last step of our pipeline(s) and gets again applied to data_1 and data_2. We did some
