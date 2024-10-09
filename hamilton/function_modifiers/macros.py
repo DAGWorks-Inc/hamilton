@@ -668,9 +668,9 @@ class pipe_input(base.NodeInjector):
 
 
     .. code-block:: python
-        :name: Simple @pipe example
+        :name: Simple @pipe_input example
 
-        from hamilton.function_modifiers import step, pipe, value, source
+        from hamilton.function_modifiers import step, pipe_input, value, source
 
 
         def _add_one(x: int) -> int:
@@ -685,7 +685,7 @@ class pipe_input(base.NodeInjector):
             return x * y * z
 
 
-        @pipe(
+        @pipe_input(
             step(_add_one),
             step(_multiply, y=2),
             step(_sum, y=value(3)),
@@ -695,7 +695,7 @@ class pipe_input(base.NodeInjector):
             return upstream_int
 
     .. code-block:: python
-        :name: Equivalent example with no @pipe, nested
+        :name: Equivalent example with no @pipe_input, nested
 
         upstream_int = ...  # result from upstream
         upstream_node_to_multiply = ...  # result from upstream
@@ -714,7 +714,7 @@ class pipe_input(base.NodeInjector):
         )
 
     .. code-block:: python
-        :name: Equivalent example with no @pipe, procedural
+        :name: Equivalent example with no @pipe_input, procedural
 
         upstream_int = ...  # result from upstream
         upstream_node_to_multiply = ...  # result from upstream
@@ -735,7 +735,7 @@ class pipe_input(base.NodeInjector):
 
     Furthermore, the function should be typed, as a Hamilton function would be.
 
-    One has two ways to tune the shape/implementation of the subsequent nodes:
+    One has three ways to tune the shape/implementation of the subsequent nodes:
 
     1. ``when``/``when_not``/``when_in``/``when_not_in`` -- these are used to filter the application of the function. This is valuable to reflect
         if/else conditions in the structure of the DAG, pulling it out of functions, rather than buried within the logic itself. It is functionally
@@ -745,7 +745,7 @@ class pipe_input(base.NodeInjector):
 
         .. code-block:: python
 
-            @pipe(
+            @pipe_input(
                 step(_add_one).when(foo="bar"),
                 step(_add_two, y=source("other_node_to_add").when(foo="baz"),
             )
@@ -764,7 +764,7 @@ class pipe_input(base.NodeInjector):
 
         .. code-block:: python
 
-            @pipe(
+            @pipe_input(
                 step(_add_one).named("a"),
                 step(_add_two, y=source("upstream_node")).named("b"),
             )
@@ -785,20 +785,20 @@ class pipe_input(base.NodeInjector):
           :name: Namespaced step
 
 
-            @pipe(
+            @pipe_input(
                 step(_add_one).named("a", namespace="foo"),  # foo.a
                 step(_add_two, y=source("upstream_node")).named("b", namespace=...),  # final_result.b
             )
             def final_result(upstream_int: int) -> int:
                 return upstream_int
 
-        Note that if you pass a namespace argument to the ``pipe`` function, it will set the namespace on each step operation.
+        Note that if you pass a namespace argument to the ``pipe_input`` function, it will set the namespace on each step operation.
         This is useful if you want to ensure that all the nodes in a pipe have a common namespace, but you want to rename them.
 
         .. code-block:: python
-            :name: pipe with globally applied namespace
+            :name: pipe_input with globally applied namespace
 
-            @pipe(
+            @pipe_input(
                 step(_add_one).named("a"), # a
                 step(_add_two, y=source("upstream_node")).named("b"), # foo.b
                 namespace=..., # default -- final_result.a and final_result.b, OR
@@ -810,6 +810,48 @@ class pipe_input(base.NodeInjector):
 
         In all likelihood, you should not be using this, and this is only here in case you want to expose a node for
         consumption/output later. Setting the namespace in individual nodes as well as in ``pipe_input`` is not yet supported.
+
+    3. For extra control in case of multiple function arguments (parameters), we can also specify the target parameter that we wish to transform.
+        In case ``on_input`` is set to None (default), we apply ``pipe_input`` on the first parameter only. If ``on_input`` is set for a specific transform
+        make sure the other ones are also set either through a global setting or individually, otherwise it is unclear which transforms target which parameters.
+
+        The following applies *_add_one* to ``p1``, ``p3`` and *_add_two* to ``p2``
+
+        .. code-block:: python
+
+            @pipe_input(
+                step(_add_one).on_input(["p1","p3"])
+                step(_add_two, y=source("upstream_node")).on_input("p2")
+            )
+            def final_result(p1: int, p2: int, p3: int) -> int:
+                return upstream_int
+
+        We can also do this on the global level to set for all transforms a target parameter.
+        The following would apply function *_add_one* and *_add_two* to ``p2``
+
+        .. code-block:: python
+
+            @pipe_input(
+                step(_add_one)
+                step(_add_two, y=source("upstream_node")),
+                on_input = "p2"
+            )
+            def final_result(p1: int, p2: int, p3: int) -> int:
+                return upstream_int
+
+        Lastly, a mixture of global and local is possible, where the global selects the target parameters for
+        all transforms and we can select individual transforms to also target more parameters.
+        The following would apply function *_add_one* to all ``p1``, ``p2``, ``p3`` and *_add_two* also on ``p2``
+
+        .. code-block:: python
+
+            @pipe_input(
+                step(_add_one).on_input(["p1","p3"])
+                step(_add_two, y=source("upstream_node")),
+                on_input = "p2"
+            )
+            def final_result(p1: int, p2: int, p3: int) -> int:
+                return upstream_int
 
     """
 
