@@ -18,6 +18,7 @@ Note the following:
 
   * ``@config`` If you're feeling adventurous, you can pass in a lambda function that takes in the entire configuration and resolves to ``True`` or ``False``. You probably don't want to do this.
 
+* To always exclude a function (such as helper functions) from the DAG the most straightforward and preferred pattern is to prefix it with "_", but you can also use ``@hamilton_exclude``.
 
 ----
 
@@ -26,3 +27,5 @@ Note the following:
 .. autoclass:: hamilton.function_modifiers.config
    :members: when, when_in, when_not, when_not_in
    :special-members: __init__
+
+.. autoclass:: hamilton.function_modifiers.configuration.hamilton_exclude

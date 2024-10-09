@@ -111,3 +111,14 @@ def test_config_base_resolve_nodes_end_to_end():
     config_fn = annotation(config_fn)
     nodes = base.resolve_nodes(config_fn, {})
     assert len(nodes) == 0
+
+
+def test_hamilton_exclude():
+    def fn_to_hamilton_exclude() -> int:
+        pass
+
+    decorator = function_modifiers.hamilton_exclude
+    hidden_fn = decorator(fn_to_hamilton_exclude)
+    nodes = base.resolve_nodes(hidden_fn, {})
+    assert decorator.resolve(fn_to_hamilton_exclude, {"key": "value"}) is None
+    assert len(nodes) == 0
