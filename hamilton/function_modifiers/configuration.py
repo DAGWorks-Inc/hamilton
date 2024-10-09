@@ -257,15 +257,16 @@ class config(base.NodeResolver):
         return config(resolver, config_used=list(resolver.optional_config))
 
 
-class hamilton_skip(base.NodeResolver):
+class hamilton_exclude(base.NodeResolver):
     """Decorator class that excludes a function from the DAG.
 
-    This is useful for decorating helper functions without the need to prefix them with "_" and
-    use them either inside other nodes or in conjunction with ``step`` or ``apply_to``.
+    The preferred way to hide functions from the Hamilton DAG is to prefix them with "_". However,
+    for the exceptional case, it can be useful for decorating helper functions without the need to prefix
+    them with "_" and use them either inside other nodes or in conjunction with ``step`` or ``apply_to``.
 
     .. code-block:: python
 
-        @hamilton_skip
+        @hamilton_exclude
         def helper(...) -> ...:
             '''This will not be part of the DAG'''
             ...

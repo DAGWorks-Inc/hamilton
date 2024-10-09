@@ -11,7 +11,7 @@ import pandas as pd
 from hamilton import models, node
 from hamilton.dev_utils.deprecation import deprecated
 from hamilton.function_modifiers import base
-from hamilton.function_modifiers.configuration import ConfigResolver, hamilton_skip
+from hamilton.function_modifiers.configuration import ConfigResolver, hamilton_exclude
 from hamilton.function_modifiers.delayed import resolve as delayed_resolve
 from hamilton.function_modifiers.dependencies import (
     LiteralDependency,
@@ -1368,7 +1368,7 @@ class mutate:
         """
 
         # This function will be excluded from the DAG as a node since we are inserting it manually
-        mutating_fn = hamilton_skip()(mutating_fn)
+        mutating_fn = hamilton_exclude()(mutating_fn)
 
         if self.restrict_to_single_module:
             self.validate_same_module(mutating_fn=mutating_fn)
