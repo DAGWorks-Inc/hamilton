@@ -29,7 +29,7 @@ InvalidDecoratorException = base.InvalidDecoratorException
 
 # The config decorator
 config = configuration.config
-hamilton_skip = configuration.hamilton_skip()
+hamilton_exclude = configuration.hamilton_exclude()
 
 # Dependency Specification
 # Helper functions to specify dependency sources for parameterization
