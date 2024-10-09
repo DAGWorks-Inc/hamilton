@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import logging
 import typing
-from collections import Counter
+from collections import Counter, defaultdict
 from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
@@ -373,6 +373,7 @@ class Applicable:
             _resolvers=self.resolvers + list(additional_resolvers),
             _name=self.name,
             _namespace=self.namespace,
+            _target=self.target,
             args=self.args,
             kwargs=self.kwargs,
             target_fn=self.target_fn,
@@ -426,6 +427,7 @@ class Applicable:
             _resolvers=self.resolvers,
             _name=self.name,
             _namespace=namespace,
+            _target=self.target,
             args=self.args,
             kwargs=self.kwargs,
             target_fn=self.target_fn,
@@ -464,6 +466,30 @@ class Applicable:
                 if namespace is None
                 else (namespace if namespace is not ... else self.namespace)
             ),
+            _target=self.target,
+            args=self.args,
+            kwargs=self.kwargs,
+            target_fn=self.target_fn,
+        )
+
+    # on_input / on_output are the same but here for naming convention
+    # I know there is a way to dynamically resolve this to revert to a common function
+    # just can't remember it now or find it online...
+    def on_input(self, target: base.TargetType) -> "Applicable":
+        """Add Target on a single function level.
+
+        This determines to which node(s) it will applies. Should match the same naming convention
+        as the NodeTransorfmLifecycle child class (for example NodeTransformer).
+
+        :param target: Which node(s) to apply on top of
+        :return: The Applicable with specified target
+        """
+        return Applicable(
+            fn=self.fn,
+            _resolvers=self.resolvers,
+            _name=self.name,
+            _namespace=self.namespace,
+            _target=target if target is not None else self.target,
             args=self.args,
             kwargs=self.kwargs,
             target_fn=self.target_fn,
@@ -623,6 +649,16 @@ def step(
     return Applicable(fn=fn, _resolvers=[], args=args, kwargs=kwargs)
 
 
+class MissingTargetError(Exception):
+    """When setting target make sure it is clear which transform targets which node.
+
+    This is a safeguard, because the default behavior may not apply if targets are partially set
+    and we do not want to make assumptions what the user meant.
+    """
+
+    pass
+
+
 class pipe_input(base.NodeInjector):
     """Running a series of transformation on the input of the function.
 
@@ -773,13 +809,15 @@ class pipe_input(base.NodeInjector):
                 return upstream_int
 
         In all likelihood, you should not be using this, and this is only here in case you want to expose a node for
-        consumption/output later. Setting the namespace in individual nodes as well as in ``pipe`` is not yet supported.
+        consumption/output later. Setting the namespace in individual nodes as well as in ``pipe_input`` is not yet supported.
+
     """
 
     def __init__(
         self,
         *transforms: Applicable,
         namespace: NamespaceType = ...,
+        on_input: base.TargetType = None,
         collapse=False,
         _chain=False,
     ):
@@ -787,51 +825,146 @@ class pipe_input(base.NodeInjector):
 
         :param transforms: step transformations to be applied, in order
         :param namespace: namespace to apply to all nodes in the pipe. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string). Note that you can either use this *or* namespaces inside ``pipe_input()``...
+        :param on_input: setting the target parameter for all steps in the pipe. Leave empty to select only the first argument.
         :param collapse: Whether to collapse this into a single node. This is not currently supported.
         :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. ``@flow`` will make use of this.
         """
+        base.NodeTransformer._early_validate_target(target=on_input, allow_multiple=True)
+
         self.transforms = transforms
         self.collapse = collapse
+        self.target = on_input
         self.chain = _chain
         self.namespace = namespace
 
+        if isinstance(on_input, str):  # have to do extra since strings are collections in python
+            self.target = [on_input]
+        elif isinstance(on_input, Collection):
+            self.target = on_input
+        else:
+            self.target = [on_input]
+
         if self.collapse:
             raise NotImplementedError(
-                "Collapsing step() functions as one node is not yet implemented for pipe(). Please reach out if you want this feature."
+                "Collapsing step() functions as one node is not yet implemented for pipe_input(). Please reach out if you want this feature."
             )
 
         if self.chain:
             raise NotImplementedError("@flow() is not yet supported -- this is ")
+
+    def _distribute_transforms_to_parameters(
+        self, params: Dict[str, Type[Type]]
+    ) -> Dict[str, List[Applicable]]:
+        """Resolves target option on the transform level.
+        Adds option that we can decide for each applicable which input parameter it will target on
+        top of the global target (if it is set).
+
+        We create a hash for each target parameter with a list of transforms that will be applied
+        to this parameter.
+
+        :params: Available input parameters of the function
+        :return: A dictionary mapping between selected parameters and list of transforms
+        """
+
+        selected_transforms = defaultdict(list)
+        for param in params:
+            for transform in self.transforms:
+                target = transform.target
+                # In case there is no target set on applicable we assign global target
+                if target is None:
+                    target = self.target
+                elif isinstance(target, str):  # user selects single target via string
+                    target = [target]
+                    target.extend(self.target)
+                elif isinstance(target, Collection):  # user inputs a list of targets
+                    target.extend(self.target)
+
+                if param in target:
+                    selected_transforms[param].append(transform)
+
+        return selected_transforms
+
+    def _check_parameters_transforms_mapping_validity(
+        self, mapping: Dict[str, List[Applicable]], fn: Callable, params: Dict[str, Type[Type]]
+    ) -> Dict[str, List[Applicable]]:
+        """Checks for a valid distribution of transforms to parameters."""
+        if not mapping:
+            # This reverts back to legacy chaining through first parameter and checks first parameter
+            sig = inspect.signature(fn)
+            first_parameter = list(sig.parameters.values())[0].name
+            # use the name of the parameter to determine the first node
+            # Then wire them all through in order
+            # if it resolves, great
+            # if not, skip that, pointing to the previous
+            # Create a node along the way
+            if first_parameter not in params:
+                raise base.InvalidDecoratorException(
+                    f"Function: {fn.__name__} has a first parameter that is not a dependency. "
+                    f"@pipe requires the parameter names to match the function parameters. "
+                    f"Thus it might not be compatible with some other decorators"
+                )
+            mapping[first_parameter] = self.transforms
+        else:
+            # in case we set target this checks that each transform has at least one target parameter
+            transform_set = []
+            for param in mapping:
+                transform_set.extend(mapping[param])
+            transform_set = set(transform_set)
+            if len(transform_set) != len(self.transforms):
+                raise MissingTargetError(
+                    "The on_input settings are unclear. Please make sure all transforms "
+                    "either have specified individually or globally a target or there is "
+                    "no on_input usage."
+                )
+        return mapping
+
+    def _resolve_namespace(
+        self,
+        param: str,
+    ) -> str:
+        """Add parameter name to namespace.
+        In case we pipe_input on multiple parameters we have to duplicate nodes to be able to chain
+        them together for each argument and they have to have different names.
+        """
+        if self.namespace is ... or self.namespace is None:
+            return param
+        else:
+            return f"{self.namespace}_{param}"
 
     def inject_nodes(
         self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
     ) -> Tuple[List[node.Node], Dict[str, str]]:
         """Injects nodes into the graph. This creates a node for each pipe() step,
         then reassigns the inputs to pass it in."""
-        sig = inspect.signature(fn)
-        first_parameter = list(sig.parameters.values())[0].name
-        # use the name of the parameter to determine the first node
-        # Then wire them all through in order
-        # if it resolves, great
-        # if not, skip that, pointing to the previous
-        # Create a node along the way
-        if first_parameter not in params:
-            raise base.InvalidDecoratorException(
-                f"Function: {fn.__name__} has a first parameter that is not a dependency. "
-                f"@pipe requires the parameter names to match the function parameters. "
-                f"Thus it might not be compatible with some other decorators"
-            )
 
-        # Chaining gets done by linking the first argument of each node
-        nodes, current_param = chain_transforms(
-            first_arg=first_parameter,
-            transforms=self.transforms,
-            namespace=self.namespace,
-            config=config,
-            fn=fn,
+        parameters_transforms_mapping = self._distribute_transforms_to_parameters(params=params)
+        parameters_transforms_mapping = self._check_parameters_transforms_mapping_validity(
+            mapping=parameters_transforms_mapping, fn=fn, params=params
         )
 
-        return nodes, {first_parameter: current_param}  # rename to ensure it all works
+        total_nodes = []
+        total_rename_maps = {}
+
+        for param in parameters_transforms_mapping:
+            # If only single parameter we revert to previous namespace convention since no duplication issues
+            # This also ensures backwards compatibility
+            if len(parameters_transforms_mapping) == 1:
+                namespace = self.namespace
+            else:
+                namespace = self._resolve_namespace(param=param)
+
+            # Chaining gets done by linking the specified argument of each node
+            nodes, current_param = chain_transforms(
+                target_arg=param,
+                transforms=parameters_transforms_mapping[param],
+                namespace=namespace,
+                config=config,
+                fn=fn,
+            )
+            total_nodes.extend(nodes)
+            total_rename_maps.update({param: current_param})
+
+        return total_nodes, total_rename_maps  # rename to ensure it all works
 
     def validate(self, fn: Callable):
         """Validates the the individual steps work together."""
@@ -871,12 +1004,14 @@ class pipe(pipe_input):
         self,
         *transforms: Applicable,
         namespace: NamespaceType = ...,
+        on_input: base.TargetType = None,
         collapse=False,
         _chain=False,
     ):
         super(pipe, self).__init__(
             *transforms,
             namespace=namespace,
+            on_input=on_input,
             collapse=False,
             _chain=False,
         )
@@ -1094,7 +1229,7 @@ class pipe_output(base.NodeTransformer):
 
         transforms = transforms + (step(__identity).named(fn.__name__),)
         nodes, _ = chain_transforms(
-            first_arg=original_node.name,
+            target_arg=original_node.name,
             transforms=transforms,
             namespace=_namespace,  # self.namespace,
             config=config,
@@ -1133,21 +1268,21 @@ class pipe_output(base.NodeTransformer):
 
 
 def chain_transforms(
-    first_arg: str,
+    target_arg: str,
     transforms: List[Applicable],
     namespace: str,
     config: Dict[str, Any],
     fn: Callable,
 ):
-    """Chaining nodes together sequentially through the first argument.
+    """Chaining nodes together sequentially through the a specified argument.
 
-    :param first_arg: assigning the name of the first argument of the first node in chain
+    :param target_arg: assigning the name of the specified argument of the first node in chain
     :param transforms: step transformations to be applied, in order
     :param namespace: namespace to apply to all nodes. This can be "..." (the default), which resolves to the name of the decorated function, None (which means no namespace), or a string (which means that all nodes will be namespaced with that string)
     :param config: Configuration to use -- this can be specified in the decorator
     :param fn: initial function that was decorated
 
-    :return: A list of nodes that have been chained together through the first argument.
+    :return: A list of nodes that have been chained together through the specified argument.
     """
 
     fn_count = Counter()
@@ -1173,15 +1308,15 @@ def chain_transforms(
             raw_node = raw_node.copy_with(namespace=node_namespace, name=node_name)
             # TODO -- validate that the first parameter is the right type/all the same
             fn_count[fn_name] += 1
-            upstream_inputs, literal_inputs = applicable.bind_function_args(first_arg)
+            upstream_inputs, literal_inputs = applicable.bind_function_args(target_arg)
             nodes.append(
                 raw_node.reassign_inputs(
                     input_names=upstream_inputs,
                     input_values=literal_inputs,
                 )
             )
-            first_arg = raw_node.name
-    return nodes, first_arg
+            target_arg = raw_node.name
+    return nodes, target_arg
 
 
 def apply_to(fn_: Union[Callable, str], **mutating_fn_kwargs: Union[SingleDependency, Any]):
