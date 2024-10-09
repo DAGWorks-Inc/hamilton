@@ -345,7 +345,7 @@ class Applicable:
         :param _resolvers: Resolvers to use for the function
         :param _name: Name of the node to be created
         :param _namespace: Namespace of the node to be created -- currently only single-level namespaces are supported
-        :param _target: Selects which target nodes it will be appended onto. By default all.
+        :param _target: Selects which target nodes it will be appended onto. Default None gets resolved on decorator level.
         :param kwargs: Kwargs (**kwargs) to pass to the function
         """
 
@@ -875,7 +875,6 @@ class pipe_input(base.NodeInjector):
 
         self.transforms = transforms
         self.collapse = collapse
-        self.target = on_input
         self.chain = _chain
         self.namespace = namespace
 
