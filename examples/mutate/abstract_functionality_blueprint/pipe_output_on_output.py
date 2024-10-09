@@ -1,19 +1,24 @@
 from typing import Dict
 
-from hamilton.function_modifiers import extract_fields, hamilton_skip, pipe_output, step
+from hamilton.function_modifiers import (
+    extract_fields,
+    hamilton_exclude,
+    pipe_output,
+    step,
+)
 
 
-@hamilton_skip
+@hamilton_exclude
 def pre_step(something: int) -> int:
     return something + 10
 
 
-@hamilton_skip
+@hamilton_exclude
 def post_step(something: int) -> int:
     return something + 100
 
 
-@hamilton_skip
+@hamilton_exclude
 def something_else(something: int) -> int:
     return something + 1000
 

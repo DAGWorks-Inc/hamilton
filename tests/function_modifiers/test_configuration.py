@@ -113,12 +113,12 @@ def test_config_base_resolve_nodes_end_to_end():
     assert len(nodes) == 0
 
 
-def test_hamilton_skip():
-    def fn_to_hamilton_skip() -> int:
+def test_hamilton_exclude():
+    def fn_to_hamilton_exclude() -> int:
         pass
 
-    decorator = function_modifiers.hamilton_skip
-    hidden_fn = decorator(fn_to_hamilton_skip)
+    decorator = function_modifiers.hamilton_exclude
+    hidden_fn = decorator(fn_to_hamilton_exclude)
     nodes = base.resolve_nodes(hidden_fn, {})
-    assert decorator.resolve(fn_to_hamilton_skip, {"key": "value"}) is None
+    assert decorator.resolve(fn_to_hamilton_exclude, {"key": "value"}) is None
     assert len(nodes) == 0
