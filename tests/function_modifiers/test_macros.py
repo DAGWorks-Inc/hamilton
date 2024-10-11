@@ -330,129 +330,20 @@ def function_multiple_same_type_params(p1: int, p2: int, p3: int) -> int:
     return p1 + p2 + p3
 
 
-def function_multiple_diverse_type_params(p1: int, p2: str, p3: int) -> int:
-    return p1 + len(p2) + p3
+# TODO: in case of multiple paramters need some type checking
+# def function_multiple_diverse_type_params(p1: int, p2: str, p3: int) -> int:
+#     return p1 + len(p2) + p3
 
 
-def test_pipe_input_no_namespace_with_target():
-    n = node.Node.from_fn(function_multiple_diverse_type_params)
-
-    decorator = pipe_input(
-        step(_test_apply_function, source("bar_upstream"), baz=value(10))
-        .on_input(["p1", "p3"])
-        .named("node_1"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(100)).named("node_2"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(1000))
-        .on_input("p3")
-        .named("node_3"),
-        on_input="p2",
-        namespace=None,
-    )
-    nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
-    final_node = nodes[0].name
-    p1_node = nodes[1].name
-    p2_node1 = nodes[2].name
-    p2_node2 = nodes[3].name
-    p2_node3 = nodes[4].name
-    p3_node1 = nodes[5].name
-    p3_node2 = nodes[6].name
-
-    assert final_node == "function_multiple_diverse_type_params"
-    assert p1_node == "p1.node_1"
-    assert p2_node1 == "p2.node_1"
-    assert p2_node2 == "p2.node_2"
-    assert p2_node3 == "p2.node_3"
-    assert p3_node1 == "p3.node_1"
-    assert p3_node2 == "p3.node_3"
-
-
-def test_pipe_input_elipsis_namespace_with_target():
-    n = node.Node.from_fn(function_multiple_diverse_type_params)
-
-    decorator = pipe_input(
-        step(_test_apply_function, source("bar_upstream"), baz=value(10))
-        .on_input(["p1", "p3"])
-        .named("node_1"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(100)).named("node_2"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(1000))
-        .on_input("p3")
-        .named("node_3"),
-        namespace=...,
-        on_input="p2",
-    )
-    nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
-    final_node = nodes[0].name
-    p1_node = nodes[1].name
-    p2_node1 = nodes[2].name
-    p2_node2 = nodes[3].name
-    p2_node3 = nodes[4].name
-    p3_node1 = nodes[5].name
-    p3_node2 = nodes[6].name
-
-    assert final_node == "function_multiple_diverse_type_params"
-    assert p1_node == "p1.node_1"
-    assert p2_node1 == "p2.node_1"
-    assert p2_node2 == "p2.node_2"
-    assert p2_node3 == "p2.node_3"
-    assert p3_node1 == "p3.node_1"
-    assert p3_node2 == "p3.node_3"
-
-
-def test_pipe_input_custom_namespace_with_target():
-    n = node.Node.from_fn(function_multiple_diverse_type_params)
-
-    decorator = pipe_input(
-        step(_test_apply_function, source("bar_upstream"), baz=value(10))
-        .on_input(["p1", "p3"])
-        .named("node_1"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(100)).named("node_2"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(1000))
-        .on_input("p3")
-        .named("node_3"),
-        namespace="abc",
-        on_input="p2",
-    )
-    nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
-    final_node = nodes[0].name
-    p1_node = nodes[1].name
-    p2_node1 = nodes[2].name
-    p2_node2 = nodes[3].name
-    p2_node3 = nodes[4].name
-    p3_node1 = nodes[5].name
-    p3_node2 = nodes[6].name
-
-    assert final_node == "function_multiple_diverse_type_params"
-    assert p1_node == "abc_p1.node_1"
-    assert p2_node1 == "abc_p2.node_1"
-    assert p2_node2 == "abc_p2.node_2"
-    assert p2_node3 == "abc_p2.node_3"
-    assert p3_node1 == "abc_p3.node_1"
-    assert p3_node2 == "abc_p3.node_3"
-
-
-def test_pipe_input_mapping_args_targets_local():
-    n = node.Node.from_fn(function_multiple_diverse_type_params)
-
-    decorator = pipe_input(
-        step(_test_apply_function, source("bar_upstream"), baz=value(10))
-        .on_input(["p1", "p3"])
-        .named("node_1"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(100))
-        .on_input("p2")
-        .named("node_2"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(1000))
-        .on_input("p3")
-        .named("node_3"),
-        namespace="abc",
-    )
-    nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
-    nodes_by_name = {item.name: item for item in nodes}
-    chain_node_1 = nodes_by_name["abc_p1.node_1"]
-    chain_node_2 = nodes_by_name["abc_p2.node_2"]
-    chain_node_3_first = nodes_by_name["abc_p3.node_1"]
-    assert chain_node_1(p1=1, bar_upstream=3) == 14
-    assert chain_node_2(p2=1, bar_upstream=3) == 104
-    assert chain_node_3_first(p3=7, bar_upstream=3) == 20
+def test_pipe_input_on_input_error_unless_string_or_none():
+    with pytest.raises(NotImplementedError):
+        decorator = pipe_input(  # noqa
+            step(_test_apply_function, source("bar_upstream"), baz=value(10)).named("node_1"),
+            step(_test_apply_function, source("bar_upstream"), baz=value(100)).named("node_2"),
+            step(_test_apply_function, source("bar_upstream"), baz=value(1000)).named("node_3"),
+            on_input=["p2", "p3"],
+            namespace="abc",
+        )
 
 
 def test_pipe_input_mapping_args_targets_global():
@@ -465,88 +356,210 @@ def test_pipe_input_mapping_args_targets_global():
         on_input="p2",
         namespace="abc",
     )
-    nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
+    nodes = decorator.transform_dag([n], {}, function_multiple_same_type_params)
     nodes_by_name = {item.name: item for item in nodes}
     chain_node = nodes_by_name["abc.node_1"]
     assert chain_node(p2=1, bar_upstream=3) == 14
 
 
-def test_pipe_input_mapping_args_targets_local_adds_to_global():
-    n = node.Node.from_fn(function_multiple_same_type_params)
+# TODO: multiple parameter tests
+# def test_pipe_input_no_namespace_with_target():
+#     n = node.Node.from_fn(function_multiple_diverse_type_params)
 
-    decorator = pipe_input(
-        step(_test_apply_function, source("bar_upstream"), baz=value(10))
-        .on_input(["p1", "p2"])
-        .named("node_1"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(100))
-        .on_input("p2")
-        .named("node_2"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(1000)).named("node_3"),
-        on_input="p3",
-        namespace="abc",
-    )
-    nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
-    nodes_by_name = {item.name: item for item in nodes}
-    p1_node = nodes_by_name["abc_p1.node_1"]
-    p2_node1 = nodes_by_name["abc_p2.node_1"]
-    p2_node2 = nodes_by_name["abc_p2.node_2"]
-    p3_node1 = nodes_by_name["abc_p3.node_1"]
-    p3_node2 = nodes_by_name["abc_p3.node_2"]
-    p3_node3 = nodes_by_name["abc_p3.node_3"]
+#     decorator = pipe_input(
+#         step(_test_apply_function, source("bar_upstream"), baz=value(10))
+#         .on_input(["p1", "p3"])
+#         .named("node_1"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(100)).named("node_2"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(1000))
+#         .on_input("p3")
+#         .named("node_3"),
+#         on_input="p2",
+#         namespace=None,
+#     )
+#     nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
+#     final_node = nodes[0].name
+#     p1_node = nodes[1].name
+#     p2_node1 = nodes[2].name
+#     p2_node2 = nodes[3].name
+#     p2_node3 = nodes[4].name
+#     p3_node1 = nodes[5].name
+#     p3_node2 = nodes[6].name
 
-    assert p1_node(p1=1, bar_upstream=3) == 14
-    assert p2_node1(p2=7, bar_upstream=3) == 20
-    assert p2_node2(**{"abc_p2.node_1": 2, "bar_upstream": 3}) == 105
-    assert p3_node1(p3=9, bar_upstream=3) == 22
-    assert p3_node2(**{"abc_p3.node_1": 13, "bar_upstream": 3}) == 116
-    assert p3_node3(**{"abc_p3.node_2": 17, "bar_upstream": 3}) == 1020
-
-
-def test_pipe_input_fails_with_missing_targets():
-    n = node.Node.from_fn(function_multiple_same_type_params)
-
-    decorator = pipe_input(
-        step(_test_apply_function, source("bar_upstream"), baz=value(10))
-        .on_input(["p1", "p2"])
-        .named("node_1"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(100))
-        .on_input("p2")
-        .named("node_2"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(1000)).named("node_3"),
-        namespace="abc",
-    )
-    with pytest.raises(hamilton.function_modifiers.macros.MissingTargetError):
-        nodes = decorator.transform_dag([n], {}, function_multiple_same_type_params)  # noqa
+#     assert final_node == "function_multiple_diverse_type_params"
+#     assert p1_node == "p1.node_1"
+#     assert p2_node1 == "p2.node_1"
+#     assert p2_node2 == "p2.node_2"
+#     assert p2_node3 == "p2.node_3"
+#     assert p3_node1 == "p3.node_1"
+#     assert p3_node2 == "p3.node_3"
 
 
-def test_pipe_input_decorator_with_target_no_collapse_multi_node():
-    n = node.Node.from_fn(function_multiple_same_type_params)
+# def test_pipe_input_elipsis_namespace_with_target():
+#     n = node.Node.from_fn(function_multiple_diverse_type_params)
 
-    decorator = pipe_input(
-        step(_test_apply_function, source("bar_upstream"), baz=value(10))
-        .on_input(["p1", "p3"])
-        .named("node_1"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(100))
-        .on_input("p2")
-        .named("node_2"),
-        step(_test_apply_function, source("bar_upstream"), baz=value(1000))
-        .on_input("p3")
-        .named("node_3"),
-        namespace="abc",
-    )
-    nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
-    nodes_by_name = {item.name: item for item in nodes}
-    final_node = nodes_by_name["function_multiple_same_type_params"]
-    chain_node_1 = nodes_by_name["abc_p1.node_1"]
-    chain_node_2 = nodes_by_name["abc_p2.node_2"]
-    chain_node_3_first = nodes_by_name["abc_p3.node_1"]
-    chain_node_3_second = nodes_by_name["abc_p3.node_3"]
-    assert len(nodes_by_name) == 5
-    assert chain_node_1(p1=1, bar_upstream=3) == 14
-    assert chain_node_2(p2=1, bar_upstream=3) == 104
-    assert chain_node_3_first(p3=7, bar_upstream=3) == 20
-    assert chain_node_3_second(**{"abc_p3.node_1": 13, "bar_upstream": 3}) == 1016
-    assert final_node(**{"abc_p1.node_1": 3, "abc_p2.node_2": 4, "abc_p3.node_3": 5}) == 12
+#     decorator = pipe_input(
+#         step(_test_apply_function, source("bar_upstream"), baz=value(10))
+#         .on_input(["p1", "p3"])
+#         .named("node_1"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(100)).named("node_2"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(1000))
+#         .on_input("p3")
+#         .named("node_3"),
+#         namespace=...,
+#         on_input="p2",
+#     )
+#     nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
+#     final_node = nodes[0].name
+#     p1_node = nodes[1].name
+#     p2_node1 = nodes[2].name
+#     p2_node2 = nodes[3].name
+#     p2_node3 = nodes[4].name
+#     p3_node1 = nodes[5].name
+#     p3_node2 = nodes[6].name
+
+#     assert final_node == "function_multiple_diverse_type_params"
+#     assert p1_node == "p1.node_1"
+#     assert p2_node1 == "p2.node_1"
+#     assert p2_node2 == "p2.node_2"
+#     assert p2_node3 == "p2.node_3"
+#     assert p3_node1 == "p3.node_1"
+#     assert p3_node2 == "p3.node_3"
+
+
+# def test_pipe_input_custom_namespace_with_target():
+#     n = node.Node.from_fn(function_multiple_diverse_type_params)
+
+#     decorator = pipe_input(
+#         step(_test_apply_function, source("bar_upstream"), baz=value(10))
+#         .on_input(["p1", "p3"])
+#         .named("node_1"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(100)).named("node_2"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(1000))
+#         .on_input("p3")
+#         .named("node_3"),
+#         namespace="abc",
+#         on_input="p2",
+#     )
+#     nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
+#     final_node = nodes[0].name
+#     p1_node = nodes[1].name
+#     p2_node1 = nodes[2].name
+#     p2_node2 = nodes[3].name
+#     p2_node3 = nodes[4].name
+#     p3_node1 = nodes[5].name
+#     p3_node2 = nodes[6].name
+
+#     assert final_node == "function_multiple_diverse_type_params"
+#     assert p1_node == "abc_p1.node_1"
+#     assert p2_node1 == "abc_p2.node_1"
+#     assert p2_node2 == "abc_p2.node_2"
+#     assert p2_node3 == "abc_p2.node_3"
+#     assert p3_node1 == "abc_p3.node_1"
+#     assert p3_node2 == "abc_p3.node_3"
+
+
+# def test_pipe_input_mapping_args_targets_local():
+#     n = node.Node.from_fn(function_multiple_diverse_type_params)
+
+#     decorator = pipe_input(
+#         step(_test_apply_function, source("bar_upstream"), baz=value(10))
+#         .on_input(["p1", "p3"])
+#         .named("node_1"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(100))
+#         .on_input("p2")
+#         .named("node_2"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(1000))
+#         .on_input("p3")
+#         .named("node_3"),
+#         namespace="abc",
+#     )
+#     nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
+#     nodes_by_name = {item.name: item for item in nodes}
+#     chain_node_1 = nodes_by_name["abc_p1.node_1"]
+#     chain_node_2 = nodes_by_name["abc_p2.node_2"]
+#     chain_node_3_first = nodes_by_name["abc_p3.node_1"]
+#     assert chain_node_1(p1=1, bar_upstream=3) == 14
+#     assert chain_node_2(p2=1, bar_upstream=3) == 104
+#     assert chain_node_3_first(p3=7, bar_upstream=3) == 20
+#
+#
+# def test_pipe_input_mapping_args_targets_local_adds_to_global():
+#     n = node.Node.from_fn(function_multiple_same_type_params)
+
+#     decorator = pipe_input(
+#         step(_test_apply_function, source("bar_upstream"), baz=value(10))
+#         .on_input(["p1", "p2"])
+#         .named("node_1"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(100))
+#         .on_input("p2")
+#         .named("node_2"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(1000)).named("node_3"),
+#         on_input="p3",
+#         namespace="abc",
+#     )
+#     nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
+#     nodes_by_name = {item.name: item for item in nodes}
+#     p1_node = nodes_by_name["abc_p1.node_1"]
+#     p2_node1 = nodes_by_name["abc_p2.node_1"]
+#     p2_node2 = nodes_by_name["abc_p2.node_2"]
+#     p3_node1 = nodes_by_name["abc_p3.node_1"]
+#     p3_node2 = nodes_by_name["abc_p3.node_2"]
+#     p3_node3 = nodes_by_name["abc_p3.node_3"]
+
+#     assert p1_node(p1=1, bar_upstream=3) == 14
+#     assert p2_node1(p2=7, bar_upstream=3) == 20
+#     assert p2_node2(**{"abc_p2.node_1": 2, "bar_upstream": 3}) == 105
+#     assert p3_node1(p3=9, bar_upstream=3) == 22
+#     assert p3_node2(**{"abc_p3.node_1": 13, "bar_upstream": 3}) == 116
+#     assert p3_node3(**{"abc_p3.node_2": 17, "bar_upstream": 3}) == 1020
+
+
+# def test_pipe_input_fails_with_missing_targets():
+#     n = node.Node.from_fn(function_multiple_same_type_params)
+
+#     decorator = pipe_input(
+#         step(_test_apply_function, source("bar_upstream"), baz=value(10))
+#         .on_input(["p1", "p2"])
+#         .named("node_1"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(100))
+#         .on_input("p2")
+#         .named("node_2"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(1000)).named("node_3"),
+#         namespace="abc",
+#     )
+#     with pytest.raises(hamilton.function_modifiers.macros.MissingTargetError):
+#         nodes = decorator.transform_dag([n], {}, function_multiple_same_type_params)  # noqa
+
+
+# def test_pipe_input_decorator_with_target_no_collapse_multi_node():
+#     n = node.Node.from_fn(function_multiple_same_type_params)
+
+#     decorator = pipe_input(
+#         step(_test_apply_function, source("bar_upstream"), baz=value(10))
+#         .on_input(["p1", "p3"])
+#         .named("node_1"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(100))
+#         .on_input("p2")
+#         .named("node_2"),
+#         step(_test_apply_function, source("bar_upstream"), baz=value(1000))
+#         .on_input("p3")
+#         .named("node_3"),
+#         namespace="abc",
+#     )
+#     nodes = decorator.transform_dag([n], {}, function_multiple_diverse_type_params)
+#     nodes_by_name = {item.name: item for item in nodes}
+#     final_node = nodes_by_name["function_multiple_same_type_params"]
+#     chain_node_1 = nodes_by_name["abc_p1.node_1"]
+#     chain_node_2 = nodes_by_name["abc_p2.node_2"]
+#     chain_node_3_first = nodes_by_name["abc_p3.node_1"]
+#     chain_node_3_second = nodes_by_name["abc_p3.node_3"]
+#     assert len(nodes_by_name) == 5
+#     assert chain_node_1(p1=1, bar_upstream=3) == 14
+#     assert chain_node_2(p2=1, bar_upstream=3) == 104
+#     assert chain_node_3_first(p3=7, bar_upstream=3) == 20
+#     assert chain_node_3_second(**{"abc_p3.node_1": 13, "bar_upstream": 3}) == 1016
+#     assert final_node(**{"abc_p1.node_1": 3, "abc_p2.node_2": 4, "abc_p3.node_3": 5}) == 12
 
 
 def test_pipe_decorator_positional_variable_args():
@@ -655,33 +668,6 @@ def test_pipe_end_to_end_1():
     assert result["chain_2_using_pipe"] == result["chain_2_not_using_pipe"]
 
 
-def test_pipe_end_to_end_target_local():
-    dr = (
-        driver.Builder()
-        .with_modules(tests.resources.pipe_input)
-        .with_adapter(base.DefaultAdapter())
-        .with_config({"calc_c": True})
-        .build()
-    )
-
-    inputs = {
-        "input_1": 10,
-        "input_2": 20,
-        "input_3": 30,
-    }
-    result = dr.execute(
-        [
-            "chain_1_using_pipe_input_target_local",
-            "chain_1_not_using_pipe_input_target_local",
-        ],
-        inputs=inputs,
-    )
-    assert (
-        result["chain_1_not_using_pipe_input_target_local"]
-        == result["chain_1_using_pipe_input_target_local"]
-    )
-
-
 def test_pipe_end_to_end_target_global():
     dr = (
         driver.Builder()
@@ -709,31 +695,58 @@ def test_pipe_end_to_end_target_global():
     )
 
 
-def test_pipe_end_to_end_target_mixed():
-    dr = (
-        driver.Builder()
-        .with_modules(tests.resources.pipe_input)
-        .with_adapter(base.DefaultAdapter())
-        .with_config({"calc_c": True})
-        .build()
-    )
+# TODO: For multiple parameters end-to-end
+# def test_pipe_end_to_end_target_local():
+#     dr = (
+#         driver.Builder()
+#         .with_modules(tests.resources.pipe_input)
+#         .with_adapter(base.DefaultAdapter())
+#         .with_config({"calc_c": True})
+#         .build()
+#     )
 
-    inputs = {
-        "input_1": 10,
-        "input_2": 20,
-        "input_3": 30,
-    }
-    result = dr.execute(
-        [
-            "chain_1_using_pipe_input_target_mixed",
-            "chain_1_not_using_pipe_input_target_mixed",
-        ],
-        inputs=inputs,
-    )
-    assert (
-        result["chain_1_not_using_pipe_input_target_mixed"]
-        == result["chain_1_using_pipe_input_target_mixed"]
-    )
+#     inputs = {
+#         "input_1": 10,
+#         "input_2": 20,
+#         "input_3": 30,
+#     }
+#     result = dr.execute(
+#         [
+#             "chain_1_using_pipe_input_target_local",
+#             "chain_1_not_using_pipe_input_target_local",
+#         ],
+#         inputs=inputs,
+#     )
+#     assert (
+#         result["chain_1_not_using_pipe_input_target_local"]
+#         == result["chain_1_using_pipe_input_target_local"]
+#     )
+
+# def test_pipe_end_to_end_target_mixed():
+#     dr = (
+#         driver.Builder()
+#         .with_modules(tests.resources.pipe_input)
+#         .with_adapter(base.DefaultAdapter())
+#         .with_config({"calc_c": True})
+#         .build()
+#     )
+
+#     inputs = {
+#         "input_1": 10,
+#         "input_2": 20,
+#         "input_3": 30,
+#     }
+#     result = dr.execute(
+#         [
+#             "chain_1_using_pipe_input_target_mixed",
+#             "chain_1_not_using_pipe_input_target_mixed",
+#         ],
+#         inputs=inputs,
+#     )
+#     assert (
+#         result["chain_1_not_using_pipe_input_target_mixed"]
+#         == result["chain_1_using_pipe_input_target_mixed"]
+#     )
 
 
 def result_from_downstream_function() -> int:
