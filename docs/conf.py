@@ -35,6 +35,21 @@ extensions = [
 
 nb_execution_mode = "off"
 
+# this is required to get simplepdf to work
+nb_mime_priority_overrides = [
+    ["simplepdf", "application/vnd.jupyter.widget-view+json", 10],
+    ["simplepdf", "application/javascript", 20],
+    ["simplepdf", "text/html", 30],
+    ["simplepdf", "image/svg+xml", 40],
+    ["simplepdf", "image/png", 50],
+    ["simplepdf", "image/gif", 60],
+    ["simplepdf", "image/jpeg", 70],
+    ["simplepdf", "text/markdown", 80],
+    ["simplepdf", "text/latex", 90],
+    ["simplepdf", "text/plain", 100],
+]
+
+
 # for the sitemap extension ---
 # check if the current commit is tagged as a release (vX.Y.Z) and set the version
 GIT_TAG_OUTPUT = subprocess.check_output(["git", "tag", "--points-at", "HEAD"])

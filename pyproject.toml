@@ -85,6 +85,7 @@ docs = [
   "sphinx", # unpinned because myst-parser doesn't break anymore
   "sphinx-autobuild",
   "sphinx-rtd-theme", # read the docs pins
+  "sphinx-simplepdf",
   "sphinx-sitemap",
   "tqdm",
   "xgboost",
