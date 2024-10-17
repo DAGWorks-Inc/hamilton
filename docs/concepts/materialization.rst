@@ -6,7 +6,7 @@ So far, we executed our dataflow using the ``Driver.execute()`` method, which ca
 
 On this page, you'll learn:
 
-- How to load and data in Hamilton
+- How to load and save data in Hamilton
 - Why use materialization
 - What are ``DataSaver`` and ``DataLoader`` objects
 - The difference between ``.execute()`` and ``.materialize()``
