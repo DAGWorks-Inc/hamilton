@@ -19,10 +19,13 @@ docker buildx inspect hamilton-builder > /dev/null 2>&1 || \
 FRONTEND_IMAGE="dagworks/ui-frontend"
 BACKEND_IMAGE="dagworks/ui-backend"
 
-docker buildx build --platform linux/amd64,linux/arm64 \
+# Define common platforms/architectures
+PLATFORMS="linux/amd64,linux/arm64"
+
+docker buildx build --platform $PLATFORMS \
     -t $BACKEND_IMAGE:$VERSION -t $BACKEND_IMAGE:latest \
     --push -f backend/Dockerfile.backend backend/
 
-docker buildx build --platform linux/amd64,linux/arm64 \
+docker buildx build --platform $PLATFORMS \
     -t $FRONTEND_IMAGE:$VERSION -t $FRONTEND_IMAGE:latest \
     --push -f frontend/Dockerfile.frontend frontend/
