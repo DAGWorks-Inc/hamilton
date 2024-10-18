@@ -10,13 +10,37 @@ check_buildx_installed() {
     fi
 }
 
-# fetches the latest version of sf-hamilton-ui from PyPI
-get_latest_version() {
-    curl -s https://pypi.org/pypi/sf-hamilton-ui/json | \
-    jq -r '.info.version'
+# check if jq is installed
+check_jq_installed() {
+    if ! jq --version &> /dev/null; then
+        echo "Error: jq is not installed. Please install jq to proceed."
+        exit 1
+    fi
 }
 
+# Fetches the latest version of sf-hamilton-ui from PyPI
+get_latest_version() {
+    response=$(curl -s https://pypi.org/pypi/sf-hamilton-ui/json)
+    
+    # check if curl succeeded and the response is not empty
+    if [ $? -ne 0 ] || [ -z "$response" ]; then
+        echo "Error: Failed to fetch data from PyPI. Please check your internet connection or the URL."
+        exit 1
+    fi
+    
+    # extract version using jq and handle potential errors
+    version=$(echo "$response" | jq -r '.info.version')
+    if [ "$version" == "null" ]; then
+        echo "Error: Unable to extract version from the response."
+        exit 1
+    fi
+
+    echo "$version"
+}
+
+# check if Docker Buildx and jq are installed
 check_buildx_installed
+check_jq_installed
 
 VERSION=$(get_latest_version)
 
