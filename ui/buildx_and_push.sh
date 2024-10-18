@@ -2,11 +2,21 @@
 
 export DOCKER_CLI_EXPERIMENTAL=enabled
 
-#fetches the latest version of sf-hamilton-ui from PyPI
+# check if Docker Buildx is installed
+check_buildx_installed() {
+    if ! docker buildx version &> /dev/null; then
+        echo "Error: Docker Buildx is not installed. Please install Docker Buildx to proceed."
+        exit 1
+    fi
+}
+
+# fetches the latest version of sf-hamilton-ui from PyPI
 get_latest_version() {
     curl -s https://pypi.org/pypi/sf-hamilton-ui/json | \
     jq -r '.info.version'
 }
+
+check_buildx_installed
 
 VERSION=$(get_latest_version)
 
@@ -19,7 +29,7 @@ docker buildx inspect hamilton-builder > /dev/null 2>&1 || \
 FRONTEND_IMAGE="dagworks/ui-frontend"
 BACKEND_IMAGE="dagworks/ui-backend"
 
-# Define common platforms/architectures
+# define common platforms/architectures
 PLATFORMS="linux/amd64,linux/arm64"
 
 docker buildx build --platform $PLATFORMS \
