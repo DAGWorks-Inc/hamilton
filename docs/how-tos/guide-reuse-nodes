@@ -1,103 +1,150 @@
 # Guide for Using Node Reuse in Hamilton 📖
 
-**What is Node Reuse? 🔍**
+**Is Node Reuse a Common Question? 🤔**
 
-◉ Hamilton is this Python library for building Directed Acyclic Graphs (DAGs) for data transformations, right?
+◉ Yes, node reuse is a common question among Hamilton users. When building Directed Acyclic Graphs (DAGs), you often want to reuse certain nodes (functions) across multiple parts of your graph to avoid recalculating values. This not only makes your code more efficient but also ensures that your calculations remain consistent and easier to maintain.
 
-In a DAG, you write functions (called nodes) that do stuff with your data. Sometimes, you might need the same data in different places. Instead of calculating it over and over again, you can reuse nodes.
-
-◉ For example, say you calculate __daily_sales.__ 
-You might need to use that to calculate both __weekly_sales__ and __monthly_sales__. 
-
-Instead of re calculating __daily_sales__ every time, you can just reuse it! Makes life easier and your code faster.
-
-# Why Node Reuse is Important ⚡:
-
-**There are a few reasons why node reuse is super useful:**
-
-1. Faster execution: Hamilton calculates the node once and reuses the result, so you don’t waste time running the same calculations multiple times.
-
-2. Less code duplication: You write the logic once and reuse it wherever it’s needed this makes your code easier to maintain.
- 
-3. Consistency: By reusing a node, you’re making sure that everywhere it’s used gets the exact same result, avoiding mistakes or mismatched data.
+◉ Hamilton allows you to define nodes (functions) that operate on data. By reusing these nodes, you can speed up calculations and reduce useless chunk in your code. This is a powerful feature in Hamilton, but many users are unsure how to implement it or how it works effectively in various scenarios.
 
 
-# Example of Node Reuse in Hamilton 💻:
+## Solution Overview 📚:
+
+**We’ve compiled information and resources to answer the common question about node reuse. The content for this is already available, and we will reference key resources to help you understand and use node reuse in Hamilton effectively.**
+
+# Resources to Understand Node Reuse 📜:
+
+◉ Hamilton Meetup Slides (March 2024): These slides go into detail about node reuse, specifically slides 10-12.
+
+--> https://github.com/skrawcz/talks/files/14657471/Hamilton.March.2024.Meetup.pdf
+
+◉ YouTube Deep Dive Video: A video from the Hamilton meetup discussing node reuse. Skip to 20:35 to find the section about node reuse.
+
+--> https://www.youtube.com/watch?v=IJByeN41xHs
+
+◉ Hamilton Tutorial Notebook: A hands-on guide with practical examples and code for node reuse.
+
+--> https://github.com/DAGWorks-Inc/hamilton-tutorials/blob/main/2024-03-19/march-meetup.ipynb
+
+◉ Hamilton GitHub Examples: A collection of Python files in the Hamilton repository that demonstrate node reuse.
+
+**Clone the repository to explore more:**
+
+     git clone https://github.com/dagworks-inc/hamilton.git
+     cd hamilton/examples
+     python node_reuse_example_1.py
+     python node_reuse_example_2.py
+
+
+## What is Node Reuse in Hamilton? 🔍
+
+◉ In Hamilton, nodes are functions that represent steps or operations in a calculations graph. These nodes can be reused in different parts of the graph, allowing you to avoid useless calculations.
+
+## Why Reuse Nodes? ⚡
+
+◉ Faster Execution -> By reusing a node, Hamilton only calculates the result once and reuses it wherever necessary.
+
+◉ Less Code Duplication -> You define the logic of a node once and can reuse it in different contexts.
+
+◉ Consistency -> Reusing a node ensures that every part of your graph that uses the node gets the same result, avoiding errors.
+
+
+## Example of Node Reuse in Hamilton 💻:
 
 
 A Simple yet easy way to show how node reuse works in hamilton!:
 
-    import hamilton
+    from hamilton import Graph
     
     # Function that calculates daily sales
     def daily_sales(raw_data):
         return raw_data.sum(axis=0)
     
-    # Reuse daily_sales to calculate weekly and monthly sales
+    # Function that calculates weekly sales using daily sales
     def weekly_sales(daily_sales):
         return daily_sales * 7
     
+    # Function that calculates monthly sales using daily sales
     def monthly_sales(daily_sales):
         return daily_sales * 30
+    
+    # Create a Hamilton graph
+    graph = Graph()
+    
+    # Add nodes to the graph
+    graph.add_node('daily_sales', daily_sales, ['raw_data'])
+    graph.add_node('weekly_sales', weekly_sales, ['daily_sales'])
+    graph.add_node('monthly_sales', monthly_sales, ['daily_sales'])
+    
+    # Run the graph with sample data
+    raw_data = [100, 200, 300]
+    result = graph.run({'raw_data': raw_data})
+    
+    print("Daily Sales:", result['daily_sales'])
+    print("Weekly Sales:", result['weekly_sales'])
+    print("Monthly Sales:", result['monthly_sales'])
 
 
-# In the above example:
+## Key Takeaways from above example:
 
 ◉ The function __daily_sales__ is calculated once.
 
-◉ Both __weekly_sales__ and __monthly_sales__ reuse __daily_sales__, making things faster and more efficient!
+◉ Both __weekly_sales__ and __monthly_sales__ reuse __daily_sales__ as input, thus avoiding useless calculations.
+
+## Above Code Explanation:
+
+◉ __daily_sales__ is the node that performs the calculation of total sales.
+
+◉ __weekly_sales__ and __monthly_sales__ reuse the result of __daily_sales__ for their calculations.
 
 
-# Want to Learn More? Check These Out 📚
+## Reusing Nodes in More Complex Scenarios 🔄
 
-If you are curious and want to dive deeper into node reuse, here are some resources that explain it well:
+In more complex graphs, node reuse can be even more beneficial. For example, if you're working with multiple data streams or more complicated transformations, reusing nodes can help you avoid repeating logic.
 
-◉ Hamilton Meetup Slides (March 2024) -> https://github.com/skrawcz/talks/files/14657471/Hamilton.March.2024.Meetup.pdf
+Example of Reusing Nodes with Multiple Data Streams:
 
-The slides go into detail about node reuse (check out slides 10-12). It’s a short one with some helpful examples!
+    from hamilton import Graph
+    
+    # Function that calculates sales per product
+    def product_sales(product_data):
+        return sum(product_data)
+    
+    # Reuse product_sales across multiple product streams
+    def total_sales(product_sales_a, product_sales_b):
+        return product_sales_a + product_sales_b
+    
+    # Create a graph
+    graph = Graph()
+    graph.add_node('product_sales_a', product_sales, ['product_a_data'])
+    graph.add_node('product_sales_b', product_sales, ['product_b_data'])
+    graph.add_node('total_sales', total_sales, ['product_sales_a', 'product_sales_b'])
+    
+    # Running the graph
+    result = graph.run({
+        'product_a_data': [100, 150, 200],
+        'product_b_data': [120, 130, 180]
+    })
+    
+    print("Total Sales:", result['total_sales'])
 
-◉ YouTube Deep Dive -> https://www.youtube.com/watch?v=IJByeN41xHs
+## Best Practices for Using Node Reuse 💡:
 
-Check out this YouTube video from the Hamilton meetup. If you skip to around 20:35, you’ll find the part that talks specifically about node reuse.
+◉ Define reusable nodes early: Plan and define nodes that can be reused across your graph to keep things modular.
 
-◉ Notebook -> https://github.com/DAGWorks-Inc/hamilton-tutorials/blob/main/2024-03-19/march-meetup.ipynb
+◉ Use clear, descriptive names: Naming nodes descriptively makes your code easier to understand and helps in managing reuse.
 
-It has a lot of examples.
+◉ Avoid unnecessary reuse: While reusing nodes is efficient, be mindful not to overcomplicate graphs. Only reuse nodes when necessary to avoid confusion.
 
-# Example Code in the Hamilton Repo 🛠️:
+## Conclusion 🔚:
 
-**You can also see node reuse with the examples in the Hamilton GitHub repository. Here are a few of them:**
-
-◉ examples/node_reuse_example_1.py: A basic example showing node reuse.
-
-◉ examples/node_reuse_example_2.py: A more advanced example with multiple data streams.
-
-
-**To try them out, clone the repository and run the Python files like this:**
-
-    git clone https://github.com/dagworks-inc/hamilton.git
-    cd hamilton/examples
-    python node_reuse_example_1.py
-
-
-# Tips for Using Node Reuse 💡:
-
-**These will Help you make the most of node reuse in Hamilton:**
-
-1. Plan ahead: Define reusable nodes early in your DAG so they’re ready for use wherever you need them.
-
-2. Use descriptive names: Clear names for your nodes help you (and others) understand what each node does and where it can be reused.
-
-3. Reuse wherever you can: Don’t duplicate calculations, if the data already exists, reuse it!
-
-
-# Conclusion 🔚
-
-Node reuse is a simple but powerful feature in Hamilton that makes your DAGs faster, cleaner, and easier to manage.
-
-Instead of recalculating the same thing over and over, you can reuse nodes to keep things efficient.
+◉ Node reuse in Hamilton is a powerful feature that enhances efficiency, reduces code duplication, and ensures consistency in calculation based graphs. By reusing nodes, you can streamline your DAGs and make your code faster and easier to maintain.
 
 
-# If you want to learn more, definitely check out the slides, videos, and examples mentioned above.
+## For More Information 🔗
+
+◉ GitHub Examples: Clone the Hamilton repository ( https://github.com/dagworks-inc/hamilton )and try the examples yourself!
+
+◉ YouTube Video: Watch now @ https://www.youtube.com/watch?v=IJByeN41xHs
+
 
 # Thank You
