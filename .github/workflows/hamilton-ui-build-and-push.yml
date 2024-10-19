@@ -1,0 +1,59 @@
+name: Building and pushing UI frontend and backend images
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  
+  workflow_dispatch:  
+
+jobs:
+  check_and_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Check latest version of sf-hamilton-ui
+        id: check_version
+        run: |
+          response=$(curl -s https://pypi.org/pypi/sf-hamilton-ui/json)
+          version=$(echo "$response" | jq -r '.info.version')
+          echo "latest_version=$version" >> $GITHUB_ENV
+
+      - name: Restore previous version from cache
+        id: restore_cache
+        uses: actions/cache@v4
+        with:
+          path: ./version_cache
+          key: hamilton-ui-version-cache
+
+      - name: Compare versions
+        id: compare_versions
+        run: |
+          PREVIOUS_VERSION=$(cat version_cache/previous_version.txt 2>/dev/null || echo "none")
+          echo "Previous version: $PREVIOUS_VERSION"
+          if [[ "$latest_version" == "$PREVIOUS_VERSION" ]]; then
+            echo "No new version found. Exiting."
+            exit 0
+          else
+            echo "New version detected: $latest_version"
+          fi
+
+      - name: Run build and push script
+        run: |
+          chmod +x ./ui/buildx_and_push.sh
+          ./ui/buildx_and_push.sh $latest_version
+
+      - name: Save the latest version to a file
+        run: |
+          mkdir -p version_cache
+          echo "$latest_version" > version_cache/previous_version.txt
+
+      - name: Cache the latest version
+        uses: actions/cache@v4
+        with:
+          path: ./version_cache
+          key: hamilton-ui-version-cache
