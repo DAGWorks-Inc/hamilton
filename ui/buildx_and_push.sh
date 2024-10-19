@@ -59,6 +59,9 @@ BACKEND_IMAGE="sikehish/ui-backend"
 # define common platforms/architectures
 PLATFORMS="linux/amd64,linux/arm64"
 
+cd "$(dirname "$0")" 
+echo "Changed directory to: $(pwd)"
+
 docker buildx build --platform $PLATFORMS \
     -t $BACKEND_IMAGE:$VERSION -t $BACKEND_IMAGE:latest \
     --push -f backend/Dockerfile.backend backend/
