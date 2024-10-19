@@ -2,6 +2,9 @@
 
 export DOCKER_CLI_EXPERIMENTAL=enabled
 
+echo "Current directory: $(pwd)"
+
+
 # check if Docker Buildx is installed
 check_buildx_installed() {
     if ! docker buildx version &> /dev/null; then
