@@ -2,9 +2,6 @@
 
 export DOCKER_CLI_EXPERIMENTAL=enabled
 
-echo "Current directory: $(pwd)"
-
-
 # check if Docker Buildx is installed
 check_buildx_installed() {
     if ! docker buildx version &> /dev/null; then
@@ -53,14 +50,13 @@ echo "Using sf-hamilton-ui version: $VERSION"
 docker buildx inspect hamilton-builder > /dev/null 2>&1 || \
     docker buildx create --use --name hamilton-builder
 
-FRONTEND_IMAGE="sikehish/ui-frontend"
-BACKEND_IMAGE="sikehish/ui-backend"
+FRONTEND_IMAGE="dagworks/ui-frontend"
+BACKEND_IMAGE="dagworks/ui-backend"
 
 # define common platforms/architectures
 PLATFORMS="linux/amd64,linux/arm64"
 
-cd "$(dirname "$0")" 
-echo "Changed directory to: $(pwd)"
+cd "$(dirname "$0")" # cd into the directory where this script is present(i.e. ui)
 
 docker buildx build --platform $PLATFORMS \
     -t $BACKEND_IMAGE:$VERSION -t $BACKEND_IMAGE:latest \
