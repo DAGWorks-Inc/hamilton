@@ -38,7 +38,7 @@ jobs:
           # find the highest version tag
           highest_version="none"
           for tag in $tags; do
-            if [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; 
+            if [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               if [ "$highest_version" == "none" ] || [ "$(printf '%s\n' "$tag" "$highest_version" | sort -V | tail -n1)" == "$tag" ]; then
                 highest_version="$tag"
               fi
