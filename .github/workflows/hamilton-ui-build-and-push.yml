@@ -57,22 +57,26 @@ jobs:
 
           if [[ "$latest_version" == "$highest_version" ]]; then
             echo "No new version found. Exiting."
-            exit 0
+            echo "skip_build=true" >> $GITHUB_ENV
           else
             echo "New version detected: $latest_version"
+            echo "skip_build=false" >> $GITHUB_ENV
           fi
 
       - name: Run build and push script
+        if: env.skip_build != 'true' 
         run: |
           chmod +x ./ui/buildx_and_push.sh
           ./ui/buildx_and_push.sh $latest_version
 
       - name: Save the latest version to a file
+        if: env.skip_build != 'true' 
         run: |
           mkdir -p version_cache
           echo "$latest_version" > version_cache/previous_version.txt
 
       - name: Cache the latest version
+        if: env.skip_build != 'true'
         uses: actions/cache@v4
         with:
           path: ./version_cache
