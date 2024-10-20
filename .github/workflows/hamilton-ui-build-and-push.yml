@@ -33,7 +33,7 @@ jobs:
         id: fetch_tags
         run: |
           # get the list of tags for the frontend image
-          tags=$(curl -s https://registry.hub.docker.com/v3/repositories/sikehish/ui-frontend/tags?page_size=100 | jq -r '.results[].name')
+          tags=$(curl -s https://registry.hub.docker.com/v2/repositories/sikehish/ui-frontend/tags?page_size=100 | jq -r '.results[].name')
           
           # find the highest version tag
           highest_version="none"
