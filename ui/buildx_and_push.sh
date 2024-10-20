@@ -50,8 +50,8 @@ echo "Using sf-hamilton-ui version: $VERSION"
 docker buildx inspect hamilton-builder > /dev/null 2>&1 || \
     docker buildx create --use --name hamilton-builder
 
-FRONTEND_IMAGE="dagworks/ui-frontend"
-BACKEND_IMAGE="dagworks/ui-backend"
+FRONTEND_IMAGE="sikehish/ui-frontend"
+BACKEND_IMAGE="sikehish/ui-backend"
 
 # define common platforms/architectures
 PLATFORMS="linux/amd64,linux/arm64"
