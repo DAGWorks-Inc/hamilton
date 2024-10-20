@@ -46,7 +46,7 @@ jobs:
           done
 
           echo "Highest version on Docker Hub: $highest_version"
-          echo "::set-output name=highest_version::$highest_version"
+          echo "highest_version=$highest_version" >> $GITHUB_OUTPUT
 
       - name: Compare versions
         id: compare_versions
