@@ -1158,7 +1158,7 @@ class pipe_output(base.NodeTransformer):
         def B(...):
             return ...
 
-    we obtain the new DAG **A --> B_raw --> B1 --> B2 --> B --> C**, where we can think of the **B_raw --> B1 --> B2 --> B** as a "pipe" that takes the raw output of **B**, applies to it
+    we obtain the new DAG **A --> B.raw --> B1 --> B2 --> B --> C**, where we can think of the **B.raw --> B1 --> B2 --> B** as a "pipe" that takes the raw output of **B**, applies to it
     **B1**, takes the output of **B1** applies to it **B2** and then gets renamed to **B** to re-connect to the rest of the DAG.
 
     The rules for chaining nodes are the same as for ``pipe_input``.
@@ -1282,7 +1282,7 @@ class pipe_output(base.NodeTransformer):
     ) -> Collection[node.Node]:
         """Injects nodes into the graph.
 
-        We create a copy of the original function and rename it to `function_name_raw` to be the
+        We create a copy of the original function and rename it to `function_name.raw` to be the
         initial node. Then we create a node for each step in `post-pipe` and chain them together.
         The last node is an identity to the previous one with the original name `function_name` to
         represent an exit point of `pipe_output`.
@@ -1299,7 +1299,8 @@ class pipe_output(base.NodeTransformer):
         else:
             _namespace = self.namespace
 
-        original_node = node_.copy_with(name=f"{node_.name}_raw")
+        # We pick a reserved prefix that ovoids clashes with user defined functions / nodes
+        original_node = node_.copy_with(name=f"{node_.name}.raw")
 
         def __identity(foo: Any) -> Any:
             return foo
@@ -1455,7 +1456,7 @@ class mutate:
         def _transform2(...):
             return ...
 
-    we obtain the new pipe-like subDAGs **A_raw --> _transform1 --> A** and **B_raw --> _transform1 --> _transform2 --> B**,
+    we obtain the new pipe-like subDAGs **A.raw --> _transform1 --> A** and **B.raw --> _transform1 --> _transform2 --> B**,
     where the behavior is the same as ``pipe_output``.
 
     While it is generally reasonable to use ``pipe_output``, you should consider ``mutate`` in the following scenarios:
