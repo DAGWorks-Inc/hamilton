@@ -1526,7 +1526,7 @@ class mutate:
         :param target_functions: functions we wish to mutate the output of
         :param collapse: Whether to collapse this into a single node. This is not currently supported.
         :param _chain: Whether to chain the first parameter. This is the only mode that is supported. Furthermore, this is not externally exposed. ``@flow`` will make use of this.
-        :param \*\*mutating_function_kwargs: other kwargs that the decorated function has. Must be validly called as ``f(**kwargs)``, and have a 1-to-1 mapping of kwargs to parameters. This will be applied for all ``target_functions``, unless ``apply_to`` already has the mutator function kwargs, in which case it takes those.
+        :param `**mutating_function_kwargs`: other kwargs that the decorated function has. Must be validly called as ``f(**kwargs)``, and have a 1-to-1 mapping of kwargs to parameters. This will be applied for all ``target_functions``, unless ``apply_to`` already has the mutator function kwargs, in which case it takes those.
         """
         self.collapse = collapse
         self.chain = _chain
