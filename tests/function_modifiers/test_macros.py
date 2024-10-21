@@ -781,8 +781,11 @@ def test_pipe_output_decorator_positional_single_node():
     nodes = decorator.transform_dag([n], {}, result_from_downstream_function)
     nodes_by_name = {item.name: item for item in nodes}
     chain_node = nodes_by_name["node_1"]
-    assert chain_node(result_from_downstream_function_raw=2, bar_upstream=10) == 112
-    assert sorted(chain_node.input_types) == ["bar_upstream", "result_from_downstream_function_raw"]
+    assert chain_node(**{"result_from_downstream_function.raw": 2, "bar_upstream": 10}) == 112
+    assert sorted(chain_node.input_types) == [
+        "bar_upstream",
+        "result_from_downstream_function.raw",
+    ]
     final_node = nodes_by_name["result_from_downstream_function"]
     assert final_node(foo=112) == 112  # original arg name
     assert final_node(node_1=112) == 112  # renamed to match the last node
@@ -800,7 +803,10 @@ def test_pipe_output_decorator_no_collapse_multi_node():
     nodes_by_name = {item.name: item for item in nodes}
     final_node = nodes_by_name["result_from_downstream_function"]
     assert len(nodes_by_name) == 4  # We add fn_raw and identity
-    assert nodes_by_name["node_1"](result_from_downstream_function_raw=1, bar_upstream=10) == 111
+    assert (
+        nodes_by_name["node_1"](**{"result_from_downstream_function.raw": 1, "bar_upstream": 10})
+        == 111
+    )
     assert nodes_by_name["node_2"](node_1=4) == 114
     assert final_node(node_2=13) == 13
 
@@ -827,7 +833,7 @@ def test_pipe_output_inherits_null_namespace():
     decorator.validate(result_from_downstream_function)
     nodes = decorator.transform_dag([n], {}, result_from_downstream_function)
     assert "node_1" in {item.name for item in nodes}
-    assert "result_from_downstream_function_raw" in {item.name for item in nodes}
+    assert "result_from_downstream_function.raw" in {item.name for item in nodes}
     assert "result_from_downstream_function" in {item.name for item in nodes}
 
 
