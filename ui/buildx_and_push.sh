@@ -60,7 +60,7 @@ cd "$(dirname "$0")" # cd into the directory where this script is present(i.e. u
 
 docker buildx build --platform $PLATFORMS \
     -t $BACKEND_IMAGE:$VERSION -t $BACKEND_IMAGE:latest \
-    --push -f backend/Dockerfile.backend backend/
+    --push -f backend/Dockerfile.backend-prod backend/
 
 docker buildx build --platform $PLATFORMS \
     -t $FRONTEND_IMAGE:$VERSION -t $FRONTEND_IMAGE:latest \
