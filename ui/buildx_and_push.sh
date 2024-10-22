@@ -64,6 +64,6 @@ docker buildx build --platform $PLATFORMS \
 
 docker buildx build --platform $PLATFORMS \
     -t $FRONTEND_IMAGE:$VERSION -t $FRONTEND_IMAGE:latest \
-    --push -f frontend/Dockerfile.frontend frontend/ \
+    --push -f frontend/Dockerfile.frontend-prod frontend/ \
     --build-arg REACT_APP_AUTH_MODE=local \
     --build-arg REACT_APP_USE_POSTHOG=false \
