@@ -21,13 +21,13 @@ check_jq_installed() {
 # fetches the latest version of sf-hamilton-ui from PyPI
 get_latest_version() {
     response=$(curl -s https://pypi.org/pypi/sf-hamilton-ui/json)
-    
+
     # check if curl succeeded and the response is not empty
     if [ $? -ne 0 ] || [ -z "$response" ]; then
         echo "Error: Failed to fetch data from PyPI. Please check your internet connection or the URL."
         exit 1
     fi
-    
+
     # extract version using jq and handle potential errors
     version=$(echo "$response" | jq -r '.info.version')
     if [ "$version" == "null" ]; then

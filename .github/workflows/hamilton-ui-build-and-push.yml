@@ -2,8 +2,8 @@ name: Building and pushing UI frontend and backend images
 
 on:
   schedule:
-    - cron: '0 0 * * *'  
-  workflow_dispatch:  
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
   check_and_build:
@@ -34,7 +34,7 @@ jobs:
         run: |
           # get the list of tags for the frontend image
           tags=$(curl -s https://registry.hub.docker.com/v2/repositories/dagworks/ui-frontend/tags?page_size=100 | jq -r '.results[].name')
-          
+
           # find the highest version tag
           highest_version="none"
           for tag in $tags; do
@@ -64,13 +64,13 @@ jobs:
           fi
 
       - name: Run build and push script
-        if: env.skip_build != 'true' 
+        if: env.skip_build != 'true'
         run: |
           chmod +x ./ui/buildx_and_push.sh
           ./ui/buildx_and_push.sh $latest_version
 
       - name: Save the latest version to a file
-        if: env.skip_build != 'true' 
+        if: env.skip_build != 'true'
         run: |
           mkdir -p version_cache
           echo "$latest_version" > version_cache/previous_version.txt
