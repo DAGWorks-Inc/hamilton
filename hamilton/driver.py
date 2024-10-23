@@ -1200,6 +1200,7 @@ class Driver:
                 display_fields=show_schema,
                 custom_style_function=custom_style_function,
                 config=self.graph._config,
+                keep_dot=keep_dot,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
@@ -1263,6 +1264,7 @@ class Driver:
                 display_fields=show_schema,
                 custom_style_function=custom_style_function,
                 config=self.graph._config,
+                keep_dot=keep_dot,
             )
         except ImportError as e:
             logger.warning(f"Unable to import {e}", exc_info=True)
