@@ -10,6 +10,9 @@ __pycache__/
 docs/_build/
 C:\Users\User\contribute-hamilton\hamilton\docs\_build
 
+env1/
+.venv/
+
 # Distribution / packaging
 .Python
 build/
