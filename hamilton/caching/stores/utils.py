@@ -2,6 +2,7 @@ import pathlib
 
 
 def get_directory_size(directory: str) -> float:
+    """Get the size of the content of a directory in bytes."""
     total_size = 0
     for p in pathlib.Path(directory).rglob("*"):
         if p.is_file():
@@ -11,6 +12,7 @@ def get_directory_size(directory: str) -> float:
 
 
 def readable_bytes_size(n_bytes: float) -> str:
+    """Convert a number of bytes to a human-readable unit."""
     labels = ["B", "KB", "MB", "GB", "TB"]
     exponent = 0
 
