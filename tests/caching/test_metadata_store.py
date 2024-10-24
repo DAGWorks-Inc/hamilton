@@ -98,3 +98,58 @@ def test_set_get_without_dependencies(metadata_store):
     retrieved_data_version = metadata_store.get(cache_key=cache_key)
 
     assert retrieved_data_version == data_version
+
+
+@pytest.mark.parametrize("metadata_store", [SQLiteMetadataStore], indirect=True)
+def test_get_run_ids_returns_ordered_list(metadata_store):
+    pre_run_ids = metadata_store.get_run_ids()
+    assert pre_run_ids == ["test-run-id"]  # this is from the fixture
+
+    metadata_store.initialize(run_id="foo")
+    metadata_store.initialize(run_id="bar")
+    metadata_store.initialize(run_id="baz")
+
+    post_run_ids = metadata_store.get_run_ids()
+    assert post_run_ids == ["test-run-id", "foo", "bar", "baz"]
+
+
+@pytest.mark.parametrize("metadata_store", [SQLiteMetadataStore], indirect=True)
+def test_get_run_results_include_cache_key_and_data_version(metadata_store):
+    run_id = "test-run-id"
+    metadata_store.set(
+        cache_key="foo",
+        data_version="1",
+        run_id=run_id,
+        node_name="a",  # kwarg specific to SQLiteMetadataStore
+        code_version="b",  # kwarg specific to SQLiteMetadataStore
+    )
+    metadata_store.set(
+        cache_key="bar",
+        data_version="2",
+        run_id=run_id,
+        node_name="a",  # kwarg specific to SQLiteMetadataStore
+        code_version="b",  # kwarg specific to SQLiteMetadataStore
+    )
+
+    run_info = metadata_store.get_run(run_id=run_id)
+
+    assert isinstance(run_info, list)
+    assert len(run_info) == 2
+    assert isinstance(run_info[1], dict)
+    assert run_info[0]["cache_key"] == "foo"
+    assert run_info[0]["data_version"] == "1"
+    assert run_info[1]["cache_key"] == "bar"
+    assert run_info[1]["data_version"] == "2"
+
+
+@pytest.mark.parametrize("metadata_store", [SQLiteMetadataStore], indirect=True)
+def test_get_run_returns_empty_list_if_run_started_but_no_execution_recorded(metadata_store):
+    metadata_store.initialize(run_id="foo")
+    run_info = metadata_store.get_run(run_id="foo")
+    assert run_info == []
+
+
+@pytest.mark.parametrize("metadata_store", [SQLiteMetadataStore], indirect=True)
+def test_get_run_raises_error_if_run_id_not_found(metadata_store):
+    with pytest.raises(IndexError):
+        metadata_store.get_run(run_id="foo")

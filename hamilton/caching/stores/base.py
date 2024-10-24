@@ -95,7 +95,7 @@ class MetadataStore(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get(self, cache_key: str) -> Optional[str]:
+    def get(self, cache_key: str, **kwargs) -> Optional[str]:
         """Try to retrieve ``data_version`` keyed by ``cache_key``.
         If retrieval misses return ``None``.
         """
@@ -118,15 +118,19 @@ class MetadataStore(abc.ABC):
     def get_run_ids(self) -> Sequence[str]:
         """Return a list of run ids, sorted from oldest to newest start time.
         A ``run_id`` is registered when the metadata_store ``.initialize()`` is called.
-
-        NOTE because of race conditions, the order could theoretically differ from the
-        order stored on the SmartCacheAdapter `._run_ids` attribute.
         """
 
     @abc.abstractmethod
-    def get_run(self, run_id: str) -> Any:
-        """Return all the metadata associated with a run.
-        The metadata content may differ across MetadataStore implementations
+    def get_run(self, run_id: str) -> Sequence[dict]:
+        """Return a list of node metadata associated with a run.
+
+        For each node, the metadata should include ``cache_key`` (created or used)
+        and ``data_version``. These values allow to manually query the MetadataStore
+        or ResultStore.
+
+        Decoding the ``cache_key`` gives the ``node_name``, ``code_version``, and
+        ``dependencies_data_versions``. Individual implementations may add more
+        information or decode the ``cache_key`` before returning metadata.
         """
 
     @property
