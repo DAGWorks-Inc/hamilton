@@ -123,10 +123,10 @@ class MetadataStore(abc.ABC):
     @abc.abstractmethod
     def get_run(self, run_id: str) -> Sequence[dict]:
         """Return a list of node metadata associated with a run.
-        For each node, the metadata should include:
-            - ``cache_key`` (created or used)
-            - ``data_version``
-        This is to allow users to manually query the MetadataStore or ResultStore.
+
+        For each node, the metadata should include ``cache_key`` (created or used)
+        and ``data_version``. These values allow to manually query the MetadataStore
+        or ResultStore.
 
         Decoding the ``cache_key`` gives the ``node_name``, ``code_version``, and
         ``dependencies_data_versions``. Individual implementations may add more

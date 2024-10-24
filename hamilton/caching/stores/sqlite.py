@@ -210,10 +210,10 @@ class SQLiteMetadataStore(MetadataStore):
 
         :param run_id: ID of the run to retrieve
         :return: List of node metadata which includes ``cache_key``, ``data_version``,
-        ``node_name``, and ``code_version``. The list can be empty if a run was initialized
-        but no nodes were executed.
+            ``node_name``, and ``code_version``. The list can be empty if a run was initialized
+            but no nodes were executed.
 
-        Raises an ``IndexError`` if the ``run_id`` is not found in metadata store.
+        :raises IndexError: if the ``run_id`` is not found in metadata store.
         """
         cur = self.connection.cursor()
         if self._run_exists(run_id) is False:
