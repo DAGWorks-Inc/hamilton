@@ -3,6 +3,7 @@ import sqlite3
 import threading
 from typing import List, Optional
 
+from hamilton.caching.cache_key import decode_key
 from hamilton.caching.stores.base import MetadataStore
 
 
@@ -19,14 +20,14 @@ class SQLiteMetadataStore(MetadataStore):
 
         self._thread_local = threading.local()
 
-    def _get_connection(self):
+    def _get_connection(self) -> sqlite3.Connection:
         if not hasattr(self._thread_local, "connection"):
             self._thread_local.connection = sqlite3.connect(
                 str(self._path), check_same_thread=False, **self.connection_kwargs
             )
         return self._thread_local.connection
 
-    def _close_connection(self):
+    def _close_connection(self) -> None:
         if hasattr(self._thread_local, "connection"):
             self._thread_local.connection.close()
             del self._thread_local.connection
@@ -76,9 +77,9 @@ class SQLiteMetadataStore(MetadataStore):
             """\
             CREATE TABLE IF NOT EXISTS cache_metadata (
                 cache_key TEXT PRIMARY KEY,
+                data_version TEXT NOT NULL,
                 node_name TEXT NOT NULL,
                 code_version TEXT NOT NULL,
-                data_version TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
                 FOREIGN KEY (cache_key) REFERENCES history(cache_key)
@@ -106,12 +107,20 @@ class SQLiteMetadataStore(MetadataStore):
         self,
         *,
         cache_key: str,
-        node_name: str,
-        code_version: str,
         data_version: str,
         run_id: str,
+        node_name: str = None,
+        code_version: str = None,
+        **kwargs,
     ) -> None:
         cur = self.connection.cursor()
+
+        # if the caller of ``.set()`` directly provides the ``node_name`` and ``code_version``,
+        # we can skip the decoding step.
+        if (node_name is None) or (code_version is None):
+            decoded_key = decode_key(cache_key)
+            node_name = decoded_key["node_name"]
+            code_version = decoded_key["code_version"]
 
         cur.execute("INSERT INTO history (cache_key, run_id) VALUES (?, ?)", (cache_key, run_id))
         cur.execute(
@@ -150,7 +159,7 @@ class SQLiteMetadataStore(MetadataStore):
         cur.execute("DELETE FROM cache_metadata WHERE cache_key = ?", (cache_key,))
         self.connection.commit()
 
-    def delete_all(self):
+    def delete_all(self) -> None:
         """Delete all existing tables from the database"""
         cur = self.connection.cursor()
 
@@ -170,35 +179,66 @@ class SQLiteMetadataStore(MetadataStore):
         return result is not None
 
     def get_run_ids(self) -> List[str]:
+        """Return a list of run ids, sorted from oldest to newest start time."""
         cur = self.connection.cursor()
-        cur.execute("SELECT run_id FROM history ORDER BY id")
+        cur.execute("SELECT run_id FROM run_ids ORDER BY id")
         result = cur.fetchall()
 
-        if result is None:
-            raise IndexError("No `run_id` found. Table `history` is empty.")
+        return [r[0] for r in result]
 
-        return result[0]
-
-    def get_run(self, run_id: str) -> List[dict]:
-        """Return all the metadata associated with a run."""
+    def _run_exists(self, run_id: str) -> bool:
+        """Returns True if a run was initialized with ``run_id``, even
+        if the run recorded no node executions.
+        """
         cur = self.connection.cursor()
         cur.execute(
             """\
+            SELECT EXISTS(
+                SELECT 1
+                FROM run_ids
+                WHERE run_id = ?
+            )
+            """,
+            (run_id,),
+        )
+        result = cur.fetchone()
+        # SELECT EXISTS returns 1 for True, i.e., `run_id` is found
+        return result[0] == 1
+
+    def get_run(self, run_id: str) -> List[dict]:
+        """Return a list of node metadata associated with a run.
+
+        :param run_id: ID of the run to retrieve
+        :return: List of node metadata which includes ``cache_key``, ``data_version``,
+        ``node_name``, and ``code_version``. The list can be empty if a run was initialized
+        but no nodes were executed.
+
+        Raises an ``IndexError`` if the ``run_id`` is not found in metadata store.
+        """
+        cur = self.connection.cursor()
+        if self._run_exists(run_id) is False:
+            raise IndexError(f"`run_id` not found in table `run_ids`: {run_id}")
+
+        cur.execute(
+            """\
             SELECT
+                cache_metadata.cache_key,
+                cache_metadata.data_version,
                 cache_metadata.node_name,
-                cache_metadata.code_version,
-                cache_metadata.data_version
-            FROM (SELECT * FROM history WHERE history.run_id = ?) AS run_history
-            JOIN cache_metadata ON run_history.cache_key = cache_metadata.cache_key
+                cache_metadata.code_version
+            FROM history
+            JOIN cache_metadata ON history.cache_key = cache_metadata.cache_key
+            WHERE history.run_id = ?
             """,
             (run_id,),
         )
         results = cur.fetchall()
-
-        if results is None:
-            raise IndexError(f"`run_id` not found in table `history`: {run_id}")
-
         return [
-            dict(node_name=node_name, code_version=code_version, data_version=data_version)
-            for node_name, code_version, data_version in results
+            dict(
+                cache_key=cache_key,
+                data_version=data_version,
+                node_name=node_name,
+                code_version=code_version,
+            )
+            for cache_key, data_version, node_name, code_version in results
         ]
