@@ -20,6 +20,10 @@ class SQLiteMetadataStore(MetadataStore):
 
         self._thread_local = threading.local()
 
+        # creating tables at `__init__` prevents other methods from encountering
+        # `sqlite3.OperationalError` because tables are missing.
+        self._create_tables_if_not_exists()
+
     def _get_connection(self) -> sqlite3.Connection:
         if not hasattr(self._thread_local, "connection"):
             self._thread_local.connection = sqlite3.connect(
@@ -33,14 +37,15 @@ class SQLiteMetadataStore(MetadataStore):
             del self._thread_local.connection
 
     @property
-    def connection(self):
+    def connection(self) -> sqlite3.Connection:
+        """Connection to the SQLite database."""
         return self._get_connection()
 
     def __del__(self):
         """Close the SQLite connection when the object is deleted"""
         self._close_connection()
 
-    def _create_tables_if_not_exists(self):
+    def _create_tables_if_not_exists(self) -> None:
         """Create the tables necessary for the cache:
 
         run_ids: queue of run_ids, ordered by start time.
@@ -92,12 +97,11 @@ class SQLiteMetadataStore(MetadataStore):
         """Call initialize when starting a run. This will create database tables
         if necessary.
         """
-        self._create_tables_if_not_exists()
         cur = self.connection.cursor()
         cur.execute("INSERT INTO run_ids (run_id) VALUES (?)", (run_id,))
         self.connection.commit()
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Number of entries in cache_metadata"""
         cur = self.connection.cursor()
         cur.execute("SELECT COUNT(*) FROM cache_metadata")
@@ -118,7 +122,15 @@ class SQLiteMetadataStore(MetadataStore):
         # if the caller of ``.set()`` directly provides the ``node_name`` and ``code_version``,
         # we can skip the decoding step.
         if (node_name is None) or (code_version is None):
-            decoded_key = decode_key(cache_key)
+            try:
+                decoded_key = decode_key(cache_key)
+            except BaseException as e:
+                raise ValueError(
+                    f"Failed decoding the cache_key: {cache_key}.\n",
+                    "Was it manually created? Do `code_version` and `data_version` found in ",
+                    "``dependencies_data_versions`` have the proper encoding?",
+                ) from e
+
             node_name = decoded_key["node_name"]
             code_version = decoded_key["code_version"]
 

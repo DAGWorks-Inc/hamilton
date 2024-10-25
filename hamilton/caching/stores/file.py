@@ -2,8 +2,14 @@ import shutil
 from pathlib import Path
 from typing import Any, Optional
 
-from hamilton.caching.stores.base import ResultStore, StoredResult
+try:
+    from typing import override
+except ImportError:
+    override = lambda x: x  # noqa E731
+
 from hamilton.io.data_adapters import DataLoader, DataSaver
+
+from .base import ResultStore, StoredResult
 
 
 class FileResultStore(ResultStore):

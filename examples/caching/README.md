@@ -3,4 +3,5 @@
 This directory contains tutorial notebooks for the Hamilton caching feature.
 
 - `tutorial.ipynb`: the main tutorial for caching
-- `materializer_tutorial.ipynb`: tutorial on the interactions between `DataLoader/DataSaver` and caching. This is a more advanced tutorial for materializer users. You should complete the `tutorial.ipynb` first.
+- `in_memory_tutorial.ipynb`: How to use caching without writing metadata and results to file.
+- `materializer_tutorial.ipynb`: Learn interactions between `DataLoader/DataSaver` and caching. This is a more advanced tutorial.
