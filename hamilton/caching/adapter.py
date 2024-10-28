@@ -274,7 +274,9 @@ class HamiltonCacheAdapter(
         state = self.__dict__.copy()
         # store the classes to reinstantiate the same backend in __setstate__
         state["metadata_store_cls"] = self.metadata_store.__class__
+        state["metadata_store_init"] = self.metadata_store.__getstate__()
         state["result_store_cls"] = self.result_store.__class__
+        state["result_store_init"] = self.result_store.__getstate__()
         del state["metadata_store"]
         del state["result_store"]
         return state
@@ -288,8 +290,8 @@ class HamiltonCacheAdapter(
         """
         # instantiate the backend from the class, then delete the attribute before
         # setting it on the adapter instance.
-        self.metadata_store = state["metadata_store_cls"](path=state["_path"])
-        self.result_store = state["result_store_cls"](path=state["_path"])
+        self.metadata_store = state["metadata_store_cls"](**state["metadata_store_init"])
+        self.result_store = state["result_store_cls"](**state["result_store_init"])
         del state["metadata_store_cls"]
         del state["result_store_cls"]
         self.__dict__.update(state)

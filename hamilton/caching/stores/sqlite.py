@@ -24,6 +24,16 @@ class SQLiteMetadataStore(MetadataStore):
         # `sqlite3.OperationalError` because tables are missing.
         self._create_tables_if_not_exists()
 
+    def __getstate__(self) -> dict:
+        """Serialized `__init__` arguments required to initialize the
+        MetadataStore in a new thread or process.
+        """
+        state = {}
+        # NOTE kwarg `path` is not equivalent to `self._path`
+        state["path"] = self._directory
+        state["connection_kwargs"] = self.connection_kwargs
+        return state
+
     def _get_connection(self) -> sqlite3.Connection:
         if not hasattr(self._thread_local, "connection"):
             self._thread_local.connection = sqlite3.connect(
@@ -127,8 +137,8 @@ class SQLiteMetadataStore(MetadataStore):
             except BaseException as e:
                 raise ValueError(
                     f"Failed decoding the cache_key: {cache_key}.\n",
-                    "Was it manually created? Do `code_version` and `data_version` found in ",
-                    "``dependencies_data_versions`` have the proper encoding?",
+                    "The `cache_key` must be created by `hamilton.caching.cache_key.create_cache_key()` ",
+                    "if `node_name` and `code_version` are not provided.",
                 ) from e
 
             node_name = decoded_key["node_name"]

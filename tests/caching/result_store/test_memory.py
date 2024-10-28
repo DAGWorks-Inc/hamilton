@@ -4,30 +4,13 @@ from hamilton.caching.stores.base import StoredResult
 from hamilton.caching.stores.file import FileResultStore
 from hamilton.caching.stores.memory import InMemoryResultStore
 
-
-def _instantiate_result_store(result_store_cls, tmp_path):
-    if result_store_cls == FileResultStore:
-        return FileResultStore(path=tmp_path)
-    elif result_store_cls == InMemoryResultStore:
-        return InMemoryResultStore()
-    else:
-        raise ValueError(
-            f"Class `{result_store_cls}` isn't defined in `_instantiate_metadata_store()`"
-        )
+# `result_store` is imported but not directly used because it's
+# a pytest fixture automatically provided to tests
+from .test_base import result_store  # noqa: F401
 
 
-@pytest.fixture
-def result_store(request, tmp_path):
-    result_store_cls = request.param
-    result_store = _instantiate_result_store(result_store_cls, tmp_path)
-
-    yield result_store
-
-    result_store.delete_all()
-
-
-def _store_size(result_store: InMemoryResultStore) -> int:
-    return len(result_store._results)
+def _store_size(memory_store: InMemoryResultStore) -> int:
+    return len(memory_store._results)
 
 
 @pytest.fixture
@@ -148,6 +131,6 @@ def test_load_from(result_store):  # noqa: F811
 
 
 def test_load_from_must_have_metadata_store_or_data_versions(tmp_path):
-    result_store = FileResultStore(tmp_path)
+    file_result_store = FileResultStore(tmp_path)
     with pytest.raises(ValueError):
-        InMemoryResultStore.load_from(result_store)
+        InMemoryResultStore.load_from(result_store=file_result_store)

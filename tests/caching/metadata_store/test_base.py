@@ -51,8 +51,6 @@ def metadata_store(request, tmp_path):
 
     yield metadata_store
 
-    metadata_store.delete_all()
-
 
 @pytest.mark.parametrize("metadata_store", IMPLEMENTATIONS, indirect=True)
 def test_initialize_empty(metadata_store):

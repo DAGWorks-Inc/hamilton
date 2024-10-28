@@ -1,3 +1,4 @@
+import itertools
 from typing import List
 
 import pandas as pd
@@ -5,6 +6,9 @@ import pytest
 
 from hamilton import ad_hoc_utils, driver
 from hamilton.caching.adapter import CachingEventType, HamiltonCacheAdapter
+from hamilton.caching.stores.file import FileResultStore
+from hamilton.caching.stores.memory import InMemoryMetadataStore, InMemoryResultStore
+from hamilton.caching.stores.sqlite import SQLiteMetadataStore
 from hamilton.execution.executors import (
     MultiProcessingExecutor,
     MultiThreadingExecutor,
@@ -12,7 +16,28 @@ from hamilton.execution.executors import (
 )
 from hamilton.function_modifiers import cache as cache_decorator
 
+# `metadata_store` and `result_store` are imported but not directly used because they
+# are pytest fixtures automatically provided to tests
+from .metadata_store.test_base import metadata_store  # noqa: F401
+from .result_store.test_base import result_store  # noqa: F401
 from tests.resources.dynamic_parallelism import parallel_linear_basic, parallelism_with_caching
+
+
+def _instantiate_executor(executor_cls):
+    if executor_cls == SynchronousLocalTaskExecutor:
+        return SynchronousLocalTaskExecutor()
+    elif executor_cls == MultiProcessingExecutor:
+        return MultiProcessingExecutor(max_tasks=10)
+    elif executor_cls == MultiThreadingExecutor:
+        return MultiThreadingExecutor(max_tasks=10)
+    else:
+        raise ValueError(f"Class `{executor_cls}` isn't defined in `_instantiate_executor()`")
+
+
+@pytest.fixture
+def executor(request):
+    executor_cls = request.param
+    return _instantiate_executor(executor_cls)
 
 
 @pytest.fixture
@@ -483,19 +508,34 @@ def test_result_is_materialized_to_file(tmp_path):
     assert result[node_name] == retrieved_result
 
 
-@pytest.mark.parametrize(
-    "executor",
-    [
-        SynchronousLocalTaskExecutor(),
-        MultiProcessingExecutor(max_tasks=10),
-        MultiThreadingExecutor(max_tasks=10),
-    ],
+EXECUTORS_AND_STORES_CONFIGURATIONS = list(
+    itertools.product(
+        [SynchronousLocalTaskExecutor, MultiThreadingExecutor, MultiProcessingExecutor],
+        [SQLiteMetadataStore],
+        [FileResultStore],
+    )
 )
-def test_parallel_synchronous_step_by_step(tmp_path, executor):
+
+# InMemory stores can't be used with multiprocessing because they don't share memory.
+IN_MEMORY_CONFIGURATIONS = list(
+    itertools.product(
+        [SynchronousLocalTaskExecutor, MultiThreadingExecutor],
+        [InMemoryMetadataStore, SQLiteMetadataStore],
+        [InMemoryResultStore, FileResultStore],
+    )
+)
+
+EXECUTORS_AND_STORES_CONFIGURATIONS += IN_MEMORY_CONFIGURATIONS
+
+
+@pytest.mark.parametrize(
+    "executor,metadata_store,result_store", EXECUTORS_AND_STORES_CONFIGURATIONS, indirect=True
+)
+def test_parallel_synchronous_step_by_step(executor, metadata_store, result_store):  # noqa: F811
     dr = (
         driver.Builder()
         .with_modules(parallel_linear_basic)
-        .with_cache(path=tmp_path)
+        .with_cache(metadata_store=metadata_store, result_store=result_store)
         .enable_dynamic_execution(allow_experimental_mode=True)
         .with_remote_executor(executor)
         .build()
@@ -559,11 +599,8 @@ def test_parallel_synchronous_step_by_step(tmp_path, executor):
 
 @pytest.mark.parametrize(
     "executor",
-    [
-        SynchronousLocalTaskExecutor(),
-        MultiProcessingExecutor(max_tasks=10),
-        MultiThreadingExecutor(max_tasks=10),
-    ],
+    [SynchronousLocalTaskExecutor, MultiProcessingExecutor, MultiThreadingExecutor],
+    indirect=True,
 )
 def test_materialize_parallel_branches(tmp_path, executor):
     # NOTE the module can't be defined here because multithreading requires functions to be top-level.
@@ -596,7 +633,7 @@ def test_materialize_parallel_branches(tmp_path, executor):
     )
 
 
-def test_consistent_cache_key_with_or_without_defaut_parameter(tmp_path):
+def test_consistent_cache_key_with_or_without_default_parameter(tmp_path):
     def foo(external_dep: int = 3) -> int:
         return external_dep + 1
 
