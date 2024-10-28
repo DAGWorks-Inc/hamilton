@@ -8,6 +8,9 @@ from hamilton.caching.stores.memory import InMemoryResultStore
 # a pytest fixture automatically provided to tests
 from .test_base import result_store  # noqa: F401
 
+# implementations that in-memory result store can `.persist_to()` and `.load_from()`
+PERSISTENT_IMPLEMENTATIONS = [FileResultStore]
+
 
 def _store_size(memory_store: InMemoryResultStore) -> int:
     return len(memory_store._results)
@@ -88,11 +91,7 @@ def test_delete_all(memory_store):
     assert _store_size(memory_store) == 0
 
 
-@pytest.mark.parametrize(
-    "result_store",
-    [FileResultStore],
-    indirect=True,
-)
+@pytest.mark.parametrize("result_store", PERSISTENT_IMPLEMENTATIONS, indirect=True)
 def test_persist_to(result_store, memory_store):  # noqa: F811
     data_version = "foo"
     result = "bar"
@@ -109,11 +108,7 @@ def test_persist_to(result_store, memory_store):  # noqa: F811
     assert memory_store.get(data_version) == result_store.get(data_version)
 
 
-@pytest.mark.parametrize(
-    "result_store",
-    [FileResultStore],
-    indirect=True,
-)
+@pytest.mark.parametrize("result_store", PERSISTENT_IMPLEMENTATIONS, indirect=True)
 def test_load_from(result_store):  # noqa: F811
     data_version = "foo"
     result = "bar"

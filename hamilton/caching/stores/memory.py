@@ -276,6 +276,4 @@ class InMemoryResultStore(ResultStore):
             result = result_store.get(data_version)
             in_memory_result_store.set(data_version, result)
 
-        # TODO could be beneficial to delete the `result_store` after loading from it,
-        # but we don't know if it's used for other purposes
         return in_memory_result_store

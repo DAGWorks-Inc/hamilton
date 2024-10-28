@@ -7,12 +7,11 @@ from hamilton.caching.stores.sqlite import SQLiteMetadataStore
 # a pytest fixture automatically provided to tests
 from .test_base import _mock_cache_key, metadata_store  # noqa: F401
 
+# implementations that in-memory metadata store can `.persist_to()` and `.load_from()`
+PERSISTENT_IMPLEMENTATIONS = [SQLiteMetadataStore]
 
-@pytest.mark.parametrize(
-    "metadata_store",
-    [SQLiteMetadataStore],
-    indirect=True,
-)
+
+@pytest.mark.parametrize("metadata_store", PERSISTENT_IMPLEMENTATIONS, indirect=True)
 def test_persist_to(metadata_store):  # noqa: F811
     cache_key = _mock_cache_key()
     data_version = "foo-a"
@@ -38,11 +37,7 @@ def test_persist_to(metadata_store):  # noqa: F811
     assert in_memory_metadata_store.get_run_ids() == metadata_store.get_run_ids()
 
 
-@pytest.mark.parametrize(
-    "metadata_store",
-    [SQLiteMetadataStore],
-    indirect=True,
-)
+@pytest.mark.parametrize("metadata_store", PERSISTENT_IMPLEMENTATIONS, indirect=True)
 def test_load_from(metadata_store):  # noqa: F811
     cache_key = _mock_cache_key()
     data_version = "foo-a"
