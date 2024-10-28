@@ -8,6 +8,11 @@ from hamilton.caching.stores.memory import InMemoryMetadataStore
 from hamilton.caching.stores.sqlite import SQLiteMetadataStore
 from hamilton.graph_types import hash_source_code
 
+# if you're adding a new `MetadataStore` implementation, add it to this list.
+# Your implementation should successfully pass all the tests.
+# Implementation-specific tests should be added to `test_{implementation}.py`.
+IMPLEMENTATIONS = [SQLiteMetadataStore, InMemoryMetadataStore]
+
 
 def _instantiate_metadata_store(metadata_store_cls, tmp_path):
     if metadata_store_cls == SQLiteMetadataStore:
@@ -41,29 +46,21 @@ def _mock_cache_key(
 
 @pytest.fixture
 def metadata_store(request, tmp_path):
-    metdata_store_cls = request.param
-    metadata_store = _instantiate_metadata_store(metdata_store_cls, tmp_path)
+    metadata_store_cls = request.param
+    metadata_store = _instantiate_metadata_store(metadata_store_cls, tmp_path)
 
     yield metadata_store
 
     metadata_store.delete_all()
 
 
-@pytest.mark.parametrize(
-    "metadata_store",
-    [SQLiteMetadataStore, InMemoryMetadataStore],
-    indirect=True,
-)
+@pytest.mark.parametrize("metadata_store", IMPLEMENTATIONS, indirect=True)
 def test_initialize_empty(metadata_store):
     metadata_store.initialize(run_id="test-run-id")
     assert metadata_store.size == 0
 
 
-@pytest.mark.parametrize(
-    "metadata_store",
-    [SQLiteMetadataStore, InMemoryMetadataStore],
-    indirect=True,
-)
+@pytest.mark.parametrize("metadata_store", IMPLEMENTATIONS, indirect=True)
 def test_not_empty_after_set(metadata_store):
     cache_key = _mock_cache_key()
     run_id = "test-run-id"
@@ -78,11 +75,7 @@ def test_not_empty_after_set(metadata_store):
     assert metadata_store.size > 0
 
 
-@pytest.mark.parametrize(
-    "metadata_store",
-    [SQLiteMetadataStore, InMemoryMetadataStore],
-    indirect=True,
-)
+@pytest.mark.parametrize("metadata_store", IMPLEMENTATIONS, indirect=True)
 def test_set_doesnt_produce_duplicates(metadata_store):
     cache_key = _mock_cache_key()
     data_version = "foo-a"
@@ -104,9 +97,7 @@ def test_set_doesnt_produce_duplicates(metadata_store):
     assert metadata_store.size == 1
 
 
-@pytest.mark.parametrize(
-    "metadata_store", [SQLiteMetadataStore, InMemoryMetadataStore], indirect=True
-)
+@pytest.mark.parametrize("metadata_store", IMPLEMENTATIONS, indirect=True)
 def test_get_miss_returns_none(metadata_store):
     cache_key = _mock_cache_key()
     run_id = "test-run-id"
@@ -117,9 +108,7 @@ def test_get_miss_returns_none(metadata_store):
     assert data_version is None
 
 
-@pytest.mark.parametrize(
-    "metadata_store", [SQLiteMetadataStore, InMemoryMetadataStore], indirect=True
-)
+@pytest.mark.parametrize("metadata_store", IMPLEMENTATIONS, indirect=True)
 def test_set_and_get_with_empty_dependencies(metadata_store):
     cache_key = _mock_cache_key()
     data_version = "foo-a"
@@ -136,9 +125,7 @@ def test_set_and_get_with_empty_dependencies(metadata_store):
     assert retrieved_data_version == data_version
 
 
-@pytest.mark.parametrize(
-    "metadata_store", [SQLiteMetadataStore, InMemoryMetadataStore], indirect=True
-)
+@pytest.mark.parametrize("metadata_store", IMPLEMENTATIONS, indirect=True)
 def test_get_run_ids_returns_ordered_list(metadata_store):
     pre_run_ids = metadata_store.get_run_ids()
     assert pre_run_ids == []
@@ -151,9 +138,7 @@ def test_get_run_ids_returns_ordered_list(metadata_store):
     assert post_run_ids == ["foo", "bar", "baz"]
 
 
-@pytest.mark.parametrize(
-    "metadata_store", [SQLiteMetadataStore, InMemoryMetadataStore], indirect=True
-)
+@pytest.mark.parametrize("metadata_store", IMPLEMENTATIONS, indirect=True)
 def test_get_run_results_include_cache_key_and_data_version(metadata_store):
     cache_key = _mock_cache_key()
     data_version = "foo-a"
@@ -175,9 +160,7 @@ def test_get_run_results_include_cache_key_and_data_version(metadata_store):
     assert run_info[0]["data_version"] == data_version
 
 
-@pytest.mark.parametrize(
-    "metadata_store", [SQLiteMetadataStore, InMemoryMetadataStore], indirect=True
-)
+@pytest.mark.parametrize("metadata_store", IMPLEMENTATIONS, indirect=True)
 def test_get_run_returns_empty_list_if_run_started_but_no_execution_recorded(metadata_store):
     run_id = "test-run-id"
     metadata_store.initialize(run_id=run_id)
@@ -185,9 +168,7 @@ def test_get_run_returns_empty_list_if_run_started_but_no_execution_recorded(met
     assert run_info == []
 
 
-@pytest.mark.parametrize(
-    "metadata_store", [SQLiteMetadataStore, InMemoryMetadataStore], indirect=True
-)
+@pytest.mark.parametrize("metadata_store", IMPLEMENTATIONS, indirect=True)
 def test_get_run_raises_error_if_run_id_not_found(metadata_store):
     metadata_store.initialize(run_id="test-run-id")
     with pytest.raises(IndexError):

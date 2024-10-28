@@ -137,10 +137,12 @@ class InMemoryMetadataStore(MetadataStore):
 
         return in_memory_metadata_store
 
+    @override
     def get_run_ids(self) -> List[str]:
         """Return a list of all ``run_id`` values stored."""
         return self._run_ids
 
+    @override
     def get_run(self, run_id: str) -> List[Dict[str, str]]:
         """Return a list of node metadata associated with a run."""
         if self._cache_keys_by_run.get(run_id, None) is None:
