@@ -20,6 +20,12 @@ class FileResultStore(ResultStore):
         if self.create_dir:
             self.path.mkdir(exist_ok=True, parents=True)
 
+    def __getstate__(self) -> dict:
+        """Serialize the `__init__` kwargs to pass in Parallelizable branches
+        when using multiprocessing.
+        """
+        return {"path": str(self.path)}
+
     @staticmethod
     def _write_result(file_path: Path, stored_result: StoredResult) -> None:
         file_path.write_bytes(stored_result.save())
