@@ -39,10 +39,12 @@ class FileResultStore(ResultStore):
         # TODO allow a more flexible mechanism to specify file path extension
         return self._path_from_data_version(data_version).with_suffix(f".{saver_cls.name()}")
 
+    @override
     def exists(self, data_version: str) -> bool:
         result_path = self._path_from_data_version(data_version)
         return result_path.exists()
 
+    @override
     def set(
         self,
         data_version: str,
@@ -71,6 +73,7 @@ class FileResultStore(ResultStore):
         stored_result = StoredResult.new(value=result, saver=saver, loader=loader)
         self._write_result(result_path, stored_result)
 
+    @override
     def get(self, data_version: str) -> Optional[Any]:
         result_path = self._path_from_data_version(data_version)
         stored_result = self._load_result_from_path(result_path)
@@ -80,10 +83,12 @@ class FileResultStore(ResultStore):
 
         return stored_result.value
 
+    @override
     def delete(self, data_version: str) -> None:
         result_path = self._path_from_data_version(data_version)
         result_path.unlink(missing_ok=True)
 
+    @override
     def delete_all(self) -> None:
         shutil.rmtree(self.path)
         self.path.mkdir(exist_ok=True)
