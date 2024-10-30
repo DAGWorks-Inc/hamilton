@@ -19,3 +19,9 @@ stores.sqlite
 
 .. automodule:: hamilton.caching.stores.sqlite
     :members:
+
+stores.memory
+-------------
+
+.. automodule:: hamilton.caching.stores.memory
+    :members:
