@@ -502,10 +502,11 @@ It is possible to directly interact with the metadata and result stores either b
 
 .. code-block:: python
 
-    from hamitlon.io.store import SQLiteMetadataStore, ShelveResultStore
+    from hamilton.caching.stores.sqlite import SQLiteMetadataStore
+    from hamilton.caching.stores.file import FileResultStore
 
     metadata_store = SQLiteMetadataStore(path="~/.hamilton_cache")
-    result_store = ShelveResultStore(path="/path/to/my/project")
+    result_store = FileResultStore(path="/path/to/my/project")
 
     metadata_store.get(context_key=...)
     result_store.get(data_version=...)
@@ -532,7 +533,7 @@ A useful pattern is using the ``Driver.cache`` state or `structured logs <cachin
 .. code-block:: python
 
     from hamilton import driver
-    from hamilton.lifecycle.caching import CachingEventType
+    from hamilton.caching.adapter import CachingEventType
     import my_dataflow
 
     dr = (
@@ -559,6 +560,98 @@ A useful pattern is using the ``Driver.cache`` state or `structured logs <cachin
             break
 
     stored_result = dr.cache.result_store(data_version)
+
+
+In-memory
+~~~~~~~~~
+
+You can enable in-memory caching by using the ``InMemoryMetadataStore`` and ``InMemoryResultStore``. Caching behaves the same, but metadata and results are never persisted to disk. This is useful in notebooks and interactive sessions where results are only temporary relevant (e.g., experimentating with new features).
+
+.. warning::
+
+    In-memory caching can quickly fill memory. We suggest selectively caching results to limit this issue.
+
+
+.. code-block:: python
+
+    from hamilton import driver
+    from hamilton.caching.stores.memory import InMemoryMetadataStore, InMemoryResultStore
+    import dataflow
+
+    dr = (
+        driver.Builder()
+        .with_modules(dataflow)
+        .with_cache(
+            metadata_store=InMemoryMetadataStore(),
+            result_store=InMemoryResultStore(),
+        )
+        .build()
+    )
+
+
+In-memory stores also allow you to persist your entire in-memory session to disk or start your in-memory session by loading an existing cache. This is compatible with most implementations.
+
+Persist cache
+^^^^^^^^^^^^^
+
+This snippet shows how to persist an in-memory cache to an sqlite-backed metadata store and a file-based result store. Note that you should persist both the metadata and results stores for this to be useful. The ``.persist_to()`` method will repeatedly call ``.set()`` on the destination store. Persisting multiple times will add to the already cached data.
+
+.. code-block:: python
+
+    from hamilton import driver
+    from hamilton.caching.stores.sqlite import SQLiteMetadataStore
+    from hamilton.caching.stores.file import FileResultStore
+    from hamilton.caching.stores.memory import InMemoryMetadataStore, InMemoryResultStore
+    import my_dataflow
+
+    dr = (
+        driver.Builder()
+        .with_modules(my_dataflow)
+        .with_cache(
+            metadata_store=InMemoryMetadataStore(),
+            result_store=InMemoryResultStore(),
+        )
+        .build()
+    )
+
+    # execute the Driver several time. This will populate the in-memory stores
+    dr.execute(...)
+
+    # persist to disk
+    dr.cache.metadata_store.persist_to(SQLiteMetadataStore(path="./.hamilton_cache"))
+    dr.cache.result_store.persist_to(FileResultStore(path="./.hamilton_cache"))
+
+
+Load cache
+^^^^^^^^^^
+
+This snippet loads in-memory data from persisted metadata and result stores. The ``.load_from()`` is a classmethod and returns an instance of the in-memory store. The method ``InMemoryResultStore.load_from(...)`` must receive as argument a result store, but also a metadata store or a list of ``data_version`` to load. This is because ``ResultStore`` implementations don't have a registry of stored results.
+
+.. code-block:: python
+
+    from hamilton import driver
+    from hamilton.caching.stores.sqlite import SQLiteMetadataStore
+    from hamilton.caching.stores.file import FileResultStore
+    from hamilton.caching.stores.memory import InMemoryMetadataStore, InMemoryResultStore
+    import my_dataflow
+
+    # create persisted stores
+    metadata_store = SQLiteMetadataStore(path="./.hamilton_cache")
+    result_store = FileResultStore(path="./.hamilton_cache")
+
+    dr = (
+        driver.Builder()
+        .with_modules(my_dataflow)
+        .with_cache(
+            # create in-memory stores by loading from persisted store
+            metadata_store=InMemoryMetadataStore.load_from(metadata_store),
+            result_store=InMemoryResultStore.load_from(
+                result_store=result_store,
+                metadata_store=metadata_store,
+            ),
+        )
+        .build()
+    )
 
 
 Roadmap
