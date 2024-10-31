@@ -1,0 +1,4 @@
+beautifulsoup4
+prompt_toolkit
+selenium
+webdriver-manager
