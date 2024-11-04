@@ -181,7 +181,7 @@ def test_reuse_subdag_end_to_end():
     fg = graph.FunctionGraph.from_modules(tests.resources.reuse_subdag, config={"op": "subtract"})
     prefixless_nodes = []
     prefixed_nodes = collections.defaultdict(list)
-    for name, node in fg.nodes.items():
+    for name, node in fg.nodes.items():  # noqa:F402
         name_split = name.split(".")
         if len(name_split) == 1:
             prefixless_nodes.append(node)

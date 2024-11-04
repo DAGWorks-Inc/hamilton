@@ -20,7 +20,7 @@ from hamilton import base, htypes, node
 from hamilton.execution import graph_functions
 from hamilton.function_modifiers import base as fm_base
 from hamilton.function_modifiers import subdag
-from hamilton.function_modifiers.recursive import assign_namespace
+from hamilton.function_modifiers.recursive import assign_namespace, prune_nodes
 from hamilton.htypes import custom_subclass_check
 from hamilton.lifecycle import base as lifecycle_base
 
@@ -700,34 +700,6 @@ def derive_dataframe_parameter_from_node(node_: node.Node, requested_parameter: 
     return derive_dataframe_parameter(types_, requested_parameter, originating_function_name)
 
 
-def prune_nodes(nodes: List[node.Node], select: Optional[List[str]] = None) -> List[node.Node]:
-    """Prunes the nodes to only include those upstream from the select columns.
-    Conducts a depth-first search using the nodes `input_types` field.
-
-    If select is None, we just assume all nodes should be included.
-
-    :param nodes: Full set of nodes
-    :param select: Columns to select
-    :return:  Pruned set of nodes
-    """
-    if select is None:
-        return nodes
-
-    node_name_map = {node_.name: node_ for node_ in nodes}
-    seen_nodes = set(select)
-    stack = list({node_name_map[col] for col in select if col in node_name_map})
-    output = []
-    while len(stack) > 0:
-        node_ = stack.pop()
-        output.append(node_)
-        for dep in node_.input_types:
-            if dep not in seen_nodes and dep in node_name_map:
-                dep_node = node_name_map[dep]
-                stack.append(dep_node)
-            seen_nodes.add(dep)
-    return output
-
-
 class require_columns(fm_base.NodeTransformer):
     """Decorator for spark that allows for the specification of columns to transform.
     These are columns within a specific node in a decorator, enabling the user to make use of pyspark
@@ -1041,7 +1013,6 @@ class with_columns(fm_base.NodeCreator):
             )
         self.dataframe_subdag_param = pass_dataframe_as
         self.namespace = namespace
-        self.upstream_dependency = dataframe
         self.mode = mode
         self.config_required = config_required
 
