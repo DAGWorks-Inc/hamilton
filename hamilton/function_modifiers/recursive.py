@@ -1,7 +1,7 @@
 import inspect
 import sys
 from types import ModuleType
-from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, TypedDict, Union
 
 _sys_version_info = sys.version_info
 _version_tuple = (_sys_version_info.major, _sys_version_info.minor, _sys_version_info.micro)
@@ -11,8 +11,6 @@ if _version_tuple < (3, 11, 0):
 else:
     from typing import NotRequired
 
-
-from typing import TypedDict
 
 # Copied this over from function_graph
 # TODO -- determine the best place to put this code
@@ -600,3 +598,31 @@ class parameterized_subdag(base.NodeCreator):
         :return: Any required config items.
         """
         return None
+
+
+def prune_nodes(nodes: List[node.Node], select: Optional[List[str]] = None) -> List[node.Node]:
+    """Prunes the nodes to only include those upstream from the select columns.
+    Conducts a depth-first search using the nodes `input_types` field.
+
+    If select is None, we just assume all nodes should be included.
+
+    :param nodes: Full set of nodes
+    :param select: Columns to select
+    :return:  Pruned set of nodes
+    """
+    if select is None:
+        return nodes
+
+    node_name_map = {node_.name: node_ for node_ in nodes}
+    seen_nodes = set(select)
+    stack = list({node_name_map[col] for col in select if col in node_name_map})
+    output = []
+    while len(stack) > 0:
+        node_ = stack.pop()
+        output.append(node_)
+        for dep in node_.input_types:
+            if dep not in seen_nodes and dep in node_name_map:
+                dep_node = node_name_map[dep]
+                stack.append(dep_node)
+            seen_nodes.add(dep)
+    return output
