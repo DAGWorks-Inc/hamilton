@@ -324,3 +324,26 @@ async def test_async_builder_without_init():
     assert hook.ran
 
     # builder.result_builder = result_builder
+
+
+@pytest.mark.asyncio
+async def test_async_builder_allow_module_overrides():
+    def foo() -> int:
+        return 1
+
+    mod1 = ad_hoc_utils.create_temporary_module(foo)
+
+    def foo() -> int:
+        return 2
+
+    mod2 = ad_hoc_utils.create_temporary_module(foo)
+
+    # Should raise without .allow_module_overrides()
+    with pytest.raises(ValueError) as e:
+        await async_driver.Builder().with_modules(mod1, mod2).build()
+
+    assert "Cannot define function foo more than once." in str(e.value)
+
+    # Should not raise with .allow_module_overrides()
+    dr = await async_driver.Builder().with_modules(mod1, mod2).allow_module_overrides().build()
+    assert (await dr.execute(final_vars=["foo"])) == {"foo": 2}
