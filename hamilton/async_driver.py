@@ -198,6 +198,7 @@ class AsyncDriver(driver.Driver):
         *modules,
         result_builder: Optional[base.ResultMixin] = None,
         adapters: typing.List[lifecycle.LifecycleAdapter] = None,
+        allow_module_overrides: bool = False,
     ):
         """Instantiates an asynchronous driver.
 
@@ -210,8 +211,12 @@ class AsyncDriver(driver.Driver):
 
         :param config: Config to build the graph
         :param modules: Modules to crawl for fns/graph nodes
-        :param adapters: Adapters to use for lifecycle methods.
         :param result_builder: Results mixin to compile the graph's final results. TBD whether this should be included in the long run.
+        :param adapters: Adapters to use for lifecycle methods.
+        :param allow_module_overrides: Optional. Same named functions get overridden by later modules.
+            The order of listing the modules is important, since later ones will overwrite the previous ones.
+            This is a global call affecting all imported modules.
+            See https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/module_overrides for more info.
         """
         if adapters is None:
             adapters = []
@@ -243,6 +248,7 @@ class AsyncDriver(driver.Driver):
                 *sync_adapters,
                 *async_adapters,  # note async adapters will not be called during synchronous execution -- this is for access later
             ],
+            allow_module_overrides=allow_module_overrides,
         )
         self.initialized = False
 
@@ -492,6 +498,7 @@ class Builder(driver.Builder):
             *self.modules,
             adapters=self.adapters,
             result_builder=specified_result_builder,
+            allow_module_overrides=self._allow_module_overrides,
         )
 
     async def build(self):
