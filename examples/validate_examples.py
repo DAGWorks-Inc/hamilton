@@ -65,7 +65,7 @@ def validate_notebook(notebook_path: pathlib.Path) -> int:
         return SUCCESS
 
     if first_cell.cell_type != "code":
-        issues.append("The first cell should be cell to set up the notebook.")
+        issues.append("The first cell should be a code cell to set up the notebook.")
         RETURN_VALUE |= FAILURE
 
     if "%pip install" not in first_cell.source:
@@ -128,17 +128,10 @@ def add_badges_to_title(path: pathlib.Path):
     if notebook.cells[1].cell_type != "markdown":
         return
 
-    colab_url = f"https://colab.research.google.com/github/dagworks-inc/hamilton/blob/main/{path}"
-    colab_badge = (
-        f"[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]({colab_url})"
-    )
-    github_url = f"https://github.com/dagworks-inc/hamilton/blob/main/{path}"
-    github_badge = f"[![GitHub badge](https://img.shields.io/badge/github-view_source-2b3137?logo=github)]({github_url})"
-
     updated_content = ""
     for idx, line in enumerate(notebook.cells[1].source.splitlines()):
         if idx == 0:
-            updated_content += f"{line} {colab_badge} {github_badge}\n"
+            updated_content += f"{line} {_create_colab_badge(path)} {_create_github_badge(path)}\n"
         else:
             updated_content += f"\n{line}"
 
