@@ -105,3 +105,34 @@ def chain_2_not_using_pipe_output(v: int, input_3: int, calc_c: bool = False) ->
     d = _add_n(c, n=input_3)  # Assuming "upstream" refers to the same value as "v" here
     e = _add_two(d)
     return e
+
+
+@pipe_output(
+    step(_square).named("a").when(key="Yes"),
+    step(_multiply_n, n=value(2)).named("b").when(key="No"),
+    step(_add_n, n=10).named("c").when(key="Yes"),
+    step(_add_n, n=source("input_3")).named("d").when(key="No"),
+    step(_add_two).named("e").when(key="Yes"),
+)
+def chain_3_using_pipe_output(v: int) -> int:
+    return v + 10
+
+
+def chain_3_not_using_pipe_output_config_true(v: int, input_3: int) -> int:
+    start = v + 10
+    a = _square(start)
+    c = _add_n(a, n=10)
+    e = _add_two(c)
+    return e
+
+
+def chain_3_not_using_pipe_output_config_false(v: int, input_3: int) -> int:
+    start = v + 10
+    b = _multiply_n(start, n=2)
+    d = _add_n(b, n=input_3)
+    return d
+
+
+def chain_3_not_using_pipe_output_config_no_conditions_met(v: int, input_3: int) -> int:
+    start = v + 10
+    return start
