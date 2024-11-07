@@ -976,6 +976,71 @@ def test_pipe_output_end_to_end():
     assert result["chain_2_using_pipe_output"] == result["chain_2_not_using_pipe_output"]
 
 
+def test_pipe_output_end_to_end_with_config():
+    inputs = {
+        "input_1": 10,
+        "input_2": 20,
+        "input_3": 30,
+    }
+
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.pipe_output)
+        .with_adapter(base.DefaultAdapter())
+        .with_config({"key": "Yes"})
+        .build()
+    )
+
+    result = dr.execute(
+        [
+            "chain_3_using_pipe_output",
+            "chain_3_not_using_pipe_output_config_true",
+        ],
+        inputs=inputs,
+    )
+    assert (
+        result["chain_3_using_pipe_output"] == result["chain_3_not_using_pipe_output_config_true"]
+    )
+
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.pipe_output)
+        .with_adapter(base.DefaultAdapter())
+        .with_config({"key": "No"})
+        .build()
+    )
+
+    result = dr.execute(
+        [
+            "chain_3_using_pipe_output",
+            "chain_3_not_using_pipe_output_config_false",
+        ],
+        inputs=inputs,
+    )
+    assert (
+        result["chain_3_using_pipe_output"] == result["chain_3_not_using_pipe_output_config_false"]
+    )
+
+    dr = (
+        driver.Builder()
+        .with_modules(tests.resources.pipe_output)
+        .with_adapter(base.DefaultAdapter())
+        .with_config({"key": "skip"})
+        .build()
+    )
+    result = dr.execute(
+        [
+            "chain_3_using_pipe_output",
+            "chain_3_not_using_pipe_output_config_no_conditions_met",
+        ],
+        inputs=inputs,
+    )
+    assert (
+        result["chain_3_using_pipe_output"]
+        == result["chain_3_not_using_pipe_output_config_no_conditions_met"]
+    )
+
+
 # Mutate will mark the modules (and leave a mark).
 # Thus calling it a second time (for instance through pmultiple tests) might mess it up slightly...
 # Using fixtures just to be sure.

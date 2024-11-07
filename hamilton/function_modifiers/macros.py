@@ -1314,6 +1314,10 @@ class pipe_output(base.NodeTransformer):
             fn=fn,
         )
 
+        # In case config resolves to no pipe functions applied we return the original node and skip pipe
+        if len(nodes) == 1:
+            return [node_]
+
         last_node = nodes[-1].copy_with(name=f"{node_.name}", typ=nodes[-2].type)
 
         out = [original_node]
