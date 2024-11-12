@@ -360,15 +360,23 @@ class Node(object):
         if input_values is None:
             input_values = {}
 
+        is_async = inspect.iscoroutinefunction(self.callable)  # determine if its async
+
         def new_callable(**kwargs) -> Any:
             reverse_input_names = {v: k for k, v in input_names.items()}
             kwargs = {**kwargs, **input_values}
             return self.callable(**{reverse_input_names.get(k, k): v for k, v in kwargs.items()})
 
+        async def async_function(**kwargs):
+            return await new_callable(**kwargs)
+
+        fn_to_use = async_function if is_async else new_callable
+
         new_input_types = {
             input_names.get(k, k): v for k, v in self.input_types.items() if k not in input_values
         }
-        out = self.copy_with(callabl=new_callable, input_types=new_input_types)
+        # out = self.copy_with(callabl=new_callable, input_types=new_input_types)
+        out = self.copy_with(callabl=fn_to_use, input_types=new_input_types)
         return out
 
     def transform_output(
