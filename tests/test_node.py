@@ -137,3 +137,39 @@ def test_node_from_future_annotation_standard():
 def test_node_from_future_annotation_collected():
     collected = nodes_with_future_annotation.collected
     assert node.Node.from_fn(collected).node_role == node.NodeType.COLLECT
+
+
+def test_reassign_inputs():
+    def foo(a: int, b: str) -> int:
+        return a + len(b)
+
+    node_ = Node.from_fn(foo)
+
+    first_arg_node = node_.reassign_inputs(input_names={"a": "c"})
+    new_first_arg = list(first_arg_node.input_types.keys())
+    second_arg_node = node_.reassign_inputs(input_names={"b": "d"})
+    new_second_arg = list(second_arg_node.input_types.keys())
+    both_arg_node = node_.reassign_inputs(input_names={"a": "c", "b": "d"})
+    new_both_arg = list(both_arg_node.input_types.keys())
+    assert new_first_arg[0] == "c"
+    assert new_first_arg[1] == "b"
+    assert new_second_arg[0] == "a"
+    assert new_second_arg[1] == "d"
+    assert new_both_arg[0] == "c"
+    assert new_both_arg[1] == "d"
+    assert both_arg_node(**{"c": 2, "d": "abc"}) == 5
+
+
+@pytest.mark.asyncio
+async def test_subdag_async():
+    async def foo(a: int, b: str) -> int:
+        return a + len(b)
+
+    node_ = Node.from_fn(foo)
+
+    new_node = node_.reassign_inputs(input_names={"a": "c", "b": "d"})
+    new_args = list(new_node.input_types.keys())
+    assert new_args[0] == "c"
+    assert new_args[1] == "d"
+    assert inspect.iscoroutinefunction(new_node.callable)
+    assert await new_node(**{"c": 2, "d": "abc"}) == 5

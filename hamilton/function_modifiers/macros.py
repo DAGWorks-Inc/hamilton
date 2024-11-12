@@ -608,7 +608,7 @@ class Applicable:
     def bind_function_args(
         self, current_param: Optional[str]
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        """Binds function arguments, given current, chained parameeter
+        """Binds function arguments, given current, chained parameter
 
         :param current_param: Current, chained parameter. None, if we're not chaining.
         :return: A tuple of (upstream_inputs, literal_inputs)
@@ -1302,10 +1302,17 @@ class pipe_output(base.NodeTransformer):
         # We pick a reserved prefix that ovoids clashes with user defined functions / nodes
         original_node = node_.copy_with(name=f"{node_.name}.raw")
 
+        is_async = inspect.iscoroutinefunction(fn)  # determine if its async
+
         def __identity(foo: Any) -> Any:
             return foo
 
-        transforms = transforms + (step(__identity).named(fn.__name__),)
+        async def async_function(**kwargs):
+            return await __identity(**kwargs)
+
+        fn_to_use = async_function if is_async else __identity
+
+        transforms = transforms + (step(fn_to_use).named(fn.__name__),)
         nodes, _ = chain_transforms(
             target_arg=original_node.name,
             transforms=transforms,
