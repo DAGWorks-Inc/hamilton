@@ -184,6 +184,11 @@ class HamiltonMagics(Magics):
                 "DeprecationWarning: -v/--verbose no long does anything and will be removed in future releases."
             )
 
+        if any(arg == "--hide_results" for arg in unknown):
+            print(
+                "DeprecationWarning: `--hide_results` is no longer required when using `--execute`. Now, results are hidden by default. Use `--show_results` if you want them automatically printed to cell output."
+            )
+
         # there for backwards compatibility. Equivalent to calling `%%cell_to_module?`
         # not included as @argument because it's not really a function arg to %%cell_to_module
         if any(arg in ("-h", "--help") for arg in unknown):
@@ -228,6 +233,11 @@ class HamiltonMagics(Magics):
         help="Display the dataflow. The argument is the variable name of a dictionary of visualization kwargs; else {}.",
     )
     @argument(
+        "--display_cache",
+        action="store_true",
+        help="After execution, display the retrieved results. This uses `dr.cache.view_run()`.",
+    )
+    @argument(
         "-x",
         "--execute",
         nargs="?",
@@ -255,9 +265,9 @@ class HamiltonMagics(Magics):
         help="Execution overrides. The argument is the variable name of a dict of overrides; else {}.",
     )
     @argument(
-        "--hide_results",
+        "--show_results",
         action="store_true",
-        help="Hides the automatic display of execution results.",
+        help="Print node values in the output cell after each node is executed.",
     )
     @argument(
         "-w",
@@ -304,7 +314,8 @@ class HamiltonMagics(Magics):
 
             # main case: exit if variable is not in user namespace
             if value and self.shell.user_ns.get(value) is None:
-                return f"KeyError: Received `--{name} {value}` but variable not found."
+                print(f"KeyError: Received `--{name} {value}` but variable not found.")
+                return
 
         # parse config; exit if config is invalid
         config = self.resolve_config_arg(args.config)
@@ -330,7 +341,10 @@ class HamiltonMagics(Magics):
         # determine the Driver config
         # can't check from args.builder because it might be None
         if config and base_builder.config:
-            return "AssertionError: Received a config -c/--config and a Builder -b/--builder with an existing config. Pass either one."
+            print(
+                "AssertionError: Received a config -c/--config and a Builder -b/--builder with an existing config. Pass either one."
+            )
+            return
 
         # Decision: write to file before trying to build and execute Driver
         # See argument `help` for behavior details
@@ -395,10 +409,16 @@ class HamiltonMagics(Magics):
             results = {_normalize_result_names(name): value for name, value in results.items()}
             self.shell.push(results)
 
-            if args.hide_results:
-                return
-            # results will follow the order of `final_vars` or topologically sorted if all vars
-            display(*(results[n] for n in final_vars))
+            if args.show_results:
+                # results will follow the order of `final_vars` or topologically sorted if all vars
+                display(*(results[n] for n in final_vars))
+
+            if args.display_cache:
+                dot = dr.cache.view_run()
+                if self.notebook_env == "databricks":
+                    display_in_databricks(dot)
+                else:
+                    display(dot)
 
     # TODO unify the API and logic of `%%cell_to_module` and `%%incr_cell_to_module`
     @magic_arguments()
@@ -544,7 +564,7 @@ class HamiltonMagics(Magics):
             print(f"KeyError: `{args.module_name}` not found.")
 
     @magic_arguments()
-    @argument("name", type=str, help="Creates a dictionary fromt the cell's content.")
+    @argument("name", type=str, help="Creates a dictionary from the cell's content.")
     @cell_magic
     def set_dict(self, line: str, cell: str):
         """Execute the cell and store all assigned variables as inputs"""
