@@ -277,10 +277,10 @@ def create_graphviz_graph(
         # because config *values* are passed through this function
         # see issue: https://github.com/DAGWorks-Inc/hamilton/issues/1200
         # see graphviz ref: https://graphviz.org/doc/info/shapes.html#html
-        escaped_type_string = html.escape(type_string, quote=True)
-        if len(escaped_type_string) > MAX_STRING_LENGTH:
-            escaped_type_string = escaped_type_string[:MAX_STRING_LENGTH] + "[...]"
+        if len(type_string) > MAX_STRING_LENGTH:
+            type_string = type_string[:MAX_STRING_LENGTH] + "[...]"
 
+        escaped_type_string = html.escape(type_string, quote=True)
         return f"<<b>{name}</b><br /><br /><i>{escaped_type_string}</i>>"
 
     def _get_input_label(input_nodes: FrozenSet[node.Node]) -> str:
