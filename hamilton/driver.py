@@ -978,7 +978,17 @@ class Driver:
         # TODO should determine if the visualization logic should live here or in the graph.py module
         nodes, user_nodes = fn_graph.get_upstream_nodes(final_vars, inputs, overrides)
         if not bypass_validation:
-            Driver.validate_inputs(fn_graph, adapter, user_nodes, inputs, nodes)
+            try:
+                Driver.validate_inputs(fn_graph, adapter, user_nodes, inputs, nodes)
+            except ValueError as e:
+                # Python 3.11 enables the more succinct `.add_note()` syntax
+                error_note = "Use `bypass_validation=True` to skip validation"
+                if e.args:
+                    e.args = (f"{e.args[0]}; {error_note}",) + e.args[1:]
+                else:
+                    e.args = (error_note,)
+                raise e
+
         node_modifiers = {fv: {graph.VisualizationNodeModifiers.IS_OUTPUT} for fv in final_vars}
         for user_node in user_nodes:
             if user_node.name not in node_modifiers:
