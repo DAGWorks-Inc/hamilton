@@ -49,6 +49,9 @@ and a Postgres database. If you'd like a quick overview of some of the features,
     <iframe width="560" height="315" src="https://www.youtube.com/embed/0VIVSeN7Ij8?si=i3vTsfTNorzh5y2C" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 
+Note: if you run into the "Invalid HTTP_HOST" error, then please set the environment variable `HAMILTON_ALLOWED_HOSTS="*"` (or comma separated list of domains of choice) for the backend docker container. You can inject
+this via `-e` or in the `docker-compose[-prod].yml` file itself.
+
 Install
 -------
 
