@@ -6,6 +6,7 @@ It should only house the graph & things required to create and traverse one.
 Note: one should largely consider the code in this module to be "private".
 """
 
+import html
 import inspect
 import logging
 import os.path
@@ -235,6 +236,7 @@ def create_graphviz_graph(
     :return: a graphviz.Digraph; use this to render/save a graph representation.
     """
     PATH_COLOR = "red"
+    MAX_STRING_LENGTH = 80
 
     import graphviz
 
@@ -270,7 +272,16 @@ def create_graphviz_graph(
         if type_string is None:
             type_string = get_type_as_string(n.type) if get_type_as_string(n.type) else ""
 
-        return f"<<b>{name}</b><br /><br /><i>{type_string}</i>>"
+        # We need to ensure that name and type string are HTML-escaped
+        # strings to avoid syntax errors. This is particular important
+        # because config *values* are passed through this function
+        # see issue: https://github.com/DAGWorks-Inc/hamilton/issues/1200
+        # see graphviz ref: https://graphviz.org/doc/info/shapes.html#html
+        if len(type_string) > MAX_STRING_LENGTH:
+            type_string = type_string[:MAX_STRING_LENGTH] + "[...]"
+
+        escaped_type_string = html.escape(type_string, quote=True)
+        return f"<<b>{name}</b><br /><br /><i>{escaped_type_string}</i>>"
 
     def _get_input_label(input_nodes: FrozenSet[node.Node]) -> str:
         """Get a graphviz HTML-like node label formatted aspyer a table.
@@ -372,7 +383,6 @@ def create_graphviz_graph(
         Graphviz needs values to be strings.
         """
         edge_style = dict()
-
         if from_type == "expand":
             edge_style.update(
                 dir="both",
