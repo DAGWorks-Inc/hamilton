@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 import hamilton.function_modifiers
-from hamilton import base, driver, function_modifiers, models, node
+from hamilton import async_driver, base, driver, function_modifiers, models, node
 from hamilton.function_modifiers import does
 from hamilton.function_modifiers.dependencies import source, value
 from hamilton.function_modifiers.macros import (
@@ -20,6 +20,8 @@ from hamilton.function_modifiers.macros import (
 from hamilton.node import DependencyType
 
 import tests.resources.mutate
+import tests.resources.mutate_async
+import tests.resources.pipe_async
 import tests.resources.pipe_input
 import tests.resources.pipe_output
 
@@ -1150,3 +1152,61 @@ def test_mutate_end_to_end_1(import_mutate_module):
     )
     assert result["chain_1_using_mutate"] == result["chain_1_not_using_mutate"]
     assert result["chain_2_using_mutate"] == result["chain_2_not_using_mutate"]
+
+
+@pytest.mark.asyncio
+async def test_async_pipe_input_and_output_end_to_end():
+    inputs = {"data_input": pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})}
+
+    group_by_a = inputs["data_input"].groupby("a").sum().reset_index()
+    group_by_b = inputs["data_input"].groupby("b").sum().reset_index()
+
+    dr = (
+        await async_driver.Builder()
+        .with_modules(tests.resources.pipe_async)
+        .with_config(dict(groupby="a"))
+        .build()
+    )
+    results = await dr.execute(final_vars=["data_pipe_input", "data_pipe_output"], inputs=inputs)
+
+    pd.testing.assert_frame_equal(group_by_a, results["data_pipe_output"])
+    pd.testing.assert_frame_equal(group_by_a, results["data_pipe_input"])
+
+    dr = (
+        await async_driver.Builder()
+        .with_modules(tests.resources.pipe_async)
+        .with_config(dict(groupby="b"))
+        .build()
+    )
+    results = await dr.execute(final_vars=["data_pipe_input", "data_pipe_output"], inputs=inputs)
+
+    pd.testing.assert_frame_equal(group_by_b, results["data_pipe_output"])
+    pd.testing.assert_frame_equal(group_by_b, results["data_pipe_input"])
+
+
+@pytest.mark.asyncio
+async def test_async_mutate_end_to_end():
+    inputs = {"data_input": pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})}
+
+    group_by_a = inputs["data_input"].groupby("a").sum().reset_index()
+    group_by_b = inputs["data_input"].groupby("b").sum().reset_index()
+
+    dr = (
+        await async_driver.Builder()
+        .with_modules(tests.resources.mutate_async)
+        .with_config(dict(groupby="a"))
+        .build()
+    )
+    results = await dr.execute(final_vars=["data_mutate"], inputs=inputs)
+
+    pd.testing.assert_frame_equal(group_by_a, results["data_mutate"])
+
+    dr = (
+        await async_driver.Builder()
+        .with_modules(tests.resources.mutate_async)
+        .with_config(dict(groupby="b"))
+        .build()
+    )
+    results = await dr.execute(final_vars=["data_mutate"], inputs=inputs)
+
+    pd.testing.assert_frame_equal(group_by_b, results["data_mutate"])
