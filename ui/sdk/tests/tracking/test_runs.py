@@ -534,3 +534,13 @@ def test_process_result_happy(test_result, test_node, observability_type, stats)
     if schema is not None:
         json.dumps(schema)
     [json.dumps(add) for add in additional]
+
+
+def test_disable_capturing_data_stats(monkeypatch):
+    monkeypatch.setattr("hamilton_sdk.tracking.constants.CAPTURE_DATA_STATISTICS", False)
+    stats, schema, additional = runs.process_result([1, 2, 3, 4], create_node("a", list))
+    assert stats["observability_type"] == "primitive"
+    assert stats["observability_value"] == {
+        "type": "str",
+        "value": "RESULT SUMMARY DISABLED",
+    }

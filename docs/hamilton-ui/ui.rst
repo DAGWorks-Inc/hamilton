@@ -115,7 +115,12 @@ This will build the containers from scratch. If you just want to mount the local
 Self-Hosting
 -------------
 
-Please reach out to us if you want to deploy on your own infrastructure. Self-hosting documentation will be up soon.
+If you know docker, you should be good to go. The one environment variable to know is `HAMILTON_ALLOWED_HOSTS`, which you can set to `*` to allow all hosts, or
+a comma separated list of hosts you want to allow.
+
+Please reach out to us if you want to deploy on your own infrastructure and need help - `join slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>`_.
+More extensive self-hosting documentation is in the works, e.g. Snowflake, Databricks, AWS, GCP, Azure, etc.; we'd love a helm
+chart contribution!
 
 
 -----------
@@ -228,3 +233,113 @@ View a history of runs, telemetry on runs/comparison, and data for specific runs
 
 .. image:: ../_static/run_data.png
     :alt: Run Data
+
+
+------------------
+SDK Configuration
+------------------
+This section documents HamiltonTracker configuration options.
+
+Changing where data is sent
+----------------------------
+You can change where telemetry is logged by passing in `hamilton_api_url` and/or `hamilton_ui_url` to the
+HamiltonTracker constructor. By default, these are set to `localhost:8241/8242`.
+
+.. code-block:: python
+
+    from hamilton_sdk import adapters
+
+    tracker = adapters.HamiltonTracker(
+       project_id=PROJECT_ID_FROM_ABOVE,
+       username="USERNAME/EMAIL_YOU_PUT_IN_THE_UI",
+       dag_name="my_version_of_the_dag",
+       tags={"environment": "DEV", "team": "MY_TEAM", "version": "X"},
+       hamilton_api_url="http://YOUR_DOMAIN_HERE:8241",
+       hamilton_ui_url="http://YOUR_DOMAIN_HERE:8242" # if using docker the UI is on 8242.
+    )
+
+    dr = (
+      driver.Builder()
+        .with_config(your_config)
+        .with_modules(*your_modules)
+        .with_adapters(tracker)
+        .build()
+    )
+
+
+Changing behavior of what is captured
+-------------------------------------
+By default, a lot is captured and sent to the Hamilton UI.
+
+Here are a few options that can change that - these can be found
+in `hamilton_sdk.tracking.constants`. You can either change the defaults by
+directly changing the constants, by specifying them in a config file, or via environment variables.
+
+Here we first explain the options:
+
+.. table:: Simple Invocation
+   :align: left
+
+   +-----------------------------+-----------------------------+----------------------------------------------------------+
+   | Option                      | Default                     | Explanation                                              |
+   +=============================+=============================+==========================================================+
+   | CAPTURE_DATA_STATISTICS     | True                        | Whether to capture any data insights/statistics          |
+   +-----------------------------+-----------------------------+----------------------------------------------------------+
+   | MAX_LIST_LENGTH_CAPTURE     | 50                          | Max length for list capture                              |
+   +-----------------------------+-----------------------------+----------------------------------------------------------+
+   | MAX_DICT_LENGTH_CAPTURE     | 100                         | Max length for dict capture                              |
+   +-----------------------------+-----------------------------+----------------------------------------------------------+
+   | DEFAULT_CONFIG_URI          | ~/.hamilton.conf            | Default config file URI.                                 |
+   +-----------------------------+-----------------------------+----------------------------------------------------------+
+
+
+To change the defaults via a config file, you can do the following:
+
+.. code-block:: ini
+
+    [SDK_CONSTANTS]
+    MAX_LIST_LENGTH_CAPTURE=100
+    MAX_DICT_LENGTH_CAPTURE=200
+
+    # save this to ~/.hamilton.conf
+
+
+To change the defaults via environment variables, you can do the following, prefixing them with `HAMILTON_`:
+
+.. code-block:: bash
+
+    export HAMILTON_MAX_LIST_LENGTH_CAPTURE=100
+    export HAMILTON_MAX_DICT_LENGTH_CAPTURE=200
+    python run_my_hamilton_code.py
+
+To change the defaults directly, you can do the following:
+
+.. code-block:: python
+
+    from hamilton_sdk.tracking import constants
+
+    constants.MAX_LIST_LENGTH_CAPTURE = 100
+    constants.MAX_DICT_LENGTH_CAPTURE = 200
+
+    tracker = adapters.HamiltonTracker(
+       project_id=PROJECT_ID_FROM_ABOVE,
+       username="USERNAME/EMAIL_YOU_PUT_IN_THE_UI",
+       dag_name="my_version_of_the_dag",
+       tags={"environment": "DEV", "team": "MY_TEAM", "version": "X"}
+    )
+
+    dr = (
+      driver.Builder()
+        .with_config(your_config)
+        .with_modules(*your_modules)
+        .with_adapters(tracker)
+        .build()
+    )
+    dr.execute(...)
+
+In terms of precedence, the order is:
+
+1. Module default.
+2. Config file values.
+3. Environment variables.
+4. Directly set values.

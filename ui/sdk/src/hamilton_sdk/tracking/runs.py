@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from hamilton_sdk.tracking import data_observation
+from hamilton_sdk.tracking import constants, data_observation
 from hamilton_sdk.tracking.data_observation import ObservationType
 from hamilton_sdk.tracking.trackingtypes import DAGRun, Status, TaskRun
 
@@ -59,13 +59,25 @@ def process_result(
     statistics = None
     schema = None
     additional = []
-    try:
-        start = py_time.time()
-        statistics = data_observation.compute_stats(result, node.name, node.tags)
-        end = py_time.time()
-        logger.debug(f"Took {end - start} seconds to describe {node.name}")
-    except Exception as e:
-        logger.warning(f"Failed to introspect statistics for {node.name}. Error:\n{e}")
+    if constants.CAPTURE_DATA_STATISTICS:
+        try:
+            start = py_time.time()
+            statistics = data_observation.compute_stats(result, node.name, node.tags)
+            end = py_time.time()
+            logger.debug(f"Took {end - start} seconds to describe {node.name}")
+        except Exception as e:
+            logger.warning(f"Failed to introspect statistics for {node.name}. Error:\n{e}")
+    else:
+        # TODO: handle case where it's metadata from a dataloader/saver right now we don't log that
+        # info, but we should in this particular case.
+        statistics = {
+            "observability_type": "primitive",
+            "observability_value": {
+                "type": "str",
+                "value": "RESULT SUMMARY DISABLED",
+            },
+            "observability_schema_version": "0.0.1",
+        }
     try:
         start = py_time.time()
         schema = data_observation.compute_schema(result, node.name, node.tags)
