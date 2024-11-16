@@ -32,6 +32,35 @@ def test_compute_stats_dict():
     }
 
 
+def test_compute_stats_dict_truncated(monkeypatch):
+    monkeypatch.setattr("hamilton_sdk.tracking.constants.MAX_DICT_LENGTH_CAPTURE", 1)
+    actual = data_observation.compute_stats({"a": 1, "b": 2}, "test_node", {})
+    assert actual == {
+        "observability_type": "dict",
+        "observability_value": {
+            "type": str(type(dict())),
+            "value": {
+                "__truncated__": "... values truncated ...",
+                "a": 1,
+            },
+        },
+        "observability_schema_version": "0.0.2",
+    }
+
+
+def test_compute_stats_list_truncated(monkeypatch):
+    monkeypatch.setattr("hamilton_sdk.tracking.constants.MAX_LIST_LENGTH_CAPTURE", 1)
+    actual = data_observation.compute_stats([1, 2, 3, 4], "test_node", {})
+    assert actual == {
+        "observability_type": "dict",
+        "observability_value": {
+            "type": str(type(list())),
+            "value": [1, "... truncated ..."],
+        },
+        "observability_schema_version": "0.0.2",
+    }
+
+
 def test_compute_stats_tuple_dataloader():
     """tests case of a dataloader"""
     actual = data_observation.compute_stats(

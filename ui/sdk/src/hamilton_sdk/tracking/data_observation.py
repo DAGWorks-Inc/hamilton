@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from hamilton_sdk.tracking import sql_utils
+from hamilton_sdk.tracking import constants
 
 # Multiple observations per are allowed
 ObservationType = Dict[str, Any]
@@ -74,6 +75,17 @@ def compute_stats_primitives(result, node_name: str, node_tags: dict) -> Observa
 @compute_stats.register(dict)
 def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> ObservationType:
     """call summary stats on the values in the dict"""
+    truncated = False
+    if len(result) >= constants.MAX_DICT_LENGTH_CAPTURE:
+        new_result = {}
+        for i, k in enumerate(result.keys()):
+            new_result[k] = result[k]
+            if i + 1 < constants.MAX_DICT_LENGTH_CAPTURE:
+                continue
+            else:
+                break
+        result = new_result  # replace pointer with smaller dict
+        truncated = True
     try:
         # if it's JSON serializable, take it.
         json.dumps(result)
@@ -109,7 +121,8 @@ def compute_stats_dict(result: dict, node_name: str, node_tags: dict) -> Observa
             else:
                 # it's a DF, Series -- so take full result.
                 result_values[k] = v_result["observability_value"]
-
+    if truncated:
+        result["__truncated__"] = "... values truncated ..."
     return {
         "observability_type": "dict",
         "observability_value": {
@@ -170,6 +183,10 @@ def compute_stats_tuple(result: tuple, node_name: str, node_tags: dict) -> Obser
 @compute_stats.register(list)
 def compute_stats_list(result: list, node_name: str, node_tags: dict) -> ObservationType:
     """call summary stats on the values in the list"""
+    truncated = False
+    if len(result) > constants.MAX_LIST_LENGTH_CAPTURE:
+        result = result[: constants.MAX_LIST_LENGTH_CAPTURE]
+        truncated = True
     try:
         # if it's JSON serializable, take it.
         json.dumps(result)
@@ -200,6 +217,8 @@ def compute_stats_list(result: list, node_name: str, node_tags: dict) -> Observa
                 elif observed_type == "dict":
                     v = v_result["observability_value"]
             result_values.append(v)
+    if truncated:
+        result_values.append("... truncated ...")
     return {
         # yes dict type -- that's so that we can display in the UI. It's a hack.
         "observability_type": "dict",
