@@ -52,8 +52,8 @@ CLI_COMMAND = "os_hamilton_cli_command"
 EXPERIMENT_SERVER = "os_hamilton_experiment_server"
 TIMEOUT = 2
 MAX_COUNT_SESSION = 100  # max number of events collected per python process
-
-DEFAULT_CONFIG_LOCATION = os.path.expanduser("~/.hamilton.conf")
+DEFAULT_CONFIG_URI = os.environ.get("HAMILTON_CONFIG_URI", "~/.hamilton.conf")
+DEFAULT_CONFIG_LOCATION = os.path.expanduser(DEFAULT_CONFIG_URI)
 
 
 def _load_config(config_location: str) -> configparser.ConfigParser:
