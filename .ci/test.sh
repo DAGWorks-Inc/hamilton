@@ -61,6 +61,8 @@ fi
 
 if [[ ${TASK} == "tests" ]]; then
     pip install .
+    # https://github.com/plotly/Kaleido/issues/226
+    pip install "kaleido<0.4.0" # kaleido 0.4.0 breaks plotly; TODO: remove this
     pytest \
         --cov=hamilton \
         --ignore tests/integrations \
