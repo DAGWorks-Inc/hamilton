@@ -46,6 +46,7 @@ if [[ ${TASK} == "pyspark" ]]; then
 fi
 
 if [[ ${TASK} == "vaex" ]]; then
+    pip install "numpy<2.0.0"  # numpy2.0 breaks vaex
     pip install -e '.[vaex]'
     pytest plugin_tests/h_vaex
     exit 0
