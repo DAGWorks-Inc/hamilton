@@ -27,7 +27,13 @@ fi
 
 if [[ ${TASK} == "integrations" ]]; then
     pip install -e '.[pandera]'
-    pip install dask dask-expr
+    pip install dask
+    if python -c 'import sys; exit(0) if sys.version_info > (3, 9) else exit(1)'; then
+        echo "python version is 3.9+"
+        pip install dask-expr
+    else
+        echo "Python version is 3.8 or less"
+    fi
     pytest tests/integrations
     exit 0
 fi
