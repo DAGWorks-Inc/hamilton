@@ -28,6 +28,12 @@ fi
 if [[ ${TASK} == "integrations" ]]; then
     pip install -e '.[pandera]'
     pip install dask
+    if python -c 'import sys; exit(0) if sys.version_info > (3, 9) else exit(1)'; then
+        echo "python version is 3.9+"
+        pip install dask-expr
+    else
+        echo "Python version is 3.8 or less"
+    fi
     pytest tests/integrations
     exit 0
 fi
@@ -46,6 +52,7 @@ if [[ ${TASK} == "pyspark" ]]; then
 fi
 
 if [[ ${TASK} == "vaex" ]]; then
+    pip install "numpy<2.0.0"  # numpy2.0 breaks vaex
     pip install -e '.[vaex]'
     pytest plugin_tests/h_vaex
     exit 0
@@ -60,6 +67,8 @@ fi
 
 if [[ ${TASK} == "tests" ]]; then
     pip install .
+    # https://github.com/plotly/Kaleido/issues/226
+    pip install "kaleido<0.4.0" # kaleido 0.4.0 breaks plotly; TODO: remove this
     pytest \
         --cov=hamilton \
         --ignore tests/integrations \

@@ -1,3 +1,5 @@
+import sys
+
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
@@ -146,6 +148,7 @@ def test_pandera_decorator_fails_without_annotation():
         h_pandera.check_output().get_validators(n)
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python3.9 or higher")
 def test_pandera_decorator_dask_df():
     """Validates that the function can be annotated with a dask dataframe type it'll work appropriately.
 
@@ -196,6 +199,7 @@ def test_pandera_decorator_dask_df():
     assert not result_success.passes
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python3.9 or higher")
 def test_pandera_decorator_dask_series():
     """Validates that the function can be annotated with a dask series type it'll work appropriately.
     Install dask if this fails.
