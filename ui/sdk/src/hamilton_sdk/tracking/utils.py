@@ -48,6 +48,8 @@ def make_json_safe(item: Union[dict, list, str, float, int, bool]) -> Any:
         # we convert to json string and then deserialize it so that
         # it's not a string in the UI.
         try:
+            if hasattr(item, "head"):
+                item = item.head()  # truncate to head rows if it's a dataframe
             return json.loads(item.to_json())
         except Exception:
             # pass
