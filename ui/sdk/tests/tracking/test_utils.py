@@ -139,7 +139,7 @@ def test_make_json_safe_with_pandas_series():
         "1642291200000": 50,
         "1642896000000": 100,
         "1643500800000": 200,
-        "1644105600000": 400,
+        # "1644105600000": 400, -- skipped due to `.head()` being called
     }
 
 
