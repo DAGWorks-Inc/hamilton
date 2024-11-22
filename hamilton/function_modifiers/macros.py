@@ -845,7 +845,7 @@ class pipe_input(base.NodeInjector):
                     step(_add_two, y=source("upstream_node")).on_input("p2")
                 )
                 def final_result(p1: int, p2: int, p3: int) -> int:
-                    return upstream_int
+                    return p1 + p2 + p3
 
             We can also do this on the global level to set for all transforms a target parameter.
 
