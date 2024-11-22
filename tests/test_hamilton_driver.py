@@ -3,7 +3,7 @@ from unittest import mock
 import pandas as pd
 import pytest
 
-from hamilton import base, node
+from hamilton import base, node, telemetry
 from hamilton.caching.adapter import HamiltonCacheAdapter
 from hamilton.driver import (
     Builder,
@@ -24,6 +24,8 @@ import tests.resources.test_driver_serde_mapper
 import tests.resources.test_driver_serde_worker
 import tests.resources.test_for_materialization
 import tests.resources.very_simple_dag
+
+telemetry.MAX_COUNT_SESSION = 100
 
 """This file tests driver capabilities.
 Anything involving execution is tested for multiple executors/driver configuration.
@@ -235,6 +237,7 @@ def test_capture_constructor_telemetry(send_event_json):
     assert actual_event_dict["event"] == "os_hamilton_run_start"
     # validate schema
     expected_properties = {
+        "$process_person_profile",
         "os_type",
         "os_version",
         "python_version",
