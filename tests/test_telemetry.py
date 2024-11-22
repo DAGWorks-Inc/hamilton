@@ -10,6 +10,8 @@ import pytest
 from hamilton import async_driver, base, node, telemetry
 from hamilton.lifecycle import base as lifecycle_base
 
+telemetry.MAX_COUNT_SESSION = 100
+
 
 @pytest.fixture
 def blank_conf_file(tmp_path_factory):

@@ -51,7 +51,7 @@ DATAFLOW_IMPORT = "os_hamilton_dataflow_import_call"
 CLI_COMMAND = "os_hamilton_cli_command"
 EXPERIMENT_SERVER = "os_hamilton_experiment_server"
 TIMEOUT = 2
-MAX_COUNT_SESSION = 100  # max number of events collected per python process
+MAX_COUNT_SESSION = 10  # max number of events collected per python process
 DEFAULT_CONFIG_URI = os.environ.get("HAMILTON_CONFIG_URI", "~/.hamilton.conf")
 DEFAULT_CONFIG_LOCATION = os.path.expanduser(DEFAULT_CONFIG_URI)
 
@@ -155,6 +155,7 @@ BASE_PROPERTIES = {
     "distinct_id": g_anonymous_id,
     "hamilton_version": list(VERSION),
     "telemetry_version": "0.0.1",
+    "$process_person_profile": False,
 }
 
 
