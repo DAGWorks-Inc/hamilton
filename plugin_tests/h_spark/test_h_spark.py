@@ -11,6 +11,8 @@ from pyspark.sql.connect.session import SparkSession as CSparkSession
 from pyspark.sql.functions import column
 
 from hamilton import base, driver, htypes, node
+from hamilton.function_modifiers.base import NodeInjector
+from hamilton.function_modifiers.recursive import prune_nodes
 from hamilton.plugins import h_spark
 from hamilton.plugins.h_spark import SparkInputValidator
 
@@ -569,7 +571,7 @@ def test_prune_nodes_no_select():
         node.Node.from_fn(fn) for fn in [basic_spark_dag.a, basic_spark_dag.b, basic_spark_dag.c]
     ]
     select = None
-    assert {n for n in h_spark.prune_nodes(nodes, select)} == set(nodes)
+    assert {n for n in prune_nodes(nodes, select)} == set(nodes)
 
 
 def test_prune_nodes_single_select():
@@ -577,7 +579,7 @@ def test_prune_nodes_single_select():
         node.Node.from_fn(fn) for fn in [basic_spark_dag.a, basic_spark_dag.b, basic_spark_dag.c]
     ]
     select = ["a", "b"]
-    assert {n for n in h_spark.prune_nodes(nodes, select)} == set(nodes[0:2])
+    assert {n for n in prune_nodes(nodes, select)} == set(nodes[0:2])
 
 
 def test_generate_nodes_invalid_select():
@@ -593,7 +595,10 @@ def test_generate_nodes_invalid_select():
         def df_as_pandas(df: DataFrame) -> pd.DataFrame:
             return df.toPandas()
 
-        dec.generate_nodes(df_as_pandas, {})
+        dummy_node = node.Node.from_fn(df_as_pandas)
+        injectable_params = NodeInjector.find_injectable_params([dummy_node])
+
+        dec.inject_nodes(params=injectable_params, config={}, fn=df_as_pandas)
 
 
 def test_with_columns_generate_nodes_no_select():
@@ -607,13 +612,16 @@ def test_with_columns_generate_nodes_no_select():
     def df_as_pandas(df: DataFrame) -> pd.DataFrame:
         return df.toPandas()
 
-    nodes = dec.generate_nodes(df_as_pandas, {})
+    dummy_node = node.Node.from_fn(df_as_pandas)
+    injectable_params = NodeInjector.find_injectable_params([dummy_node])
+
+    nodes, _ = dec.inject_nodes(params=injectable_params, config={}, fn=df_as_pandas)
+
     nodes_by_names = {n.name: n for n in nodes}
     assert set(nodes_by_names.keys()) == {
         "df_as_pandas.a",
         "df_as_pandas.b",
         "df_as_pandas.c",
-        "df_as_pandas",
     }
 
 
@@ -629,9 +637,14 @@ def test_with_columns_generate_nodes_select():
     def df_as_pandas(df: DataFrame) -> pd.DataFrame:
         return df.toPandas()
 
-    nodes = dec.generate_nodes(df_as_pandas, {})
+    dummy_node = node.Node.from_fn(df_as_pandas)
+    injectable_params = NodeInjector.find_injectable_params([dummy_node])
+
+    nodes, _ = dec.inject_nodes(params=injectable_params, config={}, fn=df_as_pandas)
     nodes_by_names = {n.name: n for n in nodes}
-    assert set(nodes_by_names.keys()) == {"df_as_pandas.c", "df_as_pandas"}
+    assert set(nodes_by_names.keys()) == {
+        "df_as_pandas.c",
+    }
 
 
 def test_with_columns_generate_nodes_select_append_mode():
@@ -644,10 +657,13 @@ def test_with_columns_generate_nodes_select_append_mode():
     def df_as_pandas(df: DataFrame) -> pd.DataFrame:
         return df.toPandas()
 
-    nodes = dec.generate_nodes(df_as_pandas, {})
+    dummy_node = node.Node.from_fn(df_as_pandas)
+    injectable_params = NodeInjector.find_injectable_params([dummy_node])
+
+    nodes, _ = dec.inject_nodes(params=injectable_params, config={}, fn=df_as_pandas)
+
     nodes_by_names = {n.name: n for n in nodes}
     assert set(nodes_by_names.keys()) == {
-        "df_as_pandas",
         "df_as_pandas._select",
         "df_as_pandas.a",
         "df_as_pandas.b",
@@ -668,11 +684,13 @@ def test_with_columns_generate_nodes_select_mode_select():
     def df_as_pandas(df: DataFrame) -> pd.DataFrame:
         return df.toPandas()
 
-    nodes = dec.generate_nodes(df_as_pandas, {})
+    dummy_node = node.Node.from_fn(df_as_pandas)
+    injectable_params = NodeInjector.find_injectable_params([dummy_node])
+
+    nodes, _ = dec.inject_nodes(params=injectable_params, config={}, fn=df_as_pandas)
     nodes_by_names = {n.name: n for n in nodes}
     assert set(nodes_by_names.keys()) == {
         "df_as_pandas.c",
-        "df_as_pandas",
         "df_as_pandas._select",
     }
 
@@ -689,9 +707,16 @@ def test_with_columns_generate_nodes_specify_namespace():
     def df_as_pandas(df: DataFrame) -> pd.DataFrame:
         return df.toPandas()
 
-    nodes = dec.generate_nodes(df_as_pandas, {})
+    dummy_node = node.Node.from_fn(df_as_pandas)
+    injectable_params = NodeInjector.find_injectable_params([dummy_node])
+
+    nodes, _ = dec.inject_nodes(params=injectable_params, config={}, fn=df_as_pandas)
     nodes_by_names = {n.name: n for n in nodes}
-    assert set(nodes_by_names.keys()) == {"foo.a", "foo.b", "foo.c", "df_as_pandas"}
+    assert set(nodes_by_names.keys()) == {
+        "foo.a",
+        "foo.b",
+        "foo.c",
+    }
 
 
 def test__format_pandas_udf():
