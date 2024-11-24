@@ -2,6 +2,6 @@
 
 We show the ability to use the familiar `with_columns` from either `pyspark` or `polars` on a Pandas dataframe.
 
-To see the example look at the notebook.
+To see the example look at the [notebook](notebook.ipynb).
 
 ![image info](./dag.png)
