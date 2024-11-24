@@ -5,6 +5,7 @@ from typing import Tuple
 
 import pytest
 
+import hamilton
 from hamilton import ad_hoc_utils, graph
 from hamilton.function_modifiers import (
     InvalidDecoratorException,
@@ -16,7 +17,7 @@ from hamilton.function_modifiers import (
 )
 from hamilton.function_modifiers.base import NodeTransformer
 from hamilton.function_modifiers.dependencies import source
-from hamilton.function_modifiers.recursive import _validate_config_inputs
+from hamilton.function_modifiers.recursive import _validate_config_inputs, with_columns_base
 
 import tests.resources.reuse_subdag
 
@@ -539,3 +540,16 @@ def test_recursive_validate_config_inputs_happy(config, inputs):
 def test_recursive_validate_config_inputs_sad(config, inputs):
     with pytest.raises(InvalidDecoratorException):
         _validate_config_inputs(config, inputs)
+
+
+def dummy_fn_with_columns(col_1: int) -> int:
+    return col_1 + 100
+
+
+def test_columns_and_subdag_nodes_do_not_clash():
+    node_a = hamilton.node.Node.from_fn(dummy_fn_with_columns, name="a")
+    node_b = hamilton.node.Node.from_fn(dummy_fn_with_columns, name="a")
+    node_c = hamilton.node.Node.from_fn(dummy_fn_with_columns, name="c")
+
+    assert not with_columns_base.contains_duplicates([node_a, node_c])
+    assert with_columns_base.contains_duplicates([node_a, node_b, node_c])

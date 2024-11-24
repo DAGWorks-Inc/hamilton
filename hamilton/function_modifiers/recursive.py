@@ -1,5 +1,8 @@
+import abc
 import inspect
 import sys
+import typing
+from collections import defaultdict
 from types import ModuleType
 from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, TypedDict, Union
 
@@ -10,7 +13,6 @@ if _version_tuple < (3, 11, 0):
     from typing_extensions import NotRequired
 else:
     from typing import NotRequired
-
 
 # Copied this over from function_graph
 # TODO -- determine the best place to put this code
@@ -624,5 +626,226 @@ def prune_nodes(nodes: List[node.Node], select: Optional[List[str]] = None) -> L
             if dep not in seen_nodes and dep in node_name_map:
                 dep_node = node_name_map[dep]
                 stack.append(dep_node)
-            seen_nodes.add(dep)
+                seen_nodes.add(dep)
+
+    if not set(select) <= set([node_.name for node_ in output]):
+        raise ValueError(
+            "At least one of the selected nodes is not not in the DAG. "
+            f"You selected: {select}, but we only found nodes: {nodes}."
+        )
     return output
+
+
+def _default_inject_parameter(fn: Callable, target_dataframe: str = None) -> str:
+    if target_dataframe is not None:
+        inject_parameter = target_dataframe
+    else:
+        # If we don't have a specified dataframe we assume it's the first argument
+        function_parameters = list(inspect.signature(fn).parameters.values())
+        if function_parameters:
+            inject_parameter = function_parameters[0].name
+        else:
+            raise ValueError(
+                f"Function {fn.__qualname__} has no parameters, but was "
+                f"decorated with with_columns. with_columns requires the first "
+                f"parameter to be a dataframe or using the on_input argument."
+            )
+    return inject_parameter
+
+
+class with_columns_base(base.NodeInjector, abc.ABC):
+    """Factory for with_columns operation on a dataframe. This is used when you want to extract some
+    columns out of the dataframe, perform operations on them and then append to the original dataframe.
+
+    This is an internal class that is meant to be extended by each individual dataframe library implementing
+    the following abstract methods:
+
+    - get_initial_nodes
+    - get_subdag_nodes
+    - chain_subdag_nodes
+    - validate
+    """
+
+    # TODO: if we rename the column nodes into something smarter this can be avoided and
+    # can also modify columns in place
+    @staticmethod
+    def contains_duplicates(nodes_: List[node.Node]) -> bool:
+        """Ensures that we don't run into name clashing of columns and group operations.
+
+        In the case when we extract columns for the user, because ``columns_to_pass`` was used, we want
+        to safeguard against nameclashing with functions that are passed into ``with_columns`` - i.e.
+        there are no functions that have the same name as the columns. This effectively means that
+        using ``columns_to_pass`` will only append new columns to the dataframe and for changing
+        existing columns ``pass_dataframe_as`` or ``on_input`` needs to be used.
+        """
+        node_counter = defaultdict(int)
+        for node_ in nodes_:
+            node_counter[node_.name] += 1
+            if node_counter[node_.name] > 1:
+                return True
+        return False
+
+    @staticmethod
+    def validate_dataframe(
+        fn: Callable, inject_parameter: str, params: Dict[str, Type[Type]], required_type: Type
+    ) -> None:
+        input_types = typing.get_type_hints(fn)
+        if inject_parameter not in params:
+            raise InvalidDecoratorException(
+                f"Function: {fn.__name__} does not have the parameter {inject_parameter} as a dependency. "
+                f"@with_columns requires the parameter names to match the function parameters. "
+                f"If you wish do not wish to use the first argument, please use ``pass_dataframe_as`` or ``on_input`` option. "
+                f"It might not be compatible with some other decorators."
+            )
+
+        if isinstance(input_types[inject_parameter], required_type):
+            raise InvalidDecoratorException(
+                "The selected dataframe parameter is not the correct dataframe type. "
+                f"You selected a parameter of type {input_types[inject_parameter]}, but we expect to get {required_type}"
+            )
+
+    def __init__(
+        self,
+        *load_from: Union[Callable, ModuleType],
+        columns_to_pass: List[str] = None,
+        pass_dataframe_as: str = None,
+        on_input: str = None,
+        select: List[str] = None,
+        namespace: str = None,
+        config_required: List[str] = None,
+        dataframe_type: Type = None,
+    ):
+        """Instantiates a ``@with_columns`` decorator.
+
+        :param load_from: The functions or modules that will be used to generate the group of map operations.
+        :param columns_to_pass: The initial schema of the dataframe. This is used to determine which
+            upstream inputs should be taken from the dataframe, and which shouldn't. Note that, if this is
+            left empty (and external_inputs is as well), we will assume that all dependencies come
+            from the dataframe. This cannot be used in conjunction with pass_dataframe_as.
+        :param pass_dataframe_as: The name of the dataframe that we're modifying, as known to the subdag.
+            If you pass this in, you are responsible for extracting columns out. If not provided, you have
+            to pass columns_to_pass in, and we will extract the columns out for you.
+        :param on_input: the dataframe parameter that we are applying with_columns on. By default we
+            will assume the first parameter is the corresponding dataframe.
+        :param select: The end nodes that represent columns to be appended to the original dataframe
+            via with_columns. Existing columns will be overridden.
+        :param namespace: The namespace of the nodes, so they don't clash with the global namespace
+            and so this can be reused. If its left out, there will be no namespace (in which case you'll want
+            to be careful about repeating it/reusing the nodes in other parts of the DAG.)
+        :param config_required: the list of config keys that are required to resolve any functions. Pass in None\
+            if you want the functions/modules to have access to all possible config.
+        """
+
+        self.subdag_functions = subdag.collect_functions(load_from)
+        self.select = select
+
+        # This is here to restrict to using either pass_dataframe_as or on_input or columns_to_pass
+        # TODO: decouple columns_to_pass, pass_dataframe_as and on_input
+        # For spark, we always perform with_columns on first parameter and use pass_dataframe_as;
+        # for pandas/polars, we can select which dataframe with on_input, but columns_to_pass, will always only work on first parameter
+        # We can decouple it so that on_input selects the target dataframe parameter that will inject into the next node
+        # pass_dataframe_as selects the original dataframe we want to extract columns from
+        # columns_to_pass is optinal helper that can be toggled on/off so no need to raise this error.
+        if (
+            int(pass_dataframe_as is None) + int(columns_to_pass is None) + int(on_input is None)
+            == 1
+        ):
+            raise ValueError(
+                "You must specify only one of ``columns_to_pass``, ``pass_dataframe_as``, and ``on_input``. "
+                "This is because specifying ``pass_dataframe_as`` or ``on_input`` injects into "
+                "the set of columns, allowing you to perform your own extraction"
+                "from the dataframe. We then execute all columns in the subdag"
+                "in order, passing in that initial dataframe. If you want"
+                "to reference columns in your code, you'll have to specify "
+                "the set of initial columns, and allow the subdag decorator "
+                "to inject the dataframe through. The initial columns tell "
+                "us which parameters to take from that dataframe, so we can"
+                "feed the right data into the right columns."
+            )
+
+        self.initial_schema = columns_to_pass
+        self.dataframe_subdag_param = pass_dataframe_as
+        self.target_dataframe = on_input
+        self.namespace = namespace
+        self.config_required = config_required
+
+        if dataframe_type is None:
+            raise InvalidDecoratorException(
+                "Please provide the dataframe type for this specific library."
+            )
+
+        self.dataframe_type = dataframe_type
+
+    def required_config(self) -> List[str]:
+        return self.config_required
+
+    @abc.abstractmethod
+    def get_initial_nodes(
+        self, fn: Callable, params: Dict[str, Type[Type]]
+    ) -> Tuple[str, Collection[node.Node]]:
+        """Preparation stage where columns get extracted into nodes. In case `pass_dataframe_as` or `on_input` is
+        used, this should return an empty list (no column nodes) since the users will extract it
+        themselves.
+
+        :param fn: the function we are decorating. By using the inspect library you can get information.
+            about what arguments it has / find out the dataframe argument.
+        :param params: Dictionary of all the type names one wants to inject.
+        :return: name of the dataframe parameter and list of nodes representing the extracted columns (can be empty).
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_subdag_nodes(self, fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]:
+        """Creates subdag from the passed in module / functions.
+
+        :param config: Configuration with which the DAG was constructed.
+        :return: the subdag as a list of nodes.
+        """
+        pass
+
+    @abc.abstractmethod
+    def chain_subdag_nodes(
+        self, fn: Callable, inject_parameter: str, generated_nodes: Collection[node.Node]
+    ) -> node.Node:
+        """Combines the origanl dataframe with selected columns. This should produce a
+        dataframe output that is injected into the decorated function with new columns
+        appended and existing columns overriden.
+
+        :param inject_parameter: the name of the original dataframe that.
+        :return: the new dataframe with the columns appended / overwritten.
+        """
+        pass
+
+    def inject_nodes(
+        self, params: Dict[str, Type[Type]], config: Dict[str, Any], fn: Callable
+    ) -> Tuple[List[node.Node], Dict[str, str]]:
+        namespace = fn.__name__ if self.namespace is None else self.namespace
+
+        inject_parameter, initial_nodes = self.get_initial_nodes(fn=fn, params=params)
+        subdag_nodes = self.get_subdag_nodes(fn=fn, config=config)
+        generated_nodes = initial_nodes + subdag_nodes
+        # TODO: for now we restrict that if user wants to change columns that already exist, he needs to
+        # pass the dataframe and extract them himself. If we add namespace to initial nodes and rewire the
+        # initial node names with the ongoing ones that have a column argument, we can also allow in place
+        # changes when using columns_to_pass
+        if with_columns_base.contains_duplicates(generated_nodes):
+            raise ValueError(
+                "You can only specify columns once. You used `columns_to_pass` and we "
+                "extract the columns for you. In this case they cannot be overwritten -- only new columns get "
+                "appended. If you want to modify in-place columns pass in a dataframe and "
+                "extract + modify the columns and afterwards select them."
+            )
+
+        pruned_nodes = prune_nodes(nodes=generated_nodes, select=self.select)
+        if len(pruned_nodes) == 0:
+            raise ValueError(
+                f"No nodes found upstream from select columns: {self.select} for function: "
+                f"{fn.__qualname__}"
+            )
+
+        # Node combining columns and dataframe might need info about prior nodes
+        output_nodes, current_param = self.chain_subdag_nodes(
+            fn=fn, inject_parameter=inject_parameter, generated_nodes=pruned_nodes
+        )
+        output_nodes = subdag.add_namespace(output_nodes, namespace)
+        return output_nodes, {inject_parameter: assign_namespace(current_param, namespace)}
