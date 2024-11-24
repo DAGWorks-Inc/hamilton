@@ -41,13 +41,32 @@ from hamilton.io import utils
 from hamilton.io.data_adapters import DataLoader
 
 DATAFRAME_TYPE = pl.LazyFrame
-COLUMN_TYPE = None
-COLUMN_FRIENDLY_DF_TYPE = False
+COLUMN_TYPE = pl.Expr
+# COLUMN_FRIENDLY_DF_TYPE = False
 
 
 def register_types():
     """Function to register the types for this extension."""
     registry.register_types("polars_lazyframe", DATAFRAME_TYPE, COLUMN_TYPE)
+
+
+@registry.get_column.register(pl.LazyFrame)
+def get_column_polars_lazyframe(df: pl.LazyFrame, column_name: str) -> pl.Expr:
+    # TODO: figure out if we can validate this here already or need to wait to the end
+    # when query.collect() resolves the lazy frame
+    # df.collect_schema().names() gives a list of names but it can be expensive
+    # https://docs.pola.rs/api/python/stable/reference/lazyframe/api/polars.LazyFrame.columns.html
+    # https://docs.pola.rs/api/python/stable/reference/lazyframe/api/polars.LazyFrame.collect_schema.html#polars.LazyFrame.collect_schema
+    return pl.col(column_name)
+
+
+@registry.fill_with_scalar.register(pl.LazyFrame)
+def fill_with_scalar_polars_lazyframe(
+    df: pl.LazyFrame, column_name: str, scalar_value: Any
+) -> pl.LazyFrame:
+    if not isinstance(scalar_value, pl.Expr):
+        scalar_value = pl.lit(scalar_value)
+    return df.with_columns(scalar_value.alias(column_name))
 
 
 register_types()
