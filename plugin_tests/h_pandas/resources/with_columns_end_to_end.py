@@ -59,7 +59,9 @@ def col_3(initial_df: pd.DataFrame) -> pd.Series:
 
 @with_columns(
     col_3,
-    pass_dataframe_as="initial_df",
+    multiply_3__by_5,
+    multiply_3__by_7,
+    on_input="initial_df",
     select=["col_3", "multiply_3"],
 )
 def final_df_2(initial_df: pd.DataFrame) -> pd.DataFrame:
