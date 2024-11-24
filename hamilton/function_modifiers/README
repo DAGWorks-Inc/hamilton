@@ -1,0 +1,19 @@
+# with_columns_base
+
+Documenting the current design flow for the `with_columns` decorator. It belongs to the `NodeInjector` lifecycle.
+
+The `with_columns` consists of three parts that are represented in the corresponding three abstract methods in `with_columns_base`:
+
+1. `get_initial_nodes` -- Input node(s): Either a dataframe if `pass_datafame_as` is used or extracted columns into nodes if `columns_to_pass` and is library specific.
+2. `get_subdag_nodes` -- Subdag nodes: Creating the `subdag` is outsourced to `recursive.subdag`, left flexibility to pre- and post-process since some libraries need that (see h_spark).
+3. `chain_subdag_nodes` -- Merge node: The append functionality between dataframe and selected columns is library specific.
+
+Each plugin library that can implement `with_columns` should subclass from this base class and implement the three abstract methods (four since `validate()` is also abstract). The child
+classes need to override the `init` where they call out to the parent `init` and pass in `dataframe_type` which is registered in the corresponding `extensions` and has information of what
+columns types are permitted for the given dataframe type.
+
+Keeping it for now loosely coupled to the `registry` and detached from `ResultBuilder`. The API is private, should we want to switch to `registry`, the refactoring is straightforward and shouldn't get us into trouble down the road.
+
+## NOTE
+The handling of scalars and dataframe types varies between library to library. We made the decision that such a thing should not be permissible, so all the selected columns that want to be
+appended to the original dataframe need to have the matching column type that is registered in the `registry` and set in the library extension modules.
