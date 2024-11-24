@@ -1,8 +1,8 @@
 # Using with_columns with Polars
 
-We show the ability to use the familiar `with_columns` from `polars`. Supported for both `pl.DataFrame` and `pl.LazyFrame`.
+We show the ability to use the familiar `with_columns` from `polars`. Supported for both: `pl.DataFrame` and `pl.LazyFrame`.
 
-To see the example look at the notebook.
+To see the example look at the [notebook](notebook.ipynb).
 
 ![image info](./DAG_DataFrame.png)
 ![image info](./DAG_lazy.png)

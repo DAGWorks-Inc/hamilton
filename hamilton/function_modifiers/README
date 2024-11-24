@@ -1,6 +1,8 @@
 # with_columns_base
 
-Documenting the current design flow for the `with_columns` decorator. It belongs to the `NodeInjector` lifecycle.
+Documenting the current design flow for the `with_columns` decorator.
+
+For now, it belongs to the `NodeInjector` lifecycle since it still runs the decorated function as a node but injects the dataframe with columns appended columns as one of the parameters.
 
 The `with_columns` consists of three parts that are represented in the corresponding three abstract methods in `with_columns_base`:
 

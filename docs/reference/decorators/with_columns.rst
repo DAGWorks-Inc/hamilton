@@ -2,14 +2,32 @@
 with_columns
 =======================
 
-Pandas
---------------
+We support the `with_columns` operation that appends the results as new columns to the original dataframe for several libraries:
 
-We have a ``with_columns`` option to run operations on columns of a Pandas dataframe and append the results as new columns.
+Pandas
+-----------------------
 
 **Reference Documentation**
 
 .. autoclass:: hamilton.plugins.h_pandas.with_columns
+   :special-members: __init__
+
+
+Polar (Eager)
+-----------------------
+
+**Reference Documentation**
+
+.. autoclass:: hamilton.plugins.h_polars.with_columns
+   :special-members: __init__
+
+
+Polars (Lazy)
+-----------------------
+
+**Reference Documentation**
+
+.. autoclass:: hamilton.plugins.h_polars_lazyframe.with_columns
    :special-members: __init__
 
 
