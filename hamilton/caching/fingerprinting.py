@@ -71,7 +71,11 @@ def hash_value(obj, *args, depth=0, **kwargs) -> str:
     if depth > MAX_DEPTH:
         return UNHASHABLE
 
-    if hasattr(obj, "__dict__"):
+    # __dict__ attribute contains the instance attributes of the object.
+    # this is typically sufficient to define the object and its behavior, so it's a good target
+    # for a hash in the default case.
+    # Objects that return an empty dict should be skipped (very odd behavior, happens with pandas type)
+    if getattr(obj, "__dict__", {}) != {}:
         return hash_value(obj.__dict__, depth=depth + 1)
 
     # check if the object comes from a module part of the standard library

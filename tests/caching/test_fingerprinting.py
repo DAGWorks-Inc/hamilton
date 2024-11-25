@@ -23,12 +23,24 @@ def test_hash_no_dict_attribute():
     class Foo:
         __slots__ = ()
 
-        def __init__(self):
-            pass
+    obj = Foo()
+    assert not hasattr(obj, "__dict__")
+
+    fingerprint = fingerprinting.hash_value(obj)
+
+    assert fingerprint == fingerprinting.UNHASHABLE
+
+
+def test_empty_dict_attr_is_unhashable():
+    """Classes with an empty __dict__ can't be hashed during the base case."""
+
+    class Foo: ...  # noqa: E701
 
     obj = Foo()
+    assert obj.__dict__ == {}
+
     fingerprint = fingerprinting.hash_value(obj)
-    assert not hasattr(obj, "__dict__")
+
     assert fingerprint == fingerprinting.UNHASHABLE
 
 
