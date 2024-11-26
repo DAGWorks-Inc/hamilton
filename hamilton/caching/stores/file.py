@@ -1,3 +1,4 @@
+import inspect
 import shutil
 from pathlib import Path
 from typing import Any, Optional
@@ -68,8 +69,24 @@ class FileResultStore(ResultStore):
         if saver_cls is not None:
             # materialized_path
             materialized_path = self._materialized_path(data_version, saver_cls)
-            saver = saver_cls(path=str(materialized_path.absolute()))
-            loader = loader_cls(path=str(materialized_path.absolute()))
+            saver_argspec = inspect.getfullargspec(saver_cls.__init__)
+            loader_argspec = inspect.getfullargspec(loader_cls.__init__)
+            if "file" in saver_argspec.args:
+                saver = saver_cls(file=str(materialized_path.absolute()))
+            elif "path" in saver_argspec.args:
+                saver = saver_cls(path=str(materialized_path.absolute()))
+            else:
+                raise ValueError(
+                    f"Saver [{saver_cls.name()}] must have either `file` or `path` as an argument."
+                )
+            if "file" in loader_argspec.args:
+                loader = loader_cls(file=str(materialized_path.absolute()))
+            elif "path" in loader_argspec.args:
+                loader = loader_cls(path=str(materialized_path.absolute()))
+            else:
+                raise ValueError(
+                    f"Loader [{loader_cls.name()}] must have either `file` or `path` as an argument."
+                )
         else:
             saver = None
             loader = None
