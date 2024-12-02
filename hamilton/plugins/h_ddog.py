@@ -1,7 +1,10 @@
 import logging
-from typing import Any, Dict, Optional
+from types import ModuleType
+from typing import Any, Dict, List, Optional
 
-from hamilton import lifecycle
+from hamilton import graph as h_graph
+from hamilton import lifecycle, node
+from hamilton.lifecycle import base
 
 logger = logging.getLogger(__name__)
 try:
@@ -267,3 +270,205 @@ class DDOGTracer(
             exc_value = error
             tb = error.__traceback__
         span.__exit__(exc_type, exc_value, tb)
+
+
+class AsyncDDOGTracer(
+    base.BasePostGraphConstructAsync,
+    base.BasePreGraphExecuteAsync,
+    base.BasePreNodeExecuteAsync,
+    base.BasePostNodeExecuteAsync,
+    base.BasePostGraphExecuteAsync,
+):
+    def __init__(
+        self, root_name: str, include_causal_links: bool = False, service: str | None = None
+    ):
+        """Creates a AsyncDDOGTracer. This has the option to specify some parameters.
+
+        :param root_name: Name of the root trace/span. Due to the way datadog inherits, this will inherit an active span.
+        :param include_causal_links: Whether or not to include span causal links. Note that there are some edge-cases here, and
+            This is in beta for datadog, and actually broken in the current client, but it has been fixed and will be released shortly:
+            https://github.com/DataDog/dd-trace-py/issues/8049. Furthermore, the query on datadog is slow for displaying causal links.
+            We've disabled this by default, but feel free to test it out -- its likely they'll be improving the docum
+        :param service: Service name -- will pick it up from the environment through DDOG if not available.
+        """
+        self.root_name = root_name
+        self.service = service
+        self.include_causal_links = include_causal_links
+        self.run_span_cache: dict[str, Any] = {}  # Cache of run_id -> span tuples
+        self.task_span_cache: dict[
+            str, Any
+        ] = {}  # cache of run_iod -> task_id -> span. Note that we will prune this after task execution
+        self.node_span_cache: dict[
+            str, Any
+        ] = {}  # Cache of run_id -> [task_id, node_id] -> span. We use this to open/close general traces
+
+    @staticmethod
+    def _serialize_span_dict(span_dict: Dict[str, Span]) -> Dict[str, dict]:
+        """Serializes to a readable format. We're not propogating span links (see note above on causal links),
+        but that's fine (for now). We have to do this as passing spans back and forth is frowned upon.
+
+        :param span_dict: A key -> span dictionary
+        :return: The serialized representation.
+        """
+        # For some reason this doesn't use the right ser/deser for dask
+        # Or for some reason it has contexts instead of spans. Well, we can serialize them both!
+        return {
+            key: {
+                "trace_id": span.context.trace_id if isinstance(span, Span) else span.trace_id,
+                "span_id": span.context.span_id if isinstance(span, Span) else span.span_id,
+            }
+            for key, span in span_dict.items()
+        }
+
+    @staticmethod
+    def _deserialize_span_dict(serialized_repr: Dict[str, dict]) -> Dict[str, context.Context]:
+        """Note that we deserialize as contexts, as passing spans is not supported
+        (the child should never terminate the parent span).
+
+        :param span_dict: Dict of str -> dict params for contexts
+        :return: A dictionary of contexts
+        """
+        return {key: context.Context(**params) for key, params in serialized_repr.items()}
+
+    def __getstate__(self) -> dict[str, Any]:
+        """Gets the state for serialization."""
+        return dict(
+            root_trace_name=self.root_name,
+            service=self.service,
+            include_causal_links=self.include_causal_links,
+            run_span_cache=self._serialize_span_dict(self.run_span_cache),
+            task_span_cache={
+                key: self._serialize_span_dict(value) for key, value in self.task_span_cache.items()
+            },
+            # this is unnecessary, but leaving it here for now
+            # to remove it, we need to add a default check in the one that adds to the nodes
+            node_span_cache={
+                key: self._serialize_span_dict(value) for key, value in self.task_span_cache.items()
+            },  # Nothing here, we can just wipe it for a new task
+        )
+
+    def __setstate__(self, state: dict) -> None:
+        """Sets the state for serialization."""
+        self.service = state["service"]
+        self.root_name = state["root_trace_name"]
+        self.include_causal_links = state["include_causal_links"]
+        # TODO -- move this out/consider doing it to the others
+        self.run_span_cache = self._deserialize_span_dict(state["run_span_cache"])
+        # We only really need this if we log the stuff before submitting...
+        # This shouldn't happen but it leaves flexibility for the future
+        self.task_span_cache = {
+            key: self._deserialize_span_dict(value)
+            for key, value in state["task_span_cache"].items()
+        }
+        self.node_span_cache = {
+            key: self._deserialize_span_dict(value)
+            for key, value in state["node_span_cache"].items()
+        }
+
+    @staticmethod
+    def _sanitize_tags(tags: Dict[str, Any]) -> Dict[str, str]:
+        """Sanitizes tags to be strings, just in case.
+
+        :param tags: Node tags.
+        :return: The string -> string representation of tags
+        """
+        return {f"hamilton.{key}": str(value) for key, value in tags.items()}
+
+    async def post_graph_construct(
+        self, graph: h_graph.FunctionGraph, modules: List[ModuleType], config: Dict[str, Any]
+    ) -> None:
+        pass
+
+    async def pre_graph_execute(
+        self,
+        run_id: str,
+        graph: h_graph.FunctionGraph,
+        final_vars: List[str],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+    ) -> None:
+        current_context = (
+            tracer.current_trace_context()
+        )  # Get the current ctx, if available, otherwise returns None
+        span = tracer.start_span(
+            name=self.root_name, child_of=current_context, activate=True, service=self.service
+        )
+        self.run_span_cache[run_id] = span  # we save this as a root span
+        self.node_span_cache[run_id] = {}
+        self.task_span_cache[run_id] = {}
+
+    async def pre_node_execute(
+        self, run_id: str, node_: node.Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
+    ) -> None:
+        """Runs before a node's execution. Sets up/stores spans.
+
+        :param node_name: Name of the node.
+        :param node_kwargs: Keyword arguments of the node.
+        :param node_tags: Tags of the node (they'll get stored as datadog tags)
+        :param task_id: Task ID that spawned the node
+        :param run_id: ID of the run.
+        :param future_kwargs: reserved for future keyword arguments/backwards compatibility.
+        """
+        # We need to do this on launching tasks and we have not yet exposed it.
+        # TODO -- do pre-task and post-task execution.
+        parent_span = self.task_span_cache[run_id].get(task_id) or self.run_span_cache[run_id]
+        new_span_name = f"{task_id}:" if task_id is not None else ""
+        new_span_name += node_.name
+        new_span = tracer.start_span(
+            name=new_span_name, child_of=parent_span, activate=True, service=self.service
+        )
+        if self.include_causal_links:
+            prior_spans = {key: self.node_span_cache[run_id].get((task_id, key)) for key in kwargs}
+            for input_node, span in prior_spans.items():
+                if span is not None:
+                    new_span.link_span(
+                        context=span.context,
+                        attributes={
+                            "link.name": f"{input_node}_to_{node_.name}",
+                        },
+                    )
+        tags = node_.tags.copy()
+        tags["hamilton.node_name"] = node_.name
+        new_span.set_tags(AsyncDDOGTracer._sanitize_tags(tags=tags))  # type: ignore[arg-type]
+        self.node_span_cache[run_id][(task_id, node_.name)] = new_span
+
+    async def post_node_execute(
+        self,
+        run_id: str,
+        node_: node.Node,
+        success: bool,
+        error: Optional[Exception],
+        result: Any,
+        task_id: Optional[str] = None,
+        **future_kwargs: dict,
+    ) -> None:
+        span = self.node_span_cache[run_id][(task_id, node_.name)]
+        exc_type = None
+        exc_value = None
+        tb = None
+        if error is not None:
+            exc_type = type(error)
+            exc_value = error
+            tb = error.__traceback__
+        span.__exit__(exc_type, exc_value, tb)
+
+    async def post_graph_execute(
+        self,
+        run_id: str,
+        graph: h_graph.FunctionGraph,
+        success: bool,
+        error: Optional[Exception],
+        results: Optional[Dict[str, Any]],
+    ) -> None:
+        span = self.run_span_cache[run_id]
+        exc_type = None
+        exc_value = None
+        tb = None
+        if error is not None:
+            exc_type = type(error)
+            exc_value = error
+            tb = error.__traceback__
+        span.__exit__(exc_type, exc_value, tb)
+        del self.run_span_cache[run_id]
+        del self.node_span_cache[run_id]
+        del self.task_span_cache[run_id]
