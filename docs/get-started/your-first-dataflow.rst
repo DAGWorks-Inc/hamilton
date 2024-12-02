@@ -72,8 +72,11 @@ To actually run the dataflow, we'll need to write :doc:`a driver <../concepts/dr
 
     import pandas as pd
 
+    # We add this to speed up running things if you have a lot in your python environment.
+    from hamilton import registry; registry.disable_autoload()
+    from hamilton import driver, base
     import my_functions  # we import the module here!
-    from hamilton import driver
+
 
     logger = logging.getLogger(__name__)
     logging.basicConfig(stream=sys.stdout)
@@ -86,10 +89,14 @@ To actually run the dataflow, we'll need to write :doc:`a driver <../concepts/dr
             'signups': pd.Series([1, 10, 50, 100, 200, 400], index=index),
             'spend': pd.Series([10, 10, 20, 40, 40, 50], index=index),
         }
-        # we need to tell hamilton where to load function definitions from
-        config = {} # we don't have any configuration or invariant data for this example.
-        dr = driver.Driver(config, my_functions)  # can pass in multiple modules
-        # we need to specify what we want in the final dataframe.
+        dr = (
+          driver.Builder()
+            .with_config({})  # we don't have any configuration or invariant data for this example.
+            .with_modules(my_functions)  # we need to tell hamilton where to load function definitions from
+            .with_adapters(base.PandasDataFrameResult())  # we want a pandas dataframe as output
+            .build()
+        )
+        # we need to specify what we want in the final dataframe (these could be function pointers).
         output_columns = [
             'spend',
             'signups',
@@ -99,7 +106,7 @@ To actually run the dataflow, we'll need to write :doc:`a driver <../concepts/dr
         # let's create the dataframe!
         df = dr.execute(output_columns, inputs=initial_columns)
         # `pip install sf-hamilton[visualization]` earlier you can also do
-        # dr.visualize_execution(output_columns,'./my_dag.dot', {})
+        # dr.visualize_execution(output_columns,'./my_dag.png', {})
         print(df)
 
 Run the script with the following command:
@@ -122,3 +129,8 @@ Not only is your spend to signup ratio decreasing exponentially (your product is
 successfully run your first Hamilton Dataflow. Kudos!
 
 See, wasn't that quick and easy?
+
+Note: if you're ever like "why are things taking a while to execute?", then you might have too much
+in your python environment and Hamilton is auto-loading all the extensions. You can disable this by
+setting the environment variable ``HAMILTON_AUTOLOAD_EXTENSIONS=0`` or programmatically via
+``from hamilton import registry; registry.disable_autoload()`` - for more see :doc:`../how-tos/extensions-autoloading`.
