@@ -155,7 +155,7 @@ class _DDOGTracerImpl:
                     )
         tags = node_tags.copy()
         tags["hamilton.node_name"] = node_name
-        new_span.set_tags(DDOGTracer._sanitize_tags(tags=tags))
+        new_span.set_tags(self._sanitize_tags(tags=tags))
         self.node_span_cache[run_id][(task_id, node_name)] = new_span
 
     def run_after_node_execution(
