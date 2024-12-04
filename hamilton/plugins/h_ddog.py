@@ -20,6 +20,15 @@ except ImportError as e:
 
 
 class _DDOGTracerImpl:
+    """Implementation class for DDOGTracer and AsyncDDOGTracer functionality.
+
+    This class encapsulates the core logic for Datadog tracing within Hamilton's lifecycle hooks.
+    It provides methods to handle the tracing operations required before and after the execution
+    of graphs, nodes, and tasks. The DDOGTracer and AsyncDDOGTracer classes are composed of this implementation class,
+    due to the differences in their base lifecycle classes (sync vs async). This class allows sharing logic between the
+    two without duplicating code or interfering with the base classes they inherit from.
+    """
+
     def __init__(self, root_name: str, include_causal_links: bool = False, service: str = None):
         self.root_name = root_name
         self.service = service
@@ -106,6 +115,7 @@ class _DDOGTracerImpl:
         :param run_id: ID of the run
         :param future_kwargs: reserved for future keyword arguments/backwards compatibility.
         """
+        # This returns None if there's no active context and works as a no-op, otherwise we tie this span to a parent.
         current_context = tracer.current_trace_context()
         span = tracer.start_span(
             name=self.root_name, child_of=current_context, activate=True, service=self.service
