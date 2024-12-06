@@ -61,6 +61,8 @@ Multiple companies are doing cool stuff with Hamilton! Come chat with members of
 
 * **Wealth.com** - Async Python LLM document processing pipelines
 * **Wren.ai** - Async RAG pipelines
+* **Oxehealth** - Multi-modal prediction
+* **PupPilot** - Async python LLM transcript processing pipelines
 * **Stitch Fix** — Time series forecasting
 * **British cycling** — Telemetry analysis
 * **Joby** - Flight data processing
@@ -80,3 +82,44 @@ Multiple companies are doing cool stuff with Hamilton! Come chat with members of
 * **Capitec Bank** - Financial decisions
 * **Best Egg** - Feature engineering
 * **RTV Euro AGD** - General feature engineering & machine learning
+
+# Testimonials
+
+<link rel="stylesheet" type="text/css" href="_static/testimonials.css">
+<div class="testimonial-container">
+        <div class="testimonial-card">
+            <div class="testimonial-content">
+                <p>"Hamilton provides a modular and compatible framework that has significantly empowered our data science team. We've been able to build robust and flexible data pipelines with ease. The documentation is thorough and regularly updated... Even with no prior experience with the package, our team successfully migrated one of our legacy data pipelines to the Hamilton structure within a month. This transition has greatly enhanced our productivity, enabling us to focus more on feature engineering and model iteration while Hamilton's DAG approach seamlessly manages data lineage.<br/>I highly recommend Hamilton to data professionals looking for a reliable, standardized solution for creating and managing data pipelines."</p>
+                <h4>Yuan Liu</h4>
+                <span>DS, Kora Financial</span>
+            </div>
+        </div>
+        <div class="testimonial-card">
+            <div class="testimonial-content">
+                <p>"How (with good software practices) do you orchestrate a system of asynchronous LLM calls, but where some of them depend on others? How do you build such a system so that it’s modular and testable? At wealth.com we've selected Hamilton to help us solve these problems and others. And today our product, Ester AI, an AI legal assistant that extracts information from estate planning documents, is running in production with Hamilton under the hood."</p>
+                <h4>Kyle Pounder</h4>
+                <span>CTO, Wealth.com</span>
+            </div>
+        </div>
+        <div class="testimonial-card">
+            <div class="testimonial-content">
+                <p>"Hamilton is simplicity. Its declarative approach to defining pipelines (as well as the UI to visualize them) makes testing and modifying the code easy, and onboarding is quick and painless. Since using Hamilton, we have improved our efficiency of both developing new functionality and onboarding new developers to work on the code. We deliver solutions more quickly than before."</p>
+                <h4>Michał Siedlaczek</h4>
+                <span>Senior DS/SWE, IBM</span>
+            </div>
+        </div>
+        <div class="testimonial-card">
+            <div class="testimonial-content">
+                <p>"...The companion Hamilton UI has taken the value proposition up enormously with the ability to clearly show lineage & track execution times, covering a major part of our observability needs"</p>
+                <h4>Fran Boon</h4>
+                <span>Director, Oxehealth.com</span>
+            </div>
+        </div>
+        <div class="testimonial-card">
+            <div class="testimonial-content">
+                <p>"Many thanks to writing such a great library. We are very excited about it and very pleased with so many decisions you've made. 🙏"</p>
+                <h4>Louwrens</h4>
+                <span>Software Engineer, luoautomation.com</span>
+            </div>
+        </div>
+</div>
