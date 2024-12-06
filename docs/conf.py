@@ -25,6 +25,11 @@ html_theme_options = {
         "color-announcement-text": "#091E42",
     },
 }
+html_static_path = ["_static"]
+
+html_css_files = [
+    "testimonials.css",
+]
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
