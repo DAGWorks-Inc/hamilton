@@ -5,6 +5,7 @@ import inspect
 import typing
 from typing import Any, Callable, Collection, Dict, Tuple, Union
 
+import typing_extensions
 import typing_inspect
 
 from hamilton import node, registry
@@ -733,7 +734,7 @@ def _validate_extract_fields(fields: dict):
 class extract_fields(base.SingleNodeNodeTransformer):
     """Extracts fields from a dictionary of output."""
 
-    def __init__(self, fields: dict, fill_with: Any = None):
+    def __init__(self, fields: dict = None, fill_with: Any = None):
         """Constructor for a modifier that expands a single function into the following nodes:
 
         - n functions, each of which take in the original dict and output a specific field
@@ -745,7 +746,6 @@ class extract_fields(base.SingleNodeNodeTransformer):
         field value.
         """
         super(extract_fields, self).__init__()
-        _validate_extract_fields(fields)
         self.fields = fields
         self.fill_with = fill_with
 
@@ -759,13 +759,25 @@ class extract_fields(base.SingleNodeNodeTransformer):
         if typing_inspect.is_generic_type(output_type):
             base_type = typing_inspect.get_origin(output_type)
             if base_type == dict or base_type == Dict:
-                pass
+                _validate_extract_fields(self.fields)
             else:
                 raise base.InvalidDecoratorException(
                     f"For extracting fields, output type must be a dict or typing.Dict, not: {output_type}"
                 )
         elif output_type == dict:
-            pass
+            _validate_extract_fields(self.fields)
+        elif typing_extensions.is_typeddict(output_type):
+            if self.fields is None:
+                self.fields = typing.get_type_hints(output_type)
+                _validate_extract_fields(self.fields)
+            else:
+                # check that fields is a subset of TypedDict
+                typed_dict_fields = typing.get_type_hints(output_type)
+                for k, v in self.fields.items():
+                    if typed_dict_fields.get(k, None) != v:
+                        raise base.InvalidDecoratorException(
+                            f"Error {self.fields} did not match a subset of the TypedDict annotation's fields {typed_dict_fields}."
+                        )
         else:
             raise base.InvalidDecoratorException(
                 f"For extracting fields, output type must be a dict or typing.Dict, not: {output_type}"
