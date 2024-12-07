@@ -423,7 +423,29 @@ class subdag(base.NodeCreator):
 
     def generate_nodes(self, fn: Callable, configuration: Dict[str, Any]) -> Collection[node.Node]:
         # Resolve all nodes from passed in functions
-        resolved_config = dict(configuration, **self.config)
+        # if self.config has source() or value() in it, we need to resolve it
+        sources_to_map = {}
+        values_to_include = {}
+        for key, value in self.config.items():
+            if isinstance(value, dependencies.UpstreamDependency):
+                sources_to_map[key] = value.source
+            elif isinstance(value, dependencies.LiteralDependency):
+                values_to_include[key] = value.value
+        plain_configs = {
+            k: v
+            for k, v in self.config.items()
+            if k not in sources_to_map and k not in values_to_include
+        }
+        resolved_config = dict(configuration, **plain_configs, **values_to_include)
+        # override any values from sources
+        for key, source in sources_to_map.items():
+            try:
+                resolved_config[key] = resolved_config[source]
+            except KeyError as e:
+                raise InvalidDecoratorException(
+                    f"Source {source} was not found in the configuration. This is required for the {fn.__name__} subdag."
+                ) from e
+        # resolved_config = dict(configuration, **self.config)
         nodes = self.collect_nodes(config=resolved_config, subdag_functions=self.subdag_functions)
         # Derive the namespace under which all these nodes will live
         namespace = self._derive_namespace(fn)
