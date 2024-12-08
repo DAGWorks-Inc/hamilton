@@ -771,7 +771,7 @@ class extract_fields(base.SingleNodeNodeTransformer):
                 self.fields = typing.get_type_hints(output_type)
                 _validate_extract_fields(self.fields)
             else:
-                # check that fields is a subset of TypedDict
+                # check that fields is a subset of TypedDict that is defined
                 typed_dict_fields = typing.get_type_hints(output_type)
                 for k, v in self.fields.items():
                     if typed_dict_fields.get(k, None) != v:
