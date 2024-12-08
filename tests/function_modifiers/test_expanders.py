@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -313,6 +313,15 @@ def test_extract_fields_constructor_happy(fields):
     expanders._validate_extract_fields(fields)
 
 
+class MyDict(TypedDict):
+    test: int
+    test2: str
+
+
+class MyDictBad(TypedDict):
+    test2: str
+
+
 @pytest.mark.parametrize(
     "return_type",
     [
@@ -320,6 +329,7 @@ def test_extract_fields_constructor_happy(fields):
         Dict,
         Dict[str, str],
         Dict[str, Any],
+        MyDict,
     ],
 )
 def test_extract_fields_validate_happy(return_type):
@@ -330,7 +340,10 @@ def test_extract_fields_validate_happy(return_type):
     annotation.validate(return_dict)
 
 
-@pytest.mark.parametrize("return_type", [(int), (list), (np.ndarray), (pd.DataFrame)])
+@pytest.mark.parametrize(
+    "return_type",
+    [(int), (list), (np.ndarray), (pd.DataFrame), (MyDictBad)],
+)
 def test_extract_fields_validate_errors(return_type):
     def return_dict() -> return_type:
         return {}
@@ -338,6 +351,24 @@ def test_extract_fields_validate_errors(return_type):
     annotation = function_modifiers.extract_fields({"test": int})
     with pytest.raises(hamilton.function_modifiers.base.InvalidDecoratorException):
         annotation.validate(return_dict)
+
+
+def test_extract_fields_typeddict_empty_fields():
+    def return_dict() -> MyDict:
+        return {}
+
+    # don't need fields for TypedDict
+    annotation = function_modifiers.extract_fields()
+    annotation.validate(return_dict)
+
+
+def test_extract_fields_typeddict_subset():
+    def return_dict() -> MyDict:
+        return {}
+
+    # test that a subset of fields is fine
+    annotation = function_modifiers.extract_fields({"test2": str})
+    annotation.validate(return_dict)
 
 
 def test_valid_extract_fields():
