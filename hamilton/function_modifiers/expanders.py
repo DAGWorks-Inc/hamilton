@@ -769,7 +769,6 @@ class extract_fields(base.SingleNodeNodeTransformer):
         elif typing_extensions.is_typeddict(output_type):
             if self.fields is None:
                 self.fields = typing.get_type_hints(output_type)
-                _validate_extract_fields(self.fields)
             else:
                 # check that fields is a subset of TypedDict that is defined
                 typed_dict_fields = typing.get_type_hints(output_type)
@@ -778,6 +777,7 @@ class extract_fields(base.SingleNodeNodeTransformer):
                         raise base.InvalidDecoratorException(
                             f"Error {self.fields} did not match a subset of the TypedDict annotation's fields {typed_dict_fields}."
                         )
+            _validate_extract_fields(self.fields)
         else:
             raise base.InvalidDecoratorException(
                 f"For extracting fields, output type must be a dict or typing.Dict, not: {output_type}"
