@@ -10,6 +10,7 @@ from hamilton import ad_hoc_utils, graph
 from hamilton.function_modifiers import (
     InvalidDecoratorException,
     config,
+    configuration,
     parameterized_subdag,
     recursive,
     subdag,
@@ -413,7 +414,7 @@ def test_nested_subdag_with_config_remapping():
     def outer_subdag_1(inner_subdag: Tuple[int, int]) -> int:
         return sum(inner_subdag)
 
-    @subdag(inner_subdag, inputs={"input_2": value(3)}, config={"broken": source("broken2")})
+    @subdag(inner_subdag, inputs={"input_2": value(3)}, config={"broken": configuration("broken2")})
     def outer_subdag_2(inner_subdag: Tuple[int, int]) -> int:
         return sum(inner_subdag)
 
@@ -454,7 +455,11 @@ def test_nested_subdag_with_config_remapping_missing_error():
     def outer_subdag_1(inner_subdag: Tuple[int, int]) -> int:
         return sum(inner_subdag)
 
-    @subdag(inner_subdag, inputs={"input_2": value(3)}, config={"broken": source("broken_missing")})
+    @subdag(
+        inner_subdag,
+        inputs={"input_2": value(3)},
+        config={"broken": configuration("broken_missing")},
+    )
     def outer_subdag_2(inner_subdag: Tuple[int, int]) -> int:
         return sum(inner_subdag)
 
@@ -466,6 +471,30 @@ def test_nested_subdag_with_config_remapping_missing_error():
     full_module = ad_hoc_utils.create_temporary_module(outer_subdag_1, outer_subdag_2, sum_all)
     with pytest.raises(InvalidDecoratorException):
         graph.FunctionGraph.from_modules(full_module, config={"broken2": False})
+
+
+@pytest.mark.parametrize(
+    "configuration,fields,expected",
+    [
+        ({"a": 1, "b": 2}, {}, {"a": 1, "b": 2}),
+        ({"a": 1, "b": 2}, {"c": value(3)}, {"a": 1, "b": 2, "c": 3}),
+        (
+            {"a": 1, "b": 2},
+            {"c": value(3), "d": configuration("a")},
+            {"a": 1, "b": 2, "c": 3, "d": 1},
+        ),
+    ],
+)
+def test_resolve_subdag_configuration_happy(configuration, fields, expected):
+    actual = recursive._resolve_subdag_configuration(configuration, fields, "test")
+    assert actual == expected
+
+
+def test_resolve_subdag_configuration_bad_mapping():
+    _configuration = {"a": 1, "b": 2}
+    fields = {"c": value(3), "d": configuration("e")}
+    with pytest.raises(InvalidDecoratorException):
+        recursive._resolve_subdag_configuration(_configuration, fields, "test")
 
 
 def test_subdag_with_external_nodes_input():

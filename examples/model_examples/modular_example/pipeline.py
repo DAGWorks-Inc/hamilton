@@ -5,7 +5,7 @@ import inference
 import pandas as pd
 import train
 
-from hamilton.function_modifiers import extract_fields, source, subdag
+from hamilton.function_modifiers import configuration, extract_fields, source, subdag
 
 
 @extract_fields({"fit_model": Any, "training_prediction": pd.DataFrame})
@@ -18,7 +18,7 @@ from hamilton.function_modifiers import extract_fields, source, subdag
         "model_params": source("model_params"),
     },
     config={
-        "model": source("model"),  # not strictly required but allows us to remap.
+        "model": configuration("train_model_type"),  # not strictly required but allows us to remap.
     },
 )
 def trained_pipeline(fit_model: Any, predicted_data: pd.DataFrame) -> dict:

@@ -6,7 +6,7 @@ from hamilton import driver
 def run():
     dr = (
         driver.Builder()
-        .with_config({"model": "RandomForest", "model_params": {"n_estimators": 100}})
+        .with_config({"train_model_type": "RandomForest", "model_params": {"n_estimators": 100}})
         .with_modules(pipeline)
         .build()
     )
