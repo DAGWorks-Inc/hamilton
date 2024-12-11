@@ -8,7 +8,7 @@ from typing import Any, Callable, Collection, Dict, Tuple, Union
 import typing_extensions
 import typing_inspect
 
-from hamilton import node, registry
+from hamilton import htypes, node, registry
 from hamilton.dev_utils import deprecation
 from hamilton.function_modifiers import base
 from hamilton.function_modifiers.dependencies import (
@@ -772,8 +772,15 @@ class extract_fields(base.SingleNodeNodeTransformer):
             else:
                 # check that fields is a subset of TypedDict that is defined
                 typed_dict_fields = typing.get_type_hints(output_type)
-                for k, v in self.fields.items():
-                    if typed_dict_fields.get(k, None) != v:
+                for field_name, field_type in self.fields.items():
+                    expected_type = typed_dict_fields.get(field_name, None)
+                    if expected_type == field_type:
+                        pass  # we're definitely good
+                    elif expected_type is not None and htypes.custom_subclass_check(
+                        field_type, expected_type
+                    ):
+                        pass
+                    else:
                         raise base.InvalidDecoratorException(
                             f"Error {self.fields} did not match a subset of the TypedDict annotation's fields {typed_dict_fields}."
                         )

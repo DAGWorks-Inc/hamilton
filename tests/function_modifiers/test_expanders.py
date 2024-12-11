@@ -340,6 +340,41 @@ def test_extract_fields_validate_happy(return_type):
     annotation.validate(return_dict)
 
 
+class SomeObject:
+    pass
+
+
+class InheritedObject(SomeObject):
+    pass
+
+
+class MyDictInheritance(TypedDict):
+    test: SomeObject
+    test2: str
+
+
+class MyDictInheritanceBadCase(TypedDict):
+    test: InheritedObject
+    test2: str
+
+
+def test_extract_fields_validate_happy_inheritance():
+    def return_dict() -> MyDictInheritance:
+        return {}
+
+    annotation = function_modifiers.extract_fields({"test": InheritedObject})
+    annotation.validate(return_dict)
+
+
+def test_extract_fields_validate_not_subclass():
+    def return_dict() -> MyDictInheritanceBadCase:
+        return {}
+
+    annotation = function_modifiers.extract_fields({"test": SomeObject})
+    with pytest.raises(base.InvalidDecoratorException):
+        annotation.validate(return_dict)
+
+
 @pytest.mark.parametrize(
     "return_type",
     [(int), (list), (np.ndarray), (pd.DataFrame), (MyDictBad)],
