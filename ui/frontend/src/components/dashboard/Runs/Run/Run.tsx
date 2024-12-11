@@ -147,6 +147,13 @@ const VariableTable = (props: {
                         <code>{variableKey}</code>
                       </td>
                       {values.map((value, i) => {
+                        let json_string = "";
+                        if (value) {
+                          json_string = JSON.stringify(value, null, 2);
+                          if (json_string.length > 10000) {
+                            json_string = json_string.substring(0, 10000) + " (truncated)";
+                          }
+                        }
                         return (
                           <td
                             onMouseEnter={() => {
@@ -175,7 +182,7 @@ const VariableTable = (props: {
                           >
                             <div className="max-w-64 max-h-48 overflow-scroll scrollbar-hide">
                               <code className="whitespace-pre-wrap truncate">
-                                {value?.toString()}
+                                {json_string}
                               </code>
                             </div>
                           </td>
