@@ -16,6 +16,7 @@ class ParametrizedDependencySource(enum.Enum):
     UPSTREAM = "upstream"
     GROUPED_LIST = "grouped_list"
     GROUPED_DICT = "grouped_dict"
+    CONFIGURATION = "configuration"
 
 
 class ParametrizedDependency:
@@ -42,6 +43,14 @@ class UpstreamDependency(SingleDependency):
 
     def get_dependency_type(self) -> ParametrizedDependencySource:
         return ParametrizedDependencySource.UPSTREAM
+
+
+@dataclasses.dataclass
+class ConfigDependency(SingleDependency):
+    source: str
+
+    def get_dependency_type(self) -> ParametrizedDependencySource:
+        return ParametrizedDependencySource.CONFIGURATION
 
 
 class GroupedDependency(ParametrizedDependency, abc.ABC):
@@ -123,8 +132,8 @@ def value(literal_value: Any) -> LiteralDependency:
 
     E.G. value("foo") means that the value is actually the string value "foo".
 
-    :param literal_value: Python literal value to use. :return: A LiteralDependency object -- a
-        signifier to the internal framework of the dependency type.
+    :param literal_value: Python literal value to use.
+    :return: A LiteralDependency object -- a signifier to the internal framework of the dependency type.
     """
     if isinstance(literal_value, LiteralDependency):
         return literal_value
@@ -138,12 +147,23 @@ def source(dependency_on: Any) -> UpstreamDependency:
     be assigned the value that "foo" outputs.
 
     :param dependency_on: Upstream function (i.e. node) to come from.
-    :return: An
-        UpstreamDependency object -- a signifier to the internal framework of the dependency type.
+    :return: An UpstreamDependency object -- a signifier to the internal framework of the dependency type.
     """
     if isinstance(dependency_on, UpstreamDependency):
         return dependency_on
     return UpstreamDependency(source=dependency_on)
+
+
+def configuration(dependency_on: str) -> ConfigDependency:
+    """Specifies that a parameterized dependency comes from the global `config` passed in.
+
+    This means that it comes from a global configuration key value. E.G. config("foo") means that it should
+    be assigned the value that the "foo" key in global configuration passed to Hamilton maps to.
+
+    :param dependency_on: name of the configuration key to pull from.
+    :return: An ConfigDependency object -- a signifier to the internal framework of the dependency type.
+    """
+    return ConfigDependency(source=dependency_on)
 
 
 def _validate_group_params(

@@ -10,6 +10,8 @@ from hamilton import ad_hoc_utils, graph
 from hamilton.function_modifiers import (
     InvalidDecoratorException,
     config,
+    configuration,
+    group,
     parameterized_subdag,
     recursive,
     subdag,
@@ -390,6 +392,122 @@ def test_nested_subdag_with_config():
     assert res["sum_all"] == sum_all(
         outer_subdag_1(inner_subdag(bar(2), foo(10))), outer_subdag_2(inner_subdag(bar(2), foo(3)))
     )
+
+
+def test_nested_subdag_with_config_remapping():
+    """Tests that we can remap config values and source and value are resolved correctly."""
+
+    def bar(input_1: int) -> int:
+        return input_1 + 1
+
+    @config.when(broken=False)
+    def foo(input_2: int) -> int:
+        return input_2 + 1
+
+    @subdag(
+        foo,
+        bar,
+    )
+    def inner_subdag(foo: int, bar: int) -> Tuple[int, int]:
+        return foo, bar
+
+    @subdag(inner_subdag, inputs={"input_2": value(10)}, config={"broken": value(False)})
+    def outer_subdag_1(inner_subdag: Tuple[int, int]) -> int:
+        return sum(inner_subdag)
+
+    @subdag(inner_subdag, inputs={"input_2": value(3)}, config={"broken": configuration("broken2")})
+    def outer_subdag_2(inner_subdag: Tuple[int, int]) -> int:
+        return sum(inner_subdag)
+
+    def sum_all(outer_subdag_1: int, outer_subdag_2: int) -> int:
+        return outer_subdag_1 + outer_subdag_2
+
+    # we only need to generate from the outer subdag
+    # as it refers to the inner one
+    full_module = ad_hoc_utils.create_temporary_module(outer_subdag_1, outer_subdag_2, sum_all)
+    fg = graph.FunctionGraph.from_modules(full_module, config={"broken2": False})
+    assert "outer_subdag_1" in fg.nodes
+    assert "outer_subdag_2" in fg.nodes
+    res = fg.execute(nodes=[fg.nodes["sum_all"]], inputs={"input_1": 2})
+    # This is effectively the function graph
+    assert res["sum_all"] == sum_all(
+        outer_subdag_1(inner_subdag(bar(2), foo(10))), outer_subdag_2(inner_subdag(bar(2), foo(3)))
+    )
+
+
+def test_nested_subdag_with_config_remapping_missing_error():
+    """Tests that we error if we can't remap a config value."""
+
+    def bar(input_1: int) -> int:
+        return input_1 + 1
+
+    @config.when(broken=False)
+    def foo(input_2: int) -> int:
+        return input_2 + 1
+
+    @subdag(
+        foo,
+        bar,
+    )
+    def inner_subdag(foo: int, bar: int) -> Tuple[int, int]:
+        return foo, bar
+
+    @subdag(inner_subdag, inputs={"input_2": value(10)}, config={"broken": value(False)})
+    def outer_subdag_1(inner_subdag: Tuple[int, int]) -> int:
+        return sum(inner_subdag)
+
+    @subdag(
+        inner_subdag,
+        inputs={"input_2": value(3)},
+        config={"broken": configuration("broken_missing")},
+    )
+    def outer_subdag_2(inner_subdag: Tuple[int, int]) -> int:
+        return sum(inner_subdag)
+
+    def sum_all(outer_subdag_1: int, outer_subdag_2: int) -> int:
+        return outer_subdag_1 + outer_subdag_2
+
+    # we only need to generate from the outer subdag
+    # as it refers to the inner one
+    full_module = ad_hoc_utils.create_temporary_module(outer_subdag_1, outer_subdag_2, sum_all)
+    with pytest.raises(InvalidDecoratorException):
+        graph.FunctionGraph.from_modules(full_module, config={"broken2": False})
+
+
+@pytest.mark.parametrize(
+    "configuration,fields,expected",
+    [
+        ({"a": 1, "b": 2}, {}, {"a": 1, "b": 2}),
+        ({"a": 1, "b": 2}, {"c": value(3)}, {"a": 1, "b": 2, "c": 3}),
+        (
+            {"a": 1, "b": 2},
+            {"c": value(3), "d": configuration("a")},
+            {"a": 1, "b": 2, "c": 3, "d": 1},
+        ),
+    ],
+)
+def test_resolve_subdag_configuration_happy(configuration, fields, expected):
+    actual = recursive._resolve_subdag_configuration(configuration, fields, "test")
+    assert actual == expected
+
+
+def test_resolve_subdag_configuration_bad_mapping():
+    _configuration = {"a": 1, "b": 2}
+    fields = {"c": value(3), "d": configuration("e")}
+    with pytest.raises(InvalidDecoratorException):
+        recursive._resolve_subdag_configuration(_configuration, fields, "test")
+
+
+def test_resolve_subdag_configuration_flag_incorrect_source_group_deps():
+    _configuration = {"a": 1, "b": 2}
+    with pytest.raises(InvalidDecoratorException):
+        recursive._resolve_subdag_configuration(
+            _configuration, {"c": value(3), "d": source("e")}, "test"
+        )
+    with pytest.raises(InvalidDecoratorException):
+        recursive._resolve_subdag_configuration(
+            _configuration, {"c": value(3), "d": group(source("e"))}, "test"
+        )
 
 
 def test_subdag_with_external_nodes_input():

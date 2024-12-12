@@ -36,6 +36,7 @@ hamilton_exclude = configuration.hamilton_exclude()
 value = dependencies.value
 source = dependencies.source
 group = dependencies.group
+configuration = dependencies.configuration
 
 # These aren't strictly part of the API but we should have them here for safety
 LiteralDependency = dependencies.LiteralDependency
