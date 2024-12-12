@@ -131,6 +131,43 @@ def _validate_config_inputs(config: Dict[str, Any], inputs: Dict[str, Any]):
             )
 
 
+def _resolve_subdag_configuration(
+    configuration: Dict[str, Any], fields: Dict[str, Any], function_name: str
+) -> Dict[str, Any]:
+    """Resolves the configuration for a subdag.
+
+    :param configuration: the Hamilton configuration
+    :param fields: the fields passed to the subdag decorator
+    :return: resolved configuration to use for this subdag.
+    """
+    sources_to_map = {}
+    values_to_include = {}
+    for key, value in fields.items():
+        if isinstance(value, dependencies.ConfigDependency):
+            sources_to_map[key] = value.source
+        elif isinstance(value, dependencies.LiteralDependency):
+            values_to_include[key] = value.value
+        elif isinstance(value, (dependencies.GroupedDependency, dependencies.SingleDependency)):
+            raise InvalidDecoratorException(
+                f"`{value}` is not allowed in the config= part of the subdag decorator. "
+                "Please use `configuration()` or `value()` or literal python values."
+            )
+    plain_configs = {
+        k: v for k, v in fields.items() if k not in sources_to_map and k not in values_to_include
+    }
+    resolved_config = dict(configuration, **plain_configs, **values_to_include)
+
+    # override any values from sources
+    for key, source in sources_to_map.items():
+        try:
+            resolved_config[key] = resolved_config[source]
+        except KeyError as e:
+            raise InvalidDecoratorException(
+                f"Source {source} was not found in the configuration. This is required for the {function_name} subdag."
+            ) from e
+    return resolved_config
+
+
 NON_FINAL_TAGS = {NodeTransformer.NON_FINAL_TAG: True}
 
 
@@ -423,7 +460,9 @@ class subdag(base.NodeCreator):
 
     def generate_nodes(self, fn: Callable, configuration: Dict[str, Any]) -> Collection[node.Node]:
         # Resolve all nodes from passed in functions
-        resolved_config = dict(configuration, **self.config)
+        # if self.config has configuration() or value() in it, we need to resolve it
+        resolved_config = _resolve_subdag_configuration(configuration, self.config, fn.__name__)
+        # resolved_config = dict(configuration, **self.config)
         nodes = self.collect_nodes(config=resolved_config, subdag_functions=self.subdag_functions)
         # Derive the namespace under which all these nodes will live
         namespace = self._derive_namespace(fn)
