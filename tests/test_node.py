@@ -60,7 +60,7 @@ def test_node_handles_annotated():
 
     node = Node.from_fn(annotated_func)
     assert node.name == "annotated_func"
-    if major == 2 and minor > 1:  # greater that 2.1
+    if major == 2 and minor > 1 and sys.version_info > (3, 9):  # greater that 2.1
         expected = {
             "first": (
                 Annotated[np.ndarray[tuple[int, ...], np.dtype[np.float64]], Literal["N"]],
@@ -68,6 +68,7 @@ def test_node_handles_annotated():
             ),
             "other": (float, DependencyType.OPTIONAL),
         }
+        expected_type = Annotated[np.ndarray[tuple[int, ...], np.dtype[np.float64]], Literal["N"]]
     else:
         expected = {
             "first": (
@@ -76,8 +77,9 @@ def test_node_handles_annotated():
             ),
             "other": (float, DependencyType.OPTIONAL),
         }
+        expected_type = Annotated[np.ndarray[Any, np.dtype[np.float64]], Literal["N"]]
     assert node.input_types == expected
-    assert node.type == Annotated[np.ndarray[tuple[int, ...], np.dtype[np.float64]], Literal["N"]]
+    assert node.type == expected_type
 
 
 @pytest.mark.parametrize(
