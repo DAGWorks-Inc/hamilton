@@ -11,6 +11,7 @@ from hamilton.function_modifiers import (
     InvalidDecoratorException,
     config,
     configuration,
+    group,
     parameterized_subdag,
     recursive,
     subdag,
@@ -495,6 +496,18 @@ def test_resolve_subdag_configuration_bad_mapping():
     fields = {"c": value(3), "d": configuration("e")}
     with pytest.raises(InvalidDecoratorException):
         recursive._resolve_subdag_configuration(_configuration, fields, "test")
+
+
+def test_resolve_subdag_configuration_flag_incorrect_source_group_deps():
+    _configuration = {"a": 1, "b": 2}
+    with pytest.raises(InvalidDecoratorException):
+        recursive._resolve_subdag_configuration(
+            _configuration, {"c": value(3), "d": source("e")}, "test"
+        )
+    with pytest.raises(InvalidDecoratorException):
+        recursive._resolve_subdag_configuration(
+            _configuration, {"c": value(3), "d": group(source("e"))}, "test"
+        )
 
 
 def test_subdag_with_external_nodes_input():

@@ -147,6 +147,11 @@ def _resolve_subdag_configuration(
             sources_to_map[key] = value.source
         elif isinstance(value, dependencies.LiteralDependency):
             values_to_include[key] = value.value
+        elif isinstance(value, (dependencies.GroupedDependency, dependencies.SingleDependency)):
+            raise InvalidDecoratorException(
+                f"`{value}` is not allowed in the config= part of the subdag decorator. "
+                "Please use `configuration()` or `value()` or literal python values."
+            )
     plain_configs = {
         k: v for k, v in fields.items() if k not in sources_to_map and k not in values_to_include
     }
