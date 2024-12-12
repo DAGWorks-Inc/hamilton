@@ -31,4 +31,4 @@ By using `@subdag` we namespace the reuse of the modules and that's how we can
 reuse the same functions in different pipelines.
 
 See:
-![single_pipeline](my_dag.png)
+![single_pipeline](my_dag_annotated.png)
