@@ -34,6 +34,7 @@ def test_xgboost_model_json_writer(
     assert metadata[FILE_METADATA]["path"] == str(model_path)
 
 
+@pytest.mark.xfail(condition=True, reason="scikitlearn library incompatibility issue", strict=False)
 def test_xgboost_model_json_reader(
     fitted_xgboost_model: xgboost.XGBModel, tmp_path: pathlib.Path
 ) -> None:
