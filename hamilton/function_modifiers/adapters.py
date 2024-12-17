@@ -17,6 +17,7 @@ from hamilton.function_modifiers.dependencies import (
     ParametrizedDependency,
     UpstreamDependency,
 )
+from hamilton.htypes import custom_subclass_check
 from hamilton.io.data_adapters import AdapterCommon, DataLoader, DataSaver
 from hamilton.node import DependencyType
 from hamilton.registry import LOADER_REGISTRY, SAVER_REGISTRY
@@ -748,9 +749,16 @@ class dataloader(NodeCreator):
             )
         # check that the second is a dict
         second_arg = typing_inspect.get_args(return_annotation)[1]
-        if not (second_arg == dict or second_arg == Dict):
+        if not (custom_subclass_check(second_arg, dict)):
             raise InvalidDecoratorException(
                 f"Function: {fn.__qualname__} must return a tuple of type (SOME_TYPE, dict)."
+            )
+        second_arg_params = typing_inspect.get_args(second_arg)
+        if (
+            len(second_arg_params) > 0 and not second_arg_params[0] == str
+        ):  # metadata must have string keys
+            raise InvalidDecoratorException(
+                f"Function: {fn.__qualname__} must return a tuple of type (SOME_TYPE, dict[str, ...]). Instead got (SOME_TYPE, dict[{second_arg_params[0]}, ...]"
             )
 
     def generate_nodes(self, fn: Callable, config) -> List[node.Node]:
