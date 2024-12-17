@@ -86,8 +86,8 @@ def get_response(prj_id, spend, signups, output_columns):
         tags={"environment": "R&D", "team": "MY_TEAM", "version": "Beta"},
     )
     input_columns = {
-        "signups": pd.Series(spend),
-        "spend": pd.Series(signups),
+        "signups": pd.Series(signups),
+        "spend": pd.Series(spend),
     }
     dr = (
         driver.Builder()
