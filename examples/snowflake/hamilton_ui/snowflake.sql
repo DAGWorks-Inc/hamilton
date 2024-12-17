@@ -1,4 +1,5 @@
-https://medium.com/@pkantyka/observability-of-python-code-and-application-logic-with-hamilton-ui-on-snowflake-container-services-a26693b46635
+-- For more details visit:
+-- https://medium.com/@pkantyka/observability-of-python-code-and-application-logic-with-hamilton-ui-on-snowflake-container-services-a26693b46635
 
 CREATE SERVICE public.hamilton_ui
 IN COMPUTE POOL TEST_POOL

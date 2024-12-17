@@ -1,3 +1,15 @@
+"""
+This module:
+- Defines a flask app that listens for POST requests on /echo
+- the /echo command is invoked from a Snowflake SQL query
+- the /echo command calls a function get_response that is defined in this module
+- get_response uses Hamilton to execute a pipeline defined in my_functions.py
+- my_functions.py contains the functions that are used in the pipeline
+- the pipeline is executed with the input data from the Snowflake query
+- the output of the pipeline is returned to Snowflake
+- the Hamilton UI tracker is used to track the execution of the pipeline
+"""
+
 import logging
 import os
 import sys
@@ -13,7 +25,7 @@ import my_functions  # we import the module here!
 from hamilton import driver
 from hamilton_sdk import adapters
 
-# WRAPER CODE FOR SNOWFLAKE FUNCTION ######
+# WRAPPER CODE FOR SNOWFLAKE FUNCTION ######
 
 SERVICE_HOST = os.getenv("SERVER_HOST", "0.0.0.0")
 SERVICE_PORT = os.getenv("SERVER_PORT", 8080)
@@ -42,6 +54,7 @@ def readiness_probe():
 
 @app.post("/echo")
 def echo():
+    """This is the endpoint that Snowflake will call to run Hamilton code."""
     message = request.json
     logger.debug(f"Received request: {message}")
 
@@ -61,17 +74,18 @@ def echo():
     return response
 
 
-# END OF WRAPER CODE FOR SNOWFLAKE FUNCTION ######
+# END OF WRAPPER CODE FOR SNOWFLAKE FUNCTION ######
 
 
 def get_response(prj_id, spend, signups, output_columns):
+    """The function that is called from SQL on Snowflake."""
     tracker = adapters.HamiltonTracker(
         project_id=prj_id,
         username="admin",
         dag_name="MYDAG",
         tags={"environment": "R&D", "team": "MY_TEAM", "version": "Beta"},
     )
-    initial_columns = {  # load from actuals or wherever -- this is our initial data we use as input.
+    input_columns = {
         "signups": pd.Series(spend),
         "spend": pd.Series(signups),
     }
@@ -81,11 +95,11 @@ def get_response(prj_id, spend, signups, output_columns):
         .with_modules(
             my_functions
         )  # we need to tell hamilton where to load function definitions from
-        .with_adapters(tracker)  # we want a pandas dataframe as output
+        .with_adapters(tracker)  # we add the Hamilton UI tracker
         .build()
     )
 
-    df = dr.execute(output_columns, inputs=initial_columns)
+    df = dr.execute(output_columns, inputs=input_columns)
 
     serializable_df = {}
 
