@@ -697,19 +697,23 @@ def test_load_from_with_multiple_inputs():
 import sys
 
 if sys.version_info >= (3, 9):
-    dl_type = tuple[int, dict]
-    ds_type = dict
+    dict_ = dict
+    tuple_ = tuple
 else:
-    dl_type = Tuple[int, Dict]
-    ds_type = Dict
+    dict_ = Dict
+    tuple_ = Tuple
 
 
 # Mock functions for dataloader & datasaver testing
-def correct_dl_function(foo: int) -> dl_type:
+def correct_dl_function(foo: int) -> tuple_[int, dict_]:
     return 1, {}
 
 
-def correct_ds_function(data: float) -> ds_type:
+def correct_dl_function_with_subscripts(foo: int) -> tuple_[Dict[str, int], Dict[str, str]]:
+    return {"a": 1}, {"b": "c"}
+
+
+def correct_ds_function(data: float) -> dict_:
     return {}
 
 
@@ -721,12 +725,16 @@ def non_tuple_return_function() -> int:
     return 1
 
 
-def incorrect_tuple_length_function() -> Tuple[int]:
+def incorrect_tuple_length_function() -> tuple_[int]:
     return (1,)
 
 
-def incorrect_second_element_function() -> Tuple[int, list]:
+def incorrect_second_element_function() -> tuple_[int, list]:
     return 1, []
+
+
+def incorrect_dict_subscript() -> tuple_[int, Dict[int, str]]:
+    return 1, {1: "a"}
 
 
 incorrect_funcs = [
@@ -734,6 +742,7 @@ incorrect_funcs = [
     non_tuple_return_function,
     incorrect_tuple_length_function,
     incorrect_second_element_function,
+    incorrect_dict_subscript,
 ]
 
 
@@ -744,10 +753,23 @@ def test_dl_validate_incorrect_functions(func):
         dl.validate(func)
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9, 0),
+    reason="dataloader not guarenteed to work with subscripted tuples on 3.8",
+)
 def test_dl_validate_with_correct_function():
     dl = dataloader()
     try:
         dl.validate(correct_dl_function)
+    except InvalidDecoratorException:
+        # i.e. fail the test if there's an error
+        pytest.fail("validate() raised InvalidDecoratorException unexpectedly!")
+
+
+def test_dl_validate_with_subscripts():
+    dl = dataloader()
+    try:
+        dl.validate(correct_dl_function_with_subscripts)
     except InvalidDecoratorException:
         # i.e. fail the test if there's an error
         pytest.fail("validate() raised InvalidDecoratorException unexpectedly!")
