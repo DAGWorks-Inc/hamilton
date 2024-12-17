@@ -123,6 +123,12 @@ More extensive self-hosting documentation is in the works, e.g. Snowflake, Datab
 chart contribution!
 
 
+Running on Snowflake
+---------------------
+You can run the Hamilton UI on Snowflake Container Services. For a detailed guide, see the blog post
+`Observability of Python code and application logic with Hamilton UI on Snowflake Container Services <https://medium.com/@pkantyka/observability-of-python-code-and-application-logic-with-hamilton-ui-on-snowflake-container-services-a26693b46635>`_ by
+`Greg Kantyka <https://medium.com/@pkantyka>`_ and the `Hamilton Snowflake Example <https://github.com/DAGWorks-Inc/hamilton/tree/main/examples/snowflake/hamilton_ui>`_.
+
 -----------
 Get started
 -----------
