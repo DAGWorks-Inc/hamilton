@@ -19,6 +19,7 @@ from hamilton.function_modifiers.adapters import (
     resolve_kwargs,
 )
 from hamilton.function_modifiers.base import DefaultNodeCreator
+from hamilton.htypes import custom_subclass_check
 from hamilton.io.data_adapters import DataLoader, DataSaver
 from hamilton.io.default_data_loaders import JSONDataSaver
 from hamilton.registry import LOADER_REGISTRY
@@ -790,6 +791,18 @@ def test_dataloader():
         "hamilton.data_loader.node": "correct_dl_function",
         "hamilton.data_loader.source": "correct_dl_function",
     }
+
+
+def test_dataloader_future_annotations():
+    from tests.resources import nodes_with_future_annotation
+
+    fn_to_collect = nodes_with_future_annotation.sample_dataloader
+    fg = graph.create_function_graph(
+        ad_hoc_utils.create_temporary_module(fn_to_collect),
+        config={},
+    )
+    # the data loaded is a list
+    assert custom_subclass_check(fg["sample_dataloader"].type, list)
 
 
 def test_datasaver():

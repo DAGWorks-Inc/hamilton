@@ -733,7 +733,7 @@ class dataloader(NodeCreator):
 
     def validate(self, fn: Callable):
         """Validates that the output type is correctly annotated."""
-        return_annotation = inspect.signature(fn).return_annotation
+        return_annotation = typing.get_type_hints(fn).get("return")
         if return_annotation is inspect.Signature.empty:
             raise InvalidDecoratorException(
                 f"Function: {fn.__qualname__} must have a return annotation."
