@@ -1,6 +1,15 @@
 -- For more details visit:
 -- https://medium.com/@pkantyka/observability-of-python-code-and-application-logic-with-hamilton-ui-on-snowflake-container-services-a26693b46635
 
+CREATE OR REPLACE IMAGE REPOSITORY images;
+-- then docker build -t <repository_url>/snowflake-hamilton-ui .
+-- docker login <registry_hostname> -u <snowflake-username>
+-- docker push <repository_url>/snowflake-hamilton-ui
+SHOW IMAGES IN IMAGE REPOSITORY <name>;
+
+CREATE STAGE hamilton_base ENCRYPTION = (type = 'SNOWFLAKE_SSE');
+
+
 CREATE SERVICE public.hamilton_ui
 IN COMPUTE POOL TEST_POOL
 FROM SPECIFICATION $$
@@ -21,7 +30,7 @@ spec:
    - name: hamilton-basedir
      source: "@<db-name>.<schema-name>.hamilton_base"
   $$
-QUERY_WAREHOUSE = <warehause-name>
+QUERY_WAREHOUSE = <warehouse-name>
 ;
 
 CALL SYSTEM$GET_SERVICE_STATUS('<db-name>.<schema>.hamilton_ui');
