@@ -1,5 +1,5 @@
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List, Type
 
 from hamilton import registry
 
@@ -45,14 +45,39 @@ class FutureAdapter(base.BaseDoRemoteExecute, lifecycle.ResultBuilder):
 
     """
 
-    def __init__(self, max_workers: int = None, thread_name_prefix: str = ""):
+    def __init__(
+        self,
+        max_workers: int = None,
+        thread_name_prefix: str = "",
+        result_builder: lifecycle.ResultBuilder = None,
+    ):
         """Constructor.
         :param max_workers: The maximum number of threads that can be used to execute the given calls.
         :param thread_name_prefix: An optional name prefix to give our threads.
+        :param result_builder: Optional. Result builder to use for building the result.
         """
         self.executor = ThreadPoolExecutor(
             max_workers=max_workers, thread_name_prefix=thread_name_prefix
         )
+        self.result_builder = result_builder
+
+    def input_types(self) -> List[Type[Type]]:
+        """Gives the applicable types to this result builder.
+        This is optional for backwards compatibility, but is recommended.
+
+        :return: A list of types that this can apply to.
+        """
+        # since this wraps a potential result builder, expose the input types of the wrapped
+        # result builder doesn't make sense.
+        return [Any]
+
+    def output_type(self) -> Type:
+        """Returns the output type of this result builder
+        :return: the type that this creates
+        """
+        if self.result_builder:
+            return self.result_builder.output_type()
+        return Any
 
     def do_remote_execute(
         self,
@@ -81,4 +106,6 @@ class FutureAdapter(base.BaseDoRemoteExecute, lifecycle.ResultBuilder):
         for k, v in outputs.items():
             if isinstance(v, Future):
                 outputs[k] = v.result()
+        if self.result_builder:
+            return self.result_builder.build_result(**outputs)
         return outputs

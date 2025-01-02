@@ -1,5 +1,7 @@
 from concurrent.futures import Future
+from typing import Any
 
+from hamilton import lifecycle
 from hamilton.plugins.h_threadpool import FutureAdapter, _new_fn
 
 
@@ -58,3 +60,60 @@ def test_future_adapter_build_result():
 
     result = adapter.build_result(a=future_a, b=future_b)
     assert result == {"a": 1, "b": 2}
+
+
+def test_future_adapter_input_types():
+    adapter = FutureAdapter()
+    assert adapter.input_types() == [Any]
+
+
+def test_future_adapter_output_type():
+    adapter = FutureAdapter()
+    assert adapter.output_type() == Any
+
+
+def test_future_adapter_input_types_with_result_builder():
+    """Tests that we ignore exposing the input types of the wrapped result builder."""
+
+    class MockResultBuilder(lifecycle.ResultBuilder):
+        def build_result(self, **outputs: Any) -> Any:
+            pass
+
+        def input_types(self):
+            return [int, str]
+
+    adapter = FutureAdapter(result_builder=MockResultBuilder())
+    assert adapter.input_types() == [Any]
+
+
+def test_future_adapter_output_type_with_result_builder():
+    class MockResultBuilder(lifecycle.ResultBuilder):
+        def build_result(self, **outputs: Any) -> Any:
+            pass
+
+        def output_type(self):
+            return dict
+
+    adapter = FutureAdapter(result_builder=MockResultBuilder())
+    assert adapter.output_type() == dict
+
+
+def test_future_adapter_build_result_with_result_builder():
+    class MockResultBuilder(lifecycle.ResultBuilder):
+        def build_result(self, **outputs):
+            return sum(outputs.values())
+
+        def input_types(self):
+            return [int]
+
+        def output_type(self):
+            return int
+
+    adapter = FutureAdapter(result_builder=MockResultBuilder())
+    future_a = Future()
+    future_b = Future()
+    future_a.set_result(1)
+    future_b.set_result(2)
+
+    result = adapter.build_result(a=future_a, b=future_b)
+    assert result == 3
