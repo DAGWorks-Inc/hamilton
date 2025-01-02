@@ -1,6 +1,48 @@
 Dynamic DAGs/Parallel Execution
 ----------------------------------
 
+There are two approaches to parallel execution in Hamilton:
+
+1. Using an adapter that submits each node/function to a system that handles execution, e.g. ray, dask, async, or a threadpool.
+2. Using the `Parallelizable[]` and `Collect[]` types + delegating to an executor.
+
+Using an Adapter
+================
+The adapter approach effectively farms out the execution of each node/function to a system that can handle resolving
+futures. That is, Hamilton walks the DAG and submits each node to the adapter, which then submits the node for execution,
+and internally the execution resolves any Futures from prior submitted nodes.
+
+To make use of this, the general pattern is you apply an adapter to the driver and don't need to touch your Hamilton functions!:
+
+.. code-block:: python
+
+    from hamilton import driver
+    from hamilton.execution import executors
+    from hamilton.plugins.h_threadpool import FutureAdapter
+    # from hamilton.plugins.h_ray import RayGraphAdapter
+    # from hamilton.plugins.h_dask import DaskGraphAdapter
+
+    dr = (
+        driver.Builder()
+        .with_modules(foo_module)
+        .with_adapter(FutureAdapter())
+        .build()
+    )
+
+    dr.execute(["my_variable"], inputs={...}, overrides={...})
+
+The code above will execute the DAG submitting to a `ThreadPoolExecutor` (see :doc:`../reference/graph-adapters/ThreadPoolFutureAdapter`),
+which is great if you're doing a lot of I/O bound work, e.g. making API calls, reading from a database, etc.
+
+See this `Threadpool based example <https://github.com/dagworks-inc/hamilton/blob/main/examples/parallelism/lazy_threadpool_execution/>`_ for a complete example.
+
+Other adapters, e.g. Ray :doc:`../reference/graph-adapters/RayGraphAdapter`, Dask :doc:`../reference/graph-adapters/DaskGraphAdapter`, etc... will submit to their respective executors, but will involve object serialization
+(see caveats below).
+
+Using the `Parallelizable[]` and `Collect[]` types
+==================================================
+
+
 Hamilton now has pluggable execution, which allows for the following:
 
 1. Grouping of nodes into "tasks" (discrete execution unit between serialization boundaries)
