@@ -8,7 +8,7 @@ from hamilton.plugins import h_threadpool
 start = time.time()
 adapter = h_threadpool.FutureAdapter()
 dr = driver.Builder().with_modules(my_functions).with_adapters(adapter).build()
-dr.display_all_functions("my_funtions.png")
+dr.display_all_functions("my_functions.png")
 r = dr.execute(["s", "x", "a"])
 print("got return from dr")
 print(r)

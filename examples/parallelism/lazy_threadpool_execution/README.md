@@ -12,6 +12,11 @@ HTTP requests, reading/writing to disk, LLM API calls, etc.
 
 > Note: this adapter does not support DAGs with Parallelizable and Collect functions; create an issue if you need this feature.
 
+![DAG](my_functions.png)
+
+The above image shows the DAG that will be executed. You can see from the structure
+that the DAG can be parallelized, i.e. the left most nodes can be executed in parallel.
+
 When you execute `run.py`, you will output that shows:
 
 1. The DAG running in parallel -- check the image against what is printed.
