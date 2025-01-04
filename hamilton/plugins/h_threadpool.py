@@ -1,10 +1,6 @@
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, Callable, Dict, List, Type
 
-from hamilton import registry
-
-registry.disable_autoload()
-
 from hamilton import lifecycle, node
 from hamilton.lifecycle import base
 
