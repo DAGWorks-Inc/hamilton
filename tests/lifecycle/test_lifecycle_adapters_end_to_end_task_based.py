@@ -29,8 +29,8 @@ from .lifecycle_adapters_for_testing import (
     TrackingDoNodeExecuteHook,
     TrackingPostNodeExecuteHook,
     TrackingPostTaskExecuteHook,
-    TrackingPostTaskGroupHook,
     TrackingPostTaskExpandHook,
+    TrackingPostTaskGroupHook,
     TrackingPreNodeExecuteHook,
 )
 
