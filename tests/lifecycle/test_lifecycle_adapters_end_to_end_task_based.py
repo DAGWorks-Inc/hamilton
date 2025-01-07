@@ -14,6 +14,8 @@ from hamilton.lifecycle.base import (
     BasePostGraphExecute,
     BasePostNodeExecute,
     BasePostTaskExecute,
+    BasePostTaskExpand,
+    BasePostTaskGroup,
     BasePreDoAnythingHook,
     BasePreGraphExecute,
     BasePreNodeExecute,
@@ -27,6 +29,8 @@ from .lifecycle_adapters_for_testing import (
     TrackingDoNodeExecuteHook,
     TrackingPostNodeExecuteHook,
     TrackingPostTaskExecuteHook,
+    TrackingPostTaskGroupHook,
+    TrackingPostTaskExpandHook,
     TrackingPreNodeExecuteHook,
 )
 
@@ -205,6 +209,39 @@ def test_individual_do_node_execute_method_task_based():
     assert res == {"output": 426}  # Result of the above, computed but not explicitly drawn out
 
 
+def test_individual_post_task_group_hook():
+    hook_name = "post_task_group"
+    hook = TrackingPostTaskGroupHook(name=hook_name)
+    dr = _sample_driver(hook)
+    dr.execute(["output"], inputs={"n_iters_input": 5})
+    relevant_calls = [item for item in hook.calls if item.name == hook_name]
+    assert len(relevant_calls) == 1
+    assert len(relevant_calls[0].bound_kwargs["tasks"]) == 6
+    base_ids = {item.base_id for item in relevant_calls[0].bound_kwargs["tasks"]}
+    assert base_ids == {
+        "expand-parallel_over",
+        "block-parallel_over",
+        "collect-parallel_over",
+        "n_iters_input",
+        "n_iters",
+        "output",
+    }
+    assert len(relevant_calls[0].bound_kwargs["run_id"]) > 10  # Should be UUID(ish)...
+
+
+def test_individual_post_task_expand_hook():
+    hook_name = "post_task_expand"
+    hook = TrackingPostTaskExpandHook(name=hook_name)
+    dr = _sample_driver(hook)
+    dr.execute(["output"], inputs={"n_iters_input": 5})
+    relevant_calls = [item for item in hook.calls if item.name == hook_name]
+    assert len(relevant_calls) == 1
+    assert len(relevant_calls[0].bound_kwargs["parameters"]) == 5
+    parameters = [item for item in relevant_calls[0].bound_kwargs["parameters"]]
+    assert parameters == ["0", "1", "2", "3", "4"]
+    assert len(relevant_calls[0].bound_kwargs["run_id"]) > 10  # Should be UUID(ish)...
+
+
 def test_multi_hook():
     class MultiHook(
         BasePreDoAnythingHook,
@@ -216,6 +253,8 @@ def test_multi_hook():
         BasePostNodeExecute,
         BasePostTaskExecute,
         BasePostGraphExecute,
+        BasePostTaskGroup,
+        BasePostTaskExpand,
         ExtendToTrackCalls,
     ):
         def pre_task_execute(
@@ -297,6 +336,12 @@ def test_multi_hook():
         ):
             pass
 
+        def post_task_group(self, run_id: str, tasks: List[TaskSpec]):
+            pass
+
+        def post_task_expand(self, run_id: str, task_id: str, parameters: Dict[str, Any]):
+            pass
+
     multi_hook = MultiHook(name="multi_hook")
 
     dr = _sample_driver(multi_hook)
@@ -313,4 +358,6 @@ def test_multi_hook():
         "post_node_execute": 14,
         "post_task_execute": 10,
         "post_graph_execute": 1,
+        "post_task_group": 1,
+        "post_task_expand": 1,
     }

@@ -16,6 +16,8 @@ from hamilton.lifecycle.base import (
     BasePostGraphExecute,
     BasePostNodeExecute,
     BasePostTaskExecute,
+    BasePostTaskGroup,
+    BasePostTaskExpand,
     BasePreDoAnythingHook,
     BasePreGraphExecute,
     BasePreNodeExecute,
@@ -109,6 +111,11 @@ class TrackingPreGraphExecuteHook(ExtendToTrackCalls, BasePreGraphExecute):
         pass
 
 
+class TrackingPostTaskGroupHook(ExtendToTrackCalls, BasePostTaskGroup):
+    def post_task_group(self, run_id: str, tasks: List[TaskSpec]):
+        pass
+
+
 class TrackingPreTaskExecuteHook(ExtendToTrackCalls, BasePreTaskExecute):
     def pre_task_execute(
         self,
@@ -156,6 +163,11 @@ class TrackingPostTaskExecuteHook(ExtendToTrackCalls, BasePostTaskExecute):
         spawning_task_id: Optional[str],
         purpose: NodeGroupPurpose,
     ):
+        pass
+
+
+class TrackingPostTaskExpandHook(ExtendToTrackCalls, BasePostTaskExpand):
+    def post_task_expand(self, run_id: str, task_id: str, parameters: Dict[str, Any]):
         pass
 
 
