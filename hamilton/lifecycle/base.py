@@ -43,6 +43,10 @@ from hamilton import htypes
 # python, which (our usage of) leans type-hinting trigger-happy, this will suffice.
 if TYPE_CHECKING:
     from hamilton import graph, node
+    from hamilton.execution.grouping import NodeGroupPurpose, TaskSpec
+else:
+    NodeGroupPurpose = None
+    TaskSpec = None
 
 # All of these are internal APIs. Specifically, structure required to manage a set of
 # hooks/methods/validators that we will likely expand. We store them in constants (rather than, say, a more complex single object)
@@ -418,6 +422,8 @@ class BasePreTaskExecute(abc.ABC):
         nodes: List["node.Node"],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         """Hook that is called immediately prior to task execution. Note that this is only useful in dynamic
         execution, although we reserve the right to add this back into the standard hamilton execution pattern.
@@ -427,6 +433,8 @@ class BasePreTaskExecute(abc.ABC):
         :param nodes: Nodes that are being executed
         :param inputs: Inputs to the task
         :param overrides: Overrides to task execution
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
         """
         pass
 
@@ -442,6 +450,8 @@ class BasePreTaskExecuteAsync(abc.ABC):
         nodes: List["node.Node"],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         """Hook that is called immediately prior to task execution. Note that this is only useful in dynamic
         execution, although we reserve the right to add this back into the standard hamilton execution pattern.
@@ -451,6 +461,8 @@ class BasePreTaskExecuteAsync(abc.ABC):
         :param nodes: Nodes that are being executed
         :param inputs: Inputs to the task
         :param overrides: Overrides to task execution
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
         """
         pass
 
@@ -627,6 +639,8 @@ class BasePostTaskExecute(abc.ABC):
         results: Optional[Dict[str, Any]],
         success: bool,
         error: Exception,
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         """Hook called immediately after task execution. Note that this is only useful in dynamic
         execution, although we reserve the right to add this back into the standard hamilton execution pattern.
@@ -637,6 +651,8 @@ class BasePostTaskExecute(abc.ABC):
         :param results: Results of the task
         :param success: Whether or not the task executed successfully
         :param error: The error that was raised, if any
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
         """
         pass
 
@@ -653,6 +669,8 @@ class BasePostTaskExecuteAsync(abc.ABC):
         results: Optional[Dict[str, Any]],
         success: bool,
         error: Exception,
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         """Asynchronous Hook called immediately after task execution. Note that this is only useful in dynamic
         execution, although we reserve the right to add this back into the standard hamilton execution pattern.
@@ -663,6 +681,8 @@ class BasePostTaskExecuteAsync(abc.ABC):
         :param results: Results of the task
         :param success: Whether or not the task executed successfully
         :param error: The error that was raised, if any
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
         """
         pass
 

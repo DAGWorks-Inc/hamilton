@@ -15,7 +15,11 @@ from hamilton import graph_types, node
 # To really fix this we should move everything user-facing out of base, which is a pretty sloppy name for a package anyway
 # And put it where it belongs. For now we're OK with the TYPE_CHECKING hack
 if TYPE_CHECKING:
+    from hamilton.execution.grouping import NodeGroupPurpose, TaskSpec
     from hamilton.graph import FunctionGraph
+else:
+    NodeGroupPurpose = None
+    TaskSpec = None
 
 from hamilton.graph_types import HamiltonGraph, HamiltonNode
 from hamilton.lifecycle.base import (
@@ -379,6 +383,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         nodes: List["node.Node"],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         self.run_before_task_execution(
             run_id=run_id,
@@ -386,6 +392,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
             nodes=[HamiltonNode.from_node(n) for n in nodes],
             inputs=inputs,
             overrides=overrides,
+            spawning_task_id=spawning_task_id,
+            purpose=purpose,
         )
 
     def post_task_execute(
@@ -397,6 +405,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         results: Optional[Dict[str, Any]],
         success: bool,
         error: Exception,
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         self.run_after_task_execution(
             run_id=run_id,
@@ -405,6 +415,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
             results=results,
             success=success,
             error=error,
+            spawning_task_id=spawning_task_id,
+            purpose=purpose,
         )
 
     @abc.abstractmethod
@@ -416,6 +428,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         nodes: List[HamiltonNode],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
         **future_kwargs,
     ):
         """Implement this to run something after task execution. Tasks are tols used to group nodes.
@@ -428,6 +442,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         :param inputs: Inputs to the task
         :param overrides: Overrides passed to the task
         :param future_kwargs: Reserved for backwards compatibility.
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
         """
         pass
 
@@ -441,6 +457,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         results: Optional[Dict[str, Any]],
         success: bool,
         error: Exception,
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
         **future_kwargs,
     ):
         """Implement this to run something after task execution. See note in run_before_task_execution.
@@ -452,6 +470,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         :param success: Whether the task was successful
         :param error: The error the task threw, if any
         :param future_kwargs: Reserved for backwards compatibility.
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
         """
         pass
 
