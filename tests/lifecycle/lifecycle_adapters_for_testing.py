@@ -5,6 +5,7 @@ from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from hamilton import node
+from hamilton.execution.grouping import NodeGroupPurpose, TaskSpec
 from hamilton.graph import FunctionGraph
 from hamilton.lifecycle.base import (
     BaseDoBuildResult,
@@ -116,6 +117,8 @@ class TrackingPreTaskExecuteHook(ExtendToTrackCalls, BasePreTaskExecute):
         nodes: List[node.Node],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         pass
 
@@ -150,6 +153,8 @@ class TrackingPostTaskExecuteHook(ExtendToTrackCalls, BasePostTaskExecute):
         results: Optional[Dict[str, Any]],
         success: bool,
         error: Exception,
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         pass
 

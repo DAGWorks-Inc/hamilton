@@ -6,6 +6,7 @@ import pytest
 
 from hamilton import ad_hoc_utils, driver, node
 from hamilton.execution.executors import SynchronousLocalTaskExecutor
+from hamilton.execution.grouping import NodeGroupPurpose, TaskSpec
 from hamilton.htypes import Collect, Parallelizable
 from hamilton.lifecycle.base import (
     BaseDoNodeExecute,
@@ -158,7 +159,15 @@ def test_individual_post_task_execute_hook_task_based():
     # Note we have >= as we actually happen to include the input, which is suboptimal, but not worth fixing now
     assert {item.bound_kwargs["success"] for item in relevant_calls} == {True}
     assert {item.bound_kwargs["error"] for item in relevant_calls} == {None}
-    assert len({item.bound_kwargs["task_id"] for item in relevant_calls}) == 10  # unique task names
+    spawning_task_ids = Counter([item.bound_kwargs["spawning_task_id"] for item in relevant_calls])
+    assert spawning_task_ids == {"expand-parallel_over": 5, None: 5}
+    purposes = Counter([item.bound_kwargs["purpose"] for item in relevant_calls])
+    assert purposes == {
+        NodeGroupPurpose.EXECUTE_BLOCK: 5,
+        NodeGroupPurpose.EXECUTE_SINGLE: 3,
+        NodeGroupPurpose.EXPAND_UNORDERED: 1,
+        NodeGroupPurpose.GATHER: 1,
+    }
 
 
 def test_individual_post_task_execute_hook_with_exception():
@@ -216,6 +225,8 @@ def test_multi_hook():
             nodes: List[node.Node],
             inputs: Dict[str, Any],
             overrides: Dict[str, Any],
+            spawning_task_id: Optional[str],
+            purpose: NodeGroupPurpose,
         ):
             pass
 
@@ -236,6 +247,8 @@ def test_multi_hook():
             results: Optional[Dict[str, Any]],
             success: bool,
             error: Exception,
+            spawning_task_id: Optional[str],
+            purpose: NodeGroupPurpose,
         ):
             pass
 
