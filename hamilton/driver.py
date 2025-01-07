@@ -241,6 +241,12 @@ class TaskBasedGraphExecutor(GraphExecutor):
         results_cache = state.DictBasedResultCache(prehydrated_results)
         # Create tasks from the grouped nodes, filtering/pruning as we go
         tasks = grouping.create_task_plan(grouped_nodes, final_vars, overrides, self.adapter)
+
+        if self.adapter.does_hook("post_task_group", is_async=False):
+            self.adapter.call_all_lifecycle_hooks_sync(
+                "post_task_group", run_id=run_id, tasks=tasks,
+            )
+
         # Create a task graph and execution state
         execution_state = state.ExecutionState(
             tasks, results_cache, run_id

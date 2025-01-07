@@ -384,6 +384,13 @@ class ExecutionState:
                 self.realize_parameterized_group(
                     completed_task.task_id, parameterization_values, input_to_parameterize
                 )
+                if completed_task.adapter.does_hook("post_task_expand", is_async=False):
+                    completed_task.adapter.call_all_lifecycle_hooks_sync(
+                        "post_task_expand",
+                        run_id=completed_task.run_id,
+                        task_id=completed_task.task_id,
+                        parameters=parameterization_values
+                    )
             else:
                 for candidate_task in self.base_reverse_dependencies[completed_task.base_id]:
                     # This means its not spawned by another task, or a node spawning group itself
