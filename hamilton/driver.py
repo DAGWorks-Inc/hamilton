@@ -244,7 +244,9 @@ class TaskBasedGraphExecutor(GraphExecutor):
 
         if self.adapter.does_hook("post_task_group", is_async=False):
             self.adapter.call_all_lifecycle_hooks_sync(
-                "post_task_group", run_id=run_id, tasks=tasks,
+                "post_task_group",
+                run_id=run_id,
+                tasks=tasks,
             )
 
         # Create a task graph and execution state

@@ -647,12 +647,8 @@ class TaskGroupingHook(BasePostTaskGroup, BasePostTaskExpand):
 
     @override
     @final
-    def post_task_expand(
-        self, *, run_id: str, task_id: str, parameters: Dict[str, Any]
-    ):
-        return self.run_after_task_expansion(
-            run_id=run_id, task_id=task_id, parameters=parameters
-        )
+    def post_task_expand(self, *, run_id: str, task_id: str, parameters: Dict[str, Any]):
+        return self.run_after_task_expansion(run_id=run_id, task_id=task_id, parameters=parameters)
 
     @abc.abstractmethod
     def run_after_task_grouping(self, *, run_id: str, tasks: List[TaskSpec], **future_kwargs):

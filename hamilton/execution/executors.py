@@ -142,7 +142,7 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
                 success=success,
                 error=error,
                 spawning_task_id=task.spawning_task_id,
-                purpose=task.purpose
+                purpose=task.purpose,
             )
     # This selection is for GC
     # We also need to get the override values

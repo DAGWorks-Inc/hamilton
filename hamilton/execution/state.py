@@ -389,7 +389,7 @@ class ExecutionState:
                         "post_task_expand",
                         run_id=completed_task.run_id,
                         task_id=completed_task.task_id,
-                        parameters=parameterization_values
+                        parameters=parameterization_values,
                     )
             else:
                 for candidate_task in self.base_reverse_dependencies[completed_task.base_id]:
