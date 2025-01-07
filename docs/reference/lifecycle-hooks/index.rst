@@ -24,7 +24,8 @@ looking forward.
    NodeExecutionMethod
    StaticValidator
    GraphConstructionHook
-
+   TaskExecutionHook
+   TaskGroupingHook
 
 Available Adapters
 -------------------
