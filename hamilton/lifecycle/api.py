@@ -637,6 +637,8 @@ class StaticValidator(BaseValidateGraph, BaseValidateNode):
 
 
 class TaskGroupingHook(BasePostTaskGroup, BasePostTaskExpand):
+    """Implement this to run something after task grouping or task expansion. This will allow you to
+    capture information about the tasks during `Parallelize`/`Collect` blocks in dynamic DAG execution."""
 
     @override
     @final
