@@ -733,7 +733,12 @@ class FunctionGraph:
         """
 
         functions = sum([find_functions(module) for module in modules], [])
-        return FunctionGraph.from_functions(*functions, config=config, adapter=adapter, allow_module_overrides=allow_module_overrides)
+        return FunctionGraph.from_functions(
+            *functions,
+            config=config,
+            adapter=adapter,
+            allow_module_overrides=allow_module_overrides,
+        )
 
     @staticmethod
     def from_functions(
@@ -743,7 +748,10 @@ class FunctionGraph:
         allow_module_overrides: bool = False,
     ) -> "FunctionGraph":
         nodes = create_function_graph(
-            *functions, config=config, adapter=adapter, allow_module_overrides=allow_module_overrides
+            *functions,
+            config=config,
+            adapter=adapter,
+            allow_module_overrides=allow_module_overrides,
         )
         return FunctionGraph(nodes, config, adapter)
 

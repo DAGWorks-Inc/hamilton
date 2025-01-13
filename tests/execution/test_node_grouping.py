@@ -98,7 +98,9 @@ def test_task_get_input_vars_not_user_defined():
     # This is hacking around function graph which is messy as it is built of larger components
     # (modules), and should instead be broken into smaller pieces (functions/nodes), and have utilities
     # to create it from those.
-    fn_graph = graph.FunctionGraph.from_modules(ad_hoc_utils.create_temporary_module(bar), config={})
+    fn_graph = graph.FunctionGraph.from_modules(
+        ad_hoc_utils.create_temporary_module(bar), config={}
+    )
     node_ = fn_graph.nodes["bar"]
     task = grouping.TaskSpec(
         base_id="bar",
@@ -120,7 +122,9 @@ def test_task_get_input_vars_with_optional():
     # This is hacking around function graph which is messy as it is built of larger components
     # (modules), and should instead be broken into smaller pieces (functions/nodes), and have utilities
     # to create it from those.
-    fn_graph = graph.FunctionGraph.from_modules(ad_hoc_utils.create_temporary_module(bar), config={})
+    fn_graph = graph.FunctionGraph.from_modules(
+        ad_hoc_utils.create_temporary_module(bar), config={}
+    )
     node_ = fn_graph.nodes["bar"]
     task = grouping.TaskSpec(
         base_id="bar",

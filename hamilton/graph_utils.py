@@ -25,7 +25,7 @@ def find_functions(function_module: ModuleType) -> List[Tuple[str, Callable]]:
     :return: list of tuples of (func_name, function).
     """
     return [
-        (name, fn) for name, fn in inspect.getmembers(function_module)
-        if is_hamilton_function(fn)
-        and is_submodule(inspect.getmodule(fn), function_module)
+        (name, fn)
+        for name, fn in inspect.getmembers(function_module)
+        if is_hamilton_function(fn) and is_submodule(inspect.getmodule(fn), function_module)
     ]

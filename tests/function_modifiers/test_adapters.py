@@ -570,7 +570,9 @@ def test_loader_default_factory_field():
     def foo(param: int) -> int:
         return param
 
-    fn_graph = graph.FunctionGraph.from_modules(ad_hoc_utils.create_temporary_module(foo), config={})
+    fn_graph = graph.FunctionGraph.from_modules(
+        ad_hoc_utils.create_temporary_module(foo), config={}
+    )
     assert len(fn_graph.nodes) == 3
     assert "foo" in fn_graph.nodes
 
@@ -599,7 +601,9 @@ def test_saver_default_factory_field():
     def foo(param: int) -> int:
         return param
 
-    fn_graph = graph.FunctionGraph.from_modules(ad_hoc_utils.create_temporary_module(foo), config={})
+    fn_graph = graph.FunctionGraph.from_modules(
+        ad_hoc_utils.create_temporary_module(foo), config={}
+    )
     assert len(fn_graph.nodes) == 3
     assert "foo" in fn_graph.nodes
 
