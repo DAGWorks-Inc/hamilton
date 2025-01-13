@@ -570,12 +570,9 @@ def test_loader_default_factory_field():
     def foo(param: int) -> int:
         return param
 
-    fg = graph.create_function_graph(
-        ad_hoc_utils.create_temporary_module(foo),
-        config={},
-    )
-    assert len(fg) == 3
-    assert "foo" in fg
+    fn_graph = graph.FunctionGraph.from_modules(ad_hoc_utils.create_temporary_module(foo), config={})
+    assert len(fn_graph.nodes) == 3
+    assert "foo" in fn_graph.nodes
 
 
 @dataclasses.dataclass
@@ -602,12 +599,9 @@ def test_saver_default_factory_field():
     def foo(param: int) -> int:
         return param
 
-    fg = graph.create_function_graph(
-        ad_hoc_utils.create_temporary_module(foo),
-        config={},
-    )
-    assert len(fg) == 3
-    assert "foo" in fg
+    fn_graph = graph.FunctionGraph.from_modules(ad_hoc_utils.create_temporary_module(foo), config={})
+    assert len(fn_graph.nodes) == 3
+    assert "foo" in fn_graph.nodes
 
 
 @dataclasses.dataclass
@@ -631,12 +625,11 @@ def test_adapters_optional_params():
     def foo(param: int) -> int:
         return param
 
-    fg = graph.create_function_graph(
-        ad_hoc_utils.create_temporary_module(foo),
-        config={},
+    fn_graph = graph.FunctionGraph.from_modules(
+        ad_hoc_utils.create_temporary_module(foo), config={}
     )
-    assert len(fg) == 3
-    assert "foo" in fg
+    assert len(fn_graph.nodes) == 3
+    assert "foo" in fn_graph.nodes
 
 
 def test_save_to_with_input_from_other_fn():
@@ -648,12 +641,11 @@ def test_save_to_with_input_from_other_fn():
     def fn() -> dict:
         return {"a": 1}
 
-    fg = graph.create_function_graph(
-        ad_hoc_utils.create_temporary_module(output_path, fn),
-        config={},
+    fn_graph = graph.FunctionGraph.from_modules(
+        ad_hoc_utils.create_temporary_module(output_path, fn), config={}
     )
 
-    assert len(fg) == 3
+    assert len(fn_graph.nodes) == 3
 
 
 def test_load_from_with_input_from_other_fn():
@@ -665,11 +657,10 @@ def test_load_from_with_input_from_other_fn():
     def fn(data: dict) -> dict:
         return data
 
-    fg = graph.create_function_graph(
-        ad_hoc_utils.create_temporary_module(input_path, fn),
-        config={},
+    fn_graph = graph.FunctionGraph.from_modules(
+        ad_hoc_utils.create_temporary_module(input_path, fn), config={}
     )
-    assert len(fg) == 4
+    assert len(fn_graph.nodes) == 4
 
 
 def test_load_from_with_multiple_inputs():
@@ -686,12 +677,9 @@ def test_load_from_with_multiple_inputs():
     def fn(data1: dict, data2: dict) -> dict:
         return {**data1, **data2}
 
-    fg = graph.create_function_graph(
-        ad_hoc_utils.create_temporary_module(fn),
-        config={},
-    )
+    fn_graph = graph.FunctionGraph.from_modules(ad_hoc_utils.create_temporary_module(fn), config={})
     # One filter, one loader for each and the transform function
-    assert len(fg) == 5
+    assert len(fn_graph.nodes) == 5
 
 
 import sys
@@ -819,12 +807,11 @@ def test_dataloader_future_annotations():
     from tests.resources import nodes_with_future_annotation
 
     fn_to_collect = nodes_with_future_annotation.sample_dataloader
-    fg = graph.create_function_graph(
-        ad_hoc_utils.create_temporary_module(fn_to_collect),
-        config={},
+    fn_graph = graph.FunctionGraph.from_modules(
+        ad_hoc_utils.create_temporary_module(fn_to_collect), config={}
     )
     # the data loaded is a list
-    assert custom_subclass_check(fg["sample_dataloader"].type, list)
+    assert custom_subclass_check(fn_graph.nodes["sample_dataloader"].type, list)
 
 
 def test_datasaver():

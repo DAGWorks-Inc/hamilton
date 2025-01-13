@@ -470,20 +470,20 @@ def create_testing_nodes_override_B():
 def test_create_function_graph_simple():
     """Tests that we create a simple function graph."""
     expected = create_testing_nodes()
-    actual = graph.create_function_graph(tests.resources.dummy_functions, config={})
-    assert actual == expected
+    fn_graph = graph.FunctionGraph.from_modules(tests.resources.dummy_functions, config={})
+    assert fn_graph.nodes == expected
 
 
 def test_create_function_graph_with_override():
     """Tests that we can override nodes from later modules in function graph."""
     override_expected = create_testing_nodes_override_B()
-    override_actual = graph.create_function_graph(
+    fn_graph = graph.FunctionGraph.from_modules(
         tests.resources.dummy_functions,
         tests.resources.dummy_functions_module_override,
         config={},
         allow_module_overrides=True,
     )
-    assert override_expected == override_actual
+    assert fn_graph.nodes == override_expected
 
 
 def test_execute():

@@ -258,7 +258,7 @@ class NodeInjector(SubDAGModifier, abc.ABC):
 
     def transform_dag(
         self, nodes: Collection[node.Node], config: Dict[str, Any], fn: Callable
-    ) -> Collection[node.Node]:
+    ) -> List[node.Node]:
         """Transforms the subDAG by getting the injectable parameters (anything not
         produced by nodes inside it), then calling the inject_nodes function on it.
 

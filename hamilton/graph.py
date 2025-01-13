@@ -143,7 +143,7 @@ def update_dependencies(
 
 
 def create_function_graph(
-    *modules: ModuleType,
+    *functions: List[Tuple[str, Callable]],
     config: Dict[str, Any],
     adapter: lifecycle_base.LifecycleAdapterSet = None,
     fg: Optional["FunctionGraph"] = None,
@@ -164,7 +164,6 @@ def create_function_graph(
         nodes = {}  # name -> Node
     else:
         nodes = fg.nodes
-    functions = sum([find_functions(module) for module in modules], [])
 
     # create non-input nodes -- easier to just create this in one loop
     for _func_name, f in functions:
@@ -733,8 +732,18 @@ class FunctionGraph:
         :return: a function graph.
         """
 
+        functions = sum([find_functions(module) for module in modules], [])
+        return FunctionGraph.from_functions(*functions, config=config, adapter=adapter, allow_module_overrides=allow_module_overrides)
+
+    @staticmethod
+    def from_functions(
+        *functions,
+        config: Dict[str, Any],
+        adapter: lifecycle_base.LifecycleAdapterSet = None,
+        allow_module_overrides: bool = False,
+    ) -> "FunctionGraph":
         nodes = create_function_graph(
-            *modules, config=config, adapter=adapter, allow_module_overrides=allow_module_overrides
+            *functions, config=config, adapter=adapter, allow_module_overrides=allow_module_overrides
         )
         return FunctionGraph(nodes, config, adapter)
 
