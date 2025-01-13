@@ -87,13 +87,16 @@ class resolve(DynamicResolver):
             return s1 + s2
 
     Note how this works:
+
     1. The `decorate_with` argument is a function that gives you the decorator you want to apply.
     Currently its "hamilton-esque" -- while we do not require it to be typed, you can use a separate
     configuration-reoslver function (and include type information). This lambda function must return
     a decorator.
+
     2. The `when` argument is the point at which you want to resolve the decorator. Currently, we
     only support `ResolveAt.CONFIG_AVAILABLE`, which means that the decorator will be resolved at compile
     time, E.G. when the driver is instantiated.
+
     3. This is then run and dynamically resolved.
 
     This is powerful, but the code is uglier. It's meant to be used in some very specific cases,
