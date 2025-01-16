@@ -1,7 +1,7 @@
 import inspect
 import sys
 import typing
-from typing import Any, Iterable, Optional, Protocol, Tuple, Type, TypeVar, Union, Generic
+from typing import Any, Generic, Iterable, Optional, Protocol, Tuple, Type, TypeVar, Union
 
 import typing_inspect
 
@@ -297,15 +297,33 @@ class Parallelizable(Iterable[ParallelizableElement], Protocol[ParallelizableEle
 
     pass
 
-class ParallelizableList(list[ParallelizableElement], Parallelizable, Generic[ParallelizableElement]):
+
+class ParallelizableList(
+    list[ParallelizableElement], Parallelizable, Generic[ParallelizableElement]
+):
+    """
+    Marks the output of a function node as parallelizable and also as a list.
+
+    It has the same usage as "Parallelizable", but for returns that are specifically
+    lists, for correct functioning of linters and other tools.
+    """
+
     pass
 
 
-def is_parallelizable(type:Type) -> bool:
+def is_parallelizable(type: Type) -> bool:
+    """
+    Checks if a type is parallelizable.
+
+    :param type: Type to check.
+    :return: True if the type is parallelizable, False otherwise.
+    """
     return type == Parallelizable or Parallelizable in type.__bases__
+
 
 def is_parallelizable_type(type_: Type) -> bool:
     return _get_origin(type_) == Parallelizable
+
 
 class Collect(Iterable[CollectElement], Protocol[CollectElement]):
     """Marks a function node parameter as collectable.
