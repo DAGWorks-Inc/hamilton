@@ -318,6 +318,9 @@ def is_parallelizable(type: Type) -> bool:
     :param type: Type to check.
     :return: True if the type is parallelizable, False otherwise.
     """
+    if type is None:
+        return False
+
     return type == Parallelizable or Parallelizable in type.__bases__
 
 
