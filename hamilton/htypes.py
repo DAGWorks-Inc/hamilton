@@ -297,6 +297,8 @@ class Parallelizable(Iterable[ParallelizableElement], Protocol[ParallelizableEle
 
     pass
 
+def is_parallelizable(type:Type) -> bool:
+    return type == Parallelizable or Parallelizable in type.__bases__
 
 def is_parallelizable(type: Type) -> bool:
     """
@@ -313,7 +315,6 @@ def is_parallelizable(type: Type) -> bool:
 
 def is_parallelizable_type(type_: Type) -> bool:
     return _get_origin(type_) == Parallelizable
-
 
 class Collect(Iterable[CollectElement], Protocol[CollectElement]):
     """Marks a function node parameter as collectable.

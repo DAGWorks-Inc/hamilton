@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import typing_inspect
 
-from hamilton.htypes import Collect, is_parallelizable
+from hamilton.htypes import Collect, Parallelizable, is_parallelizable
 
 """
 Module that contains the primitive components of the graph.
