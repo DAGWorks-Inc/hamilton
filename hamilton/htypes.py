@@ -2,7 +2,8 @@ import inspect
 import sys
 import typing
 from typing import (
-    Any, Generic, Iterable, Optional, Protocol, Tuple, Type, TypeVar, Union)
+    Any, Generic, Iterable, List, Optional, Protocol, Tuple, Type, TypeVar,
+    Union)
 
 import typing_inspect
 
@@ -300,7 +301,7 @@ class Parallelizable(Iterable[ParallelizableElement], Protocol[ParallelizableEle
 
 
 class ParallelizableList(
-    list[ParallelizableElement], Parallelizable, Generic[ParallelizableElement]
+    List[ParallelizableElement], Parallelizable, Generic[ParallelizableElement]
 ):
     """
     Marks the output of a function node as parallelizable and also as a list.
