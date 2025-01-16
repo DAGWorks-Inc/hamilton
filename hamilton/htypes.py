@@ -1,7 +1,7 @@
 import inspect
 import sys
 import typing
-from typing import Any, Iterable, Optional, Protocol, Tuple, Type, TypeVar, Union
+from typing import Any, Iterable, Optional, Protocol, Tuple, Type, TypeVar, Union, Generic
 
 import typing_inspect
 
@@ -296,6 +296,10 @@ class Parallelizable(Iterable[ParallelizableElement], Protocol[ParallelizableEle
     """
 
     pass
+
+class ParallelizableList(list[ParallelizableElement], Parallelizable, Generic[ParallelizableElement]):
+    pass
+
 
 def is_parallelizable(type:Type) -> bool:
     return type == Parallelizable or Parallelizable in type.__bases__
