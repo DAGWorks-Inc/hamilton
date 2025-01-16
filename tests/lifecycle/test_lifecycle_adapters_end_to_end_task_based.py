@@ -6,7 +6,7 @@ import pytest
 
 from hamilton import ad_hoc_utils, driver, node
 from hamilton.execution.executors import SynchronousLocalTaskExecutor
-from hamilton.execution.grouping import NodeGroupPurpose, TaskSpec
+from hamilton.execution.grouping import NodeGroupPurpose
 from hamilton.htypes import Collect, Parallelizable
 from hamilton.lifecycle.base import (
     BaseDoNodeExecute,
@@ -216,9 +216,9 @@ def test_individual_post_task_group_hook():
     dr.execute(["output"], inputs={"n_iters_input": 5})
     relevant_calls = [item for item in hook.calls if item.name == hook_name]
     assert len(relevant_calls) == 1
-    assert len(relevant_calls[0].bound_kwargs["tasks"]) == 6
-    base_ids = {item.base_id for item in relevant_calls[0].bound_kwargs["tasks"]}
-    assert base_ids == {
+    task_ids = relevant_calls[0].bound_kwargs["task_ids"]
+    assert len(task_ids) == 6
+    assert set(task_ids) == {
         "expand-parallel_over",
         "block-parallel_over",
         "collect-parallel_over",
@@ -336,7 +336,7 @@ def test_multi_hook():
         ):
             pass
 
-        def post_task_group(self, run_id: str, tasks: List[TaskSpec]):
+        def post_task_group(self, run_id: str, task_ids: List[str]):
             pass
 
         def post_task_expand(self, run_id: str, task_id: str, parameters: Dict[str, Any]):

@@ -15,11 +15,10 @@ from hamilton import graph_types, node
 # To really fix this we should move everything user-facing out of base, which is a pretty sloppy name for a package anyway
 # And put it where it belongs. For now we're OK with the TYPE_CHECKING hack
 if TYPE_CHECKING:
-    from hamilton.execution.grouping import NodeGroupPurpose, TaskSpec
+    from hamilton.execution.grouping import NodeGroupPurpose
     from hamilton.graph import FunctionGraph
 else:
     NodeGroupPurpose = None
-    TaskSpec = None
 
 from hamilton.graph_types import HamiltonGraph, HamiltonNode
 from hamilton.lifecycle.base import (
@@ -642,8 +641,8 @@ class TaskGroupingHook(BasePostTaskGroup, BasePostTaskExpand):
 
     @override
     @final
-    def post_task_group(self, *, run_id: str, tasks: List[TaskSpec]):
-        return self.run_after_task_grouping(run_id=run_id, tasks=tasks)
+    def post_task_group(self, *, run_id: str, task_ids: List[str]):
+        return self.run_after_task_grouping(run_id=run_id, task_ids=task_ids)
 
     @override
     @final
@@ -651,10 +650,10 @@ class TaskGroupingHook(BasePostTaskGroup, BasePostTaskExpand):
         return self.run_after_task_expansion(run_id=run_id, task_id=task_id, parameters=parameters)
 
     @abc.abstractmethod
-    def run_after_task_grouping(self, *, run_id: str, tasks: List[TaskSpec], **future_kwargs):
+    def run_after_task_grouping(self, *, run_id: str, task_ids: List[str], **future_kwargs):
         """Hook that is called after task grouping.
         :param run_id: ID of the run, unique in scope of the driver.
-        :param tasks: List of tasks that were grouped together.
+        :param task_ids: List of tasks that were grouped together.
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility.
         """
         pass

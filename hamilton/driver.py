@@ -241,12 +241,13 @@ class TaskBasedGraphExecutor(GraphExecutor):
         results_cache = state.DictBasedResultCache(prehydrated_results)
         # Create tasks from the grouped nodes, filtering/pruning as we go
         tasks = grouping.create_task_plan(grouped_nodes, final_vars, overrides, self.adapter)
+        task_ids = [task.base_id for task in tasks]
 
         if self.adapter.does_hook("post_task_group", is_async=False):
             self.adapter.call_all_lifecycle_hooks_sync(
                 "post_task_group",
                 run_id=run_id,
-                tasks=tasks,
+                task_ids=task_ids,
             )
 
         # Create a task graph and execution state
@@ -2077,7 +2078,7 @@ class Builder:
         self._require_field_unset("execution_manager", "Cannot set execution manager twice")
         self._require_field_unset(
             "remote_executor",
-            "Cannot set execution manager with remote " "executor set -- these are disjoint",
+            "Cannot set execution manager with remote executor set -- these are disjoint",
         )
 
         self.execution_manager = execution_manager
@@ -2094,7 +2095,7 @@ class Builder:
         self._require_field_unset("remote_executor", "Cannot set remote executor twice")
         self._require_field_unset(
             "execution_manager",
-            "Cannot set remote executor with execution " "manager set -- these are disjoint",
+            "Cannot set remote executor with execution manager set -- these are disjoint",
         )
         self.remote_executor = remote_executor
         return self
@@ -2110,7 +2111,7 @@ class Builder:
         self._require_field_unset("local_executor", "Cannot set local executor twice")
         self._require_field_unset(
             "execution_manager",
-            "Cannot set local executor with execution " "manager set -- these are disjoint",
+            "Cannot set local executor with execution manager set -- these are disjoint",
         )
         self.local_executor = local_executor
         return self

@@ -43,10 +43,9 @@ from hamilton import htypes
 # python, which (our usage of) leans type-hinting trigger-happy, this will suffice.
 if TYPE_CHECKING:
     from hamilton import graph, node
-    from hamilton.execution.grouping import NodeGroupPurpose, TaskSpec
+    from hamilton.execution.grouping import NodeGroupPurpose
 else:
     NodeGroupPurpose = None
-    TaskSpec = None
 
 # All of these are internal APIs. Specifically, structure required to manage a set of
 # hooks/methods/validators that we will likely expand. We store them in constants (rather than, say, a more complex single object)
@@ -630,12 +629,12 @@ class BasePostNodeExecuteAsync(abc.ABC):
 @lifecycle.base_hook("post_task_group")
 class BasePostTaskGroup(abc.ABC):
     @abc.abstractmethod
-    def post_task_group(self, *, run_id: str, tasks: List[TaskSpec]):
+    def post_task_group(self, *, run_id: str, task_ids: List[str]):
         """Hook that is called immediately after a task group is created. Note that this is only useful in dynamic
         execution, although we reserve the right to add this back into the standard hamilton execution pattern.
 
         :param run_id: ID of the run, unique in scope of the driver.
-        :param tasks: Tasks specs that are in the group."""
+        :param task_ids: IDs of tasks that are in the group."""
         pass
 
 

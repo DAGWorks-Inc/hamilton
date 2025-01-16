@@ -5,7 +5,7 @@ from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from hamilton import node
-from hamilton.execution.grouping import NodeGroupPurpose, TaskSpec
+from hamilton.execution.grouping import NodeGroupPurpose
 from hamilton.graph import FunctionGraph
 from hamilton.lifecycle.base import (
     BaseDoBuildResult,
@@ -112,7 +112,7 @@ class TrackingPreGraphExecuteHook(ExtendToTrackCalls, BasePreGraphExecute):
 
 
 class TrackingPostTaskGroupHook(ExtendToTrackCalls, BasePostTaskGroup):
-    def post_task_group(self, run_id: str, tasks: List[TaskSpec]):
+    def post_task_group(self, run_id: str, task_ids: List[str]):
         pass
 
 
