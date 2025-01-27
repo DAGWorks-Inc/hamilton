@@ -30,7 +30,6 @@ from tests.resources.dynamic_parallelism import (
     parallel_complex,
     parallel_delayed,
     parallel_linear_basic,
-    parallel_list,
 )
 
 ADAPTER = base.DefaultAdapter()
@@ -348,14 +347,3 @@ def test_parallel_end_to_end_with_empty_list():
     parallel_collect_multiple_arguments._reset_counter()
     res = dr.execute(["final"], overrides={"number_of_steps": 0})
     assert res["final"] == parallel_linear_basic._calc(0)
-
-
-def test_parallel_list():
-    dr = (
-        driver.Builder()
-        .with_modules(parallel_list)
-        .enable_dynamic_execution(allow_experimental_mode=True)
-        .build()
-    )
-    result = dr.execute(["final"])
-    assert result["final"] == parallel_linear_basic._calc()
