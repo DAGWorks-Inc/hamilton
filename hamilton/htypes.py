@@ -2,8 +2,7 @@ import inspect
 import sys
 import typing
 from typing import (
-    Any, Generic, Iterable, List, Optional, Protocol, Tuple, Type, TypeVar,
-    Union)
+    Any, Iterable, Optional, Protocol, Tuple, Type, TypeVar, Union)
 
 import typing_inspect
 
