@@ -1,7 +1,7 @@
 import inspect
 import sys
 import typing
-from typing import Any, Generic, Iterable, List, Optional, Protocol, Tuple, Type, TypeVar, Union
+from typing import Any, Iterable, Optional, Protocol, Tuple, Type, TypeVar, Union
 
 import typing_inspect
 
@@ -293,19 +293,6 @@ class Parallelizable(Iterable[ParallelizableElement], Protocol[ParallelizableEle
 
     Because this uses dynamic execution, the builder method `enable_dynamic_execution`
     must be called with `allow_experimental_mode=True`.
-    """
-
-    pass
-
-
-class ParallelizableList(
-    List[ParallelizableElement], Parallelizable, Generic[ParallelizableElement]
-):
-    """
-    Marks the output of a function node as parallelizable and also as a list.
-
-    It has the same usage as "Parallelizable", but for returns that are specifically
-    lists, for correct functioning of linters and other tools.
     """
 
     pass
