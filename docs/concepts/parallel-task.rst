@@ -268,7 +268,7 @@ to set what should be determined to be collected at DAG construction time:
     .with_config(_config)
 
 Parallelizable Subclassing
-=============
+==========================
 
 When annotating a function with `Parallelizable`, it is not possible to specify in the annotation what the type returned by the function will actually be, and these are not identified by a linter or other tools as static type checking. Especially for functions that can be used with or without Hamilton, this can be a problem.
 
