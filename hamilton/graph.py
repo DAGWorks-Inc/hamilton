@@ -13,7 +13,7 @@ import os.path
 import pathlib
 import uuid
 from enum import Enum
-from types import ModuleType
+from types import FunctionType, ModuleType
 from typing import Any, Callable, Collection, Dict, FrozenSet, List, Optional, Set, Tuple, Type
 
 import hamilton.lifecycle.base as lifecycle_base
@@ -142,17 +142,18 @@ def update_dependencies(
     return nodes
 
 
-def create_function_graph(
+def compile_to_nodes(
     *functions: List[Tuple[str, Callable]],
     config: Dict[str, Any],
     adapter: lifecycle_base.LifecycleAdapterSet = None,
     fg: Optional["FunctionGraph"] = None,
-    allow_module_overrides: bool = False,
+    allow_node_level_overrides: bool = False,
 ) -> Dict[str, node.Node]:
     """Creates a graph of all available functions & their dependencies.
     :param modules: A set of modules over which one wants to compute the function graph
     :param config: Dictionary that we will inspect to get values from in building the function graph.
     :param adapter: The adapter that adapts our node type checking based on the context.
+    :param allow_node_level_overrides: Whether or not to allow node names to override each other
     :return: list of nodes in the graph.
     If it needs to be more complicated, we'll return an actual networkx graph and get all the rest of the logic for free
     """
@@ -170,7 +171,7 @@ def create_function_graph(
         for n in fm_base.resolve_nodes(f, config):
             if n.name in config:
                 continue  # This makes sure we overwrite things if they're in the config...
-            if n.name in nodes and not allow_module_overrides:
+            if n.name in nodes and not allow_node_level_overrides:
                 raise ValueError(
                     f"Cannot define function {n.name} more than once."
                     f" Already defined by function {f}"
@@ -714,12 +715,41 @@ class FunctionGraph:
         self.adapter = adapter
 
     @staticmethod
+    def compile(
+        modules: List[ModuleType],
+        functions: List[FunctionType],
+        config: Dict[str, Any],
+        adapter: lifecycle_base.LifecycleAdapterSet = None,
+        allow_node_overrides: bool = False,
+    ) -> "FunctionGraph":
+        """Base level static function for compiling a function graph. Note
+        that this can both use functions (E.G. passing them directly) and modules
+        (passing them in and crawling.
+
+        :param modules: Modules to use
+        :param functions: Functions to use
+        :param config: Config to use for setting up the DAG
+        :param adapter: Adapter to use for node resolution
+        :param allow_node_overrides: Whether or not to allow node level overrides.
+        :return: The compiled function graph
+        """
+        module_functions = sum([find_functions(module) for module in modules], [])
+        nodes = compile_to_nodes(
+            *module_functions,
+            *functions,
+            config=config,
+            adapter=adapter,
+            allow_node_level_overrides=allow_node_overrides,
+        )
+        return FunctionGraph(nodes, config, adapter)
+
+    @staticmethod
     def from_modules(
         *modules: ModuleType,
         config: Dict[str, Any],
         adapter: lifecycle_base.LifecycleAdapterSet = None,
         allow_module_overrides: bool = False,
-    ):
+    ) -> "FunctionGraph":
         """Initializes a function graph from the specified modules. Note that this was the old
         way we constructed FunctionGraph -- this is not a public-facing API, so we replaced it
         with a constructor that takes in nodes directly. If you hacked in something using
@@ -732,28 +762,28 @@ class FunctionGraph:
         :return: a function graph.
         """
 
-        functions = sum([find_functions(module) for module in modules], [])
-        return FunctionGraph.from_functions(
-            *functions,
+        return FunctionGraph.compile(
+            modules=modules,
+            functions=[],
             config=config,
             adapter=adapter,
-            allow_module_overrides=allow_module_overrides,
+            allow_node_overrides=allow_module_overrides,
         )
 
     @staticmethod
     def from_functions(
-        *functions,
+        *functions: FunctionType,
         config: Dict[str, Any],
         adapter: lifecycle_base.LifecycleAdapterSet = None,
         allow_module_overrides: bool = False,
     ) -> "FunctionGraph":
-        nodes = create_function_graph(
-            *functions,
+        return FunctionGraph.compile(
+            modules=[],
+            functions=functions,
             config=config,
             adapter=adapter,
-            allow_module_overrides=allow_module_overrides,
+            allow_node_overrides=allow_module_overrides,
         )
-        return FunctionGraph(nodes, config, adapter)
 
     def with_nodes(self, nodes: Dict[str, Node]) -> "FunctionGraph":
         """Creates a new function graph with the additional specified nodes.
