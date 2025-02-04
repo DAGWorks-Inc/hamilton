@@ -5,7 +5,7 @@ import sys
 import time
 import typing
 import uuid
-from types import ModuleType
+from types import FunctionType, ModuleType
 from typing import Any, Dict, Optional, Tuple
 
 import hamilton.lifecycle.base as lifecycle_base
@@ -199,6 +199,7 @@ class AsyncDriver(driver.Driver):
         result_builder: Optional[base.ResultMixin] = None,
         adapters: typing.List[lifecycle.LifecycleAdapter] = None,
         allow_module_overrides: bool = False,
+        functions: typing.List[FunctionType] = None,
     ):
         """Instantiates an asynchronous driver.
 
@@ -249,6 +250,7 @@ class AsyncDriver(driver.Driver):
                 *async_adapters,  # note async adapters will not be called during synchronous execution -- this is for access later
             ],
             allow_module_overrides=allow_module_overrides,
+            functions=functions,
         )
         self.initialized = False
 

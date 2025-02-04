@@ -57,8 +57,7 @@ docs = [
   "diskcache",
   # required for all the plugins
   "dlt",
-  # furo -- install from main for now until the next release is out:
-  "furo @ git+https://github.com/pradyunsg/furo@main",
+  "furo",
   "gitpython", # Required for parsing git info for generation of data-adapter docs
   "grpcio-status",
   "lightgbm",

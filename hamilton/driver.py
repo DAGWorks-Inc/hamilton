@@ -13,7 +13,7 @@ import time
 import typing
 import uuid
 from datetime import datetime
-from types import ModuleType
+from types import FunctionType, ModuleType
 from typing import (
     Any,
     Callable,
@@ -402,6 +402,7 @@ class Driver:
         self,
         config: Dict[str, Any],
         *modules: ModuleType,
+        functions: List[FunctionType] = None,
         adapter: Optional[
             Union[lifecycle_base.LifecycleAdapter, List[lifecycle_base.LifecycleAdapter]]
         ] = None,
@@ -435,13 +436,15 @@ class Driver:
         if adapter.does_hook("pre_do_anything", is_async=False):
             adapter.call_all_lifecycle_hooks_sync("pre_do_anything")
         error = None
+        self.graph_functions = functions if functions is not None else []
         self.graph_modules = modules
         try:
-            self.graph = graph.FunctionGraph.from_modules(
-                *modules,
+            self.graph = graph.FunctionGraph.compile(
+                modules=list(modules),
+                functions=functions if functions is not None else [],
                 config=config,
                 adapter=adapter,
-                allow_module_overrides=allow_module_overrides,
+                allow_node_overrides=allow_module_overrides,
             )
             if _materializers:
                 materializer_factories, extractor_factories = self._process_materializers(
@@ -1866,6 +1869,7 @@ class Builder:
         # common fields
         self.config = {}
         self.modules = []
+        self.functions = []
         self.materializers = []
 
         # Allow later modules to override nodes of the same name
@@ -1925,6 +1929,17 @@ class Builder:
         :return: self
         """
         self.modules.extend(modules)
+        return self
+
+    def with_functions(self, *functions: FunctionType) -> "Builder":
+        """Adds the specified functions to the list.
+        This can be called multiple times. If you have allow_module_overrides
+        set this will enabl overwriting modules or previously added functions.
+
+        :param functions:
+        :return: self
+        """
+        self.functions.extend(functions)
         return self
 
     def with_adapter(self, adapter: base.HamiltonGraphAdapter) -> "Builder":
@@ -2168,6 +2183,7 @@ class Builder:
             _graph_executor=graph_executor,
             _use_legacy_adapter=False,
             allow_module_overrides=self._allow_module_overrides,
+            functions=self.functions,
         )
 
     def copy(self) -> "Builder":
