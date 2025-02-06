@@ -385,6 +385,7 @@ class ExecutionState:
                     completed_task.task_id, parameterization_values, input_to_parameterize
                 )
                 if completed_task.adapter.does_hook("post_task_expand", is_async=False):
+                    # TODO -- parameterization_values could be materialized here for generators
                     completed_task.adapter.call_all_lifecycle_hooks_sync(
                         "post_task_expand",
                         run_id=completed_task.run_id,
