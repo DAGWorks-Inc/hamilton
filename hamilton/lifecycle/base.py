@@ -643,7 +643,7 @@ class BasePostTaskExpand(abc.ABC):
     @abc.abstractmethod
     def post_task_expand(self, *, run_id: str, task_id: str, parameters: Dict[str, Any]):
         """Hook that is called immediately after a task is expanded into separate task. Note that this is only useful
-        in dynamic execution, although we reserve the right to add this back into the standard hamilton execution pattern.
+        in dynamic execution.
 
         :param run_id: ID of the run, unique in scope of the driver.
         :param task_id: ID of the task.
