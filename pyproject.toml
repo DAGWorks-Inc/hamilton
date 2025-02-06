@@ -107,6 +107,7 @@ pyspark = [
   "pyspark[pandas_on_spark,sql]"
 ]
 ray = ["ray>=2.0.0", "pyarrow"]
+rich = ["rich"]
 sdk = ["sf-hamilton-sdk"]
 slack = ["slack-sdk"]
 test = [
