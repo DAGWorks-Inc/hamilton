@@ -1,5 +1,5 @@
 ==========================
-plugins.h_tqdm.ProgressBar
+plugins.h_rich.RichProgressBar
 ==========================
 
 Provides a progress bar for Hamilton execution. Must have `rich` installed to use it:
