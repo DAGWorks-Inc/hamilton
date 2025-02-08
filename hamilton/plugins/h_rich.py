@@ -29,7 +29,7 @@ class RichProgressBar(TaskExecutionHook, TaskGroupingHook, GraphExecutionHook):
             driver.Builder()
             .with_config({})
             .with_modules(some_modules)
-            .with_adapters(h_rich.TaskProgressHook())
+            .with_adapters(h_rich.RichProgressBar())
             .build()
         )
         # and then when you call .execute() or .materialize() you'll get a progress bar!
