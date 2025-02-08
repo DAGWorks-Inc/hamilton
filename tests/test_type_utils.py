@@ -178,6 +178,7 @@ def test__safe_subclass(candidate, type_, expected):
         (pd.Series),
         (htypes.column[pd.Series, int]),
         (pd.DataFrame),
+        (typing.Annotated[int, "metadata"]),
     ],
 )
 def test_get_type_as_string(type_):
@@ -186,6 +187,12 @@ def test_get_type_as_string(type_):
         type_string = htypes.get_type_as_string(type_)  # noqa: F841
     except Exception as e:
         pytest.fail(f"test get_type_as_string raised: {e}")
+
+
+def test_type_as_string_with_annotated_type():
+    """Tests the custom_subclass_check"""
+    type_string = htypes.get_type_as_string(typing.Annotated[int, "metadata"])  # type: ignore
+    assert type_string == "int"
 
 
 @pytest.mark.parametrize(
