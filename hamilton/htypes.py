@@ -99,7 +99,7 @@ def get_type_as_string(type_: Type) -> Optional[str]:
     :return: string representation of the type. An empty string if everything fails.
     """
 
-    if typing.get_origin(type_) is Annotated:  # differs from typing_inspect.get_origin
+    if _is_annotated_type(type_):
         type_string = get_type_as_string(typing.get_args(type_)[0])
     elif getattr(type_, "__name__", None):
         type_string = type_.__name__
