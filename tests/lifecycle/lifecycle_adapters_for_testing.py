@@ -5,6 +5,7 @@ from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from hamilton import node
+from hamilton.execution.grouping import NodeGroupPurpose
 from hamilton.graph import FunctionGraph
 from hamilton.lifecycle.base import (
     BaseDoBuildResult,
@@ -15,6 +16,8 @@ from hamilton.lifecycle.base import (
     BasePostGraphExecute,
     BasePostNodeExecute,
     BasePostTaskExecute,
+    BasePostTaskExpand,
+    BasePostTaskGroup,
     BasePreDoAnythingHook,
     BasePreGraphExecute,
     BasePreNodeExecute,
@@ -108,6 +111,11 @@ class TrackingPreGraphExecuteHook(ExtendToTrackCalls, BasePreGraphExecute):
         pass
 
 
+class TrackingPostTaskGroupHook(ExtendToTrackCalls, BasePostTaskGroup):
+    def post_task_group(self, run_id: str, task_ids: List[str]):
+        pass
+
+
 class TrackingPreTaskExecuteHook(ExtendToTrackCalls, BasePreTaskExecute):
     def pre_task_execute(
         self,
@@ -116,6 +124,8 @@ class TrackingPreTaskExecuteHook(ExtendToTrackCalls, BasePreTaskExecute):
         nodes: List[node.Node],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         pass
 
@@ -150,7 +160,14 @@ class TrackingPostTaskExecuteHook(ExtendToTrackCalls, BasePostTaskExecute):
         results: Optional[Dict[str, Any]],
         success: bool,
         error: Exception,
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
+        pass
+
+
+class TrackingPostTaskExpandHook(ExtendToTrackCalls, BasePostTaskExpand):
+    def post_task_expand(self, run_id: str, task_id: str, parameters: Dict[str, Any]):
         pass
 
 

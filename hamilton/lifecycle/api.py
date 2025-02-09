@@ -15,7 +15,10 @@ from hamilton import graph_types, node
 # To really fix this we should move everything user-facing out of base, which is a pretty sloppy name for a package anyway
 # And put it where it belongs. For now we're OK with the TYPE_CHECKING hack
 if TYPE_CHECKING:
+    from hamilton.execution.grouping import NodeGroupPurpose
     from hamilton.graph import FunctionGraph
+else:
+    NodeGroupPurpose = None
 
 from hamilton.graph_types import HamiltonGraph, HamiltonNode
 from hamilton.lifecycle.base import (
@@ -27,6 +30,8 @@ from hamilton.lifecycle.base import (
     BasePostGraphExecute,
     BasePostNodeExecute,
     BasePostTaskExecute,
+    BasePostTaskExpand,
+    BasePostTaskGroup,
     BasePreGraphExecute,
     BasePreNodeExecute,
     BasePreTaskExecute,
@@ -379,6 +384,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         nodes: List["node.Node"],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         self.run_before_task_execution(
             run_id=run_id,
@@ -386,6 +393,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
             nodes=[HamiltonNode.from_node(n) for n in nodes],
             inputs=inputs,
             overrides=overrides,
+            spawning_task_id=spawning_task_id,
+            purpose=purpose,
         )
 
     def post_task_execute(
@@ -397,6 +406,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         results: Optional[Dict[str, Any]],
         success: bool,
         error: Exception,
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
     ):
         self.run_after_task_execution(
             run_id=run_id,
@@ -405,6 +416,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
             results=results,
             success=success,
             error=error,
+            spawning_task_id=spawning_task_id,
+            purpose=purpose,
         )
 
     @abc.abstractmethod
@@ -416,6 +429,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         nodes: List[HamiltonNode],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
         **future_kwargs,
     ):
         """Implement this to run something after task execution. Tasks are tols used to group nodes.
@@ -428,6 +443,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         :param inputs: Inputs to the task
         :param overrides: Overrides passed to the task
         :param future_kwargs: Reserved for backwards compatibility.
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
         """
         pass
 
@@ -441,6 +458,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         results: Optional[Dict[str, Any]],
         success: bool,
         error: Exception,
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
         **future_kwargs,
     ):
         """Implement this to run something after task execution. See note in run_before_task_execution.
@@ -452,6 +471,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         :param success: Whether the task was successful
         :param error: The error the task threw, if any
         :param future_kwargs: Reserved for backwards compatibility.
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
         """
         pass
 
@@ -612,6 +633,42 @@ class StaticValidator(BaseValidateGraph, BaseValidateNode):
         self, *, graph: "FunctionGraph", modules: List[ModuleType], config: Dict[str, Any]
     ) -> Tuple[bool, Optional[Exception]]:
         return self.run_to_validate_graph(graph=HamiltonGraph.from_graph(graph))
+
+
+class TaskGroupingHook(BasePostTaskGroup, BasePostTaskExpand):
+    """Implement this to run something after task grouping or task expansion. This will allow you to
+    capture information about the tasks during `Parallelize`/`Collect` blocks in dynamic DAG execution."""
+
+    @override
+    @final
+    def post_task_group(self, *, run_id: str, task_ids: List[str]):
+        return self.run_after_task_grouping(run_id=run_id, task_ids=task_ids)
+
+    @override
+    @final
+    def post_task_expand(self, *, run_id: str, task_id: str, parameters: Dict[str, Any]):
+        return self.run_after_task_expansion(run_id=run_id, task_id=task_id, parameters=parameters)
+
+    @abc.abstractmethod
+    def run_after_task_grouping(self, *, run_id: str, task_ids: List[str], **future_kwargs):
+        """Hook that is called after task grouping.
+        :param run_id: ID of the run, unique in scope of the driver.
+        :param task_ids: List of tasks that were grouped together.
+        :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility.
+        """
+        pass
+
+    @abc.abstractmethod
+    def run_after_task_expansion(
+        self, *, run_id: str, task_id: str, parameters: Dict[str, Any], **future_kwargs
+    ):
+        """Hook that is called after task expansion.
+        :param run_id: ID of the run, unique in scope of the driver.
+        :param task_id: ID of the task that was expanded.
+        :param parameters: Parameters that were passed to the task.
+        :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility.
+        """
+        pass
 
 
 class GraphConstructionHook(BasePostGraphConstruct, abc.ABC):

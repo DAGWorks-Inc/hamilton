@@ -9,6 +9,7 @@ from .api import (  # noqa: F401
     ResultBuilder,
     StaticValidator,
     TaskExecutionHook,
+    TaskGroupingHook,
 )
 from .base import LifecycleAdapter  # noqa: F401
 from .default import (  # noqa: F401
@@ -39,6 +40,7 @@ __all__ = [
     "NodeExecutionMethod",
     "StaticValidator",
     "TaskExecutionHook",
+    "TaskGroupingHook",
     "FunctionInputOutputTypeChecker",
     "NoEdgeAndInputTypeChecking",
 ]

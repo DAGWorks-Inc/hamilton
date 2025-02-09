@@ -6,6 +6,7 @@ import pytest
 
 from hamilton import ad_hoc_utils, driver, node
 from hamilton.execution.executors import SynchronousLocalTaskExecutor
+from hamilton.execution.grouping import NodeGroupPurpose
 from hamilton.htypes import Collect, Parallelizable
 from hamilton.lifecycle.base import (
     BaseDoNodeExecute,
@@ -13,6 +14,8 @@ from hamilton.lifecycle.base import (
     BasePostGraphExecute,
     BasePostNodeExecute,
     BasePostTaskExecute,
+    BasePostTaskExpand,
+    BasePostTaskGroup,
     BasePreDoAnythingHook,
     BasePreGraphExecute,
     BasePreNodeExecute,
@@ -26,6 +29,8 @@ from .lifecycle_adapters_for_testing import (
     TrackingDoNodeExecuteHook,
     TrackingPostNodeExecuteHook,
     TrackingPostTaskExecuteHook,
+    TrackingPostTaskExpandHook,
+    TrackingPostTaskGroupHook,
     TrackingPreNodeExecuteHook,
 )
 
@@ -158,7 +163,15 @@ def test_individual_post_task_execute_hook_task_based():
     # Note we have >= as we actually happen to include the input, which is suboptimal, but not worth fixing now
     assert {item.bound_kwargs["success"] for item in relevant_calls} == {True}
     assert {item.bound_kwargs["error"] for item in relevant_calls} == {None}
-    assert len({item.bound_kwargs["task_id"] for item in relevant_calls}) == 10  # unique task names
+    spawning_task_ids = Counter([item.bound_kwargs["spawning_task_id"] for item in relevant_calls])
+    assert spawning_task_ids == {"expand-parallel_over": 5, None: 5}
+    purposes = Counter([item.bound_kwargs["purpose"] for item in relevant_calls])
+    assert purposes == {
+        NodeGroupPurpose.EXECUTE_BLOCK: 5,
+        NodeGroupPurpose.EXECUTE_SINGLE: 3,
+        NodeGroupPurpose.EXPAND_UNORDERED: 1,
+        NodeGroupPurpose.GATHER: 1,
+    }
 
 
 def test_individual_post_task_execute_hook_with_exception():
@@ -196,6 +209,39 @@ def test_individual_do_node_execute_method_task_based():
     assert res == {"output": 426}  # Result of the above, computed but not explicitly drawn out
 
 
+def test_individual_post_task_group_hook():
+    hook_name = "post_task_group"
+    hook = TrackingPostTaskGroupHook(name=hook_name)
+    dr = _sample_driver(hook)
+    dr.execute(["output"], inputs={"n_iters_input": 5})
+    relevant_calls = [item for item in hook.calls if item.name == hook_name]
+    assert len(relevant_calls) == 1
+    task_ids = relevant_calls[0].bound_kwargs["task_ids"]
+    assert len(task_ids) == 6
+    assert set(task_ids) == {
+        "expand-parallel_over",
+        "block-parallel_over",
+        "collect-parallel_over",
+        "n_iters_input",
+        "n_iters",
+        "output",
+    }
+    assert len(relevant_calls[0].bound_kwargs["run_id"]) > 10  # Should be UUID(ish)...
+
+
+def test_individual_post_task_expand_hook():
+    hook_name = "post_task_expand"
+    hook = TrackingPostTaskExpandHook(name=hook_name)
+    dr = _sample_driver(hook)
+    dr.execute(["output"], inputs={"n_iters_input": 5})
+    relevant_calls = [item for item in hook.calls if item.name == hook_name]
+    assert len(relevant_calls) == 1
+    assert len(relevant_calls[0].bound_kwargs["parameters"]) == 5
+    parameters = [item for item in relevant_calls[0].bound_kwargs["parameters"]]
+    assert parameters == ["0", "1", "2", "3", "4"]
+    assert len(relevant_calls[0].bound_kwargs["run_id"]) > 10  # Should be UUID(ish)...
+
+
 def test_multi_hook():
     class MultiHook(
         BasePreDoAnythingHook,
@@ -207,6 +253,8 @@ def test_multi_hook():
         BasePostNodeExecute,
         BasePostTaskExecute,
         BasePostGraphExecute,
+        BasePostTaskGroup,
+        BasePostTaskExpand,
         ExtendToTrackCalls,
     ):
         def pre_task_execute(
@@ -216,6 +264,8 @@ def test_multi_hook():
             nodes: List[node.Node],
             inputs: Dict[str, Any],
             overrides: Dict[str, Any],
+            spawning_task_id: Optional[str],
+            purpose: NodeGroupPurpose,
         ):
             pass
 
@@ -236,6 +286,8 @@ def test_multi_hook():
             results: Optional[Dict[str, Any]],
             success: bool,
             error: Exception,
+            spawning_task_id: Optional[str],
+            purpose: NodeGroupPurpose,
         ):
             pass
 
@@ -284,6 +336,12 @@ def test_multi_hook():
         ):
             pass
 
+        def post_task_group(self, run_id: str, task_ids: List[str]):
+            pass
+
+        def post_task_expand(self, run_id: str, task_id: str, parameters: Dict[str, Any]):
+            pass
+
     multi_hook = MultiHook(name="multi_hook")
 
     dr = _sample_driver(multi_hook)
@@ -300,4 +358,6 @@ def test_multi_hook():
         "post_node_execute": 14,
         "post_task_execute": 10,
         "post_graph_execute": 1,
+        "post_task_group": 1,
+        "post_task_expand": 1,
     }

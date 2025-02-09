@@ -24,7 +24,8 @@ looking forward.
    NodeExecutionMethod
    StaticValidator
    GraphConstructionHook
-
+   TaskExecutionHook
+   TaskGroupingHook
 
 Available Adapters
 -------------------
@@ -51,6 +52,7 @@ Recall to add lifecycle adapters, you just need to call the ``with_adapters`` me
     PDBDebugger
     PrintLn
     ProgressBar
+    RichProgressBar
     DDOGTracer
     FunctionInputOutputTypeChecker
     SlackNotifierHook
