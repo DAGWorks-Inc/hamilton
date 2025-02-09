@@ -3,6 +3,7 @@ import typing
 
 import dask.array
 import dask.dataframe
+import dask_expr
 import numpy as np
 import pandas as pd
 from dask import compute
@@ -227,7 +228,7 @@ class DaskDataFrameResult(base.ResultMixin):
             elif isinstance(v, (list, tuple)):
                 massaged_outputs[k] = dask.dataframe.from_array(dask.array.from_array(v))
                 columns_expected.append(k)
-            elif isinstance(v, (dask.dataframe.core.Scalar,)):
+            elif isinstance(v, (dask.dataframe.core.Scalar, dask_expr.Scalar)):
                 scalar = v.compute()
                 if length == 0:
                     massaged_outputs[k] = dask.dataframe.from_pandas(
