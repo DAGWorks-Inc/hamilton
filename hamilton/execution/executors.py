@@ -2,11 +2,13 @@ import abc
 import dataclasses
 import functools
 import logging
+import sys
 
-try:
-    from concurrent.futures.process import ProcessPoolExecutor
-except ModuleNotFoundError:
+if sys.platform in ("emscripten", "wasi"):
     ProcessPoolExecutor = None
+else:
+    from concurrent.futures.process import ProcessPoolExecutor
+
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from typing import Any, Callable, Dict, List
 
