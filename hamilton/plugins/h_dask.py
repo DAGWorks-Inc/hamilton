@@ -1,4 +1,6 @@
 import logging
+
+# import sys
 import typing
 
 import dask.array
@@ -16,9 +18,10 @@ from hamilton.execution import executors
 logger = logging.getLogger(__name__)
 
 try:
-    from dask.dataframe.core import Scalar as dask_scalar
+    from dask.dataframe.dask_expr import Scalar as dask_scalar
 except ImportError:
-    from dask_expr import Scalar as dask_scalar
+    from dask.dataframe.core import Scalar as dask_scalar
+    # maybe import from dask_expr here?
 
 
 class DaskGraphAdapter(base.HamiltonGraphAdapter):
@@ -262,9 +265,7 @@ class DaskDataFrameResult(base.ResultMixin):
 
         # assumption is that everything here is a dask series or dataframe
         # we assume that we do column concatenation and that it's an outer join (TBD: make this configurable)
-        _df = dask.dataframe.multi.concat(
-            [o for o in massaged_outputs.values()], axis=1, join="outer"
-        )
+        _df = dask.dataframe.concat([o for o in massaged_outputs.values()], axis=1, join="outer")
         _df.columns = columns_expected
         return _df
 

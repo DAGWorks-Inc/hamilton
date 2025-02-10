@@ -51,7 +51,7 @@ docs = [
   "sf-hamilton[dev]",
   "alabaster>=0.7,<0.8,!=0.7.5", # read the docs pins
   "commonmark==0.9.1", # read the docs pins
-  "dask-expr",
+  "dask-expr; python_version == '3.9'",
   "dask[distributed]",
   "ddtrace",
   "diskcache",
@@ -113,7 +113,7 @@ slack = ["slack-sdk"]
 test = [
   "connectorx",
   "dask[complete]",
-#  "dask-expr; python_version >= '3.9'",
+  "dask-expr; python_version == '3.9'",
   "datasets", # huggingface datasets
   "diskcache",
   "dlt",
