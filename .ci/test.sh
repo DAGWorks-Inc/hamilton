@@ -26,7 +26,7 @@ if [[ ${TASK} == "dask" ]]; then
 fi
 
 if [[ ${TASK} == "integrations" ]]; then
-    pip install -e '.[pandera]'
+    pip install -e '.[pandera, test]'
     pip install -r tests/integrations/pandera/requirements.txt
     if python -c 'import sys; exit(0) if sys.version_info[:2] == (3, 9) else exit(1)'; then
       echo "Python version is 3.9"
