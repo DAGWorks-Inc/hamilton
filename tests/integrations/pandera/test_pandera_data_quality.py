@@ -200,7 +200,7 @@ def test_pandera_decorator_dask_df():
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python3.9 or higher")
-@pytest.xfail(
+@pytest.mark.xfail(
     reason="some weird import issue leads to key error in pandera, can't recreate outside of the series decorator"
 )
 def test_pandera_decorator_dask_series():
