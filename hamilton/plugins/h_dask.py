@@ -1,6 +1,4 @@
 import logging
-
-# import sys
 import typing
 
 import dask.array
@@ -20,8 +18,8 @@ logger = logging.getLogger(__name__)
 try:
     from dask.dataframe.dask_expr import Scalar as dask_scalar
 except ImportError:
+    # this is for older versions of dask
     from dask.dataframe.core import Scalar as dask_scalar
-    # maybe import from dask_expr here?
 
 
 class DaskGraphAdapter(base.HamiltonGraphAdapter):
