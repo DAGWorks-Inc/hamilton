@@ -15,6 +15,12 @@ from hamilton.execution import executors
 
 logger = logging.getLogger(__name__)
 
+try:
+    from dask.dataframe.dask_expr import Scalar as dask_scalar
+except ImportError:
+    # this is for older versions of dask
+    from dask.dataframe.core import Scalar as dask_scalar
+
 
 class DaskGraphAdapter(base.HamiltonGraphAdapter):
     """Class representing what's required to make Hamilton run on Dask.
@@ -227,7 +233,7 @@ class DaskDataFrameResult(base.ResultMixin):
             elif isinstance(v, (list, tuple)):
                 massaged_outputs[k] = dask.dataframe.from_array(dask.array.from_array(v))
                 columns_expected.append(k)
-            elif isinstance(v, (dask.dataframe.core.Scalar,)):
+            elif isinstance(v, (dask_scalar,)):
                 scalar = v.compute()
                 if length == 0:
                     massaged_outputs[k] = dask.dataframe.from_pandas(
@@ -257,9 +263,7 @@ class DaskDataFrameResult(base.ResultMixin):
 
         # assumption is that everything here is a dask series or dataframe
         # we assume that we do column concatenation and that it's an outer join (TBD: make this configurable)
-        _df = dask.dataframe.multi.concat(
-            [o for o in massaged_outputs.values()], axis=1, join="outer"
-        )
+        _df = dask.dataframe.concat([o for o in massaged_outputs.values()], axis=1, join="outer")
         _df.columns = columns_expected
         return _df
 

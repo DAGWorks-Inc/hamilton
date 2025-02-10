@@ -1,1 +1,2 @@
 # Additional requirements on top of hamilton...pandera
+pandera[dask]
