@@ -1,3 +1,2 @@
 # Additional requirements on top of hamilton...pandera
-dask
 pandera[dask]
