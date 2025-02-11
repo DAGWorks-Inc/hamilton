@@ -9,6 +9,11 @@ import pytest
 from hamilton import htypes
 from hamilton.htypes import check_instance
 
+if sys.version_info >= (3, 9):
+    from typing import Annotated
+else:
+    from typing_extensions import Annotated
+
 
 class X:
     pass
@@ -178,6 +183,7 @@ def test__safe_subclass(candidate, type_, expected):
         (pd.Series),
         (htypes.column[pd.Series, int]),
         (pd.DataFrame),
+        (Annotated[int, "metadata"]),
     ],
 )
 def test_get_type_as_string(type_):
@@ -186,6 +192,12 @@ def test_get_type_as_string(type_):
         type_string = htypes.get_type_as_string(type_)  # noqa: F841
     except Exception as e:
         pytest.fail(f"test get_type_as_string raised: {e}")
+
+
+def test_type_as_string_with_annotated_type():
+    """Tests the custom_subclass_check"""
+    type_string = htypes.get_type_as_string(Annotated[int, "metadata"])  # type: ignore
+    assert type_string == "int"
 
 
 @pytest.mark.parametrize(
