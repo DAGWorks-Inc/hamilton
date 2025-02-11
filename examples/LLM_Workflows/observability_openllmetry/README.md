@@ -2,7 +2,7 @@
 
 In this simple example, you'll learn how to use the `OpenTelemetryTracer` to emit traces of your Hamilton code using the OpenTelemetry format, in particular LLM applications.
 
-![Traceloop screenshot](image.png)
+![Traceloop screenshot](screenshot.png)
 
 [OpenTelemetry](https://opentelemetry.io/) is an open-source cross-language tool that allows to instrument, generate, collect, and export telemetry data (metrics, logs, traces), and constitute an industry-recognized standard. Learn more about it in this [Awesome OpenTelemetry repository](https://github.com/magsther/awesome-opentelemetry)
 
