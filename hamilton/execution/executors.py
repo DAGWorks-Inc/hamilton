@@ -2,7 +2,14 @@ import abc
 import dataclasses
 import functools
 import logging
-from concurrent.futures import Executor, Future, ProcessPoolExecutor, ThreadPoolExecutor
+import sys
+
+if sys.platform in ("emscripten", "wasi"):
+    ProcessPoolExecutor = None
+else:
+    from concurrent.futures.process import ProcessPoolExecutor
+
+from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from typing import Any, Callable, Dict, List
 
 from hamilton import node
