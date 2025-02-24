@@ -388,6 +388,17 @@ def run_graph_to_completion(
             if next_task is not None:
                 task_executor = execution_manager.get_executor_for_task(next_task)
                 if task_executor.can_submit_task():
+                    if next_task.adapter.does_hook("pre_task_submission", is_async=False):
+                        next_task.adapter.call_all_lifecycle_hooks_sync(
+                            "pre_task_submission",
+                            run_id=next_task.run_id,
+                            task_id=next_task.task_id,
+                            nodes=next_task.nodes,
+                            inputs=next_task.dynamic_inputs,
+                            overrides=next_task.overrides,
+                            spawning_task_id=next_task.spawning_task_id,
+                            purpose=next_task.purpose,
+                        )
                     try:
                         submitted = task_executor.submit_task(next_task)
                     except Exception as e:
@@ -396,7 +407,7 @@ def run_graph_to_completion(
                             f"{[item.name for item in next_task.nodes]}"
                         )
                         raise e
-                    task_futures[next_task.task_id] = submitted
+                    task_futures[next_task] = submitted
                 else:
                     # Whoops, back on the queue
                     # We should probably wait a bit here, but for now we're going to keep
@@ -404,12 +415,24 @@ def run_graph_to_completion(
                     execution_state.reject_task(task_to_reject=next_task)
             # update all the tasks in flight
             # copy so we can modify
-            for task_name, task_future in task_futures.copy().items():
+            for task, task_future in task_futures.copy().items():
                 state = task_future.get_state()
                 result = task_future.get_result()
-                execution_state.update_task_state(task_name, state, result)
+                execution_state.update_task_state(task.task_id, state, result)
                 if TaskState.is_terminal(state):
-                    del task_futures[task_name]
+                    if task.adapter.does_hook("post_task_resolution", is_async=False):
+                        task.adapter.call_all_lifecycle_hooks_sync(
+                            "post_task_resolution",
+                            run_id=task.run_id,
+                            task_id=task.task_id,
+                            nodes=task.nodes,
+                            success=state == TaskState.SUCCESSFUL,
+                            error=None,  # FIXME -- we should get the error here
+                            result=result,
+                            spawning_task_id=task.spawning_task_id,
+                            purpose=task.purpose,
+                        )
+                    del task_futures[task]
         logger.info(f"Graph is done, graph state is {execution_state.get_graph_state()}")
     finally:
         execution_manager.finalize()
