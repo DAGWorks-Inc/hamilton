@@ -410,6 +410,60 @@ class BasePreGraphExecuteAsync(abc.ABC):
         pass
 
 
+@lifecycle.base_hook("post_task_group")
+class BasePostTaskGroup(abc.ABC):
+    @abc.abstractmethod
+    def post_task_group(self, *, run_id: str, task_ids: List[str]):
+        """Hook that is called immediately after a task group is created. Note that this is only useful in dynamic
+        execution, although we reserve the right to add this back into the standard hamilton execution pattern.
+
+        :param run_id: ID of the run, unique in scope of the driver.
+        :param task_ids: IDs of tasks that are in the group."""
+        pass
+
+
+@lifecycle.base_hook("post_task_expand")
+class BasePostTaskExpand(abc.ABC):
+    @abc.abstractmethod
+    def post_task_expand(self, *, run_id: str, task_id: str, parameters: Dict[str, Any]):
+        """Hook that is called immediately after a task is expanded into separate task. Note that this is only useful
+        in dynamic execution.
+
+        :param run_id: ID of the run, unique in scope of the driver.
+        :param task_id: ID of the task.
+        :param parameters: Parameters that are being passed to each of the expanded tasks."""
+        pass
+
+
+@lifecycle.base_hook("pre_task_submission")
+class BasePreTaskSubmission(abc.ABC):
+    @abc.abstractmethod
+    def pre_task_submission(
+        self,
+        *,
+        run_id: str,
+        task_id: str,
+        nodes: List["node.Node"],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
+    ):
+        """Hook that is called immediately prior to task submission to an executor as a task future.
+        Note that this is only useful in dynamic execution, although we reserve the right to add this back
+        into the standard hamilton execution pattern.
+
+        :param run_id: ID of the run, unique in scope of the driver.
+        :param task_id: ID of the task.
+        :param nodes: Nodes that are being executed.
+        :param inputs: Inputs to the task.
+        :param overrides: Overrides to task execution.
+        :param spawning_task_id: ID of the task that spawned this task.
+        :param purpose: Purpose of the current task group.
+        """
+        pass
+
+
 @lifecycle.base_hook("pre_task_execute")
 class BasePreTaskExecute(abc.ABC):
     @abc.abstractmethod
@@ -626,31 +680,6 @@ class BasePostNodeExecuteAsync(abc.ABC):
         pass
 
 
-@lifecycle.base_hook("post_task_group")
-class BasePostTaskGroup(abc.ABC):
-    @abc.abstractmethod
-    def post_task_group(self, *, run_id: str, task_ids: List[str]):
-        """Hook that is called immediately after a task group is created. Note that this is only useful in dynamic
-        execution, although we reserve the right to add this back into the standard hamilton execution pattern.
-
-        :param run_id: ID of the run, unique in scope of the driver.
-        :param task_ids: IDs of tasks that are in the group."""
-        pass
-
-
-@lifecycle.base_hook("post_task_expand")
-class BasePostTaskExpand(abc.ABC):
-    @abc.abstractmethod
-    def post_task_expand(self, *, run_id: str, task_id: str, parameters: Dict[str, Any]):
-        """Hook that is called immediately after a task is expanded into separate task. Note that this is only useful
-        in dynamic execution.
-
-        :param run_id: ID of the run, unique in scope of the driver.
-        :param task_id: ID of the task.
-        :param parameters: Parameters that are being passed to each of the expanded tasks."""
-        pass
-
-
 @lifecycle.base_hook("post_task_execute")
 class BasePostTaskExecute(abc.ABC):
     @abc.abstractmethod
@@ -703,6 +732,36 @@ class BasePostTaskExecuteAsync(abc.ABC):
         :param task_id: ID of the task
         :param nodes: Nodes that were executed
         :param results: Results of the task
+        :param success: Whether or not the task executed successfully
+        :param error: The error that was raised, if any
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
+        """
+        pass
+
+
+@lifecycle.base_hook("post_task_resolution")
+class BasePostTaskResolution(abc.ABC):
+    @abc.abstractmethod
+    def post_task_resolution(
+        self,
+        *,
+        run_id: str,
+        task_id: str,
+        nodes: List["node.Node"],
+        result: Any,
+        success: bool,
+        error: Exception,
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
+    ):
+        """Hook called immediately after a task future (as submitted to a task executor) is resolved.
+        Note that this is only useful in dynamic execution, although we reserve the right to add this
+        back into the standard hamilton execution pattern.
+
+        :param run_id: ID of the run, unique in scope of the driver.
+        :param task_id: ID of the task
+        :param result: Return value of the task (from task future resolution).
         :param success: Whether or not the task executed successfully
         :param error: The error that was raised, if any
         :param spawning_task_id: ID of the task that spawned this task

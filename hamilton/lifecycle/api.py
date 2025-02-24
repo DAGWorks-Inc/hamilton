@@ -32,9 +32,11 @@ from hamilton.lifecycle.base import (
     BasePostTaskExecute,
     BasePostTaskExpand,
     BasePostTaskGroup,
+    BasePostTaskResolution,
     BasePreGraphExecute,
     BasePreNodeExecute,
     BasePreTaskExecute,
+    BasePreTaskSubmission,
     BaseValidateGraph,
     BaseValidateNode,
 )
@@ -371,10 +373,121 @@ class GraphExecutionHook(BasePreGraphExecute, BasePostGraphExecute):
         pass
 
 
+class TaskSubmissionHook(BasePreTaskSubmission, abc.ABC):
+    """Implement this to hook into the task submission process. Tasks are submitted to an executor,
+    which then controls how and where the nodes associated with the task are run."""
+
+    @override
+    def pre_task_submission(
+        self,
+        *,
+        run_id: str,
+        task_id: str,
+        nodes: List["node.Node"],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
+    ):
+        self.run_before_task_submission(
+            run_id=run_id,
+            task_id=task_id,
+            nodes=nodes,
+            inputs=inputs,
+            overrides=overrides,
+            spawning_task_id=spawning_task_id,
+            purpose=purpose,
+        )
+
+    @abc.abstractmethod
+    def run_before_task_submission(
+        self,
+        *,
+        run_id: str,
+        task_id: str,
+        nodes: List["node.Node"],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
+        **future_kwargs,
+    ):
+        """Runs prior to a task being submitted to an executor. By definition this is run *outside*
+        of the task executor, on the process that executed the driver.
+
+        :param run_id: ID of the run this is under.
+        :param task_id: ID of the task we're launching.
+        :param nodes: Nodes that are part of this task
+        :param inputs: Inputs to the task
+        :param overrides: Overrides passed to the task
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
+        :param future_kwargs: Reserved for backwards compatibility.
+        """
+        pass
+
+
+class TaskResolutionHook(BasePostTaskResolution, abc.ABC):
+    """Implement this to hook into the task resolution process. Tasks are submitted to an executor,
+    which then returns a task future to be resolved at a later time when the task is complete."""
+
+    @override
+    def post_task_resolution(
+        self,
+        *,
+        run_id: str,
+        task_id: str,
+        nodes: List["node.Node"],
+        result: Any,
+        success: bool,
+        error: Optional[Exception],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
+    ):
+        self.run_after_task_resolution(
+            run_id=run_id,
+            task_id=task_id,
+            nodes=nodes,
+            result=result,
+            success=success,
+            error=error,
+            spawning_task_id=spawning_task_id,
+            purpose=purpose,
+        )
+
+    @abc.abstractmethod
+    def run_after_task_resolution(
+        self,
+        *,
+        run_id: str,
+        task_id: str,
+        nodes: List["node.Node"],
+        result: Any,
+        success: bool,
+        error: Optional[Exception],
+        spawning_task_id: Optional[str],
+        purpose: NodeGroupPurpose,
+        **future_kwargs,
+    ):
+        """Runs after a task (future) has been resolved into a returns value. By definition this is
+        run *outside* of the task executor,on the process that executed the driver.
+
+        :param run_id: ID of the run this is under.
+        :param task_id: ID of the task that was just executed.
+        :param nodes: Nodes that were part of this task
+        :param result: Result of the task
+        :param success: Whether the task was successful
+        :param error: The error the task threw, if any
+        :param spawning_task_id: ID of the task that spawned this task
+        :param purpose: Purpose of the current task group
+        :param future_kwargs: Reserved for backwards compatibility.
+        """
+        pass
+
+
 class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
-    """Implement this to run something after task execution. Tasks are tols used to group nodes.
-    Note that this is currently run *inside* the task, although we do not guarantee where it will be run
-    (it could easily move to outside the task)."""
+    """Implement this to hook into the task execution process. Tasks consist of a group of one or
+    more nodes that are run on a task executor."""
 
     def pre_task_execute(
         self,
@@ -433,9 +546,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         purpose: NodeGroupPurpose,
         **future_kwargs,
     ):
-        """Implement this to run something after task execution. Tasks are tols used to group nodes.
-        Note that this is currently run *inside* the task, although we do not guarantee where it will be run
-        (it could easily move to outside the task).
+        """Runs prior to any of the nodes associated with a task. By definition this is run *inside*
+        of the executor and therefore may be run on separate or distributed processes.
 
         :param task_id: ID of the task we're launching.
         :param run_id: ID of the run this is under.
@@ -462,7 +574,8 @@ class TaskExecutionHook(BasePreTaskExecute, BasePostTaskExecute, abc.ABC):
         purpose: NodeGroupPurpose,
         **future_kwargs,
     ):
-        """Implement this to run something after task execution. See note in run_before_task_execution.
+        """Runs after all of the nodes associated with a task have been executed. By definition this
+        is run *inside* of the executor and therefore may be run on separate or distributed processes.
 
         :param task_id: ID of the task that was just executed
         :param run_id: ID of the run this was under.
@@ -651,7 +764,9 @@ class TaskGroupingHook(BasePostTaskGroup, BasePostTaskExpand):
 
     @abc.abstractmethod
     def run_after_task_grouping(self, *, run_id: str, task_ids: List[str], **future_kwargs):
-        """Hook that is called after task grouping.
+        """Runs after task grouping. This allows you to capture information about the which tasks were
+        created for a given run.
+
         :param run_id: ID of the run, unique in scope of the driver.
         :param task_ids: List of tasks that were grouped together.
         :param future_kwargs: Additional keyword arguments -- this is kept for backwards compatibility.
@@ -662,7 +777,9 @@ class TaskGroupingHook(BasePostTaskGroup, BasePostTaskExpand):
     def run_after_task_expansion(
         self, *, run_id: str, task_id: str, parameters: Dict[str, Any], **future_kwargs
     ):
-        """Hook that is called after task expansion.
+        """Runs after task expansion in Parallelize/Collect blocks. This allows you to capture information
+        about the task that was expanded.
+
         :param run_id: ID of the run, unique in scope of the driver.
         :param task_id: ID of the task that was expanded.
         :param parameters: Parameters that were passed to the task.
