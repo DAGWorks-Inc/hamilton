@@ -4,6 +4,7 @@ import functools
 import itertools
 import logging
 from abc import ABC
+from inspect import unwrap
 
 try:
     from types import EllipsisType
@@ -99,18 +100,30 @@ class NodeTransformLifecycle(abc.ABC):
         :param fn: Function to decorate
         :return: The function again, with the desired properties.
         """
-        self.validate(fn)
+        # stop unwrapping if not a hamilton function
+        # should only be one level of "hamilton wrapping" - and that's what we attach things to.
+        self.validate(unwrap(fn, stop=lambda f: not hasattr(f, "__hamilton__")))
+        if not hasattr(fn, "__hamilton__"):
+
+            @functools.wraps(fn)
+            def wrapper(*args, **kwargs):
+                return fn(*args, **kwargs)
+
+            wrapper.__hamilton__ = True
+        else:
+            wrapper = fn
+
         lifecycle_name = self.__class__.get_lifecycle_name()
-        if hasattr(fn, self.get_lifecycle_name()):
+        if hasattr(wrapper, self.get_lifecycle_name()):
             if not self.allows_multiple():
                 raise ValueError(
                     f"Got multiple decorators for decorator @{self.__class__}. Only one allowed."
                 )
-            curr_value = getattr(fn, lifecycle_name)
-            setattr(fn, lifecycle_name, curr_value + [self])
+            curr_value = getattr(wrapper, lifecycle_name)
+            setattr(wrapper, lifecycle_name, curr_value + [self])
         else:
-            setattr(fn, lifecycle_name, [self])
-        return fn
+            setattr(wrapper, lifecycle_name, [self])
+        return wrapper
 
     def required_config(self) -> Optional[List[str]]:
         """Declares the required configuration keys for this decorator.
