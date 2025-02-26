@@ -231,6 +231,65 @@ class parameterize(base.NodeExpander):
                     # now the error will be clear enough
                 return node_.callable(*args, **new_kwargs)
 
+            async def async_replacement_function(
+                *args,
+                upstream_dependencies=upstream_dependencies,
+                literal_dependencies=literal_dependencies,
+                grouped_list_dependencies=grouped_list_dependencies,
+                grouped_dict_dependencies=grouped_dict_dependencies,
+                former_inputs=list(node_.input_types.keys()),  # noqa
+                **kwargs,
+            ):
+                """This function rewrites what is passed in kwargs to the right kwarg for the function.
+                The passed in kwargs are all the dependencies of this node. Note that we actually have the "former inputs",
+                which are what the node declares as its dependencies. So, we just have to loop through all of them to
+                get the "new" value. This "new" value comes from the parameterization.
+
+                Note that much of this code should *probably* live within the source/value/grouped functions, but
+                it is here as we're not 100% sure about the abstraction.
+
+                TODO -- think about how the grouped/source/literal functions should be able to grab the values from kwargs/args.
+                Should be easy -- they should just have something like a "resolve(**kwargs)" function that they can call.
+                """
+                new_kwargs = {}
+                for node_input in former_inputs:
+                    if node_input in upstream_dependencies:
+                        # If the node is specified by `source`, then we get the value from the kwargs
+                        new_kwargs[node_input] = kwargs[upstream_dependencies[node_input].source]
+                    elif node_input in literal_dependencies:
+                        # If the node is specified by `value`, then we get the literal value (no need for kwargs)
+                        new_kwargs[node_input] = literal_dependencies[node_input].value
+                    elif node_input in grouped_list_dependencies:
+                        # If the node is specified by `group`, then we get the list of values from the kwargs or the literal
+                        new_kwargs[node_input] = []
+                        for replacement in grouped_list_dependencies[node_input].sources:
+                            resolved_value = (
+                                kwargs[replacement.source]
+                                if replacement.get_dependency_type()
+                                == ParametrizedDependencySource.UPSTREAM
+                                else replacement.value
+                            )
+                            new_kwargs[node_input].append(resolved_value)
+                    elif node_input in grouped_dict_dependencies:
+                        # If the node is specified by `group`, then we get the dict of values from the kwargs or the literal
+                        new_kwargs[node_input] = {}
+                        for dependency, replacement in grouped_dict_dependencies[
+                            node_input
+                        ].sources.items():
+                            resolved_value = (
+                                kwargs[replacement.source]
+                                if replacement.get_dependency_type()
+                                == ParametrizedDependencySource.UPSTREAM
+                                else replacement.value
+                            )
+                            new_kwargs[node_input][dependency] = resolved_value
+                    elif node_input in kwargs:
+                        new_kwargs[node_input] = kwargs[node_input]
+                    # This case is left blank for optional parameters. If we error here, we'll break
+                    # the (supported) case of optionals. We do know whether its optional but for
+                    # now the error will be clear enough
+                return await node_.callable(*args, **new_kwargs)
+
             new_input_types = {}
             grouped_dependencies = {
                 **grouped_list_dependencies,
@@ -271,7 +330,9 @@ class parameterize(base.NodeExpander):
                     name=output_node,
                     doc_string=docstring,  # TODO -- change docstring
                     callabl=functools.partial(
-                        replacement_function,
+                        replacement_function
+                        if not inspect.iscoroutinefunction(node_.callable)
+                        else async_replacement_function,
                         **{parameter: val.value for parameter, val in literal_dependencies.items()},
                     ),
                     input_types=new_input_types,

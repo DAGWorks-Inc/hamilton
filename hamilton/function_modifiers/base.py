@@ -1,6 +1,7 @@
 import abc
 import collections
 import functools
+import inspect
 import itertools
 import logging
 from abc import ABC
@@ -100,14 +101,20 @@ class NodeTransformLifecycle(abc.ABC):
         :param fn: Function to decorate
         :return: The function again, with the desired properties.
         """
-        # stop unwrapping if not a hamilton function
-        # should only be one level of "hamilton wrapping" - and that's what we attach things to.
+        # # stop unwrapping if not a hamilton function
+        # # should only be one level of "hamilton wrapping" - and that's what we attach things to.
         self.validate(unwrap(fn, stop=lambda f: not hasattr(f, "__hamilton__")))
         if not hasattr(fn, "__hamilton__"):
+            if inspect.iscoroutinefunction(fn):
 
-            @functools.wraps(fn)
-            def wrapper(*args, **kwargs):
-                return fn(*args, **kwargs)
+                @functools.wraps(fn)
+                async def wrapper(*args, **kwargs):
+                    return await fn(*args, **kwargs)
+            else:
+
+                @functools.wraps(fn)
+                def wrapper(*args, **kwargs):
+                    return fn(*args, **kwargs)
 
             wrapper.__hamilton__ = True
         else:

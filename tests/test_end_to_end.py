@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Type
 import pandas as pd
 import pytest
 
-from hamilton import ad_hoc_utils, base, driver, settings
+from hamilton import ad_hoc_utils, async_driver, base, driver, settings
 from hamilton.base import DefaultAdapter
 from hamilton.data_quality.base import DataValidationError, ValidationResult
 from hamilton.execution import executors, grouping
@@ -15,6 +15,7 @@ from hamilton.function_modifiers import source, value
 from hamilton.io.materialization import from_, to
 
 import tests.resources.data_quality
+import tests.resources.decorator_related
 import tests.resources.dynamic_config
 import tests.resources.example_module
 import tests.resources.overrides
@@ -556,3 +557,18 @@ def test_driver_v2_inputs_can_be_none():
     with pytest.raises(ValueError):
         # validate that None doesn't cause issues
         dr.execute(["e"], inputs=None)
+
+
+def test_function_decorator_reuse():
+    """Tests we can reuse a function with multiple decorators"""
+    dr = driver.Builder().with_modules(tests.resources.decorator_related).build()
+    result = dr.execute(["a", "b", "c", "e", "q"], inputs={"input": 2})
+    assert result == {"a": 4, "b": 2, "c": 4, "e": 8, "q": 8}
+
+
+@pytest.mark.asyncio
+async def test_function_decorator_reuse_async():
+    """Tests we can reuse a function with multiple decorators"""
+    dr = await async_driver.Builder().with_modules(tests.resources.decorator_related).build()
+    result = await dr.execute(["a", "b", "c", "e", "q", "zz", "b_p3", "aaa"], inputs={"input": 2})
+    assert result == {"a": 4, "aaa": 16, "b": 2, "b_p3": 8, "c": 4, "e": 8, "q": 8, "zz": 40}
