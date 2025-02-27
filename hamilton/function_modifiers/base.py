@@ -117,6 +117,10 @@ class NodeTransformLifecycle(abc.ABC):
                     return fn(*args, **kwargs)
 
             wrapper.__hamilton__ = True
+            if not hasattr(fn, "__hamilton_wrappers__"):
+                fn.__hamilton_wrappers__ = [wrapper]
+            else:
+                fn.__hamilton_wrappers__.append(wrapper)
         else:
             wrapper = fn
 

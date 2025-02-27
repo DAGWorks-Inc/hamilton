@@ -1605,15 +1605,29 @@ class mutate:
                 mutating_fn=mutating_fn, remote_applicable_builder=remote_applicable
             )
             found_pipe_output = False
-            if hasattr(remote_applicable.target_fn, base.NodeTransformer.get_lifecycle_name()):
-                for decorator in remote_applicable.target_fn.transform:
+            wrapper_fn = None
+            if hasattr(remote_applicable.target_fn, "__hamilton_wrappers__"):
+                # get first wrapper
+                wrapper_fn = remote_applicable.target_fn.__hamilton_wrappers__[0]
+            elif hasattr(remote_applicable.target_fn, "__hamilton__"):
+                wrapper_fn = remote_applicable.target_fn
+
+            if wrapper_fn:
+                for decorator in wrapper_fn.transform:
                     if isinstance(decorator, pipe_output):
                         decorator.transforms = decorator.transforms + (new_pipe_step,)
                         found_pipe_output = True
+                        print(
+                            "added to existing pipe_output: ",
+                            wrapper_fn.__name__,
+                            decorator.name,
+                            decorator.transforms,
+                        )
 
             if not found_pipe_output:
                 remote_applicable.target_fn = pipe_output(
                     new_pipe_step, collapse=self.collapse, _chain=self.chain
                 )(remote_applicable.target_fn)
+                print("added to new pipe_output: ", remote_applicable.target_fn)
 
         return mutating_fn
