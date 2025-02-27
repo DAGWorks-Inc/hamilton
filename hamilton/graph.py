@@ -168,16 +168,6 @@ def create_function_graph(
 
     # create non-input nodes -- easier to just create this in one loop
     for _func_name, f in functions:
-        # check for mutate...
-        if hasattr(f, "__hamilton_wrappers__"):
-            wrapper = f.__hamilton_wrappers__[0]
-            for decorator in wrapper.transform:
-                from hamilton.function_modifiers import macros
-
-                if isinstance(decorator, macros.pipe_output):
-                    f = wrapper
-                    break
-
         for n in fm_base.resolve_nodes(f, config):
             if n.name in config:
                 continue  # This makes sure we overwrite things if they're in the config...

@@ -1107,8 +1107,6 @@ def test_mutate_local_kwargs_override_global_ones(_downstream_result_to_mutate):
 
 
 def test_mutate_end_to_end_simple(import_mutate_module):
-    dr = driver.Builder().with_config({"calc_c": True}).build()
-
     dr = (
         driver.Builder()
         .with_modules(import_mutate_module)

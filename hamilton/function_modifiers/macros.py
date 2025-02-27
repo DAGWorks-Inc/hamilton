@@ -1256,6 +1256,11 @@ class pipe_output(base.NodeTransformer):
         if self.chain:
             raise NotImplementedError("@flow() is not yet supported -- this is ")
 
+        self.is_via_mutate = False  # flag to know how this was instantiated.
+
+    def set_is_via_mutate(self):
+        self.is_via_mutate = True
+
     def _filter_individual_target(self, node_):
         """Resolves target option on the transform level.
         Adds option that we can decide for each applicable which output node it will target.
@@ -1617,17 +1622,10 @@ class mutate:
                     if isinstance(decorator, pipe_output):
                         decorator.transforms = decorator.transforms + (new_pipe_step,)
                         found_pipe_output = True
-                        print(
-                            "added to existing pipe_output: ",
-                            wrapper_fn.__name__,
-                            decorator.name,
-                            decorator.transforms,
-                        )
 
             if not found_pipe_output:
-                remote_applicable.target_fn = pipe_output(
-                    new_pipe_step, collapse=self.collapse, _chain=self.chain
-                )(remote_applicable.target_fn)
-                print("added to new pipe_output: ", remote_applicable.target_fn)
+                decorator = pipe_output(new_pipe_step, collapse=self.collapse, _chain=self.chain)
+                decorator.set_is_via_mutate()
+                remote_applicable.target_fn = decorator(remote_applicable.target_fn)
 
         return mutating_fn

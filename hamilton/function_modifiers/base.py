@@ -829,6 +829,9 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     which configuration they need.
     :return: A list of nodes into which this function transforms.
     """
+    # check for mutate...
+    fn = handle_mutate_hack(fn)
+
     try:
         function_decorators = get_node_decorators(fn, config)
         node_resolvers = function_decorators[NodeResolver.get_lifecycle_name()]
@@ -855,6 +858,33 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     except Exception as e:
         logger.exception(_resolve_nodes_error(fn))
         raise e
+
+
+def handle_mutate_hack(fn):
+    """Function that encapsulates the mutate hack check.
+
+    This isn't pretty. It's a hack to get around how special
+    mutate is.
+
+    This will return the "wrapped function" if this is
+    a vanilla python function that has a pointer to a pipe_output
+    decorated function. This is because all other decorators
+    directly wrap the function, but mutate does not. It adds
+    a pointer to the function in question that we follow here.
+
+    :param fn: Function to check
+    :return: Function or wrapped function to use if applicable.
+    """
+    if hasattr(fn, "__hamilton_wrappers__"):
+        wrapper = fn.__hamilton_wrappers__[0]  # assume first one
+        if hasattr(wrapper, "transform"):
+            for decorator in wrapper.transform:
+                from hamilton.function_modifiers import macros
+
+                if isinstance(decorator, macros.pipe_output) and decorator.is_via_mutate:
+                    fn = wrapper  # overwrite callable with right one
+                    break
+    return fn
 
 
 class InvalidDecoratorException(Exception):
