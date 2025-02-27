@@ -121,7 +121,10 @@ a comma separated list of hosts you want to allow.
 To host the UI on a subpath, set `REACT_APP_HAMILTON_SUB_PATH` to the subpath required. For example, to run on `https://domain.com/hamilton`:
 
 .. code-block:: yaml
+
     - REACT_APP_HAMILTON_SUB_PATH=/hamilton
+
+Make sure that the sub path environment variable begins with `/` if set.
 
 Please reach out to us if you want to deploy on your own infrastructure and need help - `join slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>`_.
 More extensive self-hosting documentation is in the works, e.g. Snowflake, Databricks, AWS, GCP, Azure, etc.; we'd love a helm
