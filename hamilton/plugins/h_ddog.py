@@ -8,6 +8,7 @@ from hamilton.lifecycle import base
 
 logger = logging.getLogger(__name__)
 try:
+    # TODO: this works for ddtrace < 3.0; Span got moved somewhere else in 3.0..
     from ddtrace import Span, context, tracer
 except ImportError as e:
     logger.error("ImportError: %s", e)
