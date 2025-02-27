@@ -872,6 +872,9 @@ def handle_mutate_hack(fn):
     directly wrap the function, but mutate does not. It adds
     a pointer to the function in question that we follow here.
 
+    This code depends on what the mutate class does
+    and what the pipe_output decorator does.
+
     :param fn: Function to check
     :return: Function or wrapped function to use if applicable.
     """

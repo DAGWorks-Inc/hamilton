@@ -1611,6 +1611,9 @@ class mutate:
             )
             found_pipe_output = False
             wrapper_fn = None
+            # Assumptions:
+            # 1. This code depends on the `__call__()` definition in the Hamilton base decorator class
+            # 2. This is then used in `handle_mutate_hack()` in the Hamilton function modifier base.py.
             if hasattr(remote_applicable.target_fn, "__hamilton_wrappers__"):
                 # get first wrapper
                 wrapper_fn = remote_applicable.target_fn.__hamilton_wrappers__[0]
