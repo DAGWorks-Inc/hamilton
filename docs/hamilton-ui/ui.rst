@@ -118,6 +118,11 @@ Self-Hosting
 If you know docker, you should be good to go. The one environment variable to know is `HAMILTON_ALLOWED_HOSTS`, which you can set to `*` to allow all hosts, or
 a comma separated list of hosts you want to allow.
 
+To host the UI on a subpath, set `REACT_APP_HAMILTON_SUB_PATH` to the subpath required. For example, to run on `https://domain.com/hamilton`:
+
+.. code-block:: yaml
+    - REACT_APP_HAMILTON_SUB_PATH=/hamilton
+
 Please reach out to us if you want to deploy on your own infrastructure and need help - `join slack <https://join.slack.com/t/hamilton-opensource/shared_invite/zt-2niepkra8-DGKGf_tTYhXuJWBTXtIs4g>`_.
 More extensive self-hosting documentation is in the works, e.g. Snowflake, Databricks, AWS, GCP, Azure, etc.; we'd love a helm
 chart contribution!
