@@ -1,9 +1,11 @@
 import abc
 import collections
 import functools
+import inspect
 import itertools
 import logging
 from abc import ABC
+from inspect import unwrap
 
 try:
     from types import EllipsisType
@@ -99,18 +101,40 @@ class NodeTransformLifecycle(abc.ABC):
         :param fn: Function to decorate
         :return: The function again, with the desired properties.
         """
-        self.validate(fn)
+        # # stop unwrapping if not a hamilton function
+        # # should only be one level of "hamilton wrapping" - and that's what we attach things to.
+        self.validate(unwrap(fn, stop=lambda f: not hasattr(f, "__hamilton__")))
+        if not hasattr(fn, "__hamilton__"):
+            if inspect.iscoroutinefunction(fn):
+
+                @functools.wraps(fn)
+                async def wrapper(*args, **kwargs):
+                    return await fn(*args, **kwargs)
+            else:
+
+                @functools.wraps(fn)
+                def wrapper(*args, **kwargs):
+                    return fn(*args, **kwargs)
+
+            wrapper.__hamilton__ = True
+            if not hasattr(fn, "__hamilton_wrappers__"):
+                fn.__hamilton_wrappers__ = [wrapper]
+            else:
+                fn.__hamilton_wrappers__.append(wrapper)
+        else:
+            wrapper = fn
+
         lifecycle_name = self.__class__.get_lifecycle_name()
-        if hasattr(fn, self.get_lifecycle_name()):
+        if hasattr(wrapper, self.get_lifecycle_name()):
             if not self.allows_multiple():
                 raise ValueError(
                     f"Got multiple decorators for decorator @{self.__class__}. Only one allowed."
                 )
-            curr_value = getattr(fn, lifecycle_name)
-            setattr(fn, lifecycle_name, curr_value + [self])
+            curr_value = getattr(wrapper, lifecycle_name)
+            setattr(wrapper, lifecycle_name, curr_value + [self])
         else:
-            setattr(fn, lifecycle_name, [self])
-        return fn
+            setattr(wrapper, lifecycle_name, [self])
+        return wrapper
 
     def required_config(self) -> Optional[List[str]]:
         """Declares the required configuration keys for this decorator.
@@ -805,6 +829,9 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     which configuration they need.
     :return: A list of nodes into which this function transforms.
     """
+    # check for mutate...
+    fn = handle_mutate_hack(fn)
+
     try:
         function_decorators = get_node_decorators(fn, config)
         node_resolvers = function_decorators[NodeResolver.get_lifecycle_name()]
@@ -831,6 +858,36 @@ def resolve_nodes(fn: Callable, config: Dict[str, Any]) -> Collection[node.Node]
     except Exception as e:
         logger.exception(_resolve_nodes_error(fn))
         raise e
+
+
+def handle_mutate_hack(fn):
+    """Function that encapsulates the mutate hack check.
+
+    This isn't pretty. It's a hack to get around how special
+    mutate is.
+
+    This will return the "wrapped function" if this is
+    a vanilla python function that has a pointer to a pipe_output
+    decorated function. This is because all other decorators
+    directly wrap the function, but mutate does not. It adds
+    a pointer to the function in question that we follow here.
+
+    This code depends on what the mutate class does
+    and what the pipe_output decorator does.
+
+    :param fn: Function to check
+    :return: Function or wrapped function to use if applicable.
+    """
+    if hasattr(fn, "__hamilton_wrappers__"):
+        wrapper = fn.__hamilton_wrappers__[0]  # assume first one
+        if hasattr(wrapper, "transform"):
+            for decorator in wrapper.transform:
+                from hamilton.function_modifiers import macros
+
+                if isinstance(decorator, macros.pipe_output) and decorator.is_via_mutate:
+                    fn = wrapper  # overwrite callable with right one
+                    break
+    return fn
 
 
 class InvalidDecoratorException(Exception):

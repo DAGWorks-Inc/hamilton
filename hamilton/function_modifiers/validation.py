@@ -1,4 +1,5 @@
 import abc
+import inspect
 from collections import defaultdict
 from typing import Any, Callable, Collection, Dict, List, Type
 
@@ -46,6 +47,14 @@ class BaseDataValidationDecorator(base.NodeTransformer):
                 result = list(kwargs.values())[0]  # This should just have one kwarg
                 return validator_to_call.validate(result)
 
+            async def async_validation_function(
+                validator_to_call: dq_base.DataValidator = validator, **kwargs
+            ):
+                result = list(kwargs.values())[0]  # This should just have one kwarg
+                if inspect.isawaitable(result):
+                    result = await result
+                return validator_to_call.validate(result)
+
             validator_node_name = node_.name + "_" + validator.name()
             validator_name_count[validator_node_name] = (
                 validator_name_count[validator_node_name] + 1
@@ -58,7 +67,9 @@ class BaseDataValidationDecorator(base.NodeTransformer):
                 name=validator_node_name,  # TODO -- determine a good approach towards naming this
                 typ=dq_base.ValidationResult,
                 doc_string=validator.description(),
-                callabl=validation_function,
+                callabl=validation_function
+                if not inspect.iscoroutinefunction(node_.callable)
+                else async_validation_function,
                 node_source=node.NodeType.STANDARD,
                 input_types={raw_node.name: (node_.type, node.DependencyType.REQUIRED)},
                 tags={

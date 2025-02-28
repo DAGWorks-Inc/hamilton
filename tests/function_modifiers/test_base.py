@@ -1,12 +1,15 @@
+from inspect import unwrap
 from typing import Collection, Dict, List
+from unittest.mock import Mock
 
-import pytest as pytest
+import pytest
 
 from hamilton import node, settings
 from hamilton.function_modifiers import InvalidDecoratorException, base
 from hamilton.function_modifiers.base import (
     MissingConfigParametersException,
     NodeTransformer,
+    NodeTransformLifecycle,
     TargetType,
 )
 from hamilton.node import Node
@@ -149,3 +152,86 @@ def test_add_fn_metadata():
     ]
     assert len(nodes_with_fn_pointer) == len(nodes)
     assert all([n.originating_functions == (test_add_fn_metadata,) for n in nodes])
+
+
+class MockNodeTransformLifecycle(NodeTransformLifecycle):
+    @classmethod
+    def get_lifecycle_name(cls):
+        return "mock_lifecycle"
+
+    @classmethod
+    def allows_multiple(cls):
+        return True
+
+    def validate(self, fn):
+        pass
+
+
+def test_decorator_adds_attributes():
+    mock_decorator = MockNodeTransformLifecycle()
+
+    def my_function(a: int) -> int:
+        pass
+
+    decorated_fn = mock_decorator(my_function)
+
+    assert hasattr(decorated_fn, "mock_lifecycle")
+    assert decorated_fn.mock_lifecycle == [mock_decorator]
+    assert hasattr(decorated_fn, "__hamilton__")
+
+
+def test_decorator_allows_multiple_raises_error():
+    class MockMultipleNodeTransformLifecycle(NodeTransformLifecycle):
+        @classmethod
+        def get_lifecycle_name(cls):
+            return "mock_lifecycle"
+
+        @classmethod
+        def allows_multiple(cls):
+            return False
+
+        def validate(self, fn):
+            pass
+
+    mock_decorator = MockMultipleNodeTransformLifecycle()
+    mock_fn = Mock()
+    decorated_fn = mock_decorator(mock_fn)
+
+    with pytest.raises(ValueError):
+        mock_decorator(decorated_fn)
+
+
+def test_decorator_only_wraps_once():
+    """Tests that the decorator only wraps once."""
+    mock_decorator = MockNodeTransformLifecycle()
+
+    def my_function(a: int) -> int:
+        pass
+
+    decorated_fn = mock_decorator(my_function)
+    decorated_fn = mock_decorator(decorated_fn)
+    decorated_fn = mock_decorator(decorated_fn)
+
+    assert decorated_fn.__hamilton__ is True
+    assert decorated_fn.__wrapped__ == my_function  # one level of wrapping only
+
+
+def test_wrapping_and_unwrapping_logic():
+    """Tests unwrapping logic works as expected."""
+
+    def my_function(a: int) -> int:
+        pass
+
+    # Wrap the function
+    wrapped_fn = MockNodeTransformLifecycle()(my_function)
+    # Unwrap the function
+    unwrapped_fn = unwrap(wrapped_fn, stop=lambda f: not hasattr(f, "__hamilton__"))
+
+    # Ensure the function is unwrapped correctly
+    assert unwrapped_fn == my_function
+    assert not hasattr(unwrapped_fn, "__hamilton__")
+
+    wrapped_fn2 = MockNodeTransformLifecycle()(wrapped_fn)
+    unwrapped_fn2 = unwrap(wrapped_fn2, stop=lambda f: not hasattr(f, "__hamilton__"))
+    assert wrapped_fn2 == wrapped_fn  # these should be the same
+    assert unwrapped_fn2 == my_function  # these should be the same

@@ -1256,6 +1256,11 @@ class pipe_output(base.NodeTransformer):
         if self.chain:
             raise NotImplementedError("@flow() is not yet supported -- this is ")
 
+        self.is_via_mutate = False  # flag to know how this was instantiated.
+
+    def set_is_via_mutate(self):
+        self.is_via_mutate = True
+
     def _filter_individual_target(self, node_):
         """Resolves target option on the transform level.
         Adds option that we can decide for each applicable which output node it will target.
@@ -1605,15 +1610,25 @@ class mutate:
                 mutating_fn=mutating_fn, remote_applicable_builder=remote_applicable
             )
             found_pipe_output = False
-            if hasattr(remote_applicable.target_fn, base.NodeTransformer.get_lifecycle_name()):
-                for decorator in remote_applicable.target_fn.transform:
+            wrapper_fn = None
+            # Assumptions:
+            # 1. This code depends on the `__call__()` definition in the Hamilton base decorator class
+            # 2. This is then used in `handle_mutate_hack()` in the Hamilton function modifier base.py.
+            if hasattr(remote_applicable.target_fn, "__hamilton_wrappers__"):
+                # get first wrapper
+                wrapper_fn = remote_applicable.target_fn.__hamilton_wrappers__[0]
+            elif hasattr(remote_applicable.target_fn, "__hamilton__"):
+                wrapper_fn = remote_applicable.target_fn
+
+            if wrapper_fn:
+                for decorator in wrapper_fn.transform:
                     if isinstance(decorator, pipe_output):
                         decorator.transforms = decorator.transforms + (new_pipe_step,)
                         found_pipe_output = True
 
             if not found_pipe_output:
-                remote_applicable.target_fn = pipe_output(
-                    new_pipe_step, collapse=self.collapse, _chain=self.chain
-                )(remote_applicable.target_fn)
+                decorator = pipe_output(new_pipe_step, collapse=self.collapse, _chain=self.chain)
+                decorator.set_is_via_mutate()
+                remote_applicable.target_fn = decorator(remote_applicable.target_fn)
 
         return mutating_fn

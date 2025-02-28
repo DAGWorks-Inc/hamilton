@@ -41,7 +41,7 @@ dask-core = ["dask-core"]
 dask-dataframe = ["dask[dataframe]"]
 dask-diagnostics = ["dask[diagnostics]"]
 dask-distributed = ["dask[distributed]"]
-datadog = ["ddtrace"]
+datadog = ["ddtrace<3.0"]  # Temporary pin until h_ddog.py import is fixed for >3.0 version
 dev = [
   "pre-commit",
   "ruff==0.5.7", # this should match `.pre-commit-config.yaml`
@@ -53,7 +53,7 @@ docs = [
   "commonmark==0.9.1", # read the docs pins
   "dask-expr; python_version == '3.9'",
   "dask[distributed]",
-  "ddtrace",
+  "ddtrace<3.0",
   "diskcache",
   # required for all the plugins
   "dlt",
