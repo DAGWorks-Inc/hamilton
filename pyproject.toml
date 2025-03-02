@@ -53,7 +53,7 @@ docs = [
   "commonmark==0.9.1", # read the docs pins
   "dask-expr; python_version == '3.9'",
   "dask[distributed]",
-  "ddtrace",
+  "ddtrace<3.0",
   "diskcache",
   # required for all the plugins
   "dlt",
