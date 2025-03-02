@@ -427,7 +427,7 @@ def run_graph_to_completion(
                             task_id=task.task_id,
                             nodes=task.nodes,
                             success=state == TaskState.SUCCESSFUL,
-                            error=None,  # FIXME -- we should get the error here
+                            error=None,  # TODO -- we could get the error from the task future
                             result=result,
                             spawning_task_id=task.spawning_task_id,
                             purpose=task.purpose,
