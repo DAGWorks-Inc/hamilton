@@ -41,7 +41,7 @@ dask-core = ["dask-core"]
 dask-dataframe = ["dask[dataframe]"]
 dask-diagnostics = ["dask[diagnostics]"]
 dask-distributed = ["dask[distributed]"]
-datadog = ["ddtrace"]
+datadog = ["ddtrace<3.0"]
 dev = [
   "pre-commit",
   "ruff==0.5.7", # this should match `.pre-commit-config.yaml`
