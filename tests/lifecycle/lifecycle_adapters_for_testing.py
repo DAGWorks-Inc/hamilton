@@ -162,7 +162,7 @@ class TrackingPreTaskSubmissionHook(ExtendToTrackCalls, BasePreTaskSubmission):
         nodes: List[Node],
         inputs: Dict[str, Any],
         overrides: Dict[str, Any],
-        spawning_task_id: str | None,
+        spawning_task_id: Optional[str],
         purpose: NodeGroupPurpose,
     ):
         pass
@@ -178,7 +178,7 @@ class TrackingPostTaskResolutionHook(ExtendToTrackCalls, BasePostTaskResolution)
         result: Any,
         success: bool,
         error: Exception,
-        spawning_task_id: str | None,
+        spawning_task_id: Optional[str],
         purpose: NodeGroupPurpose,
     ):
         pass
