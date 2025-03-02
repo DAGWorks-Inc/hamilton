@@ -16,10 +16,12 @@ from hamilton.lifecycle.base import (
     BasePostTaskExecute,
     BasePostTaskExpand,
     BasePostTaskGroup,
+    BasePostTaskResolution,
     BasePreDoAnythingHook,
     BasePreGraphExecute,
     BasePreNodeExecute,
     BasePreTaskExecute,
+    BasePreTaskSubmission,
 )
 from hamilton.node import Node
 
@@ -31,7 +33,9 @@ from .lifecycle_adapters_for_testing import (
     TrackingPostTaskExecuteHook,
     TrackingPostTaskExpandHook,
     TrackingPostTaskGroupHook,
+    TrackingPostTaskResolutionHook,
     TrackingPreNodeExecuteHook,
+    TrackingPreTaskSubmissionHook,
 )
 
 if TYPE_CHECKING:
@@ -242,6 +246,72 @@ def test_individual_post_task_expand_hook():
     assert len(relevant_calls[0].bound_kwargs["run_id"]) > 10  # Should be UUID(ish)...
 
 
+def test_individual_pre_task_submission_hook():
+    hook_name = "pre_task_submission"
+    hook = TrackingPreTaskSubmissionHook(name=hook_name)
+    dr = _sample_driver(hook)
+    dr.execute(["output"], inputs={"n_iters_input": 5})
+    relevant_calls = [item for item in hook.calls if item.name == hook_name]
+    assert len(relevant_calls) == 10
+    spawning_task_ids = Counter([item.bound_kwargs["spawning_task_id"] for item in relevant_calls])
+    assert spawning_task_ids == {"expand-parallel_over": 5, None: 5}
+    purposes = Counter([item.bound_kwargs["purpose"] for item in relevant_calls])
+    assert purposes == {
+        NodeGroupPurpose.EXECUTE_BLOCK: 5,
+        NodeGroupPurpose.EXECUTE_SINGLE: 3,
+        NodeGroupPurpose.EXPAND_UNORDERED: 1,
+        NodeGroupPurpose.GATHER: 1,
+    }
+    nodes = {node.name for item in relevant_calls for node in item.bound_kwargs["nodes"]}
+    assert nodes == {
+        "parallel_over",
+        "n_iters",
+        "processed",
+        "more_processed",
+        "collect",
+        "output",
+        "n_iters_input",
+    }
+
+
+def test_individual_post_task_resolution_hook():
+    hook_name = "post_task_resolution"
+    hook = TrackingPostTaskResolutionHook(name=hook_name)
+    dr = _sample_driver(hook)
+    dr.execute(["output"], inputs={"n_iters_input": 5})
+    relevant_calls = [item for item in hook.calls if item.name == hook_name]
+    assert len(relevant_calls) == 10
+    spawning_task_ids = Counter([item.bound_kwargs["spawning_task_id"] for item in relevant_calls])
+    assert spawning_task_ids == {"expand-parallel_over": 5, None: 5}
+    purposes = Counter([item.bound_kwargs["purpose"] for item in relevant_calls])
+    assert purposes == {
+        NodeGroupPurpose.EXECUTE_BLOCK: 5,
+        NodeGroupPurpose.EXECUTE_SINGLE: 3,
+        NodeGroupPurpose.EXPAND_UNORDERED: 1,
+        NodeGroupPurpose.GATHER: 1,
+    }
+    nodes = {node.name for item in relevant_calls for node in item.bound_kwargs["nodes"]}
+    assert nodes == {
+        "parallel_over",
+        "n_iters",
+        "processed",
+        "more_processed",
+        "collect",
+        "output",
+        "n_iters_input",
+    }
+    results = {
+        item.bound_kwargs["result"]["more_processed"]
+        for item in relevant_calls
+        if "more_processed" in item.bound_kwargs["result"]  # only block execute results
+    }
+    assert results == {0, 1, 16, 81, 256}
+    success = {item.bound_kwargs["success"] for item in relevant_calls}
+    assert success == {True}
+    errors = {item.bound_kwargs["error"] for item in relevant_calls}
+    assert errors == {None}
+
+
 def test_multi_hook():
     class MultiHook(
         BasePreDoAnythingHook,
@@ -255,6 +325,8 @@ def test_multi_hook():
         BasePostGraphExecute,
         BasePostTaskGroup,
         BasePostTaskExpand,
+        BasePreTaskSubmission,
+        BasePostTaskResolution,
         ExtendToTrackCalls,
     ):
         def pre_task_execute(
@@ -342,6 +414,33 @@ def test_multi_hook():
         def post_task_expand(self, run_id: str, task_id: str, parameters: Dict[str, Any]):
             pass
 
+        def pre_task_submission(
+            self,
+            *,
+            run_id: str,
+            task_id: str,
+            nodes: List[Node],
+            inputs: Dict[str, Any],
+            overrides: Dict[str, Any],
+            spawning_task_id: str | None,
+            purpose: NodeGroupPurpose,
+        ):
+            pass
+
+        def post_task_resolution(
+            self,
+            *,
+            run_id: str,
+            task_id: str,
+            nodes: List[Node],
+            result: Any,
+            success: bool,
+            error: Exception,
+            spawning_task_id: str | None,
+            purpose: NodeGroupPurpose,
+        ):
+            pass
+
     multi_hook = MultiHook(name="multi_hook")
 
     dr = _sample_driver(multi_hook)
@@ -358,6 +457,8 @@ def test_multi_hook():
         "post_node_execute": 14,
         "post_task_execute": 10,
         "post_graph_execute": 1,
+        "pre_task_submission": 10,
+        "post_task_resolution": 10,
         "post_task_group": 1,
         "post_task_expand": 1,
     }

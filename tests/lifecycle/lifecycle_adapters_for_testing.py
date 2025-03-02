@@ -18,10 +18,12 @@ from hamilton.lifecycle.base import (
     BasePostTaskExecute,
     BasePostTaskExpand,
     BasePostTaskGroup,
+    BasePostTaskResolution,
     BasePreDoAnythingHook,
     BasePreGraphExecute,
     BasePreNodeExecute,
     BasePreTaskExecute,
+    BasePreTaskSubmission,
     BaseValidateGraph,
     BaseValidateNode,
     LifecycleAdapterSet,
@@ -147,6 +149,37 @@ class TrackingPostNodeExecuteHook(ExtendToTrackCalls, BasePostNodeExecute):
         error: Optional[Exception],
         result: Any,
         task_id: Optional[str] = None,
+    ):
+        pass
+
+
+class TrackingPreTaskSubmissionHook(ExtendToTrackCalls, BasePreTaskSubmission):
+    def pre_task_submission(
+        self,
+        *,
+        run_id: str,
+        task_id: str,
+        nodes: List[Node],
+        inputs: Dict[str, Any],
+        overrides: Dict[str, Any],
+        spawning_task_id: str | None,
+        purpose: NodeGroupPurpose,
+    ):
+        pass
+
+
+class TrackingPostTaskResolutionHook(ExtendToTrackCalls, BasePostTaskResolution):
+    def post_task_resolution(
+        self,
+        *,
+        run_id: str,
+        task_id: str,
+        nodes: List[Node],
+        result: Any,
+        success: bool,
+        error: Exception,
+        spawning_task_id: str | None,
+        purpose: NodeGroupPurpose,
     ):
         pass
 
