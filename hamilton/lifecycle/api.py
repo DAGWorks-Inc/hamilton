@@ -469,7 +469,7 @@ class TaskResolutionHook(BasePostTaskResolution, abc.ABC):
         purpose: NodeGroupPurpose,
         **future_kwargs,
     ):
-        """Runs after a task (future) has been resolved into a returns value. By definition this is
+        """Runs after a task (future) has been resolved into a return value. By definition this is
         run *outside* of the task executor,on the process that executed the driver.
 
         :param run_id: ID of the run this is under.

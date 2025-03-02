@@ -426,7 +426,7 @@ class BasePostTaskGroup(abc.ABC):
 class BasePostTaskExpand(abc.ABC):
     @abc.abstractmethod
     def post_task_expand(self, *, run_id: str, task_id: str, parameters: Dict[str, Any]):
-        """Hook that is called immediately after a task is expanded into separate task. Note that this is only useful
+        """Hook that is called immediately after a task is expanded into parallelizable tasks. Note that this is only useful
         in dynamic execution.
 
         :param run_id: ID of the run, unique in scope of the driver.
