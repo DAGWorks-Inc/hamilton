@@ -28,6 +28,7 @@ import { UserContext } from "./auth/Login";
 import { LocalAccount } from "./auth/LocalAccount";
 
 export const localMode = process.env.REACT_APP_AUTH_MODE === "local";
+export const subPath = process.env.REACT_APP_HAMILTON_SUB_PATH || ""
 
 const useAuthInfoBasedOnProcEnv = () => {
   if (localMode) {
@@ -99,7 +100,7 @@ export const App = () => {
           includeHelp: true,
         }}
       >
-        <BrowserRouter>
+        <BrowserRouter basename={subPath}>
           <Routes>
             {localMode && (
               <Route path="/" element={<Navigate to="/dashboard/account" />} />
