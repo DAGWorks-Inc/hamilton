@@ -8,6 +8,8 @@ from hamilton.lifecycle import base
 
 logger = logging.getLogger(__name__)
 try:
+    # TODO: this works for ddtrace < 3.0; Span was deprecated in 3.0
+    # See https://github.com/DataDog/dd-trace-py/pull/12186
     from ddtrace import Span, context, tracer
 except ImportError as e:
     logger.error("ImportError: %s", e)

@@ -41,7 +41,7 @@ dask-core = ["dask-core"]
 dask-dataframe = ["dask[dataframe]"]
 dask-diagnostics = ["dask[diagnostics]"]
 dask-distributed = ["dask[distributed]"]
-datadog = ["ddtrace<3.0"]
+datadog = ["ddtrace<3.0"]  # Temporary pin until h_ddog.py import is fixed for >3.0 version
 dev = [
   "pre-commit",
   "ruff==0.5.7", # this should match `.pre-commit-config.yaml`
