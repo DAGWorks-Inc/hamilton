@@ -102,7 +102,7 @@ Thus, when you write a DAG like this (a simple map-reduce pattern):
     def url_loaded(url: str) -> str:
         return _load(urls)
 
-    def counts(url_loaded: str) -> str:
+    def counts(url_loaded: str) -> int:
         return len(url_loaded.split(" "))
 
     def total_words(counts: Collect[int]) -> int:
@@ -135,7 +135,7 @@ Solution:
 * If you're using a library that doesn't support serialization, then one option is to have Hamilton instantiate
   the object in each parallel block. You can do this by making the code depend on something within the parallel block.
 * Another option is write a customer wrapper function that uses `__set_state__` and `__get_state__` to serialize and deserialize the object.
-* See [this issue](https://github.com/DAGWorks-Inc/hamilton/issues/743) for details and possible features to make
+* See `this issue <https://github.com/DAGWorks-Inc/hamilton/issues/743>`_ for details and possible features to make
   this simpler to deal with.
 
 
