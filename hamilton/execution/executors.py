@@ -10,7 +10,7 @@ else:
     from concurrent.futures.process import ProcessPoolExecutor
 
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Protocol
 
 from hamilton import node
 from hamilton.execution.graph_functions import execute_subdag
@@ -20,13 +20,17 @@ from hamilton.execution.state import ExecutionState, GraphState, TaskState
 logger = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass
-class TaskFuture:
+class TaskFuture(Protocol):
     """Simple representation of a future. TODO -- add cancel().
     This a clean wrapper over a python future, and we may end up just using that at some point."""
 
-    get_state: Callable[[], TaskState]
-    get_result: Callable[[], Any]
+    def get_state(self) -> TaskState:
+        """Returns the state of the task."""
+        ...
+
+    def get_result(self) -> Any:
+        """Returns the result of the task."""
+        ...
 
 
 class TaskExecutor(abc.ABC):
@@ -162,6 +166,36 @@ def base_execute_task(task: TaskImplementation) -> Dict[str, Any]:
     return final_retval
 
 
+@dataclasses.dataclass
+class TaskFutureWrappingFunction(TaskFuture):
+    """Wraps a python function call in a TaskFuture."""
+
+    def __init__(self, function: Callable[[], Any]):
+        self.function = function
+        self._results = None
+        self._done = False
+        self._exception = None
+
+    def get_state(self):
+        try:
+            self._results = self.function()
+        except Exception as e:
+            logger.exception("Task failed")
+            self._exception = e
+            return TaskState.FAILED
+        finally:
+            self._done = True
+        return TaskState.SUCCESSFUL
+
+    def get_result(self):
+        if self._exception is not None:
+            raise self._exception
+        if not self._done:
+            self._results = self.function()
+            self._done = True
+        return self._results
+
+
 class SynchronousLocalTaskExecutor(TaskExecutor):
     """Basic synchronous/local task executor that runs tasks
     in the same process, at submit time."""
@@ -172,9 +206,7 @@ class SynchronousLocalTaskExecutor(TaskExecutor):
         :param task: Task to submit
         :return: Future associated with this task
         """
-        # No error management for now
-        result = base_execute_task(task)
-        return TaskFuture(get_state=lambda: TaskState.SUCCESSFUL, get_result=lambda: result)
+        return TaskFutureWrappingFunction(functools.partial(base_execute_task, task))
 
     def can_submit_task(self) -> bool:
         """We can always submit a task as the task submission is blocking!
@@ -190,6 +222,7 @@ class SynchronousLocalTaskExecutor(TaskExecutor):
         pass
 
 
+@dataclasses.dataclass
 class TaskFutureWrappingPythonFuture(TaskFuture):
     """Wraps a python future in a TaskFuture"""
 
