@@ -330,6 +330,7 @@ class LoggingAdapter(
                 log_func = self.logger.info
             log_func("Task completed [OK]", extra=extra)
         elif error and not self._exception_logged:
+            # NOTE: _exception_logged is used to prevent duplicate exception logging
             self.logger.exception("Task completion failed due to errors", extra=extra)
             self._exception_logged = True
 
