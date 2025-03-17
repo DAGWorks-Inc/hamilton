@@ -842,6 +842,8 @@ LifecycleAdapter = Union[
     BasePreGraphExecuteAsync,
     BasePostTaskGroup,
     BasePostTaskExpand,
+    BasePreTaskSubmission,
+    BasePostTaskResolution,
     BasePreTaskExecute,
     BasePreTaskExecuteAsync,
     BasePreNodeExecute,
