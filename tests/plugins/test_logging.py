@@ -322,7 +322,7 @@ def test_logging_parallel_nodes(caplog, executor_type, executor_args):
         "Task 'b' - Starting execution",
         "Task 'b' - Starting execution without dependencies",
         "Task 'b' - Node 'b' - Finished execution [OK]",
-        "Task 'b' - Finished execution [Ok]",
+        "Task 'b' - Finished execution [OK]",
         "Task 'expand-c' - Initializing new task and submitting to executor",
         "Task 'expand-c' - Starting execution of nodes 'c'",
         "Task 'expand-c' - Starting execution with dependencies 'b'",
