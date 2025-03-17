@@ -7,9 +7,11 @@ import pytest
 from hamilton import ad_hoc_utils, async_driver, driver
 from hamilton.execution import executors
 from hamilton.htypes import Collect, Parallelizable
-from hamilton.plugins.h_dask import DaskExecutor
+
+# from hamilton.plugins.h_dask import DaskExecutor   # FIXME: Not available CI (see below)
 from hamilton.plugins.h_logging import AsyncLoggingAdapter, LoggingAdapter, get_logger
-from hamilton.plugins.h_ray import RayTaskExecutor
+
+# from hamilton.plugins.h_ray import RayTaskExecutor  # FIXME: Not available in the CI (see below)
 from hamilton.plugins.h_threadpool import FutureAdapter
 
 
@@ -246,8 +248,8 @@ def test_logging_async_nodes(caplog):
             ),
         ),
         (executors.MultiThreadingExecutor, {"max_tasks": 5}),
-        (RayTaskExecutor, {}),
-        (DaskExecutor, {"client": None}),
+        # (RayTaskExecutor, {}),
+        # (DaskExecutor, {"client": None}),
     ],
 )
 def test_logging_parallel_nodes(caplog, executor_type, executor_args):
@@ -276,12 +278,13 @@ def test_logging_parallel_nodes(caplog, executor_type, executor_args):
     def f(e: int) -> int:
         return e
 
-    if executor_type == DaskExecutor:
-        import dask.distributed
+    # FIXME: dask is not available in the CI environment
+    # if executor_type == DaskExecutor:
+    #     import dask.distributed
 
-        cluster = dask.distributed.LocalCluster(n_workers=5)
-        client = dask.distributed.Client(cluster)
-        executor_args["client"] = client
+    #     cluster = dask.distributed.LocalCluster(n_workers=5)
+    #     client = dask.distributed.Client(cluster)
+    #     executor_args["client"] = client
 
     modules = ad_hoc_utils.create_temporary_module(b, c, d, e, f)
     adapters = [LoggingAdapter(name)]
