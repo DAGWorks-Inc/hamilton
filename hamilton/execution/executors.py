@@ -442,7 +442,8 @@ def run_graph_to_completion(
                         raise e
                     task_futures[next_task] = submitted
                 else:
-                    # TODO: Investigate a backoff strategy, now for add back on the queue
+                    # Whoops, back on the queue. We should probably wait a bit here, but for
+                    # now we're going to keep burning through
                     execution_state.reject_task(task_to_reject=next_task)
 
             # Update all the tasks in flight (copy so we can modify)
@@ -456,7 +457,7 @@ def run_graph_to_completion(
                         f"Exception resolving task {task.task_id}, with nodes: "
                         f"{[item.name for item in task.nodes]}"
                     )
-                    raise e
+                    error = e
                 finally:
                     execution_state.update_task_state(task.task_id, state, result)
                     if TaskState.is_terminal(state):
@@ -473,6 +474,8 @@ def run_graph_to_completion(
                                 purpose=task.purpose,
                             )
                         del task_futures[task]
+                    if error:
+                        raise error
         logger.info(f"Graph is done, graph state is {execution_state.get_graph_state()}")
     finally:
         execution_manager.finalize()
