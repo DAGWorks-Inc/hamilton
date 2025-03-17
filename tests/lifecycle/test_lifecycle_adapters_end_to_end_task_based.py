@@ -252,15 +252,15 @@ def test_individual_pre_task_submission_hook():
     dr = _sample_driver(hook)
     dr.execute(["output"], inputs={"n_iters_input": 5})
     relevant_calls = [item for item in hook.calls if item.name == hook_name]
-    assert len(relevant_calls) == 10
+    assert len(relevant_calls) == 10  # Total number of tasks
     spawning_task_ids = Counter([item.bound_kwargs["spawning_task_id"] for item in relevant_calls])
-    assert spawning_task_ids == {"expand-parallel_over": 5, None: 5}
+    assert spawning_task_ids == {"expand-parallel_over": 5, None: 5}  # Number of parallel tasks
     purposes = Counter([item.bound_kwargs["purpose"] for item in relevant_calls])
     assert purposes == {
-        NodeGroupPurpose.EXECUTE_BLOCK: 5,
-        NodeGroupPurpose.EXECUTE_SINGLE: 3,
-        NodeGroupPurpose.EXPAND_UNORDERED: 1,
-        NodeGroupPurpose.GATHER: 1,
+        NodeGroupPurpose.EXPAND_UNORDERED: 1,  # Expanding task - 'parallel_over'
+        NodeGroupPurpose.EXECUTE_BLOCK: 5,  # Tasks group from 'parallel_over'
+        NodeGroupPurpose.GATHER: 1,  # Gathering task - 'collect'
+        NodeGroupPurpose.EXECUTE_SINGLE: 3,  # All other tasks outside parallelization - single node
     }
     nodes = {node.name for item in relevant_calls for node in item.bound_kwargs["nodes"]}
     assert nodes == {
@@ -280,15 +280,15 @@ def test_individual_post_task_resolution_hook():
     dr = _sample_driver(hook)
     dr.execute(["output"], inputs={"n_iters_input": 5})
     relevant_calls = [item for item in hook.calls if item.name == hook_name]
-    assert len(relevant_calls) == 10
+    assert len(relevant_calls) == 10  # Total number of tasks
     spawning_task_ids = Counter([item.bound_kwargs["spawning_task_id"] for item in relevant_calls])
-    assert spawning_task_ids == {"expand-parallel_over": 5, None: 5}
+    assert spawning_task_ids == {"expand-parallel_over": 5, None: 5}  # Number of parallel tasks
     purposes = Counter([item.bound_kwargs["purpose"] for item in relevant_calls])
     assert purposes == {
-        NodeGroupPurpose.EXECUTE_BLOCK: 5,
-        NodeGroupPurpose.EXECUTE_SINGLE: 3,
-        NodeGroupPurpose.EXPAND_UNORDERED: 1,
-        NodeGroupPurpose.GATHER: 1,
+        NodeGroupPurpose.EXPAND_UNORDERED: 1,  # Expanding task - 'parallel_over'
+        NodeGroupPurpose.EXECUTE_BLOCK: 5,  # Tasks group from 'parallel_over'
+        NodeGroupPurpose.GATHER: 1,  # Gathering task - 'collect'
+        NodeGroupPurpose.EXECUTE_SINGLE: 3,  # All other tasks outside parallelization - single node
     }
     nodes = {node.name for item in relevant_calls for node in item.bound_kwargs["nodes"]}
     assert nodes == {
