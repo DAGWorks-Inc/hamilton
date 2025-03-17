@@ -357,14 +357,14 @@ class AsyncLoggingAdapter(GraphExecutionHook, BasePreNodeExecute, BasePostNodeEx
     """Async version of the `LoggingAdapter`.
 
     This adapter logs the following hamilton events:
-    - Graph start (`BasePreGraphExecuteAsync`)
-    - Node pre-execution (`BasePreNodeExecuteAsync`)
+    - Graph start (`GraphExecutionHook`)
+    - Node pre-execution (`BasePreNodeExecute`)
     - Node post-execution (`BasePostNodeExecuteAsync`)
-    - Graph completion  (`BasePostGraphExecuteAsync`)
+    - Graph completion  (`GraphExecutionHook`)
 
     Note that this adapter is intended to be used with the async driver. Due to current limitations
-    with the async driver, is only able to approximate when the async node has been submitted. It
-    cannot currently log the exact moment the async node begins execution.
+    with the async driver, this adapter is only able to approximate when the async node has been
+    submitted. It cannot currently log the exact moment the async node begins execution.
     """
 
     def __init__(self, logger: Union[str, logging.Logger, None] = None) -> None:
