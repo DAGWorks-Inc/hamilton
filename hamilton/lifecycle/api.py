@@ -764,7 +764,7 @@ class TaskGroupingHook(BasePostTaskGroup, BasePostTaskExpand):
 
     @abc.abstractmethod
     def run_after_task_grouping(self, *, run_id: str, task_ids: List[str], **future_kwargs):
-        """Runs after task grouping. This allows you to capture information about the which tasks were
+        """Runs after task grouping. This allows you to capture information about which tasks were
         created for a given run.
 
         :param run_id: ID of the run, unique in scope of the driver.
