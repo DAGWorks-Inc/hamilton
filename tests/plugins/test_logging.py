@@ -168,7 +168,7 @@ def test_logging_branching_nodes(caplog, adapter):
 
 
 def test_logging_async_nodes(caplog):
-    """Test logging of async nodes at at multiple logging levels."""
+    """Test logging of async nodes at multiple logging levels."""
 
     name = "test_logging_async_nodes"
     caplog.set_level(logging.DEBUG, logger=name)
