@@ -58,7 +58,7 @@ def get_logger(name: Optional[str] = None) -> "ContextLogger":
 class ContextLogger(LoggerAdapter):
     """Custom logger adapter for Hamilton that adds context to log messages.
 
-    This logger a adds context-aware prefix to log messages based on the current execution. The
+    This logger adds context-aware prefix to log messages based on the current execution. The
     logger is intended to be used with hamilton the `LoggingAdapter` lifecycle adapter. The context
     is both thread-safe and async-safe. Context includes the following details:
     - Graph run
