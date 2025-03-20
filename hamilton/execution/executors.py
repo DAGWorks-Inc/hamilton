@@ -177,14 +177,17 @@ class TaskFutureWrappingFunction(TaskFuture):
         self._exception = None
 
     def get_state(self):
-        try:
-            self._results = self.function()
-        except Exception as e:
-            logger.exception("Task failed")
-            self._exception = e
+        if self._exception is not None:
             return TaskState.FAILED
-        finally:
-            self._done = True
+        if not self._done:
+            try:
+                self._results = self.function()
+            except Exception as e:
+                logger.exception("Task failed")
+                self._exception = e
+                return TaskState.FAILED
+            finally:
+                self._done = True
         return TaskState.SUCCESSFUL
 
     def get_result(self):
