@@ -312,7 +312,7 @@ class LoggingAdapter(
             return
 
         if success:
-            self.logger.debug("Finished execution [Ok]", extra=extra)
+            self.logger.debug("Finished execution [OK]", extra=extra)
         elif error:
             self.logger.error("Execution failed due to errors", extra=extra)
 

@@ -330,7 +330,7 @@ def test_logging_parallel_nodes(caplog, executor_type, executor_args):
         "Task 'expand-c' - Starting execution of nodes 'c'",
         "Task 'expand-c' - Starting execution with dependencies 'b'",
         "Task 'expand-c' - Node 'c' - Finished execution [OK]",
-        "Task 'expand-c' - Finished execution [Ok]",
+        "Task 'expand-c' - Finished execution [OK]",
         "Task 'expand-c.0.block-c' - Spawning task and submitting to executor",
         "Task 'expand-c.1.block-c' - Spawning task and submitting to executor",
         "Task 'expand-c.2.block-c' - Spawning task and submitting to executor",
@@ -340,14 +340,14 @@ def test_logging_parallel_nodes(caplog, executor_type, executor_args):
         "Task 'collect-c' - Starting execution of nodes 'e'",
         "Task 'collect-c' - Starting execution with dependencies 'd'",
         "Task 'collect-c' - Node 'e' - Finished execution [OK]",
-        "Task 'collect-c' - Finished execution [Ok]",
+        "Task 'collect-c' - Finished execution [OK]",
         "Task 'f' - Initializing new task and submitting to executor",
         "Task 'f' - Starting execution",
         "Task 'f' - Starting execution with dependencies 'e'",
         "Task 'f' - Node 'f' - Finished execution [OK]",
-        "Task 'f' - Finished execution [Ok]",
+        "Task 'f' - Finished execution [OK]",
     }
-    assert local_debug_log.issubset(set(debug))
+    assert local_debug_log.difference(set(debug)) == set()
 
 
 def test_logging_with_inputs(caplog):
