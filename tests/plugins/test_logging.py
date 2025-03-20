@@ -1,18 +1,18 @@
 import asyncio
 import logging
-import sys
 
 import pytest
 
 from hamilton import ad_hoc_utils, async_driver, driver
 from hamilton.execution import executors
-from hamilton.htypes import Collect, Parallelizable
 
 # from hamilton.plugins.h_dask import DaskExecutor   # FIXME: Not available CI (see below)
 from hamilton.plugins.h_logging import AsyncLoggingAdapter, LoggingAdapter, get_logger
 
 # from hamilton.plugins.h_ray import RayTaskExecutor  # FIXME: Not available in the CI (see below)
 from hamilton.plugins.h_threadpool import FutureAdapter
+
+from . import test_logging_task_nodes
 
 
 def _split_log_messages(caplog, name):
@@ -237,46 +237,22 @@ def test_logging_async_nodes(caplog):
 
 
 @pytest.mark.parametrize(
-    ["executor_type", "executor_args"],
+    ["executor_type", "executor_args", "check_context"],
     [
-        (executors.SynchronousLocalTaskExecutor, {}),
-        pytest.param(
-            executors.MultiProcessingExecutor,
-            {"max_tasks": 5},
-            marks=pytest.mark.skipif(
-                sys.platform == "win32", reason="Windows does not support fork"
-            ),
-        ),
-        (executors.MultiThreadingExecutor, {"max_tasks": 5}),
-        # (RayTaskExecutor, {}),
-        # (DaskExecutor, {"client": None}),
+        (executors.SynchronousLocalTaskExecutor, {}, True),
+        (executors.MultiProcessingExecutor, {"max_tasks": 1}, False),
+        (executors.MultiThreadingExecutor, {"max_tasks": 2}, True),
+        # (RayTaskExecutor, {}, True),  # FIXME: Not available in the CI environment
+        # (DaskExecutor, {"client": None}, False),  # FIXME: Not available in the CI environment
     ],
 )
-def test_logging_parallel_nodes(caplog, executor_type, executor_args):
+def test_logging_parallel_nodes(caplog, executor_type, executor_args, check_context):
     """Test logging of parallel nodes at multiple logging levels."""
 
     # NOTE: These test is brittle, as it depends on undocumented names of the expanded tasks.
 
-    name = "test_logging_parallel_nodes_at_info_level"
+    name = "test_logging_parallel_nodes"
     caplog.set_level(logging.DEBUG, logger=name)
-
-    def b() -> int:
-        return 5
-
-    def c(b: int) -> Parallelizable[int]:
-        for i in range(b):
-            yield i
-
-    def d(c: int) -> int:
-        logger = get_logger(name)
-        logger.warning("Context aware message")
-        return 2 * c
-
-    def e(d: Collect[int]) -> int:
-        return sum(d)
-
-    def f(e: int) -> int:
-        return e
 
     # FIXME: dask is not available in the CI environment
     # if executor_type == DaskExecutor:
@@ -286,11 +262,10 @@ def test_logging_parallel_nodes(caplog, executor_type, executor_args):
     #     client = dask.distributed.Client(cluster)
     #     executor_args["client"] = client
 
-    modules = ad_hoc_utils.create_temporary_module(b, c, d, e, f)
     adapters = [LoggingAdapter(name)]
     dr = (
         driver.Builder()
-        .with_modules(modules)
+        .with_modules(test_logging_task_nodes)
         .with_adapters(*adapters)
         .enable_dynamic_execution(allow_experimental_mode=True)
         .with_remote_executor(executor_type(**executor_args))
@@ -348,6 +323,15 @@ def test_logging_parallel_nodes(caplog, executor_type, executor_args):
         "Task 'f' - Finished execution [OK]",
     }
     assert local_debug_log.difference(set(debug)) == set()
+
+    if check_context:
+        assert set(warning) == {
+            "Task 'expand-c.0.block-c' - Context aware message",
+            "Task 'expand-c.1.block-c' - Context aware message",
+            "Task 'expand-c.2.block-c' - Context aware message",
+            "Task 'expand-c.3.block-c' - Context aware message",
+            "Task 'expand-c.4.block-c' - Context aware message",
+        }
 
 
 def test_logging_with_inputs(caplog):
