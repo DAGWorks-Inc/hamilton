@@ -4,7 +4,18 @@ import logging
 import sys
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, MutableMapping, Optional, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 from hamilton.graph_types import HamiltonNode
 from hamilton.lifecycle.api import (
@@ -74,7 +85,7 @@ class ContextLogger(LoggerAdapter):
     @override
     def process(
         self, msg: str, kwargs: MutableMapping[str, Any]
-    ) -> tuple[str, MutableMapping[str, Any]]:
+    ) -> Tuple[str, MutableMapping[str, Any]]:
         # Ensure that the extra fields are passed through correctly
         kwargs["extra"] = {**(self.extra or {}), **(kwargs.get("extra") or {})}
 
@@ -384,7 +395,7 @@ class AsyncLoggingAdapter(GraphExecutionHook, BasePreNodeExecute, BasePostNodeEx
 
     @override
     def pre_node_execute(
-        self, *, run_id: str, node_: Node, kwargs: Dict[str, Any], task_id: str | None = None
+        self, *, run_id: str, node_: Node, kwargs: Dict[str, Any], task_id: Optional[str] = None
     ):
         # NOTE: We call the base synchronous method here in order to approximate when the async task
         # has bee submitted. This is a workaround until further work is done on the async adapter.
@@ -410,9 +421,9 @@ class AsyncLoggingAdapter(GraphExecutionHook, BasePreNodeExecute, BasePostNodeEx
         node_: Node,
         kwargs: Dict[str, Any],
         success: bool,
-        error: Exception | None,
+        error: Optional[Exception],
         result: Any,
-        task_id: str | None = None,
+        task_id: Optional[str] = None,
     ):
         self._impl.run_after_node_execution(
             node_name=node_.name,
