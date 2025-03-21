@@ -63,7 +63,7 @@ def get_logger(name: Optional[str] = None) -> "ContextLogger":
     :param name: Name of the logger, defaults to root logger if not provided.
     """
     logger = logging.getLogger(name)
-    return ContextLogger(logger)
+    return ContextLogger(logger, extra=None)
 
 
 class ContextLogger(LoggerAdapter):
