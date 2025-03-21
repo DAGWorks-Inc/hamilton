@@ -63,7 +63,7 @@ def get_logger(name: Optional[str] = None) -> "ContextLogger":
     :param name: Name of the logger, defaults to root logger if not provided.
     """
     logger = logging.getLogger(name)
-    return ContextLogger(logger, extra=None)
+    return ContextLogger(logger, extra={})
 
 
 class ContextLogger(LoggerAdapter):
@@ -162,7 +162,7 @@ class LoggingAdapter(
             self.logger = logging.getLogger(logger)
 
         if not isinstance(self.logger, ContextLogger):
-            self.logger = ContextLogger(self.logger)
+            self.logger = ContextLogger(self.logger, extra={})
 
         self._exception_logged = False  # For tracking remote exceptions
 
