@@ -18,7 +18,7 @@ def fitted_xgboost_model() -> xgboost.XGBModel:
 @pytest.fixture
 def fitted_xgboost_booster() -> xgboost.Booster:
     dtrain = xgboost.DMatrix([[0]], label=[[0]])
-    booster = xgboost.train({"objective": "binary:logistic"}, dtrain, 1)
+    booster = xgboost.train({"objective": "binary:logistic", "base_score": 0.5}, dtrain, 1)
     return booster
 
 
