@@ -23,7 +23,7 @@ from hamilton.lifecycle.api import (
     NodeExecutionHook,
     TaskExecutionHook,
     TaskGroupingHook,
-    TaskResolutionHook,
+    TaskReturnHook,
     TaskSubmissionHook,
 )
 from hamilton.lifecycle.base import BasePostNodeExecuteAsync, BasePreNodeExecute
@@ -128,7 +128,7 @@ class LoggingAdapter(
     TaskGroupingHook,
     TaskSubmissionHook,
     TaskExecutionHook,
-    TaskResolutionHook,
+    TaskReturnHook,
 ):
     """Hamilton lifecycle adapter that logs runtime execution events.
 
@@ -140,7 +140,7 @@ class LoggingAdapter(
     - Node pre-execution (`NodeExecutionHook`)
     - Node post-execution (`NodeExecutionHook`)
     - Task post-execution (`TaskExecutionHook`))
-    - Task resolution  (`TaskResolutionHook`)
+    - Task resolution  (`TaskReturnHook`)
     - Graph completion  (`GraphExecutionHook`)
 
     This adapter can be run with both node-based and task-based execution (using the V2 executor).
@@ -317,7 +317,7 @@ class LoggingAdapter(
             self.logger.error("Execution failed due to errors", extra=extra)
 
     @override
-    def run_after_task_resolution(
+    def run_after_task_return(
         self,
         *,
         run_id: str,
