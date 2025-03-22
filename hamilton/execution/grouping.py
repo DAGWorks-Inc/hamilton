@@ -154,6 +154,14 @@ class TaskImplementation(TaskSpec):
         super(TaskImplementation, self).__post_init__()
         self.task_id = self.determine_task_id(self.base_id, self.spawning_task_id, self.group_id)
 
+    def __hash__(self) -> int:
+        return hash(self.task_id)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TaskImplementation):
+            return False
+        return self.task_id == other.task_id
+
 
 class GroupingStrategy(abc.ABC):
     """Base class for grouping nodes"""
