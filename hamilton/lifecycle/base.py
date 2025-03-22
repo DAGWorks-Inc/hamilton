@@ -740,10 +740,10 @@ class BasePostTaskExecuteAsync(abc.ABC):
         pass
 
 
-@lifecycle.base_hook("post_task_resolution")
-class BasePostTaskResolution(abc.ABC):
+@lifecycle.base_hook("post_task_return")
+class BasePostTaskReturn(abc.ABC):
     @abc.abstractmethod
-    def post_task_resolution(
+    def post_task_return(
         self,
         *,
         run_id: str,
@@ -755,13 +755,13 @@ class BasePostTaskResolution(abc.ABC):
         spawning_task_id: Optional[str],
         purpose: NodeGroupPurpose,
     ):
-        """Hook called immediately after a task future (as submitted to a task executor) is resolved.
-        Note that this is only useful in dynamic execution, although we reserve the right to add this
-        back into the standard hamilton execution pattern.
+        """Hook called immediately after a task returns from an executor. Note that this is only
+        useful in dynamic execution, although we reserve the right to add this back into the
+        standard hamilton execution pattern.
 
         :param run_id: ID of the run, unique in scope of the driver.
         :param task_id: ID of the task
-        :param result: Return value of the task (from task future resolution).
+        :param result: Return value of the task.
         :param success: Whether or not the task executed successfully
         :param error: The error that was raised, if any
         :param spawning_task_id: ID of the task that spawned this task
@@ -843,7 +843,7 @@ LifecycleAdapter = Union[
     BasePostTaskGroup,
     BasePostTaskExpand,
     BasePreTaskSubmission,
-    BasePostTaskResolution,
+    BasePostTaskReturn,
     BasePreTaskExecute,
     BasePreTaskExecuteAsync,
     BasePreNodeExecute,

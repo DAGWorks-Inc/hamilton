@@ -25,7 +25,7 @@ looking forward.
    StaticValidator
    GraphConstructionHook
    TaskSubmissionHook
-   TaskResolutionHook
+   TaskReturnHook
    TaskExecutionHook
    TaskGroupingHook
 

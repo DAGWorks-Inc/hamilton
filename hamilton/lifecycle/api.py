@@ -32,7 +32,7 @@ from hamilton.lifecycle.base import (
     BasePostTaskExecute,
     BasePostTaskExpand,
     BasePostTaskGroup,
-    BasePostTaskResolution,
+    BasePostTaskReturn,
     BasePreGraphExecute,
     BasePreNodeExecute,
     BasePreTaskExecute,
@@ -427,12 +427,12 @@ class TaskSubmissionHook(BasePreTaskSubmission, abc.ABC):
         pass
 
 
-class TaskResolutionHook(BasePostTaskResolution, abc.ABC):
-    """Implement this to hook into the task resolution process. Tasks are submitted to an executor,
-    which then returns a task future to be resolved at a later time when the task is complete."""
+class TaskReturnHook(BasePostTaskReturn, abc.ABC):
+    """Implement this to hook into the task return process. Tasks are submitted to an executor,
+    which executes the task and returns the results (or raises an error)."""
 
     @override
-    def post_task_resolution(
+    def post_task_return(
         self,
         *,
         run_id: str,
@@ -444,7 +444,7 @@ class TaskResolutionHook(BasePostTaskResolution, abc.ABC):
         spawning_task_id: Optional[str],
         purpose: NodeGroupPurpose,
     ):
-        self.run_after_task_resolution(
+        self.run_after_task_return(
             run_id=run_id,
             task_id=task_id,
             nodes=nodes,
@@ -456,7 +456,7 @@ class TaskResolutionHook(BasePostTaskResolution, abc.ABC):
         )
 
     @abc.abstractmethod
-    def run_after_task_resolution(
+    def run_after_task_return(
         self,
         *,
         run_id: str,
@@ -469,8 +469,8 @@ class TaskResolutionHook(BasePostTaskResolution, abc.ABC):
         purpose: NodeGroupPurpose,
         **future_kwargs,
     ):
-        """Runs after a task (future) has been resolved into a return value. By definition this is
-        run *outside* of the task executor,on the process that executed the driver.
+        """Runs after a task has been returned from a executor. By definition this is run *outside*
+        of the task executor, on the process that executed the driver.
 
         :param run_id: ID of the run this is under.
         :param task_id: ID of the task that was just executed.

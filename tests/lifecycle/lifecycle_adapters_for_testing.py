@@ -18,7 +18,7 @@ from hamilton.lifecycle.base import (
     BasePostTaskExecute,
     BasePostTaskExpand,
     BasePostTaskGroup,
-    BasePostTaskResolution,
+    BasePostTaskReturn,
     BasePreDoAnythingHook,
     BasePreGraphExecute,
     BasePreNodeExecute,
@@ -168,8 +168,8 @@ class TrackingPreTaskSubmissionHook(ExtendToTrackCalls, BasePreTaskSubmission):
         pass
 
 
-class TrackingPostTaskResolutionHook(ExtendToTrackCalls, BasePostTaskResolution):
-    def post_task_resolution(
+class TrackingPostTaskReturnHook(ExtendToTrackCalls, BasePostTaskReturn):
+    def post_task_return(
         self,
         *,
         run_id: str,

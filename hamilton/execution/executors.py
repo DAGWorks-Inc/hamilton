@@ -464,9 +464,9 @@ def run_graph_to_completion(
                 finally:
                     execution_state.update_task_state(task.task_id, state, result)
                     if TaskState.is_terminal(state):
-                        if task.adapter.does_hook("post_task_resolution", is_async=False):
+                        if task.adapter.does_hook("post_task_return", is_async=False):
                             task.adapter.call_all_lifecycle_hooks_sync(
-                                "post_task_resolution",
+                                "post_task_return",
                                 run_id=task.run_id,
                                 task_id=task.task_id,
                                 nodes=task.nodes,

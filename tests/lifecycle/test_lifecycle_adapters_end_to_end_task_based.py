@@ -16,7 +16,7 @@ from hamilton.lifecycle.base import (
     BasePostTaskExecute,
     BasePostTaskExpand,
     BasePostTaskGroup,
-    BasePostTaskResolution,
+    BasePostTaskReturn,
     BasePreDoAnythingHook,
     BasePreGraphExecute,
     BasePreNodeExecute,
@@ -33,7 +33,7 @@ from .lifecycle_adapters_for_testing import (
     TrackingPostTaskExecuteHook,
     TrackingPostTaskExpandHook,
     TrackingPostTaskGroupHook,
-    TrackingPostTaskResolutionHook,
+    TrackingPostTaskReturnHook,
     TrackingPreNodeExecuteHook,
     TrackingPreTaskSubmissionHook,
 )
@@ -274,9 +274,9 @@ def test_individual_pre_task_submission_hook():
     }
 
 
-def test_individual_post_task_resolution_hook():
-    hook_name = "post_task_resolution"
-    hook = TrackingPostTaskResolutionHook(name=hook_name)
+def test_individual_post_task_return_hook():
+    hook_name = "post_task_return"
+    hook = TrackingPostTaskReturnHook(name=hook_name)
     dr = _sample_driver(hook)
     dr.execute(["output"], inputs={"n_iters_input": 5})
     relevant_calls = [item for item in hook.calls if item.name == hook_name]
@@ -326,7 +326,7 @@ def test_multi_hook():
         BasePostTaskGroup,
         BasePostTaskExpand,
         BasePreTaskSubmission,
-        BasePostTaskResolution,
+        BasePostTaskReturn,
         ExtendToTrackCalls,
     ):
         def pre_task_execute(
@@ -427,7 +427,7 @@ def test_multi_hook():
         ):
             pass
 
-        def post_task_resolution(
+        def post_task_return(
             self,
             *,
             run_id: str,
@@ -458,7 +458,7 @@ def test_multi_hook():
         "post_task_execute": 10,
         "post_graph_execute": 1,
         "pre_task_submission": 10,
-        "post_task_resolution": 10,
+        "post_task_return": 10,
         "post_task_group": 1,
         "post_task_expand": 1,
     }
