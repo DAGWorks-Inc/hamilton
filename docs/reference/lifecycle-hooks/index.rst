@@ -24,6 +24,8 @@ looking forward.
    NodeExecutionMethod
    StaticValidator
    GraphConstructionHook
+   TaskSubmissionHook
+   TaskReturnHook
    TaskExecutionHook
    TaskGroupingHook
 
