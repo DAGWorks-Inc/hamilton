@@ -66,6 +66,7 @@ def test__load_config_new(tmp_path_factory):
     assert a_id == actual_config["DEFAULT"]["anonymous_id"]
 
 
+@mock.patch.dict(os.environ, {"HAMILTON_TELEMETRY_ENABLED": ""})
 def test__check_config_and_environ_for_telemetry_flag_not_present():
     """Tests not present in both."""
     conf = configparser.ConfigParser()
@@ -73,6 +74,7 @@ def test__check_config_and_environ_for_telemetry_flag_not_present():
     assert actual is False
 
 
+@mock.patch.dict(os.environ, {"HAMILTON_TELEMETRY_ENABLED": ""})
 def test__check_config_and_environ_for_telemetry_flag_in_config():
     """tests getting from config."""
     conf = configparser.ConfigParser()
