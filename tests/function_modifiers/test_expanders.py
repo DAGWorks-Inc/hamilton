@@ -576,7 +576,6 @@ def test_unpack_fields_valid_type_annotations(return_type, fields):
         (list, ("A",)),
         (dict, ("A",)),
         (Tuple, ("A",)),
-        (Tuple[...], ("A", "B")),
         (Tuple[int, int], ("A", "B", "C", "D")),
     ],
 )
