@@ -35,7 +35,8 @@ def get_file_metadata(path: Union[str, Path, PathLike]) -> Dict[str, Any]:
     notes = f"File metadata is unsupported for scheme: {scheme} or path: {path} does not exist."
 
     # Check if the path is a local file path (Windows drive can be listed as a scheme)
-    if (parsed.scheme == "" or parsed.scheme.isalpha()) and os.path.exists(path):
+    is_win_path = parsed.scheme and len(parsed.scheme) == 1 and parsed.scheme.isalpha()
+    if (parsed.scheme == "" or is_win_path) and os.path.exists(path):
         size = os.path.getsize(path)
         last_modified = os.path.getmtime(path)
         notes = ""
