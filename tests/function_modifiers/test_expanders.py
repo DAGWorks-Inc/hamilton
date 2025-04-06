@@ -19,9 +19,6 @@ from hamilton.function_modifiers.dependencies import (
 from hamilton.htypes import Collect, Parallelizable
 from hamilton.node import DependencyType
 
-if sys.version_info >= (3, 9):
-    skip_if_before_39 = pytest.mark.skipif(sys.version_info < (3, 9), reason="Requires Python 3.9+")
-
 
 def test_parametrized_invalid_params():
     annotation = function_modifiers.parameterize_values(
@@ -556,18 +553,18 @@ def test_unpack_fields_valid_indeterminate_tuple():
     assert nodes[3].input_types == {dummy.__name__: (Tuple[int, ...], DependencyType.REQUIRED)}
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="Python 3.9+ required for modern tuple syntax"
+)
 @pytest.mark.parametrize(
     "return_type,fields",
     [
-        (Tuple[int, int], ("A", "B")),
-        (Tuple[int, int, str], ("A", "B", "C")),
-        (Tuple[int, int, str], ("A", "B", "C")),
-        pytest.param(tuple[int, int], ("A", "B"), marks=skip_if_before_39),
-        pytest.param(tuple[int, int, str], ("A", "B", "C"), marks=skip_if_before_39),
-        pytest.param(tuple[int, int, str], ("A", "B", "C"), marks=skip_if_before_39),
+        (tuple[int, int], ("A", "B")),
+        (tuple[int, int, str], ("A", "B", "C")),
+        (tuple[int, int, str], ("A", "B", "C")),
     ],
 )
-def test_unpack_fields_valid_type_annotations(return_type, fields):
+def test_unpack_fields_valid_type_annotation(return_type, fields):
     def function() -> return_type:
         return 1, 2, "3"  # Only testing validation, so return value doesn't matter
 
@@ -578,20 +575,54 @@ def test_unpack_fields_valid_type_annotations(return_type, fields):
 @pytest.mark.parametrize(
     "return_type,fields",
     [
+        (Tuple[int, int], ("A", "B")),
+        (Tuple[int, int, str], ("A", "B", "C")),
+        (Tuple[int, int, str], ("A", "B", "C")),
+    ],
+)
+def test_unpack_fields_valid_type_annotations_legacy(return_type, fields):
+    def function() -> return_type:
+        return 1, 2, "3"  # Only testing validation, so return value doesn't matter
+
+    annotation = function_modifiers.unpack_fields(*fields)
+    annotation.validate(function)
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="Python 3.9+ required for modern tuple syntax"
+)
+@pytest.mark.parametrize(
+    "return_type,fields",
+    [
+        (int, ("A",)),
+        (list, ("A",)),
+        (dict, ("A",)),
+        (tuple, ("A",)),
+        (tuple[...], ("A", "B")),
+        (tuple[int, int], ("A", "B", "C", "D")),
+    ],
+)
+def test_unpack_fields_invalid_type_annotations(return_type, fields):
+    def function() -> return_type:
+        return 1, 2, 3  # Only testing validation, so return value doesn't matter
+
+    annotation = function_modifiers.unpack_fields(*fields)
+    with pytest.raises(hamilton.function_modifiers.base.InvalidDecoratorException):
+        annotation.validate(function)
+
+
+@pytest.mark.parametrize(
+    "return_type,fields",
+    [
         (int, ("A",)),
         (list, ("A",)),
         (dict, ("A",)),
         (Tuple, ("A",)),
         (Tuple[...], ("A", "B")),
-        (Tuple[int, int, ...], ("A", "B")),
         (Tuple[int, int], ("A", "B", "C", "D")),
-        pytest.param(tuple, ("A",), marks=skip_if_before_39),
-        pytest.param(tuple[...], ("A", "B"), marks=skip_if_before_39),
-        pytest.param(tuple[int, int, ...], ("A", "B"), marks=skip_if_before_39),
-        pytest.param(tuple[int, int], ("A", "B", "C", "D"), marks=skip_if_before_39),
     ],
 )
-def test_unpack_fields_invalid_type_annotations(return_type, fields):
+def test_unpack_fields_invalid_type_annotations_legacy(return_type, fields):
     def function() -> return_type:
         return 1, 2, 3  # Only testing validation, so return value doesn't matter
 
