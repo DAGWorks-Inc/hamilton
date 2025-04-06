@@ -525,7 +525,7 @@ def test_unpack_fields_valid_explicit_tuple_subset():
     assert nodes[1].input_types == {dummy.__name__: (Tuple[int, str, int], DependencyType.REQUIRED)}
 
 
-def test_upack_fields_valid_indeterminate_tuple():
+def test_unpack_fields_valid_indeterminate_tuple():
     def dummy() -> Tuple[int, ...]:
         """dummy doc"""
         return 1, 2, 3
