@@ -875,11 +875,11 @@ class extract_fields(base.SingleNodeNodeTransformer):
 
 
 def _process_unpack_fields(fields: List[str], output_type: Any) -> Optional[List[Type]]:
-    """Processes the fields and base output type args to extract a tuple of field types.
+    """Processes the fields and base output type to extract a tuple of field types.
 
-    :param fields: Tuple of fields to extract from the tuple.
-    :param args: Tuple of types to extract from the tuple.
-    :return: List of types.
+    :param fields: List of fields to extract from the tuple.
+    :param output_type: The output type of the node function.
+    :return: List of field types.
     """
 
     base_type = typing_inspect.get_origin(output_type)
