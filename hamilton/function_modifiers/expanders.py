@@ -3,7 +3,7 @@ import dataclasses
 import functools
 import inspect
 import typing
-from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
 
 import typing_extensions
 import typing_inspect
@@ -874,7 +874,7 @@ class extract_fields(base.SingleNodeNodeTransformer):
         return output_nodes
 
 
-def _process_unpack_fields(fields: List[str], output_type: Any) -> List[Type] | None:
+def _process_unpack_fields(fields: List[str], output_type: Any) -> Optional[List[Type]]:
     """Processes the fields and base output type args to extract a tuple of field types.
 
     :param fields: Tuple of fields to extract from the tuple.
