@@ -45,7 +45,8 @@ def _mock_cache_key(
 
 
 @pytest.fixture
-def metadata_store(request, tmp_path):
+def metadata_store(request, tmp_path_factory):
+    tmp_path = tmp_path_factory.mktemp("result_store")
     metadata_store_cls = request.param
     metadata_store = _instantiate_metadata_store(metadata_store_cls, tmp_path)
 

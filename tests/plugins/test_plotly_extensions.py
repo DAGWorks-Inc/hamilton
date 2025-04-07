@@ -1,4 +1,5 @@
 import pathlib
+import sys
 
 import plotly.graph_objects as go
 import pytest
@@ -12,6 +13,10 @@ def figure():
     yield go.Figure(data=go.Scatter(x=[1, 2, 3, 4, 5], y=[10, 14, 18, 24, 30], mode="markers"))
 
 
+@pytest.mark.skipif(
+    sys.platform.startswith("win"),
+    reason="Windows does not currently support plotly static image export",
+)
 def test_plotly_static_writer(figure: go.Figure, tmp_path: pathlib.Path) -> None:
     file_path = tmp_path / "figure.png"
 

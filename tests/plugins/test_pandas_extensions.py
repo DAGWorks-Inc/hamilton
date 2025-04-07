@@ -1,9 +1,12 @@
+import os
 import pathlib
 import sqlite3
 from typing import Union
+from unittest import mock
 
 import pandas as pd
 import pytest
+import tzdata
 from pandas.testing import assert_frame_equal
 from sqlalchemy import create_engine
 
@@ -238,6 +241,7 @@ def test_pandas_orc_writer(tmp_path: pathlib.Path) -> None:
     assert metadata["dataframe_metadata"]["column_names"] == ["col1", "col2"]
 
 
+@mock.patch.dict(os.environ, {"TZDIR": os.path.join(os.path.dirname(tzdata.__file__), "zoneinfo")})
 def test_pandas_orc_reader(tmp_path: pathlib.Path) -> None:
     path_to_test = "tests/resources/data/test_load_from_data.orc"
     reader = PandasORCReader(path=path_to_test)
