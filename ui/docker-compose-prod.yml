@@ -60,6 +60,7 @@ services:
       - REACT_APP_AUTH_MODE=local
       - REACT_APP_USE_POSTHOG=false
       - REACT_APP_API_URL=http://backend:8241
+      - REACT_APP_HAMILTON_SUB_PATH=  # empty default
     depends_on:
       - backend
 
