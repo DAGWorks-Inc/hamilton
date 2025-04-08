@@ -3,7 +3,7 @@ import dataclasses
 import functools
 import inspect
 import typing
-from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Collection, Dict, List, Tuple, Type, Union
 
 import typing_extensions
 import typing_inspect
@@ -874,7 +874,7 @@ class extract_fields(base.SingleNodeNodeTransformer):
         return output_nodes
 
 
-def _process_unpack_fields(fields: List[str], output_type: Any) -> Optional[List[Type]]:
+def _process_unpack_fields(fields: List[str], output_type: Any) -> List[Type]:
     """Processes the fields and base output type to extract a tuple of field types.
 
     :param fields: List of fields to extract from the tuple.
@@ -882,9 +882,15 @@ def _process_unpack_fields(fields: List[str], output_type: Any) -> Optional[List
     :return: List of field types.
     """
 
-    base_type = typing_inspect.get_origin(output_type)
+    base_type = typing_inspect.get_origin(output_type)  # Returns None when output_type is None
     if base_type != tuple and base_type != Tuple:
-        return
+        message = (
+            f"For unpacking fields, the decorated function output type must be either an "
+            f"explicit length tuple (e.g.`tuple[int, str]`, `typing.Tuple[int, str]`) or an "
+            f"indeterminate length tuple (e.g. `tuple[int, ...]`, `typing.Tuple[int, ...]`), "
+            f"not: {output_type}"
+        )
+        raise base.InvalidDecoratorException(message)
 
     output_args = typing_inspect.get_args(output_type)
     num_ellipsis = output_args.count(Ellipsis)
@@ -953,17 +959,8 @@ class unpack_fields(base.SingleNodeNodeTransformer):
     def validate(self, fn: Callable):
         output_type = typing.get_type_hints(fn).get("return")
         field_types = _process_unpack_fields(self.fields, output_type)
-        if field_types:
-            self.field_types = field_types
-            self.output_type = output_type
-        else:
-            message = (
-                f"For unpacking fields, the decorated function output type must be either an "
-                f"explicit length tuple (e.g.`tuple[int, str]`, `typing.Tuple[int, str]`) or an "
-                f"indeterminate length tuple (e.g. `tuple[int, ...]`, `typing.Tuple[int, ...]`), "
-                f"not: {output_type}"
-            )
-            raise base.InvalidDecoratorException(message)
+        self.field_types = field_types
+        self.output_type = output_type
 
     @override
     def transform_node(
