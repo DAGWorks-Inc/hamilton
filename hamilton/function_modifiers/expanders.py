@@ -985,28 +985,16 @@ class unpack_fields(base.SingleNodeNodeTransformer):
         output_nodes = [node_.copy_with(callabl=tuple_generator)]
 
         for idx, (field_name, field_type) in enumerate(zip(self.fields, self.field_types)):
-            # NOTE: The extractors, as defined below, are constructed to avoid closure issues.
-            if inspect.iscoroutinefunction(fn):
 
-                async def extractor(field_index: int = idx, **kwargs) -> field_type:  # type: ignore
-                    dt = kwargs[node_.name]
-                    if field_index < 0 or field_index >= len(dt):
-                        raise base.InvalidDecoratorException(
-                            f"Out of bounds field: {node_.name} contains only {len(dt)} fields, "
-                            f"index requested: {field_index}. "
-                        )
-                    return kwargs[node_.name][field_index]
-
-            else:
-
-                def extractor(field_index: int = idx, **kwargs) -> field_type:  # type: ignore
-                    dt = kwargs[node_.name]
-                    if field_index < 0 or field_index >= len(dt):
-                        raise base.InvalidDecoratorException(
-                            f"Out of bounds field: {field_index} produced by {node_.name}. "
-                            f"It only produced {list(dt)} fields."
-                        )
-                    return kwargs[node_.name][field_index]
+            def extractor(field_index: int = idx, **kwargs) -> field_type:  # type: ignore
+                # This extractor is constructed to avoid closure issues.
+                dt = kwargs[node_.name]
+                if field_index < 0 or field_index >= len(dt):
+                    raise base.InvalidDecoratorException(
+                        f"Out of bounds field: {field_index} produced by {node_.name}. "
+                        f"It only produced {list(dt)} fields."
+                    )
+                return kwargs[node_.name][field_index]
 
             output_nodes.append(
                 node.Node(
