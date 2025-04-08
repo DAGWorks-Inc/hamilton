@@ -19,6 +19,17 @@ from hamilton.function_modifiers.dependencies import (
 from hamilton.htypes import Collect, Parallelizable
 from hamilton.node import DependencyType
 
+# TODO: Move/refactor for more general use
+skipif = pytest.mark.skipif
+prior_to_py39 = {
+    "condition": sys.version_info < (3, 9, 0),
+    "reason": "Python 3.9+ required for this test",
+}
+prior_to_py311 = {
+    "condition": sys.version_info < (3, 11, 0),
+    "reason": "Python 3.11+ required for this test",
+}
+
 
 def test_parametrized_invalid_params():
     annotation = function_modifiers.parameterize_values(
@@ -554,14 +565,19 @@ def test_unpack_fields_valid_indeterminate_tuple():
 
 
 @pytest.mark.parametrize(
-    "return_type,fields",
+    "return_type_str,fields",
     [
-        (Tuple[int, int], ("A", "B")),
-        (Tuple[int, int, str], ("A", "B", "C")),
-        (Tuple[int, int, str], ("A", "B", "C")),
+        ("Tuple[int, int]", ("A", "B")),
+        ("Tuple[int, int, str]", ("A", "B", "C")),
+        ("Tuple[int, ...]", ("A", "B")),
+        pytest.param("tuple[int, int]", ("A", "B"), marks=skipif(**prior_to_py39)),
+        pytest.param("tuple[int, int, str]", ("A", "B", "C"), marks=skipif(**prior_to_py39)),
+        pytest.param("tuple[int, ...]", ("A", "B"), marks=skipif(**prior_to_py39)),
     ],
 )
-def test_unpack_fields_valid_type_annotations(return_type, fields):
+def test_unpack_fields_valid_type_annotations(return_type_str, fields):
+    return_type = eval(return_type_str)
+
     def function() -> return_type:
         return 1, 2, "3"  # Only testing validation, so return value doesn't matter
 
@@ -570,16 +586,29 @@ def test_unpack_fields_valid_type_annotations(return_type, fields):
 
 
 @pytest.mark.parametrize(
-    "return_type,fields",
+    "return_type_str,fields",
     [
-        (int, ("A",)),
-        (list, ("A",)),
-        (dict, ("A",)),
-        (Tuple, ("A",)),
-        (Tuple[int, int], ("A", "B", "C", "D")),
+        ("int", ("A",)),
+        ("list", ("A",)),
+        ("dict", ("A",)),
+        ("Tuple", ("A",)),
+        ("Tuple[int, int]", ("A", "B", "C")),
+        pytest.param("Tuple[...]", ("A", "B", "C"), marks=skipif(**prior_to_py311)),
+        pytest.param("Tuple[int, int, ...]", ("A", "B"), marks=skipif(**prior_to_py311)),
+        pytest.param("Tuple[..., int, int]", ("A", "B"), marks=skipif(**prior_to_py311)),
+        pytest.param("tuple", ("A",), marks=skipif(**prior_to_py39)),
+        pytest.param("tuple[int, int]", ("A", "B", "C"), marks=skipif(**prior_to_py39)),
+        pytest.param("tuple[...]", ("A", "B", "C"), marks=skipif(**prior_to_py39)),
+        pytest.param("tuple[int, int, ...]", ("A", "B"), marks=skipif(**prior_to_py39)),
+        pytest.param("tuple[..., int, int]", ("A", "B"), marks=skipif(**prior_to_py39)),
     ],
 )
-def test_unpack_fields_invalid_type_annotations(return_type, fields):
+def test_unpack_fields_invalid_type_annotations(return_type_str, fields):
+    # NOTE: Prior to Python 3.11, improper use of the ellipsis in a typing.Tuple was an error.
+    # However, improper use of an ellipsis in a (bare) tuple (python 3.9+) was not an error.
+
+    return_type = eval(return_type_str)
+
     def function() -> return_type:
         return 1, 2, 3  # Only testing validation, so return value doesn't matter
 
@@ -872,10 +901,9 @@ def test_inject_misconfigured_param_type_dict():
         annotation.validate(foo)
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9, 0), reason="Stricter type-checking only works on python 3.9+"
-)
+@pytest.mark.skipif(**prior_to_py39)
 def test_inject_misconfigured_param_untyped_generic_list():
+    # NOTE: Stricter typing rules for generics were introduced in Python 3.9.
     def foo(x: List) -> int:
         return sum(x)
 
