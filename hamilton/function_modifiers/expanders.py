@@ -899,7 +899,7 @@ def _process_unpack_fields(fields: List[str], output_type: Any) -> List[Type]:
             f"Invalid tuple: Found more than one ellipsis ('...'): {output_type}"
         )
     elif num_ellipsis == 1:
-        if len(output_args) != 2:
+        if len(output_args) != 2 or output_args[1] is not Ellipsis:
             raise base.InvalidDecoratorException(
                 f"Invalid tuple: Ellipsis ('...') must be second element: {output_type}"
             )
