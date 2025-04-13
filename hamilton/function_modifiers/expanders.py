@@ -875,9 +875,9 @@ class extract_fields(base.SingleNodeNodeTransformer):
 
 
 def _process_unpack_fields(fields: List[str], output_type: Any) -> List[Type]:
-    """Processes the fields and base output type to extract a tuple of field types.
+    """Processes the fields and base output type to extract a list of field types.
 
-    :param fields: List of fields to extract from the tuple.
+    :param fields: List of fields to to unpack.
     :param output_type: The output type of the node function.
     :return: List of field types.
     """
@@ -933,7 +933,7 @@ def _process_unpack_fields(fields: List[str], output_type: Any) -> List[Type]:
 
 
 class unpack_fields(base.SingleNodeNodeTransformer):
-    """Extracts fields from a tuple output.
+    """Unpacks fields from a tuple output.
 
     Expands a single function into the following nodes:
 
@@ -945,7 +945,7 @@ class unpack_fields(base.SingleNodeNodeTransformer):
     - An explicit length tuple (e.g.`tuple[int, str]`, `typing.Tuple[int, str]`)
     - An indeterminate length tuple (e.g. `tuple[int, ...]`, `typing.Tuple[int, ...]`)
 
-    :param fields: Fields to extract from the return value of the decorated function.
+    :param fields: Fields to unpack from the return value of the decorated function.
     """
 
     output_type: Any
