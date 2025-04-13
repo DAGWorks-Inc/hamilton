@@ -836,30 +836,15 @@ class extract_fields(base.SingleNodeNodeTransformer):
         for field, field_type in self.fields.items():
             doc_string = base_doc  # default doc string of base function.
 
-            # if fn is async
-            if inspect.iscoroutinefunction(fn):
-
-                async def extractor_fn(field_to_extract: str = field, **kwargs) -> field_type:
-                    dt = kwargs[node_.name]
-                    if field_to_extract not in dt:
-                        raise base.InvalidDecoratorException(
-                            f"No such field: {field_to_extract} produced by {node_.name}. "
-                            f"It only produced {list(dt.keys())}"
-                        )
-                    return kwargs[node_.name][field_to_extract]
-
-            else:
-
-                def extractor_fn(
-                    field_to_extract: str = field, **kwargs
-                ) -> field_type:  # avoiding problems with closures
-                    dt = kwargs[node_.name]
-                    if field_to_extract not in dt:
-                        raise base.InvalidDecoratorException(
-                            f"No such field: {field_to_extract} produced by {node_.name}. "
-                            f"It only produced {list(dt.keys())}"
-                        )
-                    return kwargs[node_.name][field_to_extract]
+            # This extractor is constructed to avoid closure issues.
+            def extractor_fn(field_to_extract: str = field, **kwargs) -> field_type:  # type: ignore
+                dt = kwargs[node_.name]
+                if field_to_extract not in dt:
+                    raise base.InvalidDecoratorException(
+                        f"No such field: {field_to_extract} produced by {node_.name}. "
+                        f"It only produced {list(dt.keys())}"
+                    )
+                return kwargs[node_.name][field_to_extract]
 
             output_nodes.append(
                 node.Node(
