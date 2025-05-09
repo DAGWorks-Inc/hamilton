@@ -700,7 +700,7 @@ class extract_columns(base.SingleNodeNodeTransformer):
 
 
 def _process_extract_fields(
-    fields: Optional[Dict[str, Any] | List[str]], output_type: Any
+    fields: Optional[Union[Dict[str, Any], List[str]]], output_type: Any
 ) -> Dict[str, Any]:
     """Processes the fields and base output type to extract a dict of field types.
 
@@ -826,7 +826,7 @@ class extract_fields(base.SingleNodeNodeTransformer):
 
     def __init__(
         self,
-        fields: Optional[Dict[str, Any] | List[str] | Any] = None,
+        fields: Optional[Union[Dict[str, Any], List[str], Any]] = None,
         *others,
         fill_with: Any = None,
     ):
