@@ -673,7 +673,7 @@ def test_extract_fields_transform_not_using_fill_with():
         nodes[1].callable(dummy_dict=dummy_dict())
 
 
-def test_unpack_fields_valid_explicit_tuple():
+def test_unpack_fields_transform_on_explicit_tuple():
     def dummy() -> Tuple[int, str, int]:
         """dummy doc"""
         return 1, "2", 3
@@ -704,7 +704,7 @@ def test_unpack_fields_valid_explicit_tuple():
     assert nodes[3].input_types == {dummy.__name__: (Tuple[int, str, int], DependencyType.REQUIRED)}
 
 
-def test_unpack_fields_valid_explicit_tuple_subset():
+def test_unpack_fields_transform_on_explicit_tuple_subset():
     def dummy() -> Tuple[int, str, int]:
         """dummy doc"""
         return 1, "2", 3
@@ -727,7 +727,7 @@ def test_unpack_fields_valid_explicit_tuple_subset():
     assert nodes[1].input_types == {dummy.__name__: (Tuple[int, str, int], DependencyType.REQUIRED)}
 
 
-def test_unpack_fields_valid_indeterminate_tuple():
+def test_unpack_fields_transform_on_indeterminate_tuple():
     def dummy() -> Tuple[int, ...]:
         """dummy doc"""
         return 1, 2, 3
