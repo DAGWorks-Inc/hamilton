@@ -56,8 +56,8 @@ class DltResourceLoader(DataLoader):
         pipeline = dlt.pipeline(
             pipeline_name="Hamilton-DltResourceLoader", destination="filesystem"
         )
-        pipeline.extract(self.resource)
-        normalize_info = pipeline.normalize(loader_file_format="parquet")
+        pipeline.extract(self.resource, loader_file_format="parquet")
+        normalize_info = pipeline.normalize()
 
         partition_file_paths = []
         package = normalize_info.load_packages[0]
