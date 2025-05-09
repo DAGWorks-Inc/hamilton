@@ -201,7 +201,7 @@ A good example is splitting a dataset into training, validation, and test splits
     from typing import Tuple
     from hamilton.function_modifiers import unpack_fields
 
-    @unpack_fields("X_train" "X_validation", "X_test")
+    @unpack_fields("X_train", "X_validation", "X_test")
     def dataset_splits(X: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Randomly split data into train, validation, test"""
         X_train, X_validation, X_test = random_split(X)
