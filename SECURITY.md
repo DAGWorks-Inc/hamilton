@@ -15,7 +15,7 @@
     limitations under the License.
 -->
 # Security Policy
-The security surface area of Apache Hamilton should be pretty small in comparison to other projects. But to get a better mark on Github, we're including this policy file for completeness.
+The security surface area of Apache Hamilton should be pretty small in comparison to other projects.
 
 ## Supported Versions
 
