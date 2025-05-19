@@ -699,10 +699,11 @@ class extract_columns(base.SingleNodeNodeTransformer):
         return output_nodes
 
 
-def _process_extract_fields(
+def _determine_fields_to_extract(
     fields: Optional[Union[Dict[str, Any], List[str]]], output_type: Any
 ) -> Dict[str, Any]:
-    """Processes the fields and base output type to extract a dict of field types.
+    """Determines which fields to extract based on user requested fields and the output type of
+    the return type of the function.
 
     :param fields: Dict of fields to extract.
     :param output_type: The output type of the node function.
@@ -856,7 +857,7 @@ class extract_fields(base.SingleNodeNodeTransformer):
         :raises: InvalidDecoratorException If the function is not annotated with a dict or typing.Dict type as output.
         """
         self.output_type = typing.get_type_hints(fn).get("return")
-        self.resolved_fields = _process_extract_fields(self.fields, self.output_type)
+        self.resolved_fields = _determine_fields_to_extract(self.fields, self.output_type)
 
     def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
@@ -922,8 +923,9 @@ class extract_fields(base.SingleNodeNodeTransformer):
         return output_nodes
 
 
-def _process_unpack_fields(fields: List[str], output_type: Any) -> List[Type]:
-    """Processes the fields and base output type to extract a list of field types.
+def _determine_fields_to_unpack(fields: List[str], output_type: Any) -> List[Type]:
+    """Determines which fields to unpack based on user requested fields and the output type of
+    the return type of the function.
 
     :param fields: List of fields to to unpack.
     :param output_type: The output type of the node function.
@@ -1006,7 +1008,7 @@ class unpack_fields(base.SingleNodeNodeTransformer):
     @override
     def validate(self, fn: Callable):
         output_type = typing.get_type_hints(fn).get("return")
-        field_types = _process_unpack_fields(self.fields, output_type)
+        field_types = _determine_fields_to_unpack(self.fields, output_type)
         self.field_types = field_types
         self.output_type = output_type
 
