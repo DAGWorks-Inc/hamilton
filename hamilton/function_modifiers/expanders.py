@@ -851,7 +851,8 @@ class extract_fields(base.SingleNodeNodeTransformer):
         self.fill_with = fill_with
 
     def validate(self, fn: Callable):
-        """A function is invalid if it is not annotated with a dict or typing.Dict return type.
+        """A function is invalid if it is not annotated with a dict or typing.Dict return type or if the
+        fields to extract are not valid.
 
         :param fn: Function to validate.
         :raises: InvalidDecoratorException If the function is not annotated with a dict or typing.Dict type as output.
@@ -1007,6 +1008,11 @@ class unpack_fields(base.SingleNodeNodeTransformer):
 
     @override
     def validate(self, fn: Callable):
+        """Validates that the return type of the function is a tuple or typing.Tuple with the
+
+        :param fn: Function to validate
+        :raises: InvalidDecoratorException If the function does not output a tuple or typing.Tuple type.
+        """
         output_type = typing.get_type_hints(fn).get("return")
         field_types = _determine_fields_to_unpack(self.fields, output_type)
         self.field_types = field_types
@@ -1016,6 +1022,14 @@ class unpack_fields(base.SingleNodeNodeTransformer):
     def transform_node(
         self, node_: node.Node, config: Dict[str, Any], fn: Callable
     ) -> Collection[node.Node]:
+        """Unpacks the specified fields form the tuple output into separate nodes.
+
+        :param node_: Node to transform
+        :param config: Config to use
+        :param fn: Function to unpack fields from. Must output a tuple.
+        :return: A collection of nodes --
+                one for the original tuple generator, and another for each field to unpack.
+        """
         fn = node_.callable
         base_doc = node_.documentation
         base_tags = node_.tags.copy()
