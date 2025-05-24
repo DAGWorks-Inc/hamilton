@@ -59,7 +59,7 @@ github:
 
 notifications:
   commits:              commits@hamilton.apache.org
-  issues:               dev@hamilton.apache.org
-  pullrequests:         dev@hamilton.apache.org
-  discussions:          dev@hamilton.apache.org
-  jobs:                 dev@hamilton.apache.org
+  issues:               notifications@hamilton.apache.org
+  pullrequests:         notifications@hamilton.apache.org
+  discussions:          notifications@hamilton.apache.org
+  jobs:                 notifications@hamilton.apache.org
