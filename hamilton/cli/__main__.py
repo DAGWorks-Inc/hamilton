@@ -323,6 +323,35 @@ def ui(
         config_file=config_file,
     )
 
+@cli.command()
+def create_tests(
+    ctx: typer.Context,
+    module_path: Path = typer.Argument(
+        ...,
+        help="Path to the Hamilton Python module file.",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        resolve_path=True,
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Custom destination path for the generated test file.",
+    ),
+):
+    """Generate pytest-style unit test stubs for functions in a Hamilton module."""
+    out_file = commands.create_tests(module_path=module_path, output_path=output)
+    _response_handler(
+        ctx=ctx,
+        response=Response(
+            command="create-tests",
+            success=True,
+            message=f"Test stubs generated at: {out_file}",
+        ),
+    )
+
 
 if __name__ == "__main__":
     cli()
