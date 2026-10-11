@@ -336,3 +336,108 @@ def _read_py_context(file_path: Path) -> dict:
         context[k] = getattr(module, k, None)
 
     return context
+
+def _has_existing_test(test_file_path: Path, test_func_name: str) -> bool:
+    """Check via AST whether the test file already declares test_func_name."""
+    import ast
+
+    if not test_file_path.exists():
+        return False
+    try:
+        tree = ast.parse(test_file_path.read_text())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.name == test_func_name:
+                return True
+    except Exception:
+        return False
+    return False
+
+
+def generate_test_stub_for_function(func_name: str, func: object, module_name: str) -> str:
+    """Generate the pytest-style unit test stub for a single Hamilton function."""
+    import inspect
+
+    sig = inspect.signature(func)
+    params = list(sig.parameters.values())
+
+    param_lines = []
+    call_args = []
+    has_pandas = False
+
+    for param in params:
+        annotation_str = ""
+        if param.annotation != inspect.Parameter.empty:
+            if hasattr(param.annotation, "__name__"):
+                annotation_str = param.annotation.__name__
+            else:
+                annotation_str = str(param.annotation).replace("typing.", "")
+
+        if "Series" in annotation_str or "DataFrame" in annotation_str:
+            has_pandas = True
+            default_val = "pd.Series([])" if "Series" in annotation_str else "pd.DataFrame({})"
+            param_lines.append(f"    {param.name}: {annotation_str} = {default_val}  # TODO: fill in")
+        elif annotation_str:
+            param_lines.append(f"    {param.name}: {annotation_str} = None  # TODO: fill in")
+        else:
+            param_lines.append(f"    {param.name} = None  # TODO: fill in")
+        call_args.append(param.name)
+
+    call_expr = f"{module_name}.{func_name}({', '.join(call_args)})"
+
+    if has_pandas:
+        assertion_block = (
+            "    # TODO: fill in expected\n"
+            "    expected = None\n"
+            "    pd.testing.assert_series_equal(actual, expected)"
+        )
+    else:
+        assertion_block = (
+            "    # TODO: fill in expected\n"
+            "    expected = None\n"
+            "    assert actual == expected"
+        )
+
+    params_code = "\n".join(param_lines)
+    if params_code:
+        params_code += "\n"
+
+    return f"""def test_{func_name}():
+{params_code}    actual = {call_expr}
+{assertion_block}
+"""
+
+
+def create_test_stubs(module_path: Path, output_file: Path | None = None) -> Path:
+    """Scan a module file and generate unit test stubs for its Hamilton functions."""
+    from hamilton import ad_hoc_utils, graph_utils
+
+    module_name = module_path.stem
+    if output_file is None:
+        output_file = module_path.parent / f"test_{module_name}.py"
+
+    mod = ad_hoc_utils.module_from_source(module_path.read_text())
+    functions = graph_utils.find_functions(mod)
+
+    new_stubs = []
+    for func_name, func_obj in functions:
+        test_func_name = f"test_{func_name}"
+        if not _has_existing_test(output_file, test_func_name):
+            new_stubs.append(generate_test_stub_for_function(func_name, func_obj, module_name))
+
+    if not new_stubs:
+        return output_file
+
+    if output_file.exists():
+        existing_text = output_file.read_text()
+        spacing = "\n\n" if not existing_text.endswith("\n\n") else ""
+        output_file.write_text(existing_text + spacing + "\n\n".join(new_stubs) + "\n")
+    else:
+        needs_pandas = any("pd." in stub for stub in new_stubs)
+        header_lines = ["import pytest"]
+        if needs_pandas:
+            header_lines.append("import pandas as pd")
+        header_lines.append(f"import {module_name}\n\n")
+        header = "\n".join(header_lines)
+        output_file.write_text(header + "\n\n".join(new_stubs) + "\n")
+
+    return output_file
