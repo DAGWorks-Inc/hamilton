@@ -33,13 +33,15 @@ IMPORTANT all container types that make a recursive call to `hash_value` or a sp
 implementation should pass the `depth` parameter to prevent `RecursionError`.
 """
 
+from __future__ import annotations
+
 import base64
 import datetime
 import functools
-import hashlib
 import logging
 import sys
 from collections.abc import Mapping, Sequence, Set
+from typing import TYPE_CHECKING
 
 from hamilton.experimental import h_databackends
 
@@ -49,6 +51,31 @@ try:
 except ImportError:
     NoneType = type(None)
 
+if TYPE_CHECKING:
+    from collections.abc import Buffer, Callable
+    from typing import Protocol
+
+    class Hash(Protocol):
+        def digest(self) -> bytes: ...
+
+
+hash_func: Callable[[str | Buffer], Hash]
+try:
+    # xxh3_128 produces a 16-byte digest (24 base64url chars, the same width as the
+    # md5 it replaces) while running substantially faster on buffer-bound paths.
+    # TODO(2.0): revisit once/if a dependency-free `apache-hamilton-core` package
+    # exists, so this optional performance dependency lands in the right tier.
+    import xxhash
+
+    hash_func = xxhash.xxh3_128
+except (ModuleNotFoundError, AttributeError):
+    # ModuleNotFoundError covers xxhash not being installed; AttributeError
+    # covers an xxhash older than 0.8.0 (which added xxh3_128).
+    # usedforsecurity=False avoids a ValueError on FIPS-mode Python; it
+    # doesn't change the digest.
+    import hashlib
+
+    hash_func = functools.partial(hashlib.md5, usedforsecurity=False)
 
 logger = logging.getLogger("hamilton.caching")
 
@@ -81,8 +108,16 @@ def _hash_bytes(data: bytes) -> str:
 
     All hashing in this module routes through this single helper so the
     underlying hashing algorithm can be changed in exactly one place.
+
+    Uses the non-cryptographic xxh3_128 algorithm when the optional
+    ``xxhash`` package is installed (see the ``performance`` extra),
+    falling back to hashlib's md5 otherwise. Both produce a 16-byte digest
+    (24 base64url chars), so digest width is unaffected either way, but the
+    two algorithms don't produce the same bytes for the same input:
+    fingerprints are stable within an environment, not across installs with
+    a different backend.
     """
-    return _compact_hash(hashlib.md5(data).digest())
+    return _compact_hash(hash_func(data).digest())
 
 
 @functools.singledispatch
@@ -176,7 +211,13 @@ def hash_sequence(obj, *args, depth: int = 0, **kwargs) -> str:
 
     Orders matters for the hash since orders matters in a sequence.
     """
-    buffer = b"".join(hash_value(elem, depth=depth + 1).encode() for elem in obj)
+    hashed_elems = [hash_value(elem, depth=depth + 1) for elem in obj]
+    # An UNHASHABLE element must not fold into a structural hash: two sequences
+    # differing only in the part that couldn't be hashed would then produce the
+    # same, normal-looking fingerprint.
+    if UNHASHABLE in hashed_elems:
+        return UNHASHABLE
+    buffer = b"".join(elem.encode() for elem in hashed_elems)
     return _hash_bytes(buffer)
 
 
@@ -195,7 +236,14 @@ def hash_unordered_mapping(obj, *args, depth: int = 0, **kwargs) -> str:
 
     hashed_mapping: dict[str, str] = {}
     for key, value in obj.items():
-        hashed_mapping[hash_value(key, depth=depth + 1)] = hash_value(value, depth=depth + 1)
+        key_hash = hash_value(key, depth=depth + 1)
+        value_hash = hash_value(value, depth=depth + 1)
+        # See hash_sequence: an unhashable key or value must not be folded into
+        # this mapping's structural hash, or the result silently collides with
+        # any other mapping that hits the same unhashable entry.
+        if key_hash == UNHASHABLE or value_hash == UNHASHABLE:
+            return UNHASHABLE
+        hashed_mapping[key_hash] = value_hash
 
     buffer = b"".join(
         key.encode() + value.encode() for key, value in sorted(hashed_mapping.items())
@@ -226,11 +274,14 @@ def hash_mapping(obj, *, ignore_order: bool = True, depth: int = 0, **kwargs) ->
         # use the same depth because we're simply dispatching to another implementation
         return hash_unordered_mapping(obj, depth=depth)
 
-    buffer = b"".join(
-        hash_value(key, depth=depth + 1).encode() + hash_value(value, depth=depth + 1).encode()
-        for key, value in obj.items()
-    )
-    return _hash_bytes(buffer)
+    parts = []
+    for key, value in obj.items():
+        key_hash = hash_value(key, depth=depth + 1)
+        value_hash = hash_value(value, depth=depth + 1)
+        if key_hash == UNHASHABLE or value_hash == UNHASHABLE:
+            return UNHASHABLE
+        parts.append(key_hash.encode() + value_hash.encode())
+    return _hash_bytes(b"".join(parts))
 
 
 @hash_value.register(Set)
@@ -241,7 +292,10 @@ def hash_set(obj, *args, depth: int = 0, **kwargs) -> str:
     For the same objects in the set, the hashes will be the
     same.
     """
-    sorted_hashes = sorted(hash_value(elem, depth=depth + 1) for elem in obj)
+    hashed_elems = [hash_value(elem, depth=depth + 1) for elem in obj]
+    if UNHASHABLE in hashed_elems:
+        return UNHASHABLE
+    sorted_hashes = sorted(hashed_elems)
     buffer = b"".join(hash.encode() for hash in sorted_hashes)
     return _hash_bytes(buffer)
 
@@ -249,28 +303,40 @@ def hash_set(obj, *args, depth: int = 0, **kwargs) -> str:
 @hash_value.register(h_databackends.AbstractPandasDataFrame)
 @hash_value.register(h_databackends.AbstractPandasColumn)
 def hash_pandas_obj(obj, *args, depth: int = 0, **kwargs) -> str:
-    """Convert a pandas dataframe, series, or index to
-    a dictionary of {index: row_hash} then hash it.
+    """Hash a pandas DataFrame, Series, or Index via vectorized row hashing.
 
-    Given the hashing for mappings, the physical ordering or rows doesn't matter.
-    For example, if the index is a date, the hash will represent the {date: row_hash},
-    and won't preserve how dates were ordered in the DataFrame.
+    ``pandas.util.hash_pandas_object`` computes a uint64 hash per row in a
+    single vectorized pass; we hash that buffer in one shot rather than
+    iterating over rows in Python. Column names and dtypes (the schema) are
+    folded in so that frames carrying identical cell values under different
+    schemas do not collide.
+
+    The hash is order-sensitive: reordering rows changes the per-row hash
+    buffer and therefore the fingerprint.
     """
     from pandas.util import hash_pandas_object
 
-    hash_per_row = hash_pandas_object(obj)
-    return hash_mapping(hash_per_row.to_dict(), ignore_order=False, depth=depth + 1)
+    row_hashes = hash_pandas_object(obj).values.tobytes()
+    if hasattr(obj, "columns"):
+        schema = f"{list(obj.columns)}:{[str(dtype) for dtype in obj.dtypes]}"
+    else:
+        schema = f"{getattr(obj, 'name', None)}:{obj.dtype}"
+    return _hash_bytes(schema.encode() + row_hashes)
 
 
 @hash_value.register(h_databackends.AbstractPolarsDataFrame)
 def hash_polars_dataframe(obj, *args, depth: int = 0, **kwargs) -> str:
-    """Convert a polars dataframe to a hash that includes column names
-    and dtypes (schema) alongside row hashes. This prevents collisions
-    between DataFrames with identical cell values but different schemas.
+    """Hash a polars DataFrame via vectorized row hashing.
+
+    ``DataFrame.hash_rows`` computes a per-row hash in a single vectorized
+    pass; we hash that buffer (``to_numpy().tobytes()``) in one shot rather
+    than iterating element-by-element in Python. Column names and dtypes
+    (the schema) are folded in so frames carrying identical cell values under
+    different schemas do not collide.
     """
     schema_str = ",".join(f"{name}:{dtype}" for name, dtype in obj.schema.items())
     schema_hash = hash_bytes(schema_str.encode())
-    row_hash = hash_sequence(obj.hash_rows().to_list(), depth=depth + 1)
+    row_hash = hash_bytes(obj.hash_rows().to_numpy().tobytes())
     return _hash_bytes(schema_hash.encode() + row_hash.encode())
 
 
